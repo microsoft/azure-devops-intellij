@@ -1,0 +1,48 @@
+<!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
+<idea-plugin version="2">
+    <name>TFS Integration</name>
+    <description>
+        Integration with Team Foundation Server.
+    </description>
+
+    <version>0.9</version>
+    <vendor url="http://www.swiftteams.com">SwiftTeams</vendor>
+
+    <idea-version since-build="7000"/>
+    <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
+
+    <project-components>
+      <component>
+        <implementation-class>org.jetbrains.tfsIntegration.core.TFSConfiguration</implementation-class>
+        <option name="workspace" value="true"/>
+      </component>
+    </project-components>
+
+    <extensions defaultExtensionNs="com.intellij">
+      <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+      <!--<checkoutProvider implementation="org.jetbrains.tfsIntegration.checkout.TFSCheckoutProvider"/>-->
+      <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"
+                          serviceImplementation="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"/>
+      <!--<projectService serviceInterface="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"-->
+                      <!--serviceImplementation="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"/>-->
+
+      <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs"/>
+    </extensions>
+
+    <actions>
+        <group id="TFSFileGroup">
+          <separator/>
+          <add-to-group group-id="VcsGroups" anchor="after" relative-to-action="VcsGlobalGroup"/>
+        </group>
+
+        <group id="TFSFilePopupGroup" popup="true" class="org.jetbrains.tfsIntegration.core.TFSFilePopupGroup">
+          <add-to-group group-id="VcsGroup" anchor="last"/>
+          <add-to-group group-id="VcsGroups" anchor="last"/>
+        </group>
+
+        <group id="TFSGroup">
+          <action id="TFS.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="TFS"/>
+          <add-to-group group-id="TFSFilePopupGroup" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>

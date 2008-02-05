@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module relativePaths="true" type="PLUGIN_MODULE" version="4">
+  <component name="DevKit.ModuleBuildProperties" url="file://$MODULE_DIR$/META-INF/plugin.xml" />
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="library" name="WSDL4J" level="project" />
+    <orderEntry type="library" name="Log4J" level="project" />
+    <orderEntry type="library" name="SAAJ" level="project" />
+    <orderEntry type="library" name="JAX RPC" level="project" />
+    <orderEntry type="library" name="Commons Logging" level="project" />
+    <orderEntry type="library" name="Commons Discovery" level="project" />
+    <orderEntry type="library" name="Axis" level="project" />
+    <orderEntry type="jdk" jdkName="IDEA 7656" jdkType="IDEA JDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Axis2" level="project" />
+    <orderEntry type="library" name="HttpClient" level="project" />
+    <orderEntry type="library" name="TFS Stubs" level="project" />
+    <orderEntry type="library" name="Sources" level="application" />
+    <orderEntryProperties />
+  </component>
+</module>
+
