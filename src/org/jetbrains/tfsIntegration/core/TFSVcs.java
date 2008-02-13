@@ -16,7 +16,6 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.stubs.RepositorySoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
-import org.jetbrains.tfsIntegration.core.tfs.TFSServerInfo;
 
 import java.rmi.RemoteException;
 
@@ -29,15 +28,15 @@ public class TFSVcs extends AbstractVcs {
 
   @NonNls public static final String TFS_NAME = "TFS";
   private static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
-  private TFSConfiguration myConfiguration;
+  private TFSProjectConfiguration myProjectConfiguration;
   private TFSEntriesFileListener myEntriesFileListener;
   private VcsShowConfirmationOption myAddConfirmation;
   private VcsShowConfirmationOption myDeleteConfirmation;
   private VcsShowSettingOption myCheckoutOptions;
 
-  public TFSVcs(Project project, TFSConfiguration configuration) {
+  public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
     super(project);
-    myConfiguration = configuration;
+    myProjectConfiguration = projectConfiguration;
     myEntriesFileListener = new TFSEntriesFileListener(project);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
@@ -51,7 +50,7 @@ public class TFSVcs extends AbstractVcs {
     //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
     //System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
     //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-    TFSServerInfo.checkServer("http://st-tfs01:8080", "tfsuser", "SWIFTTEAMS", "Parol");
+    //ServerInfo.checkServer("http://st-tfs01:8080", "tfsuser", "SWIFTTEAMS", "Parol");
     //testTFSConnect();
   }
 
@@ -95,7 +94,7 @@ public class TFSVcs extends AbstractVcs {
 
   @NonNls
   public String getName() {
-    LOG.debug("getName");
+    LOG.debug("getComputerName");
     return TFS_NAME;
   }
 
@@ -107,7 +106,7 @@ public class TFSVcs extends AbstractVcs {
 
   public Configurable getConfigurable() {
     LOG.debug("createConfigurable");
-    return new TFSConfigurable(myProject);
+    return new TFSProjectConfigurable(myProject);
   }
 
   public Project getProject() {
@@ -140,8 +139,8 @@ public class TFSVcs extends AbstractVcs {
     return myCheckoutOptions;
   }
 
-  public TFSConfiguration getSvnConfiguration() {
-    return myConfiguration;
+  public TFSProjectConfiguration getSvnConfiguration() {
+    return myProjectConfiguration;
   }
 
 }
