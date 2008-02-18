@@ -97,8 +97,11 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
       else if (Column.ServerPath.ordinal() == columnIndex) {
         workingFolder.setServerPath((String)aValue);
       }
-      else {
+      else if (Column.LocalPath.ordinal() == columnIndex) {
         workingFolder.setLocalPath((String)aValue);
+      }
+      else {
+        throw new IllegalArgumentException("columnIndex: " + columnIndex);
       }
     }
   }
@@ -294,10 +297,13 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.ServerPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
-        ServerItemSelectDialog dialog = new ServerItemSelectDialog(null, myWorkspace, /*initialText*/ null, true);
+        ServerItemSelectDialog dialog = new ServerItemSelectDialog(null, myWorkspace, initialText, true);
         dialog.show();
         if (dialog.isOK()) {
-          return dialog.getSelectedItem();
+          Object selection = dialog.getSelectedItem();
+          if (selection instanceof ItemTreeNode) {
+            return ((ItemTreeNode)selection).getFullPath();
+          }
         }
         return initialText;
       }

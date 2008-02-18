@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.NTCredentials;
@@ -13,6 +14,7 @@ import org.apache.commons.httpclient.auth.CredentialsProvider;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpParams;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.RepositorySoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
@@ -25,6 +27,12 @@ import java.rmi.RemoteException;
  * Time: 18:24:26
  */
 public class TFSVcs extends AbstractVcs {
+
+  static {
+    // enable Fiddler as proxy
+    System.setProperty("http.proxyHost", "127.0.0.1");
+    System.setProperty("http.proxyPort", "8888");
+  }
 
   @NonNls public static final String TFS_NAME = "TFS";
   private static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
@@ -94,7 +102,7 @@ public class TFSVcs extends AbstractVcs {
 
   @NonNls
   public String getName() {
-    LOG.debug("getComputerName");
+    LOG.debug("getName");
     return TFS_NAME;
   }
 
@@ -139,8 +147,12 @@ public class TFSVcs extends AbstractVcs {
     return myCheckoutOptions;
   }
 
-  public TFSProjectConfiguration getSvnConfiguration() {
+  public TFSProjectConfiguration getProjectConfiguration() {
     return myProjectConfiguration;
   }
 
+  @Nullable
+  public ChangeProvider getChangeProvider() {
+    return new TFSChangeProvider();
+  }
 }

@@ -17,13 +17,7 @@ public class Credentials {
     this("", "", null);
   }
 
-  public Credentials(String userName, String domain, String password) {
-    if (userName == null) {
-      throw new IllegalArgumentException("userName is null");
-    }
-    if (domain == null) {
-      throw new IllegalArgumentException("domain is null");
-    }
+  public Credentials(final @NotNull String userName, final @NotNull String domain, final String password) {
     myUserName = userName;
     myDomain = domain;
     myPassword = password;
@@ -47,10 +41,7 @@ public class Credentials {
     return myUserName;
   }
 
-  void setUserName(String userName) {
-    if (userName == null) {
-      throw new IllegalArgumentException("userName is null");
-    }
+  void setUserName(final @NotNull String userName) {
     myUserName = userName;
   }
 
@@ -58,10 +49,7 @@ public class Credentials {
     myPassword = password;
   }
 
-  void setDomain(String domain) {
-    if (domain == null) {
-      throw new IllegalArgumentException("domain is null");
-    }
+  void setDomain(final @NotNull String domain) {
     myDomain = domain;
   }
 

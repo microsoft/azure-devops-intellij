@@ -3,6 +3,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.AxisFault;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
@@ -10,10 +11,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 
 public class VersionControlServer {
@@ -29,8 +27,6 @@ public class VersionControlServer {
 
 // ***************************************************
 // used by now
-
-
 
   public Workspace getWorkspace(String workspaceName, String workspaceOwner) throws RemoteException {
     return myRepository.QueryWorkspace(workspaceName, workspaceOwner);
@@ -48,16 +44,98 @@ public class VersionControlServer {
     myRepository.DeleteWorkspace(workspaceName, workspaceOwner);
   }
 
+  public List<ExtendedItem> getChildItems(final String workspasceName, final String ownerName, final ExtendedItem parent,
+                                          final DeletedState deletedState, final ItemType itemType) throws RemoteException {
+    List<List<ExtendedItem>> extendedItems
+      = getChildItems(workspasceName, ownerName, Collections.singletonList(parent), deletedState, itemType);
 
-  public List<ItemInfo> getItems(final ItemInfo item, final DeletedState delState, final ItemType type) throws RemoteException {
-    ArrayList<ItemInfo> result = new ArrayList<ItemInfo>();
-    ArrayOfExtendedItem[] items = getExtendedItems(item.getFullName(), delState, type);
-    if (items.length > 0) {
-      for (ExtendedItem i : items[0].getExtendedItem()) {
-        result.add(new ItemInfo(item.getWorkspace(), i.getSitem()));
+    assert extendedItems != null && extendedItems.size() == 1;
+    return extendedItems.get(0);
+  }
+
+  public List<List<ExtendedItem>> getChildItems(final String workspasceName, final String ownerName, final List<ExtendedItem> parents,
+                                                final DeletedState deletedState, final ItemType itemType) throws RemoteException {
+    List<List<ExtendedItem>> result  = getExtendedItems(workspasceName, ownerName, parents,
+                                                        deletedState, RecursionType.OneLevel, itemType);
+    // remove parent items
+    Iterator<ExtendedItem> pIter = parents.iterator();
+    Iterator<List<ExtendedItem>> resIter = result.iterator();
+    while (resIter.hasNext() && pIter.hasNext()) {
+      ExtendedItem parentItem = pIter.next();
+      List<ExtendedItem> resList = resIter.next();
+      Iterator<ExtendedItem> resListIter = resList.iterator();
+      while (resListIter.hasNext()) {
+        ExtendedItem childItem = resListIter.next();
+        if (parentItem.getSitem().equals(childItem.getSitem())) {
+          resListIter.remove();
+          break;
+        }
       }
     }
     return result;
+  }
+
+  public List<List<ExtendedItem>> getExtendedItems(final String workspasceName, final String ownerName, final List<ExtendedItem> items,
+                                                          final DeletedState deletedState, final RecursionType recursionType, final ItemType itemType) throws RemoteException {
+    List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+    for (ExtendedItem item : items) {
+      ItemSpec itemSpec = new ItemSpec();
+      itemSpec.setItem(item.getSitem());
+      itemSpec.setRecurse(recursionType);
+      itemSpecList.add(itemSpec);
+    }
+    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
+    List<List<ExtendedItem>> result = new LinkedList<List<ExtendedItem>>();
+    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, itemType).getArrayOfExtendedItem();
+    assert extendedItems != null && extendedItems.length == items.size();
+    for (ArrayOfExtendedItem extendedItem : extendedItems) {
+      List<ExtendedItem> resultItemsList = new LinkedList<ExtendedItem>();
+      ExtendedItem[] resultItems = extendedItem.getExtendedItem();
+      if (resultItems != null) {
+        resultItemsList.addAll(Arrays.asList(resultItems));
+      }
+      result.add(resultItemsList);
+    }
+    return result;
+  }
+
+  public ExtendedItem getExtendedItem(final String workspasceName, final String ownerName,
+                                      final String itemServerPath, final DeletedState deletedState) throws RemoteException {
+    ItemSpec itemSpec = new ItemSpec();
+    // TODO: is this local path?
+    itemSpec.setItem(itemServerPath);
+    itemSpec.setRecurse(RecursionType.None);
+    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(new ItemSpec[] {itemSpec});
+    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any).getArrayOfExtendedItem();
+    assert extendedItems != null && extendedItems.length == 1;
+    ExtendedItem[] resultItems = extendedItems[0].getExtendedItem();
+    if (resultItems != null) {
+      assert resultItems.length == 1;
+      return resultItems[0];
+    }
+    return null;
+  }
+
+
+  public ArrayOfExtendedItem[] getExtendedItems(ItemSpec[] itemSpecs, DeletedState deletedState, ItemType itemType) throws RemoteException {
+    ArrayOfItemSpec is = new ArrayOfItemSpec();
+    is.setItemSpec(itemSpecs);
+    return myRepository.QueryItemsExtended(null, null, is, deletedState, itemType).getArrayOfExtendedItem();
+  }
+
+
+  @Nullable
+  public ArrayOfExtendedItem[] getExtendedItems(String path, DeletedState deletedState, ItemType itemType) throws RemoteException {
+    ItemSpec is = new ItemSpec();
+    is.setItem(path);
+    is.setRecurse(RecursionType.OneLevel);
+    ArrayOfExtendedItem[] items = getExtendedItems(new ItemSpec[]{is}, deletedState, itemType);
+    if (items.length == 0) {
+      return null;
+    }
+    return items;
   }
 
   
@@ -81,7 +159,7 @@ public class VersionControlServer {
   }
 
   public Workspace createWorkspace(String name, String owner) throws UnknownHostException, RemoteException {
-    return createWorkspace(name, owner, null, new WorkingFolder[0], Workstation.getInstance().getComputerName());
+    return createWorkspace(name, owner, null, new WorkingFolder[0], Workstation.getComputerName());
   }
 
   @Nullable
@@ -202,7 +280,7 @@ public class VersionControlServer {
 
     String item = itemSpecs[0].getItem();
     if (!VersionControlPath.isServerItem(item)) {
-      WorkspaceInfo info = Workstation.getInstance().findWorkspaceByLocalPath(item);
+      WorkspaceInfo info = Workstation.getInstance().findWorkspace(item);
       if (info != null) {
         workspaceName = info.getName();
         workspaceOwner = info.getOwnerName();
@@ -212,24 +290,6 @@ public class VersionControlServer {
     is.setItemSpec(itemSpecs);    
     return myRepository.QueryItems(workspaceName, workspaceOwner, is, versionSpec, deletedState, itemType, includeDownloadInfo)
       .getItemSet();
-  }
-
-  @Nullable
-  public ArrayOfExtendedItem[] getExtendedItems(String path, DeletedState deletedState, ItemType itemType) throws RemoteException {
-    ItemSpec is = new ItemSpec();
-    is.setItem(path);
-    is.setRecurse(RecursionType.OneLevel);
-    ArrayOfExtendedItem[] items = getExtendedItems(new ItemSpec[]{is}, deletedState, itemType);
-    if (items.length == 0) {
-      return null;
-    }
-    return items;
-  }
-
-  public ArrayOfExtendedItem[] getExtendedItems(ItemSpec[] itemSpecs, DeletedState deletedState, ItemType itemType) throws RemoteException {
-    ArrayOfItemSpec is = new ArrayOfItemSpec();
-    is.setItemSpec(itemSpecs);
-    return myRepository.QueryItemsExtended(null, null, is, deletedState, itemType).getArrayOfExtendedItem();
   }
 
   public int getLatestChangesetId() throws RemoteException {
@@ -326,10 +386,7 @@ public class VersionControlServer {
     return w2;
   }
 
-  public Workspace getWorkspace(WorkspaceInfo info) {
-    if (info == null) {
-      throw new IllegalArgumentException("workspaceInfo cannot be null!");
-    }
+  public Workspace getWorkspace(final @NotNull WorkspaceInfo info) {
     // todo: we cannot not set referense to 'this' like in opentfs,
     // because our generated calss for WorkspaceInfo does not have such field.
     // In opentfs referense to 'this' allows get Repository from WorkspaceInfo,
@@ -346,7 +403,7 @@ public class VersionControlServer {
   public Workspace getWorkspace(String localPath) {
     String path = convertToFullPath(localPath);
 
-    WorkspaceInfo info = Workstation.getInstance().findWorkspaceByLocalPath(path);
+    WorkspaceInfo info = Workstation.getInstance().findWorkspace(path);
     if (info == null) {
       throw new IllegalArgumentException("Item not mapped " + path);
     }
@@ -392,7 +449,7 @@ public class VersionControlServer {
     String workspaceOwner = "";
 
     if (!VersionControlPath.isServerItem(itemSpec.getItem())) {
-      WorkspaceInfo info = Workstation.getInstance().findWorkspaceByLocalPath(itemSpec.getItem());
+      WorkspaceInfo info = Workstation.getInstance().findWorkspace(itemSpec.getItem());
       if (info != null) {
         workspaceName = info.getName();
         workspaceOwner = info.getOwnerName();

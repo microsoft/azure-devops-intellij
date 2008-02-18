@@ -1,5 +1,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfWorkingFolder;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolderType;
@@ -22,37 +24,25 @@ public class WorkspaceInfo {
   private String myOriginalName;
   private String myComment;
   private Calendar myTimestamp;
-  //private boolean myWorkingFoldersCached;
+  private boolean myLoaded;
   private String myModifiedName;
 
   private List<WorkingFolderInfo> myWorkingFoldersInfos = new ArrayList<WorkingFolderInfo>();
 
-  public WorkspaceInfo(final ServerInfo serverInfo, final String owner, final String computer) {
-    if (serverInfo == null) {
-      throw new IllegalArgumentException("null serverInfo");
-    }
-    if (owner == null) {
-      throw new IllegalArgumentException("null owner");
-    }
-    if (computer == null) {
-      throw new IllegalArgumentException("null computer");
-    }
+  public WorkspaceInfo(final @NotNull ServerInfo serverInfo, final @NotNull String owner, final @NotNull String computer) {
     myServerInfo = serverInfo;
     myOwnerName = owner;
     myComputer = computer;
     myTimestamp = Calendar.getInstance();
   }
 
-  public WorkspaceInfo(final ServerInfo serverInfo,
-                       final String name,
+  public WorkspaceInfo(final @NotNull ServerInfo serverInfo,
+                       final @NotNull String name,
                        final String owner,
                        final String computer,
                        final String comment,
                        final Calendar timestamp) {
     this(serverInfo, owner, computer);
-    if (name == null) {
-      throw new IllegalArgumentException("null name");
-    }
 
     myOriginalName = name;
     myComment = comment;
@@ -104,15 +94,43 @@ public class WorkspaceInfo {
   //}
 
   public List<WorkingFolderInfo> getWorkingFoldersInfos() {
+    //try {
+    //  loadFromServer();
+    //}
+    //catch (RemoteException e) {
+    //  // TODO ASAP !!!!!
+    //  e.printStackTrace();
+    //}
+
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
   public void loadFromServer() throws RemoteException {
-    Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
-    fromBean(workspaceBean, this);
+    if (!myLoaded) {
+      Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
+      fromBean(workspaceBean, this);
 
-    //setWorkingFoldersCached(false);
-    Workstation.getInstance().updateCacheFile();
+      //setWorkingFoldersCached(false);
+      Workstation.getInstance().updateCacheFile();
+      myLoaded = true;
+    }
+  }
+
+  @Nullable
+  public String findServerPathByLocalPath(final @NotNull String localPath) {
+    for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
+      String normalizedMappedLocalPath = VersionControlPath.getNormalizedPath(folderInfo.getLocalPath());
+      if (localPath.startsWith(normalizedMappedLocalPath)) {
+        String localPathRemainder = localPath.substring(normalizedMappedLocalPath.length());
+        if (folderInfo.getServerPath().length() > 0) {
+          return folderInfo.getServerPath() + localPathRemainder;
+        }
+        else {
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
@@ -136,7 +154,7 @@ public class WorkspaceInfo {
     Workstation.getInstance().updateCacheFile();
   }
 
-  private static Workspace toBean(WorkspaceInfo info) {
+  private static Workspace toBean(WorkspaceInfo info) throws RemoteException {
     final ArrayOfWorkingFolder folders = new ArrayOfWorkingFolder();
     List<WorkingFolder> foldersList = new ArrayList<WorkingFolder>(info.getWorkingFoldersInfos().size());
     for (WorkingFolderInfo folderInfo : info.getWorkingFoldersInfos()) {

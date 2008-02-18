@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
@@ -43,6 +44,7 @@ public class Workstation {
     return Collections.unmodifiableList(myServerInfos);
   }
 
+  @Nullable
   public ServerInfo getServer(URI uri) {
     for (ServerInfo server : myServerInfos) {
       if (server.getUri().equals(uri)) {
@@ -183,26 +185,6 @@ public class Workstation {
     updateCacheFile();
   }
 
-  @Nullable
-  public WorkspaceInfo findWorkspaceByLocalPath(final String path) {
-    List<WorkspaceInfo> wInfos = getAllWorkspaces();
-    WorkspaceInfo returnedInfo = null;
-    int maxPath = 0;
-
-    for (WorkspaceInfo wInfo : wInfos) {
-      for (WorkingFolderInfo folderInfo : wInfo.getWorkingFoldersInfos()) {
-        // todo: rewrite in more portable way
-        String normalizedPath = folderInfo.getLocalPath().replaceAll("[\\\\]", VersionControlPath.PATH_SEPARATOR);
-        normalizedPath = normalizedPath.replaceAll("[/]*$", "");
-        if (path.startsWith(normalizedPath) && normalizedPath.length() > maxPath) {
-          returnedInfo = wInfo;
-          maxPath = normalizedPath.length();
-        }
-      }
-    }
-    return returnedInfo;
-  }
-
   public static String getComputerName() {
     try {
       InetAddress address = InetAddress.getLocalHost();
@@ -222,4 +204,13 @@ public class Workstation {
     // todo: implement add operation
   }
 
+  @Nullable
+  public WorkspaceInfo findWorkspace(final @NotNull String localPath) {
+    for (WorkspaceInfo workspaceInfo : getAllWorkspaces()) {
+      if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
+        return workspaceInfo;
+      }
+    }
+    return null;
+  }
 }

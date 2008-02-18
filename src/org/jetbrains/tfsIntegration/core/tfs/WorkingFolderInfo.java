@@ -1,5 +1,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import org.jetbrains.annotations.NotNull;
+
 public class WorkingFolderInfo {
 
   public enum Status {
@@ -7,9 +9,9 @@ public class WorkingFolderInfo {
     Cloaked
   }
 
-  private String myLocalPath;
-  private String myServerPath;
-  private Status myStatus;
+  private @NotNull String myLocalPath;
+  private @NotNull String myServerPath;
+  private @NotNull Status myStatus;
 
   public WorkingFolderInfo() {
     this("");
@@ -25,27 +27,30 @@ public class WorkingFolderInfo {
     myServerPath = serverPath;
   }
 
+  @NotNull
   public String getLocalPath() {
     return myLocalPath;
   }
 
+  @NotNull
   public String getServerPath() {
     return myServerPath;
   }
 
+  @NotNull
   public Status getStatus() {
     return myStatus;
   }
 
-  public void setStatus(final Status status) {
+  public void setStatus(final @NotNull Status status) {
     myStatus = status;
   }
 
-  public void setServerPath(final String serverPath) {
+  public void setServerPath(final @NotNull String serverPath) {
     myServerPath = serverPath;
   }
 
-  public void setLocalPath(final String localPath) {
+  public void setLocalPath(final @NotNull String localPath) {
     myLocalPath = localPath;
   }
 

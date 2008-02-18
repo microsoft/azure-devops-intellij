@@ -1,5 +1,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Created by IntelliJ IDEA.
  * Date: 05.02.2008
@@ -12,4 +14,9 @@ public class VersionControlPath {
   public static boolean isServerItem(final String item) {
     return item.startsWith(ROOT_FOLDER);
   }
+
+  public static String getNormalizedPath(final @NotNull String localPath) {
+    return localPath.replaceAll("[\\\\]", PATH_SEPARATOR).replaceAll("[/]*$", "");
+  }
+
 }

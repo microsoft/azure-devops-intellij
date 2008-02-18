@@ -19,6 +19,8 @@
     <orderEntry type="library" name="HttpClient" level="project" />
     <orderEntry type="library" name="TFS Stubs" level="project" />
     <orderEntry type="library" name="Sources" level="application" />
+    <orderEntry type="library" name="Source code" level="application" />
+    <orderEntry type="library" name="svnIntegration" level="project" />
     <orderEntryProperties />
   </component>
 </module>

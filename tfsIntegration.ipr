@@ -354,8 +354,20 @@
         <root url="jar://$PROJECT_DIR$/lib/stubs.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://$PROJECT_DIR$/lib/stubs_src.zip!/src" />
+      </SOURCES>
+    </library>
+    <library name="svnIntegration">
+      <CLASSES />
+      <JAVADOC />
+      <SOURCES>
+        <root url="file://C:/Projects/TFS/svnIntegration/src" />
+      </SOURCES>
     </library>
   </component>
+  <UsedPathMacros>
+    <macro name="TEMPLATE" />
+  </UsedPathMacros>
 </project>
 

@@ -1,13 +1,14 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.apache.axis2.AxisFault;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 
 import java.net.URI;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.rmi.RemoteException;
 
 public class ServerInfo {
 
@@ -22,13 +23,7 @@ public class ServerInfo {
     myGuid = guid;
   }
 
-  public void addWorkspaceInfo(final WorkspaceInfo workspaceInfo) {
-    if (workspaceInfo == null) {
-      throw new IllegalArgumentException("null workspaceInfo");
-    }
-    if (workspaceInfo.getServer() != this) {
-      throw new IllegalArgumentException("invalid workspaceInfo");
-    }
+  public void addWorkspaceInfo(final @NotNull WorkspaceInfo workspaceInfo) {
     myWorkspaceInfos.add(workspaceInfo);
   }
 
@@ -46,6 +41,15 @@ public class ServerInfo {
 
   public List<WorkspaceInfo> getWorkspaceInfos() {
     return Collections.unmodifiableList(myWorkspaceInfos);
+  }
+
+  public WorkspaceInfo getWorkspace(final @NotNull String workspaceName) {
+    for (WorkspaceInfo workspaceInfo : getWorkspaceInfos()) {
+      if (workspaceInfo.getName().equals(workspaceName)) {
+        return workspaceInfo;
+      }
+    }
+    return null;
   }
 
   public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws RemoteException {

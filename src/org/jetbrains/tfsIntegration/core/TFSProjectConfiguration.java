@@ -5,8 +5,9 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @State(
   name = "TFS",
@@ -26,7 +27,6 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
   private ConfigurationBean myConfigurationBean;
 
   public static class ConfigurationBean {
-    public String workspace = "";
   }
 
   private TFSProjectConfiguration() {
@@ -43,6 +43,7 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
     return COMPONENT_NAME;
   }
 
+  @Nullable
   public static TFSProjectConfiguration getInstance(Project project) {
     return project.getComponent(TFSProjectConfiguration.class);
   }
@@ -65,14 +66,6 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
 
   public void loadState(ConfigurationBean state) {
     myConfigurationBean = state;
-  }
-
-  public String getWorkspace() {
-    return myConfigurationBean.workspace;
-  }
-
-  public void setWorkspace(String workspace) {
-    myConfigurationBean.workspace = workspace;
   }
 
 }
