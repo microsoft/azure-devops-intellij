@@ -2,10 +2,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfWorkingFolder;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolderType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -186,7 +183,8 @@ public class WorkspaceInfo {
     return new WorkingFolderInfo(status, bean.getLocal(), bean.getItem());
   }
 
-  private static void fromBean(Workspace bean, WorkspaceInfo info) {
+  static void fromBean(Workspace bean, WorkspaceInfo info) {
+    info.myOriginalName = bean.getName();
     info.setComment(bean.getComment());
     info.setTimestamp(bean.getLastAccessDate());
     final WorkingFolder[] folders;
@@ -201,6 +199,20 @@ public class WorkspaceInfo {
       workingFoldersInfos.add(fromBean(folderBean));
     }
     info.myWorkingFoldersInfos = workingFoldersInfos;
+  }
+
+  public WorkspaceInfo getCopy() {
+    WorkspaceInfo copy = new WorkspaceInfo(myServerInfo, myOwnerName, myComputer);
+    copy.myComment = myComment;
+    copy.myLoaded = myLoaded;
+    copy.myOriginalName = myOriginalName;
+    copy.myModifiedName = myModifiedName;
+    copy.myTimestamp = myTimestamp;
+
+    for (WorkingFolderInfo workingFolder : myWorkingFoldersInfos) {
+      copy.myWorkingFoldersInfos.add(workingFolder.getCopy());
+    }
+    return copy;
   }
 
   @SuppressWarnings({"HardCodedStringLiteral"})
@@ -218,4 +230,7 @@ public class WorkspaceInfo {
            "]";
   }
 
+  public ExtendedItem getExtendedItem(final String serverPath) throws RemoteException {
+    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);     
+  }
 }

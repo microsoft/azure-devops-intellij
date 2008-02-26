@@ -30,6 +30,7 @@ public class Workstation {
   private List<ServerInfo> myServerInfos;
 
   private Workstation() {
+    // TODO: if file is empty, IDEA shows exception dialog
     myServerInfos = loadCache();
   }
 
@@ -54,16 +55,12 @@ public class Workstation {
     return null;
   }
 
-  public List<WorkspaceInfo> getAllWorkspaces() {
+  public List<WorkspaceInfo> getAllWorkspacesForCurrentOwner() {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (ServerInfo serverInfo : getServers()) {
-      result.addAll(serverInfo.getWorkspaceInfos());
+      result.addAll(serverInfo.getWorkspacesForCurrentOwner());
     }
     return result;
-  }
-
-  public void refreshData() {
-
   }
 
   private static List<ServerInfo> loadCache() {
@@ -79,6 +76,12 @@ public class Workstation {
         LOG.warn("Failed to read workspaces cache file", e);
       }
       catch (SAXException e) {
+        LOG.warn("Failed to read workspaces cache file", e);
+      }
+      catch (RuntimeException e) {
+        LOG.warn("Failed to read workspaces cache file", e);
+      }
+      catch (Exception e) {
         LOG.warn("Failed to read workspaces cache file", e);
       }
     }
@@ -137,7 +140,7 @@ public class Workstation {
                 serverAttributes.put(XmlConstants.GUID_ATTR, serverInfo.getGuid());
                 savePerformer.startElement(XmlConstants.SERVER_INFO, serverAttributes);
 
-                for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaceInfos()) {
+                for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
                   Map<String, String> workspaceAttributes = new HashMap<String, String>();
                   workspaceAttributes.put(XmlConstants.NAME_ATTR, workspaceInfo.getName());
                   workspaceAttributes.put(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
@@ -206,11 +209,12 @@ public class Workstation {
 
   @Nullable
   public WorkspaceInfo findWorkspace(final @NotNull String localPath) {
-    for (WorkspaceInfo workspaceInfo : getAllWorkspaces()) {
+    for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
       if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
         return workspaceInfo;
       }
     }
     return null;
   }
+
 }

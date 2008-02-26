@@ -11,8 +11,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.core.credentials.SimpleCredentialsProvider;
-import org.jetbrains.tfsIntegration.stubs.RegistrationSoapStub;
-import org.jetbrains.tfsIntegration.stubs.ServerStatusSoapStub;
+import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
+import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
@@ -50,14 +50,14 @@ public class WebServiceHelper {
 
   public static String authenticate(final URI serverUri, final Credentials credentials) throws WebServiceException {
     try {
-      ServerStatusSoapStub stub = new ServerStatusSoapStub(serverUri.toString() + SERVER_STATUS_ENDPOINT);
+      ServerStatusServerStatusSoapStub stub = new ServerStatusServerStatusSoapStub(serverUri.toString() + SERVER_STATUS_ENDPOINT);
       setCredentials(stub, credentials, serverUri);
       String result = stub.CheckAuthentication(new CheckAuthentication());
       String expected = credentials.getDomain() + "\\" + credentials.getUserName();
       if (!expected.equalsIgnoreCase(result)) {
         throw new WebServiceException("Failed to login to server");
       }
-      RegistrationSoapStub registrationStub = new RegistrationSoapStub(serverUri.toString() + REGISTRATION_ENDPOINT);
+      RegistrationRegistrationSoapStub registrationStub = new RegistrationRegistrationSoapStub(serverUri.toString() + REGISTRATION_ENDPOINT);
       setCredentials(registrationStub, credentials, serverUri);
       ArrayOfRegistrationEntry registrationEntries = registrationStub.GetRegistrationEntries(TFS_TOOL_ID);
       for (RegistrationEntry entry : registrationEntries.getRegistrationEntry()) {

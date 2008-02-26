@@ -2,12 +2,15 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.apache.axis2.AxisFault;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class ServerInfo {
@@ -39,17 +42,24 @@ public class ServerInfo {
     return CredentialsManager.getInstance().getCredentials(getUri()).getUserName();
   }
 
-  public List<WorkspaceInfo> getWorkspaceInfos() {
-    return Collections.unmodifiableList(myWorkspaceInfos);
+  public List<WorkspaceInfo> getWorkspacesForCurrentOwner() {
+    Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
+    if (credentials != null) {
+      List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
+      for (WorkspaceInfo workspaceInfo : getWorkspaces()) {
+        if (credentials.getQualifiedUsername().equalsIgnoreCase(workspaceInfo.getOwnerName())) {
+          result.add(workspaceInfo);
+        }
+      }
+      return Collections.unmodifiableList(result);
+    }
+    else {
+      return Collections.emptyList();
+    }
   }
 
-  public WorkspaceInfo getWorkspace(final @NotNull String workspaceName) {
-    for (WorkspaceInfo workspaceInfo : getWorkspaceInfos()) {
-      if (workspaceInfo.getName().equals(workspaceName)) {
-        return workspaceInfo;
-      }
-    }
-    return null;
+  public List<WorkspaceInfo> getWorkspaces() {
+    return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
   public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws RemoteException {
@@ -58,10 +68,6 @@ public class ServerInfo {
     Workstation.getInstance().updateCacheFile();
   }
 
-  //void setWorkspaceInfos(List<WorkspaceInfo> workspaceInfos) {
-  //  myWorkspaceInfos = workspaceInfos;
-  //}
-  //
   public VersionControlServer getVCS() throws AxisFault {
     if (myServer == null) {
       myServer = new VersionControlServer(myUri);
@@ -69,9 +75,34 @@ public class ServerInfo {
     return myServer;
   }
 
+  public void refreshWorkspacesForCurrentOwner() throws RemoteException {
+    Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
+    if (credentials != null) {
+      String owner = credentials.getQualifiedUsername();
+      Workspace[] workspaces = getVCS().queryWorkspaces(owner, Workstation.getComputerName());
+      for (Iterator<WorkspaceInfo> i = myWorkspaceInfos.iterator(); i.hasNext();) {
+        WorkspaceInfo workspaceInfo = i.next();
+        if (workspaceInfo.getOwnerName().equalsIgnoreCase(owner)) {
+          i.remove();
+        }
+      }
+
+      for (Workspace workspace : workspaces) {
+        WorkspaceInfo workspaceInfo = new WorkspaceInfo(this, owner, Workstation.getComputerName());
+        WorkspaceInfo.fromBean(workspace, workspaceInfo);
+        addWorkspaceInfo(workspaceInfo);
+      }
+      Workstation.getInstance().updateCacheFile();
+    }
+  }
+
+  public void replaceWorkspace(final @NotNull WorkspaceInfo existingWorkspace, final @NotNull WorkspaceInfo newWorkspace) {
+    myWorkspaceInfos.add(myWorkspaceInfos.indexOf(existingWorkspace), newWorkspace);
+  }
+
   @SuppressWarnings({"HardCodedStringLiteral"})
   public String toString() {
-    return "ServerInfo[uri=" + getUri() + ",guid=" + getGuid() + "," + getWorkspaceInfos().size() + " workspaces]";
+    return "ServerInfo[uri=" + getUri() + ",guid=" + getGuid() + "," + getWorkspaces().size() + " workspaces]";
   }
 
 

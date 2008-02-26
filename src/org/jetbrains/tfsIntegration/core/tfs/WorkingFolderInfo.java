@@ -54,4 +54,9 @@ public class WorkingFolderInfo {
     myLocalPath = localPath;
   }
 
+  public WorkingFolderInfo getCopy() {
+    WorkingFolderInfo copy = new WorkingFolderInfo(myStatus, myLocalPath, myServerPath);
+    return copy;
+  }
+
 }

@@ -15,7 +15,7 @@ import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpParams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.stubs.RepositorySoap12Stub;
+import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
@@ -82,7 +82,7 @@ public class TFSVcs extends AbstractVcs {
         }
       });
       String targetEndPoint = "http://st-tfs01:8080/VersionControl/v1.0/repository.asmx";
-      Workspace[] workspaces = new RepositorySoap12Stub(targetEndPoint).QueryWorkspaces("tfsuser", "SENIN_NB_XP").getWorkspace();
+      Workspace[] workspaces = new RepositoryRepositorySoap12Stub(targetEndPoint).QueryWorkspaces("tfsuser", "SENIN_NB_XP").getWorkspace();
       for (Workspace w : workspaces) {
         System.out.println(w.getComputer() + "\t" + w.getOwner());
         WorkingFolder[] workingFolders = w.getFolders().getWorkingFolder();
@@ -153,6 +153,6 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public ChangeProvider getChangeProvider() {
-    return new TFSChangeProvider();
+    return new TFSChangeProvider(myProject);
   }
 }

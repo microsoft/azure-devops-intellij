@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.MessageFormat;
+
 public class Credentials {
 
   private String myUserName;
@@ -53,6 +55,16 @@ public class Credentials {
     myDomain = domain;
   }
 
+  @NotNull
+  public String getQualifiedUsername() {
+    if (getDomain().length() > 0) {
+      return MessageFormat.format("{0}\\{1}", getDomain(), getUserName());
+    }
+    else {
+      return getUserName();
+    }
+  }
+
   public boolean equalsTo(Credentials c) {
     if (!getUserName().equals(c.getUserName())) {
       return false;
@@ -72,4 +84,5 @@ public class Credentials {
   public String toString() {
     return "Credentials[username=" + getUserName() + ",domain=" + getDomain() + ",password=" + getPassword() + "]";
   }
+
 }
