@@ -166,6 +166,9 @@ public class Workstation {
             catch (SAXException e) {
               LOG.warn("Failed to update workspaces cache file", e);
             }
+            catch (Exception e) {
+              LOG.warn("Failed to update workspaces cache file", e);
+            }
           }
         });
       }
@@ -208,7 +211,7 @@ public class Workstation {
   }
 
   @Nullable
-  public WorkspaceInfo findWorkspace(final @NotNull String localPath) {
+  public WorkspaceInfo findWorkspace(final @NotNull String localPath) throws Exception {
     for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
       if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
         return workspaceInfo;

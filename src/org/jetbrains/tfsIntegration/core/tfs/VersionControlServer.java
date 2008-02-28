@@ -1,9 +1,8 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.microsoft.wsdl.types.Guid;
-import org.apache.axis2.AxisFault;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
@@ -19,7 +18,7 @@ public class VersionControlServer {
   private URI myUri;
   private Guid myGuid = new Guid();
 
-  public VersionControlServer(URI uri) throws AxisFault {
+  public VersionControlServer(URI uri) throws Exception {
     myUri = uri;
     myRepository = new Repository(this, uri);
   }
@@ -168,15 +167,14 @@ public class VersionControlServer {
 // ***************************************************
 // not used by now
 
-  public LabelResult[] createLabel(VersionControlLabel label, LabelItemSpec[] labelSpecs, LabelChildOption childOption)
-    throws RemoteException {
+  public LabelResult[] createLabel(VersionControlLabel label, LabelItemSpec[] labelSpecs, LabelChildOption childOption) throws Exception {
     Workspace workspace = getWorkspace(labelSpecs[0].getItemSpec().getItem());
     ArrayOfLabelItemSpec ls = new ArrayOfLabelItemSpec();
     ls.setLabelItemSpec(labelSpecs);
     return myRepository.LabelItem(workspace.getName(), workspace.getOwner(), label, ls, childOption).getLabelItemResult().getLabelResult();
   }
 
-  public LabelResult[] unlabelItem(String labelName, String labelScope, ItemSpec[] itemSpecs, VersionSpec version) throws RemoteException {
+  public LabelResult[] unlabelItem(String labelName, String labelScope, ItemSpec[] itemSpecs, VersionSpec version) throws Exception {
     Workspace workspace = getWorkspace(itemSpecs[0].getItem());
     ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
@@ -189,7 +187,7 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public ArrayOfBranchRelative[] getBranchHistory(ItemSpec[] itemSpecs, VersionSpec version) throws RemoteException {
+  public ArrayOfBranchRelative[] getBranchHistory(ItemSpec[] itemSpecs, VersionSpec version) throws Exception {
     if (itemSpecs.length == 0) {
       return null;
     }
@@ -229,17 +227,17 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public Item getItem(String path) throws RemoteException {
+  public Item getItem(String path) throws Exception {
     return getItem(path, VersionSpecBase.getLatest());
   }
 
   @Nullable
-  public Item getItem(String path, VersionSpec versionSpec) throws RemoteException {
+  public Item getItem(String path, VersionSpec versionSpec) throws Exception {
     return getItem(path, versionSpec, 0, false);
   }
 
   @Nullable
-  public Item getItem(String path, VersionSpec versionSpec, int deletionId, boolean includeDownloadInfo) throws RemoteException {
+  public Item getItem(String path, VersionSpec versionSpec, int deletionId, boolean includeDownloadInfo) throws Exception {
     ItemSpec itemSpec = new ItemSpec();
     itemSpec.setRecurse(RecursionType.None);
     itemSpec.setItem(path);
@@ -263,7 +261,7 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public ItemSet getItems(String path, RecursionType recursionType) throws RemoteException {
+  public ItemSet getItems(String path, RecursionType recursionType) throws Exception {
     ItemSpec itemSpec = new ItemSpec();
     itemSpec.setRecurse(recursionType);
     itemSpec.setItem(path);
@@ -271,7 +269,7 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public ItemSet getItems(String path, VersionSpec versionSpec, RecursionType recursionType) throws RemoteException {
+  public ItemSet getItems(String path, VersionSpec versionSpec, RecursionType recursionType) throws Exception {
     ItemSpec itemSpec = new ItemSpec();
     itemSpec.setRecurse(recursionType);
     itemSpec.setItem(path);
@@ -283,7 +281,7 @@ public class VersionControlServer {
                           VersionSpec versionSpec,
                           DeletedState deletedState,
                           ItemType itemType,
-                          boolean includeDownloadInfo) throws RemoteException {
+                          boolean includeDownloadInfo) throws Exception {
     ItemSet[] itemSet = getItems(new ItemSpec[]{itemSpec}, versionSpec, deletedState, itemType, includeDownloadInfo);
     if (itemSet != null) {
       return itemSet[0];
@@ -296,7 +294,7 @@ public class VersionControlServer {
                             VersionSpec versionSpec,
                             DeletedState deletedState,
                             ItemType itemType,
-                            boolean includeDownloadInfo) throws RemoteException {
+                            boolean includeDownloadInfo) throws Exception {
     if (itemSpecs.length == 0) {
       return null;
     }
@@ -332,7 +330,7 @@ public class VersionControlServer {
                                   VersionSpec versionTo,
                                   int maxCount,
                                   boolean includeChanges,
-                                  boolean slotMode) throws RemoteException {
+                                  boolean slotMode) throws Exception {
     return queryHistory(path, version, deletionId, recursion, user, versionFrom, versionTo, maxCount, includeChanges, slotMode, false);
   }
 
@@ -426,7 +424,7 @@ public class VersionControlServer {
     return w;
   }
 
-  public Workspace getWorkspace(String localPath) {
+  public Workspace getWorkspace(String localPath) throws Exception {
     String path = convertToFullPath(localPath);
 
     WorkspaceInfo info = Workstation.getInstance().findWorkspace(path);
@@ -465,7 +463,7 @@ public class VersionControlServer {
                                   int maxCount,
                                   boolean includeChanges,
                                   boolean slotMode,
-                                  boolean includeDownloadInfo) throws RemoteException {
+                                  boolean includeDownloadInfo) throws Exception {
     ItemSpec itemSpec = new ItemSpec();
     itemSpec.setItem(path);
     itemSpec.setRecurse(recursion);

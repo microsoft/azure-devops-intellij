@@ -1,13 +1,11 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import org.apache.axis2.AxisFault;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
 import java.net.URI;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -62,20 +60,20 @@ public class ServerInfo {
     return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
-  public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws RemoteException {
+  public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws Exception {
     getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName());
     myWorkspaceInfos.remove(workspaceInfo);
     Workstation.getInstance().updateCacheFile();
   }
 
-  public VersionControlServer getVCS() throws AxisFault {
+  public VersionControlServer getVCS() throws Exception {
     if (myServer == null) {
       myServer = new VersionControlServer(myUri);
     }
     return myServer;
   }
 
-  public void refreshWorkspacesForCurrentOwner() throws RemoteException {
+  public void refreshWorkspacesForCurrentOwner() throws Exception {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
     if (credentials != null) {
       String owner = credentials.getQualifiedUsername();

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -90,19 +89,12 @@ public class WorkspaceInfo {
   //  myWorkingFoldersCached = workingFoldersCached;
   //}
 
-  public List<WorkingFolderInfo> getWorkingFoldersInfos() {
-    try {
-      loadFromServer();
-    }
-    catch (RemoteException e) {
-      // TODO ASAP !!!!!
-      e.printStackTrace();
-    }
-
+  public List<WorkingFolderInfo> getWorkingFoldersInfos() throws Exception {
+    loadFromServer();
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
-  public void loadFromServer() throws RemoteException {
+  public void loadFromServer() throws Exception {
     if (!myLoaded) {
       Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
       fromBean(workspaceBean, this);
@@ -114,7 +106,7 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  public String findServerPathByLocalPath(final @NotNull String localPath) {
+  public String findServerPathByLocalPath(final @NotNull String localPath) throws Exception {
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
       String normalizedMappedLocalPath = VersionControlPath.getNormalizedPath(folderInfo.getLocalPath());
       if (localPath.startsWith(normalizedMappedLocalPath)) {
@@ -138,7 +130,7 @@ public class WorkspaceInfo {
     myWorkingFoldersInfos.remove(folderInfo);
   }
 
-  public void saveToServer() throws RemoteException {
+  public void saveToServer() throws Exception {
     if (myOriginalName != null) {
       getServer().getVCS().updateWorkspace(myOriginalName, getOwnerName(), toBean(this));
     }
@@ -151,7 +143,7 @@ public class WorkspaceInfo {
     Workstation.getInstance().updateCacheFile();
   }
 
-  private static Workspace toBean(WorkspaceInfo info) throws RemoteException {
+  private static Workspace toBean(WorkspaceInfo info) throws Exception {
     final ArrayOfWorkingFolder folders = new ArrayOfWorkingFolder();
     List<WorkingFolder> foldersList = new ArrayList<WorkingFolder>(info.getWorkingFoldersInfos().size());
     for (WorkingFolderInfo folderInfo : info.getWorkingFoldersInfos()) {
@@ -230,15 +222,15 @@ public class WorkspaceInfo {
            "]";
   }
 
-  public ExtendedItem getExtendedItem(final String serverPath) throws RemoteException {
+  public ExtendedItem getExtendedItem(final String serverPath) throws Exception {
     return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);     
   }
 
-  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws RemoteException {
+  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws Exception {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);     
   }
 
-  public GetOperation get(final String serverPath) throws RemoteException {
+  public GetOperation get(final String serverPath) throws Exception {
     return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
   }
 }

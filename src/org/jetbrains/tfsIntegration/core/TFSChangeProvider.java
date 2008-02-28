@@ -13,7 +13,6 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
-import java.rmi.RemoteException;
 import java.util.*;
 
 public class TFSChangeProvider implements ChangeProvider {
@@ -95,7 +94,7 @@ public class TFSChangeProvider implements ChangeProvider {
         }
       }
     }
-    catch (RemoteException e) {
+    catch (Exception e) {
       LOG.error("RemoteException in iterateOverDirtyItems!", e);
       throw new VcsException(e);
     }
@@ -185,7 +184,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
   }
 
-  private ExtendedItem getExtendedItem(String fileName) throws RemoteException {
+  private ExtendedItem getExtendedItem(String fileName) throws Exception {
     ExtendedItem result = null;
     WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(fileName);
     if (workspaceInfo != null) {
@@ -194,7 +193,7 @@ public class TFSChangeProvider implements ChangeProvider {
     return result;
   }
 
-  private List<ExtendedItem> getExtendedItems(List<String> fileNames) throws RemoteException {
+  private List<ExtendedItem> getExtendedItems(List<String> fileNames) throws Exception {
     Map<String, WorkspaceInfo> path2workspace = new HashMap<String, WorkspaceInfo>();
     Map<WorkspaceInfo, List<String>> workspace2paths = new HashMap<WorkspaceInfo, List<String>>();
     Map<WorkspaceInfo, List<ExtendedItem>> workspace2items = new HashMap<WorkspaceInfo, List<ExtendedItem>>();

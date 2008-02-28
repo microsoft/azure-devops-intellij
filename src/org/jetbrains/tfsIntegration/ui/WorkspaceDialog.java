@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.List;
 
 // TODO: mnemonics i18n?
@@ -363,7 +364,14 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
   }
 
   private void updateControls() {
-    myWorkingFoldersTableModel.setWorkingFolders(myWorkspace.getWorkingFoldersInfos());
+    try {
+      myWorkingFoldersTableModel.setWorkingFolders(myWorkspace.getWorkingFoldersInfos());
+    }
+    catch (Exception e) {
+      String message = MessageFormat.format("Failed to refresh workspace ''{0}''.\n{1}", myWorkspace.getName(), e.getLocalizedMessage());
+      JOptionPane
+        .showMessageDialog(null, message, getTitle(), JOptionPane.ERROR_MESSAGE);
+    }
     myFoldersTable.getSelectionModel().clearSelection();
     updateButtons();
   }
