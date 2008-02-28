@@ -118,20 +118,46 @@ public class VersionControlServer {
     return null;
   }
 
+  public List<ExtendedItem> getExtendedItems(final String workspasceName, final String ownerName,
+                                      final List<String> itemPaths, final DeletedState deletedState) throws RemoteException {
+    final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
+    for (String path : itemPaths) {
+      ItemSpec iSpec = new ItemSpec();
+      // TODO: is this local path?
+      iSpec.setItem(path);
+      iSpec.setRecurse(RecursionType.None);
+      itemSpecs.add(iSpec);
+    }
+    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
+    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any).getArrayOfExtendedItem();
+    assert extendedItems != null && extendedItems.length == itemPaths.size();
+    List<ExtendedItem> result = new ArrayList<ExtendedItem>();
+    for (ArrayOfExtendedItem extendedItem : extendedItems) {
+      ExtendedItem[] resultItems = extendedItem.getExtendedItem();
+      ExtendedItem item = null;
+      if (resultItems != null) {
+        assert resultItems.length == 1;
+        item = resultItems[0];
+      }
+      result.add(item);
+    }
+    return result;
+  }
 
-  public ArrayOfExtendedItem[] getExtendedItems(ItemSpec[] itemSpecs, DeletedState deletedState, ItemType itemType) throws RemoteException {
+  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName, final String ownerName, final ItemSpec[] itemSpecs, final DeletedState deletedState, final ItemType itemType) throws RemoteException {
     ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
-    return myRepository.QueryItemsExtended(null, null, is, deletedState, itemType).getArrayOfExtendedItem();
+    return myRepository.QueryItemsExtended(workspasceName, ownerName, is, deletedState, itemType).getArrayOfExtendedItem();
   }
 
 
   @Nullable
-  public ArrayOfExtendedItem[] getExtendedItems(String path, DeletedState deletedState, ItemType itemType) throws RemoteException {
+  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName, final String ownerName, final String path, final DeletedState deletedState, final ItemType itemType) throws RemoteException {
     ItemSpec is = new ItemSpec();
     is.setItem(path);
     is.setRecurse(RecursionType.OneLevel);
-    ArrayOfExtendedItem[] items = getExtendedItems(new ItemSpec[]{is}, deletedState, itemType);
+    ArrayOfExtendedItem[] items = getExtendedItems(workspasceName, ownerName, new ItemSpec[]{is}, deletedState, itemType);
     if (items.length == 0) {
       return null;
     }
@@ -473,6 +499,33 @@ public class VersionControlServer {
     }
 
     return Collections.enumeration(changes);
+  }
+
+  @Nullable
+  public GetOperation get(final String workspasceName, final String ownerName, final String path, VersionSpec versionSpec) throws RemoteException {
+    final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
+    final GetRequest getRequest = new GetRequest();
+    final ItemSpec itemSpec = new ItemSpec();
+    itemSpec.setRecurse(RecursionType.None);
+    itemSpec.setItem(path);
+    getRequest.setItemSpec(itemSpec);
+    getRequest.setVersionSpec(versionSpec);    
+    final GetRequest[] getRequests = new GetRequest[] { getRequest };
+    arrayOfGetRequests.setGetRequest(getRequests);
+    ArrayOfGetOperation[] operations =
+      myRepository.Get(workspasceName, ownerName, arrayOfGetRequests, true, false).getArrayOfGetOperation();
+    if (operations == null) {
+      return null;
+    }
+    assert operations.length == 1;
+    assert operations[0] != null;
+    assert operations[0].getGetOperation().length == 1;
+    return operations[0].getGetOperation()[0];
+  }
+
+  @Nullable
+  public GetOperation get(final String workspasceName, final String ownerName, final String path) throws RemoteException {
+    return get(workspasceName, ownerName, path, VersionSpecBase.getLatest());
   }
 
 }

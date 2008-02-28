@@ -6,20 +6,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.NTCredentials;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpParams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.WorkingFolder;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
-
-import java.rmi.RemoteException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -60,40 +48,6 @@ public class TFSVcs extends AbstractVcs {
     //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
     //ServerInfo.checkServer("http://st-tfs01:8080", "tfsuser", "SWIFTTEAMS", "Parol");
     //testTFSConnect();
-  }
-
-  private static void testTFSConnect() {
-
-    //System.setProperty("http.proxyHost", "127.0.0.1");
-    //System.setProperty("http.proxyPort", "8888");
-
-    try {
-      final int attempts[] = new int[]{3};
-      HttpParams httpParams = HttpClientParams.getDefaultParams();
-      httpParams.setParameter(CredentialsProvider.PROVIDER, new CredentialsProvider() {
-
-        public Credentials getCredentials(AuthScheme authScheme, String s, int i, boolean b) throws CredentialsNotAvailableException {
-          if (attempts[0]-- > 0) {
-            return new NTCredentials("tfsuser", "Parol", "SENIN_NB_XP", "SWIFTTEAMS");
-          }
-          else {
-            return null;
-          }
-        }
-      });
-      String targetEndPoint = "http://st-tfs01:8080/VersionControl/v1.0/repository.asmx";
-      Workspace[] workspaces = new RepositoryRepositorySoap12Stub(targetEndPoint).QueryWorkspaces("tfsuser", "SENIN_NB_XP").getWorkspace();
-      for (Workspace w : workspaces) {
-        System.out.println(w.getComputer() + "\t" + w.getOwner());
-        WorkingFolder[] workingFolders = w.getFolders().getWorkingFolder();
-        for (WorkingFolder wf : workingFolders) {
-          System.out.println("\t" + wf.getItem() + " --> " + wf.getLocal());
-        }
-      }
-    }
-    catch (RemoteException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    }
   }
 
   public static TFSVcs getInstance(Project project) {

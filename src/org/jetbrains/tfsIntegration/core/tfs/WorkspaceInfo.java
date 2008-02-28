@@ -91,13 +91,13 @@ public class WorkspaceInfo {
   //}
 
   public List<WorkingFolderInfo> getWorkingFoldersInfos() {
-    //try {
-    //  loadFromServer();
-    //}
-    //catch (RemoteException e) {
-    //  // TODO ASAP !!!!!
-    //  e.printStackTrace();
-    //}
+    try {
+      loadFromServer();
+    }
+    catch (RemoteException e) {
+      // TODO ASAP !!!!!
+      e.printStackTrace();
+    }
 
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
@@ -232,5 +232,13 @@ public class WorkspaceInfo {
 
   public ExtendedItem getExtendedItem(final String serverPath) throws RemoteException {
     return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);     
+  }
+
+  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws RemoteException {
+    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);     
+  }
+
+  public GetOperation get(final String serverPath) throws RemoteException {
+    return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
   }
 }

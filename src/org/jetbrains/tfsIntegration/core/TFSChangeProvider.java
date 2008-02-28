@@ -3,17 +3,16 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
-import java.io.File;
 import java.rmi.RemoteException;
 import java.util.*;
 
@@ -43,10 +42,9 @@ public class TFSChangeProvider implements ChangeProvider {
 
     initInternals();
 
-    iterateOverRecursiveFolders(dirtyScope);
-    iterateOverDirtyDirectories(dirtyScope);
-    iterateOverDirtyFiles(dirtyScope);
-    processStatusExceptions();
+    setProgressText("Processing changes");
+    
+    iterateOverDirtyItems(dirtyScope);
 
     addAddedFiles(builder);
     addHijackedFiles(builder);
@@ -64,6 +62,43 @@ public class TFSChangeProvider implements ChangeProvider {
              filesObsolete.size() +
              ", ignored: " +
              filesIgnored.size());
+  }
+
+  private void iterateOverDirtyItems(final VcsDirtyScope dirtyScope) throws VcsException {
+    // collect paths
+    final List<String> paths = new ArrayList<String>();
+    dirtyScope.iterate(new Processor<FilePath>() {
+      public boolean process(final FilePath filePath) {
+        paths.add(filePath.getPath());
+        return true;
+      }
+    });
+    try {
+      List<ExtendedItem> items = getExtendedItems(paths);
+      for (int i = 0; i < items.size(); i++) {
+        String path = paths.get(i);
+        ExtendedItem item = items.get(i);
+        // TODO: check logic!
+        if (item == null) {
+          filesNew.add(path);
+        }
+        else {
+          if (isObsolete(item)) {
+            filesObsolete.add(path);
+          }
+          else if (isChanged(item)) {
+            filesChanged.add(path);
+          }
+          else {
+            filesHijacked.add(path);
+          }
+        }
+      }
+    }
+    catch (RemoteException e) {
+      LOG.error("RemoteException in iterateOverDirtyItems!", e);
+      throw new VcsException(e);
+    }
   }
 
   public boolean isModifiedDocumentTrackingRequired() {
@@ -92,90 +127,9 @@ public class TFSChangeProvider implements ChangeProvider {
     filesIgnored.clear();
   }
 
-  /**
-   * Iterate over the project structure, find all writable files in the project,
-   * and check their status against the TFS repository. If file exists in the repository
-   * it is assigned "changed" status, otherwise it has "new" status.
-   * @param dirtyScope dirtyScope
-   */
-  private void iterateOverRecursiveFolders(final VcsDirtyScope dirtyScope) {
-    for (FilePath path : dirtyScope.getRecursivelyDirtyDirectories()) {
-      iterateOverProjectPath(path);
-    }
-  }
-
-  private void iterateOverProjectPath(FilePath path) {
-    LOG.info("-- ChangeProvider - Iterating over project structure starting from scope root: " + path.getPath());
-    setProgressText("Collecting writable files");
-
-    List<String> writableFiles = new ArrayList<String>();
-    collectSuspiciousFiles(path, writableFiles);
-
-    LOG.info("-- ChangeProvider - Found: " + writableFiles.size() + " writable files.");
-    setProgressText("Searching for new files");
-    analyzeWritableFiles(writableFiles);
-  }
-
   private void setProgressText(String text) {
     if (myProgress != null) {
       myProgress.setText(text);
-    }
-  }
-
-  private void collectSuspiciousFiles(final FilePath filePath, final List<String> writableFiles) {
-    VirtualFile vf = filePath.getVirtualFile();
-    if (vf != null) {
-      ProjectLevelVcsManager.getInstance(myProject).iterateVcsRoot(vf, new Processor<FilePath>() {
-        public boolean process(final FilePath file) {
-          String path = file.getPath();
-          VirtualFile vFile = file.getVirtualFile();
-          if (vFile != null) {
-            if (vFile.isWritable() && !vFile.isDirectory()) {
-              writableFiles.add(path);
-            }
-          }
-          return true;
-        }
-      });
-    }
-  }
-
-  private void analyzeWritableFiles(List<String> writableFiles) {
-    final HashSet<String> newFiles = new HashSet<String>();
-    if (writableFiles.isEmpty()) {
-      return;
-    }
-    analyzeWritableFilesByStatus(writableFiles, newFiles, filesChanged, filesHijacked, filesObsolete);
-    filesNew.addAll(newFiles);
-  }
-
-  private void analyzeWritableFilesByStatus(List<String> files,
-                                            HashSet<String> newFiles,
-                                            HashSet<String> changedFiles,
-                                            HashSet<String> hijackedFiles,
-                                            HashSet<String> obsoleteFiles) {
-    try {
-      for (String filePath : files) {
-        ExtendedItem result = getExtendedItem(filePath);
-        // todo: check logic!
-        if (result != null) {
-          if (isObsolete(result)) {
-            obsoleteFiles.add(filePath);
-          }
-          else if (isChanged(result)) {
-            changedFiles.add(filePath);
-          }
-          else {
-            hijackedFiles.add(filePath);
-          }
-        }
-        else {
-          newFiles.add(filePath);
-        }
-      }
-    }
-    catch (RemoteException e) {
-      LOG.error("RemoteException in analyzeWritableFilesByStatus!", e);
     }
   }
 
@@ -231,44 +185,6 @@ public class TFSChangeProvider implements ChangeProvider {
     }
   }
 
-
-  /**
-   * Deleted and New folders are marked as dirty too and we provide here
-   * special processing for them.
-   * @param dirtyScope dirtyScope
-   */
-  private void iterateOverDirtyDirectories(final VcsDirtyScope dirtyScope) {
-    for (FilePath path : dirtyScope.getDirtyFiles()) {
-      String fileName = path.getPath();
-      VirtualFile file = path.getVirtualFile();
-
-      //  make sure that:
-      //  - a file is a folder which exists physically
-      //  - it is under out vcs
-      if (path.isDirectory() && (file != null) /* && check mapping */) {
-        //String refName = discoverOldName(fileName);
-        //if (!isFolderExists(refName)) {
-        //  filesNew.add(fileName);
-        //}
-        //else {
-          ////  NB: Do not put to the "Changed" list those folders which are under
-          ////      the renamed one since we will have troubles in checking such
-          ////      folders in (it is useless, BTW).
-          ////      Simultaneously, this prevents valid processing of renamed folders
-          ////      that are under another renamed folders.
-          ////  Todo Inner rename.
-          //if (!refName.equals(fileName) && !isUnderRenamedFolder(fileName)) {
-            filesChanged.add(fileName);
-          //}
-        //}
-      }
-    }
-  }
-
-  private boolean isFolderExists( String fileName ) throws RemoteException {
-    return getExtendedItem(fileName) != null;
-  }
-
   private ExtendedItem getExtendedItem(String fileName) throws RemoteException {
     ExtendedItem result = null;
     WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(fileName);
@@ -278,80 +194,42 @@ public class TFSChangeProvider implements ChangeProvider {
     return result;
   }
 
-  private void iterateOverDirtyFiles(final VcsDirtyScope scope) {
-    List<String> paths = new ArrayList<String>();
-    for (FilePath path : scope.getDirtyFiles()) {
-      VirtualFile file = path.getVirtualFile();
-      String fileName = null; // VssUtil.getCanonicalLocalPath(path.getPath()); // todo: write findLocalPathByServerPath in WorkspaceInfo
-
-      if (isFileTfsProcessable(file) && isProperNotification(path)) {
-          if (isParentFolderNewOrUnversioned(file)) {
-            filesNew.add(fileName);
-          }
-          else {
-            paths.add(path.getPath());
-          }
+  private List<ExtendedItem> getExtendedItems(List<String> fileNames) throws RemoteException {
+    Map<String, WorkspaceInfo> path2workspace = new HashMap<String, WorkspaceInfo>();
+    Map<WorkspaceInfo, List<String>> workspace2paths = new HashMap<WorkspaceInfo, List<String>>();
+    Map<WorkspaceInfo, List<ExtendedItem>> workspace2items = new HashMap<WorkspaceInfo, List<ExtendedItem>>();
+    Map<String, Integer> path2index = new HashMap<String, Integer>();
+    // group paths by workspace
+    for (String fileName : fileNames) {
+      WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(fileName);
+      path2workspace.put(fileName, workspaceInfo);
+      if (workspaceInfo != null) {
+        List<String> workspacePaths = workspace2paths.get(workspaceInfo);
+        if (workspacePaths == null) {
+          workspacePaths = new ArrayList<String>();
+          workspace2paths.put(workspaceInfo, workspacePaths);
+        }
+        workspacePaths.add(workspaceInfo.findServerPathByLocalPath(fileName));
+        int index = workspacePaths.size() - 1;
+        path2index.put(fileName, index);
       }
     }
-    analyzeWritableFilesByStatus(paths, filesNew, filesChanged, filesHijacked, filesObsolete);
-  }
-
-  /**
-   * For the renamed or moved file we receive two change requests: one for
-   * the old file and one for the new one. For renamed file old request differs
-   * in filename, for the moved one - in parent path name. This request must be
-   * ignored since all preliminary information is already accumulated.
-   * @param filePath filePath
-   * @return result
-   */
-  private static boolean isProperNotification( final FilePath filePath )
-  {
-    String oldName = filePath.getName();
-    String newName = (filePath.getVirtualFile() == null) ? "" : filePath.getVirtualFile().getName();
-    String oldParent = (filePath.getVirtualFileParent() == null) ? "" : filePath.getVirtualFileParent().getPath();
-    String newParent = filePath.getPath().substring( 0, filePath.getPath().length() - oldName.length() - 1 );
-    newParent = ""; // VssUtil.getCanonicalLocalPath( newParent ); // todo: write findLocalPathByServerPath in WorkspaceInfo
-
-    //  Check the case when the file is deleted - its FilePath's VirtualFile
-    //  component is null and thus new name is empty.
-    return newParent.equals( oldParent ) &&
-          ( newName.equals( oldName ) || (newName.equals("") && !oldName.equals("")) );
-  }
-
-  /**
-     * Return true if:
-     * - file is not null & writable
-     * - file is not a folder
-     * - files is under the project
-   * @param file file
-   * @return true if file under TFS
-   */
-    private boolean isFileTfsProcessable( VirtualFile file ) {
-      return (file != null) && file.isWritable() && !file.isDirectory();
-             // && VcsUtil.isPathUnderProject( project, file.getPath() ); // todo: file under some workspace
+    // make queries
+    for (WorkspaceInfo workspaceInfo : workspace2paths.keySet()) {
+      workspace2items.put(workspaceInfo, workspaceInfo.getExtendedItems(workspace2paths.get(workspaceInfo)));
     }
-
-  /**
-   * Process exceptions of different kind when normal computation of file
-   * statuses is cheated by the IDEA:
-   * 1. "Extract Superclass" refactoring with "Rename original class" option set.
-   * Refactoring renamed the original class (right) but writes new content to
-   * the file with the olf name (fuck!).
-   * Remedy: Find such file in the list of "Changed" files, check whether its
-   * name is in the list of New files (from VFSListener), and check
-   * whether its name is in the record for renamed files, then move
-   * it into "New" files list.
-   */
-  private void processStatusExceptions() {
-    // todo: implement later
-    // 1.
-    //for (Iterator<String> it = filesChanged.iterator(); it.hasNext();) {
-    //  String fileName = it.next();
-    //  if (host.isNewOverRenamed(fileName)) {
-    //    it.remove();
-    //    filesNew.add(fileName);
-    //  }
-    //}
+    // merge results
+    List<ExtendedItem> result = new LinkedList<ExtendedItem>();
+    for (String fileName : fileNames) {
+      WorkspaceInfo workspaceInfo = path2workspace.get(fileName);
+      if (workspaceInfo == null) {
+        result.add(null);
+      }
+      else {
+        result.add(workspace2items.get(workspaceInfo).get(path2index.get(fileName)));
+      }
+    }
+    return result;
   }
 
   /**
@@ -386,7 +264,7 @@ public class TFSChangeProvider implements ChangeProvider {
     for (String fileName : filesHijacked) {
       final FilePath fp = VcsUtil.getFilePath( fileName );
       final FilePath currfp = VcsUtil.getFilePath( fileName );
-      TfsContentRevision revision = new TfsContentRevision(fp, myProject ); 
+      TfsContentRevision revision = new TfsContentRevision(fp);
       builder.processChange( new Change( revision, new CurrentContentRevision( currfp ), FileStatus.HIJACKED ));
     }
   }
@@ -394,7 +272,7 @@ public class TFSChangeProvider implements ChangeProvider {
   private void addObsoleteFiles(final ChangelistBuilder builder) {
     for (String fileName : filesObsolete) {
       final FilePath fp = VcsUtil.getFilePath( fileName );
-      TfsContentRevision revision = new TfsContentRevision(fp, myProject );
+      TfsContentRevision revision = new TfsContentRevision(fp);
       builder.processChange( new Change( revision, new CurrentContentRevision( fp ), FileStatus.OBSOLETE ));
     }
   }
@@ -411,7 +289,7 @@ public class TFSChangeProvider implements ChangeProvider {
       final FilePath refPath = VcsUtil.getFilePath( fileName );
       final FilePath currPath = VcsUtil.getFilePath( fileName );
 
-      TfsContentRevision revision = new TfsContentRevision(refPath, myProject );
+      TfsContentRevision revision = new TfsContentRevision(refPath);
       builder.processChange( new Change( revision, new CurrentContentRevision( currPath )));
     }
 
@@ -448,27 +326,4 @@ public class TFSChangeProvider implements ChangeProvider {
     for( String path : filesIgnored )
       builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
   }
-
-  private boolean isParentFolderNewOrUnversioned( VirtualFile file )
-  {
-    FileStatus status = FileStatus.NOT_CHANGED;
-    VirtualFile parent = file.getParent();
-    if( parent != null )
-    {
-      status = FileStatusManager.getInstance( myProject ).getStatus( parent );
-    }
-    return (status == FileStatus.ADDED) || (status == FileStatus.UNKNOWN);
-  }
-
-  private static boolean isPathUnderProcessedFolders( HashSet<String> folders, String path )
-  {
-    String parentPathToCheck = new File( path ).getParent();
-    for( String folderPath : folders )
-    {
-      if( FileUtil.pathsEqual( parentPathToCheck, folderPath ))
-        return true;
-    }
-    return false;
-  }
-
 }
