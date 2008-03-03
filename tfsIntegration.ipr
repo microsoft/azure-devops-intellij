@@ -374,7 +374,7 @@
       <module fileurl="file://$PROJECT_DIR$/tfsIntegration.iml" filepath="$PROJECT_DIR$/tfsIntegration.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 7590" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 7656 - plugins excluded" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ResourceManagerContainer">
@@ -454,7 +454,104 @@
         <root url="jar://$PROJECT_DIR$/lib/stax-1.2.0.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/deprecated/sgccalculator/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/addressing/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jibx/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/mtom/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/soapwithattachments/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/adb/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/quickstartadb/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/clustering/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/adb-codegen/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/metadata/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/fastinfoset/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/deprecated/groovy/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/adb/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/jaxws-calculator/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/databinding/client/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-java2wsdl-maven-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/saaj-api/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/quickstartxmlbeans/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jaxws/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-wsdl2code-maven-plugin/src/test/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/yahoorestsearch/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/userguide/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/json/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/pojoguidespring/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/version/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/fastinfoset/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/deprecated/mtomsample/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/mex/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jaxbri/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/deprecated/googlesearch/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jaxbri/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/clustering/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/deprecated/amazonqs/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/mex/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/eventing/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/faulthandling/service/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/manual/doclit-interop/clients" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-java2wsdl-maven-plugin/src/test/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-ant-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/json/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/test-resources/SOAP12Testing/SOAP12TestModuleC" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/test-resources/SOAP12Testing/SOAP12TestServiceB" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/yahoojsonsearch/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/addressing/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-wsdl2code-maven-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/manual/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/spring/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/scripting/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/mtompolicy/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-idea-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/codegen/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/databinding/service/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/saaj/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/pojoguide/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/ping/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/codegen/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/jms/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/soapmonitor/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/test-resources/SOAP12Testing/SOAP12TestServiceC" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/faulthandling/client/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/mtompolicy/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/ping/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-mar-maven-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/saaj/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-eclipse-service-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/manual/itest" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jaxws/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/adb-codegen/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/metadata/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jaxws-api/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/quickstartaxiom/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/kernel/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/googlespellcheck/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/xmlbeans/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/scripting/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/pojo/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/quickstart/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/test-resources/SOAP12Testing/SOAP12TestModuleB" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/java2wsdl/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/xmlbeans/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/kernel/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/quickstartjibx/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/samples/servicelifecycle/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jws-api/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-aar-maven-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/jibx/test" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/integration/manual/src" />
+        <root url="jar://C:/Archive/axis2-1.3-src.zip!/axis2-1.3/modules/tool/axis2-eclipse-codegen-plugin/src/main/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-dom/src/main/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-api/src/test/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-impl/test" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-api/src/main/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-tests/src/test/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-impl/src/main/java" />
+        <root url="jar://C:/Archive/axiom-1.2.5-src.zip!/modules/axiom-dom/src/test/java" />
+      </SOURCES>
     </library>
     <library name="HttpClient">
       <CLASSES>

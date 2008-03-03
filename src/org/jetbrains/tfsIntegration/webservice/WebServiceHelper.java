@@ -1,36 +1,47 @@
 package org.jetbrains.tfsIntegration.webservice;
 
-import org.apache.axis2.AxisFault;
+import com.intellij.openapi.diagnostic.Logger;
+import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.Stub;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.params.HttpClientParams;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSConstants;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
-import org.jetbrains.tfsIntegration.core.credentials.SimpleCredentialsProvider;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
+import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.ConnectionFailedException;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.UnauthorizedException;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
 import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthentication;
-import org.jetbrains.tfsIntegration.ui.DialogCredentialsProvider;
+import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
 import java.net.URI;
-import java.net.UnknownHostException;
+import java.net.URISyntaxException;
 import java.rmi.RemoteException;
-
-// TODO: assign credentials provider to the params of the current connection
 
 public class WebServiceHelper {
 
-  public interface Delegate {
-    void executeRequest() throws RemoteException, UnknownHostException;
+  @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
 
-    void handleError(Exception e);
+  public interface NoReturnDelegate {
+    void executeRequest() throws RemoteException;
+  }
+
+  public interface Delegate<T> {
+    @Nullable
+    T executeRequest() throws RemoteException;
   }
 
   static {
@@ -43,21 +54,26 @@ public class WebServiceHelper {
     System.setProperty("http.proxyPort", "8888");
   }
 
-  @NonNls private static final String SERVER_STATUS_ENDPOINT = "/Services/v1.0/ServerStatus.asmx";
-  @NonNls private static final String REGISTRATION_ENDPOINT = "/Services/v1.0/Registration.asmx";
   @NonNls private static final String TFS_TOOL_ID = "vstfs";
   @NonNls private static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
 
-  public static String authenticate(final URI serverUri, final Credentials credentials) throws WebServiceException {
+  private static final Logger LOG = Logger.getInstance(WebServiceHelper.class.getName());
+
+  public static String authenticate(final URI serverUri, final Credentials credentials) throws TfsException {
+    // TODO: refactor: use executeRequest()
     try {
-      ServerStatusServerStatusSoapStub stub = new ServerStatusServerStatusSoapStub(serverUri.toString() + SERVER_STATUS_ENDPOINT);
-      setCredentials(stub, credentials, serverUri);
-      String result = stub.CheckAuthentication(new CheckAuthentication());
+      ServerStatusServerStatusSoapStub serverStatusStub =
+        new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
+      setupStub(serverStatusStub);
+      setCredentials(serverStatusStub, credentials, serverUri);
+      String result = serverStatusStub.CheckAuthentication(new CheckAuthentication());
       String expected = credentials.getDomain() + "\\" + credentials.getUserName();
       if (!expected.equalsIgnoreCase(result)) {
-        throw new WebServiceException("Failed to login to server");
+        throw new UnauthorizedException("Returned credentials: " + result + " differ from expected: " + expected);
       }
-      RegistrationRegistrationSoapStub registrationStub = new RegistrationRegistrationSoapStub(serverUri.toString() + REGISTRATION_ENDPOINT);
+      RegistrationRegistrationSoapStub registrationStub =
+        new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
+      setupStub(registrationStub);
       setCredentials(registrationStub, credentials, serverUri);
       ArrayOfRegistrationEntry registrationEntries = registrationStub.GetRegistrationEntries(TFS_TOOL_ID);
       for (RegistrationEntry entry : registrationEntries.getRegistrationEntry()) {
@@ -69,68 +85,10 @@ public class WebServiceHelper {
           }
         }
       }
-      throw new WebServiceException("Failed to obtain server instance id");
+      throw new UnauthorizedException("Failed to obtain server instance");
     }
-    catch (AxisFault axisFault) {
-      throw new WebServiceException(axisFault);
-    }
-    catch (RemoteException e) {
-      throw new WebServiceException(e);
-    }
-  }
-
-  public static void executeRequest(URI serverUri, Delegate delegate) {
-    Credentials storedCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
-
-    CredentialsProvider credentialsProvider;
-    if (storedCredentials == null) {
-      credentialsProvider = new DialogCredentialsProvider(serverUri, null, null, null);
-    }
-    else if (storedCredentials.getPassword() == null) {
-      credentialsProvider = new DialogCredentialsProvider(serverUri, storedCredentials.getUserName(), storedCredentials.getDomain(), null);
-    }
-    else {
-      credentialsProvider =
-        new SimpleCredentialsProvider(storedCredentials.getUserName(), storedCredentials.getDomain(), storedCredentials.getPassword());
-    }
-
-    while (true) {
-      Exception exception;
-      try {
-        HttpClientParams.getDefaultParams().setParameter(CredentialsProvider.PROVIDER, credentialsProvider);
-        delegate.executeRequest();
-        if (credentialsProvider instanceof DialogCredentialsProvider) {
-          DialogCredentialsProvider dcp = (DialogCredentialsProvider)credentialsProvider;
-          CredentialsManager.getInstance()
-            .storeCredentials(serverUri,
-                              new Credentials(dcp.getUsername(), dcp.getDomain(), dcp.shouldStorePassword() ? dcp.getPassword() : null));
-        }
-        return;
-      }
-      catch (AxisFault axisFault) {
-        exception = axisFault;
-      }
-      catch (RemoteException e) {
-        exception = e;
-      }
-      catch (UnknownHostException e) {
-        exception = e;
-      }
-
-      if (credentialsProvider instanceof DialogCredentialsProvider) {
-        DialogCredentialsProvider dcp = (DialogCredentialsProvider)credentialsProvider;
-        if (!dcp.wasShown() || !dcp.wasOk()) {
-          return;
-        }
-        else {
-          credentialsProvider = new DialogCredentialsProvider(serverUri, dcp.getUsername(), dcp.getDomain(), dcp.getPassword());
-        }
-      }
-      else {
-        credentialsProvider =
-          new DialogCredentialsProvider(serverUri, storedCredentials.getUserName(), storedCredentials.getDomain(), null);
-      }
-      delegate.handleError(exception);
+    catch (Exception e) {
+      throw TfsExceptionManager.processException(e);
     }
   }
 
@@ -144,5 +102,79 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.AUTHENTICATE, auth);
   }
 
+  public static void executeRequest(Stub stub, final NoReturnDelegate delegate) throws TfsException {
+    executeRequest(stub, new Delegate<Object>() {
+
+      @Nullable
+      public Object executeRequest() throws RemoteException {
+        delegate.executeRequest();
+        return null;
+      }
+    });
+  }
+
+  public static <T> T executeRequest(Stub stub, Delegate<T> delegate) throws TfsException {
+    URI serverUri = null;
+    try {
+      URI targetEndpoint = new URI(stub._getServiceClient().getOptions().getTo().getAddress());
+      serverUri =
+        new URI(targetEndpoint.getScheme(), null, targetEndpoint.getHost(), targetEndpoint.getPort(), null, null, null); // TODO: trim?
+    }
+    catch (URISyntaxException e) {
+      TFSVcs.LOG.error(e);
+    }
+
+    assert serverUri != null;
+
+    Credentials credentialsToConnect = CredentialsManager.getInstance().getCredentials(serverUri);
+    Credentials credentialsToStore = null;
+    boolean forcePrompt = false;
+    while (true) {
+      if (credentialsToConnect.getPassword() == null || forcePrompt) {
+        LoginDialog d = new LoginDialog(serverUri, credentialsToConnect, false);
+        d.show();
+        if (d.isOK()) {
+          credentialsToConnect = d.getCredentialsToConnect();
+          credentialsToStore = d.getCredentialsToStore();
+        }
+        else {
+          throw new UserCancelledException();
+        }
+      }
+
+      try {
+        setCredentials(stub, credentialsToConnect, serverUri);
+        T result = delegate.executeRequest();
+        if (credentialsToStore != null) {
+          CredentialsManager.getInstance().storeCredentials(serverUri, credentialsToStore);
+        }
+        return result;
+      }
+      catch (Exception e) {
+        TfsException tfsException = TfsExceptionManager.processException(e);
+        if (tfsException instanceof UnauthorizedException) {
+          // repeat with login dialog
+          forcePrompt = true;
+        }
+        else {
+          if (!(tfsException instanceof ConnectionFailedException) && credentialsToStore != null) {
+            CredentialsManager.getInstance().storeCredentials(serverUri, credentialsToStore);
+          }
+          throw tfsException;
+        }
+      }
+    }
+  }
+
+  public static ConfigurationContext getStubConfigurationContext() throws Exception {
+    ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
+    configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
+    return configContext;
+  }
+
+  public static void setupStub(Stub stub) {
+    Options options = stub._getServiceClient().getOptions();
+    options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
+  }
 
 }

@@ -58,7 +58,7 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
       return new URI(myUriField.getText());
     }
     catch (URISyntaxException e) {
-      LOG.error(e);
+      LOG.info(e);
       return null;
     }
   }

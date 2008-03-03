@@ -23,7 +23,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   @NonNls public static final String TFS_NAME = "TFS";
-  private static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
+  public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
   private TFSProjectConfiguration myProjectConfiguration;
   private TFSEntriesFileListener myEntriesFileListener;
   private VcsShowConfirmationOption myAddConfirmation;

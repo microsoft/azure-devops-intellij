@@ -2,7 +2,9 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -45,6 +47,7 @@ public class WorkspaceInfo {
     myTimestamp = timestamp;
   }
 
+  @NotNull
   public ServerInfo getServer() {
     return myServerInfo;
   }
@@ -89,18 +92,15 @@ public class WorkspaceInfo {
   //  myWorkingFoldersCached = workingFoldersCached;
   //}
 
-  public List<WorkingFolderInfo> getWorkingFoldersInfos() throws Exception {
+  public List<WorkingFolderInfo> getWorkingFoldersInfos() throws TfsException {
     loadFromServer();
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
-  public void loadFromServer() throws Exception {
-    if (!myLoaded) {
+  public void loadFromServer() throws TfsException {
+    if (myOriginalName != null && !myLoaded) {
       Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
       fromBean(workspaceBean, this);
-
-      //setWorkingFoldersCached(false);
-      Workstation.getInstance().updateCacheFile();
       myLoaded = true;
     }
   }
@@ -130,7 +130,7 @@ public class WorkspaceInfo {
     myWorkingFoldersInfos.remove(folderInfo);
   }
 
-  public void saveToServer() throws Exception {
+  public void saveToServer() throws TfsException {
     if (myOriginalName != null) {
       getServer().getVCS().updateWorkspace(myOriginalName, getOwnerName(), toBean(this));
     }
@@ -143,7 +143,7 @@ public class WorkspaceInfo {
     Workstation.getInstance().updateCacheFile();
   }
 
-  private static Workspace toBean(WorkspaceInfo info) throws Exception {
+  private static Workspace toBean(WorkspaceInfo info) throws TfsException {
     final ArrayOfWorkingFolder folders = new ArrayOfWorkingFolder();
     List<WorkingFolder> foldersList = new ArrayList<WorkingFolder>(info.getWorkingFoldersInfos().size());
     for (WorkingFolderInfo folderInfo : info.getWorkingFoldersInfos()) {
@@ -161,6 +161,7 @@ public class WorkspaceInfo {
     return bean;
   }
 
+  @NotNull
   private static WorkingFolder toBean(final WorkingFolderInfo folderInfo) {
     WorkingFolder bean = new WorkingFolder();
     bean.setItem(folderInfo.getServerPath());
@@ -169,10 +170,17 @@ public class WorkspaceInfo {
     return bean;
   }
 
+  @Nullable
   private static WorkingFolderInfo fromBean(WorkingFolder bean) {
     WorkingFolderInfo.Status status =
       WorkingFolderType.Cloak.equals(bean.getType()) ? WorkingFolderInfo.Status.Cloaked : WorkingFolderInfo.Status.Active;
-    return new WorkingFolderInfo(status, bean.getLocal(), bean.getItem());
+    if (bean.getLocal() != null) {
+      return new WorkingFolderInfo(status, bean.getLocal(), bean.getItem());
+    }
+    else {
+      TFSVcs.LOG.info("null local folder mapping for " + bean.getItem());
+      return null;
+    }
   }
 
   static void fromBean(Workspace bean, WorkspaceInfo info) {
@@ -188,7 +196,10 @@ public class WorkspaceInfo {
     }
     List<WorkingFolderInfo> workingFoldersInfos = new ArrayList<WorkingFolderInfo>(folders.length);
     for (WorkingFolder folderBean : folders) {
-      workingFoldersInfos.add(fromBean(folderBean));
+      WorkingFolderInfo folderInfo = fromBean(folderBean);
+      if (folderInfo != null) {
+        workingFoldersInfos.add(folderInfo);
+      }
     }
     info.myWorkingFoldersInfos = workingFoldersInfos;
   }
@@ -222,15 +233,15 @@ public class WorkspaceInfo {
            "]";
   }
 
-  public ExtendedItem getExtendedItem(final String serverPath) throws Exception {
-    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);     
+  public ExtendedItem getExtendedItem(final String serverPath) throws TfsException {
+    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
   }
 
-  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws Exception {
-    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);     
+  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws TfsException {
+    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
   }
 
-  public GetOperation get(final String serverPath) throws Exception {
+  public GetOperation get(final String serverPath) throws TfsException {
     return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
   }
 }

@@ -3,9 +3,12 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.microsoft.wsdl.types.Guid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -18,44 +21,72 @@ public class VersionControlServer {
   private URI myUri;
   private Guid myGuid = new Guid();
 
-  public VersionControlServer(URI uri) throws Exception {
+  public VersionControlServer(URI uri) {
     myUri = uri;
-    myRepository = new Repository(this, uri);
-  }
+    try {
+      myRepository = new Repository(this, uri);
+    }
+    catch (Exception e) {
+      TFSVcs.LOG.error("Failed to initialize web service stub", e);
+      throw new RuntimeException(e);
+    }
 
+  }
 
 // ***************************************************
 // used by now
 
-  public Workspace getWorkspace(String workspaceName, String workspaceOwner) throws RemoteException {
-    return myRepository.QueryWorkspace(workspaceName, workspaceOwner);
+  public Workspace getWorkspace(final String workspaceName, final String workspaceOwner) throws TfsException {
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
+      public Workspace executeRequest() throws RemoteException {
+        return myRepository.QueryWorkspace(workspaceName, workspaceOwner);
+      }
+    });
   }
 
-  public Workspace updateWorkspace(String oldWorkspaceName, String workspaceOwner, Workspace newWorkspaceDataBean) throws RemoteException {
-    return myRepository.UpdateWorkspace(oldWorkspaceName, workspaceOwner, newWorkspaceDataBean);
+  public Workspace updateWorkspace(final String oldWorkspaceName, final String workspaceOwner, final Workspace newWorkspaceDataBean)
+    throws TfsException {
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
+      public Workspace executeRequest() throws RemoteException {
+        return myRepository.UpdateWorkspace(oldWorkspaceName, workspaceOwner, newWorkspaceDataBean);
+      }
+    });
   }
 
-  public Workspace createWorkspace(Workspace workspaceBean) throws RemoteException {
-    return myRepository.CreateWorkspace(workspaceBean);
+  public Workspace createWorkspace(final Workspace workspaceBean) throws TfsException {
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
+      public Workspace executeRequest() throws RemoteException {
+        return myRepository.CreateWorkspace(workspaceBean);
+      }
+    });
   }
 
-  public void deleteWorkspace(String workspaceName, String workspaceOwner) throws RemoteException {
-    myRepository.DeleteWorkspace(workspaceName, workspaceOwner);
+  public void deleteWorkspace(final String workspaceName, final String workspaceOwner) throws TfsException {
+    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.NoReturnDelegate() {
+      public void executeRequest() throws RemoteException {
+        myRepository.DeleteWorkspace(workspaceName, workspaceOwner);
+      }
+    });
   }
 
-  public List<ExtendedItem> getChildItems(final String workspasceName, final String ownerName, final ExtendedItem parent,
-                                          final DeletedState deletedState, final ItemType itemType) throws RemoteException {
-    List<List<ExtendedItem>> extendedItems
-      = getChildItems(workspasceName, ownerName, Collections.singletonList(parent), deletedState, itemType);
+  public List<ExtendedItem> getChildItems(final String workspasceName,
+                                          final String ownerName,
+                                          final ExtendedItem parent,
+                                          final DeletedState deletedState,
+                                          final ItemType itemType) throws TfsException {
+    List<List<ExtendedItem>> extendedItems =
+      getChildItems(workspasceName, ownerName, Collections.singletonList(parent), deletedState, itemType);
 
     assert extendedItems != null && extendedItems.size() == 1;
     return extendedItems.get(0);
   }
 
-  public List<List<ExtendedItem>> getChildItems(final String workspasceName, final String ownerName, final List<ExtendedItem> parents,
-                                                final DeletedState deletedState, final ItemType itemType) throws RemoteException {
-    List<List<ExtendedItem>> result  = getExtendedItems(workspasceName, ownerName, parents,
-                                                        deletedState, RecursionType.OneLevel, itemType);
+  public List<List<ExtendedItem>> getChildItems(final String workspasceName,
+                                                final String ownerName,
+                                                final List<ExtendedItem> parents,
+                                                final DeletedState deletedState,
+                                                final ItemType itemType) throws TfsException {
+    List<List<ExtendedItem>> result = getExtendedItems(workspasceName, ownerName, parents, deletedState, RecursionType.OneLevel, itemType);
     // remove parent items
     Iterator<ExtendedItem> pIter = parents.iterator();
     Iterator<List<ExtendedItem>> resIter = result.iterator();
@@ -74,8 +105,12 @@ public class VersionControlServer {
     return result;
   }
 
-  public List<List<ExtendedItem>> getExtendedItems(final String workspasceName, final String ownerName, final List<ExtendedItem> items,
-                                                          final DeletedState deletedState, final RecursionType recursionType, final ItemType itemType) throws RemoteException {
+  public List<List<ExtendedItem>> getExtendedItems(final String workspasceName,
+                                                   final String ownerName,
+                                                   final List<ExtendedItem> items,
+                                                   final DeletedState deletedState,
+                                                   final RecursionType recursionType,
+                                                   final ItemType itemType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
     for (ExtendedItem item : items) {
       ItemSpec itemSpec = new ItemSpec();
@@ -83,10 +118,17 @@ public class VersionControlServer {
       itemSpec.setRecurse(recursionType);
       itemSpecList.add(itemSpec);
     }
-    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
     List<List<ExtendedItem>> result = new LinkedList<List<ExtendedItem>>();
-    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, itemType).getArrayOfExtendedItem();
+    ArrayOfExtendedItem[] extendedItems =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
+        public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
+          return myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, itemType)
+            .getArrayOfExtendedItem();
+        }
+      });
+
     assert extendedItems != null && extendedItems.length == items.size();
     for (ArrayOfExtendedItem extendedItem : extendedItems) {
       List<ExtendedItem> resultItemsList = new LinkedList<ExtendedItem>();
@@ -99,15 +141,25 @@ public class VersionControlServer {
     return result;
   }
 
-  public ExtendedItem getExtendedItem(final String workspasceName, final String ownerName,
-                                      final String itemServerPath, final DeletedState deletedState) throws RemoteException {
+  public ExtendedItem getExtendedItem(final String workspasceName,
+                                      final String ownerName,
+                                      final String itemServerPath,
+                                      final DeletedState deletedState) throws TfsException {
     ItemSpec itemSpec = new ItemSpec();
     // TODO: is this local path?
     itemSpec.setItem(itemServerPath);
     itemSpec.setRecurse(RecursionType.None);
-    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(new ItemSpec[] {itemSpec});
-    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any).getArrayOfExtendedItem();
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{itemSpec});
+
+    ArrayOfExtendedItem[] extendedItems =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
+        public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
+          return myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any)
+            .getArrayOfExtendedItem();
+        }
+      });
+
     assert extendedItems != null && extendedItems.length == 1;
     ExtendedItem[] resultItems = extendedItems[0].getExtendedItem();
     if (resultItems != null) {
@@ -117,8 +169,10 @@ public class VersionControlServer {
     return null;
   }
 
-  public List<ExtendedItem> getExtendedItems(final String workspasceName, final String ownerName,
-                                      final List<String> itemPaths, final DeletedState deletedState) throws RemoteException {
+  public List<ExtendedItem> getExtendedItems(final String workspasceName,
+                                             final String ownerName,
+                                             final List<String> itemPaths,
+                                             final DeletedState deletedState) throws TfsException {
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
     for (String path : itemPaths) {
       ItemSpec iSpec = new ItemSpec();
@@ -127,12 +181,22 @@ public class VersionControlServer {
       iSpec.setRecurse(RecursionType.None);
       itemSpecs.add(iSpec);
     }
-    ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
-    ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any).getArrayOfExtendedItem();
+
+    ArrayOfExtendedItem[] extendedItems =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
+        public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
+          return myRepository.QueryItemsExtended(workspasceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any)
+            .getArrayOfExtendedItem();
+        }
+      });
+
     assert extendedItems != null && extendedItems.length == itemPaths.size();
     List<ExtendedItem> result = new ArrayList<ExtendedItem>();
-    for (ArrayOfExtendedItem extendedItem : extendedItems) {
+    for (ArrayOfExtendedItem extendedItem : extendedItems)
+
+    {
       ExtendedItem[] resultItems = extendedItem.getExtendedItem();
       ExtendedItem item = null;
       if (resultItems != null) {
@@ -141,10 +205,15 @@ public class VersionControlServer {
       }
       result.add(item);
     }
+
     return result;
   }
 
-  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName, final String ownerName, final ItemSpec[] itemSpecs, final DeletedState deletedState, final ItemType itemType) throws RemoteException {
+  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName,
+                                                final String ownerName,
+                                                final ItemSpec[] itemSpecs,
+                                                final DeletedState deletedState,
+                                                final ItemType itemType) throws RemoteException {
     ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
     return myRepository.QueryItemsExtended(workspasceName, ownerName, is, deletedState, itemType).getArrayOfExtendedItem();
@@ -152,7 +221,11 @@ public class VersionControlServer {
 
 
   @Nullable
-  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName, final String ownerName, final String path, final DeletedState deletedState, final ItemType itemType) throws RemoteException {
+  public ArrayOfExtendedItem[] getExtendedItems(final String workspasceName,
+                                                final String ownerName,
+                                                final String path,
+                                                final DeletedState deletedState,
+                                                final ItemType itemType) throws RemoteException {
     ItemSpec is = new ItemSpec();
     is.setItem(path);
     is.setRecurse(RecursionType.OneLevel);
@@ -163,7 +236,6 @@ public class VersionControlServer {
     return items;
   }
 
-  
 // ***************************************************
 // not used by now
 
@@ -171,7 +243,8 @@ public class VersionControlServer {
     Workspace workspace = getWorkspace(labelSpecs[0].getItemSpec().getItem());
     ArrayOfLabelItemSpec ls = new ArrayOfLabelItemSpec();
     ls.setLabelItemSpec(labelSpecs);
-    return myRepository.LabelItem(workspace.getName(), workspace.getOwner(), label, ls, childOption).getLabelItemResult().getLabelResult();
+    return myRepository.LabelItem(workspace.getName(), workspace.getOwner(), label, ls, childOption).getLabelItemResult()
+      .getLabelResult();
   }
 
   public LabelResult[] unlabelItem(String labelName, String labelScope, ItemSpec[] itemSpecs, VersionSpec version) throws Exception {
@@ -311,7 +384,7 @@ public class VersionControlServer {
       }
     }
     ArrayOfItemSpec is = new ArrayOfItemSpec();
-    is.setItemSpec(itemSpecs);    
+    is.setItemSpec(itemSpecs);
     return myRepository.QueryItems(workspaceName, workspaceOwner, is, versionSpec, deletedState, itemType, includeDownloadInfo)
       .getItemSet();
   }
@@ -369,15 +442,21 @@ public class VersionControlServer {
     return myRepository.QueryShelvesets(shelvesetName, shelvesetOwner).getShelveset();
   }
 
-  public Workspace[] queryWorkspaces(String ownerName, String computer) throws RemoteException {
-    return myRepository.QueryWorkspaces(ownerName, computer).getWorkspace();
+  public Workspace[] queryWorkspaces(final String ownerName, final String computer) throws TfsException {
+    Workspace[] workspaces = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace[]>() {
+      public Workspace[] executeRequest() throws RemoteException {
+        return myRepository.QueryWorkspaces(ownerName, computer).getWorkspace();
+      }
+    });
+
+    return workspaces != null ? workspaces : new Workspace[0];
   }
 
   public Guid getServerGuid() {
     return myGuid;
   }
 
-  Repository getRepository() {
+  private Repository getRepository() {
     return myRepository;
   }
 
@@ -500,18 +579,25 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public GetOperation get(final String workspasceName, final String ownerName, final String path, VersionSpec versionSpec) throws RemoteException {
+  public GetOperation get(final String workspasceName, final String ownerName, final String path, VersionSpec versionSpec)
+    throws TfsException {
     final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
     final GetRequest getRequest = new GetRequest();
     final ItemSpec itemSpec = new ItemSpec();
     itemSpec.setRecurse(RecursionType.None);
     itemSpec.setItem(path);
     getRequest.setItemSpec(itemSpec);
-    getRequest.setVersionSpec(versionSpec);    
-    final GetRequest[] getRequests = new GetRequest[] { getRequest };
+    getRequest.setVersionSpec(versionSpec);
+    final GetRequest[] getRequests = new GetRequest[]{getRequest};
     arrayOfGetRequests.setGetRequest(getRequests);
+
     ArrayOfGetOperation[] operations =
-      myRepository.Get(workspasceName, ownerName, arrayOfGetRequests, true, false).getArrayOfGetOperation();
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfGetOperation[]>() {
+        public ArrayOfGetOperation[] executeRequest() throws RemoteException {
+          return myRepository.Get(workspasceName, ownerName, arrayOfGetRequests, true, false).getArrayOfGetOperation();
+        }
+      });
+
     if (operations == null) {
       return null;
     }
@@ -522,7 +608,7 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public GetOperation get(final String workspasceName, final String ownerName, final String path) throws RemoteException {
+  public GetOperation get(final String workspasceName, final String ownerName, final String path) throws TfsException {
     return get(workspasceName, ownerName, path, VersionSpecBase.getLatest());
   }
 

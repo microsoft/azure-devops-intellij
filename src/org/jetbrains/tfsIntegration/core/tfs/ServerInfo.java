@@ -1,8 +1,11 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
 import java.net.URI;
@@ -36,8 +39,10 @@ public class ServerInfo {
     return myGuid;
   }
 
+  @Nullable
   public String getUsername() {
-    return CredentialsManager.getInstance().getCredentials(getUri()).getUserName();
+    Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
+    return credentials != null ? credentials.getUserName() : null;
   }
 
   public List<WorkspaceInfo> getWorkspacesForCurrentOwner() {
@@ -60,20 +65,26 @@ public class ServerInfo {
     return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
-  public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws Exception {
-    getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName());
+  public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws TfsException {
+    try {
+      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName());
+    }
+    catch (WorkspaceNotFoundException e) {
+      // already deleted
+    }
     myWorkspaceInfos.remove(workspaceInfo);
     Workstation.getInstance().updateCacheFile();
   }
 
-  public VersionControlServer getVCS() throws Exception {
+  @NotNull
+  public VersionControlServer getVCS() {
     if (myServer == null) {
       myServer = new VersionControlServer(myUri);
     }
     return myServer;
   }
 
-  public void refreshWorkspacesForCurrentOwner() throws Exception {
+  public void refreshWorkspacesForCurrentOwner() throws TfsException {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
     if (credentials != null) {
       String owner = credentials.getQualifiedUsername();
@@ -95,7 +106,7 @@ public class ServerInfo {
   }
 
   public void replaceWorkspace(final @NotNull WorkspaceInfo existingWorkspace, final @NotNull WorkspaceInfo newWorkspace) {
-    myWorkspaceInfos.add(myWorkspaceInfos.indexOf(existingWorkspace), newWorkspace);
+    myWorkspaceInfos.set(myWorkspaceInfos.indexOf(existingWorkspace), newWorkspace);
   }
 
   @SuppressWarnings({"HardCodedStringLiteral"})

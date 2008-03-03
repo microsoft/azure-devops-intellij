@@ -30,7 +30,6 @@ public class Workstation {
   private List<ServerInfo> myServerInfos;
 
   private Workstation() {
-    // TODO: if file is empty, IDEA shows exception dialog
     myServerInfos = loadCache();
   }
 
@@ -73,16 +72,16 @@ public class Workstation {
         return reader.getServers();
       }
       catch (IOException e) {
-        LOG.warn("Failed to read workspaces cache file", e);
+        LOG.info("Failed to read workspaces cache file", e);
       }
       catch (SAXException e) {
-        LOG.warn("Failed to read workspaces cache file", e);
+        LOG.info("Failed to read workspaces cache file", e);
       }
       catch (RuntimeException e) {
-        LOG.warn("Failed to read workspaces cache file", e);
+        LOG.info("Failed to read workspaces cache file", e);
       }
       catch (Exception e) {
-        LOG.warn("Failed to read workspaces cache file", e);
+        LOG.info("Failed to read workspaces cache file", e);
       }
     }
     return new ArrayList<ServerInfo>();
@@ -141,6 +140,15 @@ public class Workstation {
                 savePerformer.startElement(XmlConstants.SERVER_INFO, serverAttributes);
 
                 for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
+                  List<WorkingFolderInfo> workingFolders;
+                  try {
+                    workingFolders = workspaceInfo.getWorkingFoldersInfos();
+                  }
+                  catch (Exception e) {
+                    LOG.info("Failed to update workspace " + workspaceInfo.getName(), e);
+                    continue;
+                  }
+
                   Map<String, String> workspaceAttributes = new HashMap<String, String>();
                   workspaceAttributes.put(XmlConstants.NAME_ATTR, workspaceInfo.getName());
                   workspaceAttributes.put(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
@@ -150,7 +158,7 @@ public class Workstation {
                   savePerformer.startElement(XmlConstants.WORKSPACE_INFO, workspaceAttributes);
                   savePerformer.startElement(XmlConstants.MAPPED_PATHS);
 
-                  for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersInfos()) {
+                  for (WorkingFolderInfo folderInfo : workingFolders) {
                     Map<String, String> pathAttributes = new HashMap<String, String>();
                     pathAttributes.put(XmlConstants.PATH_ATTR, folderInfo.getLocalPath());
                     savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");
@@ -164,19 +172,19 @@ public class Workstation {
               savePerformer.endElement(XmlConstants.ROOT);
             }
             catch (SAXException e) {
-              LOG.warn("Failed to update workspaces cache file", e);
+              LOG.info("Failed to update workspaces cache file", e);
             }
-            catch (Exception e) {
-              LOG.warn("Failed to update workspaces cache file", e);
-            }
+            //catch (Exception e) {
+            //  LOG.warn("Failed to update workspaces cache file", e);
+            //}
           }
         });
       }
       catch (IOException e) {
-        LOG.warn("Failed to update workspaces cache file", e);
+        LOG.info("Failed to update workspaces cache file", e);
       }
       catch (SAXException e) {
-        LOG.warn("Failed to update workspaces cache file", e);
+        LOG.info("Failed to update workspaces cache file", e);
       }
     }
   }
