@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.EnumComboBoxModel;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -367,7 +368,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     try {
       myWorkingFoldersTableModel.setWorkingFolders(myWorkspace.getWorkingFoldersInfos());
     }
-    catch (Exception e) {
+    catch (TfsException e) {
       String message = MessageFormat.format("Failed to refresh workspace ''{0}''.\n{1}", myWorkspace.getName(), e.getLocalizedMessage());
       JOptionPane
         .showMessageDialog(null, message, getTitle(), JOptionPane.ERROR_MESSAGE);

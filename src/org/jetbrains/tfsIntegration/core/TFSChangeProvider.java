@@ -1,31 +1,27 @@
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 import java.util.*;
 
 public class TFSChangeProvider implements ChangeProvider {
-  private static final Logger LOG = Logger.getInstance(TFSChangeProvider.class.getName());
 
   private Project myProject;
-  private ProgressIndicator myProgress;
 
-  private HashSet<String> filesNew = new HashSet<String>();
-  private HashSet<String> filesHijacked = new HashSet<String>();
-  private HashSet<String> filesChanged = new HashSet<String>();
-  private HashSet<String> filesObsolete = new HashSet<String>();
-  private HashSet<String> filesIgnored = new HashSet<String>();
+  private static final ExtendedItem WORKSPACE_NOT_FOUND_MARKER = new ExtendedItem(); // TODO: get rid of
 
   public TFSChangeProvider(final Project project) {
     myProject = project;
@@ -36,35 +32,8 @@ public class TFSChangeProvider implements ChangeProvider {
     if (myProject.isDisposed()) {
       return;
     }
-    logChangesContent(dirtyScope);
-    myProgress = progress;
+    progress.setText("Processing changes");
 
-    initInternals();
-
-    setProgressText("Processing changes");
-    
-    iterateOverDirtyItems(dirtyScope);
-
-    addAddedFiles(builder);
-    addHijackedFiles(builder);
-    addObsoleteFiles(builder);
-    addChangedFiles(builder);
-    addRemovedFiles(builder);
-    addIgnoredFiles(builder);
-    LOG.info("-- ChangeProvider| New: " +
-             filesNew.size() +
-             ", modified: " +
-             filesChanged.size() +
-             ", hijacked:" +
-             filesHijacked.size() +
-             ", obsolete: " +
-             filesObsolete.size() +
-             ", ignored: " +
-             filesIgnored.size());
-  }
-
-  private void iterateOverDirtyItems(final VcsDirtyScope dirtyScope) throws VcsException {
-    // collect paths
     final List<String> paths = new ArrayList<String>();
     dirtyScope.iterate(new Processor<FilePath>() {
       public boolean process(final FilePath filePath) {
@@ -72,128 +41,116 @@ public class TFSChangeProvider implements ChangeProvider {
         return true;
       }
     });
+
+    List<ExtendedItem> items;
     try {
-      List<ExtendedItem> items = getExtendedItems(paths);
-      for (int i = 0; i < items.size(); i++) {
-        String path = paths.get(i);
-        ExtendedItem item = items.get(i);
-        // TODO: check logic!
-        if (item == null) {
-          filesNew.add(path);
-        }
-        else {
-          if (isObsolete(item)) {
-            filesObsolete.add(path);
-          }
-          else if (isChanged(item)) {
-            filesChanged.add(path);
-          }
-          else {
-            filesHijacked.add(path);
-          }
-        }
-      }
+      items = getExtendedItems(paths);
     }
-    catch (Exception e) {
-      LOG.error("RemoteException in iterateOverDirtyItems!", e);
+    catch (TfsException e) {
       throw new VcsException(e);
     }
-  }
 
-  public boolean isModifiedDocumentTrackingRequired() {
-    return true;
-  }
-
-  private static void logChangesContent(final VcsDirtyScope scope) {
-    LOG.info("-- ChangeProvider: Dirty files: " +
-             scope.getDirtyFiles().size() +
-             ", dirty recursive directories: " +
-             scope.getRecursivelyDirtyDirectories().size());
-    for (FilePath path : scope.getDirtyFiles()) {
-      LOG.info("                                " + path.getPath());
-    }
-    LOG.info("                                ---");
-    for (FilePath path : scope.getRecursivelyDirtyDirectories()) {
-      LOG.info("                                " + path.getPath());
+    for (int i = 0; i < items.size(); i++) {
+      processFile(paths.get(i), items.get(i), builder);
     }
   }
 
-  private void initInternals() {
-    filesNew.clear();
-    filesHijacked.clear();
-    filesChanged.clear();
-    filesObsolete.clear();
-    filesIgnored.clear();
-  }
+  private static void processFile(@NotNull String path, @Nullable ExtendedItem item, ChangelistBuilder builder) {
+    if (WORKSPACE_NOT_FOUND_MARKER.equals(item)) {
+      // ignore
+      return;
+    }
+    VirtualFile virtualFile = VcsUtil.getVirtualFile(path);
+    if (virtualFile == null || virtualFile.getParent() == null) {
+      // TODO: IDEA crashes if reported virtual file has no parent
+      return;
+    }
 
-  private void setProgressText(String text) {
-    if (myProgress != null) {
-      myProgress.setText(text);
+    final FilePath filePath = VcsUtil.getFilePath(path);
+    if (item == null) {
+      builder.processUnversionedFile(virtualFile);
+      return;
+    }
+    else if (isUnversioned(item)) {
+      builder.processUnversionedFile(virtualFile);
+    }
+
+    if (!virtualFile.exists()) {
+      builder.processLocallyDeletedFile(filePath);
+      return;
+    }
+
+    if (isChanged(item)) {
+      TFSContentRevision revision = TFSContentRevisionFactory.getRevision(filePath);
+      builder.processChange(new Change(revision, new CurrentContentRevision(filePath)));
+    }
+    else if (isHijacked(item)) {
+      builder.processModifiedWithoutCheckout(virtualFile);
+    }
+    else if (isScheduledForAddition(item)) {
+      builder.processChange(new Change(null, new CurrentContentRevision(filePath)));
+    }
+    else if (isScheduledForDeletion(item)) {
+      builder.processChange(new Change(new CurrentContentRevision(filePath), null));
     }
   }
 
-  private boolean isChanged(final ExtendedItem item) {
-    Set<ChangeType> changeType = changeTypeSetFromString(item.getChg());
-    // todo: how to understand that file was changed? 
-    return changeType.contains(ChangeType.Edit);
-  }
-
-  private boolean isObsolete(final ExtendedItem item) {
-    return (item.getDid() > item.getLver() || item.getLatest() > item.getLver()) && !isChanged(item);
-  }
-
-  public static Set<ChangeType> changeTypeSetFromString(final String changeTypeString) {
-    HashSet<ChangeType> result = new HashSet<ChangeType>();
-    if (changeTypeString != null) {
-      StringTokenizer tokenizer = new StringTokenizer(changeTypeString, " ");
-      while (tokenizer.hasMoreTokens()) {
-        String token = tokenizer.nextToken();
-        result.add(ChangeType.valueOf(token));
-      }
+  private static boolean isUnversioned(final @NotNull ExtendedItem item) {
+    if (item.getLocal() == null) {
+      assert item.getLatest() == Integer.MIN_VALUE && item.getLver() == Integer.MIN_VALUE;
+      assert item.getDid() == Integer.MIN_VALUE;
+      return true;
     }
-    return result;
+    return false;
   }
 
-  public static String changeTypeSetToString(final Set<ChangeType> changeType) {
-    String result = "";
-    for (ChangeType type : changeType) {
-      result += (type.toString() + " ");
+  private static boolean isScheduledForAddition(final @NotNull ExtendedItem item) {
+    ChangeType changeType = ChangeType.fromString(item.getChg());
+    if (changeType.contains(ChangeType.Value.Add)) {
+      assert changeType.contains(ChangeType.Value.Edit) && changeType.contains(ChangeType.Value.Encoding);
+      assert item.getLatest() == Integer.MIN_VALUE && item.getLver() == Integer.MIN_VALUE;
+      assert item.getDid() == Integer.MIN_VALUE;
+      return true;
     }
-    return result.trim();
+    return false;
   }
 
-  enum ChangeType {
-    None(1),
-    Add(2),
-    Edit(4),
-    Encoding(8),
-    Rename(16),
-    Delete(32),
-    Undelete(64),
-    Branch(128),
-    Merge(256),
-    Lock(512);
-
-    public int getIntValue() {
-      return intValue;
+  private static boolean isScheduledForDeletion(final @NotNull ExtendedItem item) {
+    ChangeType changeType = ChangeType.fromString(item.getChg());
+    if (changeType.contains(ChangeType.Value.Delete)) {
+      assert changeType.containsOnly(ChangeType.Value.Delete);
+      assert item.getLatest() != Integer.MIN_VALUE && item.getLver() != Integer.MIN_VALUE;
+      assert item.getDid() == Integer.MIN_VALUE;
+      return true;
     }
-    private int intValue;
-
-    ChangeType(final int intValue) {
-      this.intValue = intValue;
-    }
+    return false;
   }
 
-  private ExtendedItem getExtendedItem(String fileName) throws Exception {
-    ExtendedItem result = null;
-    WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(fileName);
-    if (workspaceInfo != null) {
-      result = workspaceInfo.getExtendedItem(workspaceInfo.findServerPathByLocalPath(fileName));
+
+  private static boolean isChanged(final @NotNull ExtendedItem item) {
+    ChangeType changeType = ChangeType.fromString(item.getChg());
+    if (changeType.containsOnly(ChangeType.Value.Edit)) {
+      assert item.getLatest() != Integer.MIN_VALUE && item.getLver() != Integer.MIN_VALUE;
+      assert item.getDid() == Integer.MIN_VALUE;
+      return true;
     }
-    return result;
+    return false;
   }
 
-  private List<ExtendedItem> getExtendedItems(List<String> fileNames) throws Exception {
+  private static boolean isHijacked(final @NotNull ExtendedItem item) {
+    ChangeType changeType = ChangeType.fromString(item.getChg());
+    if (changeType.isEmpty()) {
+      assert item.getLatest() != Integer.MIN_VALUE && item.getLver() != Integer.MIN_VALUE;
+      assert item.getDid() == Integer.MIN_VALUE;
+      VirtualFile virtualFile = VcsUtil.getVirtualFile(item.getLocal());
+      assert virtualFile.exists();
+      return virtualFile.isWritable();
+    }
+    return false;
+  }
+
+
+  private static List<ExtendedItem> getExtendedItems(List<String> fileNames) throws TfsException {
     Map<String, WorkspaceInfo> path2workspace = new HashMap<String, WorkspaceInfo>();
     Map<WorkspaceInfo, List<String>> workspace2paths = new HashMap<WorkspaceInfo, List<String>>();
     Map<WorkspaceInfo, List<ExtendedItem>> workspace2items = new HashMap<WorkspaceInfo, List<ExtendedItem>>();
@@ -222,7 +179,7 @@ public class TFSChangeProvider implements ChangeProvider {
     for (String fileName : fileNames) {
       WorkspaceInfo workspaceInfo = path2workspace.get(fileName);
       if (workspaceInfo == null) {
-        result.add(null);
+        result.add(WORKSPACE_NOT_FOUND_MARKER);
       }
       else {
         result.add(workspace2items.get(workspaceInfo).get(path2index.get(fileName)));
@@ -231,98 +188,9 @@ public class TFSChangeProvider implements ChangeProvider {
     return result;
   }
 
-  /**
-   * File is either:
-   * - "new" - it is not contained in the repository, but host contains
-   * a record about it (that is, it was manually moved to the
-   * list of files to be added to the commit.
-   * - "unversioned" - it is not contained in the repository yet.
-   * @param builder builder
-   */
-  private void addAddedFiles(final ChangelistBuilder builder) {
-    for (String fileName : filesNew) {
-
-      ////  In the case of file rename or parent folder rename we should
-      ////  refer to the list of new files by the
-      //String refName = discoverOldName( myVcs, fileName );
-      //
-      //  New file could be added AFTER and BEFORE the package rename.
-      //if( host.containsNew( fileName ) || host.containsNew( refName ))
-      //{
-      //  FilePath path = VcsUtil.getFilePath( fileName );
-      //  builder.processChange( new Change( null, new CurrentContentRevision( path ) ));
-      //}
-      //else
-      //{
-        builder.processUnversionedFile( VcsUtil.getVirtualFile( fileName ) );
-      //}
-    }
+  public boolean isModifiedDocumentTrackingRequired() {
+    return true;
   }
 
-  private void addHijackedFiles(final ChangelistBuilder builder) {
-    for (String fileName : filesHijacked) {
-      final FilePath fp = VcsUtil.getFilePath( fileName );
-      final FilePath currfp = VcsUtil.getFilePath( fileName );
-      TfsContentRevision revision = new TfsContentRevision(fp);
-      builder.processChange( new Change( revision, new CurrentContentRevision( currfp ), FileStatus.HIJACKED ));
-    }
-  }
 
-  private void addObsoleteFiles(final ChangelistBuilder builder) {
-    for (String fileName : filesObsolete) {
-      final FilePath fp = VcsUtil.getFilePath( fileName );
-      TfsContentRevision revision = new TfsContentRevision(fp);
-      builder.processChange( new Change( revision, new CurrentContentRevision( fp ), FileStatus.OBSOLETE ));
-    }
-  }
-
-  /**
-   * Add all files which were determined to be changed (somehow - modified,
-   * renamed, etc) and folders which were renamed.
-   * NB: adding folders information actually works only in either batch refresh
-   * of statuses or when some folder is in the list of changes.
-   * @param builder builder
-   */
-  private void addChangedFiles(final ChangelistBuilder builder) {
-    for (String fileName : filesChanged) {
-      final FilePath refPath = VcsUtil.getFilePath( fileName );
-      final FilePath currPath = VcsUtil.getFilePath( fileName );
-
-      TfsContentRevision revision = new TfsContentRevision(refPath);
-      builder.processChange( new Change( revision, new CurrentContentRevision( currPath )));
-    }
-
-    //for( String folderName : host.renamedFolders.keySet() )
-    //{
-    //  String oldFolderName = host.renamedFolders.get( folderName );
-    //  final FilePath refPath = VcsUtil.getFilePathForDeletedFile( oldFolderName, true );
-    //  final FilePath currPath = VcsUtil.getFilePath( folderName );
-    //
-    //  builder.processChange( new Change( new VssContentRevision( refPath, project ), new CurrentContentRevision( currPath )));
-    //}
-  }
-
-  private void addRemovedFiles(final ChangelistBuilder builder) {
-    //for( String path : host.removedFolders )
-    //  builder.processLocallyDeletedFile( VcsUtil.getFilePathForDeletedFile( path, true ) );
-    //
-    //for( String path : host.removedFiles )
-    //  builder.processLocallyDeletedFile( VcsUtil.getFilePathForDeletedFile( path, false ) );
-    //
-    //for( String path : host.deletedFolders )
-    //  builder.processChange( new Change( new CurrentContentRevision( VcsUtil.getFilePathForDeletedFile( path, true )),
-    //                                                                 null, FileStatus.DELETED ));
-    //
-    //for( String path : host.deletedFiles )
-    //{
-    //  FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, false ); // todo: implement TfsContentRevision
-    //  VssContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
-    //  builder.processChange( new Change( revision, null, FileStatus.DELETED ));
-    //}
-  }
-
-  private void addIgnoredFiles(final ChangelistBuilder builder) {
-    for( String path : filesIgnored )
-      builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
-  }
 }

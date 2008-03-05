@@ -6,6 +6,7 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
 import org.xml.sax.SAXException;
@@ -144,7 +145,7 @@ public class Workstation {
                   try {
                     workingFolders = workspaceInfo.getWorkingFoldersInfos();
                   }
-                  catch (Exception e) {
+                  catch (TfsException e) {
                     LOG.info("Failed to update workspace " + workspaceInfo.getName(), e);
                     continue;
                   }
@@ -219,7 +220,7 @@ public class Workstation {
   }
 
   @Nullable
-  public WorkspaceInfo findWorkspace(final @NotNull String localPath) throws Exception {
+  public WorkspaceInfo findWorkspace(final @NotNull String localPath) throws TfsException {
     for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
       if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
         return workspaceInfo;

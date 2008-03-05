@@ -27,6 +27,8 @@ import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExte
 import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthentication;
 import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
+import javax.swing.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
@@ -131,8 +133,26 @@ public class WebServiceHelper {
     boolean forcePrompt = false;
     while (true) {
       if (credentialsToConnect.getPassword() == null || forcePrompt) {
-        LoginDialog d = new LoginDialog(serverUri, credentialsToConnect, false);
-        d.show();
+        final LoginDialog d = new LoginDialog(serverUri, credentialsToConnect, false);
+        Runnable runnable = new Runnable() {
+          public void run() {
+            d.show();
+          }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+          runnable.run();
+        }
+        else {
+          try {
+            SwingUtilities.invokeAndWait(runnable);
+          }
+          catch (InterruptedException e) {
+            // ignore
+          }
+          catch (InvocationTargetException e) {
+            // ignore
+          }
+        }
         if (d.isOK()) {
           credentialsToConnect = d.getCredentialsToConnect();
           credentialsToStore = d.getCredentialsToStore();

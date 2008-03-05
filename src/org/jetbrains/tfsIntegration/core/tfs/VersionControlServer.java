@@ -364,29 +364,33 @@ public class VersionControlServer {
 
   @Nullable
   public ItemSet[] getItems(ItemSpec[] itemSpecs,
-                            VersionSpec versionSpec,
-                            DeletedState deletedState,
-                            ItemType itemType,
-                            boolean includeDownloadInfo) throws Exception {
+                            final VersionSpec versionSpec,
+                            final DeletedState deletedState,
+                            final ItemType itemType,
+                            final boolean includeDownloadInfo) throws TfsException {
     if (itemSpecs.length == 0) {
       return null;
     }
 
-    String workspaceName = "";
-    String workspaceOwner = "";
+    final String workspaceName[] = new String [] {""};
+    final String workspaceOwner[] = new String [] {""};
 
     String item = itemSpecs[0].getItem();
     if (!VersionControlPath.isServerItem(item)) {
       WorkspaceInfo info = Workstation.getInstance().findWorkspace(item);
       if (info != null) {
-        workspaceName = info.getName();
-        workspaceOwner = info.getOwnerName();
+        workspaceName[0] = info.getName();
+        workspaceOwner[0] = info.getOwnerName();
       }
     }
-    ArrayOfItemSpec is = new ArrayOfItemSpec();
+    final ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
-    return myRepository.QueryItems(workspaceName, workspaceOwner, is, versionSpec, deletedState, itemType, includeDownloadInfo)
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
+      public ItemSet[] executeRequest() throws RemoteException {
+        return myRepository.QueryItems(workspaceName[0], workspaceOwner[0], is, versionSpec, deletedState, itemType, includeDownloadInfo)
       .getItemSet();
+      }
+    });
   }
 
   public int getLatestChangesetId() throws RemoteException {
@@ -503,7 +507,7 @@ public class VersionControlServer {
     return w;
   }
 
-  public Workspace getWorkspace(String localPath) throws Exception {
+  public Workspace getWorkspace(String localPath) throws TfsException {
     String path = convertToFullPath(localPath);
 
     WorkspaceInfo info = Workstation.getInstance().findWorkspace(path);
@@ -533,46 +537,50 @@ public class VersionControlServer {
   }
 
   public Enumeration queryHistory(String path,
-                                  VersionSpec version,
+                                  final VersionSpec version,
                                   int deletionId,
                                   RecursionType recursion,
-                                  String user,
-                                  VersionSpec versionFrom,
+                                  final String user,
+                                  final VersionSpec versionFrom,
                                   VersionSpec versionToOrig,
                                   int maxCount,
-                                  boolean includeChanges,
-                                  boolean slotMode,
-                                  boolean includeDownloadInfo) throws Exception {
-    ItemSpec itemSpec = new ItemSpec();
+                                  final boolean includeChanges,
+                                  final boolean slotMode,
+                                  final boolean includeDownloadInfo) throws TfsException {
+    final ItemSpec itemSpec = new ItemSpec();
     itemSpec.setItem(path);
     itemSpec.setRecurse(recursion);
     itemSpec.setDid(deletionId);
 
-    String workspaceName = "";
-    String workspaceOwner = "";
+    final String [] workspaceName = new String[]{""};
+    final String  []workspaceOwner = new String[]{""};
 
     if (!VersionControlPath.isServerItem(itemSpec.getItem())) {
       WorkspaceInfo info = Workstation.getInstance().findWorkspace(itemSpec.getItem());
       if (info != null) {
-        workspaceName = info.getName();
-        workspaceOwner = info.getOwnerName();
+        workspaceName[0] = info.getName();
+        workspaceOwner[0] = info.getOwnerName();
       }
     }
 
     List<Changeset> changes = new ArrayList<Changeset>();
     int total = maxCount;
-    VersionSpec versionTo = versionToOrig;
+    final VersionSpec[] versionTo = new VersionSpec[] {versionToOrig};
 
     while (total > 0) {
-      int batchMax = Math.min(256, total);
+      final int batchMax = Math.min(256, total);
       // todo: our stubs differ from opentf' ones. have to find out difference
-      Changeset[] changeSets = myRepository.QueryHistory(workspaceName, workspaceOwner, itemSpec, version, user, versionFrom, versionTo,
+      Changeset[] changeSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
+        public Changeset[] executeRequest() throws RemoteException {
+          return myRepository.QueryHistory(workspaceName[0], workspaceOwner[0], itemSpec, version, user, versionFrom, versionTo[0],
                                                          batchMax, includeChanges, slotMode, includeDownloadInfo).getChangeset();
+        }
+      });
       int batchCnt = changeSets.length;
       if (batchCnt < batchMax) break;
       total -= batchCnt;
       Changeset lastChangeset = changes.get(changes.size() - 1);
-      versionTo = new ChangesetVersionSpec(lastChangeset.getCset());
+      versionTo[0] = new ChangesetVersionSpec(lastChangeset.getCset());
     }
 
     return Collections.enumeration(changes);

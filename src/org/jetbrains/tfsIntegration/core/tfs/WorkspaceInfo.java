@@ -106,7 +106,7 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  public String findServerPathByLocalPath(final @NotNull String localPath) throws Exception {
+  public String findServerPathByLocalPath(final @NotNull String localPath) throws TfsException {
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
       String normalizedMappedLocalPath = VersionControlPath.getNormalizedPath(folderInfo.getLocalPath());
       if (localPath.startsWith(normalizedMappedLocalPath)) {

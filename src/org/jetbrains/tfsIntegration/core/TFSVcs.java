@@ -5,9 +5,15 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
+import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
+import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -109,4 +115,45 @@ public class TFSVcs extends AbstractVcs {
   public ChangeProvider getChangeProvider() {
     return new TFSChangeProvider(myProject);
   }
+
+  @Nullable
+  public CheckinEnvironment getCheckinEnvironment() {
+    return new TFSCheckinEnvironment();
+  }
+
+  @Nullable
+  public RollbackEnvironment getRollbackEnvironment() {
+    return new TFSRollbackEnvironment();
+  }
+
+  public boolean fileIsUnderVcs(final FilePath filePath) {
+    return isVersionedDirectory(filePath.getVirtualFile());
+  }
+
+  public boolean isVersionedDirectory(final VirtualFile dir) {
+    try {
+      return Workstation.getInstance().findWorkspace(dir.getPath()) != null;
+    }
+    catch (TfsException e) {
+      LOG.info(e);
+    }
+    return false;
+  }
+
+  @Nullable
+  public EditFileProvider getEditFileProvider() {
+    return new TFSEditFileProvider();
+  }
+
+  @Nullable
+  public UpdateEnvironment getUpdateEnvironment() {
+    return super.getUpdateEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
+  }
+
+  @Nullable
+  public UpdateEnvironment getStatusEnvironment() {
+    return super.getStatusEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
+  }
+
+  
 }
