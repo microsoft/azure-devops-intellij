@@ -1,48 +1,71 @@
 <!DOCTYPE idea-plugin PUBLIC "Plugin/DTD" "http://plugins.intellij.net/plugin.dtd">
 <idea-plugin version="2">
-    <name>TFS Integration</name>
-    <description>
-        Integration with Team Foundation Server.
-    </description>
+  <name>TFS Integration</name>
+  <description>
+    Integration with Team Foundation Server.
+  </description>
 
-    <version>0.9</version>
-    <vendor url="http://www.swiftteams.com">SwiftTeams</vendor>
+  <version>0.9</version>
+  <vendor url="http://www.swiftteams.com">SwiftTeams</vendor>
 
-    <idea-version since-build="7000"/>
-    <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
+  <idea-version since-build="7000"/>
+  <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
-    <project-components>
-      <component>
-        <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>
-        <option name="workspace" value="true"/>
-      </component>
-    </project-components>
+  <project-components>
+    <component>
+      <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>
+      <option name="workspace" value="true"/>
+    </component>
+  </project-components>
 
-    <extensions defaultExtensionNs="com.intellij">
-      <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
-      <!--<checkoutProvider implementation="org.jetbrains.tfsIntegration.checkout.TFSCheckoutProvider"/>-->
-      <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"
-                          serviceImplementation="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"/>
-      <!--<projectService serviceInterface="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"-->
-                      <!--serviceImplementation="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"/>-->
+  <extensions defaultExtensionNs="com.intellij">
+    <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+    <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
+    <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"
+                        serviceImplementation="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"/>
+    <!--<projectService serviceInterface="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"-->
+    <!--serviceImplementation="org.jetbrains.tfsIntegration.TFSBranchConfigurationManager"/>-->
 
-      <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs"/>
-    </extensions>
+    <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs"/>
+  </extensions>
 
-    <actions>
-        <group id="TFSFileGroup">
-          <separator/>
-          <add-to-group group-id="VcsGroups" anchor="after" relative-to-action="VcsGlobalGroup"/>
-        </group>
+  <actions>
+    <group id="TfsGlobalGroup" class="org.jetbrains.tfsIntegration.core.TFSGroup" popup="true" text="TFS">
+      <add-to-group group-id="VcsGroups" anchor="last"/>
+    </group>
 
-        <group id="TFSFilePopupGroup" popup="true" class="org.jetbrains.tfsIntegration.core.TFSFilePopupGroup">
-          <add-to-group group-id="VcsGroup" anchor="last"/>
-          <add-to-group group-id="VcsGroups" anchor="last"/>
-        </group>
+    <group id="TfsFilePopupGroup" popup="true" class="org.jetbrains.tfsIntegration.core.TFSGroup" text="TFS">
+      <add-to-group group-id="VcsGroup" anchor="last"/>
+    </group>
 
-        <group id="TFSGroup">
-          <action id="TFS.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="TFS"/>
-          <add-to-group group-id="TFSFilePopupGroup" anchor="last"/>
-        </group>
-    </actions>
+    <group id="TfsGroup" text="TFS">
+      <action id="Tfs.Share" class="org.jetbrains.tfsIntegration.actions.ShareProjectAction" text="Share project..."/>
+      <separator/>
+      <action id="Tfs.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="Add"/>
+      <reference id="CheckinFiles"/>
+      <reference id="UpdateFiles"/>
+      <reference id="IntegrateFiles"/>
+      <reference id="CheckStatusForFiles"/>
+      <separator/>
+      <action id="Tfs.Lock" class="org.jetbrains.tfsIntegration.actions.LockAction" text="Lock..."/>
+      <action id="Tfs.Unlock" class="org.jetbrains.tfsIntegration.actions.UnlockAction" text="Unlock"/>
+      <separator/>
+      <reference id="ChangesView.Rollback"/>
+      <separator/>
+      <action id="Tfs.Label" class="org.jetbrains.tfsIntegration.actions.LabelAction" text="Apply Label..."/>
+      <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="Branch..."/>
+      <separator/>
+      <reference id="Compare.SameVersion"/>
+      <reference id="Compare.LastVersion"/>
+      <reference id="Compare.Selected"/>
+      <action id="Tfs.Diff" class="org.jetbrains.tfsIntegration.actions.DiffAction" text="Compare..."/>
+      <reference id="Vcs.ShowTabbedFileHistory"/>
+      <reference id="Vcs.ShowHistoryForBlock"/>
+      <reference id="Annotate"/>
+      <reference id="ChangesView.Browse"/>
+      <add-to-group group-id="TfsGlobalGroup" anchor="last"/>
+      <add-to-group group-id="TfsFilePopupGroup" anchor="last"/>
+    </group>
+  </actions>
+
 </idea-plugin>

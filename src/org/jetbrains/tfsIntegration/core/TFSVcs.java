@@ -47,7 +47,7 @@ public class TFSVcs extends AbstractVcs {
     myCheckoutOptions = vcsManager.getStandardOption(VcsConfiguration.StandardOption.CHECKOUT, this);
   }
 
-  public static void main(String []args) {
+  public static void main(String[] args) {
     //System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
     //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
     //System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
@@ -155,5 +155,13 @@ public class TFSVcs extends AbstractVcs {
     return super.getStatusEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
-  
+  public static void assertTrue(boolean condition, String message) {
+    // TODO: inline with assert statement
+    LOG.assertTrue(condition, message);
+  }
+
+  public static void assertTrue(final boolean condition) {
+    // TODO: inline with assert statement
+    LOG.assertTrue(condition);
+  }
 }

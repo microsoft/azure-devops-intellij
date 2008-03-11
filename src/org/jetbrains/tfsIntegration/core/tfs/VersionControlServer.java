@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.microsoft.wsdl.types.Guid;
+import org.apache.commons.httpclient.HttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -77,7 +78,7 @@ public class VersionControlServer {
     List<List<ExtendedItem>> extendedItems =
       getChildItems(workspasceName, ownerName, Collections.singletonList(parent), deletedState, itemType);
 
-    assert extendedItems != null && extendedItems.size() == 1;
+    TFSVcs.assertTrue(extendedItems != null && extendedItems.size() == 1);
     return extendedItems.get(0);
   }
 
@@ -129,7 +130,7 @@ public class VersionControlServer {
         }
       });
 
-    assert extendedItems != null && extendedItems.length == items.size();
+    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == items.size());
     for (ArrayOfExtendedItem extendedItem : extendedItems) {
       List<ExtendedItem> resultItemsList = new LinkedList<ExtendedItem>();
       ExtendedItem[] resultItems = extendedItem.getExtendedItem();
@@ -160,10 +161,10 @@ public class VersionControlServer {
         }
       });
 
-    assert extendedItems != null && extendedItems.length == 1;
+    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == 1);
     ExtendedItem[] resultItems = extendedItems[0].getExtendedItem();
     if (resultItems != null) {
-      assert resultItems.length == 1;
+      TFSVcs.assertTrue(resultItems.length == 1);
       return resultItems[0];
     }
     return null;
@@ -192,7 +193,7 @@ public class VersionControlServer {
         }
       });
 
-    assert extendedItems != null && extendedItems.length == itemPaths.size();
+    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == itemPaths.size());
     List<ExtendedItem> result = new ArrayList<ExtendedItem>();
     for (ArrayOfExtendedItem extendedItem : extendedItems)
 
@@ -200,7 +201,7 @@ public class VersionControlServer {
       ExtendedItem[] resultItems = extendedItem.getExtendedItem();
       ExtendedItem item = null;
       if (resultItems != null) {
-        assert resultItems.length == 1;
+        TFSVcs.assertTrue(resultItems.length == 1);
         item = resultItems[0];
       }
       result.add(item);
@@ -213,10 +214,14 @@ public class VersionControlServer {
                                                 final String ownerName,
                                                 final ItemSpec[] itemSpecs,
                                                 final DeletedState deletedState,
-                                                final ItemType itemType) throws RemoteException {
-    ArrayOfItemSpec is = new ArrayOfItemSpec();
+                                                final ItemType itemType) throws TfsException {
+    final ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
-    return myRepository.QueryItemsExtended(workspasceName, ownerName, is, deletedState, itemType).getArrayOfExtendedItem();
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
+      public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
+        return myRepository.QueryItemsExtended(workspasceName, ownerName, is, deletedState, itemType).getArrayOfExtendedItem();
+      }
+    });
   }
 
 
@@ -225,7 +230,7 @@ public class VersionControlServer {
                                                 final String ownerName,
                                                 final String path,
                                                 final DeletedState deletedState,
-                                                final ItemType itemType) throws RemoteException {
+                                                final ItemType itemType) throws TfsException {
     ItemSpec is = new ItemSpec();
     is.setItem(path);
     is.setRecurse(RecursionType.OneLevel);
@@ -234,6 +239,12 @@ public class VersionControlServer {
       return null;
     }
     return items;
+  }
+
+  public static String downloadItem(final WorkspaceInfo workspaceInfo, final GetOperation operation) throws TfsException {
+    HttpClient client = new HttpClient();
+    final String downloadUrl = workspaceInfo.getServer().getUri().toASCIIString() + "/versioncontrol/v1.0/item.asmx?" + operation.getDurl();
+    return WebServiceHelper.httpGet(downloadUrl);
   }
 
 // ***************************************************
@@ -609,9 +620,9 @@ public class VersionControlServer {
     if (operations == null) {
       return null;
     }
-    assert operations.length == 1;
-    assert operations[0] != null;
-    assert operations[0].getGetOperation().length == 1;
+    TFSVcs.assertTrue(operations.length == 1);
+    TFSVcs.assertTrue(operations[0] != null);
+    TFSVcs.assertTrue(operations[0].getGetOperation().length == 1);
     return operations[0].getGetOperation()[0];
   }
 

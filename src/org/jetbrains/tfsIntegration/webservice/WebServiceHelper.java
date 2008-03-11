@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.webservice;
 
 import com.intellij.openapi.diagnostic.Logger;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.Stub;
@@ -8,6 +9,12 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NTCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
@@ -45,6 +52,12 @@ public class WebServiceHelper {
     @Nullable
     T executeRequest() throws RemoteException;
   }
+
+  private interface InnerDelegate<T> {
+    @Nullable
+    T executeRequest(Credentials credentials) throws Exception;
+  }
+
 
   static {
     System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
@@ -115,19 +128,54 @@ public class WebServiceHelper {
     });
   }
 
-  public static <T> T executeRequest(Stub stub, Delegate<T> delegate) throws TfsException {
-    URI serverUri = null;
+  public static <T> T executeRequest(final Stub stub, final Delegate<T> delegate) throws TfsException {
+    final URI [] serverUri = new URI[]{null};
     try {
       URI targetEndpoint = new URI(stub._getServiceClient().getOptions().getTo().getAddress());
-      serverUri =
+      serverUri[0] =
         new URI(targetEndpoint.getScheme(), null, targetEndpoint.getHost(), targetEndpoint.getPort(), null, null, null); // TODO: trim?
     }
     catch (URISyntaxException e) {
       TFSVcs.LOG.error(e);
     }
 
-    assert serverUri != null;
+    return executeRequest(serverUri[0], new InnerDelegate<T>() {
+      public T executeRequest(final Credentials credentials) throws Exception {
+        setCredentials(stub, credentials, serverUri[0]);
+        return delegate.executeRequest();
+      }
+    });
+  }
 
+  public static String httpGet(final String downloadUrl) throws TfsException {
+    final URI[] serverUri = new URI[]{null};
+    try {
+      URI uri = new URI(downloadUrl);
+      serverUri[0] = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null); // TODO: trim?
+    }
+    catch (URISyntaxException e) {
+      TFSVcs.LOG.error(e);
+    }
+
+    return executeRequest(serverUri[0], new InnerDelegate<String>() {
+
+      public String executeRequest(final Credentials credentials) throws Exception {
+        HttpClient client = new HttpClient();
+        HttpMethod method = new GetMethod(downloadUrl);
+        client.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword(),
+                                                                          serverUri[0].getHost(), credentials.getDomain()));
+        int statusCode = client.executeMethod(method);
+        if (statusCode == HttpStatus.SC_OK) {
+          return method.getResponseBodyAsString();
+        }
+        else {
+          throw new AxisFault("Transport error: " + statusCode);
+        }
+      }
+    });
+  }
+
+  private static <T> T executeRequest(URI serverUri, InnerDelegate<T> delegate) throws TfsException {
     Credentials credentialsToConnect = CredentialsManager.getInstance().getCredentials(serverUri);
     Credentials credentialsToStore = null;
     boolean forcePrompt = false;
@@ -163,8 +211,7 @@ public class WebServiceHelper {
       }
 
       try {
-        setCredentials(stub, credentialsToConnect, serverUri);
-        T result = delegate.executeRequest();
+        T result = delegate.executeRequest(credentialsToConnect);
         if (credentialsToStore != null) {
           CredentialsManager.getInstance().storeCredentials(serverUri, credentialsToStore);
         }
@@ -185,6 +232,7 @@ public class WebServiceHelper {
       }
     }
   }
+
 
   public static ConfigurationContext getStubConfigurationContext() throws Exception {
     ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
