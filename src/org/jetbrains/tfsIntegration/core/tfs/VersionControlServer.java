@@ -1,16 +1,19 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.util.Ref;
 import com.microsoft.wsdl.types.Guid;
-import org.apache.commons.httpclient.HttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsExceptionManager;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
+import java.io.*;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -142,6 +145,7 @@ public class VersionControlServer {
     return result;
   }
 
+  @Nullable
   public ExtendedItem getExtendedItem(final String workspasceName,
                                       final String ownerName,
                                       final String itemServerPath,
@@ -241,10 +245,30 @@ public class VersionControlServer {
     return items;
   }
 
-  public static String downloadItem(final WorkspaceInfo workspaceInfo, final GetOperation operation) throws TfsException {
-    HttpClient client = new HttpClient();
-    final String downloadUrl = workspaceInfo.getServer().getUri().toASCIIString() + "/versioncontrol/v1.0/item.asmx?" + operation.getDurl();
-    return WebServiceHelper.httpGet(downloadUrl);
+  public static void downloadItem(final WorkspaceInfo workspaceInfo, final String downloadKey, OutputStream outputStream) throws TfsException {
+    final String url = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
+    WebServiceHelper.httpGet(url, outputStream);
+  }
+
+  public static void downloadItem(final WorkspaceInfo workspaceInfo, final String downloadKey, final File destination) throws TfsException {
+    OutputStream fileStream = null;
+    try {
+      fileStream = new FileOutputStream(destination);
+      downloadItem(workspaceInfo, downloadKey, fileStream);
+    }
+    catch (FileNotFoundException e) {
+      throw TfsExceptionManager.processException(e);
+    }
+    finally {
+      if (fileStream != null) {
+        try {
+          fileStream.close();
+        }
+        catch (IOException e) {
+          // ignore
+        }
+      }
+    }
   }
 
 // ***************************************************
@@ -383,23 +407,23 @@ public class VersionControlServer {
       return null;
     }
 
-    final String workspaceName[] = new String [] {""};
-    final String workspaceOwner[] = new String [] {""};
+    final Ref<String> workspaceName = new Ref<String>("");
+    final Ref<String> workspaceOwner = new Ref<String>("");
 
     String item = itemSpecs[0].getItem();
     if (!VersionControlPath.isServerItem(item)) {
       WorkspaceInfo info = Workstation.getInstance().findWorkspace(item);
       if (info != null) {
-        workspaceName[0] = info.getName();
-        workspaceOwner[0] = info.getOwnerName();
+        workspaceName.set(info.getName());
+        workspaceOwner.set(info.getOwnerName());
       }
     }
     final ArrayOfItemSpec is = new ArrayOfItemSpec();
     is.setItemSpec(itemSpecs);
     return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
       public ItemSet[] executeRequest() throws RemoteException {
-        return myRepository.QueryItems(workspaceName[0], workspaceOwner[0], is, versionSpec, deletedState, itemType, includeDownloadInfo)
-      .getItemSet();
+        return myRepository.QueryItems(workspaceName.get(), workspaceOwner.get(), is, versionSpec, deletedState, itemType, includeDownloadInfo)
+          .getItemSet();
       }
     });
   }
@@ -563,28 +587,28 @@ public class VersionControlServer {
     itemSpec.setRecurse(recursion);
     itemSpec.setDid(deletionId);
 
-    final String [] workspaceName = new String[]{""};
-    final String  []workspaceOwner = new String[]{""};
+    final Ref<String> workspaceName = new Ref<String>("");
+    final Ref<String> workspaceOwner = new Ref<String>("");
 
     if (!VersionControlPath.isServerItem(itemSpec.getItem())) {
       WorkspaceInfo info = Workstation.getInstance().findWorkspace(itemSpec.getItem());
       if (info != null) {
-        workspaceName[0] = info.getName();
-        workspaceOwner[0] = info.getOwnerName();
+        workspaceName.set(info.getName());
+        workspaceOwner.set(info.getOwnerName());
       }
     }
 
     List<Changeset> changes = new ArrayList<Changeset>();
     int total = maxCount;
-    final VersionSpec[] versionTo = new VersionSpec[] {versionToOrig};
+    final VersionSpec[] versionTo = new VersionSpec[]{versionToOrig};
 
     while (total > 0) {
       final int batchMax = Math.min(256, total);
       // todo: our stubs differ from opentf' ones. have to find out difference
       Changeset[] changeSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
         public Changeset[] executeRequest() throws RemoteException {
-          return myRepository.QueryHistory(workspaceName[0], workspaceOwner[0], itemSpec, version, user, versionFrom, versionTo[0],
-                                                         batchMax, includeChanges, slotMode, includeDownloadInfo).getChangeset();
+          return myRepository.QueryHistory(workspaceName.get(), workspaceOwner.get(), itemSpec, version, user, versionFrom, versionTo[0],
+                                           batchMax, includeChanges, slotMode, includeDownloadInfo).getChangeset();
         }
       });
       int batchCnt = changeSets.length;
@@ -598,12 +622,22 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public GetOperation get(final String workspasceName, final String ownerName, final String path, VersionSpec versionSpec)
+  public GetOperation get(final String workspasceName, final String ownerName, final String path, final VersionSpec versionSpec)
     throws TfsException {
+    List<GetOperation> operations = get(workspasceName, ownerName, path, versionSpec, RecursionType.None);
+    TFSVcs.assertTrue(operations.size() == 1);
+    return operations.get(0);
+  }
+
+  public List<GetOperation> get(final String workspasceName,
+                                final String ownerName,
+                                final String path,
+                                final VersionSpec versionSpec,
+                                final RecursionType recursionType) throws TfsException {
     final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
     final GetRequest getRequest = new GetRequest();
     final ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setRecurse(RecursionType.None);
+    itemSpec.setRecurse(recursionType);
     itemSpec.setItem(path);
     getRequest.setItemSpec(itemSpec);
     getRequest.setVersionSpec(versionSpec);
@@ -618,17 +652,17 @@ public class VersionControlServer {
       });
 
     if (operations == null) {
-      return null;
+      return Collections.emptyList();
     }
     TFSVcs.assertTrue(operations.length == 1);
-    TFSVcs.assertTrue(operations[0] != null);
-    TFSVcs.assertTrue(operations[0].getGetOperation().length == 1);
-    return operations[0].getGetOperation()[0];
+    ArrayList<GetOperation> result = new ArrayList<GetOperation>();
+    TFSVcs.assertTrue(operations[0].getGetOperation() != null);
+    result.addAll(Arrays.asList(operations[0].getGetOperation()));
+    return result;
   }
 
   @Nullable
   public GetOperation get(final String workspasceName, final String ownerName, final String path) throws TfsException {
     return get(workspasceName, ownerName, path, VersionSpecBase.getLatest());
   }
-
 }

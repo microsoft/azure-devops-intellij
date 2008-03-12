@@ -1,7 +1,8 @@
 package org.jetbrains.tfsIntegration.webservice;
 
 import com.intellij.openapi.diagnostic.Logger;
-import org.apache.axis2.AxisFault;
+import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.io.StreamUtil;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.Stub;
@@ -9,10 +10,7 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.NTCredentials;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.jetbrains.annotations.NonNls;
@@ -35,14 +33,18 @@ import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthenticat
 import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
 import javax.swing.*;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
+import java.util.zip.GZIPInputStream;
 
 public class WebServiceHelper {
 
   @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
+  private static final String CONTENT_TYPE_GZIP = "application/gzip";
 
   public interface NoReturnDelegate {
     void executeRequest() throws RemoteException;
@@ -129,50 +131,62 @@ public class WebServiceHelper {
   }
 
   public static <T> T executeRequest(final Stub stub, final Delegate<T> delegate) throws TfsException {
-    final URI [] serverUri = new URI[]{null};
+    final Ref<URI> serverUri = new Ref<URI>();
     try {
       URI targetEndpoint = new URI(stub._getServiceClient().getOptions().getTo().getAddress());
-      serverUri[0] =
-        new URI(targetEndpoint.getScheme(), null, targetEndpoint.getHost(), targetEndpoint.getPort(), null, null, null); // TODO: trim?
+      serverUri.set(
+        new URI(targetEndpoint.getScheme(), null, targetEndpoint.getHost(), targetEndpoint.getPort(), null, null, null)); // TODO: trim?
     }
     catch (URISyntaxException e) {
       TFSVcs.LOG.error(e);
     }
 
-    return executeRequest(serverUri[0], new InnerDelegate<T>() {
+    return executeRequest(serverUri.get(), new InnerDelegate<T>() {
       public T executeRequest(final Credentials credentials) throws Exception {
-        setCredentials(stub, credentials, serverUri[0]);
+        setCredentials(stub, credentials, serverUri.get());
         return delegate.executeRequest();
       }
     });
   }
 
-  public static String httpGet(final String downloadUrl) throws TfsException {
-    final URI[] serverUri = new URI[]{null};
+  public static void httpGet(final String downloadUrl, final OutputStream outputStream) throws TfsException {
+    final Ref<URI> serverUri = new Ref<URI>();
     try {
       URI uri = new URI(downloadUrl);
-      serverUri[0] = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null); // TODO: trim?
+      serverUri.set(new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null)); // TODO: trim?
     }
     catch (URISyntaxException e) {
       TFSVcs.LOG.error(e);
     }
 
-    return executeRequest(serverUri[0], new InnerDelegate<String>() {
+    executeRequest(serverUri.get(), new InnerDelegate<Object>() {
 
-      public String executeRequest(final Credentials credentials) throws Exception {
+      public Object executeRequest(final Credentials credentials) throws Exception {
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(downloadUrl);
         client.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword(),
-                                                                          serverUri[0].getHost(), credentials.getDomain()));
+                                                                          serverUri.get().getHost(), credentials.getDomain()));
         int statusCode = client.executeMethod(method);
         if (statusCode == HttpStatus.SC_OK) {
-          return method.getResponseBodyAsString();
+          StreamUtil.copyStreamContent(getInputStream(method), outputStream);
         }
         else {
-          throw new AxisFault("Transport error: " + statusCode);
+          throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
         }
+        return null;
       }
     });
+  }
+
+  private static InputStream getInputStream(HttpMethod method) throws Exception {
+    // TODO: find proper way to determine gzip compression
+    Header contentType = method.getResponseHeader(HTTPConstants.HEADER_CONTENT_TYPE);
+    if (contentType != null && CONTENT_TYPE_GZIP.equalsIgnoreCase(contentType.getValue())) {
+      return new GZIPInputStream(method.getResponseBodyAsStream());
+    }
+    else {
+      return method.getResponseBodyAsStream();
+    }
   }
 
   private static <T> T executeRequest(URI serverUri, InnerDelegate<T> delegate) throws TfsException {

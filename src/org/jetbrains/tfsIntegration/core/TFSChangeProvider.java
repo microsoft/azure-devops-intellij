@@ -70,13 +70,13 @@ public class TFSChangeProvider implements ChangeProvider {
     }
 
     final FilePath filePath = VcsUtil.getFilePath(path);
-    if (item == null
-          || item.getDid() != Integer.MIN_VALUE) {  // TODO: process items deleted on server
+    if (item == null || item.getDid() != Integer.MIN_VALUE) {  // TODO: process items deleted on server
       builder.processUnversionedFile(virtualFile);
       return;
     }
     else if (isUnversioned(item)) {
       builder.processUnversionedFile(virtualFile);
+      return;
     }
 
     if (!virtualFile.exists()) {
@@ -86,7 +86,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
     if (isChanged(item)) {
       TFSContentRevision revision = TFSContentRevisionFactory.getRevision(filePath, item.getLatest());
-      builder.processChange(new Change(revision, new CurrentContentRevision(filePath)));
+      builder.processChange(new Change(revision, CurrentContentRevision.create(filePath)));
     }
     else if (isHijacked(item)) {
       builder.processModifiedWithoutCheckout(virtualFile);
@@ -103,7 +103,7 @@ public class TFSChangeProvider implements ChangeProvider {
     if (item.getLocal() == null) {
       ChangeType changeType = ChangeType.fromString(item.getChg());
       if (changeType.isEmpty()) {
-        TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
+        //TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getDid() == Integer.MIN_VALUE);
         return true;
@@ -115,7 +115,7 @@ public class TFSChangeProvider implements ChangeProvider {
   private static boolean isScheduledForAddition(final @NotNull ExtendedItem item) {
     ChangeType changeType = ChangeType.fromString(item.getChg());
     if (changeType.contains(ChangeType.Value.Add)) {
-      //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Edit));
+      TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Edit) || item.getType() == ItemType.Folder);
       TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
       TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
       TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
@@ -156,8 +156,7 @@ public class TFSChangeProvider implements ChangeProvider {
       TFSVcs.assertTrue(item.getDid() == Integer.MIN_VALUE);
       VirtualFile virtualFile = VcsUtil.getVirtualFile(item.getLocal());
       TFSVcs.assertTrue(virtualFile.exists());
-      return virtualFile.isWritable()
-             && item.getType() != ItemType.Folder; // TODO: it seems that folders must never be treated as hijacked
+      return virtualFile.isWritable() && item.getType() != ItemType.Folder; // TODO: it seems that folders must never be treated as hijacked
     }
     return false;
   }

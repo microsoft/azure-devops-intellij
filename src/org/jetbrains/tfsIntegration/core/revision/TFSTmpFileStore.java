@@ -1,7 +1,8 @@
 package org.jetbrains.tfsIntegration.core.revision;
 
-import org.jetbrains.annotations.NonNls;
+import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.FilePath;
+import org.jetbrains.annotations.NonNls;
 
 import java.io.*;
 
@@ -45,28 +46,29 @@ public class TFSTmpFileStore implements TFSContentStore {
     return myTfsTmpDir;
   }
 
-  public void saveContent(final String content) throws IOException {
-    FileWriter out = new FileWriter(myTmpFile);
+  public void saveContent(ContentWriter contentWriter) throws IOException {
+    OutputStream fileStream = null;
     try {
-      out.write(content);
+      fileStream = new FileOutputStream(myTmpFile);
+      contentWriter.write(fileStream);
     }
     finally {
-      out.close();
+      if (fileStream != null) {
+        fileStream.close();
+      }
     }
   }
 
   public String loadContent() throws IOException {
-    StringBuffer sb = new StringBuffer();
-    BufferedReader reader = new BufferedReader(new FileReader(myTmpFile));
+    InputStream fileStream = null;
     try {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        sb.append(line);
-      }
+      fileStream = new FileInputStream(myTmpFile);
+      return StreamUtil.readText(fileStream);
     }
     finally {
-      reader.close();
+      if (fileStream != null) {
+        fileStream.close();
+      }
     }
-    return sb.toString();
   }
 }

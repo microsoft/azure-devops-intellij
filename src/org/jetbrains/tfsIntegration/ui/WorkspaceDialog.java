@@ -299,7 +299,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.ServerPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
-        ServerItemSelectDialog dialog = new ServerItemSelectDialog(null, myWorkspace, initialText, true);
+        ServerItemSelectDialog dialog = new ServerItemSelectDialog(myWorkspace, initialText, true);
         dialog.show();
         if (dialog.isOK()) {
           Object selection = dialog.getSelectedItem();

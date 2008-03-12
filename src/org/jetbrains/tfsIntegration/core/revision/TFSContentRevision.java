@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -13,6 +14,7 @@ import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exc
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,21 +44,33 @@ public class TFSContentRevision implements ContentRevision {
   private String getServerContent() {
     try {
       // get workspace
-      WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(myPath.getPath());
+      final WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(myPath.getPath());
       if (workspaceInfo == null) {
         return null;
       }
       String serverPath = workspaceInfo.findServerPathByLocalPath(myPath.getPath());
       // get server item
-      GetOperation operation = workspaceInfo.get(serverPath);
+      final GetOperation operation = workspaceInfo.get(serverPath);
       if (operation == null) {
         return null;
       }
       TFSContentStore store = TFSContentStoreFactory.find(myPath, myRevision);
       if (store == null) {
         store = TFSContentStoreFactory.create(myPath, myRevision);
-        String content = VersionControlServer.downloadItem(workspaceInfo, operation);
-        store.saveContent(content);
+        final Ref<TfsException> exception = new Ref<TfsException>();
+        store.saveContent(new TFSContentStore.ContentWriter() {
+          public void write(final OutputStream outputStream) {
+            try {
+              VersionControlServer.downloadItem(workspaceInfo, operation.getDurl(), outputStream);
+            }
+            catch (TfsException e) {
+              exception.set(e);
+            }
+          }
+        });
+        if (!exception.isNull()) {
+          throw exception.get();
+        }
       }
       return store.loadContent();
     }

@@ -14,10 +14,11 @@ public class TFSDocumentUserDataStore implements TFSContentStore {
   TFSDocumentUserDataStore(final FilePath path, final int revision) throws IOException {
   }
 
-  public void saveContent(final String content) throws IOException {
+  public void saveContent(final ContentWriter contentWriter) throws IOException {
+    //To change body of implemented methods use File | Settings | File Templates.
   }
 
   public String loadContent() throws IOException {
-    return null;
+    return null;  //To change body of implemented methods use File | Settings | File Templates.
   }
 }
