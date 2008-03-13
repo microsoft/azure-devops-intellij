@@ -1,6 +1,5 @@
 package org.jetbrains.tfsIntegration.webservice;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.StreamUtil;
 import org.apache.axis2.Constants;
@@ -22,10 +21,10 @@ import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.ConnectionFailedException;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.UnauthorizedException;
+import org.jetbrains.tfsIntegration.stubs.exceptions.ConnectionFailedException;
+import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.stubs.exceptions.UnauthorizedException;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
@@ -67,14 +66,12 @@ public class WebServiceHelper {
     System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
     System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
 
-    System.setProperty("http.proxyHost", "127.0.0.1");
-    System.setProperty("http.proxyPort", "8888");
+    //System.setProperty("http.proxyHost", "127.0.0.1");
+    //System.setProperty("http.proxyPort", "8888");
   }
 
   @NonNls private static final String TFS_TOOL_ID = "vstfs";
   @NonNls private static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
-
-  private static final Logger LOG = Logger.getInstance(WebServiceHelper.class.getName());
 
   public static String authenticate(final URI serverUri, final Credentials credentials) throws TfsException {
     // TODO: refactor: use executeRequest()
@@ -83,6 +80,7 @@ public class WebServiceHelper {
         new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
       setupStub(serverStatusStub);
       setCredentials(serverStatusStub, credentials, serverUri);
+      setProxy(serverStatusStub);
       String result = serverStatusStub.CheckAuthentication(new CheckAuthentication());
       String expected = credentials.getDomain() + "\\" + credentials.getUserName();
       if (!expected.equalsIgnoreCase(result)) {
@@ -92,6 +90,7 @@ public class WebServiceHelper {
         new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
       setupStub(registrationStub);
       setCredentials(registrationStub, credentials, serverUri);
+      setProxy(registrationStub);
       ArrayOfRegistrationEntry registrationEntries = registrationStub.GetRegistrationEntries(TFS_TOOL_ID);
       for (RegistrationEntry entry : registrationEntries.getRegistrationEntry()) {
         if (TFS_TOOL_ID.equals(entry.getType())) {
@@ -107,16 +106,6 @@ public class WebServiceHelper {
     catch (Exception e) {
       throw TfsExceptionManager.processException(e);
     }
-  }
-
-  private static void setCredentials(Stub stub, Credentials credentials, URI serverUri) {
-    Options options = stub._getServiceClient().getOptions();
-    HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-    auth.setUsername(credentials.getUserName());
-    auth.setPassword(credentials.getPassword());
-    auth.setDomain(credentials.getDomain());
-    auth.setHost(serverUri.getHost());
-    options.setProperty(HTTPConstants.AUTHENTICATE, auth);
   }
 
   public static void executeRequest(Stub stub, final NoReturnDelegate delegate) throws TfsException {
@@ -144,6 +133,7 @@ public class WebServiceHelper {
     return executeRequest(serverUri.get(), new InnerDelegate<T>() {
       public T executeRequest(final Credentials credentials) throws Exception {
         setCredentials(stub, credentials, serverUri.get());
+        setProxy(stub);
         return delegate.executeRequest();
       }
     });
@@ -162,11 +152,12 @@ public class WebServiceHelper {
     executeRequest(serverUri.get(), new InnerDelegate<Object>() {
 
       public Object executeRequest(final Credentials credentials) throws Exception {
-        HttpClient client = new HttpClient();
+        HttpClient httpClient = new HttpClient();
+        setCredentials(httpClient, credentials, serverUri.get());
+        setProxy(httpClient);
+
         HttpMethod method = new GetMethod(downloadUrl);
-        client.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword(),
-                                                                          serverUri.get().getHost(), credentials.getDomain()));
-        int statusCode = client.executeMethod(method);
+        int statusCode = httpClient.executeMethod(method);
         if (statusCode == HttpStatus.SC_OK) {
           StreamUtil.copyStreamContent(getInputStream(method), outputStream);
         }
@@ -252,6 +243,45 @@ public class WebServiceHelper {
     ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
     configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
     return configContext;
+  }
+
+  private static void setProxy(Stub stub) {
+    final HttpTransportProperties.ProxyProperties proxyProperties;
+    if (TFSVcs.getProxyHost() != null) {
+      proxyProperties = new HttpTransportProperties.ProxyProperties();
+      proxyProperties.setProxyName(TFSVcs.getProxyHost());
+      proxyProperties.setProxyPort(TFSVcs.getProxyPort());
+    }
+    else {
+      proxyProperties = null;
+    }
+
+    Options options = stub._getServiceClient().getOptions();
+    options.setProperty(HTTPConstants.PROXY, proxyProperties);
+  }
+
+  private static void setProxy(HttpClient httpClient) {
+    if (TFSVcs.getProxyHost() != null) {
+      httpClient.getHostConfiguration().setProxy(TFSVcs.getProxyHost(), TFSVcs.getProxyPort());
+    }
+    else {
+      httpClient.getHostConfiguration().setProxyHost(null);
+    }
+  }
+
+  private static void setCredentials(Stub stub, Credentials credentials, URI serverUri) {
+    Options options = stub._getServiceClient().getOptions();
+    HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
+    auth.setUsername(credentials.getUserName());
+    auth.setPassword(credentials.getPassword());
+    auth.setDomain(credentials.getDomain());
+    auth.setHost(serverUri.getHost());
+    options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+  }
+
+  private static void setCredentials(HttpClient httpClient, Credentials credentials, URI serverUri) {
+    httpClient.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword(),
+                                                                          serverUri.getHost(), credentials.getDomain()));
   }
 
   public static void setupStub(Stub stub) {

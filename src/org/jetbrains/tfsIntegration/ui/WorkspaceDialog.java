@@ -4,12 +4,13 @@ import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.EnumComboBoxModel;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -370,8 +371,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     }
     catch (TfsException e) {
       String message = MessageFormat.format("Failed to refresh workspace ''{0}''.\n{1}", myWorkspace.getName(), e.getLocalizedMessage());
-      JOptionPane
-        .showMessageDialog(null, message, getTitle(), JOptionPane.ERROR_MESSAGE);
+      Messages.showErrorDialog(message, getTitle());
     }
     myFoldersTable.getSelectionModel().clearSelection();
     updateButtons();

@@ -3,7 +3,7 @@ package org.jetbrains.tfsIntegration.core.revision;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.

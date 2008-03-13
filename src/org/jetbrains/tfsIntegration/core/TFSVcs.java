@@ -13,20 +13,9 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
-/**
- * Created by IntelliJ IDEA.
- * Date: 27.01.2008
- * Time: 18:24:26
- */
 public class TFSVcs extends AbstractVcs {
-
-  static {
-    // enable Fiddler as proxy
-    System.setProperty("http.proxyHost", "127.0.0.1");
-    System.setProperty("http.proxyPort", "8888");
-  }
 
   @NonNls public static final String TFS_NAME = "TFS";
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
@@ -45,15 +34,6 @@ public class TFSVcs extends AbstractVcs {
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
     myDeleteConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.REMOVE, this);
     myCheckoutOptions = vcsManager.getStandardOption(VcsConfiguration.StandardOption.CHECKOUT, this);
-  }
-
-  public static void main(String[] args) {
-    //System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
-    //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
-    //System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
-    //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-    //ServerInfo.checkServer("http://st-tfs01:8080", "tfsuser", "SWIFTTEAMS", "Parol");
-    //testTFSConnect();
   }
 
   public static TFSVcs getInstance(Project project) {
@@ -164,4 +144,23 @@ public class TFSVcs extends AbstractVcs {
     // TODO: inline with assert statement
     LOG.assertTrue(condition);
   }
+
+  public static String getProxyHost() {
+    if (Boolean.parseBoolean(System.getProperty("TFS.UseFiddler"))) {
+      return "127.0.0.1";
+    }
+    else {
+      return null;
+    }
+  }
+
+  public static int getProxyPort() {
+    if (Boolean.parseBoolean(System.getProperty("TFS.UseFiddler"))) {
+      return 8888;
+    }
+    else {
+      return -1;
+    }
+  }
+
 }

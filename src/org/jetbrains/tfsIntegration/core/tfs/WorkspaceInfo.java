@@ -3,13 +3,10 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
-import org.jetbrains.tfsIntegration.stubs.org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class WorkspaceInfo {
 
@@ -47,6 +44,7 @@ public class WorkspaceInfo {
     myTimestamp = timestamp;
   }
 
+  // TODO: make private
   @NotNull
   public ServerInfo getServer() {
     return myServerInfo;
@@ -218,6 +216,19 @@ public class WorkspaceInfo {
     return copy;
   }
 
+  public ExtendedItem getExtendedItem(final String serverPath) throws TfsException {
+    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
+  }
+
+  public Map<String, ExtendedItem> getExtendedItems(final List<String> paths) throws TfsException {
+    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
+  }
+
+  public GetOperation get(final String serverPath) throws TfsException {
+    return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
+  }
+
+
   @SuppressWarnings({"HardCodedStringLiteral"})
   public String toString() {
     return "WorkspaceInfo[server=" +
@@ -233,15 +244,4 @@ public class WorkspaceInfo {
            "]";
   }
 
-  public ExtendedItem getExtendedItem(final String serverPath) throws TfsException {
-    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
-  }
-
-  public List<ExtendedItem> getExtendedItems(final List<String> paths) throws TfsException {
-    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
-  }
-
-  public GetOperation get(final String serverPath) throws TfsException {
-    return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
-  }
 }

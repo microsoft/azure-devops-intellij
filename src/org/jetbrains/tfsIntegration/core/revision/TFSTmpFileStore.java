@@ -2,7 +2,9 @@ package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 
@@ -10,6 +12,7 @@ public class TFSTmpFileStore implements TFSContentStore {
   @NonNls private static final String TMP_FILE_NAME = "idea_tfs";
   private static String myTfsTmpDir;
 
+  @Nullable
   public static TFSContentStore find(final FilePath path, final int revision) throws IOException {
     File tmpFile = new File(createTmpFileName(path, revision));
     if (tmpFile.exists()) {
@@ -63,7 +66,8 @@ public class TFSTmpFileStore implements TFSContentStore {
     InputStream fileStream = null;
     try {
       fileStream = new FileInputStream(myTmpFile);
-      return StreamUtil.readText(fileStream);
+      byte [] content = StreamUtil.loadFromStream(fileStream);
+      return CharsetToolkit.bytesToString(content);
     }
     finally {
       if (fileStream != null) {

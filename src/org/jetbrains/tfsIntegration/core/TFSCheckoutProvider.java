@@ -18,12 +18,14 @@ import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LocalVersionUpdate;
 import org.jetbrains.tfsIntegration.ui.ItemTreeNode;
 import org.jetbrains.tfsIntegration.ui.ServerItemSelectDialog;
 import org.jetbrains.tfsIntegration.ui.WorkspacesDialog;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TFSCheckoutProvider implements CheckoutProvider {
@@ -58,6 +60,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
         try {
           final List<GetOperation> operations = workspaceInfo.getServer().getVCS()
             .get(workspaceInfo.getName(), workspaceInfo.getOwnerName(), serverRoot, LatestVersionSpec.getLatest(), RecursionType.Full);
+          List<LocalVersionUpdate> localVersions = new ArrayList<LocalVersionUpdate>();
           localRoot.set(new File(operations.get(0).getTlocal()));
           for (GetOperation operation : operations) {
             progressIndicator.setText("Checkout from TFS: " + operation.getTitem());
@@ -70,9 +73,16 @@ public class TFSCheckoutProvider implements CheckoutProvider {
                 file.getParentFile().mkdirs();
               }
               VersionControlServer.downloadItem(workspaceInfo, operation.getDurl(), file);
+              file.setReadOnly();
             }
+            LocalVersionUpdate localVersionUpdate = new LocalVersionUpdate();
+            localVersionUpdate.setItemid(operation.getItemid());
+            localVersionUpdate.setTlocal(operation.getTlocal());
+            localVersionUpdate.setLver(operation.getLver());
+            localVersions.add(localVersionUpdate);
             progressIndicator.checkCanceled();
           }
+          workspaceInfo.getServer().getVCS().updateLocalVersions(workspaceInfo.getName(), workspaceInfo.getOwnerName(), localVersions);
           checkoutSuccessful.set(true);
         }
         catch (Exception e) {

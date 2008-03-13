@@ -558,7 +558,11 @@
         <root url="jar://$PROJECT_DIR$/lib/commons-httpclient-3.1.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES />
+      <SOURCES>
+        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/java" />
+        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/contrib" />
+        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/test" />
+      </SOURCES>
     </library>
     <library name="TFS Stubs">
       <CLASSES>
@@ -566,7 +570,7 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/stubs_src.zip!/src" />
+        <root url="jar://$PROJECT_DIR$/lib/stubs_src.zip!/" />
       </SOURCES>
     </library>
   </component>
