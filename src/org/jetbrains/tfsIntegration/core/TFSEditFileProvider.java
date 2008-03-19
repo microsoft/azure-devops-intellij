@@ -8,7 +8,8 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.apache.axis2.databinding.ADBBean;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.IOException;
@@ -32,11 +33,12 @@ public class TFSEditFileProvider implements EditFileProvider {
           }
         });
       for (String localPath : localPaths) {
-        ADBBean result = processResult.results.get(localPath);
-        if ( result instanceof GetOperation) {
+        ADBBean resultBean = processResult.results.get(localPath);
+        if (resultBean instanceof GetOperation) {
           ReadOnlyAttributeUtil.setReadOnlyAttribute(VcsUtil.getVirtualFile(localPath), false);
-        } else {
-          TFSVcs.LOG.info("Failed to checkout " + localPath);
+        }
+        else {
+          throw new VcsException("Failed to checkout " + localPath + ": " + ((Failure)resultBean).getMessage());
         }
       }
     }

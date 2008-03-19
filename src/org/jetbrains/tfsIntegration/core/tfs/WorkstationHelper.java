@@ -1,11 +1,8 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public class WorkstationHelper {
 
@@ -19,6 +16,11 @@ public class WorkstationHelper {
     Map<String, T> executeRequest(WorkspaceInfo workspace, List<String> serverPaths) throws TfsException;
   }
 
+  public interface VoidDelegate {
+
+    void executeRequest(WorkspaceInfo workspace, List<String> serverPaths) throws TfsException;
+  }
+
   public static class ProcessResult<T> {
     public final Map<String, T> results;
     public final List<String> workspaceNotFound;
@@ -27,6 +29,19 @@ public class WorkstationHelper {
       this.results = results;
       this.workspaceNotFound = workspaceNotFound;
     }
+  }
+
+  /**
+   * @return workspace not found
+   */
+  public static List<String> processByWorkspaces(List<String> localPaths, final VoidDelegate delegate) throws TfsException {
+    ProcessResult<Object> result = processByWorkspaces(localPaths, new Delegate<Object>() {
+      public Map<String, Object> executeRequest(final WorkspaceInfo workspace, final List<String> serverPaths) throws TfsException {
+        delegate.executeRequest(workspace, serverPaths);
+        return Collections.emptyMap();
+      }
+    });
+    return result.workspaceNotFound;
   }
 
   public static <T> ProcessResult<T> processByWorkspaces(List<String> localPaths, Delegate<T> delegate) throws TfsException {

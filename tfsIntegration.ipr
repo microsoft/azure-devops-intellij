@@ -570,7 +570,7 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/stubs_src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/stubs_src.zip!/src" />
       </SOURCES>
     </library>
   </component>

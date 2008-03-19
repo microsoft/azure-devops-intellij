@@ -10,7 +10,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.EnumComboBoxModel;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;

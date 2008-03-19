@@ -4,8 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.exceptions.WorkspaceNotFoundException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
 import java.net.URI;

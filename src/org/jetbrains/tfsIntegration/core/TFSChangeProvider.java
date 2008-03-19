@@ -14,13 +14,18 @@ import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevisionFactory;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+/**
+ * TODO important cases
+ * 1. when folder1 is unversioned and folder1/file1 is scheduled for addition, team exploded effectively shows folder1 as scheduled for addition
+ */
 
 public class TFSChangeProvider implements ChangeProvider {
 

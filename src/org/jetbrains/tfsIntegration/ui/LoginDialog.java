@@ -197,6 +197,16 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     JPanel dummyPanel = new JPanel();
     panel.add(dummyPanel, gc);
 
+    if (myUriField.getText() == null || myUriField.getText().length() == 0) {
+      myUriField.requestFocusInWindow();
+    }
+    else if (myUsernameField.getText() == null || myUsernameField.getText().length() == 0) {
+      myUsernameField.requestFocusInWindow();
+    }
+    else {
+      myPasswordField.requestFocusInWindow();
+    }
+
     return panel;
   }
 

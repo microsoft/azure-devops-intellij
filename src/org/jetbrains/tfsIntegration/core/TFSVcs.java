@@ -13,7 +13,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 public class TFSVcs extends AbstractVcs {
 
@@ -127,7 +127,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public UpdateEnvironment getUpdateEnvironment() {
-    return super.getUpdateEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
+    return new TFSUpdateEnvironment();    
   }
 
   @Nullable

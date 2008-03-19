@@ -12,12 +12,16 @@ import javax.xml.stream.XMLStreamException;
  * Time: 3:05:06
  */
 public class ChangesetVersionSpec extends VersionSpecBase {
+  private int changeSetId;
+
   public ChangesetVersionSpec(final int changeSetId) {
-    // todo: implement or drop
+    this.changeSetId = changeSetId;
   }
 
   protected void writeAttributes(final QName parentQName, final OMFactory factory, final MTOMAwareXMLStreamWriter xmlWriter)
     throws XMLStreamException {
-    //To change body of implemented methods use File | Settings | File Templates.
+    writeVersionAttribute("", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance", xmlWriter);
+    writeVersionAttribute("", "xsi:type", "ChangesetVersionSpec", xmlWriter);
+    writeVersionAttribute("", "cs", Integer.toString(changeSetId), xmlWriter);
   }
 }

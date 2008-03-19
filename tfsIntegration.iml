@@ -11,6 +11,7 @@
     <orderEntry type="library" name="Axis2" level="project" />
     <orderEntry type="library" name="HttpClient" level="project" />
     <orderEntry type="library" name="TFS Stubs" level="project" />
+    <orderEntry type="library" name="JDK sources" level="project" />
     <orderEntryProperties />
   </component>
 </module>

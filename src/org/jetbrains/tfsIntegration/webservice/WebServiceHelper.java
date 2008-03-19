@@ -21,10 +21,10 @@ import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.stubs.exceptions.ConnectionFailedException;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.stubs.exceptions.UnauthorizedException;
+import org.jetbrains.tfsIntegration.exceptions.ConnectionFailedException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.exceptions.UnauthorizedException;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
@@ -45,7 +45,7 @@ public class WebServiceHelper {
   @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
   private static final String CONTENT_TYPE_GZIP = "application/gzip";
 
-  public interface NoReturnDelegate {
+  public interface VoidDelegate {
     void executeRequest() throws RemoteException;
   }
 
@@ -65,9 +65,6 @@ public class WebServiceHelper {
     System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
     System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
     System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
-
-    //System.setProperty("http.proxyHost", "127.0.0.1");
-    //System.setProperty("http.proxyPort", "8888");
   }
 
   @NonNls private static final String TFS_TOOL_ID = "vstfs";
@@ -108,7 +105,7 @@ public class WebServiceHelper {
     }
   }
 
-  public static void executeRequest(Stub stub, final NoReturnDelegate delegate) throws TfsException {
+  public static void executeRequest(Stub stub, final VoidDelegate delegate) throws TfsException {
     executeRequest(stub, new Delegate<Object>() {
 
       @Nullable
