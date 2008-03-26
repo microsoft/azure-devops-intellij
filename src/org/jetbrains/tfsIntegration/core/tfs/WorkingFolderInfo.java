@@ -1,5 +1,8 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class WorkingFolderInfo {
@@ -9,26 +12,26 @@ public class WorkingFolderInfo {
     Cloaked
   }
 
-  private @NotNull String myLocalPath;
+  private @NotNull FilePath myLocalPath;
   private @NotNull String myServerPath;
   private @NotNull Status myStatus;
 
   public WorkingFolderInfo() {
-    this("");
+    this(VcsUtil.getFilePath("")); // TODO can do this?
   }
 
-  public WorkingFolderInfo(final String localPath) {
+  public WorkingFolderInfo(final FilePath localPath) {
     this(Status.Active, localPath, "");
   }
 
-  public WorkingFolderInfo(final Status status, final String localPath, final String serverPath) {
+  public WorkingFolderInfo(final Status status, final FilePath localPath, final String serverPath) {
     myStatus = status;
     myLocalPath = localPath;
     myServerPath = serverPath;
   }
 
   @NotNull
-  public String getLocalPath() {
+  public FilePath getLocalPath() {
     return myLocalPath;
   }
 
@@ -50,13 +53,23 @@ public class WorkingFolderInfo {
     myServerPath = serverPath;
   }
 
-  public void setLocalPath(final @NotNull String localPath) {
+  public void setLocalPath(final @NotNull FilePath localPath) {
     myLocalPath = localPath;
   }
 
   public WorkingFolderInfo getCopy() {
     WorkingFolderInfo copy = new WorkingFolderInfo(myStatus, myLocalPath, myServerPath);
     return copy;
+  }
+
+  public String getServerPathByLocalPath(FilePath localPath) {
+    if (getServerPath().length() > 0 && localPath.isUnder(getLocalPath(), false)) {
+      String localPathString = localPath.getIOFile().getPath();
+      String thisPathString = getLocalPath().getIOFile().getPath();
+      String remainder = FileUtil.toSystemIndependentName(localPathString.substring(thisPathString.length()));
+      return getServerPath() + remainder;
+    }
+    return null;
   }
 
 }

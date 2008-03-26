@@ -55,7 +55,11 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
 
   public URI getUri() {
     try {
-      return new URI(myUriField.getText());
+      String uriText = myUriField.getText();
+      if (!uriText.endsWith("/")) {
+        uriText = uriText.concat("/");
+      }
+      return new URI(uriText);
     }
     catch (URISyntaxException e) {
       LOG.info(e);

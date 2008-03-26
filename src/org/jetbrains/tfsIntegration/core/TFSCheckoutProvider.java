@@ -62,9 +62,11 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           List<LocalVersionUpdate> localVersions = new ArrayList<LocalVersionUpdate>();
           localRoot.set(new File(operations.get(0).getTlocal()));
           for (GetOperation operation : operations) {
-            progressIndicator.setText("Checkout from TFS: " + operation.getTitem());
-            VersionControlServer.downloadItem(workspace, operation, true, true);
-            localVersions.add(VersionControlServer.createLocalVersionUpdate(operation));
+            if (operation.getDurl() != null) {
+              progressIndicator.setText("Checkout from TFS: " + operation.getTitem());
+              VersionControlServer.downloadItem(workspace, operation, true, true);
+              localVersions.add(VersionControlServer.createLocalVersionUpdate(operation));
+            }
             progressIndicator.checkCanceled();
           }
           workspace.getServer().getVCS().updateLocalVersions(workspace.getName(), workspace.getOwnerName(), localVersions);

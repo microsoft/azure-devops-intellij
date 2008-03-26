@@ -12,6 +12,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -112,7 +113,7 @@ public class TFSVcs extends AbstractVcs {
 
   public boolean isVersionedDirectory(final VirtualFile dir) {
     try {
-      return Workstation.getInstance().findWorkspace(dir.getPath()) != null;
+      return Workstation.getInstance().findWorkspace(TfsFileUtil.getFilePath(dir)) != null;
     }
     catch (TfsException e) {
       LOG.info(e);

@@ -46,19 +46,13 @@ public class ServerInfo {
   }
 
   public List<WorkspaceInfo> getWorkspacesForCurrentOwner() {
-    Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
-    if (credentials != null) {
-      List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-      for (WorkspaceInfo workspaceInfo : getWorkspaces()) {
-        if (credentials.getQualifiedUsername().equalsIgnoreCase(workspaceInfo.getOwnerName())) {
-          result.add(workspaceInfo);
-        }
+    List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
+    for (WorkspaceInfo workspaceInfo : getWorkspaces()) {
+      if (workspaceInfo.hasCurrentOwner()) {
+        result.add(workspaceInfo);
       }
-      return Collections.unmodifiableList(result);
     }
-    else {
-      return Collections.emptyList();
-    }
+    return Collections.unmodifiableList(result);
   }
 
   public List<WorkspaceInfo> getWorkspaces() {

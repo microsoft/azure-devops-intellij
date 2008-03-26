@@ -374,7 +374,7 @@
       <module fileurl="file://$PROJECT_DIR$/tfsIntegration.iml" filepath="$PROJECT_DIR$/tfsIntegration.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 7656 - plugins excluded" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 7656" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ResourceManagerContainer">
@@ -558,11 +558,7 @@
         <root url="jar://$PROJECT_DIR$/lib/commons-httpclient-3.1.jar!/" />
       </CLASSES>
       <JAVADOC />
-      <SOURCES>
-        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/java" />
-        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/contrib" />
-        <root url="jar://C:/Archive/commons-httpclient-3.1-src.zip!/commons-httpclient-3.1/src/test" />
-      </SOURCES>
+      <SOURCES />
     </library>
     <library name="TFS Stubs">
       <CLASSES>

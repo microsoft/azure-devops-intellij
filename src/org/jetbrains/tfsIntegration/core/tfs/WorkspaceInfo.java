@@ -1,8 +1,12 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.credentials.Credentials;
+import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
@@ -63,6 +67,7 @@ public class WorkspaceInfo {
   }
 
   public void setName(final String name) {
+    checkCurrentOwner();
     myModifiedName = name;
   }
 
@@ -71,6 +76,7 @@ public class WorkspaceInfo {
   }
 
   public void setComment(final String comment) {
+    checkCurrentOwner();
     myComment = comment;
   }
 
@@ -79,16 +85,9 @@ public class WorkspaceInfo {
   }
 
   public void setTimestamp(final Calendar timestamp) {
+    checkCurrentOwner();
     myTimestamp = timestamp;
   }
-
-  //public boolean isWorkingFoldersCached() {
-  //  return myWorkingFoldersCached;
-  //}
-
-  //public void setWorkingFoldersCached(final boolean workingFoldersCached) {
-  //  myWorkingFoldersCached = workingFoldersCached;
-  //}
 
   public List<WorkingFolderInfo> getWorkingFoldersInfos() throws TfsException {
     loadFromServer();
@@ -96,39 +95,58 @@ public class WorkspaceInfo {
   }
 
   public void loadFromServer() throws TfsException {
-    if (myOriginalName != null && !myLoaded) {
-      Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
-      fromBean(workspaceBean, this);
-      myLoaded = true;
+    if (hasCurrentOwner()) {
+      if (myOriginalName != null && !myLoaded) {
+        Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
+        fromBean(workspaceBean, this);
+        myLoaded = true;
+      }
+    }
+  }
+
+  boolean hasCurrentOwner() {
+    Credentials credentials = CredentialsManager.getInstance().getCredentials(getServer().getUri());
+    return credentials != null && credentials.getQualifiedUsername().equalsIgnoreCase(getOwnerName());
+  }
+
+  private void checkCurrentOwner() {
+    if (!hasCurrentOwner()) {
+      throw new IllegalStateException("Workspace " + getName() + " has other owner");
     }
   }
 
   @Nullable
-  public String findServerPathByLocalPath(final @NotNull String localPath) throws TfsException {
+  public String findServerPathByLocalPath(final @NotNull FilePath localPath) throws TfsException {
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
-      String normalizedMappedLocalPath = VersionControlPath.getNormalizedPath(folderInfo.getLocalPath());
-      if (localPath.startsWith(normalizedMappedLocalPath)) {
-        String localPathRemainder = localPath.substring(normalizedMappedLocalPath.length());
-        if (folderInfo.getServerPath().length() > 0) {
-          return folderInfo.getServerPath() + localPathRemainder;
-        }
-        else {
-          return null;
-        }
+      String serverPath = folderInfo.getServerPathByLocalPath(localPath);
+      if (serverPath != null) {
+        return serverPath;
       }
     }
     return null;
   }
 
+  public boolean isWorkingFolder(final @NotNull FilePath localPath) throws TfsException {
+    for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
+      if (folderInfo.getLocalPath().equals(localPath)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
+    checkCurrentOwner();
     myWorkingFoldersInfos.add(workingFolderInfo);
   }
 
   public void removeWorkingFolderInfo(final WorkingFolderInfo folderInfo) {
+    checkCurrentOwner();
     myWorkingFoldersInfos.remove(folderInfo);
   }
 
   public void saveToServer() throws TfsException {
+    checkCurrentOwner();
     if (myOriginalName != null) {
       getServer().getVCS().updateWorkspace(myOriginalName, getOwnerName(), toBean(this));
     }
@@ -163,7 +181,7 @@ public class WorkspaceInfo {
   private static WorkingFolder toBean(final WorkingFolderInfo folderInfo) {
     WorkingFolder bean = new WorkingFolder();
     bean.setItem(folderInfo.getServerPath());
-    bean.setLocal(folderInfo.getLocalPath());
+    bean.setLocal(VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
     bean.setType(folderInfo.getStatus() == WorkingFolderInfo.Status.Cloaked ? WorkingFolderType.Cloak : WorkingFolderType.Map);
     return bean;
   }
@@ -173,7 +191,7 @@ public class WorkspaceInfo {
     WorkingFolderInfo.Status status =
       WorkingFolderType.Cloak.equals(bean.getType()) ? WorkingFolderInfo.Status.Cloaked : WorkingFolderInfo.Status.Active;
     if (bean.getLocal() != null) {
-      return new WorkingFolderInfo(status, bean.getLocal(), bean.getItem());
+      return new WorkingFolderInfo(status, VcsUtil.getFilePath(bean.getLocal()), bean.getItem());
     }
     else {
       TFSVcs.LOG.info("null local folder mapping for " + bean.getItem());
@@ -216,11 +234,11 @@ public class WorkspaceInfo {
     return copy;
   }
 
-  public ExtendedItem getExtendedItem(final String serverPath) throws TfsException {
-    return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
-  }
+  //public ExtendedItem getExtendedItem(final String serverPath) throws TfsException {
+  //  return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
+  //}
 
-  public Map<String, ExtendedItem> getExtendedItems(final List<String> paths) throws TfsException {
+  public Map<ItemPath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
   }
 

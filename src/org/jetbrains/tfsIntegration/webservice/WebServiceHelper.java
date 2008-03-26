@@ -21,10 +21,7 @@ import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.exceptions.ConnectionFailedException;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.exceptions.UnauthorizedException;
+import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
@@ -61,10 +58,10 @@ public class WebServiceHelper {
 
 
   static {
-    System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
-    System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
-    System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
-    System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
+    //System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.SimpleLog");
+    //System.setProperty("org.apache.commons.logging.simplelog.showdatetime", "true");
+    //System.setProperty("org.apache.commons.logging.simplelog.log.httpclient.wire.header", "debug");
+    //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
   }
 
   @NonNls private static final String TFS_TOOL_ID = "vstfs";

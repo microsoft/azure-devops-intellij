@@ -44,11 +44,11 @@ public class TFSContentRevision implements ContentRevision {
   private String getServerContent() {
     try {
       // get workspace
-      final WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(myPath.getPath());
+      final WorkspaceInfo workspaceInfo = Workstation.getInstance().findWorkspace(myPath);
       if (workspaceInfo == null) {
         return null;
       }
-      String serverPath = workspaceInfo.findServerPathByLocalPath(myPath.getPath());
+      String serverPath = workspaceInfo.findServerPathByLocalPath(myPath);
       // get server item
       final GetOperation operation = workspaceInfo.get(serverPath);
       if (operation == null) {

@@ -1,58 +1,104 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.util.*;
 
+// TODO: rename this class
 public class WorkstationHelper {
 
   private WorkstationHelper() {
   }
 
-  public interface Delegate<T> {
-    /**
-     * @return serverPath -> result
-     */
-    Map<String, T> executeRequest(WorkspaceInfo workspace, List<String> serverPaths) throws TfsException;
+  public interface ProcessDelegate<T> {
+    List<T> executeRequest(WorkspaceInfo workspace, List<ItemPath> paths) throws TfsException;
   }
 
-  public interface VoidDelegate {
+  public interface VoidProcessDelegate {
+    void executeRequest(WorkspaceInfo workspace, List<ItemPath> paths) throws TfsException;
+  }
 
-    void executeRequest(WorkspaceInfo workspace, List<String> serverPaths) throws TfsException;
+  public interface OneToOneProcessDelegate<T> {
+    Map<ItemPath, T> executeRequest(WorkspaceInfo workspace, List<ItemPath> paths) throws TfsException;
   }
 
   public static class ProcessResult<T> {
-    public final Map<String, T> results;
-    public final List<String> workspaceNotFound;
+    public final List<T> results;
+    public final List<FilePath> pathsForWhichWorkspaceNotFound;
 
-    public ProcessResult(final Map<String, T> results, final List<String> workspaceNotFound) {
+    public ProcessResult(final List<T> results, final List<FilePath> pathsForWhichWorkspaceNotFound) {
       this.results = results;
-      this.workspaceNotFound = workspaceNotFound;
+      this.pathsForWhichWorkspaceNotFound = pathsForWhichWorkspaceNotFound;
     }
   }
 
+  public static class OneToOneProcessResult<T> {
+    public final Map<ItemPath, T> results;
+    public final List<FilePath> pathsForWhichWorkspaceNotFound;
+
+    public OneToOneProcessResult(final Map<ItemPath, T> results, final List<FilePath> pathsForWhichWorkspaceNotFound) {
+      this.results = results;
+      this.pathsForWhichWorkspaceNotFound = pathsForWhichWorkspaceNotFound;
+    }
+  }
+
+  private interface WorkspaceProcessor {
+    void process(WorkspaceInfo workspace, List<ItemPath> paths) throws TfsException;
+  }
+
   /**
-   * @return workspace not found
+   * @return paths for which workspace was not found
    */
-  public static List<String> processByWorkspaces(List<String> localPaths, final VoidDelegate delegate) throws TfsException {
-    ProcessResult<Object> result = processByWorkspaces(localPaths, new Delegate<Object>() {
-      public Map<String, Object> executeRequest(final WorkspaceInfo workspace, final List<String> serverPaths) throws TfsException {
-        delegate.executeRequest(workspace, serverPaths);
+  public static List<FilePath> processByWorkspaces(List<FilePath> localPaths, final VoidProcessDelegate delegate) throws TfsException {
+    OneToOneProcessResult<Object> result = processByWorkspaces(localPaths, new OneToOneProcessDelegate<Object>() {
+      public Map<ItemPath, Object> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+        delegate.executeRequest(workspace, paths);
         return Collections.emptyMap();
       }
     });
-    return result.workspaceNotFound;
+    return result.pathsForWhichWorkspaceNotFound;
   }
 
-  public static <T> ProcessResult<T> processByWorkspaces(List<String> localPaths, Delegate<T> delegate) throws TfsException {
-    List<String> workspaceNotFoundLocalPaths = new ArrayList<String>();
-    Map<WorkspaceInfo, List<String>> workspace2localPaths = new HashMap<WorkspaceInfo, List<String>>();
-    for (String localPath : localPaths) {
+  public static <T> ProcessResult<T> processByWorkspaces(List<FilePath> localPaths, final ProcessDelegate<T> delegate) throws TfsException {
+    final List<T> overallResults = new ArrayList<T>();
+    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
+      public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+        overallResults.addAll(delegate.executeRequest(workspace, paths));
+      }
+    });
+    return new ProcessResult<T>(overallResults, workspaceNotFoundLocalPaths);
+  }
+
+  public static <T> OneToOneProcessResult<T> processByWorkspaces(List<FilePath> localPaths, final OneToOneProcessDelegate<T> delegate)
+    throws TfsException {
+    final Map<ItemPath, T> overallResults = new HashMap<ItemPath, T>(localPaths.size());
+    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
+      public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+        Map<ItemPath, T> serverPath2result = delegate.executeRequest(workspace, paths);
+        for (ItemPath itemPath : paths) {
+          overallResults.put(itemPath, serverPath2result.get(itemPath));
+        }
+      }
+    });
+    return new OneToOneProcessResult<T>(overallResults, workspaceNotFoundLocalPaths);
+  }
+
+  /**
+   * @param localPaths
+   * @param processor
+   * @return local paths for which workspace was not found
+   * @throws TfsException
+   */
+  private static List<FilePath> processByWorkspaces(List<FilePath> localPaths, WorkspaceProcessor processor) throws TfsException {
+    List<FilePath> workspaceNotFoundLocalPaths = new ArrayList<FilePath>();
+    Map<WorkspaceInfo, List<FilePath>> workspace2localPaths = new HashMap<WorkspaceInfo, List<FilePath>>();
+    for (FilePath localPath : localPaths) {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
       if (workspace != null) {
-        List<String> workspaceLocalPaths = workspace2localPaths.get(workspace);
+        List<FilePath> workspaceLocalPaths = workspace2localPaths.get(workspace);
         if (workspaceLocalPaths == null) {
-          workspaceLocalPaths = new ArrayList<String>();
+          workspaceLocalPaths = new ArrayList<FilePath>();
           workspace2localPaths.put(workspace, workspaceLocalPaths);
         }
         workspaceLocalPaths.add(localPath);
@@ -62,20 +108,15 @@ public class WorkstationHelper {
       }
     }
 
-    Map<String, T> overallResults = new HashMap<String, T>(localPaths.size());
     for (WorkspaceInfo workspace : workspace2localPaths.keySet()) {
-      List<String> currentLocalPaths = workspace2localPaths.get(workspace);
-      List<String> currentServerPaths = new ArrayList<String>(currentLocalPaths.size());
-      for (String localPath : currentLocalPaths) {
-        currentServerPaths.add(workspace.findServerPathByLocalPath(localPath));
+      List<FilePath> currentLocalPaths = workspace2localPaths.get(workspace);
+      List<ItemPath> currentItemPaths = new ArrayList<ItemPath>(currentLocalPaths.size());
+      for (FilePath localPath : currentLocalPaths) {
+        currentItemPaths.add(new ItemPath(localPath, workspace.findServerPathByLocalPath(localPath)));
       }
-      Map<String, T> serverPath2result = delegate.executeRequest(workspace, currentServerPaths);
-      for (int i = 0; i < currentLocalPaths.size(); i++) {
-        overallResults.put(currentLocalPaths.get(i), serverPath2result.get(currentServerPaths.get(i)));
-      }
+      processor.process(workspace, currentItemPaths);
     }
-
-    return new ProcessResult<T>(overallResults, workspaceNotFoundLocalPaths);
+    return workspaceNotFoundLocalPaths;
   }
 
 }

@@ -6,39 +6,35 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.apache.axis2.databinding.ADBBean;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.text.MessageFormat;
 import java.util.List;
-import java.util.Map;
 
 public class TFSEditFileProvider implements EditFileProvider {
 
   public void editFiles(final VirtualFile[] files) throws VcsException {
-    List<String> localPaths = new ArrayList<String>(files.length);
-    for (VirtualFile f : files) {
-      localPaths.add(f.getPath());
-    }
-
     try {
       WorkstationHelper.ProcessResult<ADBBean> processResult =
-        WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.Delegate<ADBBean>() {
-          public Map<String, ADBBean> executeRequest(final WorkspaceInfo workspace, final List<String> serverPaths) throws TfsException {
-            return workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), serverPaths);
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.ProcessDelegate<ADBBean>() {
+          public List<ADBBean> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+            return workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
           }
         });
-      for (String localPath : localPaths) {
-        ADBBean resultBean = processResult.results.get(localPath);
+      for (ADBBean resultBean : processResult.results) {
         if (resultBean instanceof GetOperation) {
+          GetOperation getOp = (GetOperation)resultBean;
+          String localPath = getOp.getSlocal(); // TODO determine GetOperation local path
           ReadOnlyAttributeUtil.setReadOnlyAttribute(VcsUtil.getVirtualFile(localPath), false);
         }
         else {
-          throw new VcsException("Failed to checkout " + localPath + ": " + ((Failure)resultBean).getMessage());
+          Failure failure = (Failure)resultBean;
+          String errorMessage = MessageFormat.format("Failed to checkout {0}: {1}", BeanHelper.getSubjectPath(failure), failure.getMessage());
+          throw new VcsException(errorMessage);
         }
       }
     }

@@ -1,5 +1,6 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.vcsUtil.VcsUtil;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -30,7 +31,8 @@ class WorkstationCacheReader extends DefaultHandler {
   public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
     if (XmlConstants.SERVER_INFO.equals(qName)) {
       try {
-        myCurrentServerInfo = new ServerInfo(new URI(attributes.getValue(XmlConstants.URI_ATTR)), attributes.getValue(XmlConstants.GUID_ATTR));
+        myCurrentServerInfo =
+          new ServerInfo(new URI(attributes.getValue(XmlConstants.URI_ATTR)), attributes.getValue(XmlConstants.GUID_ATTR));
       }
       catch (URISyntaxException e) {
         throw new SAXException(e);
@@ -45,7 +47,7 @@ class WorkstationCacheReader extends DefaultHandler {
       myCurrentWorkspaceInfo = new WorkspaceInfo(myCurrentServerInfo, name, owner, computer, comment, timestamp);
     }
     else if (XmlConstants.MAPPED_PATH.equals(qName)) {
-      myCurrentWorkspaceInfo.addWorkingFolderInfo(new WorkingFolderInfo(attributes.getValue(XmlConstants.PATH_ATTR)));
+      myCurrentWorkspaceInfo.addWorkingFolderInfo(new WorkingFolderInfo(VcsUtil.getFilePath(attributes.getValue(XmlConstants.PATH_ATTR))));
     }
   }
 

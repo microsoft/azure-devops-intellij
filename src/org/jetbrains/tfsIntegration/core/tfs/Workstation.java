@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vcs.FilePath;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
@@ -161,7 +162,7 @@ public class Workstation {
 
                   for (WorkingFolderInfo folderInfo : workingFolders) {
                     Map<String, String> pathAttributes = new HashMap<String, String>();
-                    pathAttributes.put(XmlConstants.PATH_ATTR, folderInfo.getLocalPath());
+                    pathAttributes.put(XmlConstants.PATH_ATTR, VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
                     savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");
                   }
                   savePerformer.endElement(XmlConstants.MAPPED_PATHS);
@@ -220,7 +221,7 @@ public class Workstation {
   }
 
   @Nullable
-  public WorkspaceInfo findWorkspace(final @NotNull String localPath) throws TfsException {
+  public WorkspaceInfo findWorkspace(final @NotNull FilePath localPath) throws TfsException {
     for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
       if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
         return workspaceInfo;

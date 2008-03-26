@@ -42,31 +42,104 @@ public class VersionControlServer {
 // ***************************************************
 // used by now
 
+  public static class GetRequestParams {
+    public final ItemPath itemPath;
+    public final RecursionType recursionType;
+    public final VersionSpec version;
+
+    public GetRequestParams(final ItemPath itemPath, final RecursionType recursionType, final VersionSpec version) {
+      this.itemPath = itemPath;
+      this.recursionType = recursionType;
+      this.version = version;
+    }
+  }
+
+  private interface ChangeRequestProvider {
+    ChangeRequest createChangeRequest(ItemPath itemPath);
+  }
+
+  private static ChangeRequest createChangeRequestTemplate(ItemPath itemPath) {
+    ItemSpec itemSpec = new ItemSpec();
+    itemSpec.setDid(Integer.MIN_VALUE);
+    itemSpec.setRecurse(null);
+
+    ChangeRequest changeRequest = new ChangeRequest();
+    changeRequest.setDid(Integer.MIN_VALUE);
+    changeRequest.setEnc(Integer.MIN_VALUE);
+    changeRequest.setItem(itemSpec);
+    changeRequest.setLock(null);
+    changeRequest.setTarget(null); // TODO
+    changeRequest.setTargettype(null); // TODO
+    changeRequest.setVspec(null); // TODO
+
+    return changeRequest;
+  }
+
   /**
    * @return List<GetOperation or Failure>
    */
-  public Map<String, ADBBean> checkoutForEdit(final String workspaceName, final String workspaceOwner, List<String> serverPaths)
+  public List<ADBBean> checkoutForEdit(final String workspaceName, final String workspaceOwner, List<ItemPath> paths) throws TfsException {
+    return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
+      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
+        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
+        changeRequest.getItem().setItem(itemPath.getServerPath());
+        changeRequest.setReq(RequestType.Edit);
+
+        File file = itemPath.getLocalPath().getIOFile();
+        changeRequest.setType(file.isFile() ? ItemType.File : ItemType.Folder);
+
+        return changeRequest;
+      }
+    });
+  }
+
+  /**
+   * @return List<GetOperation or Failure>
+   */
+  public List<ADBBean> scheduleForAddition(final String workspaceName, final String workspaceOwner, List<ItemPath> paths)
     throws TfsException {
-    List<ChangeRequest> changeRequests = new ArrayList<ChangeRequest>(serverPaths.size());
-    for (String serverPath : serverPaths) {
-      ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setDid(0);
-      itemSpec.setItem(serverPath);
-      itemSpec.setRecurse(RecursionType.None);
+    return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
+      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
+        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
+        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(itemPath.getLocalPath()));
+        changeRequest.setReq(RequestType.Add);
 
-      ChangeRequest changeRequest = new ChangeRequest();
-      changeRequest.setDid(0);
-      changeRequest.setEnc(Integer.MIN_VALUE);
-      changeRequest.setItem(itemSpec);
-      changeRequest.setLock(LockLevel.None); // TODO
-      changeRequest.setReq(RequestType.Edit);
-      changeRequest.setTarget(null); // TODO
-      changeRequest.setTargettype(null); // TODO
-      changeRequest.setType(null); // TODO
-      changeRequest.setVspec(null); // TODO
+        File file = itemPath.getLocalPath().getIOFile();
+        changeRequest.setType(file.isFile() ? ItemType.File : ItemType.Folder);
+        
+        // TODO: determine encoding by file content
+        changeRequest.setEnc(1251);
+        return changeRequest;
+      }
+    });
+  }
 
-      changeRequests.add(changeRequest);
+  /**
+   * @return List<GetOperation or Failure>
+   */
+  public List<ADBBean> scheduleForDeletion(final String workspaceName, final String workspaceOwner, final List<ItemPath> paths) throws
+                                                                                                                                TfsException {
+    return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
+      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
+        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
+        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(itemPath.getLocalPath()));
+        changeRequest.setReq(RequestType.Delete);
+        return changeRequest;
+      }
+    });
+  }
+
+
+
+  private List<ADBBean> pendChanges(final String workspaceName,
+                                    final String workspaceOwner,
+                                    List<ItemPath> paths,
+                                    ChangeRequestProvider changeRequestProvider) throws TfsException {
+    List<ChangeRequest> changeRequests = new ArrayList<ChangeRequest>(paths.size());
+    for (ItemPath itemPath : paths) {
+      changeRequests.add(changeRequestProvider.createChangeRequest(itemPath));
     }
+
     final ArrayOfChangeRequest arrayOfChangeRequest = new ArrayOfChangeRequest();
     arrayOfChangeRequest.setChangeRequest(changeRequests.toArray(new ChangeRequest[changeRequests.size()]));
 
@@ -76,17 +149,13 @@ public class VersionControlServer {
       }
     });
 
-    Map<String, ADBBean> results = new HashMap<String, ADBBean>();
-    if (response.getPendChangesResult() != null && response.getPendChangesResult().getGetOperation() != null) {
-      for (GetOperation getOperation : response.getPendChangesResult().getGetOperation()) {
-        results.put(getOperation.getTitem(), getOperation);
-      }
+    List<ADBBean> results = new ArrayList<ADBBean>();
+    if (response.getPendChangesResult().getGetOperation() != null) {
+      results.addAll(Arrays.asList(response.getPendChangesResult().getGetOperation()));
     }
 
-    if (response.getFailures() != null && response.getFailures().getFailure() != null) {
-      for (Failure failure : response.getFailures().getFailure()) {
-        results.put(failure.getItem(), failure);
-      }
+    if (response.getFailures().getFailure() != null) {
+      results.addAll(Arrays.asList(response.getFailures().getFailure()));
     }
     return results;
   }
@@ -202,7 +271,6 @@ public class VersionControlServer {
                                       final String itemServerPath,
                                       final DeletedState deletedState) throws TfsException {
     ItemSpec itemSpec = new ItemSpec();
-    // TODO: is this local path?
     itemSpec.setItem(itemServerPath);
     itemSpec.setRecurse(RecursionType.None);
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
@@ -225,15 +293,14 @@ public class VersionControlServer {
     return null;
   }
 
-  public Map<String, ExtendedItem> getExtendedItems(final String workspasceName,
-                                                    final String ownerName,
-                                                    final List<String> itemPaths,
-                                                    final DeletedState deletedState) throws TfsException {
+  public Map<ItemPath, ExtendedItem> getExtendedItems(final String workspasceName,
+                                                      final String ownerName,
+                                                      final List<ItemPath> paths,
+                                                      final DeletedState deletedState) throws TfsException {
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-    for (String path : itemPaths) {
+    for (ItemPath itemPath : paths) {
       ItemSpec iSpec = new ItemSpec();
-      // TODO: is this local path?
-      iSpec.setItem(path);
+      iSpec.setItem(itemPath.getServerPath());
       iSpec.setRecurse(RecursionType.None);
       itemSpecs.add(iSpec);
     }
@@ -248,8 +315,8 @@ public class VersionControlServer {
         }
       });
 
-    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == itemPaths.size());
-    Map<String, ExtendedItem> result = new HashMap<String, ExtendedItem>();
+    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == paths.size());
+    Map<ItemPath, ExtendedItem> result = new HashMap<ItemPath, ExtendedItem>();
     for (int i = 0; i < extendedItems.length; i++) {
       ExtendedItem[] resultItems = extendedItems[i].getExtendedItem();
       ExtendedItem item = null;
@@ -257,7 +324,7 @@ public class VersionControlServer {
         TFSVcs.assertTrue(resultItems.length == 1);
         item = resultItems[0];
       }
-      result.put(itemPaths.get(i), item);
+      result.put(paths.get(i), item);
     }
 
     return result;
@@ -500,7 +567,7 @@ public class VersionControlServer {
 
     String item = itemSpecs[0].getItem();
     if (!VersionControlPath.isServerItem(item)) {
-      WorkspaceInfo info = Workstation.getInstance().findWorkspace(item);
+      WorkspaceInfo info = null; // TODO !!!! Workstation.getInstance().findWorkspace(item);
       if (info != null) {
         workspaceName.set(info.getName());
         workspaceOwner.set(info.getOwnerName());
@@ -634,7 +701,7 @@ public class VersionControlServer {
   public Workspace getWorkspace(String localPath) throws TfsException {
     String path = convertToFullPath(localPath);
 
-    WorkspaceInfo info = Workstation.getInstance().findWorkspace(path);
+    WorkspaceInfo info = null; // TODO !!! Workstation.getInstance().findWorkspace(path);
     if (info == null) {
       throw new IllegalArgumentException("Item not mapped " + path);
     }
@@ -680,7 +747,7 @@ public class VersionControlServer {
     final Ref<String> workspaceOwner = new Ref<String>("");
 
     if (!VersionControlPath.isServerItem(itemSpec.getItem())) {
-      WorkspaceInfo info = Workstation.getInstance().findWorkspace(itemSpec.getItem());
+      WorkspaceInfo info = null; // TODO !!!  Workstation.getInstance().findWorkspace(itemSpec.getItem());
       if (info != null) {
         workspaceName.set(info.getName());
         workspaceOwner.set(info.getOwnerName());
@@ -767,14 +834,14 @@ public class VersionControlServer {
     });
   }
 
-  public Map<String, ADBBean> undoPendingChanges(final String workspaceName, final String workspaceOwner, final List<String> serverPaths)
+  public Map<String, ADBBean> undoPendingChanges(final String workspaceName, final String workspaceOwner, final List<ItemPath> paths)
     throws TfsException {
-    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(serverPaths.size());
-    for (String serverPath : serverPaths) {
+    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
+    for (ItemPath itemPath : paths) {
       ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setDid(0);
-      itemSpec.setItem(serverPath);
-      itemSpec.setRecurse(RecursionType.None);
+      itemSpec.setDid(Integer.MIN_VALUE);
+      itemSpec.setItem(itemPath.getServerPath());
+      itemSpec.setRecurse(null);
       itemSpecs.add(itemSpec);
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
@@ -802,16 +869,17 @@ public class VersionControlServer {
     return results;
   }
 
-  public Map<String, GetOperation> get(final String workspaceName, final String workspaceOwner, final Map<String, VersionSpec> requests)
-    throws TfsException {
+  public Map<ItemPath, List<GetOperation>> get(final String workspaceName,
+                                               final String workspaceOwner,
+                                               final List<GetRequestParams> requests) throws TfsException {
     List<GetRequest> getRequests = new ArrayList<GetRequest>(requests.size());
-    for (String serverPath : requests.keySet()) {
+    for (GetRequestParams getRequestParams : requests) {
       final GetRequest getRequest = new GetRequest();
       final ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setRecurse(RecursionType.None);
-      itemSpec.setItem(serverPath);
+      itemSpec.setRecurse(getRequestParams.recursionType);
+      itemSpec.setItem(getRequestParams.itemPath.getServerPath());
       getRequest.setItemSpec(itemSpec);
-      getRequest.setVersionSpec(requests.get(serverPath));
+      getRequest.setVersionSpec(getRequestParams.version);
       getRequests.add(getRequest);
     }
     final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
@@ -824,14 +892,15 @@ public class VersionControlServer {
         }
       });
 
-    Map<String, GetOperation> results = new HashMap<String, GetOperation>();
+    TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == requests.size());
+
+    Map<ItemPath, List<GetOperation>> results = new HashMap<ItemPath, List<GetOperation>>();
     if (response.getArrayOfGetOperation() != null) {
-      for (ArrayOfGetOperation array : response.getArrayOfGetOperation()) {
-        GetOperation operation = array.getGetOperation()[0];
-        results.put(operation.getTitem(), operation);
+      for (int i = 0; i < response.getArrayOfGetOperation().length; i++) {
+        results.put(requests.get(i).itemPath, Arrays.asList(response.getArrayOfGetOperation()[i].getGetOperation()));
       }
     }
-
     return results;
   }
+
 }

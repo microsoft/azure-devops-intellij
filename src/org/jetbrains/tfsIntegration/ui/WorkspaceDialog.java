@@ -5,9 +5,11 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.EnumComboBoxModel;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -36,7 +38,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     },
     LocalPath("Local path") {
       public String getValue(WorkingFolderInfo workingFolderInfo) {
-        return workingFolderInfo.getLocalPath();
+        return FileUtil.toSystemIndependentName(workingFolderInfo.getLocalPath().getPath());
       }
     },
     ServerPath("Server path") {
@@ -101,7 +103,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
         workingFolder.setServerPath((String)aValue);
       }
       else if (Column.LocalPath.ordinal() == columnIndex) {
-        workingFolder.setLocalPath((String)aValue);
+        workingFolder.setLocalPath(VcsUtil.getFilePath((String)aValue));
       }
       else {
         throw new IllegalArgumentException("columnIndex: " + columnIndex);
@@ -283,6 +285,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.LocalPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
+        // TODO refactor to use FilePath-s
         FileChooserDescriptor d = new FileChooserDescriptor(false, true, false, false, false, false);
         d.setTitle("Choose Local Folder");
         d.setShowFileSystemRoots(true);
