@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class TfsFileUtil {
@@ -15,7 +16,7 @@ public class TfsFileUtil {
     return getFilePaths(Arrays.asList(files));
   }
 
-  public static List<FilePath> getFilePaths(@NotNull final List<VirtualFile> files) {
+  public static List<FilePath> getFilePaths(@NotNull final Collection<VirtualFile> files) {
     List<FilePath> paths = new ArrayList<FilePath>(files.size());
     for (VirtualFile f : files) {
       paths.add(getFilePath(f));

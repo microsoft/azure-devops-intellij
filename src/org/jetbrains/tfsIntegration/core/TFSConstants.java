@@ -13,6 +13,7 @@ public final class TFSConstants {
   @NonNls public static final String SERVER_STATUS_ASMX = "Services/v1.0/ServerStatus.asmx";
   @NonNls public static final String REGISTRATION_ASMX = "Services/v1.0/Registration.asmx";
   @NonNls public static final String DOWNLOAD_ASMX = "VersionControl/v1.0/item.asmx";
+  @NonNls public static final String UPLOAD_ASMX = "VersionControl/v1.0/upload.asmx";
 
 
   public static File getConfigFolder() {

@@ -9,7 +9,6 @@ import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
@@ -21,7 +20,7 @@ public class TFSVcs extends AbstractVcs {
   @NonNls public static final String TFS_NAME = "TFS";
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
   private TFSProjectConfiguration myProjectConfiguration;
-  private TFSEntriesFileListener myEntriesFileListener;
+  private TFSFileListener myFileListener;
   private VcsShowConfirmationOption myAddConfirmation;
   private VcsShowConfirmationOption myDeleteConfirmation;
   private VcsShowSettingOption myCheckoutOptions;
@@ -29,7 +28,7 @@ public class TFSVcs extends AbstractVcs {
   public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
     super(project);
     myProjectConfiguration = projectConfiguration;
-    myEntriesFileListener = new TFSEntriesFileListener(project);
+    myFileListener = new TFSFileListener(project, this);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
@@ -66,12 +65,11 @@ public class TFSVcs extends AbstractVcs {
   public void activate() {
     super.activate();
     TFSApplicationSettings.getInstance().tfsActivated();
-    VirtualFileManager.getInstance().addVirtualFileListener(myEntriesFileListener);
   }
 
   @Override
   public void deactivate() {
-    VirtualFileManager.getInstance().removeVirtualFileListener(myEntriesFileListener);
+    myFileListener.dispose();
     TFSApplicationSettings.getInstance().tfsDeactivated();
     super.deactivate();
   }
@@ -128,7 +126,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public UpdateEnvironment getUpdateEnvironment() {
-    return new TFSUpdateEnvironment();    
+    return new TFSUpdateEnvironment(this);
   }
 
   @Nullable

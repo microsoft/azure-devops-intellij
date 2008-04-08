@@ -5,11 +5,13 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.apache.axis2.databinding.ADBBean;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,46 +79,15 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   }
 
   private static List<VcsException> undoPendingChanges(final List<FilePath> localPaths, final boolean updateToBaseVersion) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+    final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          // undo changes
-          Map<String, ADBBean> results =
-            workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths);
-          List<LocalVersionUpdate> updateLocalVersions = new ArrayList<LocalVersionUpdate>();
-
-          // TODO: we should update local version when reverting scheduled for deletion folder
-
-          // update content
-          for (ADBBean resultBean : results.values()) {
-            if (resultBean instanceof GetOperation) {
-              GetOperation getOperation = (GetOperation)resultBean;
-              if (updateToBaseVersion) {
-                if (getOperation.getDurl() != null) {
-                  VersionControlServer.downloadItem(workspace, getOperation, true, true);
-                  if (getOperation.getLver() == Integer.MIN_VALUE) {
-                    updateLocalVersions.add(VersionControlServer.createLocalVersionUpdate(getOperation));
-                  }
-                }
-                else if (getOperation.getType() == ItemType.Folder) {
-                 // updateLocalVersions.add(VersionControlServer.createLocalVersionUpdate(getOperation));
-                }
-              }
-            }
-            else {
-              Failure failure = (Failure)resultBean;
-              errors.add(new VcsException("Failed to undo pending changes for " + failure.getLocal() + ": " + failure.getMessage()));
-            }
-          }
-
-          // update local versions
-          if (!updateLocalVersions.isEmpty()) {
-            workspace.getServer().getVCS().updateLocalVersions(workspace.getName(), workspace.getOwnerName(), updateLocalVersions);
-          }
+          List<Failure> failures = OperationHelper.undoPendingChanges(workspace, paths, updateToBaseVersion);
+          exceptions.addAll(BeanHelper.getVcsExceptions("Failed to undo pending changes", failures));
         }
       });
-      return errors;
+      return exceptions;
     }
     catch (TfsException e) {
       return Collections.singletonList(new VcsException("Failed to undo pending changes", e));

@@ -48,8 +48,9 @@ public class WorkstationHelper {
   }
 
   /**
-   * @return paths for which workspace was not found
+   * @return paths for which workspace was not found (orphan paths)
    */
+  // TODO process orphan paths in every caller
   public static List<FilePath> processByWorkspaces(List<FilePath> localPaths, final VoidProcessDelegate delegate) throws TfsException {
     OneToOneProcessResult<Object> result = processByWorkspaces(localPaths, new OneToOneProcessDelegate<Object>() {
       public Map<ItemPath, Object> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {

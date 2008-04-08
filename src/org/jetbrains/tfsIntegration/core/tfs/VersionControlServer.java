@@ -2,8 +2,13 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.FilePath;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.databinding.ADBBean;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.methods.multipart.FilePart;
+import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
@@ -21,11 +26,21 @@ import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.*;
 
-
 public class VersionControlServer {
   private Repository myRepository;
   private URI myUri;
   private Guid myGuid = new Guid();
+
+  //public static final String Upload = "Upload";
+  //public static final String Download = "Download";
+  //public static final int EncodingBinary = -1;
+  public static final String WORKSPACE_NAME_FIELD = "wsname";
+  public static final String WORKSPACE_OWNER_FIELD = "wsowner";
+  public static final String RANGE_FIELD = "range";
+  public static final String LENGTH_FIELD = "filelength";
+  public static final String HASH_FIELD = "hash";
+  public static final String SERVER_ITEM_FIELD = "item";
+  public static final String CONTENT_FIELD = "content";
 
   public VersionControlServer(URI uri) {
     myUri = uri;
@@ -106,7 +121,7 @@ public class VersionControlServer {
 
         File file = itemPath.getLocalPath().getIOFile();
         changeRequest.setType(file.isFile() ? ItemType.File : ItemType.Folder);
-        
+
         // TODO: determine encoding by file content
         changeRequest.setEnc(1251);
         return changeRequest;
@@ -117,8 +132,8 @@ public class VersionControlServer {
   /**
    * @return List<GetOperation or Failure>
    */
-  public List<ADBBean> scheduleForDeletion(final String workspaceName, final String workspaceOwner, final List<ItemPath> paths) throws
-                                                                                                                                TfsException {
+  public List<ADBBean> scheduleForDeletion(final String workspaceName, final String workspaceOwner, final List<ItemPath> paths)
+    throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
@@ -128,7 +143,6 @@ public class VersionControlServer {
       }
     });
   }
-
 
 
   private List<ADBBean> pendChanges(final String workspaceName,
@@ -410,7 +424,7 @@ public class VersionControlServer {
         file.getParentFile().mkdirs();
       }
       downloadItem(workspace, operation.getDurl(), file, overwriteReadonly);
-      if (setReadOnly) {
+      if (setReadOnly && file.isFile()) {
         file.setReadOnly();
       }
     }
@@ -903,4 +917,159 @@ public class VersionControlServer {
     return results;
   }
 
+  public AddConflictResponse addLocalConflict(final String workspaceName,
+                                              final String workspaceOwner,
+                                              final int itemId,
+                                              final int versionFrom,
+                                              final String sourceLocal) throws TfsException {
+    final ConflictType conflictType = ConflictType.Local;
+    final int pendingChangeId = 0;
+    final int reason = 1; // TODO: ???
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
+      public AddConflictResponse executeRequest() throws RemoteException {
+        return myRepository
+          .AddConflict(workspaceName, workspaceOwner, conflictType, itemId, versionFrom, pendingChangeId, sourceLocal, sourceLocal, reason);
+      }
+    });
+  }
+
+  public List<Conflict> queryConflicts(final String workspasceName,
+                                       final String ownerName,
+                                       final List<FilePath> paths,
+                                       final RecursionType recursionType) throws TfsException {
+    List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+    for (FilePath path : paths) {
+      ItemSpec itemSpec = new ItemSpec();
+      itemSpec.setItem(path.getPath());
+      itemSpec.setRecurse(recursionType);
+      itemSpecList.add(itemSpec);
+    }
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
+    List<Conflict> result = new LinkedList<Conflict>();
+    Conflict[] conflicts = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Conflict[]>() {
+      public Conflict[] executeRequest() throws RemoteException {
+        return myRepository.QueryConflicts(workspasceName, ownerName, arrayOfItemSpec).getConflict();
+      }
+    });
+    if (conflicts != null) {
+      result.addAll(Arrays.asList(conflicts));
+    }
+    return result;
+  }
+
+
+  public static class ResolveConflictParams {
+    public final int conflictId;
+    public final Resolution resolution;
+    public final LockLevel lockLevel;
+    public final int encoding;
+    public final String newPath;
+
+    public ResolveConflictParams(final int conflictId,
+                                 final Resolution resolution,
+                                 final LockLevel lockLevel,
+                                 final int encoding,
+                                 final String newPath) {
+      this.conflictId = conflictId;
+      this.resolution = resolution;
+      this.lockLevel = lockLevel;
+      this.encoding = encoding;
+      this.newPath = newPath;
+    }
+  }
+
+  public ResolveResponse resolveConflict(final String workspasceName, final String workspasceOwnerName, final ResolveConflictParams params)
+    throws TfsException {
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ResolveResponse>() {
+      public ResolveResponse executeRequest() throws RemoteException {
+        return myRepository.Resolve(workspasceName, workspasceOwnerName, params.conflictId, params.resolution, params.newPath,
+                                    params.encoding, params.lockLevel);
+      }
+    });
+  }
+
+
+  public void uploadItem(final WorkspaceInfo workspaceInfo, PendingChange change) throws TfsException, IOException {
+
+    final String uploadUrl = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.UPLOAD_ASMX;
+    File file = new File(change.getLocal());
+    long fileLength = file.length();
+
+    ArrayList<Part> parts = new ArrayList<Part>();
+    parts.add(new StringPart(SERVER_ITEM_FIELD, change.getItem()));
+    parts.add(new StringPart(WORKSPACE_NAME_FIELD, workspaceInfo.getName()));
+    parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
+    parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    change.getHash().writeTo(os);
+    parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(os.toByteArray()), "UTF-8"))); // TODO: check encoding!
+    // TODO: handle files to large to fit in a single POST
+    parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
+    FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
+    parts.add(filePart);
+    filePart.setCharSet(null);
+    WebServiceHelper.httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null);
+  }
+
+  public Map<ItemPath, PendingChange> queryPendingSets(final String workspasceName,
+                                                       final String workspaceOwnerName,
+                                                       final List<ItemPath> paths) throws TfsException {
+    final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
+    for (ItemPath itemPath : paths) {
+      ItemSpec iSpec = new ItemSpec();
+      iSpec.setItem(itemPath.getServerPath());
+      iSpec.setRecurse(RecursionType.None);
+      itemSpecs.add(iSpec);
+    }
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
+
+    PendingSet[] pendingSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<PendingSet[]>() {
+      public PendingSet[] executeRequest() throws RemoteException {
+        return myRepository.QueryPendingSets(workspasceName, workspaceOwnerName, workspasceName, workspaceOwnerName, arrayOfItemSpec, false)
+          .getQueryPendingSetsResult().getPendingSet();
+      }
+    });
+
+    Map<ItemPath, PendingChange> result = new HashMap<ItemPath, PendingChange>();
+    if (pendingSets != null) {
+      for (int i = 0; i < pendingSets.length; i++) {
+        PendingChange[] resultChanges = pendingSets[i].getPendingChanges().getPendingChange();
+        PendingChange change = null;
+        if (resultChanges != null) {
+          TFSVcs.assertTrue(resultChanges.length == 1);
+          change = resultChanges[0];
+        }
+        result.put(paths.get(i), change);
+      }
+    }
+    return result;
+  }
+
+  public CheckinResult checkIn(final String workspaceName,
+                               final String workspaceOwnerName,
+                               final List<ItemPath> paths,
+                               final String comment) throws TfsException {
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckinResult>() {
+      public CheckinResult executeRequest() throws RemoteException {
+        final ArrayOfString serverItems = new ArrayOfString();
+        for (ItemPath path : paths) {
+          serverItems.addString(path.getServerPath());
+        }
+        final Changeset changeset = new Changeset();
+        changeset.setCset(0);
+        changeset.setDate(new GregorianCalendar());
+        changeset.setOwner(workspaceOwnerName);
+        changeset.setComment(comment);
+        final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
+        final String checkinOptions = "ValidateCheckinOwner"; // TODO
+
+        return myRepository.CheckIn(workspaceName, workspaceOwnerName, serverItems, changeset, checkinNotificationInfo, checkinOptions)
+          .getCheckInResult();
+      }
+    });
+  }
+
 }
+

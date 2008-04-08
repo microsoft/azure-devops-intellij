@@ -12,7 +12,6 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.List;
 
 public class TFSEditFileProvider implements EditFileProvider {
@@ -29,12 +28,17 @@ public class TFSEditFileProvider implements EditFileProvider {
         if (resultBean instanceof GetOperation) {
           GetOperation getOp = (GetOperation)resultBean;
           String localPath = getOp.getSlocal(); // TODO determine GetOperation local path
-          ReadOnlyAttributeUtil.setReadOnlyAttribute(VcsUtil.getVirtualFile(localPath), false);
+          VirtualFile file = VcsUtil.getVirtualFile(localPath);
+          if (file != null && file.isValid() && !file.isDirectory()) {
+            ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);
+          }
         }
         else {
           Failure failure = (Failure)resultBean;
-          String errorMessage = MessageFormat.format("Failed to checkout {0}: {1}", BeanHelper.getSubjectPath(failure), failure.getMessage());
-          throw new VcsException(errorMessage);
+          VcsException exception = BeanHelper.getVcsException("Failed to checkout", failure);
+          if (exception != null) {
+            throw exception;
+          }
         }
       }
     }

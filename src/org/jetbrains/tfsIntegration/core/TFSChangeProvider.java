@@ -57,8 +57,7 @@ public class TFSChangeProvider implements ChangeProvider {
     try {
       WorkstationHelper.processByWorkspaces(paths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          ChangeProcessor processor = new ChangelistBuilderProcessor(builder);
-          StatusProvider.processPaths(workspace, paths, new DebugChangeProcessor(processor), null);
+          StatusProvider.visitByStatus(workspace, paths, null, new ChangelistBuilderStatusVisitor(builder));
         }
       });
     }
@@ -68,61 +67,74 @@ public class TFSChangeProvider implements ChangeProvider {
   }
 
 
-  static class ChangelistBuilderProcessor implements ChangeProcessor {
+  private static class ChangelistBuilderStatusVisitor implements StatusVisitor {
     private ChangelistBuilder builder;
 
-    public ChangelistBuilderProcessor(@NotNull ChangelistBuilder builder) {
+    public ChangelistBuilderStatusVisitor(@NotNull ChangelistBuilder builder) {
       this.builder = builder;
     }
 
-    public void processDeletedOnServer(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      // TODO: special procesing for deleted on server files?
-      builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+    public void unversioned(final ItemPath path, final boolean localItemExists) {
+      if (localItemExists) {
+        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      }
     }
 
-    public void processExistsButNotDownloaded(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+    public void notDownloaded(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      }
     }
 
-    public void processLocallyDeleted(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+    public void checkedOutForEdit(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        TFSContentRevision latestRevision = TFSContentRevisionFactory.getRevision(path.getLocalPath(), extendedItem.getLatest());
+        builder.processChange(new Change(latestRevision, CurrentContentRevision.create(path.getLocalPath())));
+      }
+      else {
+        builder.processLocallyDeletedFile(path.getLocalPath());
+      }
     }
 
-    public void processCheckedOutForEdit(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      TFSContentRevision revision = TFSContentRevisionFactory.getRevision(path.getLocalPath(), item.getLatest());
-      builder.processChange(new Change(revision, CurrentContentRevision.create(path.getLocalPath())));
+    public void scheduledForAddition(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        builder.processChange(new Change(null, new CurrentContentRevision(path.getLocalPath())));
+      }
+      else {
+        builder.processLocallyDeletedFile(path.getLocalPath());
+      }
     }
 
-    public void processHijacked(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
-    }
-
-    public void processScheduledForAddition(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
-      builder.processChange(new Change(null, new CurrentContentRevision(path.getLocalPath())));
-    }
-
-    public void processScheduledForDeletion(final @NotNull ItemPath path, @NotNull final ExtendedItem item) {
+    public void scheduledForDeletion(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
       builder.processChange(new Change(new CurrentContentRevision(path.getLocalPath()), null));
     }
 
-    public void processOutOfDate(final ItemPath itemPath, final ExtendedItem item) {
-      // do nothing
+    public void outOfDate(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        if (StatusProvider.isFileWritable(path)) {
+          builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+        }
+      }
+      else {
+        builder.processLocallyDeletedFile(path.getLocalPath());
+      }
     }
 
-    public void processUnversioned(final @NotNull ItemPath path) {
-      builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+    public void deleted(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      }
     }
 
-    public void processGhost(final ItemPath itemPath) {
-      // do nothing
-    }
-
-    public void processUnexistingDeleted(final ItemPath itemPath, final ExtendedItem item) {
-      //do nothing
-    }
-
-    public void processUpToDate(final ItemPath itemPath, final ExtendedItem item) {
-      //do nothing
+    public void upToDate(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
+      if (localItemExists) {
+        if (StatusProvider.isFileWritable(path)) {
+          builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+        }
+      }
+      else {
+        builder.processLocallyDeletedFile(path.getLocalPath());
+      }
     }
   }
 

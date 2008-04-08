@@ -12,16 +12,20 @@ import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
+import org.apache.commons.httpclient.methods.multipart.Part;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
 import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
@@ -281,6 +285,45 @@ public class WebServiceHelper {
   public static void setupStub(Stub stub) {
     Options options = stub._getServiceClient().getOptions();
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
+  }
+
+  public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream) throws TfsException {
+    final Ref<URI> serverUri = new Ref<URI>();
+    try {
+      URI uri = new URI(uploadUrl);
+      serverUri.set(new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null)); // TODO: trim?
+    }
+    catch (URISyntaxException e) {
+      TFSVcs.LOG.error(e);
+    }
+
+    executeRequest(serverUri.get(), new InnerDelegate<Object>() {
+
+      public Object executeRequest(final Credentials credentials) throws Exception {
+        HttpClient httpClient = new HttpClient();
+        setCredentials(httpClient, credentials, serverUri.get());
+        setProxy(httpClient);
+
+        PostMethod postMethod = new PostMethod(uploadUrl);
+        postMethod.setRequestHeader("X-TFS-Version", "1.0.0.0");
+        postMethod.setRequestHeader("accept-language", "en-US");
+        //postMethod.setRequestHeader("X-VersionControl-Instance",
+        //                            "ac4d8821-8927-4f07-9acf-adbf71119886, CommandCheckin");
+
+        postMethod.setRequestEntity(new MultipartRequestEntity(parts, postMethod.getParams()));
+
+        int statusCode = httpClient.executeMethod(postMethod);
+        if (statusCode == HttpStatus.SC_OK ) {
+          if (outputStream != null) {
+            StreamUtil.copyStreamContent(getInputStream(postMethod), outputStream);
+          }
+        }
+        else {
+          throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+        }
+        return null;
+      }
+    });
   }
 
 }
