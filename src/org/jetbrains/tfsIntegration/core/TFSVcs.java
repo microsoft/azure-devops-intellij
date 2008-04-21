@@ -4,12 +4,16 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
+import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
@@ -24,11 +28,13 @@ public class TFSVcs extends AbstractVcs {
   private VcsShowConfirmationOption myAddConfirmation;
   private VcsShowConfirmationOption myDeleteConfirmation;
   private VcsShowSettingOption myCheckoutOptions;
+  private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
+  private VcsHistoryProvider myTFSHistoryProvider;
+  private DiffProvider myDiffProvider;
 
   public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
     super(project);
     myProjectConfiguration = projectConfiguration;
-    myFileListener = new TFSFileListener(project, this);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
@@ -64,6 +70,7 @@ public class TFSVcs extends AbstractVcs {
   @Override
   public void activate() {
     super.activate();
+    myFileListener = new TFSFileListener(getProject(), this);
     TFSApplicationSettings.getInstance().tfsActivated();
   }
 
@@ -97,7 +104,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public CheckinEnvironment getCheckinEnvironment() {
-    return new TFSCheckinEnvironment();
+    return new TFSCheckinEnvironment(myProject);
   }
 
   @Nullable
@@ -134,9 +141,14 @@ public class TFSVcs extends AbstractVcs {
     return super.getStatusEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
-  public static void assertTrue(boolean condition, String message) {
+  public static void assertTrue(boolean condition, @NonNls String message) {
     // TODO: inline with assert statement
     LOG.assertTrue(condition, message);
+  }
+
+  public static void error(@NonNls String message) {
+    // TODO: inline with assert statement
+    LOG.error(message);
   }
 
   public static void assertTrue(final boolean condition) {
@@ -160,6 +172,29 @@ public class TFSVcs extends AbstractVcs {
     else {
       return -1;
     }
+  }
+
+  @Override
+  @NotNull
+  public CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> getCommittedChangesProvider() {
+    if (myCommittedChangesProvider == null) {
+      myCommittedChangesProvider = new TFSCommittedChangesProvider(myProject);
+    }
+    return myCommittedChangesProvider;
+  }
+
+  public VcsHistoryProvider getVcsHistoryProvider() {
+    if (myTFSHistoryProvider == null) {
+      myTFSHistoryProvider = new TFSHistoryProvider(myProject);
+    }
+    return myTFSHistoryProvider;
+  }
+
+  public DiffProvider getDiffProvider() {
+    if (myDiffProvider == null) {
+      myDiffProvider = new TFSDiffProvider(myProject);
+    }
+    return myDiffProvider;
   }
 
 }

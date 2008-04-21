@@ -9,13 +9,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-/**
- * Created by IntelliJ IDEA.
- * Date: 08.02.2008
- * Time: 13:51:25
- */
 public abstract class VersionSpecBase extends VersionSpec {
-  private static VersionSpec latestVersionSpec = new LatestVersionSpec();
 
   public void serialize(final QName parentQName, final OMFactory factory, final MTOMAwareXMLStreamWriter xmlWriter)
     throws XMLStreamException {
@@ -94,7 +88,4 @@ public abstract class VersionSpecBase extends VersionSpec {
     return prefix;
   }
 
-  public static VersionSpec getLatest() {
-    return latestVersionSpec;
-  }
 }

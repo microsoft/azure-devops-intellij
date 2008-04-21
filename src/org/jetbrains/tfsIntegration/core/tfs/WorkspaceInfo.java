@@ -126,6 +126,17 @@ public class WorkspaceInfo {
     return null;
   }
 
+  @Nullable
+  public FilePath findLocalPathByServerPath(final @NotNull String serverPath) throws TfsException {
+    for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
+      FilePath localPath = folderInfo.getLocalPathByServerPath(serverPath);
+      if (localPath!= null) {
+        return localPath;
+      }
+    }
+    return null;
+  }
+
   public boolean isWorkingFolder(final @NotNull FilePath localPath) throws TfsException {
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
       if (folderInfo.getLocalPath().equals(localPath)) {
@@ -241,11 +252,6 @@ public class WorkspaceInfo {
   public Map<ItemPath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
   }
-
-  public GetOperation get(final String serverPath) throws TfsException {
-    return getServer().getVCS().get(getName(), getOwnerName(), serverPath);
-  }
-
 
   @SuppressWarnings({"HardCodedStringLiteral"})
   public String toString() {

@@ -40,7 +40,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
 
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     // TODO: get version from Configurable created in createConfigurable (latest for now)
-    final VersionSpec versionSpec = LatestVersionSpec.getLatest();
+    final VersionSpec versionSpec = LatestVersionSpec.INSTANCE;
 
     try {
       List<FilePath> unversioned =
@@ -49,17 +49,17 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
 
           TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
 
-          List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>();
+          List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(paths.size());
           for (ItemPath path : paths) {
-            requests.add(new VersionControlServer.GetRequestParams(path, RecursionType.Full, versionSpec));
+            requests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), RecursionType.Full, versionSpec));
             TFSProgressUtil.checkCanceled(progressIndicator);
           }
           // query get operations for contentRoots
-          Map<ItemPath, List<GetOperation>> getOperations =
+          List<List<GetOperation>> getOperations =
             workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
 
           Map<ItemPath, GetOperation> itemPaths2operations = new HashMap<ItemPath, GetOperation>();
-          for (List<GetOperation> operations : getOperations.values()) {
+          for (List<GetOperation> operations : getOperations) {
             for (GetOperation operation : operations) {
               itemPaths2operations.put(new ItemPath(VcsUtil.getFilePath(operation.getTlocal()), operation.getTitem()), operation);
               TFSProgressUtil.checkCanceled(progressIndicator);
@@ -99,6 +99,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       }
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       exceptions.add(new VcsException("Update failed.", e));
     }
 

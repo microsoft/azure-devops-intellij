@@ -2,20 +2,24 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.changes.ChangelistBuilder;
+import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Processor;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.revision.TFSContentRevisionFactory;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * TODO important cases
@@ -30,6 +34,10 @@ public class TFSChangeProvider implements ChangeProvider {
     myProject = project;
   }
 
+  public boolean isModifiedDocumentTrackingRequired() {
+    return true;
+  }
+
   public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progress)
     throws VcsException {
     if (myProject.isDisposed()) {
@@ -41,105 +49,117 @@ public class TFSChangeProvider implements ChangeProvider {
 
     progress.setText("Processing changes");
 
-    final List<FilePath> paths = new ArrayList<FilePath>();
+    Set<FilePath> paths = new HashSet<FilePath>();
+    for (FilePath p : dirtyScope.getRecursivelyDirtyDirectories()) {
+      addPathSmart(paths, p);
+    }
+    for (FilePath p : dirtyScope.getDirtyFiles()) {
+      addPathSmart(paths, p);
+    }
 
-    dirtyScope.iterate(new Processor<FilePath>() {
-      public boolean process(final FilePath filePath) {
-        VirtualFile file = filePath.getVirtualFile();
-        if (file != null && file.isValid()) {
-          if (!ChangeListManager.getInstance(myProject).isIgnoredFile(file)) {
-            paths.add(filePath);
-          }
-        }
-        return true;
-      }
-    });
     try {
+      // ingore orphan paths here
       WorkstationHelper.processByWorkspaces(paths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          StatusProvider.visitByStatus(workspace, paths, null, new ChangelistBuilderStatusVisitor(builder));
+          processWorkspace(workspace, paths, builder, progress);
         }
       });
     }
     catch (TfsException e) {
-      throw new VcsException("Failed to update file status", e);
+      throw new VcsException("Failed to determine items status", e);
     }
   }
 
+  private static void processWorkspace(final WorkspaceInfo workspace,
+                                       final List<ItemPath> paths,
+                                       ChangelistBuilder builder,
+                                       final @Nullable ProgressIndicator progress) throws TfsException {
+    StatusVisitor statusVisitor = new ChangelistBuilderStatusVisitor(builder);
+    Map<ItemPath, ExtendedItem> extendedItems = new HashMap<ItemPath, ExtendedItem>();
 
-  private static class ChangelistBuilderStatusVisitor implements StatusVisitor {
-    private ChangelistBuilder builder;
+    TFSProgressUtil.checkCanceled(progress);
+    List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
+      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), paths, DeletedState.NonDeleted, RecursionType.Full, ItemType.Any);
+    for (int i = 0; i < paths.size(); i++) {
+      ItemPath path = paths.get(i);
 
-    public ChangelistBuilderStatusVisitor(@NotNull ChangelistBuilder builder) {
-      this.builder = builder;
-    }
+      Collection<ExtendedItem> serverItems = extendedItemsResult.get(i);
+      Collection<FilePath> localItems = new HashSet<FilePath>();
+      localItems.add(path.getLocalPath());
+      addExistingFilesRecursively(localItems, path.getLocalPath().getVirtualFile());
 
-    public void unversioned(final ItemPath path, final boolean localItemExists) {
-      if (localItemExists) {
-        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      // find 'downloaded' server items for existing local files
+      for (FilePath localItem : localItems) {
+        if (workspace.isWorkingFolder(localItem)) {
+          // report mapping root as up to date
+          continue;
+        }
+        ExtendedItem serverItem = null;
+        for (ExtendedItem candidate : serverItems) {
+          if (VersionControlPath.toTfsRepresentation(localItem.getPath()).equals(candidate.getLocal())) {
+            serverItem = candidate;
+            break;
+          }
+        }
+
+        if (serverItem != null) {
+          serverItems.remove(serverItem);
+        }
+        extendedItems.put(new ItemPath(localItem, workspace.findServerPathByLocalPath(localItem)), serverItem);
       }
-    }
 
-    public void notDownloaded(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
-      }
-    }
-
-    public void checkedOutForEdit(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        TFSContentRevision latestRevision = TFSContentRevisionFactory.getRevision(path.getLocalPath(), extendedItem.getLatest());
-        builder.processChange(new Change(latestRevision, CurrentContentRevision.create(path.getLocalPath())));
-      }
-      else {
-        builder.processLocallyDeletedFile(path.getLocalPath());
-      }
-    }
-
-    public void scheduledForAddition(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        builder.processChange(new Change(null, new CurrentContentRevision(path.getLocalPath())));
-      }
-      else {
-        builder.processLocallyDeletedFile(path.getLocalPath());
-      }
-    }
-
-    public void scheduledForDeletion(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      builder.processChange(new Change(new CurrentContentRevision(path.getLocalPath()), null));
-    }
-
-    public void outOfDate(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        if (StatusProvider.isFileWritable(path)) {
-          builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+      // find locally missing items
+      for (ExtendedItem serverItem : serverItems) {
+        if (serverItem.getLocal() != null) {
+          extendedItems.put(new ItemPath(VcsUtil.getFilePathForDeletedFile(serverItem.getLocal(), serverItem.getType() == ItemType.Folder),
+                                         serverItem.getTitem()), serverItem);
         }
       }
-      else {
-        builder.processLocallyDeletedFile(path.getLocalPath());
-      }
     }
 
-    public void deleted(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
-      }
-    }
+    for (Map.Entry<ItemPath, ExtendedItem> entry : extendedItems.entrySet()) {
+      ItemPath itemPath = entry.getKey();
 
-    public void upToDate(final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) {
-      if (localItemExists) {
-        if (StatusProvider.isFileWritable(path)) {
-          builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+      ExtendedItem serverItem = entry.getValue();
+      ServerStatus status = StatusProvider.determineServerStatus(serverItem);
+
+      VirtualFile file = entry.getKey().getLocalPath().getVirtualFile();
+      boolean localItemExists = file != null && file.exists();
+      if (!localItemExists && serverItem != null) {
+        // if path is the original one from dirtyScope, it may have invalid 'isDirectory' status
+        itemPath = new ItemPath(
+          VcsUtil.getFilePathForDeletedFile(itemPath.getLocalPath().getPath(), serverItem.getType() == ItemType.Folder),
+          itemPath.getServerPath());
+      }
+      //System.out
+      //  .println(entry.getKey().getLocalPath().getPath() + ": " + status + (localItemExists ? ", exists locally" : ", missing locally"));
+      status.visitBy(itemPath, statusVisitor, localItemExists);
+    }
+  }
+
+  private static void addExistingFilesRecursively(final @NotNull Collection<FilePath> result, final @Nullable VirtualFile root) {
+    if (root != null && root.exists()) {
+      result.add(TfsFileUtil.getFilePath(root));
+      if (root.isDirectory()) {
+        for (VirtualFile child : root.getChildren()) {
+          addExistingFilesRecursively(result, child);
         }
-      }
-      else {
-        builder.processLocallyDeletedFile(path.getLocalPath());
       }
     }
   }
 
-  public boolean isModifiedDocumentTrackingRequired() {
-    return true;
+  private static void addPathSmart(Collection<FilePath> existingPaths, FilePath newPath) {
+    Collection<FilePath> toRemove = new ArrayList<FilePath>();
+    for (FilePath existing : existingPaths) {
+      if (FileUtil.pathsEqual(newPath.toString(), existing.toString()) || newPath.isUnder(existing, false)) {
+        return;
+      }
+      if (existing.isUnder(newPath, false)) {
+        toRemove.add(existing);
+      }
+    }
+    existingPaths.removeAll(toRemove);
+    existingPaths.add(newPath);
   }
 
 

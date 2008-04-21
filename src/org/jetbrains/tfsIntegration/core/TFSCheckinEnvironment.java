@@ -1,5 +1,6 @@
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -8,35 +9,40 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
 
+  private @NotNull final Project myProject;
+
+  public TFSCheckinEnvironment(@NotNull final Project project) {
+    myProject = project;
+  }
+
   @Nullable
   public RefreshableOnComponent createAdditionalOptionsPanel(final CheckinProjectPanel panel) {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    return null;  // TODO: implement
   }
 
   @Nullable
   public String getDefaultMessageFor(final FilePath[] filesToCheckin) {
     // TODO: correct default checkin message
-    String message = "Check in:\n";
-    for (FilePath filePath : filesToCheckin) {
-      message += (filePath + "\n");
-    }
-    return message;
+    return "";
   }
 
   public String prepareCheckinMessage(final String text) {
@@ -59,6 +65,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   @Nullable
   public List<VcsException> commit(final List<Change> changes, final String preparedComment) {
+    // TODO: add parent folders
     final List<FilePath> files = new ArrayList<FilePath>();
     for (Change change : changes) {
       FilePath path = null;
@@ -79,35 +86,43 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
-            // 1. get pending changes for given items
+            // get pending changes for given items
             Map<ItemPath, PendingChange> pendingChanges =
               workspace.getServer().getVCS().queryPendingSets(workspace.getName(), workspace.getOwnerName(), paths);
-            // 2. upload files
-            for (ItemPath path : pendingChanges.keySet()) {
-              PendingChange pendingChange = pendingChanges.get(path);
-              workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
+            // upload files
+            for (Map.Entry<ItemPath, PendingChange> entry : pendingChanges.entrySet()) {
+              if (entry.getValue().getType() == ItemType.File) {
+                workspace.getServer().getVCS().uploadItem(workspace, entry.getValue());
+              }
             }
-            // 3. call check in
+            // call check in
             if (!pendingChanges.isEmpty()) {
-              workspace.getServer().getVCS()
+              ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
                 .checkIn(workspace.getName(), workspace.getOwnerName(), new ArrayList<ItemPath>(pendingChanges.keySet()), preparedComment);
-              // TODO: check that CheckIn was successfull
-            }
-            // 4. set readonly status for files
-            for (ItemPath path : pendingChanges.keySet()) {
-              VirtualFile file = VcsUtil.getVirtualFile(path.getLocalPath().getPath());
-              if (file != null && file.isValid() && !file.isDirectory()) {
-                ReadOnlyAttributeUtil.setReadOnlyAttribute(file, true);
+              // check that CheckIn was successfull
+              if (!result.getFailures().isEmpty()) {
+                exceptions.addAll(BeanHelper.getVcsExceptions("Failed to check in", result.getFailures()));
+              }
+              else {
+                // set readonly status for files
+                for (ItemPath path : pendingChanges.keySet()) {
+                  VirtualFile file = VcsUtil.getVirtualFile(path.getLocalPath().getPath());
+                  if (file != null && file.isValid() && !file.isDirectory()) {
+                    TfsFileUtil.setReadOnlyInEventDispathThread(file, true);
+                  }
+                }
               }
             }
           }
           catch (IOException e) {
+            //noinspection ThrowableInstanceNeverThrown
             exceptions.add(new VcsException(e));
           }
         }
       });
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       exceptions.add(new VcsException(e));
     }
     return exceptions;
@@ -120,16 +135,18 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
-            List<Failure> failures = OperationHelper.scheduleForDeletion(workspace, paths);
+            Collection<Failure> failures = OperationHelper.scheduleForDeletion(myProject, workspace, paths, true);
             exceptions.addAll(BeanHelper.getVcsExceptions("Failed to schedule for deletion", failures));
           }
           catch (IOException e) {
+            //noinspection ThrowableInstanceNeverThrown
             exceptions.add(new VcsException(e));
           }
         }
       });
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       exceptions.add(new VcsException(e));
     }
     return exceptions;
@@ -137,21 +154,24 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   @Nullable
   public List<VcsException> scheduleUnversionedFilesForAddition(final List<VirtualFile> files) {
+    // TODO: schedule parent folders?
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
-            List<Failure> failures = OperationHelper.scheduleForAddition(workspace, paths);
+            Collection<Failure> failures = OperationHelper.scheduleForAddition(myProject, workspace, paths);
             exceptions.addAll(BeanHelper.getVcsExceptions("Failed to schedule for addition", failures));
           }
           catch (IOException e) {
+            //noinspection ThrowableInstanceNeverThrown
             exceptions.add(new VcsException(e));
           }
         }
       });
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       exceptions.add(new VcsException(e));
     }
     return exceptions;

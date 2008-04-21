@@ -23,7 +23,10 @@ public class VersionControlPath {
   // TODO consider FileUtil.toSystemDependentPath()
 
   public static String toTfsRepresentation(FilePath localPath) {
-    return localPath.getPath().replace(PATH_SEPARATOR_CHAR, '\\'); // TODO need this? .replaceAll("[/]*$", "");
+    return toTfsRepresentation(localPath.getPath());
   }
 
+  public static String toTfsRepresentation(String localPath) {
+    return localPath.replace(PATH_SEPARATOR_CHAR, '\\'); // TODO need this? .replaceAll("[/]*$", "");
+  }
 }

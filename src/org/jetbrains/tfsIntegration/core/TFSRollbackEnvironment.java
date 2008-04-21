@@ -3,8 +3,11 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -28,20 +31,87 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   public List<VcsException> rollbackChanges(final List<Change> changes) {
     List<FilePath> localPaths = new ArrayList<FilePath>();
     for (Change change : changes) {
-      final FilePath path;
-      if (change.getBeforeRevision() != null) {
-        path = change.getBeforeRevision().getFile();
-      }
-      else {
-        path = change.getAfterRevision().getFile();
-      }
-      localPaths.add(path);
+      ContentRevision revision = change.getType() == Change.Type.DELETED ? change.getBeforeRevision() : change.getAfterRevision();
+      localPaths.add(revision.getFile());
     }
     return undoPendingChanges(localPaths, true);
   }
 
   public List<VcsException> rollbackMissingFileDeletion(final List<FilePath> files) {
-    return undoPendingChanges(files, true);
+    try {
+      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          Map<ItemPath, ServerStatus> local2serverStatus = StatusProvider.determineServerStatus(workspace, paths);
+          final List<VersionControlServer.GetRequestParams> getRequests = new ArrayList<VersionControlServer.GetRequestParams>();
+          for (Map.Entry<ItemPath, ServerStatus> e : local2serverStatus.entrySet()) {
+            e.getValue().visitBy(e.getKey(), new StatusVisitor() {
+
+              public void unversioned(@NotNull final ItemPath path,
+                                      final @Nullable ExtendedItem extendedItem,
+                                      final boolean localItemExists) throws TfsException {
+                TFSVcs.error("Server status Unversioned when rolling back missing file deletion: " + path.getLocalPath().getPath());
+              }
+
+              public void checkedOutForEdit(@NotNull final ItemPath path,
+                                            final @NotNull ExtendedItem extendedItem,
+                                            final boolean localItemExists) {
+                addForDownload(path, extendedItem);
+              }
+
+              public void scheduledForAddition(@NotNull final ItemPath path,
+                                               final @NotNull ExtendedItem extendedItem,
+                                               final boolean localItemExists) {
+                TFSVcs
+                  .error("Server status ScheduledForAddition when rolling back missing file deletion: " + path.getLocalPath().getPath());
+              }
+
+              public void scheduledForDeletion(@NotNull final ItemPath path,
+                                               final @NotNull ExtendedItem extendedItem,
+                                               final boolean localItemExists) {
+                TFSVcs
+                  .error("Server status ScheduledForDeletion when rolling back missing file deletion: " + path.getLocalPath().getPath());
+              }
+
+              public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
+                throws TfsException {
+                addForDownload(path, extendedItem);
+              }
+
+              public void deleted(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) {
+                TFSVcs.error("Server status Deleted when rolling back missing file deletion: " + path.getLocalPath().getPath());
+              }
+
+              public void upToDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
+                throws TfsException {
+                addForDownload(path, extendedItem);
+              }
+
+              public void renamed(final @NotNull ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists)
+                throws TfsException {
+                addForDownload(path, extendedItem);
+              }
+
+              private void addForDownload(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem) {
+                getRequests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), RecursionType.None,
+                                                                          new ChangesetVersionSpec(extendedItem.getLver())));
+              }
+
+            }, false);
+          }
+
+          List<List<GetOperation>> getOperations =
+            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), getRequests);
+
+          for (List<GetOperation> list : getOperations) {
+            VersionControlServer.downloadItem(workspace, list.get(0), true, true);
+          }
+        }
+      });
+    }
+    catch (TfsException e) {
+      return Collections.singletonList(new VcsException("Failed to rollback file", e));
+    }
+    return Collections.emptyList();
   }
 
   public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
@@ -54,14 +124,13 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           // query GetOperation-s
           List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(extendedItems.size());
           for (Map.Entry<ItemPath, ExtendedItem> e : extendedItems.entrySet()) {
-            requests.add(
-              new VersionControlServer.GetRequestParams(e.getKey(), RecursionType.None, new ChangesetVersionSpec(e.getValue().getLver())));
+            requests.add(new VersionControlServer.GetRequestParams(e.getKey().getServerPath(), RecursionType.None,
+                                                                   new ChangesetVersionSpec(e.getValue().getLver())));
           }
-          Map<ItemPath, List<GetOperation>> operations =
-            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+          List<List<GetOperation>> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
 
           // update content
-          for (List<GetOperation> list : operations.values()) {
+          for (List<GetOperation> list : operations) {
             VersionControlServer.downloadItem(workspace, list.get(0), true, true);
           }
         }

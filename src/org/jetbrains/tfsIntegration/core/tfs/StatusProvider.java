@@ -17,7 +17,9 @@ import java.util.Map;
 public class StatusProvider {
 
   public static void visitByStatus(final @NotNull WorkspaceInfo workspace,
-                                   final @NotNull List<ItemPath> paths, final @Nullable ProgressIndicator progressIndicator, final @NotNull StatusVisitor statusVisitor) throws TfsException {
+                                   final @NotNull List<ItemPath> paths,
+                                   final @Nullable ProgressIndicator progressIndicator,
+                                   final @NotNull StatusVisitor statusVisitor) throws TfsException {
 
     // TODO: query pending changes for all items here to handle rename/move
 
@@ -26,8 +28,8 @@ public class StatusProvider {
     for (Map.Entry<ItemPath, ServerStatus> entry : statuses.entrySet()) {
       ServerStatus status = entry.getValue();
       boolean localItemExists = localItemExists(entry.getKey());
-      System.out
-        .println(entry.getKey().getLocalPath().getPath() + ": " + status + (localItemExists ? ", exists locally" : ", missing locally"));
+      //System.out
+      //  .println(entry.getKey().getLocalPath().getPath() + ": " + status + (localItemExists ? ", exists locally" : ", missing locally"));
       status.visitBy(entry.getKey(), statusVisitor, localItemExists);
       TFSProgressUtil.checkCanceled(progressIndicator);
     }
@@ -52,9 +54,10 @@ public class StatusProvider {
     return result;
   }
 
-  private static ServerStatus determineServerStatus(final ExtendedItem item) {
-    if (item == null) {
-      return new ServerStatus.Unversioned();
+  public static ServerStatus determineServerStatus(final ExtendedItem item) {
+    if (item == null || item.getLocal() == null) {
+      // report not downloaded items as unversioned
+      return new ServerStatus.Unversioned(item);
     }
     else {
       ChangeType change = ChangeType.fromString(item.getChg());
@@ -64,18 +67,12 @@ public class StatusProvider {
       }
       else {
         if (change.isEmpty()) {
-          if (item.getLocal() == null) {
-            TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
-            return new ServerStatus.NotDownloaded(item);
+          TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
+          if (item.getLver() < item.getLatest()) {
+            return new ServerStatus.OutOfDate(item);
           }
           else {
-            TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
-            if (item.getLver() < item.getLatest()) {
-              return new ServerStatus.OutOfDate(item);
-            }
-            else {
-              return new ServerStatus.UpToDate(item);
-            }
+            return new ServerStatus.UpToDate(item);
           }
         }
         else if (change.contains(ChangeType.Value.Add)) {
@@ -92,16 +89,20 @@ public class StatusProvider {
           //TFSVcs.assertTrue(item.getLocal() == null);
           return new ServerStatus.ScheduledForDeletion(item);
         }
-        else if (change.containsOnly(ChangeType.Value.Edit) || change.containsOnly(ChangeType.Value.Edit, ChangeType.Value.Encoding)) {
+        else if (change.contains(ChangeType.Value.Edit) && !change.contains(ChangeType.Value.Rename)) {
           TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
           TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
           TFSVcs.assertTrue(item.getLocal() != null);
           return new ServerStatus.CheckedOutForEdit(item);
         }
+        else if (change.contains(ChangeType.Value.Rename)) {
+          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Rename));
+          return new ServerStatus.Renamed(item); 
+        }
       }
     }
 
-    TFSVcs.LOG.assertTrue(false, "Uncovered case");
+    TFSVcs.LOG.assertTrue(false, "Uncovered case for item " + item.getLocal() != null ? item.getLocal() : item.getTitem());
     return null;
   }
 

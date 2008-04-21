@@ -4,6 +4,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class WorkingFolderInfo {
 
@@ -62,7 +63,8 @@ public class WorkingFolderInfo {
     return copy;
   }
 
-  public String getServerPathByLocalPath(FilePath localPath) {
+  @Nullable
+  public String getServerPathByLocalPath(final @NotNull FilePath localPath) {
     if (getServerPath().length() > 0 && localPath.isUnder(getLocalPath(), false)) {
       String localPathString = localPath.getIOFile().getPath();
       String thisPathString = getLocalPath().getIOFile().getPath();
@@ -72,4 +74,13 @@ public class WorkingFolderInfo {
     return null;
   }
 
+  @Nullable
+  public FilePath getLocalPathByServerPath(final @NotNull String serverPath) {
+    if (getServerPath().length() > 0 && serverPath.startsWith(getServerPath())) {
+      String remainder = serverPath.substring(getServerPath().length());
+      return VcsUtil.getFilePath(getLocalPath().getPath() + remainder);
+    }
+    return null;
+  }
 }
+

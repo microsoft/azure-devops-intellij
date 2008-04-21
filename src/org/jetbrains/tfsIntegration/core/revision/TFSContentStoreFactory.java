@@ -12,6 +12,7 @@ import java.io.IOException;
  */
 public class TFSContentStoreFactory {
 
+  // TODO: FilePath -> ItemPath
   public static TFSContentStore create(final FilePath path, final VcsRevisionNumber.Int revision) throws IOException {
     return new TFSTmpFileStore(path, revision.getValue());
   }

@@ -58,7 +58,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
         ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
         try {
           final List<GetOperation> operations = workspace.getServer().getVCS()
-            .get(workspace.getName(), workspace.getOwnerName(), serverRoot, LatestVersionSpec.getLatest(), RecursionType.Full);
+            .get(workspace.getName(), workspace.getOwnerName(), serverRoot, LatestVersionSpec.INSTANCE, RecursionType.Full);
           List<LocalVersionUpdate> localVersions = new ArrayList<LocalVersionUpdate>();
           localRoot.set(new File(operations.get(0).getTlocal()));
           for (GetOperation operation : operations) {

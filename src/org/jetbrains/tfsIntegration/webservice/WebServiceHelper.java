@@ -1,5 +1,7 @@
 package org.jetbrains.tfsIntegration.webservice;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.StreamUtil;
 import org.apache.axis2.Constants;
@@ -32,10 +34,8 @@ import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExte
 import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthentication;
 import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
-import javax.swing.*;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.rmi.RemoteException;
@@ -190,19 +190,11 @@ public class WebServiceHelper {
             d.show();
           }
         };
-        if (SwingUtilities.isEventDispatchThread()) {
+        if (ApplicationManager.getApplication().isDispatchThread()) {
           runnable.run();
         }
         else {
-          try {
-            SwingUtilities.invokeAndWait(runnable);
-          }
-          catch (InterruptedException e) {
-            // ignore
-          }
-          catch (InvocationTargetException e) {
-            // ignore
-          }
+          ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
         }
         if (d.isOK()) {
           credentialsToConnect = d.getCredentialsToConnect();
@@ -287,7 +279,8 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
   }
 
-  public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream) throws TfsException {
+  public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)
+    throws TfsException {
     final Ref<URI> serverUri = new Ref<URI>();
     try {
       URI uri = new URI(uploadUrl);
@@ -313,7 +306,7 @@ public class WebServiceHelper {
         postMethod.setRequestEntity(new MultipartRequestEntity(parts, postMethod.getParams()));
 
         int statusCode = httpClient.executeMethod(postMethod);
-        if (statusCode == HttpStatus.SC_OK ) {
+        if (statusCode == HttpStatus.SC_OK) {
           if (outputStream != null) {
             StreamUtil.copyStreamContent(getInputStream(postMethod), outputStream);
           }
