@@ -83,7 +83,7 @@ public class StatusProvider {
           return new ServerStatus.ScheduledForAddition(item);
         }
         else if (change.contains(ChangeType.Value.Delete)) {
-          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete));
+//          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete)); // NOTE: may come with "Lock" change 
           //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
           //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
           //TFSVcs.assertTrue(item.getLocal() == null);
@@ -95,9 +95,14 @@ public class StatusProvider {
           TFSVcs.assertTrue(item.getLocal() != null);
           return new ServerStatus.CheckedOutForEdit(item);
         }
-        else if (change.contains(ChangeType.Value.Rename)) {
-          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Rename));
-          return new ServerStatus.Renamed(item); 
+        else if (change.contains(ChangeType.Value.Rename) && !change.contains(ChangeType.Value.Edit)) {
+          return new ServerStatus.Renamed(item);
+        }
+        else if (change.contains(ChangeType.Value.Rename) && change.contains(ChangeType.Value.Edit)) {
+          TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
+          TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
+          TFSVcs.assertTrue(item.getLocal() != null);
+          return new ServerStatus.RenamedCheckedOut(item);
         }
       }
     }

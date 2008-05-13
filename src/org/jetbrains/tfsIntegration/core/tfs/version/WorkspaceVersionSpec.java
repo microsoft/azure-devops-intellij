@@ -12,8 +12,10 @@ import javax.xml.stream.XMLStreamException;
  * Time: 3:05:06
  */
 public class WorkspaceVersionSpec extends VersionSpecBase {
-  private String workspaceName;
-  private String workspaceOwnerName;
+
+    private String workspaceName;
+
+    private String workspaceOwnerName;
 
   public WorkspaceVersionSpec(final String workspaceName, final String workspaceOwnerName) {
     this.workspaceName = workspaceName;
@@ -27,4 +29,12 @@ public class WorkspaceVersionSpec extends VersionSpecBase {
     writeVersionAttribute("", "name", workspaceName, xmlWriter);
     writeVersionAttribute("", "owner", workspaceOwnerName, xmlWriter);
   }
+
+    public String getWorkspaceName() {
+        return workspaceName;
+    }
+    public String getWorkspaceOwnerName() {
+        return workspaceOwnerName;
+    }
+
 }

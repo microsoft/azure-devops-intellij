@@ -99,4 +99,14 @@ public abstract class ServerStatus {
     }
   }
 
+  public static class RenamedCheckedOut extends ServerStatus {
+    public RenamedCheckedOut(final @NotNull ExtendedItem extendedItem) {
+      super(extendedItem);
+    }
+
+    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
+      statusVisitor.renamedCheckedOut(path, myExtendedItem, localItemExists);
+    }
+  }
+
 }

@@ -66,9 +66,9 @@ public class WorkingFolderInfo {
   @Nullable
   public String getServerPathByLocalPath(final @NotNull FilePath localPath) {
     if (getServerPath().length() > 0 && localPath.isUnder(getLocalPath(), false)) {
-      String localPathString = localPath.getIOFile().getPath();
-      String thisPathString = getLocalPath().getIOFile().getPath();
-      String remainder = FileUtil.toSystemIndependentName(localPathString.substring(thisPathString.length()));
+      String localPathString = FileUtil.toSystemIndependentName(localPath.getPath());
+      String thisPathString = FileUtil.toSystemIndependentName(getLocalPath().getPath());
+      String remainder = localPathString.substring(thisPathString.length());
       return getServerPath() + remainder;
     }
     return null;

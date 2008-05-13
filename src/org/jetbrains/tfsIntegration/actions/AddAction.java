@@ -5,6 +5,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 
 public class AddAction extends AnAction {
   public void actionPerformed(AnActionEvent e) {
-    System.out.println("TFS.AddAction.actionPerformed()");
+    throw new UnsupportedOperationException();
   }
 }

@@ -2,7 +2,6 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
-import org.apache.axis2.databinding.ADBBean;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
@@ -54,6 +53,18 @@ public class VersionControlServer {
 // ***************************************************
 // used by now
 
+  public static ItemSpec createItemSpec(final String serverItem, final int deletionId, final RecursionType recursionType) {
+    ItemSpec itemSpec = new ItemSpec();
+    itemSpec.setItem(serverItem);
+    itemSpec.setDid(deletionId);
+    itemSpec.setRecurse(recursionType);
+    return itemSpec;
+  }
+
+  public static ItemSpec createItemSpec(final String serverItem, final RecursionType recursionType) {
+    return createItemSpec(serverItem, Integer.MIN_VALUE, recursionType);
+  }
+
   public static class GetRequestParams {
     public final String serverPath;
     public final RecursionType recursionType;
@@ -70,10 +81,8 @@ public class VersionControlServer {
     ChangeRequest createChangeRequest(ItemPath itemPath);
   }
 
-  private static ChangeRequest createChangeRequestTemplate(ItemPath itemPath) {
-    ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setDid(Integer.MIN_VALUE);
-    itemSpec.setRecurse(null);
+  private static ChangeRequest createChangeRequestTemplate() {
+    ItemSpec itemSpec = createItemSpec(null, null);
 
     ChangeRequest changeRequest = new ChangeRequest();
     changeRequest.setDid(Integer.MIN_VALUE);
@@ -91,7 +100,7 @@ public class VersionControlServer {
     throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
-        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
+        ChangeRequest changeRequest = createChangeRequestTemplate();
         changeRequest.getItem().setItem(itemPath.getServerPath());
         changeRequest.setReq(RequestType.Edit);
 
@@ -107,7 +116,7 @@ public class VersionControlServer {
     throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
-        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
+        ChangeRequest changeRequest = createChangeRequestTemplate();
         changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(itemPath.getLocalPath()));
         changeRequest.setReq(RequestType.Add);
 
@@ -123,12 +132,26 @@ public class VersionControlServer {
 
   public ResultWithFailures<GetOperation> scheduleForDeletion(final String workspaceName,
                                                               final String workspaceOwner,
-                                                              final List<ItemPath> paths) throws TfsException {
+                                                              final Collection<ItemPath> paths) throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, new ChangeRequestProvider() {
-      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
-        ChangeRequest changeRequest = createChangeRequestTemplate(itemPath);
-        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(itemPath.getLocalPath()));
+      public ChangeRequest createChangeRequest(final ItemPath path) {
+        ChangeRequest changeRequest = createChangeRequestTemplate();
+        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(path.getLocalPath()));
         changeRequest.setReq(RequestType.Delete);
+        return changeRequest;
+      }
+    });
+  }
+
+  public ResultWithFailures<GetOperation> rename(final String workspaceName,
+                                                 final String workspaceOwner,
+                                                 final Map<ItemPath, FilePath> movedPaths) throws TfsException {
+    return pendChanges(workspaceName, workspaceOwner, movedPaths.keySet(), new ChangeRequestProvider() {
+      public ChangeRequest createChangeRequest(final ItemPath path) {
+        ChangeRequest changeRequest = createChangeRequestTemplate();
+        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(path.getLocalPath()));
+        changeRequest.setReq(RequestType.Rename);
+        changeRequest.setTarget(VersionControlPath.toTfsRepresentation(movedPaths.get(path)));
         return changeRequest;
       }
     });
@@ -137,7 +160,7 @@ public class VersionControlServer {
 
   private ResultWithFailures<GetOperation> pendChanges(final String workspaceName,
                                                        final String workspaceOwner,
-                                                       List<ItemPath> paths,
+                                                       Collection<ItemPath> paths,
                                                        ChangeRequestProvider changeRequestProvider) throws TfsException {
     ResultWithFailures<GetOperation> result = new ResultWithFailures<GetOperation>();
     if (paths.isEmpty()) {
@@ -211,7 +234,7 @@ public class VersionControlServer {
       getChildItems(workspaceName, ownerName, Collections.singletonList(parentServerPath), deletedState, itemType);
 
     TFSVcs.assertTrue(extendedItems != null && extendedItems.size() == 1);
-    return extendedItems != null ? extendedItems.get(0) : null;
+    return extendedItems != null ? extendedItems.get(0) : Collections.<ExtendedItem>emptyList();
   }
 
   private List<List<ExtendedItem>> getChildItems(final String workspaceName,
@@ -247,10 +270,7 @@ public class VersionControlServer {
                                                             final ItemType itemType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
     for (String serverPath : parentServerPaths) {
-      ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setItem(serverPath);
-      itemSpec.setRecurse(recursionType);
-      itemSpecList.add(itemSpec);
+      itemSpecList.add(createItemSpec(serverPath, recursionType));
     }
     return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
   }
@@ -263,20 +283,17 @@ public class VersionControlServer {
                                                    final ItemType itemType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
     for (ItemPath path : paths) {
-      ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setItem(path.getServerPath());
-      itemSpec.setRecurse(recursionType);
-      itemSpecList.add(itemSpec);
+      itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
     }
     return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
   }
 
 
-  private List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
-                                                    final String ownerName,
-                                                    final List<ItemSpec> itemsSpecs,
-                                                    final DeletedState deletedState,
-                                                    final ItemType itemType) throws TfsException {
+  public List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
+                                                   final String ownerName,
+                                                   final List<ItemSpec> itemsSpecs,
+                                                   final DeletedState deletedState,
+                                                   final ItemType itemType) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
     List<List<ExtendedItem>> result = new ArrayList<List<ExtendedItem>>();
@@ -291,12 +308,10 @@ public class VersionControlServer {
     TFSVcs.assertTrue(extendedItems != null && extendedItems.length == itemsSpecs.size());
     //noinspection ConstantConditions
     for (ArrayOfExtendedItem extendedItem : extendedItems) {
-      List<ExtendedItem> resultItemsList = new ArrayList<ExtendedItem>();
-      ExtendedItem[] resultItems = extendedItem.getExtendedItem();
-      if (resultItems != null) {
-        resultItemsList.addAll(Arrays.asList(resultItems));
-      }
-      result.add(resultItemsList);
+      List<ExtendedItem> currentList = extendedItem.getExtendedItem() != null
+                                       ? new ArrayList(Arrays.asList(extendedItem.getExtendedItem()))
+                                       : Collections.<ExtendedItem>emptyList();
+      result.add(currentList);
     }
     return result;
   }
@@ -306,11 +321,8 @@ public class VersionControlServer {
                                       final String ownerName,
                                       final String itemServerPath,
                                       final DeletedState deletedState) throws TfsException {
-    ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setItem(itemServerPath);
-    itemSpec.setRecurse(RecursionType.None);
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(new ItemSpec[]{itemSpec});
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, RecursionType.None)});
 
     ArrayOfExtendedItem[] extendedItems =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
@@ -336,10 +348,7 @@ public class VersionControlServer {
                                                       final DeletedState deletedState) throws TfsException {
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
     for (ItemPath itemPath : paths) {
-      ItemSpec iSpec = new ItemSpec();
-      iSpec.setItem(itemPath.getServerPath());
-      iSpec.setRecurse(RecursionType.None);
-      itemSpecs.add(iSpec);
+      itemSpecs.add(createItemSpec(itemPath.getServerPath(), RecursionType.None));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
@@ -374,10 +383,12 @@ public class VersionControlServer {
     WebServiceHelper.httpGet(url, outputStream);
   }
 
-  private static void downloadItem(final WorkspaceInfo workspaceInfo,
-                                   final String downloadKey,
-                                   final File destination,
-                                   boolean overwriteReadonly) throws TfsException {
+  public static void downloadItem(final WorkspaceInfo workspaceInfo,
+                                  final String downloadKey,
+                                  final File destination,
+                                  boolean overwriteReadonly,
+                                  boolean setReadonly,
+                                  boolean refreshVirtualFile) throws TfsException {
     OutputStream fileStream = null;
     try {
       if (overwriteReadonly && destination.isFile()) {
@@ -385,6 +396,13 @@ public class VersionControlServer {
       }
       fileStream = new FileOutputStream(destination);
       downloadItem(workspaceInfo, downloadKey, fileStream);
+
+      if (setReadonly) {
+        destination.setReadOnly();
+      }
+      if (refreshVirtualFile) {
+        TfsFileUtil.refreshVirtualFileContents(destination);
+      }
     }
     catch (FileNotFoundException e) {
       throw TfsExceptionManager.processException(e);
@@ -404,10 +422,12 @@ public class VersionControlServer {
     }
   }
 
+  // TODO remove
   public static void downloadItem(@NotNull final WorkspaceInfo workspace,
                                   @NotNull final GetOperation operation,
                                   boolean setReadOnly,
-                                  boolean overwriteReadonly) throws TfsException {
+                                  boolean overwriteReadonly,
+                                  boolean refreshVirtualFile) throws TfsException {
     TFSVcs.assertTrue(operation.getType() == ItemType.Folder || operation.getType() == ItemType.File);
 
     if (ChangeType.fromString(operation.getChg()).contains(ChangeType.Value.Rename)) {
@@ -423,29 +443,18 @@ public class VersionControlServer {
     }
     else {
 
-      File targetFile = new File(operation.getTlocal());
+      File targetFile = new File(operation.getSlocal());
       if (operation.getType() == ItemType.Folder) {
         targetFile.mkdirs();
       }
-      else {
-        TFSVcs.assertTrue(operation.getDurl() != null);
+      // NOTE: dUrl may be null if we try to get old version of renamed file
+      else if (operation.getDurl() != null) {
         if (targetFile.getParentFile() != null) {
           targetFile.getParentFile().mkdirs();
         }
-        downloadItem(workspace, operation.getDurl(), targetFile, overwriteReadonly);
-        if (setReadOnly && targetFile.isFile()) {
-          targetFile.setReadOnly();
-        }
+        downloadItem(workspace, operation.getDurl(), targetFile, overwriteReadonly, refreshVirtualFile, setReadOnly);
       }
     }
-  }
-
-  public static LocalVersionUpdate createLocalVersionUpdate(GetOperation getOperation) {
-    LocalVersionUpdate result = new LocalVersionUpdate();
-    result.setItemid(getOperation.getItemid());
-    result.setTlocal(getOperation.getTlocal());
-    result.setLver(getOperation.getSver());
-    return result;
   }
 
   public List<Changeset> queryHistory(final String workspaceName,
@@ -461,11 +470,7 @@ public class VersionControlServer {
     // TODO: slot mode
     // TODO: include allChangeSets
 
-    final ItemSpec itemSpec = new ItemSpec();
-
-    itemSpec.setRecurse(recursionType);
-    itemSpec.setItem(rootPath.getServerPath());
-    itemSpec.setDid(deletionId);
+    final ItemSpec itemSpec = createItemSpec(rootPath.getServerPath(), deletionId, recursionType);
     List<Changeset> allChangeSets = new ArrayList<Changeset>();
     int total = maxCount > 0 ? maxCount : Integer.MAX_VALUE;
     final Ref<VersionSpec> versionToCurrent = new Ref<VersionSpec>(versionTo);
@@ -510,63 +515,6 @@ public class VersionControlServer {
                         maxCount, RecursionType.Full);
   }
 
-  public Changeset getChangeset(int changesetId) throws RemoteException {
-    return getChangeset(changesetId, false, false);
-  }
-
-  public Changeset getChangeset(int changesetId, boolean includeChanges, boolean includeDownloadInfo) throws RemoteException {
-    return myRepository.QueryChangeset(changesetId, includeChanges, includeDownloadInfo);
-  }
-
-  public int getLatestChangesetId() throws RemoteException {
-    RepositoryProperties properties = myRepository.GetRepositoryProperties(new GetRepositoryProperties());
-    return properties.getLcset();
-  }
-
-  //public Enumeration queryHistory(String path,
-  //                                VersionSpec version,
-  //                                int deletionId,
-  //                                RecursionType recursion,
-  //                                String user,
-  //                                VersionSpec versionFrom,
-  //                                VersionSpec versionTo,
-  //                                int maxCount,
-  //                                boolean includeChanges,
-  //                                boolean slotMode) throws Exception {
-  //  return queryHistory(path, version, deletionId, recursion, user, versionFrom, versionTo, maxCount, includeChanges, slotMode, false);
-  //}
-
-  //public VersionControlLabel[] queryLabels(String labelName, String labelScope, String owner, boolean includeItems) throws RemoteException {
-  //  return myRepository.QueryLabels(null, null, labelName, labelScope, owner, null, VersionSpecBase.getLatest(), includeItems, false)
-  //    .getVersionControlLabel();
-  //}
-  //
-  //public VersionControlLabel[] queryLabels(String labelName,
-  //                                         String labelScope,
-  //                                         String owner,
-  //                                         boolean includeItems,
-  //                                         String filterItem,
-  //                                         VersionSpec versionFilterItem) throws RemoteException {
-  //  return myRepository.QueryLabels(null, null, labelName, labelScope, owner, filterItem, versionFilterItem, includeItems, false)
-  //    .getVersionControlLabel();
-  //}
-  //
-  //public VersionControlLabel[] queryLabels(String labelName,
-  //                                         String labelScope,
-  //                                         String owner,
-  //                                         boolean includeItems,
-  //                                         String filterItem,
-  //                                         VersionSpec versionFilterItem,
-  //                                         boolean generateDownloadUrls) throws RemoteException {
-  //  return myRepository
-  //    .QueryLabels(null, null, labelName, labelScope, owner, filterItem, versionFilterItem, includeItems, generateDownloadUrls)
-  //    .getVersionControlLabel();
-  //}
-
-  //public ItemSecurity[] getPermissions(String[] items, RecursionType recursion) {
-  //  return getPermissions(null, items, recursion);
-  //}
-
   public Workspace[] queryWorkspaces(final String ownerName, final String computer) throws TfsException {
     Workspace[] workspaces = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace[]>() {
       public Workspace[] executeRequest() throws RemoteException {
@@ -595,26 +543,35 @@ public class VersionControlServer {
     return result.get(0);
   }
 
-  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, final List<LocalVersionUpdate> localVersions)
+  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, final Collection<GetOperation> getOperations)
     throws TfsException {
+    if (getOperations.isEmpty()) {
+      return;
+    }
+
+    List<LocalVersionUpdate> localVersionUpdates = new ArrayList<LocalVersionUpdate>(getOperations.size());
+    for (GetOperation getOperation : getOperations) {
+      LocalVersionUpdate localVersionUpdate = new LocalVersionUpdate();
+      localVersionUpdate.setItemid(getOperation.getItemid());
+      localVersionUpdate.setTlocal(getOperation.getTlocal());
+      localVersionUpdate.setLver(getOperation.getSver() != Integer.MIN_VALUE ? getOperation.getSver() : 0);
+      localVersionUpdates.add(localVersionUpdate);
+    }
     final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
-    arrayOfLocalVersionUpdate.setLocalVersionUpdate(localVersions.toArray(new LocalVersionUpdate[localVersions.size()]));
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
-        myRepository.UpdateLocalVersion(workspaceName, workspaceOwnerName, arrayOfLocalVersionUpdate);
+    arrayOfLocalVersionUpdate.setLocalVersionUpdate(localVersionUpdates.toArray(new LocalVersionUpdate[localVersionUpdates.size()]));
+    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<UpdateLocalVersionResponse>() {
+      public UpdateLocalVersionResponse executeRequest() throws RemoteException {
+        return myRepository.UpdateLocalVersion(workspaceName, workspaceOwnerName, arrayOfLocalVersionUpdate);
       }
     });
   }
 
-  public Map<String, ADBBean> undoPendingChanges(final String workspaceName, final String workspaceOwner, final List<ItemPath> paths)
-    throws TfsException {
+  public ResultWithFailures<GetOperation> undoPendingChanges(final String workspaceName,
+                                                             final String workspaceOwner,
+                                                             final Collection<ItemPath> paths) throws TfsException {
     List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
     for (ItemPath itemPath : paths) {
-      ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setDid(Integer.MIN_VALUE);
-      itemSpec.setItem(itemPath.getServerPath());
-      itemSpec.setRecurse(null);
-      itemSpecs.add(itemSpec);
+      itemSpecs.add(createItemSpec(itemPath.getServerPath(), null));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
@@ -626,30 +583,22 @@ public class VersionControlServer {
         }
       });
 
-    Map<String, ADBBean> results = new HashMap<String, ADBBean>();
-    if (response.getUndoPendingChangesResult() != null && response.getUndoPendingChangesResult().getGetOperation() != null) {
-      for (GetOperation getOperation : response.getUndoPendingChangesResult().getGetOperation()) {
-        results.put(getOperation.getTitem(), getOperation);
-      }
-    }
-
-    if (response.getFailures() != null && response.getFailures().getFailure() != null) {
-      for (Failure failure : response.getFailures().getFailure()) {
-        results.put(failure.getItem(), failure);
-      }
-    }
-    return results;
+    GetOperation[] getOperations =
+      response.getUndoPendingChangesResult() != null ? response.getUndoPendingChangesResult().getGetOperation() : null;
+    Failure[] failures = response.getFailures() != null ? response.getFailures().getFailure() : null;
+    return new ResultWithFailures<GetOperation>(getOperations, failures);
   }
 
   public List<List<GetOperation>> get(final String workspaceName, final String workspaceOwner, final List<GetRequestParams> requests)
     throws TfsException {
+    if (requests.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     List<GetRequest> getRequests = new ArrayList<GetRequest>(requests.size());
     for (GetRequestParams getRequestParams : requests) {
       final GetRequest getRequest = new GetRequest();
-      final ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setRecurse(getRequestParams.recursionType);
-      itemSpec.setItem(getRequestParams.serverPath);
-      getRequest.setItemSpec(itemSpec);
+      getRequest.setItemSpec(createItemSpec(getRequestParams.serverPath, getRequestParams.recursionType));
       getRequest.setVersionSpec(getRequestParams.version);
       getRequests.add(getRequest);
     }
@@ -694,10 +643,7 @@ public class VersionControlServer {
                                        final RecursionType recursionType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
     for (FilePath path : paths) {
-      ItemSpec itemSpec = new ItemSpec();
-      itemSpec.setItem(path.getPath());
-      itemSpec.setRecurse(recursionType);
-      itemSpecList.add(itemSpec);
+      itemSpecList.add(createItemSpec(path.getPath(), recursionType)); // TODO: use server path?!
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
@@ -767,16 +713,32 @@ public class VersionControlServer {
     WebServiceHelper.httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null);
   }
 
-  public Map<ItemPath, PendingChange> queryPendingSets(final String workspaceName,
-                                                       final String workspaceOwnerName,
-                                                       final List<ItemPath> paths) throws TfsException {
-    final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-    for (ItemPath itemPath : paths) {
-      ItemSpec iSpec = new ItemSpec();
-      iSpec.setItem(itemPath.getServerPath());
-      iSpec.setRecurse(RecursionType.None);
-      itemSpecs.add(iSpec);
+  public Collection<PendingChange> queryPendingSetsByPaths(final String workspaceName,
+                                                           final String workspaceOwnerName,
+                                                           final Collection<ItemPath> paths,
+                                                           final RecursionType recursionType) throws TfsException {
+    final Collection<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
+    for (ItemPath path : paths) {
+      itemSpecs.add(createItemSpec(path.getServerPath(), recursionType));
     }
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, recursionType);
+  }
+
+  public Collection<PendingChange> queryPendingSetsByStrings(final String workspaceName,
+                                                             final String workspaceOwnerName,
+                                                             final Collection<String> serverItems,
+                                                             final RecursionType recursionType) throws TfsException {
+    final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(serverItems.size());
+    for (String serverItem : serverItems) {
+      itemSpecs.add(createItemSpec(serverItem, recursionType));
+    }
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, recursionType);
+  }
+
+  private Collection<PendingChange> doQueryPendingSets(final String workspaceName,
+                                                       final String workspaceOwnerName,
+                                                       final Collection<ItemSpec> itemSpecs,
+                                                       final RecursionType recursionType) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
 
@@ -787,56 +749,27 @@ public class VersionControlServer {
       }
     });
 
-    Map<ItemPath, PendingChange> result = new HashMap<ItemPath, PendingChange>();
     if (pendingSets != null) {
       TFSVcs.assertTrue(pendingSets.length == 1);
-      TFSVcs.assertTrue(pendingSets[0].getPendingChanges().getPendingChange().length == paths.size());
-      for (int i = 0; i < pendingSets[0].getPendingChanges().getPendingChange().length; i++) {
-        PendingChange pendingChange = pendingSets[0].getPendingChanges().getPendingChange()[i];
-        result.put(paths.get(i), pendingChange);
-      }
+      return Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange());
     }
-    return result;
+    else {
+      return Collections.emptyList();
+    }
   }
-
-  //public List<PendingChange> queryPendingSetsRecursive(final String workspaceName,
-  //                                                     final String workspaceOwnerName,
-  //                                                     final List<ItemPath> roots) throws TfsException {
-  //  final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-  //  for (ItemPath root : roots) {
-  //    ItemSpec itemSpec = new ItemSpec();
-  //    itemSpec.setItem(root.getServerPath());
-  //    itemSpec.setRecurse(RecursionType.Full);
-  //    itemSpecs.add(itemSpec);
-  //  }
-  //  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-  //  arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
-  //
-  //  PendingSet[] pendingSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<PendingSet[]>() {
-  //    public PendingSet[] executeRequest() throws RemoteException {
-  //      return myRepository.QueryPendingSets(workspaceName, workspaceOwnerName, workspaceName, workspaceOwnerName, arrayOfItemSpec, false)
-  //        .getQueryPendingSetsResult().getPendingSet();
-  //    }
-  //  });
-  //
-  //  if (pendingSets != null) {
-  //    return Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange());
-  //  }
-  //  return Collections.emptyList();
-  //}
 
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
                                                    final String workspaceOwnerName,
-                                                   final List<ItemPath> paths,
+                                                   final Collection<String> serverItems,
                                                    final String comment) throws TfsException {
 
     ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
 
     CheckInResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckInResponse>() {
       public CheckInResponse executeRequest() throws RemoteException {
-        final ArrayOfString serverItems = new ArrayOfString();
-        for (ItemPath path : paths) {
-          serverItems.addString(path.getServerPath());
+        final ArrayOfString serverItemsArray = new ArrayOfString();
+        for (String serverItem : serverItems) {
+          serverItemsArray.addString(serverItem);
         }
         final Changeset changeset = new Changeset();
         changeset.setCset(0);
@@ -846,7 +779,8 @@ public class VersionControlServer {
         final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
         final String checkinOptions = "ValidateCheckinOwner"; // TODO checkin options
 
-        return myRepository.CheckIn(workspaceName, workspaceOwnerName, serverItems, changeset, checkinNotificationInfo, checkinOptions);
+        return myRepository
+          .CheckIn(workspaceName, workspaceOwnerName, serverItemsArray, changeset, checkinNotificationInfo, checkinOptions);
       }
     });
 
@@ -916,11 +850,8 @@ public class VersionControlServer {
                         final VersionSpec versionSpec,
                         final DeletedState deletedState,
                         final boolean generateDownloadUrl) throws TfsException {
-    ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setItem(itemServerPath);
-    itemSpec.setRecurse(RecursionType.None);
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(new ItemSpec[]{itemSpec});
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, RecursionType.None)});
 
     ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
       public ItemSet[] executeRequest() throws RemoteException {
@@ -947,6 +878,29 @@ public class VersionControlServer {
         return myRepository.QueryChangeset(changesetId, true, false);
       }
     });
+  }
+
+
+  public List<VersionControlLabel> queryLabels(final String labelName,
+                                           final String labelScope,
+                                           final String owner,
+                                           final boolean includeItems,
+                                           final String filterItem,
+                                           final VersionSpec versionFilterItem,
+                                           final boolean generateDownloadUrls) throws TfsException {
+      VersionControlLabel[] labels = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<VersionControlLabel[]>() {
+        public VersionControlLabel[] executeRequest() throws RemoteException {
+            return myRepository.QueryLabels(
+                    null, null, labelName, labelScope, owner,
+                    filterItem, versionFilterItem,
+                    includeItems, generateDownloadUrls).getVersionControlLabel();
+        }
+      });
+      ArrayList<VersionControlLabel> result = new ArrayList<VersionControlLabel>();
+      if (labels != null) {
+        result.addAll(Arrays.asList(labels));
+      }
+      return result;
   }
 
   //public Map<ItemPath, Item> queryItems(final String workspaceName,
@@ -1038,43 +992,8 @@ public class VersionControlServer {
 //    return properties.getLcset();
 //  }
 //
-//  public Enumeration queryHistory(String path,
-//                                  VersionSpec version,
-//                                  int deletionId,
-//                                  RecursionType recursion,
-//                                  String user,
-//                                  VersionSpec versionFrom,
-//                                  VersionSpec versionTo,
-//                                  int maxCount,
-//                                  boolean includeChanges,
-//                                  boolean slotMode) throws Exception {
-//    return queryHistory(path, version, deletionId, recursion, user, versionFrom, versionTo, maxCount, includeChanges, slotMode, false);
-//  }
-//
 //  public VersionControlLabel[] queryLabels(String labelName, String labelScope, String owner, boolean includeItems) throws RemoteException {
 //    return myRepository.QueryLabels(null, null, labelName, labelScope, owner, null, VersionSpecBase.getLatest(), includeItems, false)
-//      .getVersionControlLabel();
-//  }
-//
-//  public VersionControlLabel[] queryLabels(String labelName,
-//                                           String labelScope,
-//                                           String owner,
-//                                           boolean includeItems,
-//                                           String filterItem,
-//                                           VersionSpec versionFilterItem) throws RemoteException {
-//    return myRepository.QueryLabels(null, null, labelName, labelScope, owner, filterItem, versionFilterItem, includeItems, false)
-//      .getVersionControlLabel();
-//  }
-//
-//  public VersionControlLabel[] queryLabels(String labelName,
-//                                           String labelScope,
-//                                           String owner,
-//                                           boolean includeItems,
-//                                           String filterItem,
-//                                           VersionSpec versionFilterItem,
-//                                           boolean generateDownloadUrls) throws RemoteException {
-//    return myRepository
-//      .QueryLabels(null, null, labelName, labelScope, owner, filterItem, versionFilterItem, includeItems, generateDownloadUrls)
 //      .getVersionControlLabel();
 //  }
 //
@@ -1099,120 +1018,3 @@ public class VersionControlServer {
 //    return myUri;
 //  }
 //
-///////////////////////////////////////////////////////////////////////////////////////////////
-//// TO IMPLEMENT
-//
-//  private static String convertToFullPath(final String localPath) {
-//    // todo: implement convertion from local to full path
-//    return localPath;
-//  }
-//
-//  public Workspace createWorkspace(String name, String owner, String comment, WorkingFolder[] folders, String computer)
-//    throws RemoteException {
-//    // todo: we cannot not set referense to 'this' like in opentfs,
-//    // because our generated calss for WorkspaceInfo does not have such field.
-//    // In opentfs referense to 'this' allows get Repository from WorkspaceInfo,
-//    // Maybe we must create TFSWorkspace class with ref to VersionControlServer?
-//    Workspace w1 = new Workspace();
-//    w1.setName(name);
-//    w1.setOwner(owner);
-//    w1.setComment(comment);
-//    w1.getFolders().setWorkingFolder(folders);
-//    w1.setComputer(computer);
-//    Workspace w2 = myRepository.CreateWorkspace(w1);
-//    Workstation.getInstance().addWorkspace(getServerGuid(), myUri, w2);
-//    return w2;
-//  }
-//
-//  public Workspace getWorkspace(final @NotNull WorkspaceInfo info) {
-//    // todo: we cannot not set referense to 'this' like in opentfs,
-//    // because our generated calss for WorkspaceInfo does not have such field.
-//    // In opentfs referense to 'this' allows get Repository from WorkspaceInfo,
-//    // Maybe we must create TFSWorkspace class with ref to VersionControlServer?
-//    Workspace w = new Workspace();
-//    w.setName(info.getName());
-//    w.setOwner(info.getOwnerName());
-//    w.setComment(info.getComment());
-//    w.getFolders().setWorkingFolder(new WorkingFolder[0]);
-//    w.setComputer(info.getComputer());
-//    return w;
-//  }
-//
-//  public Workspace getWorkspace(String localPath) throws TfsException {
-//    String path = convertToFullPath(localPath);
-//
-//    WorkspaceInfo info = null; // TODO !!! Workstation.getInstance().findWorkspace(path);
-//    if (info == null) {
-//      throw new IllegalArgumentException("Item not mapped " + path);
-//    }
-//
-//    Workspace w = new Workspace();
-//    // todo: we cannot not set referense to 'this' like in opentfs,
-//    // because our generated calss for WorkspaceInfo does not have such field.
-//    // In opentfs referense to 'this' allows get Repository from WorkspaceInfo,
-//    // Maybe we must create TFSWorkspace class with ref to VersionControlServer?
-//    w.setName(info.getName());
-//    w.setOwner(info.getOwnerName());
-//    w.setComment(info.getComment());
-//    w.getFolders().setWorkingFolder(new WorkingFolder[0]);
-//    w.setComputer(Workstation.getInstance().getComputerName());
-//    return w;
-//  }
-//
-//
-//  public ItemSecurity[] getPermissions(String[] identityNames, String[] items, RecursionType recursion) {
-//    return new ItemSecurity[0];
-//
-//    // todo: our stubs differ from opentf' ones. have to find out difference
-//    //return myRepository.QueryItemPermissions(identityNames, items, recursion);
-//  }
-//
-//  public Enumeration queryHistory(String path,
-//                                  final VersionSpec version,
-//                                  int deletionId,
-//                                  RecursionType recursion,
-//                                  final String user,
-//                                  final VersionSpec versionFrom,
-//                                  VersionSpec versionToOrig,
-//                                  int maxCount,
-//                                  final boolean includeChanges,
-//                                  final boolean slotMode,
-//                                  final boolean includeDownloadInfo) throws TfsException {
-//    final ItemSpec itemSpec = new ItemSpec();
-//    itemSpec.setItem(path);
-//    itemSpec.setRecurse(recursion);
-//    itemSpec.setDid(deletionId);
-//
-//    final Ref<String> workspaceName = new Ref<String>("");
-//    final Ref<String> workspaceOwner = new Ref<String>("");
-//
-//    if (!VersionControlPath.isServerItem(itemSpec.getItem())) {
-//      WorkspaceInfo info = null; // TODO !!!  Workstation.getInstance().findWorkspace(itemSpec.getItem());
-//      if (info != null) {
-//        workspaceName.set(info.getName());
-//        workspaceOwner.set(info.getOwnerName());
-//      }
-//    }
-//
-//    List<Changeset> changes = new ArrayList<Changeset>();
-//    int total = maxCount;
-//    final VersionSpec[] versionTo = new VersionSpec[]{versionToOrig};
-//
-//    while (total > 0) {
-//      final int batchMax = Math.min(256, total);
-//      // todo: our stubs differ from opentf' ones. have to find out difference
-//      Changeset[] changeSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
-//        public Changeset[] executeRequest() throws RemoteException {
-//          return myRepository.QueryHistory(workspaceName.get(), workspaceOwner.get(), itemSpec, version, user, versionFrom, versionTo[0],
-//                                           batchMax, includeChanges, slotMode, includeDownloadInfo).getChangeset();
-//        }
-//      });
-//      int batchCnt = changeSets.length;
-//      if (batchCnt < batchMax) break;
-//      total -= batchCnt;
-//      Changeset lastChangeset = changes.get(changes.size() - 1);
-//      versionTo[0] = new ChangesetVersionSpec(lastChangeset.getCset());
-//    }
-//
-//    return Collections.enumeration(changes);
-//  }

@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 public class ChangeType {
+
   public enum Value {
     None(1),
     Add(2),
@@ -70,5 +71,8 @@ public class ChangeType {
     return myValues.isEmpty();
   }
 
+  public int size() {
+    return myValues.size();
+  }
 
 }

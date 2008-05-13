@@ -159,6 +159,9 @@ public class WebServiceHelper {
         if (statusCode == HttpStatus.SC_OK) {
           StreamUtil.copyStreamContent(getInputStream(method), outputStream);
         }
+        else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+          throw new OperationFailedException(method.getResponseBodyAsString());
+        }
         else {
           throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
         }
@@ -297,19 +300,22 @@ public class WebServiceHelper {
         setCredentials(httpClient, credentials, serverUri.get());
         setProxy(httpClient);
 
-        PostMethod postMethod = new PostMethod(uploadUrl);
-        postMethod.setRequestHeader("X-TFS-Version", "1.0.0.0");
-        postMethod.setRequestHeader("accept-language", "en-US");
-        //postMethod.setRequestHeader("X-VersionControl-Instance",
+        PostMethod method = new PostMethod(uploadUrl);
+        method.setRequestHeader("X-TFS-Version", "1.0.0.0");
+        method.setRequestHeader("accept-language", "en-US");
+        //method.setRequestHeader("X-VersionControl-Instance",
         //                            "ac4d8821-8927-4f07-9acf-adbf71119886, CommandCheckin");
 
-        postMethod.setRequestEntity(new MultipartRequestEntity(parts, postMethod.getParams()));
+        method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
 
-        int statusCode = httpClient.executeMethod(postMethod);
+        int statusCode = httpClient.executeMethod(method);
         if (statusCode == HttpStatus.SC_OK) {
           if (outputStream != null) {
-            StreamUtil.copyStreamContent(getInputStream(postMethod), outputStream);
+            StreamUtil.copyStreamContent(getInputStream(method), outputStream);
           }
+        }
+        else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+          throw new OperationFailedException(method.getResponseBodyAsString());
         }
         else {
           throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);

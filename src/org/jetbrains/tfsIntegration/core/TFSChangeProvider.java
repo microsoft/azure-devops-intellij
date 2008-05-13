@@ -14,10 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.*;
 
@@ -49,42 +46,50 @@ public class TFSChangeProvider implements ChangeProvider {
 
     progress.setText("Processing changes");
 
-    Set<FilePath> paths = new HashSet<FilePath>();
+    Collection<FilePath> roots = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
     for (FilePath p : dirtyScope.getRecursivelyDirtyDirectories()) {
-      addPathSmart(paths, p);
+      updateRoots(roots, p);
     }
     for (FilePath p : dirtyScope.getDirtyFiles()) {
-      addPathSmart(paths, p);
+      updateRoots(roots, p);
     }
 
     try {
-      // ingore orphan paths here
-      WorkstationHelper.processByWorkspaces(paths, new WorkstationHelper.VoidProcessDelegate() {
+      // ingore orphan roots here
+      WorkstationHelper.processByWorkspaces(roots, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           processWorkspace(workspace, paths, builder, progress);
         }
       });
     }
     catch (TfsException e) {
-      throw new VcsException("Failed to determine items status", e);
+      throw new VcsException(e.getMessage(), e);
     }
   }
 
   private static void processWorkspace(final WorkspaceInfo workspace,
-                                       final List<ItemPath> paths,
+                                       final List<ItemPath> roots,
                                        ChangelistBuilder builder,
                                        final @Nullable ProgressIndicator progress) throws TfsException {
-    StatusVisitor statusVisitor = new ChangelistBuilderStatusVisitor(builder);
-    Map<ItemPath, ExtendedItem> extendedItems = new HashMap<ItemPath, ExtendedItem>();
-
     TFSProgressUtil.checkCanceled(progress);
+
+    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(roots.size());
+    for (ItemPath root : roots) {
+      final VirtualFile file = root.getLocalPath().getVirtualFile();
+      RecursionType recursionType = (file != null && file.exists() && !file.isDirectory()) ? RecursionType.None : RecursionType.Full;
+      itemSpecs.add(VersionControlServer.createItemSpec(root.getServerPath(), recursionType));
+    }
+
     List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
-      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), paths, DeletedState.NonDeleted, RecursionType.Full, ItemType.Any);
-    for (int i = 0; i < paths.size(); i++) {
-      ItemPath path = paths.get(i);
+      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.NonDeleted,
+                        ItemType.Any);
+
+    Map<ItemPath, ExtendedItem> local2ExtendedItem = new HashMap<ItemPath, ExtendedItem>();
+    for (int i = 0; i < roots.size(); i++) {
+      ItemPath path = roots.get(i);
 
       Collection<ExtendedItem> serverItems = extendedItemsResult.get(i);
-      Collection<FilePath> localItems = new HashSet<FilePath>();
+      Collection<FilePath> localItems = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
       localItems.add(path.getLocalPath());
       addExistingFilesRecursively(localItems, path.getLocalPath().getVirtualFile());
 
@@ -105,21 +110,22 @@ public class TFSChangeProvider implements ChangeProvider {
         if (serverItem != null) {
           serverItems.remove(serverItem);
         }
-        extendedItems.put(new ItemPath(localItem, workspace.findServerPathByLocalPath(localItem)), serverItem);
+        local2ExtendedItem.put(new ItemPath(localItem, workspace.findServerPathByLocalPath(localItem)), serverItem);
       }
 
       // find locally missing items
       for (ExtendedItem serverItem : serverItems) {
         if (serverItem.getLocal() != null) {
-          extendedItems.put(new ItemPath(VcsUtil.getFilePathForDeletedFile(serverItem.getLocal(), serverItem.getType() == ItemType.Folder),
-                                         serverItem.getTitem()), serverItem);
+          local2ExtendedItem.put(new ItemPath(
+            VcsUtil.getFilePathForDeletedFile(serverItem.getLocal(), serverItem.getType() == ItemType.Folder), serverItem.getTitem()),
+                                 serverItem);
         }
       }
     }
 
-    for (Map.Entry<ItemPath, ExtendedItem> entry : extendedItems.entrySet()) {
+    StatusVisitor statusVisitor = new ChangelistBuilderStatusVisitor(builder, workspace);
+    for (Map.Entry<ItemPath, ExtendedItem> entry : local2ExtendedItem.entrySet()) {
       ItemPath itemPath = entry.getKey();
-
       ExtendedItem serverItem = entry.getValue();
       ServerStatus status = StatusProvider.determineServerStatus(serverItem);
 
@@ -148,18 +154,18 @@ public class TFSChangeProvider implements ChangeProvider {
     }
   }
 
-  private static void addPathSmart(Collection<FilePath> existingPaths, FilePath newPath) {
+  private static void updateRoots(Collection<FilePath> existingRoots, FilePath newPath) {
     Collection<FilePath> toRemove = new ArrayList<FilePath>();
-    for (FilePath existing : existingPaths) {
-      if (FileUtil.pathsEqual(newPath.toString(), existing.toString()) || newPath.isUnder(existing, false)) {
+    for (FilePath existing : existingRoots) {
+      if (FileUtil.pathsEqual(newPath.getPath(), existing.getPath()) || newPath.isUnder(existing, false)) {
         return;
       }
       if (existing.isUnder(newPath, false)) {
         toRemove.add(existing);
       }
     }
-    existingPaths.removeAll(toRemove);
-    existingPaths.add(newPath);
+    existingRoots.removeAll(toRemove);
+    existingRoots.add(newPath);
   }
 
 

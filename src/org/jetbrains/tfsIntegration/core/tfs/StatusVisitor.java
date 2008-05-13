@@ -21,5 +21,7 @@ public interface StatusVisitor {
 
   void upToDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
 
-  void renamed(final @NotNull ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void renamed(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+
+  void renamedCheckedOut(final ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
 }

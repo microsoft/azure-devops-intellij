@@ -8,6 +8,12 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.UpdateWorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
+
+import java.util.Map;
+import java.util.HashMap;
 
 @State(
   name = "TFS",
@@ -68,4 +74,16 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
     myConfigurationBean = state;
   }
 
+    public boolean UPDATE_RECURSIVELY = false;
+
+    private final Map<WorkspaceInfo, UpdateWorkspaceInfo> myUpdateWorkspaceInfos = new HashMap<WorkspaceInfo, UpdateWorkspaceInfo>();
+
+    public UpdateWorkspaceInfo getUpdateWorkspaceInfo(WorkspaceInfo workspace) {
+      UpdateWorkspaceInfo info = myUpdateWorkspaceInfos.get(workspace);
+      if (info == null) {
+        info = new UpdateWorkspaceInfo(LatestVersionSpec.INSTANCE);
+        myUpdateWorkspaceInfos.put(workspace, info);
+      }
+      return info;
+    }
 }

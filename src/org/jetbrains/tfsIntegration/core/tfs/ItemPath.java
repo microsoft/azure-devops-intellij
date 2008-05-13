@@ -19,4 +19,25 @@ public class ItemPath {
   public String getServerPath() {
     return myServerPath;
   }
+
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    final ItemPath itemPath = (ItemPath)o;
+
+    if (myLocalPath != null ? !myLocalPath.equals(itemPath.myLocalPath) : itemPath.myLocalPath != null) return false;
+
+    return true;
+  }
+
+  public int hashCode() {
+    int result;
+    result = (myLocalPath != null ? myLocalPath.hashCode() : 0);
+    return result;
+  }
+
+  public String toString() {
+    return "local: " + getLocalPath() + ", server: " + getServerPath();
+  }
 }

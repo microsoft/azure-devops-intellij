@@ -115,15 +115,19 @@ public class WorkspaceInfo {
     }
   }
 
+  // TODO find the nearest mapping!
   @Nullable
   public String findServerPathByLocalPath(final @NotNull FilePath localPath) throws TfsException {
+    FilePath mappingPath = null;
+    String serverPath = null;
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
-      String serverPath = folderInfo.getServerPathByLocalPath(localPath);
-      if (serverPath != null) {
-        return serverPath;
+      String sPath = folderInfo.getServerPathByLocalPath(localPath);
+      if (sPath != null && (mappingPath == null || folderInfo.getLocalPath().isUnder(mappingPath, false))) {
+        mappingPath = folderInfo.getLocalPath();
+        serverPath = sPath;
       }
     }
-    return null;
+    return serverPath;
   }
 
   @Nullable
@@ -147,7 +151,6 @@ public class WorkspaceInfo {
   }
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
-    checkCurrentOwner();
     myWorkingFoldersInfos.add(workingFolderInfo);
   }
 

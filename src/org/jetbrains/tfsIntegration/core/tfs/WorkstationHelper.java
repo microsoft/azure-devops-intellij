@@ -103,7 +103,7 @@ public class WorkstationHelper {
   public static <T> OneToOneProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths, final OneToOneProcessDelegate<T> delegate)
     throws TfsException {
     final Map<ItemPath, T> overallResults = new HashMap<ItemPath, T>(localPaths.size());
-    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
+    List<FilePath> orphanPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
       public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
         Map<ItemPath, T> serverPath2result = delegate.executeRequest(workspace, paths);
         for (ItemPath itemPath : paths) {
@@ -111,7 +111,7 @@ public class WorkstationHelper {
         }
       }
     });
-    return new OneToOneProcessResult<T>(overallResults, workspaceNotFoundLocalPaths);
+    return new OneToOneProcessResult<T>(overallResults, orphanPaths);
   }
 
   /**
@@ -121,7 +121,7 @@ public class WorkstationHelper {
    * @throws TfsException in case error occurs
    */
   private static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths, WorkspaceProcessor processor) throws TfsException {
-    List<FilePath> workspaceNotFoundLocalPaths = new ArrayList<FilePath>();
+    List<FilePath> orphanPaths = new ArrayList<FilePath>();
     Map<WorkspaceInfo, List<FilePath>> workspace2localPaths = new HashMap<WorkspaceInfo, List<FilePath>>();
     for (FilePath localPath : localPaths) {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
@@ -134,7 +134,7 @@ public class WorkstationHelper {
         workspaceLocalPaths.add(localPath);
       }
       else {
-        workspaceNotFoundLocalPaths.add(localPath);
+        orphanPaths.add(localPath);
       }
     }
 
@@ -146,7 +146,7 @@ public class WorkstationHelper {
       }
       processor.process(workspace, currentItemPaths);
     }
-    return workspaceNotFoundLocalPaths;
+    return orphanPaths;
   }
 
   public static void reportOrpanPaths(final List<FilePath> orphanPaths, final Project project) {

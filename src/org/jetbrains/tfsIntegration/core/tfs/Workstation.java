@@ -223,6 +223,7 @@ public class Workstation {
     // todo: implement add operation
   }
 
+  // TODO find by the nearest mapping!
   @Nullable
   public WorkspaceInfo findWorkspace(final @NotNull FilePath localPath) throws TfsException {
     for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {

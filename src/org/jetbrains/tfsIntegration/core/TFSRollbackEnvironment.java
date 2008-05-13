@@ -1,27 +1,32 @@
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TFSRollbackEnvironment implements RollbackEnvironment {
+
+  private final @NotNull Project myProject;
+
+  public TFSRollbackEnvironment(final Project project) {
+    myProject = project;
+  }
 
   public String getRollbackOperationName() {
     return "Undo Pending Changes";
@@ -38,11 +43,13 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   }
 
   public List<VcsException> rollbackMissingFileDeletion(final List<FilePath> files) {
+    final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           Map<ItemPath, ServerStatus> local2serverStatus = StatusProvider.determineServerStatus(workspace, paths);
-          final List<VersionControlServer.GetRequestParams> getRequests = new ArrayList<VersionControlServer.GetRequestParams>();
+          final List<VersionControlServer.GetRequestParams> download = new ArrayList<VersionControlServer.GetRequestParams>();
+          final List<ItemPath> undo = new ArrayList<ItemPath>();
           for (Map.Entry<ItemPath, ServerStatus> e : local2serverStatus.entrySet()) {
             e.getValue().visitBy(e.getKey(), new StatusVisitor() {
 
@@ -55,14 +62,13 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               public void checkedOutForEdit(@NotNull final ItemPath path,
                                             final @NotNull ExtendedItem extendedItem,
                                             final boolean localItemExists) {
-                addForDownload(path, extendedItem);
+                undo.add(path);
               }
 
               public void scheduledForAddition(@NotNull final ItemPath path,
                                                final @NotNull ExtendedItem extendedItem,
                                                final boolean localItemExists) {
-                TFSVcs
-                  .error("Server status ScheduledForAddition when rolling back missing file deletion: " + path.getLocalPath().getPath());
+                undo.add(path);
               }
 
               public void scheduledForDeletion(@NotNull final ItemPath path,
@@ -70,11 +76,13 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                                                final boolean localItemExists) {
                 TFSVcs
                   .error("Server status ScheduledForDeletion when rolling back missing file deletion: " + path.getLocalPath().getPath());
+                //undo.add(path);
+                //addForDownload(extendedItem);
               }
 
               public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
                 throws TfsException {
-                addForDownload(path, extendedItem);
+                addForDownload(extendedItem);
               }
 
               public void deleted(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) {
@@ -83,27 +91,35 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
 
               public void upToDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
                 throws TfsException {
-                addForDownload(path, extendedItem);
+                addForDownload(extendedItem);
               }
 
-              public void renamed(final @NotNull ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists)
+              public void renamed(final @NotNull ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
                 throws TfsException {
-                addForDownload(path, extendedItem);
+                undo.add(path);
               }
 
-              private void addForDownload(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem) {
-                getRequests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), RecursionType.None,
-                                                                          new ChangesetVersionSpec(extendedItem.getLver())));
+              public void renamedCheckedOut(final @NotNull ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+                throws TfsException {
+                undo.add(path);
+              }
+
+              private void addForDownload(final @NotNull ExtendedItem extendedItem) {
+                download.add(new VersionControlServer.GetRequestParams(extendedItem.getSitem(), RecursionType.None,
+                                                                       new ChangesetVersionSpec(extendedItem.getLver())));
               }
 
             }, false);
           }
 
+          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true);
+          errors.addAll(undoResult.errors);
+
           List<List<GetOperation>> getOperations =
-            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), getRequests);
+            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
 
           for (List<GetOperation> list : getOperations) {
-            VersionControlServer.downloadItem(workspace, list.get(0), true, true);
+            VersionControlServer.downloadItem(workspace, list.get(0), true, true, true);
           }
         }
       });
@@ -111,10 +127,11 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
     catch (TfsException e) {
       return Collections.singletonList(new VcsException("Failed to rollback file", e));
     }
-    return Collections.emptyList();
+    return errors;
   }
 
   public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
+    final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -128,15 +145,15 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                                                                    new ChangesetVersionSpec(e.getValue().getLver())));
           }
           List<List<GetOperation>> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
-
-          // update content
-          for (List<GetOperation> list : operations) {
-            VersionControlServer.downloadItem(workspace, list.get(0), true, true);
+          Collection<GetOperation> allOperations = new ArrayList<GetOperation>();
+          for (List<GetOperation> ops : operations) {
+            allOperations.addAll(ops);
           }
+          errors.addAll(UndoPendingChanges.postProcess(workspace, allOperations, true));
         }
       });
 
-      return Collections.emptyList();
+      return errors;
     }
     catch (TfsException e) {
       return Collections.singletonList(new VcsException("Failed to undo pending changes", e));
@@ -144,19 +161,22 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   }
 
   public void rollbackIfUnchanged(final VirtualFile file) {
-    undoPendingChanges(Collections.singletonList(TfsFileUtil.getFilePath(file)), false);
+    final List<VcsException> errors = undoPendingChanges(Collections.singletonList(TfsFileUtil.getFilePath(file)), false);
+    if (!errors.isEmpty()) {
+      AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFS_NAME);
+    }
   }
 
   private static List<VcsException> undoPendingChanges(final List<FilePath> localPaths, final boolean updateToBaseVersion) {
-    final List<VcsException> exceptions = new ArrayList<VcsException>();
+    final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          List<Failure> failures = OperationHelper.undoPendingChanges(workspace, paths, updateToBaseVersion);
-          exceptions.addAll(BeanHelper.getVcsExceptions("Failed to undo pending changes", failures));
+          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, paths, true);
+          errors.addAll(undoResult.errors);
         }
       });
-      return exceptions;
+      return errors;
     }
     catch (TfsException e) {
       return Collections.singletonList(new VcsException("Failed to undo pending changes", e));

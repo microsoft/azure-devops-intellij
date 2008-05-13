@@ -15,9 +15,11 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem
 
 class ChangelistBuilderStatusVisitor implements StatusVisitor {
   private ChangelistBuilder builder;
+  private WorkspaceInfo myWorkspace;
 
-  public ChangelistBuilderStatusVisitor(@NotNull ChangelistBuilder builder) {
+  public ChangelistBuilderStatusVisitor(@NotNull ChangelistBuilder builder, final WorkspaceInfo workspace) {
     this.builder = builder;
+    myWorkspace = workspace;
   }
 
   public void unversioned(@NotNull final ItemPath path, final @Nullable ExtendedItem extendedItem, final boolean localItemExists) {
@@ -77,10 +79,23 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     }
   }
 
-  public void renamed(@NotNull final ItemPath path, final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
+  public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
     if (localItemExists) {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(path.getLocalPath());
-      FilePath oldPath = workspace.findLocalPathByServerPath(extendedItem.getSitem());
+      FilePath oldPath = myWorkspace.findLocalPathByServerPath(extendedItem.getSitem());
+      // TODO getLatest - 1
+      TFSContentRevision before = TFSContentRevisionFactory.getRevision(oldPath, extendedItem.getLver() - 1);
+      TFSContentRevision after =
+        TFSContentRevisionFactory.getRevision(VcsUtil.getFilePath(extendedItem.getLocal()), extendedItem.getLver());
+      builder.processChange(new Change(before, after));
+    }
+    else {
+      builder.processLocallyDeletedFile(path.getLocalPath());
+    }
+  }
+
+  public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
+    if (localItemExists) {
+      FilePath oldPath = myWorkspace.findLocalPathByServerPath(extendedItem.getSitem());
       // TODO getLatest - 1
       TFSContentRevision before = TFSContentRevisionFactory.getRevision(oldPath, extendedItem.getLver() - 1);
       TFSContentRevision after =

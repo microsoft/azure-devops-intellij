@@ -109,7 +109,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public RollbackEnvironment getRollbackEnvironment() {
-    return new TFSRollbackEnvironment();
+    return new TFSRollbackEnvironment(myProject);
   }
 
   public boolean fileIsUnderVcs(final FilePath filePath) {

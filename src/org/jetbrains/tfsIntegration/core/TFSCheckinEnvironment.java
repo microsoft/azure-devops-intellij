@@ -14,17 +14,15 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinResult;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Collection;
+import java.util.List;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
 
@@ -81,33 +79,55 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
         files.add(path);
       }
     }
-    final List<VcsException> exceptions = new ArrayList<VcsException>();
+    final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
             // get pending changes for given items
-            Map<ItemPath, PendingChange> pendingChanges =
-              workspace.getServer().getVCS().queryPendingSets(workspace.getName(), workspace.getOwnerName(), paths);
-            // upload files
-            for (Map.Entry<ItemPath, PendingChange> entry : pendingChanges.entrySet()) {
-              if (entry.getValue().getType() == ItemType.File) {
-                workspace.getServer().getVCS().uploadItem(workspace, entry.getValue());
-              }
+            Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
+              .queryPendingSetsByPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None);
+
+            if (pendingChanges.isEmpty()) {
+              return;
             }
-            // call check in
-            if (!pendingChanges.isEmpty()) {
-              ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
-                .checkIn(workspace.getName(), workspace.getOwnerName(), new ArrayList<ItemPath>(pendingChanges.keySet()), preparedComment);
-              // check that CheckIn was successfull
-              if (!result.getFailures().isEmpty()) {
-                exceptions.addAll(BeanHelper.getVcsExceptions("Failed to check in", result.getFailures()));
+
+            Collection<String> checkIn = new ArrayList<String>();
+            // upload files
+            for (PendingChange pendingChange : pendingChanges) {
+              if (pendingChange.getType() == ItemType.File) {
+                ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
+                if (changeType.contains(ChangeType.Value.Edit) || changeType.contains(ChangeType.Value.Add)) {
+                  workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
+                }
               }
-              else {
-                // set readonly status for files
-                for (ItemPath path : pendingChanges.keySet()) {
-                  VirtualFile file = VcsUtil.getVirtualFile(path.getLocalPath().getPath());
-                  if (file != null && file.isValid() && !file.isDirectory()) {
+              checkIn.add(pendingChange.getItem());
+            }
+
+            ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
+              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment);
+            errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
+
+            Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
+            for (Failure failure : result.getFailures()) {
+              TFSVcs.assertTrue(failure.getItem() != null);
+              commitFailed.add(failure.getItem());
+            }
+
+            // set readonly status for files
+            for (PendingChange pendingChange : pendingChanges) {
+              TFSVcs.assertTrue(pendingChange.getItem() != null);
+              if (commitFailed.contains(pendingChange.getItem())) {
+                continue;
+              }
+
+              if (pendingChange.getType() == ItemType.File) {
+                ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
+                if (changeType.contains(ChangeType.Value.Edit) ||
+                    changeType.contains(ChangeType.Value.Add) ||
+                    changeType.contains(ChangeType.Value.Rename)) {
+                  VirtualFile file = VcsUtil.getVirtualFile(pendingChange.getLocal());
+                  if (file != null && file.isValid()) {
                     TfsFileUtil.setReadOnlyInEventDispathThread(file, true);
                   }
                 }
@@ -116,40 +136,34 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown
-            exceptions.add(new VcsException(e));
+            errors.add(new VcsException(e));
           }
         }
       });
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
-      exceptions.add(new VcsException(e));
+      errors.add(new VcsException(e));
     }
-    return exceptions;
+    return errors;
   }
 
   @Nullable
   public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
-    final List<VcsException> exceptions = new ArrayList<VcsException>();
+    final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          try {
-            Collection<Failure> failures = OperationHelper.scheduleForDeletion(myProject, workspace, paths, true);
-            exceptions.addAll(BeanHelper.getVcsExceptions("Failed to schedule for deletion", failures));
-          }
-          catch (IOException e) {
-            //noinspection ThrowableInstanceNeverThrown
-            exceptions.add(new VcsException(e));
-          }
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
+          errors.addAll(schedulingErrors);
         }
       });
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
-      exceptions.add(new VcsException(e));
+      errors.add(new VcsException(e));
     }
-    return exceptions;
+    return errors;
   }
 
   @Nullable
@@ -158,15 +172,9 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          try {
-            Collection<Failure> failures = OperationHelper.scheduleForAddition(myProject, workspace, paths);
-            exceptions.addAll(BeanHelper.getVcsExceptions("Failed to schedule for addition", failures));
-          }
-          catch (IOException e) {
-            //noinspection ThrowableInstanceNeverThrown
-            exceptions.add(new VcsException(e));
-          }
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+          Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
+          exceptions.addAll(schedulingErrors);
         }
       });
     }

@@ -13,8 +13,6 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-import sun.security.validator.ValidatorException;
-
 public class TfsExceptionManager {
 
   private static final String TRANSPORT_ERROR_MESSAGE = "Transport error: ";
@@ -100,7 +98,6 @@ public class TfsExceptionManager {
         return new UnauthorizedException(axisFault);
       case HttpStatus.SC_BAD_GATEWAY:
         return new HostNotFoundException(axisFault);
-
       default:
         return new ConnectionFailedException(axisFault, errorCode);
     }

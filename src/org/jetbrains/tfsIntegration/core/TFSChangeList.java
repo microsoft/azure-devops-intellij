@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
@@ -23,15 +24,15 @@ import java.io.IOException;
 import java.util.*;
 
 public class TFSChangeList implements CommittedChangeList {
-  private int myRevision;
+  private int myRevisionNumber;
   private String myAuthor;
   private Date myDate;
   private @NotNull String myComment;
   private final TFSVcs myVcs;
   private List<Change> myChanges;
-  private Set<FilePath> myChangedPaths = new HashSet<FilePath>();
-  private Set<FilePath> myAddedPaths = new HashSet<FilePath>();
-  private Set<FilePath> myDeletedPaths = new HashSet<FilePath>();
+  private Set<FilePath> myChangedPaths = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
+  private Set<FilePath> myAddedPaths = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
+  private Set<FilePath> myDeletedPaths = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
 
   public TFSChangeList(final TFSVcs vcs, final DataInput stream) {
     myVcs = vcs;
@@ -39,12 +40,12 @@ public class TFSChangeList implements CommittedChangeList {
   }
 
   public TFSChangeList(final TFSRepositoryLocation location,
-                       final int revision,
+                       final int revisionNumber,
                        final String author,
                        final Date date,
                        final String comment,
                        final TFSVcs vcs) {
-    myRevision = revision;
+    myRevisionNumber = revisionNumber;
     myAuthor = author;
     myDate = date;
     myComment = comment != null ? comment : "";
@@ -54,7 +55,7 @@ public class TFSChangeList implements CommittedChangeList {
 
   private void loadChanges(final TFSRepositoryLocation repositoryLocation) {
     try {
-      Changeset changeset = repositoryLocation.getWorkspace().getServer().getVCS().queryChangeset(myRevision);
+      Changeset changeset = repositoryLocation.getWorkspace().getServer().getVCS().queryChangeset(myRevisionNumber);
       org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change[] changes = changeset.getChanges().getChange();
 
       for (org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change : changes) {
@@ -126,7 +127,7 @@ public class TFSChangeList implements CommittedChangeList {
   }
 
   public long getNumber() {
-    return myRevision;
+    return myRevisionNumber;
   }
 
   public AbstractVcs getVcs() {
@@ -154,14 +155,14 @@ public class TFSChangeList implements CommittedChangeList {
   private void buildChanges() {
     myChanges = new ArrayList<Change>();
     for (FilePath path : myAddedPaths) {
-      myChanges.add(new Change(null, new TFSContentRevision(path, myRevision)));
+      myChanges.add(new Change(null, new TFSContentRevision(path, myRevisionNumber)));
     }
     for (FilePath path : myDeletedPaths) {
-      myChanges.add(new Change(new TFSContentRevision(path, myRevision - 1), null));
+      myChanges.add(new Change(new TFSContentRevision(path, myRevisionNumber - 1), null));
     }
     for (FilePath path : myChangedPaths) {
-      TFSContentRevision beforeRevision = new TFSContentRevision(path, myRevision - 1);
-      TFSContentRevision afterRevision = new TFSContentRevision(path, myRevision);
+      TFSContentRevision beforeRevision = new TFSContentRevision(path, myRevisionNumber - 1);
+      TFSContentRevision afterRevision = new TFSContentRevision(path, myRevisionNumber);
       myChanges.add(new Change(beforeRevision, afterRevision));
     }
 
@@ -169,7 +170,7 @@ public class TFSChangeList implements CommittedChangeList {
   }
 
   public void writeToStream(final DataOutput stream) throws IOException {
-    stream.writeInt(myRevision);
+    stream.writeInt(myRevisionNumber);
     stream.writeUTF(myAuthor);
     stream.writeLong(myDate.getTime());
     stream.writeUTF(myComment);
@@ -181,7 +182,7 @@ public class TFSChangeList implements CommittedChangeList {
 
   private void readFromStream(final DataInput stream) {
     try {
-      myRevision = stream.readInt();
+      myRevisionNumber = stream.readInt();
       myAuthor = stream.readUTF();
       myDate = new Date(stream.readLong());
       myComment = stream.readUTF();
@@ -216,7 +217,7 @@ public class TFSChangeList implements CommittedChangeList {
 
     final TFSChangeList that = (TFSChangeList)o;
 
-    if (myRevision != that.myRevision) return false;
+    if (myRevisionNumber != that.myRevisionNumber) return false;
     if (myAuthor != null ? !myAuthor.equals(that.myAuthor) : that.myAuthor != null) return false;
     if (myDate != null ? !myDate.equals(that.myDate) : that.myDate != null) return false;
     if (!myComment.equals(that.myComment)) return false;
@@ -226,7 +227,7 @@ public class TFSChangeList implements CommittedChangeList {
 
   public int hashCode() {
     int result;
-    result = myRevision ^ (myRevision >> 32);
+    result = myRevisionNumber ^ (myRevisionNumber >> 32);
     result = 31 * result + (myAuthor != null ? myAuthor.hashCode() : 0);
     result = 31 * result + (myDate != null ? myDate.hashCode() : 0);
     result = 31 * result + (myComment.hashCode());

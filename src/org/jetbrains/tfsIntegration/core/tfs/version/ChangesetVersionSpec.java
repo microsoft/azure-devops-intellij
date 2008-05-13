@@ -14,7 +14,11 @@ import javax.xml.stream.XMLStreamException;
 public class ChangesetVersionSpec extends VersionSpecBase {
   private int changeSetId;
 
-  public ChangesetVersionSpec(final int changeSetId) {
+    public int getChangeSetId() {
+        return changeSetId;
+    }
+
+    public ChangesetVersionSpec(final int changeSetId) {
     this.changeSetId = changeSetId;
   }
 
