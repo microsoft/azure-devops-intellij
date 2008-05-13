@@ -14,5 +14,10 @@
     <orderEntry type="library" name="TFS Stubs" level="project" />
     <orderEntryProperties />
   </component>
+  <component name="copyright">
+    <Base>
+      <setting name="state" value="1" />
+    </Base>
+  </component>
 </module>
 
