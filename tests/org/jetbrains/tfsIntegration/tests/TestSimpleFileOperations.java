@@ -125,7 +125,6 @@ public class TestSimpleFileOperations extends TFSTestCase {
     getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Collections.singletonList(TfsFileUtil.getFilePath(file)));
 
     Assert.assertEquals(0, getChanges().getTotalItems());
-    Assert.assertEquals(content, getContent(VcsUtil.getVirtualFile(path.getPath())));
   }
 
   // scheduled for addition -> rollback -> unversioned
@@ -361,8 +360,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     commit(getChanges().getChanges(), "unittest");
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getModifiedWithoutCheckoutFiles().contains(file));
+    Assert.assertEquals(0, changes.getTotalItems());
   }
 
   // modified [rename] -> rename not to original name -> modified [rename]
@@ -430,7 +428,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     Assert.assertEquals(0, getChanges().getTotalItems());
   }
 
-  // modified [rename] -> revert -> up to date
+  // modified [rename] -> commit -> up to date
   @Test
   public void testRenamedToUpToDateCommit() throws Exception {
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);

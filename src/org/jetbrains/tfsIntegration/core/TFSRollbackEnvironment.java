@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -151,7 +152,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
     try {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          // query extended items to determine base version
+          // query extended items to determine base (local) version
           Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
 
           // query GetOperation-s
@@ -165,7 +166,9 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           for (List<GetOperation> ops : operations) {
             allOperations.addAll(ops);
           }
-          errors.addAll(UndoPendingChanges.postProcess(workspace, allOperations, true));
+
+          final Collection<VcsException> applyingErrors = ApplyGetOperations.execute(workspace, allOperations, true);
+          errors.addAll(applyingErrors);
         }
       });
 

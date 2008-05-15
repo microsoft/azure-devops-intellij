@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
@@ -37,9 +38,9 @@ import java.io.OutputStream;
 public class TFSContentRevision implements ContentRevision {
   private static final Logger LOG = Logger.getInstance(TFSContentRevision.class.getName());
 
-  private FilePath myPath;
+  private final @NotNull FilePath myPath;
   private String myServerContent;
-  private VcsRevisionNumber.Int myRevisionNumber;
+  private final @NotNull VcsRevisionNumber.Int myRevisionNumber;
 
   public TFSContentRevision(@NotNull FilePath path, int changeset) {
     myPath = path;
@@ -106,5 +107,10 @@ public class TFSContentRevision implements ContentRevision {
   @NotNull
   public FilePath getFile() {
     return myPath;
+  }
+
+  @NonNls
+  public String toString() {
+    return "TFSContentRevision [file=" + getFile() + ", revision=" + getRevisionNumber().asString() + "]";
   }
 }

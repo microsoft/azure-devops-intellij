@@ -127,5 +127,53 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
            getUnversionedFiles().size() +
            getModifiedWithoutCheckoutFiles().size();
   }
-  
+
+  @SuppressWarnings({"HardCodedStringLiteral"})
+  public String toString() {
+    StringBuilder s = new StringBuilder();
+    s.append("Total changes: ").append(getTotalItems()).append("\n");
+
+    if (!getChanges().isEmpty()) {
+      s.append("Changes:\n");
+      for (Change change : getChanges()) {
+        s.append("\t");
+        if (change.getType() == Change.Type.NEW) {
+          s.append("Add: ").append(change.getAfterRevision().getFile().getPresentableUrl());
+        }
+        else if (change.getType() == Change.Type.MODIFICATION) {
+          s.append("Modified: ").append(change.getAfterRevision().getFile().getPresentableUrl());
+        }
+        else if (change.getType() == Change.Type.MOVED) {
+          s.append("Rename/move: ").append(change.getBeforeRevision().getFile().getPresentableUrl()).append(" -> ").append(change.getAfterRevision().getFile().getPresentableUrl());
+        } else {
+          s.append("Remove: ").append(change.getBeforeRevision().getFile().getPresentableUrl());
+        }
+        s.append("\n");
+      }
+    }
+
+    if (!getLocallyDeletedFiles().isEmpty()) {
+      s.append("Locally deleted:\n");
+      for (FilePath p : getLocallyDeletedFiles()) {
+        s.append("\t").append(p.getPresentableUrl()).append("\n");
+      }
+    }
+
+    if (!getModifiedWithoutCheckoutFiles().isEmpty()) {
+      s.append("Hijacked:\n");
+      for (VirtualFile f : getModifiedWithoutCheckoutFiles()) {
+        s.append("\t").append(f.getPath()).append("\n");
+      }
+    }
+
+    if (!getUnversionedFiles().isEmpty()) {
+      s.append("Unversioned:\n");
+      for (VirtualFile f : getUnversionedFiles()) {
+        s.append("\t").append(f.getPath()).append("\n");
+      }
+    }
+    
+    return s.toString();
+  }
+
 }

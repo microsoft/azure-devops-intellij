@@ -40,9 +40,9 @@ import org.jetbrains.tfsIntegration.ui.UpdatePanel;
 import java.util.*;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
-  private TFSVcs myVcs;
+  private final TFSVcs myVcs;
 
-  TFSUpdateEnvironment(TFSVcs tfsVcs) {
+  TFSUpdateEnvironment(final TFSVcs tfsVcs) {
     myVcs = tfsVcs;
   }
 
@@ -57,15 +57,14 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
 
     try {
-      List<FilePath> unversioned =
+      List<FilePath> orphanPaths =
         WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
             TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myVcs.getProject());
             if (configuration != null) {
-              final UpdateWorkspaceInfo info = configuration.getUpdateWorkspaceInfo(workspace);
-              version = info.getVersion();
+              version = configuration.getUpdateWorkspaceInfo(workspace).getVersion();
               recursionType = configuration.UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
             }
             TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
@@ -91,15 +90,14 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               // iterate over get operations: update files (get + updateLocalVersion), collect conflicting files (addLocalConflict)
               StatusProvider.visitByStatus(workspace, new ArrayList<ItemPath>(itemPaths2operations.keySet()), progressIndicator, processor);
 
-              final List<ItemPath> toDownload = processor.getPathsToDownload();
               final List<GetOperation> updateLocalVersions = new ArrayList<GetOperation>();
-              for (ItemPath path : toDownload) {
-                TFSProgressUtil.setProgressText(progressIndicator, "Update " + path.getLocalPath());
-                GetOperation operation = itemPaths2operations.get(path);
+              for (ItemPath path : processor.getPathsToDownload()) {
+                TFSProgressUtil.setProgressText(progressIndicator, "Update " + path.getLocalPath().getPresentableUrl());
+                GetOperation getOperation = itemPaths2operations.get(path);
 
                 // TODO: rename if was renamed on server: depth-first order required
-                VersionControlServer.downloadItem(workspace, operation, true, true, true);
-                updateLocalVersions.add(operation);
+                VersionControlServer.downloadItem(workspace, getOperation, true, true, true);
+                updateLocalVersions.add(getOperation);
 
                 TFSProgressUtil.checkCanceled(progressIndicator);
               }
@@ -108,13 +106,13 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             }
           }
         });
-      for (FilePath path : unversioned) {
-        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(FileUtil.toSystemIndependentName(path.getPath()));
+      for (FilePath orphanPath : orphanPaths) {
+        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(FileUtil.toSystemIndependentName(orphanPath.getPath()));
       }
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
-      exceptions.add(new VcsException("Update failed.", e));
+      exceptions.add(new VcsException("Update failed", e));
     }
 
     return new TFSUpdateSession(myVcs, contentRoots, exceptions, updatedFiles);
