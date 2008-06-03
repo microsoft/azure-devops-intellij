@@ -29,10 +29,7 @@ import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.SeverityType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.*;
 
@@ -102,11 +99,12 @@ public class TFSFileListener extends TFSFileListenerBase {
               // TODO: add local conflict
             }
 
-            public void renamedCheckedOut(final @NotNull ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
-              throws TfsException {
+            public void renamedCheckedOut(final @NotNull ItemPath path,
+                                          @NotNull final ExtendedItem extendedItem,
+                                          final boolean localItemExists) throws TfsException {
               // TODO: add local conflict
             }
-            
+
           });
         }
       });
@@ -120,30 +118,57 @@ public class TFSFileListener extends TFSFileListenerBase {
   }
 
   protected void executeDelete() {
+    // choose roots
+    // revert all pending schedules for addition recursively
+    // throw out all the unversioned items
+
     List<FilePath> deletedFiles = new ArrayList<FilePath>(myDeletedFiles);
     deletedFiles.addAll(myDeletedWithoutConfirmFiles);
 
     try {
       WorkstationHelper.processByWorkspaces(deletedFiles, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
+
+          final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
+            .queryPendingSetsByPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+
           final List<ItemPath> revertScheduledForAdditionImmediately = new ArrayList<ItemPath>();
 
-          StatusProvider.visitByStatus(workspace, paths, null, new StatusVisitor() {
+          final List<ItemPath> pathsToProcess = new ArrayList<ItemPath>(paths);
+
+          for (PendingChange pendingChange : pendingChanges) {
+            final ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
+            if (changeType.contains(ChangeType.Value.Add)) {
+              // TODO: assert that only Edit, Encoding can be here
+              final ItemPath itemPath = new ItemPath(VcsUtil.getFilePath(pendingChange.getLocal()), pendingChange.getItem());
+              revertScheduledForAdditionImmediately.add(itemPath);
+              excludeFromFurtherProcessing(itemPath);
+              pathsToProcess.remove(itemPath);
+            }
+          }
+
+          UndoPendingChanges.UndoPendingChangesResult undoResult =
+            UndoPendingChanges.execute(workspace, revertScheduledForAdditionImmediately, false, false);
+          if (!undoResult.errors.isEmpty()) {
+            // TODO list -> collection
+            AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
+          }
+
+          StatusProvider.visitByStatus(workspace, pathsToProcess, null, new StatusVisitor() {
+            public void scheduledForAddition(@NotNull final ItemPath path,
+                                             @NotNull final ExtendedItem extendedItem,
+                                             final boolean localItemExists) {
+              TFSVcs.error("Failed to revert scheduled for addition: " + path);
+            }
+
             public void unversioned(@NotNull final ItemPath path,
                                     final @Nullable ExtendedItem extendedItem,
                                     final boolean localItemExists) {
               excludeFromFurtherProcessing(path);
             }
 
-            public void checkedOutForEdit(@NotNull final ItemPath path,
-                                          @NotNull final ExtendedItem extendedItem,
-                                          final boolean localItemExists) {
-            }
-
-            public void scheduledForAddition(@NotNull final ItemPath path,
-                                             @NotNull final ExtendedItem extendedItem,
-                                             final boolean localItemExists) {
-              revertScheduledForAdditionImmediately.add(path);
+            public void deleted(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
               excludeFromFurtherProcessing(path);
             }
 
@@ -153,13 +178,15 @@ public class TFSFileListener extends TFSFileListenerBase {
               excludeFromFurtherProcessing(path);
             }
 
-            public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
-              throws TfsException {
+            public void checkedOutForEdit(@NotNull final ItemPath path,
+                                          @NotNull final ExtendedItem extendedItem,
+                                          final boolean localItemExists) {
               // keep for further processing
             }
 
-            public void deleted(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
-              excludeFromFurtherProcessing(path);
+            public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
+              throws TfsException {
+              // keep for further processing
             }
 
             public void upToDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
@@ -172,25 +199,12 @@ public class TFSFileListener extends TFSFileListenerBase {
               // keep for further processing
             }
 
-            public void renamedCheckedOut(@NotNull final ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
-              throws TfsException {
+            public void renamedCheckedOut(@NotNull final ItemPath path,
+                                          final @NotNull ExtendedItem extendedItem,
+                                          final boolean localItemExists) throws TfsException {
               // keep for further processing
             }
           });
-
-          if (!revertScheduledForAdditionImmediately.isEmpty()) {
-            UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, revertScheduledForAdditionImmediately, false);
-            if (!undoResult.errors.isEmpty()) {
-              // TODO list -> collection
-              AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
-            }
-          }
-        }
-
-        private void excludeFromFurtherProcessing(final ItemPath path) {
-          if (!myDeletedFiles.remove(path.getLocalPath())) {
-            myDeletedWithoutConfirmFiles.remove(path.getLocalPath());
-          }
         }
       });
     }
@@ -200,25 +214,6 @@ public class TFSFileListener extends TFSFileListenerBase {
 
     if (!myDeletedFiles.isEmpty() || !myDeletedWithoutConfirmFiles.isEmpty()) {
       super.executeDelete();
-    }
-
-  }
-
-  protected void performAdding(final Collection<VirtualFile> addedFiles, final Map<VirtualFile, VirtualFile> copyFromMap) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
-    try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-          Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
-          errors.addAll(schedulingErrors);
-        }
-      });
-    }
-    catch (TfsException e) {
-      errors.add(new VcsException(e));
-    }
-    if (!errors.isEmpty()) {
-      AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFS_NAME);
     }
   }
 
@@ -240,6 +235,30 @@ public class TFSFileListener extends TFSFileListenerBase {
     }
   }
 
+
+  private void excludeFromFurtherProcessing(final ItemPath path) {
+    if (!myDeletedFiles.remove(path.getLocalPath())) {
+      myDeletedWithoutConfirmFiles.remove(path.getLocalPath());
+    }
+  }
+
+  protected void performAdding(final Collection<VirtualFile> addedFiles, final Map<VirtualFile, VirtualFile> copyFromMap) {
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    try {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), new WorkstationHelper.VoidProcessDelegate() {
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+          Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
+          errors.addAll(schedulingErrors);
+        }
+      });
+    }
+    catch (TfsException e) {
+      errors.add(new VcsException(e));
+    }
+    if (!errors.isEmpty()) {
+      AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFS_NAME);
+    }
+  }
 
   protected String getDeleteTitle() {
     return "Do you want to schedule the following items for deletion from TFS?";
@@ -310,8 +329,9 @@ public class TFSFileListener extends TFSFileListenerBase {
               scheduleMove.put(path, movedPaths.get(path.getLocalPath()));
             }
 
-            public void renamedCheckedOut(final @NotNull ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
-              throws TfsException {
+            public void renamedCheckedOut(final @NotNull ItemPath path,
+                                          @NotNull final ExtendedItem extendedItem,
+                                          final boolean localItemExists) throws TfsException {
               scheduleMove.put(path, movedPaths.get(path.getLocalPath()));
             }
           });
@@ -338,7 +358,7 @@ public class TFSFileListener extends TFSFileListenerBase {
             invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal()));
             invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
           }
-          TfsFileUtil.invalidateFiles(myProject, invalidate);
+          TfsFileUtil.invalidateRecursively(myProject, invalidate);
         }
       });
     }

@@ -72,6 +72,10 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(committedPath);
+      if (workspace == null) {
+        return null;
+      }
+      
       final List<VcsFileRevision> revisions = getRevisions(committedPath, workspace);
       if (revisions == null) {
         return null;

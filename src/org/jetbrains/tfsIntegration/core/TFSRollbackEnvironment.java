@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
-import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyUndoGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -116,8 +116,9 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                 undo.add(path);
               }
 
-              public void renamedCheckedOut(final @NotNull ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
-                throws TfsException {
+              public void renamedCheckedOut(final @NotNull ItemPath path,
+                                            @NotNull final ExtendedItem extendedItem,
+                                            final boolean localItemExists) throws TfsException {
                 undo.add(path);
               }
 
@@ -129,7 +130,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
             }, false);
           }
 
-          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true);
+          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true, false);
           errors.addAll(undoResult.errors);
 
           List<List<GetOperation>> getOperations =
@@ -142,7 +143,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
       });
     }
     catch (TfsException e) {
-      return Collections.singletonList(new VcsException("Failed to rollback file", e));
+      return Collections.singletonList(new VcsException(e.getMessage(), e));
     }
     return errors;
   }
@@ -167,7 +168,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
             allOperations.addAll(ops);
           }
 
-          final Collection<VcsException> applyingErrors = ApplyGetOperations.execute(workspace, allOperations, true);
+          final Collection<VcsException> applyingErrors = ApplyUndoGetOperations.execute(workspace, allOperations, true);
           errors.addAll(applyingErrors);
         }
       });
@@ -186,13 +187,23 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
     }
   }
 
-  private static List<VcsException> undoPendingChanges(final List<FilePath> localPaths, final boolean updateToBaseVersion) {
+  private List<VcsException> undoPendingChanges(final List<FilePath> localPaths, final boolean updateToBaseVersion) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, paths, true);
+          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, paths, true, false);
           errors.addAll(undoResult.errors);
+          List<VirtualFile> refresh = new ArrayList<VirtualFile>(paths.size());
+          for (ItemPath path : paths) {
+            ItemPath undone = undoResult.undonePaths.get(path);
+            FilePath subject = (undone != null ? undone : path).getLocalPath();
+            VirtualFile file = subject.getVirtualFileParent();
+            if (file != null && file.exists()) {
+              refresh.add(file);
+            }
+          }
+          TfsFileUtil.refreshAndInvalidate(myProject, refresh);
         }
       });
       return errors;

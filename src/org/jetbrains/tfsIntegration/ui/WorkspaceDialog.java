@@ -130,7 +130,6 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
   private final WorkspaceInfo myWorkspace;
 
   private JTextField myNameField;
-  private JButton myAddFolderButton;
   private JButton myRemoveFolderButton;
   private WorkingFoldersTableModel myWorkingFoldersTableModel;
   private JTable myFoldersTable;
@@ -310,7 +309,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
         String path = "file://" + initialText.trim().replace(File.separatorChar, '/');
         VirtualFile root = VirtualFileManager.getInstance().findFileByUrl(path);
         VirtualFile[] files = FileChooser.chooseFiles(panel, d, root);
-        if (files == null || files.length != 1 || files[0] == null) {
+        if (files.length != 1 || files[0] == null) {
           return null;
         }
         return files[0].getPath().replace('/', File.separatorChar);
@@ -349,11 +348,11 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     gc.gridx = 0;
     gc.gridy = 1;
 
-    myAddFolderButton = new JButton("Add");
-    workingFoldersPanel.add(myAddFolderButton, gc);
-    myAddFolderButton.setMnemonic('a');
+    JButton addFolderButton = new JButton("Add");
+    workingFoldersPanel.add(addFolderButton, gc);
+    addFolderButton.setMnemonic('a');
 
-    myAddFolderButton.addActionListener(new ActionListener() {
+    addFolderButton.addActionListener(new ActionListener() {
 
       public void actionPerformed(final ActionEvent e) {
         myWorkspace.addWorkingFolderInfo(new WorkingFolderInfo());

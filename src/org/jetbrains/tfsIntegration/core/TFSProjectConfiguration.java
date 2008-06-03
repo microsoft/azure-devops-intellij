@@ -90,7 +90,7 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
     myConfigurationBean = state;
   }
 
-    public boolean UPDATE_RECURSIVELY = false;
+    public boolean UPDATE_RECURSIVELY = true;
 
     private final Map<WorkspaceInfo, UpdateWorkspaceInfo> myUpdateWorkspaceInfos = new HashMap<WorkspaceInfo, UpdateWorkspaceInfo>();
 

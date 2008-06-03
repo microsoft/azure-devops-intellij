@@ -22,6 +22,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.newvfs.RefreshQueue;
 import com.intellij.peer.PeerFactory;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
@@ -47,6 +48,7 @@ public class TfsFileUtil {
   }
 
   public static FilePath getFilePath(@NotNull final VirtualFile f) {
+    // TODO createFilePathOnMissingFile ?
     return PeerFactory.getInstance().getVcsContextFactory().createFilePathOn(f);
   }
 
@@ -80,7 +82,7 @@ public class TfsFileUtil {
     if (files.isEmpty()) {
       return;
     }
-    
+
     final VcsDirtyScopeManager dirtyScopeManager = VcsDirtyScopeManager.getInstance(project);
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
@@ -95,6 +97,28 @@ public class TfsFileUtil {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).fileDirty(file);
+      }
+    });
+  }
+
+  public static void invalidateRecursively(final Project project, final Collection<FilePath> roots) {
+    if (roots.isEmpty()) {
+      return;
+    }
+    
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+      public void run() {
+        for (FilePath root : roots) {
+          VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(root);
+        }
+      }
+    });
+  }
+
+  public static void invalidateRecursively(final Project project, final FilePath rootDir) {
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+      public void run() {
+        VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(rootDir);
       }
     });
   }
@@ -138,5 +162,15 @@ public class TfsFileUtil {
       return o1.getPath().compareTo(o2.getPath());
     }
   };
+
+  public static void refreshAndInvalidate(final Project project, final Collection<VirtualFile> roots) {
+    RefreshQueue.getInstance().refresh(true, true, new Runnable() {
+      public void run() {
+        for (VirtualFile root : roots) {
+          VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(root);
+        }
+      }
+    }, roots.toArray(new VirtualFile[roots.size()]));
+  }
 
 }

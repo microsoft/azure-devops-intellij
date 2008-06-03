@@ -96,9 +96,8 @@ public class WebServiceHelper {
       setCredentials(serverStatusStub, credentials, serverUri);
       setProxy(serverStatusStub);
       String result = serverStatusStub.CheckAuthentication(new CheckAuthentication());
-      String expected = credentials.getDomain() + "\\" + credentials.getUserName();
-      if (!expected.equalsIgnoreCase(result)) {
-        throw new UnauthorizedException("Returned credentials: " + result + " differ from expected: " + expected);
+      if (!credentials.getQualifiedUsername().equalsIgnoreCase(result)) {
+        throw new WrongConnectionException(result);
       }
       RegistrationRegistrationSoapStub registrationStub =
         new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
@@ -154,6 +153,7 @@ public class WebServiceHelper {
   }
 
   public static void httpGet(final String downloadUrl, final OutputStream outputStream) throws TfsException {
+    TFSVcs.assertTrue(downloadUrl != null);
     final Ref<URI> serverUri = new Ref<URI>();
     try {
       URI uri = new URI(downloadUrl);
@@ -202,7 +202,7 @@ public class WebServiceHelper {
     Credentials credentialsToStore = null;
     boolean forcePrompt = false;
     while (true) {
-      if (credentialsToConnect.getPassword() == null || forcePrompt) {
+      if (/*credentialsToConnect.getPassword() == null ||*/ forcePrompt) {
         final LoginDialog d = new LoginDialog(serverUri, credentialsToConnect, false);
         Runnable runnable = new Runnable() {
           public void run() {
@@ -278,19 +278,27 @@ public class WebServiceHelper {
     }
   }
 
-  private static void setCredentials(Stub stub, Credentials credentials, URI serverUri) {
-    Options options = stub._getServiceClient().getOptions();
-    HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-    auth.setUsername(credentials.getUserName());
-    auth.setPassword(credentials.getPassword());
-    auth.setDomain(credentials.getDomain());
-    auth.setHost(serverUri.getHost());
-    options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+  private static void setCredentials(final @NotNull Stub stub, final @Nullable Credentials credentials, final @NotNull URI serverUri) {
+    if (credentials != null) {
+      Options options = stub._getServiceClient().getOptions();
+      HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
+      auth.setUsername(credentials.getUserName());
+      auth.setPassword(credentials.getPassword() != null ? credentials.getPassword() : "");
+      auth.setDomain(credentials.getDomain());
+      auth.setHost(serverUri.getHost());
+      options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+    }
   }
 
-  private static void setCredentials(HttpClient httpClient, Credentials credentials, URI serverUri) {
-    httpClient.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword(),
-                                                                          serverUri.getHost(), credentials.getDomain()));
+  private static void setCredentials(final @NotNull HttpClient httpClient,
+                                     final @Nullable Credentials credentials,
+                                     final @NotNull URI serverUri) {
+    if (credentials != null) {
+      httpClient.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword() != null
+                                                                                                       ? credentials.getPassword()
+                                                                                                       : null, serverUri.getHost(),
+                                                                                                               credentials.getDomain()));
+    }
   }
 
   public static void setupStub(Stub stub) {

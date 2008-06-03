@@ -36,7 +36,9 @@ public class StatusProvider {
                                    final @NotNull List<ItemPath> paths,
                                    final @Nullable ProgressIndicator progressIndicator,
                                    final @NotNull StatusVisitor statusVisitor) throws TfsException {
-
+    if (paths.isEmpty()) {
+      return;
+    }
     // TODO: query pending changes for all items here to handle rename/move
 
     Map<ItemPath, ServerStatus> statuses = determineServerStatus(workspace, paths);
@@ -71,7 +73,7 @@ public class StatusProvider {
   }
 
   public static ServerStatus determineServerStatus(final ExtendedItem item) {
-    if (item == null || item.getLocal() == null) {
+    if (item == null || (item.getLocal() == null && ChangeType.fromString(item.getChg()).isEmpty())) {
       // report not downloaded items as unversioned
       return new ServerStatus.Unversioned(item);
     }

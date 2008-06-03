@@ -94,17 +94,6 @@ public class WorkstationHelper {
     return result.orphanPaths;
   }
 
-  public static <T> ListProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths, final ListProcessDelegate<T> delegate)
-    throws TfsException {
-    final List<T> overallResults = new ArrayList<T>();
-    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
-      public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-        overallResults.addAll(delegate.executeRequest(workspace, paths));
-      }
-    });
-    return new ListProcessResult<T>(overallResults, workspaceNotFoundLocalPaths);
-  }
-
   public static <T> ProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths, final ProcessDelegate<T> delegate)
     throws TfsException {
     final Ref<T> results = new Ref<T>();

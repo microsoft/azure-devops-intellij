@@ -17,18 +17,20 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.util.io.FileUtil;
+import org.jetbrains.annotations.NotNull;
 
 public class ItemPath {
 
-  private final FilePath myLocalPath;
+  private final @NotNull FilePath myLocalPath;
   private final String myServerPath;
 
-  public ItemPath(FilePath localPath, String serverPath) {
+  public ItemPath(final @NotNull FilePath localPath, String serverPath) {
     myLocalPath = localPath;
     myServerPath = serverPath;
   }
 
-  public FilePath getLocalPath() {
+  public @NotNull FilePath getLocalPath() {
     return myLocalPath;
   }
 
@@ -42,15 +44,11 @@ public class ItemPath {
 
     final ItemPath itemPath = (ItemPath)o;
 
-    if (myLocalPath != null ? !myLocalPath.equals(itemPath.myLocalPath) : itemPath.myLocalPath != null) return false;
-
-    return true;
+    return FileUtil.pathsEqual(getLocalPath().getPath(), itemPath.getLocalPath().getPath());
   }
 
   public int hashCode() {
-    int result;
-    result = (myLocalPath != null ? myLocalPath.hashCode() : 0);
-    return result;
+    return getLocalPath().hashCode();
   }
 
   public String toString() {

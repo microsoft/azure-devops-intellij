@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -62,17 +61,26 @@ public class TFSChangeProvider implements ChangeProvider {
 
     progress.setText("Processing changes");
 
-    Collection<FilePath> roots = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
-    for (FilePath p : dirtyScope.getRecursivelyDirtyDirectories()) {
-      updateRoots(roots, p);
-    }
-    for (FilePath p : dirtyScope.getDirtyFiles()) {
-      updateRoots(roots, p);
-    }
+    RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
+    roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
+    roots.addAll(dirtyScope.getDirtyFiles());
 
     try {
+      // unwrap child workspaces
+      // TODO: is it always correct to use RootsCollection.FilePathRootsCollection instead of HashSet?
+      HashSet<FilePath> mappedRoots = new HashSet<FilePath>();
+      for (FilePath root : roots) {
+        Set<FilePath> mappedPaths = Workstation.getInstance().findChildMappedPaths(root);
+        if (!mappedPaths.isEmpty()) {
+          mappedRoots.addAll(mappedPaths);
+        }
+        else {
+          mappedRoots.add(root);
+        }
+      }
+
       // ingore orphan roots here
-      WorkstationHelper.processByWorkspaces(roots, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(mappedRoots, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           processWorkspace(workspace, paths, builder, progress);
         }
@@ -83,7 +91,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
   }
 
-  private static void processWorkspace(final WorkspaceInfo workspace,
+  private static void processWorkspace(final @NotNull WorkspaceInfo workspace,
                                        final List<ItemPath> roots,
                                        ChangelistBuilder builder,
                                        final @Nullable ProgressIndicator progress) throws TfsException {
@@ -97,8 +105,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
 
     List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
-      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.NonDeleted,
-                        ItemType.Any);
+      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.NonDeleted, ItemType.Any);
 
     Map<ItemPath, ExtendedItem> local2ExtendedItem = new HashMap<ItemPath, ExtendedItem>();
     for (int i = 0; i < roots.size(); i++) {
@@ -129,12 +136,19 @@ public class TFSChangeProvider implements ChangeProvider {
         local2ExtendedItem.put(new ItemPath(localItem, workspace.findServerPathByLocalPath(localItem)), serverItem);
       }
 
-      // find locally missing items
+      // process locally missing items
       for (ExtendedItem serverItem : serverItems) {
-        if (serverItem.getLocal() != null) {
-          local2ExtendedItem.put(new ItemPath(
-            VcsUtil.getFilePathForDeletedFile(serverItem.getLocal(), serverItem.getType() == ItemType.Folder), serverItem.getTitem()),
-                                 serverItem);
+        if (serverItem.getLocal() != null || !ChangeType.fromString(serverItem.getChg()).isEmpty()) {
+          final String localPath;
+          if (serverItem.getLocal() != null) {
+            localPath = serverItem.getLocal();
+          }
+          else {
+            localPath = workspace.findLocalPathByServerPath(serverItem.getTitem()).getPath();
+          }
+          local2ExtendedItem.put(
+            new ItemPath(VcsUtil.getFilePathForDeletedFile(localPath, serverItem.getType() == ItemType.Folder), serverItem.getTitem()),
+            serverItem);
         }
       }
     }
@@ -153,8 +167,6 @@ public class TFSChangeProvider implements ChangeProvider {
           VcsUtil.getFilePathForDeletedFile(itemPath.getLocalPath().getPath(), serverItem.getType() == ItemType.Folder),
           itemPath.getServerPath());
       }
-      //System.out
-      //  .println(entry.getKey().getLocalPath().getPath() + ": " + status + (localItemExists ? ", exists locally" : ", missing locally"));
       status.visitBy(itemPath, statusVisitor, localItemExists);
     }
   }
@@ -169,20 +181,5 @@ public class TFSChangeProvider implements ChangeProvider {
       }
     }
   }
-
-  private static void updateRoots(Collection<FilePath> existingRoots, FilePath newPath) {
-    Collection<FilePath> toRemove = new ArrayList<FilePath>();
-    for (FilePath existing : existingRoots) {
-      if (FileUtil.pathsEqual(newPath.getPath(), existing.getPath()) || newPath.isUnder(existing, false)) {
-        return;
-      }
-      if (existing.isUnder(newPath, false)) {
-        toRemove.add(existing);
-      }
-    }
-    existingRoots.removeAll(toRemove);
-    existingRoots.add(newPath);
-  }
-
 
 }

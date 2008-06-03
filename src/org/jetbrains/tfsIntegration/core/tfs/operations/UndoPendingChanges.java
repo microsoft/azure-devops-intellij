@@ -26,47 +26,52 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 
 public class UndoPendingChanges {
 
   public static class UndoPendingChangesResult {
     public final Collection<VcsException> errors;
-    public final Collection<ItemPath> undonePaths;
+    public final Map<ItemPath, ItemPath> undonePaths;
 
-    public UndoPendingChangesResult(final Collection<ItemPath> undonePaths, final Collection<VcsException> errors) {
+    public UndoPendingChangesResult(final Map<ItemPath, ItemPath> undonePaths, final Collection<VcsException> errors) {
       this.undonePaths = undonePaths;
       this.errors = errors;
     }
   }
 
-  public static UndoPendingChangesResult execute(final WorkspaceInfo workspace, final Collection<ItemPath> paths, boolean download) {
+  public static UndoPendingChangesResult execute(final WorkspaceInfo workspace,
+                                                 final Collection<ItemPath> paths,
+                                                 boolean download,
+                                                 boolean recursive) {
     if (paths.isEmpty()) {
-      return new UndoPendingChangesResult(Collections.<ItemPath>emptyList(), Collections.<VcsException>emptyList());
+      return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
 
     // undo changes
     try {
       ResultWithFailures<GetOperation> result =
-        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths);
+        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths, recursive);
 
       Collection<VcsException> errors = new ArrayList<VcsException>();
       errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
 
-      Collection<ItemPath> undonePaths = new ArrayList<ItemPath>(result.getResult().size());
+      Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();
       for (GetOperation getOperation : result.getResult()) {
-        FilePath undonePath = VcsUtil.getFilePath(getOperation.getTlocal());
-        undonePaths.add(new ItemPath(undonePath, workspace.findServerPathByLocalPath(undonePath)));
+        if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
+          FilePath sourcePath = VcsUtil.getFilePath(getOperation.getSlocal());
+          FilePath targetPath = VcsUtil.getFilePath(getOperation.getTlocal());
+          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathByLocalPath(sourcePath)),
+                          new ItemPath(targetPath, workspace.findServerPathByLocalPath(targetPath)));
+        }
       }
 
-      Collection<VcsException> postProcessingErrors = ApplyGetOperations.execute(workspace, result.getResult(), download);
+      Collection<VcsException> postProcessingErrors = ApplyUndoGetOperations.execute(workspace, result.getResult(), download);
       errors.addAll(postProcessingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }
     catch (TfsException e) {
-      return new UndoPendingChangesResult(Collections.<ItemPath>emptyList(), Collections.singletonList(new VcsException(e)));
+      return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.singletonList(new VcsException(e)));
     }
   }
 

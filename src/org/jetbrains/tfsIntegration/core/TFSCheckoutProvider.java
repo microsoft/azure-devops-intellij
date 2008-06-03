@@ -22,73 +22,71 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.CheckoutProvider;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
+import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyUpdateGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
-import org.jetbrains.tfsIntegration.ui.ItemTreeNode;
-import org.jetbrains.tfsIntegration.ui.ServerItemSelectDialog;
-import org.jetbrains.tfsIntegration.ui.WorkspacesDialog;
+import org.jetbrains.tfsIntegration.ui.checkoutwizard.*;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.text.MessageFormat;
 
 public class TFSCheckoutProvider implements CheckoutProvider {
+
   public void doCheckout(@Nullable final Listener listener) {
-    WorkspacesDialog workspacesDialog = new WorkspacesDialog(WorkspacesDialog.Mode.Choose);
-    workspacesDialog.show();
-    if (!workspacesDialog.isOK()) {
-      return;
+    final CheckoutWizardModel model = new CheckoutWizardModel();
+    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model), new ChooseWorkspaceStep(model),
+                                                   new ChooseLocalAndServerPathsStep(model), new ChooseServerPathStep(model),
+                                                   new SummaryStep(model));
+    CheckoutWizard w = new CheckoutWizard(steps, model);
+    w.show();
+
+    if (w.isOK()) {
+      doCheckout(model, listener);
     }
-    WorkspaceInfo workspaceInfo = workspacesDialog.getSelectedWorkspaceInfo();
-    ServerItemSelectDialog itemSelectDialog = new ServerItemSelectDialog(workspaceInfo, VersionControlPath.ROOT_FOLDER, false);
-    itemSelectDialog.show();
-    if (!itemSelectDialog.isOK()) {
-      return;
-    }
-    Object selection = itemSelectDialog.getSelectedItem();
-    if (!(selection instanceof ItemTreeNode)) {
-      return;
-    }
-    String item = ((ItemTreeNode)selection).getFullPath();
-    doCheckout(workspaceInfo, item, listener);
   }
 
-  private static void doCheckout(final WorkspaceInfo workspace, final String serverRoot, final Listener listener) {
-    final Ref<Boolean> checkoutSuccessful = new Ref<Boolean>();
-    final Ref<File> localRoot = new Ref<File>();
-    final Ref<Exception> exception = new Ref<Exception>();
+  private static void doCheckout(final CheckoutWizardModel model, final Listener listener) {
+    final Collection<VcsException> errors = new ArrayList<VcsException>();
+    final Ref<FilePath> localRoot = new Ref<FilePath>();
 
     Runnable checkoutRunnable = new Runnable() {
       public void run() {
         ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
         try {
-          final List<GetOperation> operations = workspace.getServer().getVCS()
-            .get(workspace.getName(), workspace.getOwnerName(), serverRoot, LatestVersionSpec.INSTANCE, RecursionType.Full);
-          localRoot.set(new File(operations.get(0).getTlocal()));
-          List<GetOperation> updateLocalVersions = new ArrayList<GetOperation>();
-          for (GetOperation getOperation : operations) {
-            if (getOperation.getDurl() != null) {
-              progressIndicator.setText("Checkout from TFS: " + getOperation.getTitem());
-              VersionControlServer.downloadItem(workspace, getOperation, true, true, false);
-              updateLocalVersions.add(getOperation);
-            }
-            progressIndicator.checkCanceled();
+          final WorkspaceInfo workspace;
+          if (model.getMode() == CheckoutWizardModel.Mode.Auto) {
+            workspace = createWorkspace(model);
           }
-          workspace.getServer().getVCS().updateLocalVersions(workspace.getName(), workspace.getOwnerName(), updateLocalVersions);
-          checkoutSuccessful.set(true);
+          else {
+            workspace = model.getWorkspace();
+          }
+          localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath()));
+
+          final List<GetOperation> operations = workspace.getServer().getVCS()
+            .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
+
+          final Collection<VcsException> applyErrors = ApplyUpdateGetOperations
+            .execute(workspace, operations, progressIndicator, null, ApplyUpdateGetOperations.ConflictAction.ReportError, true);
+          errors.addAll(applyErrors);
         }
-        catch (Exception e) {
-          exception.set(e);
+        catch (TfsException e) {
+          errors.add(new VcsException(e.getMessage(), e));
         }
       }
     };
@@ -96,30 +94,32 @@ public class TFSCheckoutProvider implements CheckoutProvider {
     ProgressManager.getInstance()
       .runProcessWithProgressSynchronously(checkoutRunnable, "Checkout from TFS", true, ProjectManager.getInstance().getDefaultProject());
 
-    if (!exception.isNull()) {
-      String errorMessage = MessageFormat.format("Checkout failed.\n{0}", exception.get().getLocalizedMessage());
-      Messages.showErrorDialog(errorMessage, "Checkout from TFS");
-      TFSVcs.LOG.error(exception.get());
-    }
-
-    Runnable listenerNotificationRunnable = new Runnable() {
-      public void run() {
-        if (listener != null) {
-          if (!checkoutSuccessful.isNull() && !localRoot.isNull() && localRoot.get().isDirectory()) {
-            listener.directoryCheckedOut(localRoot.get());
+    if (errors.isEmpty()) {
+      Runnable listenerNotificationRunnable = new Runnable() {
+        public void run() {
+          if (listener != null) {
+            if (errors.isEmpty()) {
+              listener.directoryCheckedOut(new File(localRoot.get().getPath()));
+            }
+            listener.checkoutCompleted();
           }
-          listener.checkoutCompleted();
         }
-      }
-    };
+      };
 
-    String fileURL = VfsUtil.pathToUrl(serverRoot.replace(File.separatorChar, '/'));
-    VirtualFile vf = VirtualFileManager.getInstance().findFileByUrl(fileURL);
-    if (vf != null) {
-      vf.refresh(true, true, listenerNotificationRunnable);
+      VirtualFile vf = VcsUtil.getVirtualFile(localRoot.get().getPath());
+      if (vf != null) {
+        vf.refresh(true, true, listenerNotificationRunnable);
+      }
+      else {
+        listenerNotificationRunnable.run();
+      }
     }
     else {
-      listenerNotificationRunnable.run();
+      StringBuilder errorMessage = new StringBuilder("The following errors occured during checkout:\n\n");
+      for (VcsException e : errors) {
+        errorMessage.append(e.getMessage()).append("\n");
+      }
+      Messages.showErrorDialog(errorMessage.toString(), "Checkout from TFS");
     }
   }
 
@@ -128,4 +128,22 @@ public class TFSCheckoutProvider implements CheckoutProvider {
   public String getVcsName() {
     return TFSVcs.TFS_NAME;
   }
+
+  private static WorkspaceInfo createWorkspace(CheckoutWizardModel model) throws TfsException {
+    WorkspaceInfo workspace = new WorkspaceInfo(model.getServer(), model.getServer().getQualifiedUsername(), Workstation.getComputerName());
+    workspace.setName(model.getNewWorkspaceName());
+    workspace.setComment("Autocreated by IDEA for " + model.getServerPath());
+    FilePath localPath = VcsUtil.getFilePath(model.getDestinationFolder());
+    WorkingFolderInfo workingFolder = new WorkingFolderInfo(WorkingFolderInfo.Status.Active, localPath, model.getServerPath());
+    workspace.addWorkingFolderInfo(workingFolder);
+    try {
+      workspace.saveToServer();
+    }
+    catch (TfsException e) {
+      String errorMessage = MessageFormat.format("Failed to create workspace ''{0}''. {1}", workspace.getName(), e.getMessage());
+      throw new OperationFailedException(errorMessage);
+    }
+    return workspace;
+  }
+
 }

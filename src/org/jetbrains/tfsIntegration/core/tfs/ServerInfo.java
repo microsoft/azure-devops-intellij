@@ -55,6 +55,7 @@ public class ServerInfo {
     return myGuid;
   }
 
+  // TODO: NotNull?
   @Nullable
   public String getQualifiedUsername() {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());

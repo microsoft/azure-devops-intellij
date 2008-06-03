@@ -16,21 +16,34 @@
 
 package org.jetbrains.tfsIntegration.tests;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.vcs.MockChangelistBuilder;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TestChangeListBuilder extends MockChangelistBuilder {
 
-  private List<VirtualFile> myUnversionedFiles = new ArrayList<VirtualFile>();
-  private List<FilePath> myLocallyDeletedFiles = new ArrayList<FilePath>();
-  private List<VirtualFile> myModifiedWithoutCheckoutFiles = new ArrayList<VirtualFile>();
-  private List<VirtualFile> myIgnoredFiles = new ArrayList<VirtualFile>();
+  private final String myPathPrefix;
+  private final Project myProject;
+
+  private final List<VirtualFile> myUnversionedFiles = new ArrayList<VirtualFile>();
+  private final List<FilePath> myLocallyDeletedFiles = new ArrayList<FilePath>();
+  private final List<VirtualFile> myHijackedFiles = new ArrayList<VirtualFile>();
+  private final List<VirtualFile> myIgnoredFiles = new ArrayList<VirtualFile>();
+
+  public TestChangeListBuilder(final String pathPrefix, final Project project) {
+    myPathPrefix = pathPrefix;
+    myProject = project;
+  }
 
   public void processUnversionedFile(VirtualFile file) {
     myUnversionedFiles.add(file);
@@ -41,7 +54,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   }
 
   public void processModifiedWithoutCheckout(VirtualFile file) {
-    myModifiedWithoutCheckoutFiles.add(file);
+    myHijackedFiles.add(file);
   }
 
   public void processIgnoredFile(VirtualFile file) {
@@ -52,80 +65,119 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     // TODO
   }
 
-  public List<VirtualFile> getUnversionedFiles() {
-    return myUnversionedFiles;
+  public void assertUnversioned(VirtualFile file) {
+    Assert.assertTrue(toString(), myUnversionedFiles.contains(file));
+    assertFileStatus(file, FileStatus.UNKNOWN);
   }
 
-  public List<FilePath> getLocallyDeletedFiles() {
-    return myLocallyDeletedFiles;
+  public void assertLocallyDeleted(VirtualFile file) {
+    assertLocallyDeleted(TfsFileUtil.getFilePath(file));
   }
 
-  public List<VirtualFile> getModifiedWithoutCheckoutFiles() {
-    return myModifiedWithoutCheckoutFiles;
+  public void assertLocallyDeleted(FilePath path) {
+    Assert.assertTrue(toString(), myLocallyDeletedFiles.contains(path));
+    assertFileStatus(path, FileStatus.DELETED_FROM_FS);
   }
 
-  public List<VirtualFile> getIgnoredFiles() {
-    return myIgnoredFiles;
+  public List<VirtualFile> getHijackedFiles() {
+    return myHijackedFiles;
   }
 
-  public boolean containsScheduledForAddition(VirtualFile file) {
-    return containsScheduledForAddition(TfsFileUtil.getFilePath(file));
+  public void assertHijacked(VirtualFile file) {
+    Assert.assertTrue(toString(), myHijackedFiles.contains(file));
+    assertFileStatus(file, FileStatus.HIJACKED);
   }
 
-  public boolean containsScheduledForAddition(FilePath file) {
+  public void assertIgnored(VirtualFile file) {
+    Assert.assertTrue(toString(), myIgnoredFiles.contains(file));
+    assertFileStatus(file, FileStatus.IGNORED);
+  }
+
+  public void assertScheduledForAddition(VirtualFile file) {
+    assertScheduledForAddition(TfsFileUtil.getFilePath(file));
+  }
+
+  public void assertScheduledForAddition(FilePath file) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() == null && c.getAfterRevision() != null) {
         if (c.getAfterRevision().getFile().equals(file)) {
-          return true;
+          assertFileStatus(file, FileStatus.ADDED);
+          return;
         }
       }
     }
-    return false;
+    Assert.fail(toString());
   }
 
-  public boolean containsScheduledForDeletion(FilePath file) {
+  public void assertScheduledForDeletion(VirtualFile file) {
+    assertScheduledForDeletion(TfsFileUtil.getFilePath(file));
+  }
+
+  public void assertScheduledForDeletion(FilePath file) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() == null) {
         if (c.getBeforeRevision().getFile().equals(file)) {
-          return true;
+          assertFileStatus(file, FileStatus.DELETED);
+          return;
         }
       }
     }
-    return false;
+    Assert.fail(toString());
   }
 
-  public boolean containsRenamedOrMoved(FilePath from, FilePath to) {
+  public void assertRenamedOrMoved(FilePath from, FilePath to) {
+    Assert.assertNotNull(toString(), getMoveChange(from, to));
+  }
+
+  public Change getMoveChange(final FilePath from, FilePath to) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() != null) {
         if (c.getBeforeRevision().getFile().equals(from) && c.getAfterRevision().getFile().equals(to)) {
-          return true;
+          assertFileStatus(to, FileStatus.MODIFIED);
+          return c;
         }
       }
     }
-    return false;
+    return null;
   }
 
-  public boolean containsModified(VirtualFile file) {
-    return containsModified(TfsFileUtil.getFilePath(file));
+  public void assertModified(VirtualFile file) {
+    assertModified(TfsFileUtil.getFilePath(file));
   }
 
-  public boolean containsModified(FilePath file) {
+  public void assertModified(FilePath file) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() != null) {
         if (c.getBeforeRevision().getFile().equals(file) && c.getType() == Change.Type.MODIFICATION) {
-          return true;
+          assertFileStatus(file, FileStatus.MODIFIED);
+          return;
         }
       }
     }
-    return false;
+    Assert.fail(toString());
   }
 
-  public int getTotalItems() {
-    return getChanges().size() +
-           getIgnoredFiles().size() +
-           getLocallyDeletedFiles().size() +
-           getUnversionedFiles().size() +
-           getModifiedWithoutCheckoutFiles().size();
+  public List<FilePath> getLocallyDeleted() {
+    return myLocallyDeletedFiles;
+  }
+
+  public void assertTotalItems(int n) {
+    Assert.assertEquals(toString(), n, getTotalItems());
+  }
+
+  private int getTotalItems() {
+    return getChanges().size() + myUnversionedFiles.size() + myLocallyDeletedFiles.size() + myHijackedFiles.size() + myIgnoredFiles.size();
+  }
+
+
+  private String getPathRemainder(VirtualFile file) {
+    String path = file.getPresentableUrl();
+    return path.startsWith(myPathPrefix) ? path.substring(myPathPrefix.length() + 1) : path;
+  }
+
+  private String getPathRemainder(FilePath filePath) {
+    String path = filePath.getPath();
+    return path.startsWith(myPathPrefix) ? path.substring(myPathPrefix.length() + 1) : path;
   }
 
   @SuppressWarnings({"HardCodedStringLiteral"})
@@ -138,42 +190,59 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
       for (Change change : getChanges()) {
         s.append("\t");
         if (change.getType() == Change.Type.NEW) {
-          s.append("Add: ").append(change.getAfterRevision().getFile().getPresentableUrl());
+          s.append("Add: ").append(getPathRemainder(change.getAfterRevision().getFile()));
         }
         else if (change.getType() == Change.Type.MODIFICATION) {
-          s.append("Modified: ").append(change.getAfterRevision().getFile().getPresentableUrl());
+          s.append("Modified: ").append(getPathRemainder(change.getAfterRevision().getFile()));
         }
         else if (change.getType() == Change.Type.MOVED) {
-          s.append("Rename/move: ").append(change.getBeforeRevision().getFile().getPresentableUrl()).append(" -> ").append(change.getAfterRevision().getFile().getPresentableUrl());
-        } else {
-          s.append("Remove: ").append(change.getBeforeRevision().getFile().getPresentableUrl());
+          s.append("Rename/move: ").append(getPathRemainder(change.getBeforeRevision().getFile())).append(" -> ")
+            .append(getPathRemainder(change.getAfterRevision().getFile()));
+        }
+        else {
+          s.append("Remove: ").append(getPathRemainder(change.getBeforeRevision().getFile()));
         }
         s.append("\n");
       }
     }
 
-    if (!getLocallyDeletedFiles().isEmpty()) {
+    if (!myLocallyDeletedFiles.isEmpty()) {
       s.append("Locally deleted:\n");
-      for (FilePath p : getLocallyDeletedFiles()) {
-        s.append("\t").append(p.getPresentableUrl()).append("\n");
+      for (FilePath p : myLocallyDeletedFiles) {
+        s.append("\t").append(getPathRemainder(p)).append("\n");
       }
     }
 
-    if (!getModifiedWithoutCheckoutFiles().isEmpty()) {
+    if (!myHijackedFiles.isEmpty()) {
       s.append("Hijacked:\n");
-      for (VirtualFile f : getModifiedWithoutCheckoutFiles()) {
-        s.append("\t").append(f.getPath()).append("\n");
+      for (VirtualFile f : myHijackedFiles) {
+        s.append("\t").append(getPathRemainder(f)).append("\n");
       }
     }
 
-    if (!getUnversionedFiles().isEmpty()) {
+    if (!myUnversionedFiles.isEmpty()) {
       s.append("Unversioned:\n");
-      for (VirtualFile f : getUnversionedFiles()) {
-        s.append("\t").append(f.getPath()).append("\n");
+      for (VirtualFile f : myUnversionedFiles) {
+        s.append("\t").append(getPathRemainder(f)).append("\n");
       }
     }
-    
+
     return s.toString();
+  }
+
+  private void assertFileStatus(VirtualFile file, FileStatus expectedStatus) {
+    final FileStatus realStatus = FileStatusManager.getInstance(myProject).getStatus(file);
+    Assert.assertTrue("FileStatus " + realStatus + " while expected " + expectedStatus, realStatus == expectedStatus);
+  }
+
+  private void assertFileStatus(FilePath path, FileStatus expectedStatus) {
+    VirtualFile file = path.getVirtualFile();
+    if (file == null) {
+      Assert.assertTrue(FileStatus.DELETED == expectedStatus || FileStatus.DELETED_FROM_FS == expectedStatus);
+    }
+    else {
+      assertFileStatus(file, expectedStatus);
+    }
   }
 
 }

@@ -75,8 +75,7 @@ public class WorkingFolderInfo {
   }
 
   public WorkingFolderInfo getCopy() {
-    WorkingFolderInfo copy = new WorkingFolderInfo(myStatus, myLocalPath, myServerPath);
-    return copy;
+    return new WorkingFolderInfo(myStatus, myLocalPath, myServerPath);
   }
 
   @Nullable

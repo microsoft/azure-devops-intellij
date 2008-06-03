@@ -30,6 +30,11 @@ import java.util.*;
 
 public class WorkspaceInfo {
 
+  private static final Collection<String> WORKSPACE_NAME_INVALID_CHARS =
+    Arrays.asList(new String[]{"\"", "/", ":", "<", ">", "|", "*", "?"});
+
+  private static final Collection<String> WORKSPACE_NAME_INVALID_ENDING_CHARS = Arrays.asList(new String[]{" ", "."});
+
   // TODO: do we need owner name and computer name here?
 
   private final ServerInfo myServerInfo;
@@ -131,7 +136,11 @@ public class WorkspaceInfo {
     }
   }
 
-  // TODO find the nearest mapping!
+  /**
+   * @param localPath local path to find server path for
+   * @return nearest server path according to one of workspace mappings
+   * @throws org.jetbrains.tfsIntegration.exceptions.TfsException in case of error during request to TFS
+   */
   @Nullable
   public String findServerPathByLocalPath(final @NotNull FilePath localPath) throws TfsException {
     FilePath mappingPath = null;
@@ -147,10 +156,22 @@ public class WorkspaceInfo {
   }
 
   @Nullable
+  public WorkingFolderInfo findNearestMappingByLocalPath(final @NotNull FilePath localPath) throws TfsException {
+    WorkingFolderInfo mapping = null;
+    for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
+      if (folderInfo.getServerPathByLocalPath(localPath) != null && 
+          (mapping == null || folderInfo.getLocalPath().isUnder(mapping.getLocalPath(), false))) {
+        mapping = folderInfo;
+      }
+    }
+    return mapping;
+  }
+
+  @Nullable
   public FilePath findLocalPathByServerPath(final @NotNull String serverPath) throws TfsException {
     for (WorkingFolderInfo folderInfo : getWorkingFoldersInfos()) {
       FilePath localPath = folderInfo.getLocalPathByServerPath(serverPath);
-      if (localPath!= null) {
+      if (localPath != null) {
         return localPath;
       }
     }
@@ -270,6 +291,20 @@ public class WorkspaceInfo {
 
   public Map<ItemPath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
+  }
+
+  public static boolean isValidName(String name) {
+    for (String invalid : WORKSPACE_NAME_INVALID_CHARS) {
+      if (name.contains(invalid)) {
+        return false;
+      }
+    }
+    for (String invalidEnd : WORKSPACE_NAME_INVALID_ENDING_CHARS) {
+      if (name.endsWith(invalidEnd)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @SuppressWarnings({"HardCodedStringLiteral"})

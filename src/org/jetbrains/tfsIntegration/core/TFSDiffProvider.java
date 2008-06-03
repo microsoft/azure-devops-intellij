@@ -70,6 +70,9 @@ public class TFSDiffProvider implements DiffProvider {
     FilePath localPath = VcsUtil.getFilePath(virtualFile.getPath());
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(VcsUtil.getFilePath(virtualFile.getPath()));
+      if (workspace == null) {
+        return null;
+      }
       //noinspection ConstantConditions
       String serverPath = workspace.findServerPathByLocalPath(localPath);
       TFSVcs.assertTrue(serverPath != null);

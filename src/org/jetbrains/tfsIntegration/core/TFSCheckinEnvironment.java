@@ -130,6 +130,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               commitFailed.add(failure.getItem());
             }
 
+            Collection<FilePath> invalidate = new ArrayList<FilePath>(pendingChanges.size());
             // set readonly status for files
             for (PendingChange pendingChange : pendingChanges) {
               TFSVcs.assertTrue(pendingChange.getItem() != null);
@@ -148,7 +149,9 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                   }
                 }
               }
+              invalidate.add(VcsUtil.getFilePath(pendingChange.getLocal()));
             }
+            TfsFileUtil.invalidateRecursively(myProject, invalidate);
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown

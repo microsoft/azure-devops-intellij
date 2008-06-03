@@ -38,8 +38,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     final String content = "filecontent";
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getUnversionedFiles().contains(file));
+    changes.assertTotalItems(1);
+    changes.assertUnversioned(file);
     Assert.assertEquals(content, getContent(file));
   }
 
@@ -51,7 +51,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     deleteFileInCommand(file);
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // unversioned -> delete -> none
@@ -62,7 +62,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     deleteFileExternally(file);
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // none -> create file, schedule -> scheduled for addition
@@ -72,8 +72,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     final String content = "filecontent";
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForAddition(file));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForAddition(file);
     Assert.assertEquals(content, getContent(file));
   }
 
@@ -85,7 +85,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     deleteFileInCommand(file);
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // scheduled for addition -> external delete -> locally deleted
@@ -96,7 +96,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     deleteFileExternally(file);
 
-    Assert.assertTrue(getChanges().getLocallyDeletedFiles().contains(TfsFileUtil.getFilePath(file)));
+    getChanges().assertLocallyDeleted(TfsFileUtil.getFilePath(file));
   }
 
   // locally deleted -> removeFromVcs -> none
@@ -109,7 +109,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     scheduleForDeletion(file);
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // locally deleted -> rollback -> none
@@ -124,7 +124,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Collections.singletonList(TfsFileUtil.getFilePath(file)));
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // scheduled for addition -> rollback -> unversioned
@@ -137,8 +137,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rollback(getChanges().getChanges());
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getUnversionedFiles().contains(file));
+    changes.assertTotalItems(1);
+    changes.assertUnversioned(file);
     Assert.assertEquals(content, getContent(file));
   }
 
@@ -152,8 +152,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     scheduleForAddition(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForAddition(file));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForAddition(file);
   }
 
   // unversioned -> rename -> unversioned
@@ -167,8 +167,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getUnversionedFiles().contains(getVirtualFile(mySandboxRoot, newName)));
+    changes.assertTotalItems(1);
+    changes.assertUnversioned(getVirtualFile(mySandboxRoot, newName));
   }
 
   // unversioned -> external rename -> unversioned
@@ -182,8 +182,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     renameAndClearReadonlyExternally(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getUnversionedFiles().contains(getVirtualFile(mySandboxRoot, newName)));
+    changes.assertTotalItems(1);
+    changes.assertUnversioned(getVirtualFile(mySandboxRoot, newName));
   }
 
   // scheduled for addition -> rename -> scheduled for addition
@@ -197,8 +197,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForAddition(getVirtualFile(mySandboxRoot, newName)));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForAddition(getVirtualFile(mySandboxRoot, newName));
   }
 
   // scheduled for addition -> check in -> up to date
@@ -211,7 +211,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     commit(getChanges().getChanges(), "unittest");
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(0, changes.getTotalItems());
+    changes.assertTotalItems(0);
   }
 
   // up to date -> check out -> modified [edit]
@@ -225,8 +225,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     editFiles(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsModified(file));
+    changes.assertTotalItems(1);
+    changes.assertModified(file);
   }
 
   // modified [edit] -> rollback -> up to date
@@ -241,7 +241,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     rollback(getChanges().getChanges());
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // modified [edit] -> check in -> up to date
@@ -256,7 +256,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     commit(getChanges().getChanges(), "unittest");
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // up to date -> clear readonly by filesystem -> hijacked
@@ -270,8 +270,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     clearReadonlyStatusExternally(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getModifiedWithoutCheckoutFiles().contains(file));
+    changes.assertTotalItems(1);
+    changes.assertHijacked(file);
   }
 
   // hijacked -> rollback -> up to date
@@ -283,9 +283,9 @@ public class TestSimpleFileOperations extends TFSTestCase {
     commit(getChanges().getChanges(), "unittest");
 
     clearReadonlyStatusExternally(file);
-    rollbackHijacked(getChanges().getModifiedWithoutCheckoutFiles());
+    rollbackHijacked(getChanges().getHijackedFiles());
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // hijacked -> checkout -> modified [edit]
@@ -300,8 +300,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     editFiles(file);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsModified(file));
+    changes.assertTotalItems(1);
+    changes.assertModified(file);
   }
 
   // hijacked -> rename -> modified [rename]
@@ -319,9 +319,9 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rename(file, newName);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     final FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
   }
 
   // modified [rename] -> rename to original name -> hijacked
@@ -340,8 +340,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rename(file, originalName);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getModifiedWithoutCheckoutFiles().contains(file));
+    changes.assertTotalItems(1);
+    changes.assertHijacked(file);
   }
 
   // modified [rename] -> commit -> hijacked
@@ -360,7 +360,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     commit(getChanges().getChanges(), "unittest");
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(0, changes.getTotalItems());
+    changes.assertTotalItems(0);
   }
 
   // modified [rename] -> rename not to original name -> modified [rename]
@@ -381,9 +381,9 @@ public class TestSimpleFileOperations extends TFSTestCase {
     rename(file, otherName);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     final FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), otherName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
   }
 
   // up to date -> rename externally -> modified [rename]
@@ -397,12 +397,12 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     clearReadonlyStatusExternally(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
   }
 
   // modified [rename] -> revert -> up to date
@@ -416,16 +416,16 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     clearReadonlyStatusExternally(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
     rollback(getChanges().getChanges());
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // modified [rename] -> commit -> up to date
@@ -439,16 +439,16 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     clearReadonlyStatusExternally(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
     commit(getChanges().getChanges(), "unittest");
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // up to date -> rename externally -> modified [rename] -> rename to original name
@@ -463,17 +463,17 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     clearReadonlyStatusExternally(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
-    renameFileInCommand(file, originalName);
+    rename(file, originalName);
     changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getModifiedWithoutCheckoutFiles().contains(file));
+    changes.assertTotalItems(1);
+    changes.assertHijacked(file);
   }
 
   // hijacked -> delete, schedule for deletion -> scheduled for deletion
@@ -491,8 +491,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
   }
 
 
@@ -511,11 +511,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
 
     rollback(getChanges().getChanges());
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // up to date -> delete, schedule for deletion -> scheduled for deletion
@@ -531,8 +531,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
   }
 
   // scheduled for deletion -> rollback -> up to date
@@ -548,11 +548,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
 
     rollback(getChanges().getChanges());
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // scheduled for deletion -> check in -> none
@@ -568,11 +568,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
 
     commit(getChanges().getChanges(), "unit test");
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
 
@@ -591,8 +591,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    changes.assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
   }
 
   // up to date -> delete, don't schedule for deletion (modify by VCS) -> locally missing
@@ -609,8 +609,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    changes.assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
   }
 
   // locally missing -> rollback -> up to date
@@ -627,11 +627,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    changes.assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
 
     getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Arrays.asList(path));
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
     Assert.assertEquals(content, getContent(VcsUtil.getVirtualFile(path.getPath())));
   }
 
@@ -649,12 +649,12 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    changes.assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
 
     getVcs().getCheckinEnvironment().scheduleMissingFileForDeletion(Arrays.asList(path));
-    Assert.assertEquals(1, getChanges().getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    getChanges().assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
   }
 
   // modified [edit] -> delete, schedule for deletion -> scheduled for deletion
@@ -673,8 +673,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileInCommand(file);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsScheduledForDeletion(path));
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(path);
   }
 
   // modified [edit] -> external delete, don't schedule for deletion -> locally missing
@@ -693,8 +693,98 @@ public class TestSimpleFileOperations extends TFSTestCase {
     deleteFileExternally(file);
 
     final TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.getLocallyDeletedFiles().contains(path));
+    changes.assertTotalItems(1);
+    changes.assertLocallyDeleted(path);
+  }
+
+  // modified [edit, rename] -> external delete, don't schedule for deletion -> locally missing (modified name)
+  @Test
+  public void testCheckedOutAndRenamedToLocallyMissing() throws Exception {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    final String content = "filecontent";
+    final VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
+    commit(getChanges().getChanges(), "unittest");
+
+    final String newName = "file2.txt";
+    editFiles(file);
+    rename(file, newName);
+
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    deleteFileExternally(file);
+
+    final TestChangeListBuilder changes = getChanges();
+    changes.assertTotalItems(1);
+    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    changes.assertLocallyDeleted(after);
+  }
+
+  // modified [edit, rename] -> delete, schedule for deletion -> scheduled for deletion (original name)
+  @Test
+  public void testCheckedOutAndRenamedToScheduledForDeletion() throws Exception {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    final String content = "filecontent";
+    final VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
+    commit(getChanges().getChanges(), "unittest");
+    FilePath before = TfsFileUtil.getFilePath(file);
+
+    final String newName = "file2.txt";
+    editFiles(file);
+    rename(file, newName);
+
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    deleteFileInCommand(file);
+
+    final TestChangeListBuilder changes = getChanges();
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(before);
+  }
+
+  // modified [rename] -> external delete, don't schedule for deletion -> locally missing (modified name)
+  @Test
+  public void testRenamedToLocallyMissing() throws Exception {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    final String content = "filecontent";
+    final VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
+    commit(getChanges().getChanges(), "unittest");
+
+    clearReadonlyStatusExternally(file);
+
+    final String newName = "file2.txt";
+    rename(file, newName);
+
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    deleteFileExternally(file);
+
+    final TestChangeListBuilder changes = getChanges();
+    changes.assertTotalItems(1);
+    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    changes.assertLocallyDeleted(after);
+  }
+
+  // modified [rename] -> delete, schedule for deletion -> schedule for deletion (original name)
+  @Test
+  public void testRenamedToScheduledForDeletion() throws Exception {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    final String content = "filecontent";
+    final VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
+    FilePath before = TfsFileUtil.getFilePath(file);
+    commit(getChanges().getChanges(), "unittest");
+
+    clearReadonlyStatusExternally(file);
+
+    final String newName = "file2.txt";
+    rename(file, newName);
+
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    deleteFileInCommand(file);
+
+    final TestChangeListBuilder changes = getChanges();
+    changes.assertTotalItems(1);
+    changes.assertScheduledForDeletion(before);
   }
 
   // up to date -> rename, modify by VCS -> modified [edit, rename]
@@ -708,12 +798,12 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
   }
 
   // up to date -> rename, modify by VCS -> modified [edit, rename] -> rename to original name -> modified [edit]
@@ -728,18 +818,18 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
-    renameFileInCommand(file, originalName);
+    rename(file, originalName);
 
     changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsModified(before));
+    changes.assertTotalItems(1);
+    changes.assertModified(before);
   }
 
   // modified [rename, edit] -> rollback -> up to date 
@@ -753,11 +843,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     rollback(getChanges().getChanges());
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // modified [rename, edit] -> check in -> up to date
@@ -771,11 +861,11 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     commit(getChanges().getChanges(), "unittest");
 
-    Assert.assertEquals(0, getChanges().getTotalItems());
+    getChanges().assertTotalItems(0);
   }
 
   // modified [rename, edit] -> rename not to original name -> modified [rename, edit]
@@ -789,20 +879,20 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
     final String anotherName = "file3.txt";
-    renameFileInCommand(file, anotherName);
+    rename(file, anotherName);
 
     changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath anotherFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), anotherName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, anotherFile));
+    changes.assertRenamedOrMoved(before, anotherFile);
   }
 
   // modified [rename, edit] -> rename to original name -> modified [edit]
@@ -817,18 +907,18 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final String newName = "file2.txt";
     editFiles(file);
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
 
-    renameFileInCommand(file, originalName);
+    rename(file, originalName);
 
     changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsModified(before));
+    changes.assertTotalItems(1);
+    changes.assertModified(before);
   }
 
   // modified [edit] -> rename -> modified [edit, rename]
@@ -843,16 +933,16 @@ public class TestSimpleFileOperations extends TFSTestCase {
     editFiles(file);
 
     TestChangeListBuilder changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
-    Assert.assertTrue(changes.containsModified(file));
+    changes.assertTotalItems(1);
+    changes.assertModified(file);
 
     final String newName = "file2.txt";
-    renameFileInCommand(file, newName);
+    rename(file, newName);
 
     changes = getChanges();
-    Assert.assertEquals(1, changes.getTotalItems());
+    changes.assertTotalItems(1);
     FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
-    Assert.assertTrue(changes.containsRenamedOrMoved(before, after));
+    changes.assertRenamedOrMoved(before, after);
   }
 
 }

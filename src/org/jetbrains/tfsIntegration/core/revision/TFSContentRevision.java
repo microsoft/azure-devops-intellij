@@ -21,9 +21,10 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NonNls;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
@@ -70,6 +71,7 @@ public class TFSContentRevision implements ContentRevision {
         return null;
       }
       final String downloadUrl = item.getDurl();
+      TFSVcs.assertTrue(downloadUrl != null, "Null download url for item :" + item.getItem() + "'");
       TFSContentStore store = TFSContentStoreFactory.find(myPath, myRevisionNumber);
       if (store == null) {
         store = TFSContentStoreFactory.create(myPath, myRevisionNumber);

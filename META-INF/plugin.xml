@@ -39,26 +39,26 @@
     </group>
 
     <group id="TfsGroup" text="TFS">
-      <action id="Tfs.Share" class="org.jetbrains.tfsIntegration.actions.ShareProjectAction" text="Share project..."/>
+      <!--action id="Tfs.Share" class="org.jetbrains.tfsIntegration.actions.ShareProjectAction" text="Share project..."/-->
       <separator/>
-      <action id="Tfs.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="Add"/>
+      <!--action id="Tfs.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="Add"/-->
       <reference id="CheckinFiles"/>
       <reference id="UpdateFiles"/>
       <reference id="IntegrateFiles"/>
       <reference id="CheckStatusForFiles"/>
       <separator/>
-      <action id="Tfs.Lock" class="org.jetbrains.tfsIntegration.actions.LockAction" text="Lock..."/>
-      <action id="Tfs.Unlock" class="org.jetbrains.tfsIntegration.actions.UnlockAction" text="Unlock"/>
+      <!--action id="Tfs.Lock" class="org.jetbrains.tfsIntegration.actions.LockAction" text="Lock..."/-->
+      <!--action id="Tfs.Unlock" class="org.jetbrains.tfsIntegration.actions.UnlockAction" text="Unlock"/-->
       <separator/>
       <reference id="ChangesView.Rollback"/>
       <separator/>
-      <action id="Tfs.Label" class="org.jetbrains.tfsIntegration.actions.LabelAction" text="Apply Label..."/>
-      <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="Branch..."/>
+      <!--action id="Tfs.Label" class="org.jetbrains.tfsIntegration.actions.LabelAction" text="Apply Label..."/-->
+      <!--action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="Branch..."/-->
       <separator/>
       <reference id="Compare.SameVersion"/>
       <reference id="Compare.LastVersion"/>
       <reference id="Compare.Selected"/>
-      <action id="Tfs.Diff" class="org.jetbrains.tfsIntegration.actions.DiffAction" text="Compare..."/>
+      <!--action id="Tfs.Diff" class="org.jetbrains.tfsIntegration.actions.DiffAction" text="Compare..."/-->
       <reference id="Vcs.ShowTabbedFileHistory"/>
       <reference id="Vcs.ShowHistoryForBlock"/>
       <reference id="Annotate"/>

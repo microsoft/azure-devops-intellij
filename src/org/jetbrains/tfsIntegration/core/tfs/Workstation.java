@@ -239,15 +239,32 @@ public class Workstation {
     // todo: implement add operation
   }
 
-  // TODO find by the nearest mapping!
   @Nullable
   public WorkspaceInfo findWorkspace(final @NotNull FilePath localPath) throws TfsException {
+    WorkspaceInfo result = null;
+    WorkingFolderInfo nearestMapping = null;
     for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
-      if (workspaceInfo.findServerPathByLocalPath(localPath) != null) {
-        return workspaceInfo;
+      WorkingFolderInfo mapping = workspaceInfo.findNearestMappingByLocalPath(localPath);
+      if (mapping != null) {
+        if (nearestMapping == null || mapping.getLocalPath().isUnder(nearestMapping.getLocalPath(), false)) {
+          nearestMapping = mapping;
+          result = workspaceInfo;
+        }
       }
     }
-    return null;
+    return result;
   }
 
+  public Set<FilePath> findChildMappedPaths(final FilePath root) throws TfsException {
+    HashSet<FilePath> result = new HashSet<FilePath>();
+    for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
+      List<WorkingFolderInfo> workingFolders = workspaceInfo.getWorkingFoldersInfos();
+      for (WorkingFolderInfo workingFolder : workingFolders) {
+        if (workingFolder.getLocalPath().isUnder(root, false) ) {
+          result.add(workingFolder.getLocalPath());          
+        }
+      }
+    }
+    return result;
+  }
 }

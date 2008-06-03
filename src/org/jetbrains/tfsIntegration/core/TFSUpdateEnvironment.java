@@ -26,10 +26,10 @@ import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyUpdateGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -37,7 +37,10 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.ui.UpdatePanel;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
   private final TFSVcs myVcs;
@@ -75,35 +78,17 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               TFSProgressUtil.checkCanceled(progressIndicator);
             }
             // query get operations for contentRoots
-            List<List<GetOperation>> getOperations =
-              workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+            List<List<GetOperation>> result = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
 
-            Map<ItemPath, GetOperation> itemPaths2operations = new HashMap<ItemPath, GetOperation>();
-            for (List<GetOperation> operations : getOperations) {
-              for (GetOperation operation : operations) {
-                itemPaths2operations.put(new ItemPath(VcsUtil.getFilePath(operation.getSlocal()), operation.getTitem()), operation);
-                TFSProgressUtil.checkCanceled(progressIndicator);
-              }
+            List<GetOperation> getOperations = new ArrayList<GetOperation>();
+            for (List<GetOperation> list : result) {
+              getOperations.addAll(list);
             }
-            if (!itemPaths2operations.isEmpty()) {
-              UpdateStatusVisitor processor = new UpdateStatusVisitor(workspace, updatedFiles);
-              // iterate over get operations: update files (get + updateLocalVersion), collect conflicting files (addLocalConflict)
-              StatusProvider.visitByStatus(workspace, new ArrayList<ItemPath>(itemPaths2operations.keySet()), progressIndicator, processor);
 
-              final List<GetOperation> updateLocalVersions = new ArrayList<GetOperation>();
-              for (ItemPath path : processor.getPathsToDownload()) {
-                TFSProgressUtil.setProgressText(progressIndicator, "Update " + path.getLocalPath().getPresentableUrl());
-                GetOperation getOperation = itemPaths2operations.get(path);
-
-                // TODO: rename if was renamed on server: depth-first order required
-                VersionControlServer.downloadItem(workspace, getOperation, true, true, true);
-                updateLocalVersions.add(getOperation);
-
-                TFSProgressUtil.checkCanceled(progressIndicator);
-              }
-
-              workspace.getServer().getVCS().updateLocalVersions(workspace.getName(), workspace.getOwnerName(), updateLocalVersions);
-            }
+            final Collection<VcsException> applyErrors = ApplyUpdateGetOperations
+              .execute(workspace, getOperations, progressIndicator, updatedFiles, ApplyUpdateGetOperations.ConflictAction.AddLocalConflict,
+                       false);
+            exceptions.addAll(applyErrors);
           }
         });
       for (FilePath orphanPath : orphanPaths) {
