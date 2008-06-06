@@ -21,6 +21,7 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -56,10 +57,10 @@ public class WorkstationHelper {
   }
 
   public static class ProcessResult<T> {
-    public final T results;
+    public final @Nullable T results;
     public final List<FilePath> orphanPaths;
 
-    public ProcessResult(final T results, final List<FilePath> orphanPaths) {
+    public ProcessResult(@Nullable final T results, final List<FilePath> orphanPaths) {
       this.results = results;
       this.orphanPaths = orphanPaths;
     }

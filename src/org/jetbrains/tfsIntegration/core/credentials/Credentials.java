@@ -30,15 +30,17 @@ public class Credentials {
 
   private String myPassword;
 
+  private boolean myStorePassword;
 
   public Credentials() {
-    this("", "", null);
+    this("", "", null, false);
   }
 
-  public Credentials(final @NotNull String userName, final @NotNull String domain, final String password) {
+  public Credentials(final @NotNull String userName, final @NotNull String domain, final String password, final boolean storePassword) {
     myUserName = userName;
     myDomain = domain;
     myPassword = password;
+    myStorePassword = storePassword;
   }
 
   /**
@@ -69,6 +71,14 @@ public class Credentials {
 
   void setDomain(final @NotNull String domain) {
     myDomain = domain;
+  }
+
+  public boolean isStorePassword() {
+    return myStorePassword;
+  }
+
+  public void setStorePassword(final boolean storePassword) {
+    myStorePassword = storePassword;
   }
 
   @NotNull

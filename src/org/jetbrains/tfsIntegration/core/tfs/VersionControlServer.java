@@ -31,15 +31,14 @@ import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.exceptions.UnknownException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import java.io.*;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.util.*;
 import java.text.MessageFormat;
+import java.util.*;
 
 public class VersionControlServer {
   private Repository myRepository;
@@ -786,7 +785,7 @@ public class VersionControlServer {
     for (ItemPath path : paths) {
       itemSpecs.add(createItemSpec(VersionControlPath.toTfsRepresentation(path.getLocalPath()), recursionType));
     }
-    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, recursionType);
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
   }
 
   /*public Collection<PendingChange> queryPendingSetsByServerItems(final String workspaceName,
@@ -802,8 +801,7 @@ public class VersionControlServer {
 
   private Collection<PendingChange> doQueryPendingSets(final String workspaceName,
                                                        final String workspaceOwnerName,
-                                                       final Collection<ItemSpec> itemSpecs,
-                                                       final RecursionType recursionType) throws TfsException {
+                                                       final Collection<ItemSpec> itemSpecs) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
 

@@ -95,10 +95,6 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     return String.valueOf(myPasswordField.getPassword());
   }
 
-  public boolean shouldStorePassword() {
-    return myStorePasswordCheckbox.isSelected();
-  }
-
   protected Action[] createActions() {
     return new Action[]{getOKAction(), getCancelAction()};
   }
@@ -234,17 +230,11 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     // do nothing
   }
 
-  public Credentials getCredentialsToConnect() {
+  public Credentials getCredentials() {
     if (!isOK()) {
       throw new IllegalStateException("Dialog did not succeed");
     }
-    return new Credentials(getUsername(), getDomain(), getPassword());
+    return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected());
   }
 
-  public Credentials getCredentialsToStore() {
-    if (!isOK()) {
-      throw new IllegalStateException("Dialog did not succeed");
-    }
-    return new Credentials(getUsername(), getDomain(), shouldStorePassword() ? getPassword() : null);
-  }
 }

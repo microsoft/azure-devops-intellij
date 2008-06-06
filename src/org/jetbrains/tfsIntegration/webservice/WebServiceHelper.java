@@ -197,16 +197,28 @@ public class WebServiceHelper {
     }
   }
 
-  private static <T> T executeRequest(URI serverUri, InnerDelegate<T> delegate) throws TfsException {
-    Credentials credentialsToConnect = CredentialsManager.getInstance().getCredentials(serverUri);
-    Credentials credentialsToStore = null;
+  private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
+    Credentials credentials = CredentialsManager.getInstance().getCredentials(serverUri);
     boolean forcePrompt = false;
     while (true) {
-      if (/*credentialsToConnect.getPassword() == null ||*/ forcePrompt) {
-        final LoginDialog d = new LoginDialog(serverUri, credentialsToConnect, false);
+      if (/*credentials.getPassword() == null ||*/ forcePrompt) {
+        final Ref<Credentials> dialogCredentials = new Ref<Credentials>(credentials);
         Runnable runnable = new Runnable() {
           public void run() {
-            d.show();
+            // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
+            Credentials actualCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+            //noinspection ConstantConditions
+            if (actualCredentials.equalsTo(dialogCredentials.get())) {
+              final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
+              d.show();
+              if (d.isOK()) {
+                dialogCredentials.set(d.getCredentials());
+              } else {
+                dialogCredentials.set(null);
+              }
+            } else {
+              dialogCredentials.set(actualCredentials);
+            }
           }
         };
         if (ApplicationManager.getApplication().isDispatchThread()) {
@@ -215,9 +227,8 @@ public class WebServiceHelper {
         else {
           ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
         }
-        if (d.isOK()) {
-          credentialsToConnect = d.getCredentialsToConnect();
-          credentialsToStore = d.getCredentialsToStore();
+        if (dialogCredentials.get() != null) {
+          credentials = dialogCredentials.get();
         }
         else {
           throw new UserCancelledException();
@@ -225,9 +236,9 @@ public class WebServiceHelper {
       }
 
       try {
-        T result = delegate.executeRequest(credentialsToConnect);
-        if (credentialsToStore != null) {
-          CredentialsManager.getInstance().storeCredentials(serverUri, credentialsToStore);
+        T result = delegate.executeRequest(credentials);
+        if (forcePrompt) {
+          CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
         }
         return result;
       }
@@ -238,8 +249,8 @@ public class WebServiceHelper {
           forcePrompt = true;
         }
         else {
-          if (!(tfsException instanceof ConnectionFailedException) && credentialsToStore != null) {
-            CredentialsManager.getInstance().storeCredentials(serverUri, credentialsToStore);
+          if (!(tfsException instanceof ConnectionFailedException)) {
+            CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
           }
           throw tfsException;
         }

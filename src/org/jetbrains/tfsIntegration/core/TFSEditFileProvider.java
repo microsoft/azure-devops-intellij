@@ -41,13 +41,15 @@ public class TFSEditFileProvider implements EditFileProvider {
           }
         });
 
-      errors.addAll(BeanHelper.getVcsExceptions(processResult.results.getFailures()));
+      if (processResult.results != null) {
+        errors.addAll(BeanHelper.getVcsExceptions(processResult.results.getFailures()));
 
-      for (GetOperation getOp : processResult.results.getResult()) {
-        String localPath = getOp.getSlocal(); // TODO determine GetOperation local path
-        VirtualFile file = VcsUtil.getVirtualFile(localPath);
-        if (file != null && file.isValid() && !file.isDirectory()) {
-          TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+        for (GetOperation getOp : processResult.results.getResult()) {
+          String localPath = getOp.getSlocal(); // TODO determine GetOperation local path
+          VirtualFile file = VcsUtil.getVirtualFile(localPath);
+          if (file != null && file.isValid() && !file.isDirectory()) {
+            TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+          }
         }
       }
     }

@@ -102,7 +102,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
         break;
       }
     }
-    final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD);
+    final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false);
     if (server == null) {
       String serverGuid = WebServiceHelper.authenticate(serverUri, testCredentials);
       ServerInfo newServer = new ServerInfo(serverUri, serverGuid);
