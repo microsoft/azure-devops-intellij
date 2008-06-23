@@ -89,6 +89,33 @@ public class VersionControlServer {
     return createItemSpec(string, Integer.MIN_VALUE, recursionType);
   }
 
+  public List<Item> queryItemsById(final int[] itemIds,
+                            final int changeSet,
+                            final boolean generateDownloadUrl) throws TfsException {
+    final ArrayOfInt arrayOfInt = new ArrayOfInt();
+    arrayOfInt.set_int(itemIds);
+    ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
+      public ArrayOfItem executeRequest() throws RemoteException {
+        return myRepository.QueryItemsById(arrayOfInt, changeSet, generateDownloadUrl);
+      }
+    });
+    ArrayList<Item> result = new ArrayList<Item>();
+    result.addAll(Arrays.asList(arrayOfItems.getItem()));
+    return result;
+  }
+
+  public Item queryItemById(final int itemId,
+                            final int changeSet,
+                            final boolean generateDownloadUrl) throws TfsException {
+
+    List<Item> items = queryItemsById(new int[] {itemId}, changeSet, generateDownloadUrl);
+    if (items.isEmpty()) {
+      return null;
+    }
+    TFSVcs.assertTrue(items.size() == 1);
+    return items.get(0);
+  }
+
   public static class GetRequestParams {
     public final String serverPath;
     public final RecursionType recursionType;
@@ -703,11 +730,11 @@ public class VersionControlServer {
 
   public List<Conflict> queryConflicts(final String workspaceName,
                                        final String ownerName,
-                                       final List<FilePath> paths,
+                                       final List<ItemPath> paths,
                                        final RecursionType recursionType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-    for (FilePath path : paths) {
-      itemSpecList.add(createItemSpec(path.getPath(), recursionType)); // TODO: use server path?!
+    for (ItemPath path : paths) {
+      itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
@@ -876,7 +903,7 @@ public class VersionControlServer {
   //}
 
 
-  private List<List<Item>> queryItems(final String workspaceName,
+  public List<List<Item>> queryItems(final String workspaceName,
                                       final String ownerName,
                                       final List<ItemSpec> itemsSpecs,
                                       final VersionSpec versionSpec,

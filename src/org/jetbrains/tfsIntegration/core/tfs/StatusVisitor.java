@@ -25,7 +25,8 @@ public interface StatusVisitor {
 
   void unversioned(final @NotNull ItemPath path, final @Nullable ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
 
-  void checkedOutForEdit(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists);
+  void checkedOutForEdit(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws
+                                                                                                                                TfsException;
 
   void scheduledForAddition(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists);
 

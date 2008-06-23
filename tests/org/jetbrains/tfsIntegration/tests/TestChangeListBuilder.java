@@ -17,12 +17,15 @@
 package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.vcs.MockChangelistBuilder;
+import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Assert;
 
@@ -40,7 +43,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   private final List<VirtualFile> myIgnoredFiles = new ArrayList<VirtualFile>();
 
   public TestChangeListBuilder(final String pathPrefix, final Project project) {
-    myPathPrefix = pathPrefix;
+    myPathPrefix = FileUtil.toSystemIndependentName(pathPrefix);
     myProject = project;
   }
 
@@ -69,8 +72,17 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     assertFileStatus(file, FileStatus.UNKNOWN);
   }
 
+  public void assertUnversioned(String file) {
+    Assert.assertTrue(toString(), myUnversionedFiles.contains(VcsUtil.getVirtualFile(file)));
+    assertFileStatus(file, FileStatus.UNKNOWN);
+  }
+
   public void assertLocallyDeleted(VirtualFile file) {
     assertLocallyDeleted(TfsFileUtil.getFilePath(file));
+  }
+
+  public void assertLocallyDeleted(String file) {
+    assertLocallyDeleted(VcsUtil.getFilePath(file));
   }
 
   public void assertLocallyDeleted(FilePath path) {
@@ -87,13 +99,27 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     assertFileStatus(file, FileStatus.HIJACKED);
   }
 
+  public void assertHijacked(String file) {
+    Assert.assertTrue(toString(), myHijackedFiles.contains(VcsUtil.getVirtualFile(file)));
+    assertFileStatus(file, FileStatus.HIJACKED);
+  }
+
   public void assertIgnored(VirtualFile file) {
     Assert.assertTrue(toString(), myIgnoredFiles.contains(file));
     assertFileStatus(file, FileStatus.IGNORED);
   }
 
+  public void assertIgnored(String file) {
+    Assert.assertTrue(toString(), myIgnoredFiles.contains(VcsUtil.getVirtualFile(file)));
+    assertFileStatus(file, FileStatus.IGNORED);
+  }
+
   public void assertScheduledForAddition(VirtualFile file) {
     assertScheduledForAddition(TfsFileUtil.getFilePath(file));
+  }
+
+  public void assertScheduledForAddition(String file) {
+    assertScheduledForAddition(VcsUtil.getFilePath(file));
   }
 
   public void assertScheduledForAddition(FilePath file) {
@@ -112,6 +138,10 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     assertScheduledForDeletion(TfsFileUtil.getFilePath(file));
   }
 
+  public void assertScheduledForDeletion(String file) {
+    assertScheduledForDeletion(VcsUtil.getFilePath(file));
+  }
+
   public void assertScheduledForDeletion(FilePath file) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() == null) {
@@ -128,6 +158,11 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     Assert.assertNotNull(toString(), getMoveChange(from, to));
   }
 
+  public void assertRenamedOrMoved(String from, String to) {
+    Assert.assertNotNull(toString(), getMoveChange(VcsUtil.getFilePath(from), VcsUtil.getFilePath(to)));
+  }
+
+  @Nullable
   public Change getMoveChange(final FilePath from, FilePath to) {
     for (Change c : getChanges()) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() != null) {
@@ -142,6 +177,10 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
 
   public void assertModified(VirtualFile file) {
     assertModified(TfsFileUtil.getFilePath(file));
+  }
+
+  public void assertModified(String file) {
+    assertModified(VcsUtil.getFilePath(file));
   }
 
   public void assertModified(FilePath file) {
@@ -176,7 +215,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   }
 
   private String getPathRemainder(FilePath filePath) {
-    String path = filePath.getPath();
+    String path = FileUtil.toSystemIndependentName(filePath.getPath());
     return path.startsWith(myPathPrefix) ? path.substring(myPathPrefix.length() + 1) : path;
   }
 
@@ -230,19 +269,22 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     return s.toString();
   }
 
-  private void assertFileStatus(VirtualFile file, FileStatus expectedStatus) {
-    final FileStatus realStatus = FileStatusManager.getInstance(myProject).getStatus(file);
-    Assert.assertTrue("FileStatus " + realStatus + " while expected " + expectedStatus, realStatus == expectedStatus);
-  }
-
-  private void assertFileStatus(FilePath path, FileStatus expectedStatus) {
-    VirtualFile file = path.getVirtualFile();
+  private void assertFileStatus(@Nullable VirtualFile file, FileStatus expectedStatus) {
     if (file == null) {
       Assert.assertTrue(FileStatus.DELETED == expectedStatus || FileStatus.DELETED_FROM_FS == expectedStatus);
     }
     else {
-      assertFileStatus(file, expectedStatus);
+      final FileStatus realStatus = FileStatusManager.getInstance(myProject).getStatus(file);
+      Assert.assertTrue("FileStatus " + realStatus + " while expected " + expectedStatus, realStatus == expectedStatus);
     }
+  }
+
+  private void assertFileStatus(String file, FileStatus expectedStatus) {
+    assertFileStatus(VcsUtil.getVirtualFile(file), expectedStatus);
+  }
+
+  private void assertFileStatus(FilePath path, FileStatus expectedStatus) {
+    assertFileStatus(path.getVirtualFile(), expectedStatus);
   }
 
 }

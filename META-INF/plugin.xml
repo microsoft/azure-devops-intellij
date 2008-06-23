@@ -11,6 +11,12 @@
   <idea-version since-build="7000"/>
   <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
+    <application-components>
+        <component>
+            <implementation-class>org.jetbrains.tfsIntegration.core.credentials.CredentialsManager</implementation-class>
+        </component>
+    </application-components>
+
   <project-components>
     <component>
       <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>

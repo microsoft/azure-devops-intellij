@@ -115,7 +115,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     for (Changeset changeset : changesets) {
       final FilePath localPath = workspace.findLocalPathByServerPath(changeset.getChanges().getChange()[0].getItem().getItem());
       revisions.add(
-        new TFSFileRevision(localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(), changeset.getCset()));
+        new TFSFileRevision(workspace, localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(), changeset.getCset()));
     }
     return revisions;
   }

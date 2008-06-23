@@ -252,8 +252,8 @@ public class WorkspaceInfo {
 
   static void fromBean(Workspace bean, WorkspaceInfo info) {
     info.myOriginalName = bean.getName();
-    info.myComment = bean.getComment();
-    info.myTimestamp = bean.getLastAccessDate();
+    info.setComment(bean.getComment());
+    info.setTimestamp(bean.getLastAccessDate());
     final WorkingFolder[] folders;
     if (bean.getFolders().getWorkingFolder() != null) {
       folders = bean.getFolders().getWorkingFolder();

@@ -21,6 +21,8 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.io.IOException;
 import java.util.Date;
@@ -32,8 +34,11 @@ public class TFSFileRevision implements VcsFileRevision {
   private String myAuthor;
   private FilePath myFilePath;
   private int myChangeset;
+  private WorkspaceInfo myWorkspace;
 
-  public TFSFileRevision(final FilePath filePath, final Date date, final String commitMessage, final String author, final int changeset) {
+  public TFSFileRevision(final WorkspaceInfo workspace, final FilePath filePath, final Date date, final String commitMessage, final String author,
+                         final int changeset) {
+    myWorkspace = workspace;
     myDate = date;
     myCommitMessage = commitMessage;
     myAuthor = author;
@@ -64,8 +69,14 @@ public class TFSFileRevision implements VcsFileRevision {
 
   public void loadContent() throws VcsException {
     // TODO: encoding
-    final String content = new TFSContentRevision(myFilePath, myChangeset).getContent();
-    myContent = (content != null) ? content.getBytes() : null;
+    final String content;
+    try {
+      content = new TFSContentRevision(myFilePath, myChangeset).getContent();
+      myContent = (content != null) ? content.getBytes() : null;
+    }
+    catch (TfsException e) {
+      throw new VcsException("Unable to get revision content for " + myFilePath, e);
+    }
   }
 
   public byte[] getContent() throws IOException {

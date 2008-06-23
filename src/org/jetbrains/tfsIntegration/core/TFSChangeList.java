@@ -130,6 +130,7 @@ public class TFSChangeList implements CommittedChangeList {
       }
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
     }
   }
@@ -152,7 +153,13 @@ public class TFSChangeList implements CommittedChangeList {
 
   public Collection<Change> getChanges() {
     if (myChanges == null) {
-      buildChanges();
+      try {
+        buildChanges();
+      }
+      catch (TfsException e) {
+        //noinspection ThrowableInstanceNeverThrown
+        AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      }
     }
     return myChanges;
 
@@ -168,7 +175,7 @@ public class TFSChangeList implements CommittedChangeList {
     return myComment;
   }
 
-  private void buildChanges() {
+  private void buildChanges() throws TfsException {
     myChanges = new ArrayList<Change>();
     for (FilePath path : myAddedPaths) {
       myChanges.add(new Change(null, new TFSContentRevision(path, myRevisionNumber)));
@@ -207,6 +214,7 @@ public class TFSChangeList implements CommittedChangeList {
       readPaths(stream, myDeletedPaths);
     }
     catch (Exception e) {
+      //noinspection ThrowableInstanceNeverThrown
       AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
     }
   }
@@ -233,22 +241,19 @@ public class TFSChangeList implements CommittedChangeList {
 
     final TFSChangeList that = (TFSChangeList)o;
 
-    if (myRevisionNumber != that.myRevisionNumber) return false;
-    if (myAuthor != null ? !myAuthor.equals(that.myAuthor) : that.myAuthor != null) return false;
-    if (myDate != null ? !myDate.equals(that.myDate) : that.myDate != null) return false;
-    if (!myComment.equals(that.myComment)) return false;
+    return myRevisionNumber == that.myRevisionNumber &&
+           !(myAuthor != null ? !myAuthor.equals(that.myAuthor) : that.myAuthor != null) &&
+           !(myDate != null ? !myDate.equals(that.myDate) : that.myDate != null) &&
+           myComment.equals(that.myComment);
 
-    return true;
   }
 
   public int hashCode() {
     int result;
-    result = myRevisionNumber ^ (myRevisionNumber >> 32);
+    result = myRevisionNumber;
     result = 31 * result + (myAuthor != null ? myAuthor.hashCode() : 0);
     result = 31 * result + (myDate != null ? myDate.hashCode() : 0);
-    result = 31 * result + (myComment.hashCode());
     return result;
   }
-
 
 }

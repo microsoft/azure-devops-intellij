@@ -16,16 +16,16 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.revision.TFSContentRevisionFactory;
-import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
+import org.jetbrains.tfsIntegration.core.tfs.StatusProvider;
+import org.jetbrains.tfsIntegration.core.tfs.StatusVisitor;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
@@ -44,9 +44,10 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     }
   }
 
-  public void checkedOutForEdit(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
+  public void checkedOutForEdit(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+    throws TfsException {
     if (localItemExists) {
-      TFSContentRevision baseRevision = TFSContentRevisionFactory.getRevision(path.getLocalPath(), extendedItem.getLver());
+      TFSContentRevision baseRevision = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
       builder.processChange(new Change(baseRevision, CurrentContentRevision.create(path.getLocalPath())));
     }
     else {
@@ -97,11 +98,8 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
 
   public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
     if (localItemExists) {
-      FilePath oldPath = myWorkspace.findLocalPathByServerPath(extendedItem.getSitem());
-      // TODO getLatest - 1
-      TFSContentRevision before = TFSContentRevisionFactory.getRevision(oldPath, extendedItem.getLver() - 1);
-      TFSContentRevision after =
-        TFSContentRevisionFactory.getRevision(VcsUtil.getFilePath(extendedItem.getLocal()), extendedItem.getLver());
+      TFSContentRevision before = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver() - 1);
+      TFSContentRevision after = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
       builder.processChange(new Change(before, after));
     }
     else {
@@ -110,12 +108,10 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   }
 
   public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
+    // TODO: can be или нет?
     if (localItemExists) {
-      FilePath oldPath = myWorkspace.findLocalPathByServerPath(extendedItem.getSitem());
-      // TODO getLatest - 1
-      TFSContentRevision before = TFSContentRevisionFactory.getRevision(oldPath, extendedItem.getLver() - 1);
-      TFSContentRevision after =
-        TFSContentRevisionFactory.getRevision(VcsUtil.getFilePath(extendedItem.getLocal()), extendedItem.getLver());
+      TFSContentRevision before = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver() - 1);
+      TFSContentRevision after = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
       builder.processChange(new Change(before, after));
     }
     else {

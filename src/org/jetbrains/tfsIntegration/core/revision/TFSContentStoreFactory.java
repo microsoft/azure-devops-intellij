@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.core.revision;
 
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 
 import java.io.IOException;
@@ -28,13 +27,12 @@ import java.io.IOException;
  */
 public class TFSContentStoreFactory {
 
-  // TODO: FilePath -> ItemPath
-  public static TFSContentStore create(final FilePath path, final VcsRevisionNumber.Int revision) throws IOException {
-    return new TFSTmpFileStore(path, revision.getValue());
+  public static TFSContentStore create(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
+    return new TFSTmpFileStore(serverUri, itemId, revision.getValue());
   }
 
-  public static TFSContentStore find(final FilePath path, final VcsRevisionNumber.Int revision) throws IOException {
-    return TFSTmpFileStore.find(path, revision.getValue());
+  public static TFSContentStore find(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
+    return TFSTmpFileStore.find(serverUri, itemId, revision.getValue());
   }
 }
 

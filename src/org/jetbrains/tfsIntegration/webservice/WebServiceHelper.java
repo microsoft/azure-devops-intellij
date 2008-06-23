@@ -315,6 +315,7 @@ public class WebServiceHelper {
   public static void setupStub(Stub stub) {
     Options options = stub._getServiceClient().getOptions();
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
+    options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
   }
 
   public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)

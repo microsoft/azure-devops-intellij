@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.util.io.StreamUtil;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
@@ -29,8 +28,8 @@ public class TFSTmpFileStore implements TFSContentStore {
   private static String myTfsTmpDir;
 
   @Nullable
-  public static TFSContentStore find(final FilePath path, final int revision) throws IOException {
-    File tmpFile = new File(createTmpFileName(path, revision));
+  public static TFSContentStore find(final String serverUri, final int itemId, final int revision) throws IOException {
+    File tmpFile = new File(createTmpFileName(serverUri, itemId, revision));
     if (tmpFile.exists()) {
       return new TFSTmpFileStore(tmpFile);
     }
@@ -39,15 +38,13 @@ public class TFSTmpFileStore implements TFSContentStore {
 
   private File myTmpFile;
 
-  TFSTmpFileStore(final FilePath path, final int revision) throws IOException {
-    myTmpFile = new File(createTmpFileName(path, revision));
+  TFSTmpFileStore(final String serverUri, final int itemId, final int revision) throws IOException {
+    myTmpFile = new File(createTmpFileName(serverUri, itemId, revision));
     myTmpFile.deleteOnExit();
   }
 
-  private static String createTmpFileName(final FilePath path, final int revision) throws IOException {
-    FilePath parentPath = path.getParentPath();
-    String parentPathUrl = parentPath == null ? "" : parentPath.getPresentableUrl();
-    return getTfsTmpDir() + File.separator + parentPathUrl.hashCode() + "_" + path.getName() + "." + revision;
+  private static String createTmpFileName(final String serverUri, final int itemId, final int revision) throws IOException {
+    return getTfsTmpDir() + File.separator + serverUri.hashCode() + "_" + itemId + "." + revision;
   }
 
   TFSTmpFileStore(final File tmpFile) throws IOException {

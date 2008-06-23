@@ -29,6 +29,7 @@ import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
+import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
@@ -39,13 +40,34 @@ import java.io.OutputStream;
 public class TFSContentRevision implements ContentRevision {
   private static final Logger LOG = Logger.getInstance(TFSContentRevision.class.getName());
 
-  private final @NotNull FilePath myPath;
   private String myServerContent;
-  private final @NotNull VcsRevisionNumber.Int myRevisionNumber;
+  private FilePath myPath;
+  private WorkspaceInfo myWorkspace;
+  private Item myItem;
+  private final VcsRevisionNumber.Int myRevisionNumber;
 
-  public TFSContentRevision(@NotNull FilePath path, int changeset) {
+  public TFSContentRevision(final @NotNull WorkspaceInfo workspace, int itemId, int changeset) throws TfsException {
+    myWorkspace = workspace;
+    myRevisionNumber = new VcsRevisionNumber.Int(changeset);
+    myItem = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
+    if (myItem != null) {
+      myPath = workspace.findLocalPathByServerPath(myItem.getItem());
+      TFSVcs.assertTrue(myPath != null, "No mapping found for item :" + myItem.getItem());
+    }
+  }
+
+  public TFSContentRevision(final @NotNull FilePath path, int changeset) throws TfsException {
     myPath = path;
     myRevisionNumber = new VcsRevisionNumber.Int(changeset);
+    myWorkspace = Workstation.getInstance().findWorkspace(myPath);
+    if (myWorkspace == null) {
+      throw new OperationFailedException("Cannot find mapping for item " + path.getPath());
+    }
+    myItem = myWorkspace.getServer().getVCS().queryItem(
+      myWorkspace.getName(),
+      myWorkspace.getOwnerName(),
+      myPath.getPath(),
+      new ChangesetVersionSpec(changeset), DeletedState.NonDeleted, true);
   }
 
   public String getContent() {
@@ -57,29 +79,20 @@ public class TFSContentRevision implements ContentRevision {
 
   @Nullable
   private String getServerContent() {
+    if (myItem == null) {
+      return null;
+    }
     try {
-      // get workspace
-      final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(myPath);
-      if (workspace == null) {
-        return null;
-      }
-      String serverPath = workspace.findServerPathByLocalPath(myPath);
-      // get server item
-      final Item item = workspace.getServer().getVCS().queryItem(workspace.getName(), workspace.getOwnerName(), serverPath, new ChangesetVersionSpec(
-        myRevisionNumber.getValue()), DeletedState.NonDeleted, true);
-      if (item == null) {
-        return null;
-      }
-      final String downloadUrl = item.getDurl();
-      TFSVcs.assertTrue(downloadUrl != null, "Null download url for item :" + item.getItem() + "'");
-      TFSContentStore store = TFSContentStoreFactory.find(myPath, myRevisionNumber);
+      final String downloadUrl = myItem.getDurl();
+      TFSVcs.assertTrue(downloadUrl != null, "No download url for item: " + myItem.getItem());
+      TFSContentStore store = TFSContentStoreFactory.find(myWorkspace.getServer().getUri().toASCIIString(), myItem.getItemid(), myRevisionNumber);
       if (store == null) {
-        store = TFSContentStoreFactory.create(myPath, myRevisionNumber);
+        store = TFSContentStoreFactory.create(myWorkspace.getServer().getUri().toASCIIString(), myItem.getItemid(), myRevisionNumber);
         final Ref<TfsException> exception = new Ref<TfsException>();
         store.saveContent(new TFSContentStore.ContentWriter() {
           public void write(final OutputStream outputStream) {
             try {
-              VersionControlServer.downloadItem(workspace, downloadUrl, outputStream);
+              VersionControlServer.downloadItem(myWorkspace, downloadUrl, outputStream);
             }
             catch (TfsException e) {
               exception.set(e);

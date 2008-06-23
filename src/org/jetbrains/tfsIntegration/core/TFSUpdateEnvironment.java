@@ -63,6 +63,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       List<FilePath> orphanPaths =
         WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
             TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myVcs.getProject());
@@ -71,6 +72,26 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               recursionType = configuration.UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
             }
             TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
+
+            //// get item's names in target revision from their names in current revision
+            //final List<ItemSpec> itemsSpecs = new ArrayList<ItemSpec>();
+            //for (ItemPath path : paths) {
+            //  ItemSpec spec = new ItemSpec();
+            //  spec.setItem(path.getServerPath());
+            //  spec.setRecurse(recursionType);
+            //  itemsSpecs.add(spec);
+            //}
+            //List<List<Item>> itemsList =
+            //  workspace.getServer().getVCS().queryItems(workspace.getName(),
+            //                                            workspace.getOwnerName(),
+            //                                            itemsSpecs,
+            //                                            new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName()),
+            //                                            DeletedState.NonDeleted,
+            //                                            ItemType.Any,
+            //                                            false);
+            //for (List<Item> items : itemsList) {
+            //  // TODO: query history for every item in order to get correct name in target revision  
+            //}
 
             List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(paths.size());
             for (ItemPath path : paths) {

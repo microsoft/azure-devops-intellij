@@ -55,7 +55,14 @@ public class TFSDiffProvider implements DiffProvider {
     else {
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
-      return new TFSContentRevision(path, intRevisionNumber.getValue());
+      try {
+        return new TFSContentRevision(path, intRevisionNumber.getValue());
+      }
+      catch (TfsException e) {
+        //noinspection ThrowableInstanceNeverThrown
+        AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      }
+      return null;
     }
   }
 
@@ -80,6 +87,7 @@ public class TFSDiffProvider implements DiffProvider {
         .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.NonDeleted);
     }
     catch (TfsException e) {
+      //noinspection ThrowableInstanceNeverThrown
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
       return null;
     }

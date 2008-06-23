@@ -216,6 +216,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
   }
 
+  protected void commit(Change change, final String comment) {
+    commit(Collections.singletonList(change), comment);
+  }
+
   protected void rollback(final Change change) {
     rollback(Collections.singletonList(change));
   }

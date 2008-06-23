@@ -212,18 +212,19 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     gc.weighty = 1.0;
     JPanel dummyPanel = new JPanel();
     panel.add(dummyPanel, gc);
+    return panel;
+  }
 
+  public JComponent getPreferredFocusedComponent() {
     if (myUriField.getText() == null || myUriField.getText().length() == 0) {
-      myUriField.requestFocusInWindow();
+      return myUriField;
     }
     else if (myUsernameField.getText() == null || myUsernameField.getText().length() == 0) {
-      myUsernameField.requestFocusInWindow();
+      return myUsernameField;
     }
     else {
-      myPasswordField.requestFocusInWindow();
+      return myPasswordField;
     }
-
-    return panel;
   }
 
   public void actionPerformed(final ActionEvent e) {
