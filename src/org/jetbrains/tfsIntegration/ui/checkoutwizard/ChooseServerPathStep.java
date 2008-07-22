@@ -110,7 +110,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
       myPathForm.setErrorMessage("Server serverPath is empty");
     } else {
       try {
-        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath);
+        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true);
         if (localPath != null) {
           String message = MessageFormat.format("Server path ''{0}'' is mapped to ''{1}''", serverPath, localPath.getPresentableUrl());
           myPathForm.setMessage(message);

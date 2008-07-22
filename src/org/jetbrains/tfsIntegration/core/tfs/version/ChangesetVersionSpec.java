@@ -22,11 +22,6 @@ import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
-/**
- * Created by IntelliJ IDEA.
- * Date: 05.02.2008
- * Time: 3:05:06
- */
 public class ChangesetVersionSpec extends VersionSpecBase {
   private int changeSetId;
 

@@ -68,7 +68,7 @@ public class TFSChangeProvider implements ChangeProvider {
     try {
       // unwrap child workspaces
       // TODO: is it always correct to use RootsCollection.FilePathRootsCollection instead of HashSet?
-      HashSet<FilePath> mappedRoots = new HashSet<FilePath>();
+      Set<FilePath> mappedRoots = new HashSet<FilePath>();
       for (FilePath root : roots) {
         Set<FilePath> mappedPaths = Workstation.getInstance().findChildMappedPaths(root);
         if (!mappedPaths.isEmpty()) {
@@ -91,6 +91,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
   }
 
+  //  TODO FIXME respect nearest mapping here!!!
   private static void processWorkspace(final @NotNull WorkspaceInfo workspace,
                                        final List<ItemPath> roots,
                                        ChangelistBuilder builder,
@@ -118,7 +119,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
       // find 'downloaded' server items for existing local files
       for (FilePath localItem : localItems) {
-        if (workspace.isWorkingFolder(localItem)) {
+        if (workspace.isWorkingFolder(localItem) ) {
           // report mapping root as up to date
           continue;
         }

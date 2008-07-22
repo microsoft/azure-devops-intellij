@@ -16,15 +16,14 @@
 
 package org.jetbrains.tfsIntegration.core.revision;
 
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+
 import java.io.IOException;
-import java.io.OutputStream;
 
 public interface TFSContentStore {
-  interface ContentWriter {
-    void write(OutputStream outputStream);
-  }
-  
-  void saveContent(ContentWriter contentWriter) throws IOException;
 
-  String loadContent() throws IOException;
+  void saveContent(TfsFileUtil.ContentWriter contentWriter) throws TfsException, IOException;
+
+  String loadContent() throws TfsException, IOException;
 }

@@ -24,44 +24,43 @@ import javax.xml.stream.XMLStreamException;
 
 public class LabelVersionSpec extends VersionSpecBase {
 
-    private String myLabel;
-    private String myScope;
+  private final String myLabel;
+  private final String myScope;
 
-    public LabelVersionSpec(String myLabel, String myScope) {
-        this.myLabel = myLabel;
-        this.myScope = myScope;
-    }
+  public LabelVersionSpec(String label, String scope) {
+    myLabel = label;
+    myScope = scope;
+  }
 
-    protected void writeAttributes(QName parentQName, OMFactory factory, MTOMAwareXMLStreamWriter xmlWriter) throws XMLStreamException {
-        writeVersionAttribute("", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance", xmlWriter);
-        writeVersionAttribute("", "xsi:type", "LabelVersionSpec", xmlWriter);
-        writeVersionAttribute("", "label", myLabel, xmlWriter);
-        if (myScope != null) {
-            writeVersionAttribute("", "scope", myScope, xmlWriter);
-        }
+  protected void writeAttributes(QName parentQName, OMFactory factory, MTOMAwareXMLStreamWriter xmlWriter) throws XMLStreamException {
+    writeVersionAttribute("", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance", xmlWriter);
+    writeVersionAttribute("", "xsi:type", "LabelVersionSpec", xmlWriter);
+    writeVersionAttribute("", "label", myLabel, xmlWriter);
+    if (myScope != null) {
+      writeVersionAttribute("", "scope", myScope, xmlWriter);
     }
+  }
 
-    public String getLabel() {
-        return myLabel;
-    }
+  public String getLabel() {
+    return myLabel;
+  }
 
-    public String getScope() {
-        return myScope;
-    }
+  public String getScope() {
+    return myScope;
+  }
 
-    public static String getLabel(String labelString) {
-        int atPos = labelString.indexOf('@');
-        if (atPos != -1) {
-            return labelString.substring(0, atPos);
-        }
-        return labelString;
-    }
+  public String getStringRepresentation() {
+    return myScope != null ? myLabel + "@" + myScope : myLabel;
+  }
 
-    public static String getScope(String labelString) {
-        int atPos = labelString.indexOf('@');
-        if (atPos != -1) {
-            return labelString.substring(atPos + 1);
-        }
-        return null;
+  public static LabelVersionSpec fromStringRepresentation(String stringRepresentation) {
+    int atPos = stringRepresentation.indexOf('@');
+    if (atPos != -1) {
+      return new LabelVersionSpec(stringRepresentation.substring(0, atPos), stringRepresentation.substring(atPos + 1));
     }
+    else {
+      return new LabelVersionSpec(stringRepresentation, null);
+    }
+  }
+
 }

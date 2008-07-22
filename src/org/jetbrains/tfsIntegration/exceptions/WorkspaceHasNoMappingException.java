@@ -13,15 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jetbrains.tfsIntegration.ui;
+
+package org.jetbrains.tfsIntegration.exceptions;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
-public class ConflictData {
-  public @NotNull String baseContent;
-  public @NotNull String serverContent;
-  public @NotNull String localContent;
+import java.text.MessageFormat;
 
-  public String targetLocalName;
-  public String sourceLocalName;
+
+public class WorkspaceHasNoMappingException extends TfsException {
+
+  private final @NotNull WorkspaceInfo myWorkspace;
+
+
+  public WorkspaceHasNoMappingException(final @NotNull WorkspaceInfo workspace) {
+    myWorkspace = workspace;
+  }
+
+  public String getMessage() {
+    return MessageFormat
+      .format("Mappings for workspace ''{0}'' were modified on server. Please review your mapping settings before you continue working.",
+              myWorkspace.getName());
+  }
 }

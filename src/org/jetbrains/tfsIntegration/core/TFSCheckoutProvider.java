@@ -31,20 +31,20 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyUpdateGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.ui.checkoutwizard.*;
 
 import java.io.File;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.text.MessageFormat;
 
 public class TFSCheckoutProvider implements CheckoutProvider {
 
@@ -81,8 +81,8 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
 
-          final Collection<VcsException> applyErrors = ApplyUpdateGetOperations
-            .execute(workspace, operations, progressIndicator, null, ApplyUpdateGetOperations.ConflictAction.ReportError, true);
+          final Collection<VcsException> applyErrors =
+            ApplyGetOperations.execute(workspace, operations, progressIndicator, null, true, false, ApplyGetOperations.OperationType.GET);
           errors.addAll(applyErrors);
         }
         catch (TfsException e) {

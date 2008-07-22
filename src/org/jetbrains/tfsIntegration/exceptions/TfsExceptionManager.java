@@ -40,6 +40,7 @@ public class TfsExceptionManager {
     ourExceptionsBySubcodes.put(WorkspaceNotFoundException.CODE, WorkspaceNotFoundException.class);
     ourExceptionsBySubcodes.put(IllegalIdentityException.CODE, IllegalIdentityException.class);
     ourExceptionsBySubcodes.put(IdentityNotFoundException.CODE, IdentityNotFoundException.class);
+    ourExceptionsBySubcodes.put(ItemNotFoundException.CODE, ItemNotFoundException.class);
   }
 
   private static TfsException createTfsException(AxisFault axisFault) {

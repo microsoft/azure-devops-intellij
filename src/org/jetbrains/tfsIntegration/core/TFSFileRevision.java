@@ -28,15 +28,19 @@ import java.io.IOException;
 import java.util.Date;
 
 public class TFSFileRevision implements VcsFileRevision {
-  private Date myDate;
+  private final Date myDate;
   private byte[] myContent;
-  private String myCommitMessage;
-  private String myAuthor;
-  private FilePath myFilePath;
-  private int myChangeset;
-  private WorkspaceInfo myWorkspace;
+  private final String myCommitMessage;
+  private final String myAuthor;
+  private final FilePath myFilePath;
+  private final int myChangeset;
+  private final WorkspaceInfo myWorkspace;
 
-  public TFSFileRevision(final WorkspaceInfo workspace, final FilePath filePath, final Date date, final String commitMessage, final String author,
+  public TFSFileRevision(final WorkspaceInfo workspace,
+                         final FilePath filePath,
+                         final Date date,
+                         final String commitMessage,
+                         final String author,
                          final int changeset) {
     myWorkspace = workspace;
     myDate = date;

@@ -28,12 +28,19 @@ import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
+import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
+import java.text.MessageFormat;
 
 public class TfsFileUtil {
+
+  public interface ContentWriter {
+    void write(OutputStream outputStream) throws TfsException;
+  }
 
   public static List<FilePath> getFilePaths(@NotNull final VirtualFile[] files) {
     return getFilePaths(Arrays.asList(files));
@@ -48,7 +55,6 @@ public class TfsFileUtil {
   }
 
   public static FilePath getFilePath(@NotNull final VirtualFile f) {
-    // TODO createFilePathOnMissingFile ?
     return PeerFactory.getInstance().getVcsContextFactory().createFilePathOn(f);
   }
 
@@ -105,7 +111,7 @@ public class TfsFileUtil {
     if (roots.isEmpty()) {
       return;
     }
-    
+
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         for (FilePath root : roots) {
@@ -163,14 +169,91 @@ public class TfsFileUtil {
     }
   };
 
-  public static void refreshAndInvalidate(final Project project, final Collection<VirtualFile> roots) {
-    RefreshQueue.getInstance().refresh(true, true, new Runnable() {
+  public static void refreshAndInvalidate(final Project project, final Collection<VirtualFile> roots, boolean async) {
+    refreshAndInvalidate(project, roots.toArray(new VirtualFile[roots.size()]), async);
+  }
+
+  public static void refreshAndInvalidate(final Project project, final FilePath[] roots, boolean async) {
+    VirtualFile[] files = new VirtualFile[roots.length];
+    for (int i = 0; i < roots.length; i++) {
+      files[i] = roots[i].getVirtualFile();
+    }
+    refreshAndInvalidate(project, files, async);
+  }
+
+  public static void refreshAndInvalidate(final Project project, final VirtualFile[] roots, boolean async) {
+    RefreshQueue.getInstance().refresh(async, true, new Runnable() {
       public void run() {
         for (VirtualFile root : roots) {
-          VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(root);
+          try {
+            TFSVcs.assertTrue(root != null);
+            VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(root);
+          }
+          catch (RuntimeException e) {
+            TFSVcs.error("Error in refresh delegate: " + e);
+          }
         }
       }
-    }, roots.toArray(new VirtualFile[roots.size()]));
+    }, roots);
+  }
+
+  public static void refreshRecursively(final VirtualFile parent) {
+    executeInEventDispatchThread(new Runnable() {
+      public void run() {
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+          public void run() {
+            parent.refresh(false, true);
+          }
+        });
+      }
+    });
+  }
+
+
+  public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter) throws TfsException {
+    TFSVcs.assertTrue(!destination.isDirectory(), destination + " expected to be a file");
+    OutputStream fileStream = null;
+    try {
+      if (destination.exists() && !destination.canWrite()) {
+        setReadOnlyInEventDispatchThread(destination.getPath(), false);
+      }
+      fileStream = new FileOutputStream(destination);
+      contentWriter.write(fileStream);
+
+      // TODO need this?
+      //if (refreshVirtualFile) {
+      //  refreshVirtualFileContents(destination);
+      //}
+    }
+    catch (FileNotFoundException e) {
+      String errorMessage = MessageFormat.format("Failed to create file ''{0}''", destination.getPath());
+      throw new FileOperationException(errorMessage);
+    }
+    catch (IOException e) {
+      throw TfsExceptionManager.processException(e);
+    }
+    finally {
+      if (fileStream != null) {
+        try {
+          fileStream.close();
+        }
+        catch (IOException e) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  public static boolean hasWritableChildFile(File file) {
+    File[] files = file.listFiles();
+    if (files != null) {
+      for (File child : files) {
+        if ((child.isFile() && child.canWrite()) || hasWritableChildFile(child)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
 }

@@ -17,37 +17,45 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.ResolutionData;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 
 import javax.swing.*;
-import java.util.Map;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.List;
 
 public class ResolveConflictsDialog extends DialogWrapper {
   private ResolveConflictsForm myResolveConflictsForm;
 
-  public ResolveConflictsDialog(final Project project, final Map<Conflict, WorkspaceInfo> conflict2workspace) throws VcsException {
+  public ResolveConflictsDialog(final Project project,
+                                final WorkspaceInfo workspace,
+                                final List<ItemPath> paths,
+                                final List<Conflict> conflicts,
+                                final UpdatedFiles updatedFiles) {
     super(project, true);
     setTitle("Resolve Conflicts");
     setResizable(true);
-    myResolveConflictsForm = new ResolveConflictsForm(conflict2workspace, project);
+    myResolveConflictsForm = new ResolveConflictsForm(workspace, project, paths, conflicts, updatedFiles);
     init();
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    return myResolveConflictsForm.getPanel();
-  }
-
-  public Map<Conflict, ResolutionData> getMergeResult() {
-    return myResolveConflictsForm.getMergeResult();
+    JComponent panel = myResolveConflictsForm.getPanel();
+    panel.addPropertyChangeListener(ResolveConflictsForm.CLOSE_PROPERTY, new PropertyChangeListener() {
+      public void propertyChange(final PropertyChangeEvent evt) {
+        ResolveConflictsDialog.this.close(DialogWrapper.OK_EXIT_CODE);
+      }
+    });
+    return panel;
   }
 
   protected Action[] createActions() {
     setCancelButtonText("Close");
-    return new Action[]{ getCancelAction() };
+    return new Action[]{getCancelAction()};
   }
 }

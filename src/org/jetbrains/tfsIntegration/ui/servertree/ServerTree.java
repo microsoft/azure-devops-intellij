@@ -100,12 +100,12 @@ public class ServerTree {
   @Nullable
   public String getSelectedPath() {
     if (myTree.getSelectionPath() != null) {
-      final ServerTreeNode node = (ServerTreeNode)myTree.getSelectionPath().getLastPathComponent();
-      return node.getFullPath();
+      if (myTree.getSelectionPath().getLastPathComponent() instanceof ServerTreeNode) {
+        final ServerTreeNode node = (ServerTreeNode)myTree.getSelectionPath().getLastPathComponent();
+        return node.getFullPath();
+      }
     }
-    else {
-      return null;
-    }
+    return null;
   }
 
   public void setSelectedPath(@Nullable String serverPath, boolean reload) {

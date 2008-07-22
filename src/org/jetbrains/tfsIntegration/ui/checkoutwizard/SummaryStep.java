@@ -69,10 +69,11 @@ public class SummaryStep extends CheckoutWizardStep {
     if (myModel.getMode() == CheckoutWizardModel.Mode.Auto) {
       mySummaryForm.setNewWorkspaceName(myModel.getNewWorkspaceName());
       mySummaryForm.setLocalPath(myModel.getDestinationFolder());
-    } else {
+    }
+    else {
       mySummaryForm.setWorkspace(myModel.getWorkspace());
       try {
-        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(myModel.getServerPath());
+        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(myModel.getServerPath(), true);
         mySummaryForm.setLocalPath(localPath.getPresentableUrl());
       }
       catch (TfsException e) {
@@ -81,5 +82,5 @@ public class SummaryStep extends CheckoutWizardStep {
       }
     }
   }
-  
+
 }

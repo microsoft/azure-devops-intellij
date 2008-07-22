@@ -18,26 +18,22 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.changes.ChangesUtil;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.util.ui.ColumnInfo;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +71,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       if (workspace == null) {
         return null;
       }
-      
+
       final List<VcsFileRevision> revisions = getRevisions(committedPath, workspace);
       if (revisions == null) {
         return null;
@@ -85,7 +81,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
         public VcsRevisionNumber calcCurrentRevisionNumber() {
           try {
             WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(committedPath);
-            //noinspection ConstantConditions
+
             String serverPath = workspace.findServerPathByLocalPath(committedPath);
             TFSVcs.assertTrue(serverPath != null);
             ExtendedItem item = workspace.getServer().getVCS()
@@ -107,15 +103,19 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   }
 
   private static List<VcsFileRevision> getRevisions(final FilePath committedPath, WorkspaceInfo workspace) throws TfsException {
-    List<Changeset> changesets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), new ItemPath(
-      committedPath, workspace.findServerPathByLocalPath(committedPath)), Integer.MIN_VALUE, null, new WorkspaceVersionSpec(
-      workspace.getName(), workspace.getOwnerName()), new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE, Integer.MAX_VALUE,
-                                                      RecursionType.None);
+    final WorkspaceVersionSpec itemVersion = new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName());
+    List<Changeset> changesets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(),
+                                                                             workspace.findServerPathByLocalPath(committedPath),
+                                                                             Integer.MIN_VALUE, null, itemVersion,
+                                                                             new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE,
+                                                                             Integer.MAX_VALUE, RecursionType.None);
+    
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {
-      final FilePath localPath = workspace.findLocalPathByServerPath(changeset.getChanges().getChange()[0].getItem().getItem());
-      revisions.add(
-        new TFSFileRevision(workspace, localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(), changeset.getCset()));
+      final Item item = changeset.getChanges().getChange()[0].getItem();
+      final FilePath localPath = workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
+      revisions.add(new TFSFileRevision(workspace, localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(),
+                                        changeset.getCset()));
     }
     return revisions;
   }

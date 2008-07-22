@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -23,12 +24,11 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
-import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyUndoGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -123,22 +123,19 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               }
 
               private void addForDownload(final @NotNull ExtendedItem extendedItem) {
-                download.add(new VersionControlServer.GetRequestParams(extendedItem.getSitem(), RecursionType.None,
+                download.add(new VersionControlServer.GetRequestParams(extendedItem.getTitem(), RecursionType.None,
                                                                        new ChangesetVersionSpec(extendedItem.getLver())));
               }
 
             }, false);
           }
 
-          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true, false);
+          List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
+          final Collection<VcsException> downloadErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.OperationType.UNDO);
+          errors.addAll(downloadErrors);
+
+          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true, false, true);
           errors.addAll(undoResult.errors);
-
-          List<List<GetOperation>> getOperations =
-            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
-
-          for (List<GetOperation> list : getOperations) {
-            VersionControlServer.downloadItem(workspace, list.get(0), true, true, true);
-          }
         }
       });
     }
@@ -162,13 +159,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
             requests.add(new VersionControlServer.GetRequestParams(e.getKey().getServerPath(), RecursionType.None,
                                                                    new ChangesetVersionSpec(e.getValue().getLver())));
           }
-          List<List<GetOperation>> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
-          Collection<GetOperation> allOperations = new ArrayList<GetOperation>();
-          for (List<GetOperation> ops : operations) {
-            allOperations.addAll(ops);
-          }
-
-          final Collection<VcsException> applyingErrors = ApplyUndoGetOperations.execute(workspace, allOperations, true);
+          List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+          final Collection<VcsException> applyingErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.OperationType.UNDO);
           errors.addAll(applyingErrors);
         }
       });
@@ -192,7 +184,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
     try {
       WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, paths, true, false);
+          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, paths, true, false, false);
           errors.addAll(undoResult.errors);
           List<VirtualFile> refresh = new ArrayList<VirtualFile>(paths.size());
           for (ItemPath path : paths) {
@@ -203,7 +195,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               refresh.add(file);
             }
           }
-          TfsFileUtil.refreshAndInvalidate(myProject, refresh);
+          TfsFileUtil.refreshAndInvalidate(myProject, refresh, true);
         }
       });
       return errors;

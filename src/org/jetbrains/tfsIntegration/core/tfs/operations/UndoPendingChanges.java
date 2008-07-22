@@ -42,8 +42,8 @@ public class UndoPendingChanges {
 
   public static UndoPendingChangesResult execute(final WorkspaceInfo workspace,
                                                  final Collection<ItemPath> paths,
-                                                 boolean download,
-                                                 boolean recursive) {
+                                                 boolean allowDownload,
+                                                 boolean recursive, boolean overwriteWritableFiles) {
     if (paths.isEmpty()) {
       return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
@@ -66,8 +66,9 @@ public class UndoPendingChanges {
         }
       }
 
-      Collection<VcsException> postProcessingErrors = ApplyUndoGetOperations.execute(workspace, result.getResult(), download);
-      errors.addAll(postProcessingErrors);
+      final Collection<VcsException> applyingErrors =
+        ApplyGetOperations.execute(workspace, result.getResult(), null, null, allowDownload, overwriteWritableFiles, ApplyGetOperations.OperationType.UNDO);
+      errors.addAll(applyingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }
     catch (TfsException e) {

@@ -97,5 +97,15 @@ public class WorkingFolderInfo {
     }
     return null;
   }
+
+  @Nullable
+  public FilePath getLocalPathByServerPath(final String serverPath, final boolean isDirectory) {
+    if (getServerPath().length() > 0 && serverPath.startsWith(getServerPath())) {
+      String remainder = serverPath.substring(getServerPath().length());
+      return VcsUtil.getFilePath(getLocalPath().getPath() + remainder, isDirectory);
+    }
+    return null;
+  }
+
 }
 

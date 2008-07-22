@@ -22,7 +22,6 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -67,16 +66,15 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(root);
       if (workspace != null) {
         String serverPath = workspace.findServerPathByLocalPath(root);
-        return new TFSRepositoryLocation(new ItemPath(root, serverPath), workspace);
-      }
-      else {
-        return null;
+        if (serverPath != null) {
+          return new TFSRepositoryLocation(serverPath, workspace);
+        }
       }
     }
     catch (TfsException e) {
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      return null;
     }
+    return null;
   }
 
   public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
@@ -95,7 +93,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
                               : LatestVersionSpec.INSTANCE;
 
       List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(),
-                                                                               tfsRepositoryLocation.getItemPath(), Integer.MIN_VALUE,
+                                                                               tfsRepositoryLocation.getServerPath(), Integer.MIN_VALUE,
                                                                                settings.getUserFilter(), versionFrom, versionTo, maxCount);
       List<TFSChangeList> result = new ArrayList<TFSChangeList>(changeSets.size());
       for (Changeset changeset : changeSets) {

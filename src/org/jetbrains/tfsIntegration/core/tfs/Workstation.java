@@ -18,13 +18,12 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
-import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
+import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
 import org.xml.sax.SAXException;
 
@@ -106,9 +105,6 @@ public class Workstation {
   }
 
 
-
-
-
   /**
    * @return not null if file exists now
    */
@@ -163,7 +159,7 @@ public class Workstation {
                 for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
                   List<WorkingFolderInfo> workingFolders;
                   try {
-                    workingFolders = workspaceInfo.getWorkingFoldersInfos();
+                    workingFolders = workspaceInfo.getWorkingFolders();
                   }
                   catch (TfsException e) {
                     LOG.info("Failed to update workspace " + workspaceInfo.getName(), e);
@@ -231,40 +227,54 @@ public class Workstation {
     }
   }
 
-  public void removeWorkspace(final URI uri, final String workspaceName) {
-    // todo: implement remove operation
-  }
-
-  public void addWorkspace(final Guid serverGuid, final URI uri, final Workspace workspace) {
-    // todo: implement add operation
-  }
-
   @Nullable
   public WorkspaceInfo findWorkspace(final @NotNull FilePath localPath) throws TfsException {
-    WorkspaceInfo result = null;
-    WorkingFolderInfo nearestMapping = null;
-    for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
-      WorkingFolderInfo mapping = workspaceInfo.findNearestMappingByLocalPath(localPath);
-      if (mapping != null) {
-        if (nearestMapping == null || mapping.getLocalPath().isUnder(nearestMapping.getLocalPath(), false)) {
-          nearestMapping = mapping;
-          result = workspaceInfo;
-        }
+    WorkspaceInfo workspaceWithCachedMappingFound = null;
+    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
+      if (workspace.hasMappingCached(localPath)) {
+        workspaceWithCachedMappingFound = workspace;
+        break;
       }
     }
-    return result;
+
+    if (workspaceWithCachedMappingFound != null) {
+      // given path is mapped according to cached mapping info -> reload and check with server info
+      if (workspaceWithCachedMappingFound.findNearestMapping(localPath) != null) {
+        return workspaceWithCachedMappingFound;
+      }
+      else {
+        throw new WorkspaceHasNoMappingException(workspaceWithCachedMappingFound);
+      }
+    }
+    else {
+      // TODO: if server is unavailable, don't try every workspace on it
+      // TODO: exclude servers that are unavailable during current application run
+      // cached information can be out of date -> try to reload all the workspaces and search again
+      for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
+        try {
+          if (workspace.findNearestMapping(localPath) != null) {
+            return workspace;
+          }
+        }
+        catch (TfsException e) {
+          // skip
+        }
+      }
+      return null;
+    }
   }
 
   public Set<FilePath> findChildMappedPaths(final FilePath root) throws TfsException {
-    HashSet<FilePath> result = new HashSet<FilePath>();
-    for (WorkspaceInfo workspaceInfo : getAllWorkspacesForCurrentOwner()) {
-      List<WorkingFolderInfo> workingFolders = workspaceInfo.getWorkingFoldersInfos();
-      for (WorkingFolderInfo workingFolder : workingFolders) {
-        if (workingFolder.getLocalPath().isUnder(root, false) ) {
-          result.add(workingFolder.getLocalPath());          
-        }
+    Set<FilePath> result = new HashSet<FilePath>();
+
+    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
+      Collection<FilePath> paths = workspace.getMappedChildPathsCached(root);
+      if (!paths.isEmpty()) {
+        result.addAll(workspace.getMappedChildPaths(root));
       }
     }
+
+    // TODO: should we force reload of all the workspaces with no respect of their cache information?
     return result;
   }
 }

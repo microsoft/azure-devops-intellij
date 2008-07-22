@@ -17,194 +17,173 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.TfsPanel;
-import org.jetbrains.tfsIntegration.core.tfs.UpdateWorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 
 public class UpdateOptionsPanel implements TfsPanel {
-    private JPanel myPanel;
-    private JRadioButton latestRadioButton;
-    private JRadioButton dateRadioButton;
-    private JRadioButton changesetRadioButton;
-    private JRadioButton labelRadioButton;
-    private JRadioButton workspaceRadioButton;
-    private TextFieldWithBrowseButton labelVersionText;
-    private TextFieldWithBrowseButton changesetVersionText;
-    private JLabel workspaceNameLabel;
-    private JTextField dateText;
+  private JPanel myPanel;
+  private JRadioButton latestRadioButton;
+  private JRadioButton dateRadioButton;
+  private JRadioButton changesetRadioButton;
+  private JRadioButton labelRadioButton;
+  private JRadioButton workspaceRadioButton;
+  private TextFieldWithBrowseButton labelVersionText;
+  private TextFieldWithBrowseButton changesetVersionText;
+  private JTextField dateText;
 
-    private WorkspaceInfo workspace;
-    private TFSVcs myTfsVcs;
+  private final WorkspaceInfo myWorkspace;
+  private final Project myProject;
+  private final Collection<ItemPath> myPaths;
 
-    public UpdateOptionsPanel(WorkspaceInfo workspace, TFSVcs vcs) {
-        this.workspace = workspace;
-        this.myTfsVcs = vcs;
+  public UpdateOptionsPanel(final WorkspaceInfo workspace, Project project, final Collection<ItemPath> paths) {
+    myWorkspace = workspace;
+    myProject = project;
+    myPaths = paths;
 
-        latestRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                disableAllVersionInfo();
-            }
-        });
-        dateRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                disableAllVersionInfo();
-                if (dateRadioButton.isSelected()) {
-                    setDateTimePickerEnabled(true);
-                    if ("".equals(dateText.getText())) {
-                        setDate(new Date(System.currentTimeMillis()));
-                    }
-                }
-            }
-        });
-        changesetRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                disableAllVersionInfo();
-                if (changesetRadioButton.isSelected()) {
-                    changesetVersionText.setEnabled(true);
-                }
-            }
-        });
-        labelRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                disableAllVersionInfo();
-                if (labelRadioButton.isSelected()) {
-                    labelVersionText.setEnabled(true);
-                }
-            }
-        });
-        workspaceRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                disableAllVersionInfo();
-            }
-        });
+    final ActionListener radioButtonListener = new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        updateContols();
+      }
+    };
 
-        changesetVersionText.getButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // TODO: implementation for changesetVersionText browse button
-            }
-        });
+    latestRadioButton.addActionListener(radioButtonListener);
+    dateRadioButton.addActionListener(radioButtonListener);
+    changesetRadioButton.addActionListener(radioButtonListener);
+    labelRadioButton.addActionListener(radioButtonListener);
+    workspaceRadioButton.addActionListener(radioButtonListener);
 
-        labelVersionText.getButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SelectLabelDailog dialog = new SelectLabelDailog(myTfsVcs, UpdateOptionsPanel.this.workspace);
-                dialog.show();
-                if (dialog.isOK()) {
-                    labelVersionText.setText(dialog.getLabelString());
-                }
-            }
-        });
-        disableAllVersionInfo();
+    changesetVersionText.getButton().addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myPaths);
+        d.show();
+        if (d.isOK()) {
+          changesetVersionText.setText(String.valueOf(d.getChangeset()));
+        }
+      }
+    });
+
+    labelVersionText.getButton().addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        SelectLabelDialog d = new SelectLabelDialog(myProject, myWorkspace);
+        d.show();
+        if (d.isOK()) {
+          labelVersionText.setText(d.getLabelString());
+        }
+      }
+    });
+
+    latestRadioButton.setSelected(true);
+  }
+
+  private void updateContols() {
+    dateText.setEnabled(dateRadioButton.isSelected());
+    if (!dateRadioButton.isSelected()) {
+      dateText.setText(null);
+    }
+    labelVersionText.setEnabled(labelRadioButton.isSelected());
+    if (!labelRadioButton.isSelected()) {
+      labelVersionText.setText(null);
+    }
+    changesetVersionText.setEnabled(changesetRadioButton.isSelected());
+    if (!changesetRadioButton.isSelected()) {
+      changesetVersionText.setText(null);
+    }
+  }
+
+  public void reset(TFSProjectConfiguration configuration) {
+    setVersionSpec(configuration.getUpdateWorkspaceInfo(myWorkspace).getVersion());
+  }
+
+  public void apply(TFSProjectConfiguration configuration) throws ConfigurationException {
+    configuration.getUpdateWorkspaceInfo(myWorkspace).setVersion(getVersionSpec());
+  }
+
+  public boolean canApply() {
+    return true;
+  }
+
+  public JPanel getPanel() {
+    return myPanel;
+  }
+
+  public void setDate(Date date) {
+    if (date == null) {
+      return;
+    }
+    dateText.setText(SimpleDateFormat.getInstance().format(date));
+  }
+
+  private void setVersionSpec(VersionSpecBase version) {
+    if (version instanceof LatestVersionSpec) {
+      latestRadioButton.setSelected(true);
+    }
+    else if (version instanceof ChangesetVersionSpec) {
+      int changeset = ((ChangesetVersionSpec)version).getChangeSetId();
+      changesetRadioButton.setSelected(true);
+      changesetVersionText.setEnabled(true);
+      changesetVersionText.setText(String.valueOf(changeset));
+    }
+    else if (version instanceof WorkspaceVersionSpec) {
+      workspaceRadioButton.setSelected(true);
+    }
+    else if (version instanceof DateVersionSpec) {
+      Date date = ((DateVersionSpec)version).getDate();
+      dateRadioButton.setSelected(true);
+      dateText.setEnabled(true);
+      setDate(date);
+    }
+    else if (version instanceof LabelVersionSpec) {
+      labelRadioButton.setSelected(true);
+      labelVersionText.setEnabled(true);
+      labelVersionText.setText(((LabelVersionSpec)version).getStringRepresentation());
     }
 
-    private void setDateTimePickerEnabled(boolean enabled) {
-        dateText.setEnabled(enabled);
+    updateContols();
+  }
+
+  private VersionSpecBase getVersionSpec() throws ConfigurationException {
+    if (latestRadioButton.isSelected()) {
+      return LatestVersionSpec.INSTANCE;
+    }
+    else if (changesetRadioButton.isSelected()) {
+      try {
+        int changeset = Integer.parseInt(changesetVersionText.getText());
+        return new ChangesetVersionSpec(changeset);
+      }
+      catch (NumberFormatException e) {
+        throw new ConfigurationException("Incorrect changeset id '" + changesetVersionText.getText() + "'");
+      }
+    }
+    else if (workspaceRadioButton.isSelected()) {
+      return new WorkspaceVersionSpec(myWorkspace.getName(), myWorkspace.getOwnerName());
+    }
+    else if (dateRadioButton.isSelected()) {
+      try {
+        return new DateVersionSpec(SimpleDateFormat.getInstance().parse(dateText.getText()));
+      }
+      catch (ParseException e) {
+        throw new ConfigurationException("Incorrect date: '" + dateText.getText() + "'");
+      }
+    }
+    else if (labelRadioButton.isSelected()) {
+      return LabelVersionSpec.fromStringRepresentation(labelVersionText.getText());
     }
 
-    private void disableAllVersionInfo() {
-        setDateTimePickerEnabled(false);
-        labelVersionText.setEnabled(false);
-        changesetVersionText.setEnabled(false);
-    }
-
-    private void createUIComponents() {
-    }
-
-    public void reset(TFSProjectConfiguration configuration) {
-        final UpdateWorkspaceInfo info = configuration.getUpdateWorkspaceInfo(workspace);
-        VersionSpecBase version = info.getVersion();
-        if (version instanceof LatestVersionSpec) {
-            latestRadioButton.setSelected(true);
-        }
-        else if (version instanceof ChangesetVersionSpec) {
-            int changeset = ((ChangesetVersionSpec)version).getChangeSetId();
-            changesetRadioButton.setSelected(true);
-            changesetVersionText.setEnabled(true);
-            changesetVersionText.setText(Integer.toString(changeset));
-        }
-        else if (version instanceof WorkspaceVersionSpec) {
-            String workspaceName = ((WorkspaceVersionSpec) version).getWorkspaceName();
-            workspaceRadioButton.setSelected(true);
-            workspaceNameLabel.setText(workspaceName);
-        }
-        else if (version instanceof DateVersionSpec) {
-            Date date = ((DateVersionSpec) version).getDate();
-            dateRadioButton.setSelected(true);
-            setDateTimePickerEnabled(true);
-            setDate(date);
-        }
-        else if (version instanceof LabelVersionSpec) {
-            String label = ((LabelVersionSpec) version).getLabel();
-            labelRadioButton.setSelected(true);
-            labelVersionText.setEnabled(true); 
-            labelVersionText.setText(label); // TODO: what about label scope?
-        }
-    }
-
-    public void apply(TFSProjectConfiguration configuration) throws ConfigurationException {
-        final UpdateWorkspaceInfo info = configuration.getUpdateWorkspaceInfo(workspace);
-        if (latestRadioButton.isSelected()) {
-            info.setVersion(LatestVersionSpec.INSTANCE);
-        }
-        else if (changesetRadioButton.isSelected()) {
-            try {
-                int changeset = Integer.parseInt(changesetVersionText.getText());
-                info.setVersion(new ChangesetVersionSpec(changeset));
-            }
-            catch (NumberFormatException e) {
-                throw new ConfigurationException("Invalid change set id '" + changesetVersionText.getText() + "'");
-            }
-        }
-        else if (workspaceRadioButton.isSelected()) {
-            workspaceRadioButton.setSelected(true);
-            info.setVersion(new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName()));
-        }
-        else if (dateRadioButton.isSelected()) {
-            Date date = getDate();
-            info.setVersion(new DateVersionSpec(date));
-        }
-        else if (labelRadioButton.isSelected()) {
-            String labelString = labelVersionText.getText();
-            String label = LabelVersionSpec.getLabel(labelString);
-            String scope = LabelVersionSpec.getScope(labelString);
-            info.setVersion(new LabelVersionSpec(label, scope));
-        }
-    }
-
-    public boolean canApply() {
-        return true;
-    }
-
-    public JPanel getPanel() {
-        return myPanel;
-    }
-
-    public void setDate(Date date) {
-        if (date == null)  {
-            return;
-        }
-        dateText.setText(SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(date));    }
-
-    public Date getDate() throws ConfigurationException {
-        Date date;
-        try {
-            date = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).parse(dateText.getText());
-        } catch (ParseException e) {
-            throw new ConfigurationException("Incorrect date: '" + dateText.getText() + "'");
-        }
-        return date;
-    }
+    throw new ConfigurationException("Unknown version spec");
+  }
 
 }
 

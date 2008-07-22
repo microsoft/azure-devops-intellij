@@ -52,7 +52,7 @@ public class ScheduleForDeletion {
         }
       }
 
-      final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, revert, false, false);
+      final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, revert, false, false, false);
       errors.addAll(undoResult.errors);
 
       List<ItemPath> undoneRoots = new ArrayList<ItemPath>(roots.size());
@@ -72,14 +72,14 @@ public class ScheduleForDeletion {
             serverStatus instanceof ServerStatus.ScheduledForDeletion == false) {
           scheduleForDeletion.add(e.getKey());
         }
-      }                                                
+      }
 
       ResultWithFailures<GetOperation> schedulingForDeletionResults =
         workspace.getServer().getVCS().scheduleForDeletion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
       errors.addAll(BeanHelper.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       workspace.getServer().getVCS()
-        .updateLocalVersions(workspace.getName(), workspace.getOwnerName(), schedulingForDeletionResults.getResult());
+        .updateLocalVersionsByGetOperations(workspace.getName(), workspace.getOwnerName(), schedulingForDeletionResults.getResult());
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
         String localPath = getOperation.getSlocal();
@@ -92,5 +92,5 @@ public class ScheduleForDeletion {
 
     return errors;
   }
-    
+
 }

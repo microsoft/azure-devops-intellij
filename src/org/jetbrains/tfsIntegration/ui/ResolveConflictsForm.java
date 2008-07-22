@@ -15,110 +15,74 @@
  */
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.diff.ActionButtonPresentation;
-import com.intellij.openapi.diff.DiffManager;
-import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.peer.PeerFactory;
-import com.intellij.vcsUtil.VcsRunnable;
-import com.intellij.vcsUtil.VcsUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.ResolutionData;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.openapi.vcs.update.FileGroup;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.annotations.NonNls;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ResolveConflictsForm {
+
+  @NonNls public static final String CLOSE_PROPERTY = "ResolveConflictsForm.close";
+
   private JTable myItemsTable;
   private JPanel myContentPanel;
   private JButton myAcceptYoursButton;
   private JButton myAcceptTheirsButton;
+
   private JButton myMergeButton;
-
   private ItemsTableModel myItemsTableModel;
-  private List<Conflict> myUnresolvedConflicts = new ArrayList<Conflict>();
-  private Map<Conflict, ConflictData> myConflict2ConflictData = new HashMap<Conflict, ConflictData>();
-  private Map<Conflict, ResolutionData> myMergeResult = new HashMap<Conflict, ResolutionData>();
-  private Project myProject;
-  private Map<Conflict, WorkspaceInfo> myConflict2workspace;
+  private final WorkspaceInfo myWorkspace;
+  private final UpdatedFiles myUpdatedFiles;
+  private final List<ItemPath> myPaths;
+  private final ResolveConflictHelper myResolveConflictHelper;
 
-  public JComponent getPanel() {
-    return myContentPanel;
-  }
-
-  @NotNull
-  public ConflictData getConflictData(final @NotNull Conflict conflict) throws VcsException {
-    final ConflictData data = new ConflictData();
-    VcsRunnable runnable = new VcsRunnable() {
-      public void run() throws VcsException {
-
-        try {
-          WorkspaceInfo workspace = myConflict2workspace.get(conflict);
-          // names
-          FilePath sourceLocalPath = workspace.findLocalPathByServerPath(conflict.getYsitemsrc());
-          data.sourceLocalName = sourceLocalPath != null ? sourceLocalPath.getPath() : null;
-          FilePath targetLocalPath = workspace.findLocalPathByServerPath(conflict.getYsitem());
-          data.targetLocalName = targetLocalPath != null ? targetLocalPath.getPath() : null;
-          data.vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
-
-          // content
-          String original = new TFSContentRevision(workspace, conflict.getYitemid(), conflict.getYver()).getContent();
-          data.baseContent = original != null ? original : "";
-          String current = CurrentContentRevision.create(VcsUtil.getFilePath(data.vFile.getPath())).getContent();
-          data.localContent = current != null ? current : "";
-          String last = new TFSContentRevision(workspace, conflict.getYitemid(), conflict.getTver()).getContent();
-          data.serverContent = last != null ? last : "";
-        }
-        catch (TfsException e) {
-          throw new VcsException("Unable to get content for item " + data.sourceLocalName);
-        }
-      }
-    };
-    VcsUtil.runVcsProcessWithProgress(runnable, "Prepare merge data...", false, myProject);
-
-    return data;
-  }
-
-  public ResolveConflictsForm(final Map<Conflict, WorkspaceInfo> conflict2workspace, Project project) throws VcsException {
-    myProject = project;
-    myConflict2workspace = conflict2workspace;
-    myUnresolvedConflicts.addAll(conflict2workspace.keySet());
-    for (Conflict conflict : myUnresolvedConflicts) {
-      ResolutionType nameResolutionType =
-        ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Rename) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
-      ResolutionType contentResolutionType =
-        ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
-      myMergeResult.put(conflict, new ResolutionData(nameResolutionType, contentResolutionType, conflict.getSrclitem()));
-      final ConflictData conflictData = getConflictData(conflict);
-      myConflict2ConflictData.put(conflict, conflictData);
-    }
+  public ResolveConflictsForm(final WorkspaceInfo workspace,
+                              Project project,
+                              final List<ItemPath> paths,
+                              final List<Conflict> conflicts,
+                              final UpdatedFiles updatedFiles) {
+    myWorkspace = workspace;
+    myUpdatedFiles = updatedFiles;
+    myResolveConflictHelper = new ResolveConflictHelper(project, myWorkspace);
+    myPaths = paths;
 
     myItemsTableModel = new ItemsTableModel();
     myItemsTable.setModel(myItemsTableModel);
     myItemsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-    myItemsTableModel.setItems(myUnresolvedConflicts);
+
+    addListeners();
+
+    myItemsTableModel.setConflicts(conflicts);
+  }
+
+  private void addListeners() {
+    myItemsTableModel.addTableModelListener(new TableModelListener() {
+      public void tableChanged(final TableModelEvent e) {
+        if (myItemsTableModel.getRowCount() == 0) {
+          fireClose();
+        }
+      }
+    });
 
     myItemsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(final ListSelectionEvent se) {
@@ -126,194 +90,36 @@ public class ResolveConflictsForm {
         enableButtons(selectedIndices);
       }
     });
-    
-    myAcceptYoursButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        int[] selectedIndices = myItemsTable.getSelectedRows();
-        for (int index : selectedIndices) {
-          Conflict conflict = myUnresolvedConflicts.get(index);
-          ResolutionData resolutionData = myMergeResult.get(conflict);
-          resolutionData.contentResolutionType = ResolutionType.ACCEPT_YOURS;
-          resolutionData.nameResolutionType = ResolutionType.ACCEPT_YOURS;
-          resolutionData.localName = conflict.getSrclitem();
-          conflictResolved(conflict);
-          myUnresolvedConflicts.remove(conflict);
-          myItemsTableModel.fireTableDataChanged();
-        }
+
+    myAcceptYoursButton.addActionListener(new MergeActionListener() {
+      protected void execute(final Conflict conflict) throws TfsException {
+        myResolveConflictHelper.acceptYours(conflict);
+        myUpdatedFiles.getGroupById(FileGroup.MODIFIED_ID).add(conflict.getSrclitem());
       }
     });
-    myAcceptTheirsButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent ae) {
-        int[] selectedIndices = myItemsTable.getSelectedRows();
-        try {
-          for (int index : selectedIndices) {
-            Conflict conflict = myUnresolvedConflicts.get(index);
-            ResolutionData resolutionData = myMergeResult.get(conflict);
-            resolutionData.contentResolutionType = ResolutionType.ACCEPT_THEIRS;
-            resolutionData.nameResolutionType = ResolutionType.ACCEPT_THEIRS;
 
-            WorkspaceInfo workspace = myConflict2workspace.get(conflict);
-            FilePath localPath = workspace.findLocalPathByServerPath(conflict.getYsitemsrc());
-            File localFile;
-            if (localPath != null) {
-              resolutionData.localName = localPath.getPath();
-              localFile = localPath.getIOFile();
-              // delete or rename localFile if needed
-              if (conflict.getTsitem() == null) {
-                // delete localFile
-                resolutionData.localName = null;
-                localFile.delete();
-              }
-              else {
-                if (!conflict.getTsitem().equals(conflict.getYsitemsrc())) {
-                  FilePath newLocalPath = workspace.findLocalPathByServerPath(conflict.getTsitem());
-                  if (newLocalPath != null) {
-                    resolutionData.localName = newLocalPath.getPath();
-                    File newLocalFile = newLocalPath.getIOFile();
-                    localFile.renameTo(newLocalFile);
-                    localFile = newLocalFile;
-                  }
-                  else {
-                    // TODO: Is it possible?
-                    TFSVcs.error("Update: mapping not found for " + conflict.getTsitem());
-                  }
-                }
-                if (conflict.getTsitem() != null) {
-                  // set content to server content
-                  ConflictData conflictData = myConflict2ConflictData.get(conflict);
-                  BufferedWriter out = new BufferedWriter(new FileWriter(localFile));
-                  out.write(conflictData.serverContent);
-                  out.close();
-                }
-                localFile.setReadOnly();
-              }
-            }
-            else {
-              // TODO: Is it possible?
-              TFSVcs.error("Update: mapping not found for " + conflict.getYsitem());
-            }
-            conflictResolved(conflict);
-            myUnresolvedConflicts.remove(conflict);
-            myItemsTableModel.fireTableDataChanged();
-          }
-        }
-        catch (TfsException e) {
-          // TODO: show error message dialog
-        }
-        catch (IOException e) {
-          // TODO: show error message dialog
-        }
+    myAcceptTheirsButton.addActionListener(new MergeActionListener() {
+      protected void execute(final Conflict conflict) throws TfsException, IOException {
+        myResolveConflictHelper.acceptTheirs(conflict);
+        myUpdatedFiles.getGroupById(FileGroup.RESTORED_ID).add(conflict.getTgtlitem());
       }
     });
-    myMergeButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent ae) {
-        int[] selectedIndices = myItemsTable.getSelectedRows();
-        try {
-          for (int index : selectedIndices) {
-            Conflict conflict = myUnresolvedConflicts.get(index);
-            WorkspaceInfo workspace = myConflict2workspace.get(conflict);
-            ResolutionData resolutionData = myMergeResult.get(conflict);
-            ConflictData conflictData = myConflict2ConflictData.get(conflict);
 
-            // merge names if needed
-            if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Rename)) {
-              MergeNameDialog mergeNameDialog = new MergeNameDialog(conflict.getYsitem(), conflict.getTsitem());
-              mergeNameDialog.show();
-              if (mergeNameDialog.isOK()) {
-                resolutionData.nameResolutionType = ResolutionType.MERGED;
-                FilePath newLocalPath = workspace.findLocalPathByServerPath(mergeNameDialog.getSelectedName());
-                if (newLocalPath != null) {
-                  resolutionData.localName = newLocalPath.getPath();
-                }
-              }
-            }
-            // rename file on disk if needed
-            File localFile = new File(conflictData.sourceLocalName);
-            if (!conflictData.sourceLocalName.equals(resolutionData.localName)) {
-              File newLocalFile = new File(resolutionData.localName);
-              localFile.renameTo(newLocalFile);
-            }
-            // if content conflict present show merge names dialog
-            final VirtualFile vFile = VcsUtil.getVirtualFile(localFile);
-            MergeRequest request =
-              PeerFactory.getInstance().getDiffRequestFactory().createMergeRequest(conflictData.serverContent.replaceAll("\r", ""),
-                                                                                   conflictData.localContent.replaceAll("\r", ""),
-                                                                                   conflictData.baseContent.replaceAll("\r", ""),
-                                                                                   vFile,
-                                                                                   myProject,
-                                                                                   ActionButtonPresentation.createApplyButton());
-            request.setWindowTitle("Title");
-            request.setVersionTitles(new String[] {"1", "2", "3"} );
-            DiffManager.getInstance().getDiffTool().show(request);
-            resolutionData.contentResolutionType = ResolutionType.MERGED;
-            conflictResolved(conflict);
-          }
-        }
-        catch (TfsException e) {
-          //noinspection ThrowableInstanceNeverThrown
-          AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-        }
+    myMergeButton.addActionListener(new MergeActionListener() {
+      protected void execute(final Conflict conflict) throws TfsException, VcsException {
+        final ConflictData conflictData = myResolveConflictHelper.getConflictData(conflict);
+        myResolveConflictHelper.acceptMerge(conflict, conflictData);
+        myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(conflictData.targetLocalName);
       }
     });
   }
 
-  public boolean isBinary(final Conflict conflict) throws VcsException {
-    // Binary files has encoding = -1
-    boolean isBinary;
-    try {
-      WorkspaceInfo workspace = myConflict2workspace.get(conflict);
-      String serverPath = conflict.getYsitem(); // TODO: is it always Ysitem? 
-      Item item = workspace.getServer().getVCS().queryItem(workspace.getName(), workspace.getOwnerName(), serverPath,
-                                                           new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName()),
-                                                           DeletedState.NonDeleted, false);
-      isBinary = (item != null && item.getEnc() == -1);
-      return isBinary;
-    }
-    catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(myProject).showError(new VcsException("File type detection failed.", e), TFSVcs.TFS_NAME);
-    }
-    return false;
+  public JComponent getPanel() {
+    return myContentPanel;
   }
 
-  private void conflictResolved(final Conflict conflict) {
-    // send "conflict resolved" to server
-    try {
-      WorkspaceInfo workspace = myConflict2workspace.get(conflict);
-      ResolutionData resolutionData = myMergeResult.get(conflict);
-      Resolution resolution = Resolution.AcceptMerge;
-      if (resolutionData.contentResolutionType == ResolutionType.ACCEPT_YOURS &&
-          resolutionData.nameResolutionType == ResolutionType.ACCEPT_YOURS) {
-        resolution = Resolution.AcceptYours;
-      }
-      if (resolutionData.contentResolutionType == ResolutionType.ACCEPT_THEIRS &&
-          resolutionData.nameResolutionType == ResolutionType.ACCEPT_THEIRS) {
-        resolution = Resolution.AcceptTheirs;
-      }
-      final String newLocalPath = resolutionData.localName;
-      VersionControlServer.ResolveConflictParams resolveConflictParams = new VersionControlServer.ResolveConflictParams(
-        conflict.getCid(), resolution, LockLevel.Unchanged, conflict.getYenc(),
-        newLocalPath);
-
-      ResolveResponse response =
-        workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams);
-      // process response
-      GetOperation getOperation = null;
-      if (response.getResolveResult().getGetOperation() != null) {
-        getOperation = response.getResolveResult().getGetOperation()[0];
-      }
-      else if (response.getUndoOperations().getGetOperation() != null) {
-        getOperation = response.getUndoOperations().getGetOperation()[0];
-      }
-      if (getOperation != null) {
-        workspace.getServer().getVCS()
-          .updateLocalVersions(workspace.getName(), workspace.getOwnerName(), Collections.singletonList(getOperation));
-      }
-    }
-    catch (TfsException e) {
-        //noinspection ThrowableInstanceNeverThrown
-        AbstractVcsHelper.getInstance(myProject).showError(new VcsException("Conflict resolution failed.", e), TFSVcs.TFS_NAME);
-    }
+  private void fireClose() {
+    getPanel().firePropertyChange(CLOSE_PROPERTY, false, true);
   }
 
   private void enableButtons(final int[] selectedIndices) {
@@ -321,7 +127,7 @@ public class ResolveConflictsForm {
     myAcceptTheirsButton.setEnabled(selectedIndices.length > 0);
     myMergeButton.setEnabled(selectedIndices.length > 0);
     for (int index : selectedIndices) {
-      Conflict conflict = myUnresolvedConflicts.get(index);
+      Conflict conflict = myItemsTableModel.getConflicts().get(index);
       if (conflict.getTsitem() == null) {
         // item deleted on server, so it is
         myMergeButton.setEnabled(false);
@@ -330,17 +136,8 @@ public class ResolveConflictsForm {
     }
   }
 
-  Map<Conflict, ResolutionData> getMergeResult() {
-    return myMergeResult;
-  }
-
-  private class ItemsTableModel extends AbstractTableModel {
+  private static class ItemsTableModel extends AbstractTableModel {
     private List<Conflict> myConflicts;
-
-    public void setItems(List<Conflict> conflicts) {
-      myConflicts = conflicts;
-      fireTableDataChanged();
-    }
 
     public List<Conflict> getMergeData() {
       return myConflicts;
@@ -360,29 +157,38 @@ public class ResolveConflictsForm {
 
     public Object getValueAt(final int rowIndex, final int columnIndex) {
       Conflict conflict = myConflicts.get(rowIndex);
-      return Column.values()[columnIndex].getValue(conflict, myMergeResult.get(conflict));
+      return Column.values()[columnIndex].getValue(conflict);
+    }
+
+    public List<Conflict> getConflicts() {
+      return myConflicts;
+    }
+
+    public void setConflicts(final List<Conflict> conflicts) {
+      myConflicts = conflicts;
+      fireTableDataChanged();
     }
   }
 
   private enum Column {
 
     Name("Name") {
-      public String getValue(Conflict conflict, ResolutionData resolutionData) {
-        return conflict.getSrclitem(); 
+      public String getValue(Conflict conflict) {
+        return conflict.getSrclitem();
       }
     },
     ConflictType("Conflict type") {
-      public String getValue(Conflict conflict, ResolutionData resolutionData) {
+      public String getValue(Conflict conflict) {
         ArrayList<String> types = new ArrayList<String>();
-        if (resolutionData.nameResolutionType == ResolutionType.IGNORED) {
+        if (ResolveConflictHelper.isNameConflict(conflict)) {
           types.add("Rename");
         }
-        if (resolutionData.contentResolutionType == ResolutionType.IGNORED) {
+        if (ResolveConflictHelper.isContentConflict(conflict)) {
           types.add("Content");
         }
-        String res = null;
+        String res = "";
         for (String type : types) {
-          if (res == null) {
+          if (res.length() == 0) {
             res = type;
           }
           else {
@@ -403,8 +209,33 @@ public class ResolveConflictsForm {
       return myCaption;
     }
 
-    public abstract String getValue(Conflict conflict, ResolutionData resolutionData);
+    public abstract String getValue(Conflict conflict);
 
+  }
+
+  private abstract class MergeActionListener implements ActionListener {
+    public void actionPerformed(final ActionEvent ae) {
+      int[] selectedIndices = myItemsTable.getSelectedRows();
+      try {
+        for (int index : selectedIndices) {
+          Conflict conflict = myItemsTableModel.getConflicts().get(index);
+          execute(conflict);
+        }
+        myItemsTableModel.setConflicts(
+          myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full));
+      }
+      catch (TfsException e) {
+        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+      }
+      catch (IOException e) {
+        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+      }
+      catch (VcsException e) {
+        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+      }
+    }
+
+    protected abstract void execute(final Conflict conflict) throws TfsException, IOException, VcsException;
   }
 }
 

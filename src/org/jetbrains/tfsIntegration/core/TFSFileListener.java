@@ -149,7 +149,7 @@ public class TFSFileListener extends TFSFileListenerBase {
           }
 
           UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(workspace, revertScheduledForAdditionImmediately, false, false);
+            UndoPendingChanges.execute(workspace, revertScheduledForAdditionImmediately, false, false, false);
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
             AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
@@ -340,7 +340,6 @@ public class TFSFileListener extends TFSFileListenerBase {
             workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), checkoutForEditFirst);
           errors.addAll(BeanHelper.getVcsExceptions(checkoutResult.getFailures()));
 
-
           for (Failure failure : checkoutResult.getFailures()) {
             if (failure.getSev() != SeverityType.Warning) {
               FilePath path = VcsUtil.getFilePath(failure.getLocal());
@@ -352,7 +351,8 @@ public class TFSFileListener extends TFSFileListenerBase {
             workspace.getServer().getVCS().rename(workspace.getName(), workspace.getOwnerName(), scheduleMove);
           errors.addAll(BeanHelper.getVcsExceptions(renameResult.getFailures()));
 
-          workspace.getServer().getVCS().updateLocalVersions(workspace.getName(), workspace.getOwnerName(), renameResult.getResult());
+          workspace.getServer().getVCS()
+            .updateLocalVersionsByGetOperations(workspace.getName(), workspace.getOwnerName(), renameResult.getResult());
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
           for (GetOperation getOperation : renameResult.getResult()) {
             invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal()));

@@ -149,7 +149,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public UpdateEnvironment getUpdateEnvironment() {
-    return new TFSUpdateEnvironment(this);
+    return new TFSUpdateEnvironment(myProject);
   }
 
   @Nullable
@@ -172,6 +172,7 @@ public class TFSVcs extends AbstractVcs {
     LOG.assertTrue(condition);
   }
 
+  @Nullable
   public static String getProxyHost() {
     if (Boolean.parseBoolean(System.getProperty("TFS.UseFiddler"))) {
       return "127.0.0.1";

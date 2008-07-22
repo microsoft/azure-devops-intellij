@@ -16,23 +16,31 @@
 
 package org.jetbrains.tfsIntegration.tests;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.openapi.vcs.update.UpdateSession;
+import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.testFramework.AbstractVcsTestCase;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.TFSChangeList;
+import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.junit.After;
@@ -41,27 +49,31 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 @SuppressWarnings({"ConstantConditions", "HardCodedStringLiteral"})
 public abstract class TFSTestCase extends AbstractVcsTestCase {
 
-  private static final String SERVER = "http://192.168.0.123:8080/";
-  private static final String SERVER_ROOT = "$/hoo/__test";
-  private static final String USER = "tfsuser";
+  protected interface RunnableWithExceptions {
+    void run() throws Exception;
+  }
+
+  private static final String SERVER = "http://wmw-2003-01:8080/";
+//  private static final String SERVER = "http://192.168.117.128:8080/";
+  private static final String SERVER_ROOT = "$/Test";
+  private static final String USER = "TFSSETUP";
   private static final String DOMAIN = "SWIFTTEAMS";
-  private static final String PASSWORD = "Parol";
+  private static final String PASSWORD = "";
 
   private static final String WORKSPACE_NAME_PREFIX = "__testWorkspace_";
   private static final String SANDBOX_PREFIX = "sandbox_";
 
   private TempDirTestFixture myTempDirFixture;
-  private WorkspaceInfo myTestWorkspace;
+  protected WorkspaceInfo myTestWorkspace;
   protected VirtualFile mySandboxRoot;
   private Credentials myOriginalServerCredentials;
 
@@ -82,7 +94,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
 
     initProject(localRoot);
-    mySandboxRoot = createDirInCommand(myWorkingCopyDir, SANDBOX_PREFIX + Workstation.getComputerName() + "_" + localRoot.getName());
+    mySandboxRoot = createDirInCommand(myWorkingCopyDir, SANDBOX_PREFIX + Workstation.getComputerName() + "_" + localRoot.getName(), true);
 
     prepareServer();
 
@@ -91,6 +103,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     createNewWorkspaceFor(localRoot);
 
     createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot));
+
+    ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.REPORT_LOCAL_CONFLICT);
   }
 
   private void prepareServer() throws URISyntaxException, TfsException {
@@ -178,7 +192,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private TestChangeListBuilder getChanges(VirtualFile root) throws VcsException {
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
-    TestChangeListBuilder changeListBuilder = new TestChangeListBuilder(mySandboxRoot.getPresentableUrl(), myProject);
+    TestChangeListBuilder changeListBuilder = new TestChangeListBuilder(mySandboxRoot, myProject);
     getVcs().getChangeProvider().getChanges(getDirtyScopeForFile(root), changeListBuilder, new EmptyProgressIndicator());
     return changeListBuilder;
   }
@@ -212,8 +226,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected void commit(final List<Change> changes, final String comment) {
     final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(changes, comment);
-    Assert.assertTrue(errors.isEmpty());
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
   }
 
   protected void commit(Change change, final String comment) {
@@ -226,32 +240,38 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected void rollback(final List<Change> changes) {
     final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackChanges(changes);
-    Assert.assertTrue(errors.isEmpty());
-    refreshRecursively(mySandboxRoot);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
   }
 
   protected void rollbackAll(TestChangeListBuilder builder) {
     final List<VcsException> errors = new ArrayList<VcsException>();
+    errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
     errors.addAll(getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges()));
     // ??? errors.addAll(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
-    errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
     errors.addAll(getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles()));
-    Assert.assertTrue(errors.toString(), errors.isEmpty());
-    refreshRecursively(mySandboxRoot);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
   }
 
   protected void scheduleForAddition(VirtualFile... files) {
     final List<VcsException> errors = getVcs().getCheckinEnvironment().scheduleUnversionedFilesForAddition(Arrays.asList(files));
-    Assert.assertTrue(errors.isEmpty());
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
+  }
+
+  protected void scheduleForAddition(FilePath... files) {
+    List<VirtualFile> vfiles = new ArrayList<VirtualFile>(files.length);
+    for (FilePath f : files) {
+      vfiles.add(VcsUtil.getVirtualFile(f.getIOFile()));
+    }
+    scheduleForAddition(vfiles.toArray(new VirtualFile[files.length]));
   }
 
   protected void scheduleForDeletion(FilePath... files) {
     final List<VcsException> errors = getVcs().getCheckinEnvironment().scheduleMissingFileForDeletion(Arrays.asList(files));
-    Assert.assertTrue(errors.isEmpty());
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
   }
 
   protected void scheduleForDeletion(final VirtualFile file) {
@@ -264,7 +284,12 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected void rollbackHijacked(List<VirtualFile> files) {
     final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(files);
-    Assert.assertTrue(errors.isEmpty());
+    Assert.assertTrue(getMessage(errors), errors.isEmpty());
+    refreshAll();
+  }
+
+  protected void refreshAll() {
+    TfsFileUtil.refreshAndInvalidate(myProject, Collections.singletonList(mySandboxRoot), false);
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
   }
 
@@ -281,7 +306,15 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected void editFiles(VirtualFile... files) throws VcsException {
     // TODO: use ReadonlyStatusHandler.getInstance(myProject).ensureFilesWritable(file);
     getVcs().getEditFileProvider().editFiles(files);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    refreshAll();
+  }
+
+  protected void editFiles(FilePath... files) throws VcsException {
+    VirtualFile[] vf = new VirtualFile[files.length];
+    for (int i = 0; i < files.length; i++) {
+      vf[i] = VcsUtil.getVirtualFile(files[i].getIOFile());
+    }
+    editFiles(vf);
   }
 
   protected static String getContent(VirtualFile file) {
@@ -292,24 +325,22 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return new CurrentContentRevision(file).getContent();
   }
 
+  protected void deleteFileExternally(FilePath file) {
+    deleteFileExternally(file.getVirtualFile());
+  }
+
   protected void deleteFileExternally(VirtualFile file) {
     final File ioFile = new File(file.getPath());
     Assert.assertTrue(FileUtil.delete(ioFile));
-    VcsUtil.refreshFiles(new File[]{ioFile.getParentFile()}, new Runnable() {
-      public void run() {
-      }
-    });
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    refreshAll();
   }
 
-  protected void renameAndClearReadonlyExternally(final VirtualFile file, final String newName) throws IOException {
-    VirtualFile parent = file.getParent();
-
+  protected void clearReadonlyAndRenameExternally(final VirtualFile file, final String newName) throws IOException {
     FileUtil.setReadOnlyAttribute(file.getPath(), false);
     final File from = new File(file.getPath());
     final File to = new File(from.getParent(), newName);
     Assert.assertTrue(from.renameTo(to));
-    refreshRecursively(parent);
+    refreshAll();
   }
 
 
@@ -320,63 +351,88 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected void clearReadonlyStatusExternally(VirtualFile... files) throws IOException {
     for (VirtualFile file : files) {
       FileUtil.setReadOnlyAttribute(file.getPath(), false);
+    }
+    refreshAll();
+  }
+
+  protected void clearReadonlyStatusExternally(FilePath... files) throws IOException {
+    for (FilePath file : files) {
+      FileUtil.setReadOnlyAttribute(file.getPath(), false);
 //VcsUtil.refreshFiles(new File[]{new File(file.getPath())}, new Runnable() {
 //  public void run() {
 //  }
 //});
-      refreshRecursively(file.getParent());
+      refreshAll();
     }
   }
 
-  protected void rename(final VirtualFile file, final String newName) throws VcsException {
-    final File parent = new File(file.getParent().getPath());
-    renameFileInCommand(file, newName);
-// TODO: refresh needed?
-    VcsUtil.refreshFiles(new File[]{parent}, new Runnable() {
-      public void run() {
-      }
-    });
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+  protected void rename(final FilePath file, final String newName) throws VcsException {
+    rename(VcsUtil.getVirtualFile(file.getIOFile()), newName);
   }
 
-  public void refreshRecursively(final VirtualFile parent) {
-    TfsFileUtil.executeInEventDispatchThread(new Runnable() {
-      public void run() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-          public void run() {
-            parent.refresh(false, true);
-          }
-        });
-      }
-    });
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+  protected void rename(final VirtualFile file, final String newName) throws VcsException {
+    renameFileInCommand(file, newName);
+    refreshAll();
   }
+
+  /*public void refreshRecursively(final VirtualFile parent) {
+    TfsFileUtil.refreshRecursively(parent);
+    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+  }*/
 
   protected VirtualFile createFileInCommand(final VirtualFile parent, final String name, @Nullable final String content) {
     final VirtualFile result = super.createFileInCommand(parent, name, content);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    assertFile(result, content, true);
+    refreshAll();
+    return result;
+  }
+
+  protected VirtualFile createFileInCommand(final FilePath parent, final String name, @Nullable final String content) {
+    return createFileInCommand(parent.getVirtualFile(), name, content);
+  }
+
+  private VirtualFile createDirInCommand(final VirtualFile parent, final String name, boolean supressRefresh) {
+    final VirtualFile result = super.createDirInCommand(parent, name);
+    if (!supressRefresh) {
+      refreshAll();
+    }
+    assertFolder(VcsUtil.getFilePath(new File(new File(parent.getPath()), name)), 0);
     return result;
   }
 
   protected VirtualFile createDirInCommand(final VirtualFile parent, final String name) {
-    final VirtualFile result = super.createDirInCommand(parent, name);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
-    return result;
+    return createDirInCommand(parent, name, false);
+  }
+
+  protected VirtualFile createDirInCommand(final FilePath parent, final String name) {
+    return createDirInCommand(parent.getVirtualFile(), name);
   }
 
   protected void renameFileInCommand(final VirtualFile file, final String newName) {
     super.renameFileInCommand(file, newName);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    refreshAll();
+  }
+
+  protected void renameFileInCommand(final FilePath file, final String newName) {
+    renameFileInCommand(VcsUtil.getVirtualFile(file.getIOFile()), newName);
   }
 
   protected void moveFileInCommand(final VirtualFile file, final VirtualFile newParent) {
     super.moveFileInCommand(file, newParent);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    refreshAll();
+  }
+
+  protected void moveFileInCommand(final FilePath file, final VirtualFile newParent) {
+    moveFileInCommand(VcsUtil.getVirtualFile(file.getIOFile()), newParent);
   }
 
   protected void deleteFileInCommand(final VirtualFile file) {
     super.deleteFileInCommand(file);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
+    refreshAll();
+  }
+
+  protected void deleteFileInCommand(final FilePath file) {
+    deleteFileInCommand(file.getVirtualFile());
   }
 
   protected void commit() throws VcsException {
@@ -386,4 +442,105 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected void assertFileStatus(VirtualFile file, FileStatus expectedStatus) {
     Assert.assertTrue(FileStatusManager.getInstance(myProject).getStatus(file) == expectedStatus);
   }
+
+
+  protected static String getMessage(Collection<VcsException> errors) {
+    String result = "";
+    for (VcsException error : errors) {
+      result += error + "\n";
+    }
+    return result;
+  }
+
+  protected String getUsername() {
+    return DOMAIN + "\\" + USER;
+  }
+
+  protected static FilePath replaceInPath(FilePath path, FilePath folderFrom, FilePath folderTo) {
+    String from = folderFrom.getIOFile().getPath();
+    String to = folderTo.getIOFile().getPath();
+
+    String result = path.getIOFile().getPath().replace(from, to);
+    return VcsUtil.getFilePath(result);
+  }
+
+  protected static void assertFolder(VirtualFile file, int itemsInside) {
+    Assert.assertTrue(new File(file.getPath()).isDirectory());
+    Assert.assertEquals(itemsInside, new File(file.getPath()).list().length);
+  }
+
+  protected static void assertFolder(FilePath file, int itemsInside) {
+    Assert.assertTrue(file.getIOFile().isDirectory());
+    Assert.assertTrue(file.getIOFile().canWrite());
+    Assert.assertEquals(itemsInside, file.getIOFile().list().length);
+    Assert.assertEquals(itemsInside, file.getIOFile().list().length);
+  }
+
+  protected static void assertFile(FilePath file, String content, boolean writable) {
+    assertFile(file.getIOFile(), content, writable);
+  }
+
+  protected static void assertNotExists(FilePath file) {
+    Assert.assertFalse(file.getIOFile().exists());
+  }
+
+  protected static void assertFile(VirtualFile file, String content, boolean writable) {
+    assertFile(new File(file.getPath()), content, writable);
+  }
+
+  protected static void assertFile(File file, String content, boolean writable) {
+    Assert.assertTrue(file.isFile());
+    if (writable) {
+      Assert.assertTrue("File " + file + " expected to be writable", file.canWrite());
+    }
+    else {
+      Assert.assertFalse("File " + file + " expected to be read only", file.canWrite());
+    }
+    InputStream stream = null;
+    try {
+      stream = new FileInputStream(file);
+      Assert.assertEquals("File content differs", content, StreamUtil.readText(stream));
+    }
+    catch (IOException e) {
+      Assert.fail(e.getMessage());
+    }
+    finally {
+      if (stream != null) {
+        try {
+          stream.close();
+        }
+        catch (IOException e) {
+          // ingore
+        }
+      }
+    }
+  }
+
+  protected int getLatestRevisionNumber(VirtualFile file) throws VcsException {
+    final RepositoryLocation location = getVcs().getCommittedChangesProvider().getLocationFor(TfsFileUtil.getFilePath(file));
+    ChangeBrowserSettings settings = new ChangeBrowserSettings();
+
+    final List<TFSChangeList> historyList = getVcs().getCommittedChangesProvider().getCommittedChanges(settings, location, 0);
+    return (int)historyList.get(0).getNumber();
+  }
+
+  protected void update(VirtualFile root, int revision) {
+    TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myProject);
+    configuration.getUpdateWorkspaceInfo(myTestWorkspace).setVersion(new ChangesetVersionSpec(revision));
+    configuration.UPDATE_RECURSIVELY = true;
+    final UpdatedFiles updatedFiles = UpdatedFiles.create();
+    final UpdateSession session =
+      getVcs().getUpdateEnvironment().updateDirectories(new FilePath[]{TfsFileUtil.getFilePath(root)}, updatedFiles, null);
+    Assert.assertTrue(getMessage(session.getExceptions()), session.getExceptions().isEmpty());
+    refreshAll();
+  }
+
+  protected static void setFileContent(final FilePath file, String content) throws IOException {
+    setFileContent(VcsUtil.getVirtualFile(file.getIOFile()), content);
+  }
+
+  protected static void setFileContent(VirtualFile file, String content) throws IOException {
+    file.setBinaryContent(CharsetToolkit.getUtf8Bytes(content));
+  }
+
 }

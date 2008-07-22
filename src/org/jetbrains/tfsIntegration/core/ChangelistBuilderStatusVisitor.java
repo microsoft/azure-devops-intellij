@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void checkedOutForEdit(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
     throws TfsException {
     if (localItemExists) {
-      TFSContentRevision baseRevision = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
+      TFSContentRevision baseRevision = new TFSContentRevision(myWorkspace, extendedItem, false);
       builder.processChange(new Change(baseRevision, CurrentContentRevision.create(path.getLocalPath())));
     }
     else {
@@ -96,10 +97,11 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     }
   }
 
-  public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
+  public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+    throws TfsException {
     if (localItemExists) {
-      TFSContentRevision before = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver() - 1);
-      TFSContentRevision after = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
+      ContentRevision before = new TFSContentRevision(myWorkspace, extendedItem, true);
+      ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
       builder.processChange(new Change(before, after));
     }
     else {
@@ -107,11 +109,11 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     }
   }
 
-  public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) throws TfsException {
-    // TODO: can be или нет?
+  public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+    throws TfsException {
     if (localItemExists) {
-      TFSContentRevision before = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver() - 1);
-      TFSContentRevision after = new TFSContentRevision(myWorkspace, extendedItem.getItemid(), extendedItem.getLver());
+      ContentRevision before = new TFSContentRevision(myWorkspace, extendedItem, true);
+      ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
       builder.processChange(new Change(before, after));
     }
     else {

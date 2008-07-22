@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core.revision;
+package org.jetbrains.tfsIntegration.exceptions;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.apache.axis2.AxisFault;
 
-import java.io.IOException;
+import javax.xml.namespace.QName;
 
-public class TFSContentStoreFactory {
+public class ItemNotFoundException extends TfsException {
 
-  public static TFSContentStore create(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
-    return new TFSTmpFileStore(serverUri, itemId, revision.getValue());
+  public static final String CODE = "ItemNotFoundException";
+
+  private final String myServerItem;
+
+  public ItemNotFoundException(final AxisFault cause) {
+    super(cause);
+
+    myServerItem = cause.getDetail().getAttributeValue(new QName("ServerItem"));
   }
 
-  public static TFSContentStore find(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
-    return TFSTmpFileStore.find(serverUri, itemId, revision.getValue());
+  public String getServerItem() {
+    return myServerItem;
   }
 }
-

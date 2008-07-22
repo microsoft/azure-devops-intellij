@@ -16,7 +16,8 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import org.jetbrains.tfsIntegration.core.TFSVcs;
+import com.intellij.openapi.ui.Messages;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionControlLabel;
@@ -30,119 +31,113 @@ import java.util.List;
 
 
 public class SelectLabelPanel {
-    private JTextField nameTextField;
-    private JTextField ownerTextField;
-    private JButton findButton;
-    private JTable labelsTable;
-    private JPanel panel;
+  private JTextField nameTextField;
+  private JTextField ownerTextField;
+  private JButton findButton;
+  private JTable myLabelsTable;
+  private JPanel panel;
 
-    private LabelsTableModel labelsTableModel;
+  private LabelsTableModel myLabelsTableModel;
 
-    private enum Column {
-      Name("Name") {
-        public String getValue(VersionControlLabel label) {
-          return label.getName();
-        }
-      },
-      Scope("Scope") {
-        public String getValue(VersionControlLabel label) {
-          return label.getScope();
-        }
-      },
-      Owner("Owner") {
-        public String getValue(VersionControlLabel label) {
-            return label.getOwner();
-        }
-      };
-
-      private String myCaption;
-
-      Column(String caption) {
-        myCaption = caption;
+  private enum Column {
+    Name("Name") {
+      public String getValue(VersionControlLabel label) {
+        return label.getName();
       }
-
-      public String getCaption() {
-        return myCaption;
+    },
+    Scope("Scope") {
+      public String getValue(VersionControlLabel label) {
+        return label.getScope();
       }
+    },
+    Owner("Owner") {
+      public String getValue(VersionControlLabel label) {
+        return label.getOwner();
+      }
+    };
 
-      public abstract String getValue(VersionControlLabel label);
+    private String myCaption;
 
+    Column(String caption) {
+      myCaption = caption;
     }
 
-    private static class LabelsTableModel extends AbstractTableModel {
-      private List<VersionControlLabel> myLabels;
-
-      public void setLabels(List<VersionControlLabel> labels) {
-        myLabels = labels;
-        fireTableDataChanged();
-      }
-
-      public List<VersionControlLabel> getLabels() {
-        return myLabels;
-      }
-
-      public String getColumnName(final int column) {
-        return Column.values()[column].getCaption();
-      }
-
-      public int getRowCount() {
-        return myLabels != null ? myLabels.size() : 0;
-      }
-
-      public int getColumnCount() {
-        return Column.values().length;
-      }
-
-      public Object getValueAt(final int rowIndex, final int columnIndex) {
-        return Column.values()[columnIndex].getValue(myLabels.get(rowIndex));
-      }
+    public String getCaption() {
+      return myCaption;
     }
 
-    public SelectLabelPanel(final TFSVcs tfsVcs, final WorkspaceInfo workspace) {
+    public abstract String getValue(VersionControlLabel label);
 
-        labelsTableModel = new LabelsTableModel();
-        labelsTable.setModel(labelsTableModel);
-        labelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+  }
 
-        findButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    String owner = ownerTextField.getText().trim();
-                    if ("".equals(owner)) {
-                        owner = null;
-                    }
-                    String name = nameTextField.getText().trim();
-                    if ("".equals(name)) {
-                        name = null;
-                    }
-                    List<VersionControlLabel> labels =
-                            workspace.getServer().getVCS().queryLabels(
-                                    name,
-                                    "$/",
-                                    owner,
-                                    false,
-                                    null,
-                                    null,
-                                    false);
-                    labelsTableModel.setLabels(labels);
-                } catch (TfsException e) {
-                    labelsTableModel.setLabels(Collections.<VersionControlLabel>emptyList());
-                    // TODO: how to show error message? 
-                }
-            }
-        });
+  private static class LabelsTableModel extends AbstractTableModel {
+    private List<VersionControlLabel> myLabels;
+
+    public void setLabels(List<VersionControlLabel> labels) {
+      myLabels = labels;
+      fireTableDataChanged();
     }
 
-    public JPanel getPanel() {
-        return panel;
+    public List<VersionControlLabel> getLabels() {
+      return myLabels;
     }
 
-    public VersionControlLabel getLabel() {
-        if (labelsTable.getSelectedRowCount() == 1) {
-          return labelsTableModel.getLabels().get(labelsTable.getSelectedRow());
+    public String getColumnName(final int column) {
+      return Column.values()[column].getCaption();
+    }
+
+    public int getRowCount() {
+      return myLabels != null ? myLabels.size() : 0;
+    }
+
+    public int getColumnCount() {
+      return Column.values().length;
+    }
+
+    public Object getValueAt(final int rowIndex, final int columnIndex) {
+      return Column.values()[columnIndex].getValue(myLabels.get(rowIndex));
+    }
+  }
+
+  public SelectLabelPanel(final WorkspaceInfo workspace) {
+    myLabelsTableModel = new LabelsTableModel();
+    myLabelsTable.setModel(myLabelsTableModel);
+    myLabelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+    findButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        try {
+          String owner = ownerTextField.getText().trim();
+          if ("".equals(owner)) {
+            owner = null;
+          }
+          String name = nameTextField.getText().trim();
+          if ("".equals(name)) {
+            name = null;
+          }
+          // TODO respect scope
+          List<VersionControlLabel> labels = workspace.getServer().getVCS().queryLabels(name, "$/", owner, false, null, null, false);
+          myLabelsTableModel.setLabels(labels);
         }
-        else {
-          return null;
+        catch (TfsException ex) {
+          myLabelsTableModel.setLabels(Collections.<VersionControlLabel>emptyList());
+          Messages.showErrorDialog(ex.getMessage(), "Find Label");
         }
+      }
+    });
+  }
+
+  public JPanel getPanel() {
+    return panel;
+  }
+
+  @Nullable
+  public VersionControlLabel getLabel() {
+    if (myLabelsTable.getSelectedRowCount() == 1) {
+      return myLabelsTableModel.getLabels().get(myLabelsTable.getSelectedRow());
     }
+    else {
+      return null;
+    }
+  }
 }

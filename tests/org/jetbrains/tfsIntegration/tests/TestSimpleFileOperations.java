@@ -45,7 +45,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
   // unversioned -> delete -> none
   @Test
-  public void testUnversionedToNone() throws Exception {
+  public void testUnversionedToNoneDelete() throws Exception {
     doNothingSilently(VcsConfiguration.StandardConfirmation.ADD);
     final String content = "filecontent";
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
@@ -79,7 +79,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
   // scheduled for addition -> delete -> none
   @Test
-  public void testScheduledForAdditionToNone() throws Exception {
+  public void testScheduledForAdditionToNoneDelete() throws Exception {
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     final String content = "filecontent";
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
@@ -118,9 +118,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     final String content = "filecontent";
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
-    FilePath path = TfsFileUtil.getFilePath(file);
     deleteFileExternally(file);
-    refreshRecursively(mySandboxRoot);
 
     getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Collections.singletonList(TfsFileUtil.getFilePath(file)));
 
@@ -179,7 +177,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
     final String newName = "file2.txt";
 
-    renameAndClearReadonlyExternally(file, newName);
+    clearReadonlyAndRenameExternally(file, newName);
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
@@ -410,7 +408,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
   public void testRenamedToUpToDateRevert() throws Exception {
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     final String content = "filecontent";
-    final VirtualFile file = createFileInCommand(mySandboxRoot, "file.txt", content);
+    String originalName = "file.txt";
+    final VirtualFile file = createFileInCommand(mySandboxRoot, originalName, content);
     commit(getChanges().getChanges(), "unittest");
     FilePath before = TfsFileUtil.getFilePath(file);
 
@@ -425,7 +424,8 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     rollback(getChanges().getChanges());
 
-    getChanges().assertTotalItems(0);
+    getChanges().assertTotalItems(1);
+    getChanges().assertHijacked(before);
   }
 
   // modified [rename] -> commit -> up to date
@@ -631,6 +631,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
     changes.assertLocallyDeleted(path);
 
     getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Arrays.asList(path));
+    refreshAll();    
     getChanges().assertTotalItems(0);
     Assert.assertEquals(content, getContent(VcsUtil.getVirtualFile(path.getPath())));
   }

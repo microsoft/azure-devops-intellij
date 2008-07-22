@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.vcs.FilePath;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 
 import java.io.IOException;
 
@@ -30,11 +31,11 @@ public class TFSDocumentUserDataStore implements TFSContentStore {
   TFSDocumentUserDataStore(final FilePath path, final int revision) throws IOException {
   }
 
-  public void saveContent(final ContentWriter contentWriter) throws IOException {
+  public void saveContent(final TfsFileUtil.ContentWriter contentWriter) throws IOException {
     //To change body of implemented methods use File | Settings | File Templates.
   }
 
-  public String loadContent() throws IOException {
+  public String loadContent() {
     return null;  //To change body of implemented methods use File | Settings | File Templates.
   }
 }

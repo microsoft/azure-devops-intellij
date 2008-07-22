@@ -25,14 +25,14 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,19 +41,28 @@ public class TFSContentRevision implements ContentRevision {
   private static final Logger LOG = Logger.getInstance(TFSContentRevision.class.getName());
 
   private String myServerContent;
-  private FilePath myPath;
-  private WorkspaceInfo myWorkspace;
-  private Item myItem;
+  private final FilePath myPath;
+  private final WorkspaceInfo myWorkspace;
+  private final Item myItem;
   private final VcsRevisionNumber.Int myRevisionNumber;
+
+  public TFSContentRevision(final @NotNull WorkspaceInfo workspace, final @NotNull ExtendedItem extendedItem, final boolean useBasePath)
+    throws TfsException {
+    myWorkspace = workspace;
+    myRevisionNumber = new VcsRevisionNumber.Int(extendedItem.getLver());
+    myPath = workspace.findLocalPathByServerPath(useBasePath ? extendedItem.getSitem() : extendedItem.getTitem(),
+                                                 extendedItem.getType() == ItemType.Folder);
+    myItem = workspace.getServer().getVCS().queryItemById(extendedItem.getItemid(), extendedItem.getLver(), true);
+  }
 
   public TFSContentRevision(final @NotNull WorkspaceInfo workspace, int itemId, int changeset) throws TfsException {
     myWorkspace = workspace;
     myRevisionNumber = new VcsRevisionNumber.Int(changeset);
     myItem = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
-    if (myItem != null) {
-      myPath = workspace.findLocalPathByServerPath(myItem.getItem());
-      TFSVcs.assertTrue(myPath != null, "No mapping found for item :" + myItem.getItem());
-    }
+    TFSVcs.assertTrue(myItem != null, "No item found with id= " + itemId + " at revision " + changeset);
+
+    myPath = workspace.findLocalPathByServerPath(myItem.getItem(), myItem.getType() == ItemType.Folder);
+    TFSVcs.assertTrue(myPath != null, "No mapping found for item :" + myItem.getItem());
   }
 
   public TFSContentRevision(final @NotNull FilePath path, int changeset) throws TfsException {
@@ -63,11 +72,9 @@ public class TFSContentRevision implements ContentRevision {
     if (myWorkspace == null) {
       throw new OperationFailedException("Cannot find mapping for item " + path.getPath());
     }
-    myItem = myWorkspace.getServer().getVCS().queryItem(
-      myWorkspace.getName(),
-      myWorkspace.getOwnerName(),
-      myPath.getPath(),
-      new ChangesetVersionSpec(changeset), DeletedState.NonDeleted, true);
+    myItem = myWorkspace.getServer().getVCS().queryItem(myWorkspace.getName(), myWorkspace.getOwnerName(),
+                                                        VersionControlPath.toTfsRepresentation(myPath), new ChangesetVersionSpec(changeset),
+                                                        DeletedState.NonDeleted, true);
   }
 
   public String getContent() {
@@ -84,12 +91,14 @@ public class TFSContentRevision implements ContentRevision {
     }
     try {
       final String downloadUrl = myItem.getDurl();
-      TFSVcs.assertTrue(downloadUrl != null, "No download url for item: " + myItem.getItem());
-      TFSContentStore store = TFSContentStoreFactory.find(myWorkspace.getServer().getUri().toASCIIString(), myItem.getItemid(), myRevisionNumber);
+      TFSVcs.assertTrue(myItem.getType() == ItemType.File, "Item: " + myItem.getItem() + " is not a file!");
+      TFSVcs.assertTrue(downloadUrl != null, "No download url for file item: " + myItem.getItem());
+      TFSContentStore store =
+        TFSContentStoreFactory.find(myWorkspace.getServer().getUri().toASCIIString(), myItem.getItemid(), myRevisionNumber);
       if (store == null) {
         store = TFSContentStoreFactory.create(myWorkspace.getServer().getUri().toASCIIString(), myItem.getItemid(), myRevisionNumber);
         final Ref<TfsException> exception = new Ref<TfsException>();
-        store.saveContent(new TFSContentStore.ContentWriter() {
+        store.saveContent(new TfsFileUtil.ContentWriter() {
           public void write(final OutputStream outputStream) {
             try {
               VersionControlServer.downloadItem(myWorkspace, downloadUrl, outputStream);

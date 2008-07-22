@@ -56,6 +56,9 @@ public class VersionControlServer {
   public static final String SERVER_ITEM_FIELD = "item";
   public static final String CONTENT_FIELD = "content";
 
+  public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
+  public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
+
   public VersionControlServer(URI uri) {
     //myUri = uri;
     try {
@@ -89,9 +92,7 @@ public class VersionControlServer {
     return createItemSpec(string, Integer.MIN_VALUE, recursionType);
   }
 
-  public List<Item> queryItemsById(final int[] itemIds,
-                            final int changeSet,
-                            final boolean generateDownloadUrl) throws TfsException {
+  public List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
     final ArrayOfInt arrayOfInt = new ArrayOfInt();
     arrayOfInt.set_int(itemIds);
     ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
@@ -104,11 +105,10 @@ public class VersionControlServer {
     return result;
   }
 
-  public Item queryItemById(final int itemId,
-                            final int changeSet,
-                            final boolean generateDownloadUrl) throws TfsException {
+  @Nullable
+  public Item queryItemById(final int itemId, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
 
-    List<Item> items = queryItemsById(new int[] {itemId}, changeSet, generateDownloadUrl);
+    List<Item> items = queryItemsById(new int[]{itemId}, changeSet, generateDownloadUrl);
     if (items.isEmpty()) {
       return null;
     }
@@ -300,7 +300,7 @@ public class VersionControlServer {
       for (Item item : itemSet.getItems().getItem()) {
         if (!item.getItem().equals(parentServerItem)) {
           result.add(item);
-        }                    
+        }
       }
       return result;
     }
@@ -468,6 +468,9 @@ public class VersionControlServer {
     WebServiceHelper.httpGet(url, outputStream);
   }
 
+  /**
+   * @deprecated use TFSFileUtil.writeToFile
+   */
   public static void downloadItem(final WorkspaceInfo workspaceInfo,
                                   final String downloadKey,
                                   final File destination,
@@ -509,7 +512,9 @@ public class VersionControlServer {
     }
   }
 
-  // TODO remove
+  /**
+   * @deprecated
+   */
   public static void downloadItem(@NotNull final WorkspaceInfo workspace,
                                   @NotNull final GetOperation operation,
                                   boolean setReadOnly,
@@ -549,7 +554,7 @@ public class VersionControlServer {
 
   public List<Changeset> queryHistory(final String workspaceName,
                                       final String workspaceOwner,
-                                      ItemPath rootPath,
+                                      String serverPath,
                                       int deletionId,
                                       final String user,
                                       final VersionSpec itemVersion,
@@ -560,7 +565,7 @@ public class VersionControlServer {
     // TODO: slot mode
     // TODO: include allChangeSets
 
-    final ItemSpec itemSpec = createItemSpec(rootPath.getServerPath(), deletionId, recursionType);
+    final ItemSpec itemSpec = createItemSpec(serverPath, deletionId, recursionType);
     List<Changeset> allChangeSets = new ArrayList<Changeset>();
     int total = maxCount > 0 ? maxCount : Integer.MAX_VALUE;
     final Ref<VersionSpec> versionToCurrent = new Ref<VersionSpec>(versionTo);
@@ -593,7 +598,7 @@ public class VersionControlServer {
 
   public List<Changeset> queryHistory(final String workspaceName,
                                       final String workspaceOwner,
-                                      ItemPath rootPath,
+                                      String serverPath,
                                       int deletionId,
                                       final String user,
                                       final VersionSpec versionFrom,
@@ -601,7 +606,7 @@ public class VersionControlServer {
                                       int maxCount
 
   ) throws TfsException {
-    return queryHistory(workspaceName, workspaceOwner, rootPath, deletionId, user, LatestVersionSpec.INSTANCE, versionFrom, versionTo,
+    return queryHistory(workspaceName, workspaceOwner, serverPath, deletionId, user, LatestVersionSpec.INSTANCE, versionFrom, versionTo,
                         maxCount, RecursionType.Full);
   }
 
@@ -629,26 +634,36 @@ public class VersionControlServer {
                                 final VersionSpec versionSpec,
                                 final RecursionType recursionType) throws TfsException {
     final GetRequestParams getRequest = new GetRequestParams(path, recursionType, versionSpec);
-    List<List<GetOperation>> result = get(workspaceName, ownerName, Collections.singletonList(getRequest));
-    return result.get(0);
+    List<GetOperation> result = get(workspaceName, ownerName, Collections.singletonList(getRequest));
+    return result;
   }
 
-  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, final Collection<GetOperation> getOperations)
+
+  public static LocalVersionUpdate getLocalVersionUpdate(GetOperation operation) {
+    LocalVersionUpdate localVersionUpdate = new LocalVersionUpdate();
+    localVersionUpdate.setItemid(operation.getItemid());
+    localVersionUpdate.setTlocal(operation.getTlocal());
+    localVersionUpdate.setLver(operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0); // 0 for scheduled for addition
+    return localVersionUpdate;
+  }
+
+  public void updateLocalVersionsByGetOperations(final String workspaceName, final String workspaceOwnerName, final Collection<GetOperation> getOperations)
     throws TfsException {
-    if (getOperations.isEmpty()) {
+    List<LocalVersionUpdate> localVersionUpdates = new ArrayList<LocalVersionUpdate>(getOperations.size());
+    for (GetOperation operation : getOperations) {
+      localVersionUpdates.add(getLocalVersionUpdate(operation));
+    }
+    updateLocalVersions(workspaceName, workspaceOwnerName, localVersionUpdates);
+  }
+
+  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, final Collection<LocalVersionUpdate> updates)
+    throws TfsException {
+    if (updates.isEmpty()) {
       return;
     }
 
-    List<LocalVersionUpdate> localVersionUpdates = new ArrayList<LocalVersionUpdate>(getOperations.size());
-    for (GetOperation getOperation : getOperations) {
-      LocalVersionUpdate localVersionUpdate = new LocalVersionUpdate();
-      localVersionUpdate.setItemid(getOperation.getItemid());
-      localVersionUpdate.setTlocal(getOperation.getTlocal());
-      localVersionUpdate.setLver(getOperation.getSver() != Integer.MIN_VALUE ? getOperation.getSver() : 0);
-      localVersionUpdates.add(localVersionUpdate);
-    }
     final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
-    arrayOfLocalVersionUpdate.setLocalVersionUpdate(localVersionUpdates.toArray(new LocalVersionUpdate[localVersionUpdates.size()]));
+    arrayOfLocalVersionUpdate.setLocalVersionUpdate(updates.toArray(new LocalVersionUpdate[updates.size()]));
     WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<UpdateLocalVersionResponse>() {
       public UpdateLocalVersionResponse executeRequest() throws RemoteException {
         return myRepository.UpdateLocalVersion(workspaceName, workspaceOwnerName, arrayOfLocalVersionUpdate);
@@ -680,7 +695,7 @@ public class VersionControlServer {
     return new ResultWithFailures<GetOperation>(getOperations, failures);
   }
 
-  public List<List<GetOperation>> get(final String workspaceName, final String workspaceOwner, final List<GetRequestParams> requests)
+  public List<GetOperation> get(final String workspaceName, final String workspaceOwner, final List<GetRequestParams> requests)
     throws TfsException {
     if (requests.isEmpty()) {
       return Collections.emptyList();
@@ -705,13 +720,16 @@ public class VersionControlServer {
 
     TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == requests.size());
 
-    List<List<GetOperation>> results = new ArrayList<List<GetOperation>>(response.getArrayOfGetOperation().length);
+    List<GetOperation> results = new ArrayList<GetOperation>();
     for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
-      results.add(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+      results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
     }
     return results;
   }
 
+  /**
+   * @deprecated use other addLocalConflict() method
+   */
   public AddConflictResponse addLocalConflict(final String workspaceName,
                                               final String workspaceOwner,
                                               final int itemId,
@@ -727,6 +745,26 @@ public class VersionControlServer {
       }
     });
   }
+
+
+  public void addLocalConflict(final String workspaceName,
+                               final String workspaceOwner,
+                               final int itemId,
+                               final int versionFrom,
+                               final int pendingChangeId,
+                               final String sourceLocal,
+                               final String targetLocal,
+                               final int reason) throws TfsException {
+
+    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
+      public AddConflictResponse executeRequest() throws RemoteException {
+        return myRepository
+          .AddConflict(workspaceName, workspaceOwner, ConflictType.Local, itemId, versionFrom, pendingChangeId, sourceLocal, targetLocal,
+                       reason);
+      }
+    });
+  }
+
 
   public List<Conflict> queryConflicts(final String workspaceName,
                                        final String ownerName,
@@ -902,36 +940,35 @@ public class VersionControlServer {
   //  return queryItems(workspaceName, ownerName, itemSpecList, versionSpec, deletedState, itemType, generateDownloadUrl);
   //}
 
-
-  public List<List<Item>> queryItems(final String workspaceName,
-                                      final String ownerName,
-                                      final List<ItemSpec> itemsSpecs,
-                                      final VersionSpec versionSpec,
-                                      final DeletedState deletedState,
-                                      final ItemType itemType,
-                                      final boolean generateDownloadUrl) throws TfsException {
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
-    List<List<Item>> result = new ArrayList<List<Item>>();
-    ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
-      public ItemSet[] executeRequest() throws RemoteException {
-        return myRepository.QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, itemType, generateDownloadUrl)
-          .getItemSet();
-      }
-    });
-
-    TFSVcs.assertTrue(items != null && items.length == itemsSpecs.size());
-    //noinspection ConstantConditions
-    for (ItemSet item : items) {
-      List<Item> resultItemsList = new ArrayList<Item>();
-      Item[] resultItems = item.getItems().getItem();
-      if (resultItems != null) {
-        resultItemsList.addAll(Arrays.asList(resultItems));
-      }
-      result.add(resultItemsList);
-    }
-    return result;
-  }
+  //public List<List<Item>> queryItems(final String workspaceName,
+  //                                   final String ownerName,
+  //                                   final List<ItemSpec> itemsSpecs,
+  //                                   final VersionSpec versionSpec,
+  //                                   final DeletedState deletedState,
+  //                                   final ItemType itemType,
+  //                                   final boolean generateDownloadUrl) throws TfsException {
+  //  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+  //  arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
+  //  List<List<Item>> result = new ArrayList<List<Item>>();
+  //  ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
+  //    public ItemSet[] executeRequest() throws RemoteException {
+  //      return myRepository.QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, itemType, generateDownloadUrl)
+  //        .getItemSet();
+  //    }
+  //  });
+  //
+  //  TFSVcs.assertTrue(items != null && items.length == itemsSpecs.size());
+  //  //noinspection ConstantConditions
+  //  for (ItemSet item : items) {
+  //    List<Item> resultItemsList = new ArrayList<Item>();
+  //    Item[] resultItems = item.getItems().getItem();
+  //    if (resultItems != null) {
+  //      resultItemsList.addAll(Arrays.asList(resultItems));
+  //    }
+  //    result.add(resultItemsList);
+  //  }
+  //  return result;
+  //}
 
   @Nullable
   public Item queryItem(final String workspaceName,

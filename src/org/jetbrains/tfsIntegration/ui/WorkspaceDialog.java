@@ -29,6 +29,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -310,7 +311,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
         VirtualFile root = VirtualFileManager.getInstance().findFileByUrl(path);
         VirtualFile[] files = FileChooser.chooseFiles(panel, d, root);
         if (files.length != 1 || files[0] == null) {
-          return null;
+          return initialText;
         }
         return files[0].getPath().replace('/', File.separatorChar);
       }
@@ -318,20 +319,20 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.ServerPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
-        ServerItemSelectDialog dialog = new ServerItemSelectDialog(myWorkspace, initialText, true);
-        dialog.show();
-        if (dialog.isOK()) {
-          Object selection = dialog.getSelectedItem();
-          if (selection instanceof ItemTreeNode) {
-            return ((ItemTreeNode)selection).getFullPath();
+        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Folder", getContentPane(), myWorkspace.getServer(), initialText, true);
+        d.show();
+        if (d.isOK()) {
+          final String selectedPath = d.getSelectedPath();
+          if (selectedPath != null) {
+            return selectedPath;
           }
         }
         return initialText;
       }
     }));
+
     myFoldersTable.getColumn(Column.Status.getCaption())
       .setCellEditor(new DefaultCellEditor(new JComboBox(new EnumComboBoxModel<WorkingFolderInfo.Status>(WorkingFolderInfo.Status.class))));
-
 
     JScrollPane tableScrollPane = new JScrollPane(myFoldersTable);
     tableScrollPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
@@ -385,7 +386,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
 
   private void updateControls() {
     try {
-      myWorkingFoldersTableModel.setWorkingFolders(myWorkspace.getWorkingFoldersInfos());
+      myWorkingFoldersTableModel.setWorkingFolders(myWorkspace.getWorkingFolders());
     }
     catch (TfsException e) {
       String message = MessageFormat.format("Failed to refresh workspace ''{0}''.\n{1}", myWorkspace.getName(), e.getLocalizedMessage());

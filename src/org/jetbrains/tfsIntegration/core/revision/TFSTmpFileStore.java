@@ -20,6 +20,8 @@ import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.io.*;
 
@@ -47,7 +49,7 @@ public class TFSTmpFileStore implements TFSContentStore {
     return getTfsTmpDir() + File.separator + serverUri.hashCode() + "_" + itemId + "." + revision;
   }
 
-  TFSTmpFileStore(final File tmpFile) throws IOException {
+  TFSTmpFileStore(final File tmpFile) {
     myTmpFile = tmpFile;
   }
 
@@ -62,17 +64,8 @@ public class TFSTmpFileStore implements TFSContentStore {
     return myTfsTmpDir;
   }
 
-  public void saveContent(ContentWriter contentWriter) throws IOException {
-    OutputStream fileStream = null;
-    try {
-      fileStream = new FileOutputStream(myTmpFile);
-      contentWriter.write(fileStream);
-    }
-    finally {
-      if (fileStream != null) {
-        fileStream.close();
-      }
-    }
+  public void saveContent(TfsFileUtil.ContentWriter contentWriter) throws TfsException {
+    TfsFileUtil.setFileContent(myTmpFile, contentWriter);
   }
 
   public String loadContent() throws IOException {
