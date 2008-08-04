@@ -63,7 +63,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   private static final String SERVER = "http://wmw-2003-01:8080/";
-//  private static final String SERVER = "http://192.168.117.128:8080/";
+  //  private static final String SERVER = "http://192.168.117.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "TFSSETUP";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -224,8 +224,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   //                                               Collections.singletonList(itemPath.getSelectedPath()), path.getPath() + "  deleted");
   //}
 
-  protected void commit(final List<Change> changes, final String comment) {
-    final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(changes, comment);
+  protected void commit(final Collection<Change> changes, final String comment) {
+    final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(new ArrayList<Change>(changes), comment);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }
@@ -238,8 +238,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     rollback(Collections.singletonList(change));
   }
 
-  protected void rollback(final List<Change> changes) {
-    final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackChanges(changes);
+  protected void rollback(final Collection<Change> changes) {
+    final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackChanges(new ArrayList<Change>(changes));
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }
@@ -326,7 +326,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void deleteFileExternally(FilePath file) {
-    deleteFileExternally(file.getVirtualFile());
+    deleteFileExternally(VcsUtil.getVirtualFile(file.getIOFile()));
   }
 
   protected void deleteFileExternally(VirtualFile file) {
@@ -387,8 +387,13 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return result;
   }
 
+  @SuppressWarnings({"MethodOverloadsMethodOfSuperclass"})
+  protected VirtualFile createFileInCommand(final FilePath path, @Nullable final String content) {
+    return createFileInCommand(path.getParentPath(), path.getName(), content);
+  }
+
   protected VirtualFile createFileInCommand(final FilePath parent, final String name, @Nullable final String content) {
-    return createFileInCommand(parent.getVirtualFile(), name, content);
+    return createFileInCommand(VcsUtil.getVirtualFile(parent.getIOFile()), name, content);
   }
 
   private VirtualFile createDirInCommand(final VirtualFile parent, final String name, boolean supressRefresh) {
@@ -400,12 +405,16 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return result;
   }
 
+  protected VirtualFile createDirInCommand(final FilePath path) {
+    return createDirInCommand(path.getParentPath(), path.getName());
+  }
+
   protected VirtualFile createDirInCommand(final VirtualFile parent, final String name) {
     return createDirInCommand(parent, name, false);
   }
 
   protected VirtualFile createDirInCommand(final FilePath parent, final String name) {
-    return createDirInCommand(parent.getVirtualFile(), name);
+    return createDirInCommand(VcsUtil.getVirtualFile(parent.getIOFile()), name);
   }
 
   protected void renameFileInCommand(final VirtualFile file, final String newName) {
@@ -432,7 +441,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void deleteFileInCommand(final FilePath file) {
-    deleteFileInCommand(file.getVirtualFile());
+    deleteFileInCommand(VcsUtil.getVirtualFile(file.getIOFile()));
   }
 
   protected void commit() throws VcsException {
@@ -533,6 +542,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       getVcs().getUpdateEnvironment().updateDirectories(new FilePath[]{TfsFileUtil.getFilePath(root)}, updatedFiles, null);
     Assert.assertTrue(getMessage(session.getExceptions()), session.getExceptions().isEmpty());
     refreshAll();
+  }
+
+  protected void updateTo(int revisionAge) throws VcsException {
+    update(mySandboxRoot, getLatestRevisionNumber(mySandboxRoot) - revisionAge);
   }
 
   protected static void setFileContent(final FilePath file, String content) throws IOException {
