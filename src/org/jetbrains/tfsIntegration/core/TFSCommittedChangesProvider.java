@@ -26,6 +26,7 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
@@ -86,11 +87,22 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       final WorkspaceInfo workspace = tfsRepositoryLocation.getWorkspace();
       // TODO: deletion id
 
-      VersionSpec versionFrom =
-        settings.getChangeAfterFilter() != null ? new ChangesetVersionSpec((int)settings.getChangeAfterFilter().longValue()) : null;
-      VersionSpec versionTo = settings.getChangeBeforeFilter() != null
-                              ? new ChangesetVersionSpec((int)settings.getChangeBeforeFilter().longValue())
-                              : LatestVersionSpec.INSTANCE;
+      // TODO: if revision and date filters are both set, which one should have priority?
+      VersionSpec versionFrom = null;
+      if (settings.getChangeAfterFilter() != null) {
+        versionFrom = new ChangesetVersionSpec((int)settings.getChangeAfterFilter().longValue());
+      }
+      if (settings.getDateAfterFilter() != null) {
+        versionFrom = new DateVersionSpec(settings.getDateAfterFilter());
+      }
+
+      VersionSpec versionTo = LatestVersionSpec.INSTANCE;
+      if (settings.getChangeBeforeFilter() != null) {
+        versionTo = new ChangesetVersionSpec((int)settings.getChangeBeforeFilter().longValue());
+      }
+      if (settings.getDateBeforeFilter() != null) {
+        versionTo = new DateVersionSpec(settings.getDateBeforeFilter());
+      }
 
       List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(),
                                                                                tfsRepositoryLocation.getServerPath(), Integer.MIN_VALUE,
