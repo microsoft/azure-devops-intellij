@@ -104,7 +104,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
     createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot));
 
-    ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.REPORT_LOCAL_CONFLICT);
+    ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.ERROR);
   }
 
   private void prepareServer() throws URISyntaxException, TfsException {

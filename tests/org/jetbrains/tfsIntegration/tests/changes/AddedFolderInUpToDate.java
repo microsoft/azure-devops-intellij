@@ -24,6 +24,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public class AddedFolderInUpToDate extends ChildChangeTestCase {
@@ -81,7 +82,7 @@ public class AddedFolderInUpToDate extends ChildChangeTestCase {
   }
 
   @Test
-  public void doTest() throws VcsException {
+  public void doTest() throws VcsException, IOException {
     super.doTest();
   }
 }

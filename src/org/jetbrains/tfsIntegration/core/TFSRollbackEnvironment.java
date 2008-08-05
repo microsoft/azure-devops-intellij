@@ -131,7 +131,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           }
 
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
-          final Collection<VcsException> downloadErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.OperationType.UNDO);
+          final Collection<VcsException> downloadErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.ProcessMode.UNDO);
           errors.addAll(downloadErrors);
 
           final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, undo, true, false, true);
@@ -160,7 +160,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                                                                    new ChangesetVersionSpec(e.getValue().getLver())));
           }
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
-          final Collection<VcsException> applyingErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.OperationType.UNDO);
+          final Collection<VcsException> applyingErrors = ApplyGetOperations.execute(workspace, operations, null, null, true, true, ApplyGetOperations.ProcessMode.UNDO);
           errors.addAll(applyingErrors);
         }
       });

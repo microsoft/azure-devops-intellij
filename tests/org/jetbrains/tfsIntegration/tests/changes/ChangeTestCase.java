@@ -73,13 +73,14 @@ public abstract class ChangeTestCase extends TFSTestCase {
     makeOriginalState();
     checkOriginalStateAfterUpdate();
 
+    // there's no need to make parent changes without child, this case is covered by test 'parent changes in up to date'
     // check parent changes
-    makeParentChanges();
-    checkParentChangesPending();
-    updateTo(0);
-    checkParentChangesPending();
-    rollback(getPendingParentChanges());
-    checkOriginalStateAfterRollbackParent();
+    //makeParentChanges();
+    //checkParentChangesPending();
+    //updateTo(0);
+    //checkParentChangesPending();
+    //rollback(getPendingParentChanges());
+    //checkOriginalStateAfterRollbackParent();
 
     // check child change
     makeChildChange();
@@ -89,7 +90,7 @@ public abstract class ChangeTestCase extends TFSTestCase {
     rollback(getPendingChildChange());
     checkOriginalStateAfterRollbackChild();
 
-    // check both
+    // check both in different order
     makeParentChanges();
     makeChildChange();
     checkParentAndChildChangesPending();
@@ -103,8 +104,6 @@ public abstract class ChangeTestCase extends TFSTestCase {
     makeChildChange();
     makeParentChanges();
     checkParentAndChildChangesPending();
-    updateTo(0);
-    checkParentAndChildChangesPending();
     rollback(getPendingChildChange());
     checkParentChangesPendingChildRolledBack();
     rollback(getPendingParentChanges());
@@ -117,6 +116,7 @@ public abstract class ChangeTestCase extends TFSTestCase {
 
     makeOriginalState();
     checkOriginalStateAfterUpdate();
+
     makeParentChanges();
     commit(getPendingParentChanges(), "parent changes");
     checkParentChangesCommitted();
@@ -138,18 +138,30 @@ public abstract class ChangeTestCase extends TFSTestCase {
     makeOriginalState();
     checkOriginalStateAfterUpdate();
     makeChildChange();
-    commit(getPendingParentChanges(), "child change");
+    commit(getPendingChildChange(), "child change");
     checkChildChangeCommitted();
     makeParentChanges();
-    commit(getPendingParentChanges(), "parent changes");
-    checkParentAndChildChangesCommitted();
 
-    updateTo(2);
-    checkOriginalStateAfterUpdate();
-    updateTo(1);
-    checkChildChangeCommitted();
-    updateTo(0);
-    checkParentAndChildChangesCommitted();
+    final Collection<Change> parentChanges = getPendingParentChanges();
+    if (!parentChanges.isEmpty()) {
+      commit(parentChanges, "parent changes");
+      checkParentAndChildChangesCommitted();
+    }
+
+    if (parentChanges.isEmpty()) {
+      updateTo(1);
+      checkOriginalStateAfterUpdate();
+      updateTo(0);
+      checkParentAndChildChangesCommitted();
+    }
+    else {
+      updateTo(2);
+      checkOriginalStateAfterUpdate();
+      updateTo(1);
+      checkChildChangeCommitted();
+      updateTo(0);
+      checkParentAndChildChangesCommitted();
+    }
   }
 
   protected void testCommitParentChangesChildPending() throws VcsException {
@@ -182,17 +194,28 @@ public abstract class ChangeTestCase extends TFSTestCase {
     makeChildChange();
     commit(getPendingChildChange(), "child change");
     checkChildChangeCommittedParentPending();
-    commit(getPendingParentChanges(), "parent changes");
-    checkParentAndChildChangesCommitted();
 
-    updateTo(2);
-    checkOriginalStateAfterUpdate();
-    updateTo(1);
-    checkChildChangeCommitted();
-    updateTo(0);
-    checkParentAndChildChangesCommitted();
+    final Collection<Change> parentChanges = getPendingParentChanges();
+    if (!parentChanges.isEmpty()) {
+      commit(parentChanges, "parent changes");
+      checkParentAndChildChangesCommitted();
+    }
+
+    if (parentChanges.isEmpty()) {
+      updateTo(1);
+      checkOriginalStateAfterUpdate();
+      updateTo(0);
+      checkParentAndChildChangesCommitted();
+    }
+    else {
+      updateTo(2);
+      checkOriginalStateAfterUpdate();
+      updateTo(1);
+      checkChildChangeCommitted();
+      updateTo(0);
+      checkParentAndChildChangesCommitted();
+    }
   }
-
 
 
 }

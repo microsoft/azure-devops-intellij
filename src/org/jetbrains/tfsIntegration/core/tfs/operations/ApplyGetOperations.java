@@ -29,6 +29,7 @@ import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
@@ -53,9 +54,9 @@ public class ApplyGetOperations {
   private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
 
   private final boolean myOverwriteWritableFiles;
-  private OperationType myOperationType;
+  private ProcessMode myProcessMode;
 
-  public enum OperationType {
+  public enum ProcessMode {
     GET,
     UNDO,
     RESOLVE
@@ -67,20 +68,21 @@ public class ApplyGetOperations {
                              final @Nullable UpdatedFiles updatedFiles,
                              boolean allowDownload,
                              boolean overwriteWritableFiles,
-                             final OperationType operationType) {
+                             final ProcessMode operationType) {
     myWorkspace = workspace;
     myOperations = operations;
     myProgressIndicator = progressIndicator;
     myUpdatedFiles = updatedFiles;
     myAllowDownload = allowDownload;
     myOverwriteWritableFiles = overwriteWritableFiles;
-    myOperationType = operationType;
+    myProcessMode = operationType;
   }
 
   public static enum LocalConflictHandlingType {
     OVERRIDE_LOCAL_ITEM,
     REPORT_LOCAL_CONFLICT,
-    SHOW_MESSAGE
+    SHOW_MESSAGE,
+    ERROR
   }
 
   public static LocalConflictHandlingType getLocalConflictHandlingType() {
@@ -97,7 +99,7 @@ public class ApplyGetOperations {
                                                  final @Nullable UpdatedFiles updatedFiles,
                                                  boolean allowDownload,
                                                  boolean overwriteWritableFiles,
-                                                 OperationType operationType) {
+                                                 ProcessMode operationType) {
     ApplyGetOperations session =
       new ApplyGetOperations(workspace, operations, progressIndicator, updatedFiles, allowDownload, overwriteWritableFiles, operationType);
     session.execute();
@@ -291,7 +293,7 @@ public class ApplyGetOperations {
 
   private void processFileChange(final GetOperation operation) throws TfsException {
     final ChangeType changeType = ChangeType.fromString(operation.getChg());
-    boolean download = (changeType.contains(ChangeType.Value.Edit) && myOperationType != OperationType.RESOLVE) ||
+    boolean download = (changeType.contains(ChangeType.Value.Edit) && myProcessMode == ProcessMode.UNDO) ||
                        operation.getSver() != operation.getLver();
 
     File source = new File(operation.getSlocal());
@@ -328,7 +330,7 @@ public class ApplyGetOperations {
       return;
     }
 
-    if (source.isDirectory() || (source.canWrite() && myOperationType == OperationType.GET)) {
+    if (source.isDirectory() || (source.canWrite() && myProcessMode == ProcessMode.GET)) {
       if (canOverrideLocalConflictingItem(operation, true)) {
         // remove source
         if (!FileUtil.delete(source)) {
@@ -343,7 +345,7 @@ public class ApplyGetOperations {
       }
     }
 
-    if (target.canWrite() && myOperationType != OperationType.UNDO) {
+    if (target.canWrite() && myProcessMode != ProcessMode.UNDO) {
       if (!canOverrideLocalConflictingItem(operation, false)) {
         String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", target.getPath());
 
@@ -488,7 +490,6 @@ public class ApplyGetOperations {
         return false;
       }
     }
-
     return true;
   }
 
@@ -511,23 +512,37 @@ public class ApplyGetOperations {
 
   private boolean canOverrideLocalConflictingItem(final GetOperation operation, boolean sourceNotTarget) throws TfsException {
     LocalConflictHandlingType conflictHandlingType = getLocalConflictHandlingType();
-    if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
+    if (conflictHandlingType == LocalConflictHandlingType.ERROR) {
+      throw new OperationFailedException(
+        "Local conflict detected for " + (sourceNotTarget ? operation.getSlocal() : operation.getTlocal()));
+    }
+    else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
       String itemName = sourceNotTarget ? operation.getSlocal() : operation.getTlocal();
-      String message = String.format("Local conflict detected. Override local item?\n%s", itemName); // TODO: more detailed message needed
+      String message = String.format("Local conflict detected. Override local item?\n{0}", itemName); // TODO: more detailed message needed
       String title = "Modify files";
-      int res = Messages.showYesNoDialog(message, title, Messages.getQuestionIcon());
-      conflictHandlingType = (res == 0 ? LocalConflictHandlingType.OVERRIDE_LOCAL_ITEM : LocalConflictHandlingType.REPORT_LOCAL_CONFLICT);
+      int result = Messages.showYesNoDialog(message, title, Messages.getQuestionIcon());
+      if (result == 0) {
+        return true;
+      }
+      else {
+        reportLocalConflict(operation, sourceNotTarget);
+        return false;
+      }
     }
-    if (conflictHandlingType == LocalConflictHandlingType.REPORT_LOCAL_CONFLICT) {
-      // report local conflict
-      int reason = sourceNotTarget ? VersionControlServer.LOCAL_CONFLICT_REASON_SOURCE : VersionControlServer.LOCAL_CONFLICT_REASON_TARGET;
-      myWorkspace.getServer().getVCS().addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(),
-                                                        operation.getSver(),
-                                                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0,
-                                                        operation.getSlocal(), operation.getTlocal(), reason);
-      return false;
+    else if (conflictHandlingType == LocalConflictHandlingType.OVERRIDE_LOCAL_ITEM) {
+      return true;
     }
-    return true;
+    else {
+      throw new IllegalArgumentException("Unknown conflict handling type: " + conflictHandlingType);
+    }
+  }
+
+  private void reportLocalConflict(final GetOperation operation, boolean sourceNotTarget) throws TfsException {
+    int reason = sourceNotTarget ? VersionControlServer.LOCAL_CONFLICT_REASON_SOURCE : VersionControlServer.LOCAL_CONFLICT_REASON_TARGET;
+    myWorkspace.getServer().getVCS().addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(),
+                                                      operation.getSver(),
+                                                      operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0,
+                                                      operation.getSlocal(), operation.getTlocal(), reason);
   }
 
   private void updateLocalVersion(GetOperation operation) {

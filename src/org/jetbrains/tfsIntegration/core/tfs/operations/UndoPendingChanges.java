@@ -67,7 +67,7 @@ public class UndoPendingChanges {
       }
 
       final Collection<VcsException> applyingErrors =
-        ApplyGetOperations.execute(workspace, result.getResult(), null, null, allowDownload, overwriteWritableFiles, ApplyGetOperations.OperationType.UNDO);
+        ApplyGetOperations.execute(workspace, result.getResult(), null, null, allowDownload, overwriteWritableFiles, ApplyGetOperations.ProcessMode.UNDO);
       errors.addAll(applyingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }

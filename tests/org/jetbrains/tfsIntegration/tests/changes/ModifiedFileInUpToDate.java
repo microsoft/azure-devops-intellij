@@ -22,64 +22,61 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class AddedFileInUpToDate extends ChildChangeTestCase {
+public class ModifiedFileInUpToDate extends ChildChangeTestCase {
 
-  private FilePath myAddedFile;
-  private static final String FILE_CONTENT = "content";
+  private FilePath myFile;
+  private static final String FILE_ORIGINAL_CONTENT = "original content";
+  private static final String FILE_MODIFIED_CONTENT = "modified content";
 
   protected void preparePaths() {
-    myAddedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "added_file.txt"));
+    myFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "modified_file.txt"));
   }
 
   protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedFile);
+    getChanges().assertModified(myFile, FILE_ORIGINAL_CONTENT, FILE_MODIFIED_CONTENT);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    assertFile(myFile, FILE_MODIFIED_CONTENT, true);
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
     getChanges().assertTotalItems(0);
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myFile, FILE_ORIGINAL_CONTENT, false);
   }
 
   protected void checkOriginalStateAfterRollback() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertUnversioned(myAddedFile);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    checkOriginalStateAfterUpdate();
   }
 
   protected void checkChildChangeCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, false);
+    assertFile(myFile, FILE_MODIFIED_CONTENT, false);
   }
 
   protected void makeOriginalState() throws VcsException {
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-    // nothing here
+    createFileInCommand(myFile, FILE_ORIGINAL_CONTENT);
+    commit(getChanges().getChanges(), "original state");
   }
 
-  protected void makeChildChange() {
-    if (myAddedFile.getIOFile().exists()) {
-      scheduleForAddition(myAddedFile);
-    }
-    else {
-      createFileInCommand(myAddedFile, FILE_CONTENT);
-    }
+  protected void makeChildChange() throws IOException, VcsException {
+    editFiles(myFile);
+    setFileContent(myFile, FILE_MODIFIED_CONTENT);
   }
 
+  @Nullable
   protected Change getChildChange() throws VcsException {
-    return getChanges().getAddChange(myAddedFile);
+    return getChanges().getModificationChange(myFile);
   }
 
   @Test

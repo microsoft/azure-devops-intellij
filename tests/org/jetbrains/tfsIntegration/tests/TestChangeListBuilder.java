@@ -68,7 +68,11 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   }
 
   public void assertUnversioned(FilePath file) {
-    assertUnversioned(file.getIOFile().getPath());
+    Assert.assertTrue(toString(), isUnversioned(file));
+  }
+
+  public boolean isUnversioned(FilePath file) {
+    return myUnversionedFiles.contains(VcsUtil.getVirtualFile(file.getIOFile()));
   }
 
   public void assertUnversioned(VirtualFile file) {
@@ -181,6 +185,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     return ChangeHelper.getMoveChange(getChanges(), from, to);
   }
 
+  @Nullable
   public Change getModificationChange(final FilePath file) {
     return ChangeHelper.getModificationChange(getChanges(), file);
   }

@@ -58,10 +58,10 @@ public class ResolveConflictHelper {
         myWorkspace.getServer().getVCS().resolveConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), resolveConflictParams);
 
       final ArrayOfGetOperation getOperations;
-      final ApplyGetOperations.OperationType operationType;
+      final ApplyGetOperations.ProcessMode operationType;
       if (resolution == Resolution.AcceptTheirs) {
         getOperations = response.getUndoOperations();
-        operationType = ApplyGetOperations.OperationType.UNDO;
+        operationType = ApplyGetOperations.ProcessMode.UNDO;
         TFSVcs.assertTrue(response.getResolveResult().getGetOperation() == null);
       }
       else if (resolution == Resolution.AcceptYoursRenameTheirs) {
@@ -72,7 +72,7 @@ public class ResolveConflictHelper {
       }
       else { //  resolution == Resolution.AcceptMerge || resolution == Resolution.AcceptYours
         getOperations = response.getResolveResult();
-        operationType = ApplyGetOperations.OperationType.RESOLVE;
+        operationType = ApplyGetOperations.ProcessMode.RESOLVE;
         TFSVcs.assertTrue(response.getUndoOperations().getGetOperation() == null);
       }
       // TODO check for null not needed?

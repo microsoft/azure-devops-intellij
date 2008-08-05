@@ -19,6 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public abstract class ChildChangeTestCase extends TFSTestCase {
@@ -36,12 +39,13 @@ public abstract class ChildChangeTestCase extends TFSTestCase {
 
   protected abstract void makeOriginalState() throws VcsException;
 
-  protected abstract void makeChildChange();
+  protected abstract void makeChildChange() throws IOException, VcsException;
 
+  @Nullable
   protected abstract Change getChildChange() throws VcsException;
 
 
-  protected void doTest() throws VcsException {
+  protected void doTest() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
