@@ -77,8 +77,9 @@ public class ResolveConflictHelper {
       }
       // TODO check for null not needed?
       if (getOperations != null && getOperations.getGetOperation() != null) {
-        ApplyGetOperations.execute(myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, null, true,
-                                   resolution == Resolution.AcceptTheirs, operationType);
+        ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
+          .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
+        ApplyGetOperations.execute(myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, null, downloadMode, operationType);
       }
     }
     catch (TfsException e) {

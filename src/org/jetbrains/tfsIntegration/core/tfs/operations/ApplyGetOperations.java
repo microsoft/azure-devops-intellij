@@ -43,18 +43,25 @@ import java.util.Collection;
 import java.util.List;
 
 
+@SuppressWarnings({"HardCodedStringLiteral"})
 public class ApplyGetOperations {
+  private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
+
+
   private final WorkspaceInfo myWorkspace;
   private final Collection<GetOperation> myOperations;
   private final @Nullable ProgressIndicator myProgressIndicator;
   private final @Nullable UpdatedFiles myUpdatedFiles;
   private final Collection<VcsException> myErrors = new ArrayList<VcsException>();
   private final Collection<LocalVersionUpdate> myUpdateLocalVersions = new ArrayList<LocalVersionUpdate>();
-  private final boolean myAllowDownload;
-  private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
+  private final DownloadMode myDownloadMode;
+  private final ProcessMode myProcessMode;
 
-  private final boolean myOverwriteWritableFiles;
-  private ProcessMode myProcessMode;
+  public enum DownloadMode {
+    FORCE,
+    ALLOW,
+    FORBID
+  }
 
   public enum ProcessMode {
     GET,
@@ -62,27 +69,25 @@ public class ApplyGetOperations {
     RESOLVE
   }
 
-  private ApplyGetOperations(WorkspaceInfo workspace,
-                             Collection<GetOperation> operations,
-                             final @Nullable ProgressIndicator progressIndicator,
-                             final @Nullable UpdatedFiles updatedFiles,
-                             boolean allowDownload,
-                             boolean overwriteWritableFiles,
-                             final ProcessMode operationType) {
-    myWorkspace = workspace;
-    myOperations = operations;
-    myProgressIndicator = progressIndicator;
-    myUpdatedFiles = updatedFiles;
-    myAllowDownload = allowDownload;
-    myOverwriteWritableFiles = overwriteWritableFiles;
-    myProcessMode = operationType;
-  }
-
-  public static enum LocalConflictHandlingType {
+  public enum LocalConflictHandlingType {
     OVERRIDE_LOCAL_ITEM,
     REPORT_LOCAL_CONFLICT,
     SHOW_MESSAGE,
     ERROR
+  }
+
+  private ApplyGetOperations(WorkspaceInfo workspace,
+                             Collection<GetOperation> operations,
+                             final @Nullable ProgressIndicator progressIndicator,
+                             final @Nullable UpdatedFiles updatedFiles,
+                             final DownloadMode downloadMode,
+                             final ProcessMode processMode) {
+    myWorkspace = workspace;
+    myOperations = operations;
+    myProgressIndicator = progressIndicator;
+    myUpdatedFiles = updatedFiles;
+    myDownloadMode = downloadMode;
+    myProcessMode = processMode;
   }
 
   public static LocalConflictHandlingType getLocalConflictHandlingType() {
@@ -97,11 +102,10 @@ public class ApplyGetOperations {
                                                  Collection<GetOperation> operations,
                                                  final @Nullable ProgressIndicator progressIndicator,
                                                  final @Nullable UpdatedFiles updatedFiles,
-                                                 boolean allowDownload,
-                                                 boolean overwriteWritableFiles,
+                                                 DownloadMode downloadMode,
                                                  ProcessMode operationType) {
     ApplyGetOperations session =
-      new ApplyGetOperations(workspace, operations, progressIndicator, updatedFiles, allowDownload, overwriteWritableFiles, operationType);
+      new ApplyGetOperations(workspace, operations, progressIndicator, updatedFiles, downloadMode, operationType);
     session.execute();
     return session.myErrors;
   }
@@ -255,12 +259,11 @@ public class ApplyGetOperations {
     }
 
     boolean fileExists = target.exists();
-    if (!fileExists && operation.getDurl() != null) {
+    if (operation.getDurl() != null) {
       downloadFile(operation);
     }
 
     updateLocalVersion(operation);
-
     addToGroup(fileExists ? FileGroup.UPDATED_ID : FileGroup.RESTORED_ID, target);
   }
 
@@ -293,8 +296,8 @@ public class ApplyGetOperations {
 
   private void processFileChange(final GetOperation operation) throws TfsException {
     final ChangeType changeType = ChangeType.fromString(operation.getChg());
-    boolean download = (changeType.contains(ChangeType.Value.Edit) && myProcessMode == ProcessMode.UNDO) ||
-                       operation.getSver() != operation.getLver();
+    boolean download =
+      operation.getSver() != operation.getLver() || (myProcessMode == ProcessMode.UNDO && changeType.contains(ChangeType.Value.Edit));
 
     File source = new File(operation.getSlocal());
     File target = new File(operation.getTlocal());
@@ -302,7 +305,7 @@ public class ApplyGetOperations {
     boolean rename = !source.equals(target);
 
     if (!rename && !download) {
-      if (myOverwriteWritableFiles && operation.getDurl() != null) {
+      if (myDownloadMode == DownloadMode.FORCE && operation.getDurl() != null) {
         if (!target.getParentFile().exists() && !createFolder(target.getParentFile())) {
           String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getParentFile().getPath());
           myErrors.add(new VcsException(errorMessage));
@@ -325,12 +328,11 @@ public class ApplyGetOperations {
     if (target.isDirectory()) {
       // Note: TFC does not report local conflict in this case
       String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with same name exists", target.getPath());
-
       myErrors.add(new VcsException(errorMessage));
       return;
     }
 
-    if (source.isDirectory() || (source.canWrite() && myProcessMode == ProcessMode.GET)) {
+    if (source.isDirectory() || (source.canWrite() && myProcessMode != ProcessMode.UNDO)) {
       if (canOverrideLocalConflictingItem(operation, true)) {
         // remove source
         if (!FileUtil.delete(source)) {
@@ -354,30 +356,26 @@ public class ApplyGetOperations {
       }
     }
 
-    if (rename && !download && source.exists()) { // rename only, source must exist
+    if (rename && !download && source.exists()) {
       if (source.renameTo(target)) {
         addToGroup(FileGroup.UPDATED_ID, target);
         updateLocalVersion(operation);
       }
       else {
         String errorMessage = MessageFormat.format("Failed to rename file ''{0}'' to ''{1}''", source.getPath(), target.getPath());
-
         myErrors.add(new VcsException(errorMessage));
       }
     }
-    else { // rename && download
+    else {
       if (rename && !FileUtil.delete(source)) {
         String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", source.getPath());
-
         myErrors.add(new VcsException(errorMessage));
         return;
       }
 
       if (operation.getDurl() != null) {
         downloadFile(operation);
-        //if (rename || !changeType.contains(ChangeType.Value.Edit)) {
         updateLocalVersion(operation);
-        //}
         addToGroup(FileGroup.UPDATED_ID, target);
       }
     }
@@ -434,7 +432,7 @@ public class ApplyGetOperations {
 
         // don't create folder if undoing locally missing scheduled for addition folder
         if (!ChangeType.fromString(operation.getChg()).contains(ChangeType.Value.Add) &&
-            (!source.equals(target) || myOverwriteWritableFiles)) {
+            (!source.equals(target) || myDownloadMode == DownloadMode.FORCE)) {
           if (createFolder(target)) {
             addToGroup(FileGroup.CREATED_ID, target);
           }
@@ -494,11 +492,11 @@ public class ApplyGetOperations {
   }
 
   private boolean createFolder(File target) {
-    return !myAllowDownload || target.mkdirs();
+    return myDownloadMode == DownloadMode.FORBID || target.mkdirs();
   }
 
   private void downloadFile(final GetOperation operation) throws TfsException {
-    if (!myAllowDownload) {
+    if (myDownloadMode == DownloadMode.FORBID) {
       return;
     }
     final File target = new File(operation.getTlocal());
@@ -518,7 +516,8 @@ public class ApplyGetOperations {
     }
     else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
       String itemName = sourceNotTarget ? operation.getSlocal() : operation.getTlocal();
-      String message = String.format("Local conflict detected. Override local item?\n{0}", itemName); // TODO: more detailed message needed
+      String message =
+        MessageFormat.format("Local conflict detected. Override local item?\n {0}", itemName); // TODO: more detailed message needed
       String title = "Modify files";
       int result = Messages.showYesNoDialog(message, title, Messages.getQuestionIcon());
       if (result == 0) {

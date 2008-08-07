@@ -81,8 +81,9 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
 
-          final Collection<VcsException> applyErrors =
-            ApplyGetOperations.execute(workspace, operations, progressIndicator, null, true, false, ApplyGetOperations.ProcessMode.GET);
+          final Collection<VcsException> applyErrors = ApplyGetOperations.execute(workspace, operations, progressIndicator, null,
+                                                                                  ApplyGetOperations.DownloadMode.ALLOW,
+                                                                                  ApplyGetOperations.ProcessMode.GET);
           errors.addAll(applyErrors);
         }
         catch (TfsException e) {

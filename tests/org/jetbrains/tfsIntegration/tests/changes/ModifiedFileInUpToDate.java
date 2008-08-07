@@ -17,12 +17,11 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
-import org.junit.Test;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +30,6 @@ import java.io.IOException;
 public class ModifiedFileInUpToDate extends ChildChangeTestCase {
 
   private FilePath myFile;
-  private static final String FILE_ORIGINAL_CONTENT = "original content";
-  private static final String FILE_MODIFIED_CONTENT = "modified content";
 
   protected void preparePaths() {
     myFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "modified_file.txt"));
@@ -40,16 +37,16 @@ public class ModifiedFileInUpToDate extends ChildChangeTestCase {
 
   protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertModified(myFile, FILE_ORIGINAL_CONTENT, FILE_MODIFIED_CONTENT);
+    getChanges().assertModified(myFile, ORIGINAL_CONTENT, MODIFIED_CONTENT);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myFile, FILE_MODIFIED_CONTENT, true);
+    assertFile(myFile, MODIFIED_CONTENT, true);
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
     getChanges().assertTotalItems(0);
     assertFolder(mySandboxRoot, 1);
-    assertFile(myFile, FILE_ORIGINAL_CONTENT, false);
+    assertFile(myFile, ORIGINAL_CONTENT, false);
   }
 
   protected void checkOriginalStateAfterRollback() throws VcsException {
@@ -60,18 +57,17 @@ public class ModifiedFileInUpToDate extends ChildChangeTestCase {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myFile, FILE_MODIFIED_CONTENT, false);
+    assertFile(myFile, MODIFIED_CONTENT, false);
   }
 
   protected void makeOriginalState() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-    createFileInCommand(myFile, FILE_ORIGINAL_CONTENT);
+    createFileInCommand(myFile, ORIGINAL_CONTENT);
     commit(getChanges().getChanges(), "original state");
   }
 
   protected void makeChildChange() throws IOException, VcsException {
     editFiles(myFile);
-    setFileContent(myFile, FILE_MODIFIED_CONTENT);
+    setFileContent(myFile, MODIFIED_CONTENT);
   }
 
   @Nullable

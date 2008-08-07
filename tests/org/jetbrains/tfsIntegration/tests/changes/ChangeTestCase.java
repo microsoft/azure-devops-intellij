@@ -19,27 +19,26 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public abstract class ChangeTestCase extends TFSTestCase {
 
-  protected abstract void preparePaths();
+  protected static final String ORIGINAL_CONTENT = "original content";
+  protected static final String MODIFIED_CONTENT = "modified content";
+  protected static final String FILE_CONTENT = "file_content";
 
-  protected abstract void checkParentChangesPending() throws VcsException;
+
+  protected abstract void preparePaths();
 
   protected abstract void checkParentChangesPendingChildRolledBack() throws VcsException;
 
   protected abstract void checkChildChangePendingParentRolledBack() throws VcsException;
 
-  protected abstract void checkChildChangePending() throws VcsException;
-
   protected abstract void checkParentAndChildChangesPending() throws VcsException;
-
-  protected abstract void checkOriginalStateAfterRollbackParent() throws VcsException;
-
-  protected abstract void checkOriginalStateAfterRollbackChild() throws VcsException;
 
   protected abstract void checkOriginalStateAfterRollbackParentChild() throws VcsException;
 
@@ -60,58 +59,41 @@ public abstract class ChangeTestCase extends TFSTestCase {
 
   protected abstract void makeParentChanges() throws VcsException;
 
-  protected abstract void makeChildChange() throws VcsException;
+  protected abstract void makeChildChange(boolean parentChangesMade) throws VcsException, IOException;
 
   protected abstract Collection<Change> getPendingParentChanges() throws VcsException;
 
-  protected abstract Change getPendingChildChange() throws VcsException;
+  @Nullable
+  protected abstract Change getPendingChildChange(boolean parentChangesMade) throws VcsException;
 
 
-  protected void doTestPendingAndRollback() throws VcsException {
+  protected void doTestPendingAndRollback() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
     checkOriginalStateAfterUpdate();
 
-    // there's no need to make parent changes without child, this case is covered by test 'parent changes in up to date'
-    // check parent changes
-    //makeParentChanges();
-    //checkParentChangesPending();
-    //updateTo(0);
-    //checkParentChangesPending();
-    //rollback(getPendingParentChanges());
-    //checkOriginalStateAfterRollbackParent();
-
-    // check child change
-    makeChildChange();
-    checkChildChangePending();
-    updateTo(0);
-    checkChildChangePending();
-    rollback(getPendingChildChange());
-    checkOriginalStateAfterRollbackChild();
-
-    // check both in different order
     makeParentChanges();
-    makeChildChange();
+    makeChildChange(true);
     checkParentAndChildChangesPending();
     updateTo(0);
     checkParentAndChildChangesPending();
     rollback(getPendingParentChanges());
     checkChildChangePendingParentRolledBack();
-    rollback(getPendingChildChange());
+    rollback(getPendingChildChange(false));
     checkOriginalStateAfterRollbackParentChild();
 
-    makeChildChange();
+    makeChildChange(false);
     makeParentChanges();
     checkParentAndChildChangesPending();
-    rollback(getPendingChildChange());
+    rollback(getPendingChildChange(true));
     checkParentChangesPendingChildRolledBack();
     rollback(getPendingParentChanges());
     checkOriginalStateAfterRollbackParentChild();
   }
 
 
-  protected void testCommitParentThenChildChanges() throws VcsException {
+  protected void testCommitParentThenChildChanges() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
@@ -120,8 +102,8 @@ public abstract class ChangeTestCase extends TFSTestCase {
     makeParentChanges();
     commit(getPendingParentChanges(), "parent changes");
     checkParentChangesCommitted();
-    makeChildChange();
-    commit(getPendingChildChange(), "child change");
+    makeChildChange(true);
+    commit(getPendingChildChange(true), "child change");
     checkParentAndChildChangesCommitted();
 
     updateTo(2);
@@ -132,13 +114,13 @@ public abstract class ChangeTestCase extends TFSTestCase {
     checkParentAndChildChangesCommitted();
   }
 
-  protected void testCommitChildThenParentChanges() throws VcsException {
+  protected void testCommitChildThenParentChanges() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
     checkOriginalStateAfterUpdate();
-    makeChildChange();
-    commit(getPendingChildChange(), "child change");
+    makeChildChange(false);
+    commit(getPendingChildChange(false), "child change");
     checkChildChangeCommitted();
     makeParentChanges();
 
@@ -164,17 +146,16 @@ public abstract class ChangeTestCase extends TFSTestCase {
     }
   }
 
-  protected void testCommitParentChangesChildPending() throws VcsException {
+  protected void testCommitParentChangesChildPending() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
     checkOriginalStateAfterUpdate();
     makeParentChanges();
-    makeChildChange();
+    makeChildChange(true);
     commit(getPendingParentChanges(), "parent changes");
     checkParentChangesCommittedChildPending();
-    makeChildChange();
-    commit(getPendingChildChange(), "child change");
+    commit(getPendingChildChange(true), "child change");
     checkParentAndChildChangesCommitted();
 
     updateTo(2);
@@ -185,14 +166,14 @@ public abstract class ChangeTestCase extends TFSTestCase {
     checkParentAndChildChangesCommitted();
   }
 
-  protected void testCommitChildChangesParentPending() throws VcsException {
+  protected void testCommitChildChangesParentPending() throws VcsException, IOException {
     preparePaths();
 
     makeOriginalState();
     checkOriginalStateAfterUpdate();
     makeParentChanges();
-    makeChildChange();
-    commit(getPendingChildChange(), "child change");
+    makeChildChange(true);
+    commit(getPendingChildChange(true), "child change");
     checkChildChangeCommittedParentPending();
 
     final Collection<Change> parentChanges = getPendingParentChanges();

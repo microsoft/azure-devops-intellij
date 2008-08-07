@@ -16,13 +16,12 @@
 
 package org.jetbrains.tfsIntegration.tests.changes;
 
-import org.junit.Test;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
-import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.VcsConfiguration;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
+import org.junit.Test;
 
 import java.io.File;
 
@@ -32,8 +31,6 @@ public class MovedFolder extends TFSTestCase {
 
   @Test
   public void testMovedFolderFromUpToDateToUpToDate() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-
     final String foldernameOriginal = "Folder_Original";
     FilePath folderOriginal = TfsFileUtil.getFilePath(createDirInCommand(mySandboxRoot, foldernameOriginal));
     FilePath subfolder = TfsFileUtil.getFilePath(createDirInCommand(mySandboxRoot, "subfolder"));

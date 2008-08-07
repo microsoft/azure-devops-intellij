@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
@@ -64,7 +63,6 @@ public class AddedFolderInUpToDate extends ChildChangeTestCase {
   }
 
   protected void makeOriginalState() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     // nothing here
   }
 

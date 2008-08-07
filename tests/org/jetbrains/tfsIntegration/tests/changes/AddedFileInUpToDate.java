@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
@@ -30,7 +29,6 @@ import java.io.IOException;
 public class AddedFileInUpToDate extends ChildChangeTestCase {
 
   private FilePath myAddedFile;
-  private static final String FILE_CONTENT = "content";
 
   protected void preparePaths() {
     myAddedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "added_file.txt"));
@@ -65,7 +63,6 @@ public class AddedFileInUpToDate extends ChildChangeTestCase {
   }
 
   protected void makeOriginalState() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     // nothing here
   }
 

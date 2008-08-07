@@ -109,8 +109,9 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 }
               }
               final Collection<VcsException> applyErrors = ApplyGetOperations
-                .execute(workspace, operations, progressIndicator, updatedFiles, true, true, ApplyGetOperations.ProcessMode.GET);
-              exceptions.addAll(applyErrors);
+                .execute(workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW,
+                         ApplyGetOperations.ProcessMode.GET);
+                exceptions.addAll(applyErrors);
             }
             // TODO content roots can be renamed while executing
             TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);

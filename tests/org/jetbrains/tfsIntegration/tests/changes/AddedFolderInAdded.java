@@ -17,16 +17,15 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-
 
 // see remarks for AddedFileInAdded test case
 
@@ -40,14 +39,6 @@ public class AddedFolderInAdded extends ChangeTestCase {
     myAddedChildFolder = VcsUtil.getFilePath(new File(new File(myAddedParentFolder.getPath()), "AddedSubfolder"));
   }
 
-  protected void checkParentChangesPending() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedParentFolder);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 0);
-  }
-
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {
     getChanges().assertTotalItems(2);
     getChanges().assertScheduledForAddition(myAddedParentFolder);
@@ -59,10 +50,6 @@ public class AddedFolderInAdded extends ChangeTestCase {
   }
 
   protected void checkChildChangePendingParentRolledBack() throws VcsException {
-    checkChildChangePending();
-  }
-
-  protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(2);
     getChanges().assertUnversioned(myAddedParentFolder);
     getChanges().assertScheduledForAddition(myAddedChildFolder);
@@ -80,18 +67,6 @@ public class AddedFolderInAdded extends ChangeTestCase {
     assertFolder(mySandboxRoot, 1);
     assertFolder(myAddedParentFolder, 1);
     assertFolder(myAddedChildFolder, 0);
-  }
-
-  protected void checkOriginalStateAfterRollbackParent() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertUnversioned(myAddedParentFolder);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 0);
-  }
-
-  protected void checkOriginalStateAfterRollbackChild() throws VcsException {
-    checkOriginalStateAfterRollbackParentChild();
   }
 
   protected void checkOriginalStateAfterRollbackParentChild() throws VcsException {
@@ -142,7 +117,6 @@ public class AddedFolderInAdded extends ChangeTestCase {
   }
 
   protected void makeOriginalState() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
   }
 
   protected void makeParentChanges() throws VcsException {
@@ -156,9 +130,11 @@ public class AddedFolderInAdded extends ChangeTestCase {
     }
   }
 
-  protected void makeChildChange() throws VcsException {
-    myAddedParentFolder.getIOFile().mkdirs();
-    refreshAll();
+  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
+    if (!parentChangeMade) {
+      myAddedParentFolder.getIOFile().mkdirs();
+      refreshAll();
+    }
 
     if (myAddedChildFolder.getIOFile().exists()) {
       scheduleForAddition(myAddedChildFolder);
@@ -173,32 +149,32 @@ public class AddedFolderInAdded extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange() throws VcsException {
+  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
     return getChanges().getAddChange(myAddedChildFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException {
+  public void doTestPendingAndRollback() throws VcsException, IOException {
     super.doTestPendingAndRollback();
   }
 
   @Test
-  public void testCommitParentThenChildChanges() throws VcsException {
+  public void testCommitParentThenChildChanges() throws VcsException, IOException {
     super.testCommitParentThenChildChanges();
   }
 
   @Test
-  public void testCommitChildThenParentChanges() throws VcsException {
+  public void testCommitChildThenParentChanges() throws VcsException, IOException {
     super.testCommitChildThenParentChanges();
   }
 
   @Test
-  public void testCommitParentChangesChildPending() throws VcsException {
+  public void testCommitParentChangesChildPending() throws VcsException, IOException {
     super.testCommitParentChangesChildPending();
   }
 
   @Test
-  public void testCommitChildChangesParentPending() throws VcsException {
+  public void testCommitChildChangesParentPending() throws VcsException, IOException {
     super.testCommitChildChangesParentPending();
   }
 

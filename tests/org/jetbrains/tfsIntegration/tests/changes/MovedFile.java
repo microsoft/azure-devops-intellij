@@ -16,13 +16,12 @@
 
 package org.jetbrains.tfsIntegration.tests.changes;
 
-import org.junit.Test;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
-import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.VcsConfiguration;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
+import org.junit.Test;
 
 import java.io.File;
 
@@ -33,8 +32,6 @@ public class MovedFile extends TFSTestCase {
 
   @Test
   public void testMovedFileFromUpToDateToUpToDate() throws VcsException {
-    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-
     final String fileContent = "content";
     final String filenameOriginal = "file_original.txt";
     FilePath fileOriginal = TfsFileUtil.getFilePath(createFileInCommand(mySandboxRoot, filenameOriginal, fileContent));

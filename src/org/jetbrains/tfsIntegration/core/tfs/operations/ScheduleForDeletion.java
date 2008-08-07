@@ -32,7 +32,7 @@ public class ScheduleForDeletion {
 
   public static Collection<VcsException> execute(Project project, WorkspaceInfo workspace, List<ItemPath> paths) {
     // choose roots
-    // recursivaly undo pending changes except schedule for deletion => map: modified_name->original_name
+    // recursively undo pending changes except schedule for deletion => map: modified_name->original_name
     // schedule roots for deletion using their original names (+updateLocalVersion)
 
     Collection<VcsException> errors = new ArrayList<VcsException>();
@@ -52,7 +52,8 @@ public class ScheduleForDeletion {
         }
       }
 
-      final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(workspace, revert, false, false, false);
+      final UndoPendingChanges.UndoPendingChangesResult undoResult =
+        UndoPendingChanges.execute(workspace, revert, ApplyGetOperations.DownloadMode.FORBID);
       errors.addAll(undoResult.errors);
 
       List<ItemPath> undoneRoots = new ArrayList<ItemPath>(roots.size());

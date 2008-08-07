@@ -26,6 +26,11 @@ import java.io.IOException;
 @SuppressWarnings({"HardCodedStringLiteral"})
 public abstract class ChildChangeTestCase extends TFSTestCase {
 
+  protected static final String ORIGINAL_CONTENT = "original content";
+  protected static final String MODIFIED_CONTENT = "modified content";
+  protected static final String FILE_CONTENT = "file_content";
+
+  
   protected abstract void preparePaths();
 
   protected abstract void checkChildChangePending() throws VcsException;

@@ -105,6 +105,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot));
 
     ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.ERROR);
+
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
   }
 
   private void prepareServer() throws URISyntaxException, TfsException {
@@ -433,6 +435,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected void moveFileInCommand(final FilePath file, final VirtualFile newParent) {
     moveFileInCommand(VcsUtil.getVirtualFile(file.getIOFile()), newParent);
+  }
+
+  protected void moveFileInCommand(final FilePath file, final FilePath newParent) {
+    moveFileInCommand(file, VcsUtil.getVirtualFile(newParent.getIOFile()));
   }
 
   protected void deleteFileInCommand(final VirtualFile file) {

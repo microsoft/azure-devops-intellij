@@ -647,8 +647,9 @@ public class VersionControlServer {
     return localVersionUpdate;
   }
 
-  public void updateLocalVersionsByGetOperations(final String workspaceName, final String workspaceOwnerName, final Collection<GetOperation> getOperations)
-    throws TfsException {
+  public void updateLocalVersionsByGetOperations(final String workspaceName,
+                                                 final String workspaceOwnerName,
+                                                 final Collection<GetOperation> getOperations) throws TfsException {
     List<LocalVersionUpdate> localVersionUpdates = new ArrayList<LocalVersionUpdate>(getOperations.size());
     for (GetOperation operation : getOperations) {
       localVersionUpdates.add(getLocalVersionUpdate(operation));
@@ -673,11 +674,10 @@ public class VersionControlServer {
 
   public ResultWithFailures<GetOperation> undoPendingChanges(final String workspaceName,
                                                              final String workspaceOwner,
-                                                             final Collection<ItemPath> paths,
-                                                             boolean recursive) throws TfsException {
+                                                             final Collection<ItemPath> paths) throws TfsException {
     List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
     for (ItemPath itemPath : paths) {
-      itemSpecs.add(createItemSpec(itemPath.getServerPath(), recursive ? RecursionType.Full : null));
+      itemSpecs.add(createItemSpec(itemPath.getServerPath(), null));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));

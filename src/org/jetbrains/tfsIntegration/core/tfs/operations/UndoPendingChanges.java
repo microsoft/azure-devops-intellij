@@ -42,8 +42,7 @@ public class UndoPendingChanges {
 
   public static UndoPendingChangesResult execute(final WorkspaceInfo workspace,
                                                  final Collection<ItemPath> paths,
-                                                 boolean allowDownload,
-                                                 boolean recursive, boolean overwriteWritableFiles) {
+                                                 ApplyGetOperations.DownloadMode downloadMode) {
     if (paths.isEmpty()) {
       return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
@@ -51,7 +50,7 @@ public class UndoPendingChanges {
     // undo changes
     try {
       ResultWithFailures<GetOperation> result =
-        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths, recursive);
+        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths);
 
       Collection<VcsException> errors = new ArrayList<VcsException>();
       errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
@@ -67,7 +66,7 @@ public class UndoPendingChanges {
       }
 
       final Collection<VcsException> applyingErrors =
-        ApplyGetOperations.execute(workspace, result.getResult(), null, null, allowDownload, overwriteWritableFiles, ApplyGetOperations.ProcessMode.UNDO);
+        ApplyGetOperations.execute(workspace, result.getResult(), null, null, downloadMode, ApplyGetOperations.ProcessMode.UNDO);
       errors.addAll(applyingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }
