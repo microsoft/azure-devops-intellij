@@ -43,6 +43,8 @@ import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinResult;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -94,7 +96,12 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
 
     initProject(localRoot);
-    mySandboxRoot = createDirInCommand(myWorkingCopyDir, SANDBOX_PREFIX + Workstation.getComputerName() + "_" + localRoot.getName(), true);
+    mySandboxRoot = createDirInCommand(myWorkingCopyDir, SANDBOX_PREFIX +
+                                                         Workstation.getComputerName() +
+                                                         "_" +
+                                                         localRoot.getName() +
+                                                         "_" +
+                                                         Calendar.getInstance().getTimeInMillis(), true);
 
     prepareServer();
 
@@ -102,11 +109,12 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
     createNewWorkspaceFor(localRoot);
 
-    createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot));
+    createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot), "sandbox " + mySandboxRoot.getName() + "created");
 
     ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.ERROR);
 
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
   }
 
   private void prepareServer() throws URISyntaxException, TfsException {
@@ -199,23 +207,24 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return changeListBuilder;
   }
 
-  protected VirtualFile createFolderInSandbox(String name) throws TfsException {
-    return createLocalAndServerFolder(mySandboxRoot, name);
-  }
+  private void createServerFolder(FilePath path, String comment) throws VcsException {
+    try {
+      ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathByLocalPath(path));
+      final ResultWithFailures<GetOperation> addResult = myTestWorkspace.getServer().getVCS()
+        .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
+      if (!addResult.getFailures().isEmpty()) {
+        throw BeanHelper.getVcsException(addResult.getFailures().iterator().next());
+      }
 
-  private VirtualFile createLocalAndServerFolder(VirtualFile parent, String name) throws TfsException {
-    FilePath filePath = VcsUtil.getFilePath(new File(new File(parent.getPath()), name));
-    createServerFolder(filePath);
-    doNothingSilently(VcsConfiguration.StandardConfirmation.ADD);
-    return createDirInCommand(parent, name);
-  }
-
-  private void createServerFolder(FilePath path) throws TfsException {
-    ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathByLocalPath(path));
-    myTestWorkspace.getServer().getVCS()
-      .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
-    myTestWorkspace.getServer().getVCS().checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(),
-                                                 Collections.singletonList(itemPath.getServerPath()), path.getPath() + "  created");
+      final ResultWithFailures<CheckinResult> checkinResult = myTestWorkspace.getServer().getVCS()
+        .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment);
+      if (!checkinResult.getFailures().isEmpty()) {
+        throw BeanHelper.getVcsException(checkinResult.getFailures().iterator().next());
+      }
+    }
+    catch (TfsException e) {
+      throw new VcsException(e);
+    }
   }
 
   //private void deleteServerFolder(FilePath path) throws TfsException {
@@ -467,7 +476,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return result;
   }
 
-  protected String getUsername() {
+  protected static String getUsername() {
     return DOMAIN + "\\" + USER;
   }
 
@@ -493,10 +502,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected static void assertFile(FilePath file, String content, boolean writable) {
     assertFile(file.getIOFile(), content, writable);
-  }
-
-  protected static void assertNotExists(FilePath file) {
-    Assert.assertFalse(file.getIOFile().exists());
   }
 
   protected static void assertFile(VirtualFile file, String content, boolean writable) {
@@ -533,9 +538,11 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected int getLatestRevisionNumber(VirtualFile file) throws VcsException {
     final RepositoryLocation location = getVcs().getCommittedChangesProvider().getLocationFor(TfsFileUtil.getFilePath(file));
-    ChangeBrowserSettings settings = new ChangeBrowserSettings();
 
-    final List<TFSChangeList> historyList = getVcs().getCommittedChangesProvider().getCommittedChanges(settings, location, 0);
+    // maxCount = 0 here to test that ALL the history is accessed properly
+    // TODO do this explicitly
+    final List<TFSChangeList> historyList =
+      getVcs().getCommittedChangesProvider().getCommittedChanges(new ChangeBrowserSettings(), location, 0);
     return (int)historyList.get(0).getNumber();
   }
 

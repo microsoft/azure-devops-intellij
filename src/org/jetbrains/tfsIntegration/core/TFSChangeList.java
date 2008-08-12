@@ -66,6 +66,7 @@ public class TFSChangeList implements CommittedChangeList {
     myDate = date;
     myComment = comment != null ? comment : "";
     myVcs = vcs;
+    // TODO: load changes lazily?
     loadChanges(location);
   }
 
@@ -120,7 +121,7 @@ public class TFSChangeList implements CommittedChangeList {
     if (changeType.contains(ChangeType.Value.Rename)) {
       List<Changeset> fileHistory = repositoryLocation.getWorkspace().getServer().getVCS().queryHistory(
         repositoryLocation.getWorkspace().getName(), repositoryLocation.getWorkspace().getOwnerName(), change.getItem().getItem(),
-        Integer.MIN_VALUE, null, new ChangesetVersionSpec(changeset), new ChangesetVersionSpec(1),
+        change.getItem().getDid(), null, new ChangesetVersionSpec(changeset), new ChangesetVersionSpec(1),
         new ChangesetVersionSpec(change.getItem().getCs()), 2, RecursionType.None);
       TFSVcs.assertTrue(fileHistory.size() == 2);
 

@@ -27,153 +27,139 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
-// REMARKS:
-// 1. add file without parent folder -> only file sheduled for addition, not pending change for parent,
-// but TFC shows folder as added too
-// 2. when commiting son's addition parent folder is not mentioned, but it appeares as up to date after commit and in commit details
-// 3. when parent and child added, and pending change for parent reverted, in TFC after refresh it looks like case 1 
-
-// TODO show parent report unversioned folder as added if some of its children is added (remark 1) ?
-
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class AddedFileInAdded extends ChangeTestCase {
-  private FilePath myAddedParentFolder;
-  private FilePath myAddedChildFile;
+public class DeletedFolderInRenamed extends ChangeTestCase {
+  private FilePath myOriginalParentFolder;
+  private FilePath myRenamedParentFolder;
+  private FilePath myDeletedFolderOriginalFolder;
+  private FilePath myDeletedFolderInRenamedFolder;
 
   protected void preparePaths() {
-    myAddedParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "AddedFolder"));
-    myAddedChildFile = VcsUtil.getFilePath(new File(new File(myAddedParentFolder.getPath()), "added_file.txt"));
+    myOriginalParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "OriginalFolder"));
+    myRenamedParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "RenamedFolder"));
+
+    final String filename = "DeletedSubfolder";
+    myDeletedFolderOriginalFolder = VcsUtil.getFilePath(new File(myOriginalParentFolder.getIOFile(), filename));
+    myDeletedFolderInRenamedFolder = VcsUtil.getFilePath(new File(myRenamedParentFolder.getIOFile(), filename));
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {
-    getChanges().assertTotalItems(2);
-    getChanges().assertScheduledForAddition(myAddedParentFolder);
-    getChanges().assertUnversioned(myAddedChildFile);
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myRenamedParentFolder, 1);
+    assertFolder(myDeletedFolderInRenamedFolder, 0);
   }
 
   protected void checkChildChangePendingParentRolledBack() throws VcsException {
-    getChanges().assertTotalItems(2);
-    getChanges().assertUnversioned(myAddedParentFolder); // see remark 1
-    getChanges().assertScheduledForAddition(myAddedChildFile);
+    getChanges().assertTotalItems(1);
+    getChanges().assertScheduledForDeletion(myDeletedFolderOriginalFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myOriginalParentFolder, 0);
   }
 
   protected void checkParentAndChildChangesPending() throws VcsException {
     getChanges().assertTotalItems(2);
-    getChanges().assertScheduledForAddition(myAddedParentFolder);
-    getChanges().assertScheduledForAddition(myAddedChildFile);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+    getChanges().assertScheduledForDeletion(myDeletedFolderInRenamedFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myRenamedParentFolder, 0);
   }
 
   protected void checkOriginalStateAfterRollbackParentChild() throws VcsException {
-    getChanges().assertTotalItems(2);
-    getChanges().assertUnversioned(myAddedParentFolder);
-    getChanges().assertUnversioned(myAddedChildFile);
+    getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myOriginalParentFolder, 1);
+    assertFolder(myDeletedFolderOriginalFolder, 0);
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
     getChanges().assertTotalItems(0);
-    assertFolder(mySandboxRoot, 0);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myOriginalParentFolder, 1);
+    assertFolder(myDeletedFolderOriginalFolder, 0);
   }
 
   protected void checkParentChangesCommittedChildPending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedChildFile);
+    getChanges().assertScheduledForDeletion(myDeletedFolderInRenamedFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myRenamedParentFolder, 0);
   }
 
   protected void checkChildChangeCommittedParentPending() throws VcsException {
-    checkParentAndChildChangesCommitted(); // see remark 2
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myRenamedParentFolder, 0);
   }
 
   protected void checkParentChangesPending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedParentFolder);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 0);
+    assertFolder(myRenamedParentFolder, 1);
+    assertFolder(myDeletedFolderInRenamedFolder, 0);
   }
 
   protected void checkChildChangePending() throws VcsException {
-    getChanges().assertTotalItems(2);
-    getChanges().assertUnversioned(myAddedParentFolder); // see remark 1
-    getChanges().assertScheduledForAddition(myAddedChildFile);
+    getChanges().assertTotalItems(1);
+    getChanges().assertScheduledForDeletion(myDeletedFolderOriginalFolder);
+
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, true);
+    assertFolder(myOriginalParentFolder, 0);
   }
 
   protected void checkParentChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 0);
+    assertFolder(myRenamedParentFolder, 1);
+    assertFolder(myDeletedFolderInRenamedFolder, 0);
   }
 
   protected void checkChildChangeCommitted() throws VcsException {
-    checkParentAndChildChangesCommitted(); // see remark 2
+    getChanges().assertTotalItems(0);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myOriginalParentFolder, 0);
   }
 
   protected void checkParentAndChildChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFolder(myAddedParentFolder, 1);
-    assertFile(myAddedChildFile, FILE_CONTENT, false);
+    assertFolder(myRenamedParentFolder, 0);
   }
 
   protected void makeOriginalState() throws VcsException {
+    createDirInCommand(myOriginalParentFolder);
+    createDirInCommand(myDeletedFolderOriginalFolder);
   }
 
   protected void makeParentChanges() throws VcsException {
-    if (myAddedParentFolder.getIOFile().exists()) {
-      // parent folder can be already added, see remark 2
-      if (getChanges().isUnversioned(myAddedParentFolder)) {
-        scheduleForAddition(myAddedParentFolder);
-      }
-    }
-    else {
-      createDirInCommand(myAddedParentFolder);
-    }
+    renameFileInCommand(myOriginalParentFolder, myRenamedParentFolder.getName());
   }
 
   protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    if (!parentChangeMade) {
-      myAddedParentFolder.getIOFile().mkdirs();
-      refreshAll();
-    }
-
-    if (myAddedChildFile.getIOFile().exists()) {
-      scheduleForAddition(myAddedChildFile);
-    }
-    else {
-      createFileInCommand(myAddedChildFile, FILE_CONTENT);
-    }
+    deleteFileInCommand(parentChangeMade ? myDeletedFolderInRenamedFolder : myDeletedFolderOriginalFolder);
   }
 
   protected Collection<Change> getPendingParentChanges() throws VcsException {
-    final Change change = getChanges().getAddChange(myAddedParentFolder);
+    final Change change = getChanges().getMoveChange(myOriginalParentFolder, myRenamedParentFolder);
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
   protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return getChanges().getAddChange(myAddedChildFile);
+    return getChanges().getDeleteChange(parentChangesMade ? myDeletedFolderInRenamedFolder : myDeletedFolderOriginalFolder);
   }
 
   @Test

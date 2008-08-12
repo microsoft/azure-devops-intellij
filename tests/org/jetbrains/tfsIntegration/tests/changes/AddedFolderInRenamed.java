@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 // REMARKS
-// 1. Attempt to commit add change for item in pending renamed folder fails with
+// 1. Attempt to commit add change for file/folder in pending renamed/moved folder fails with
 // TF14088: '<parent folder>' must be checked in because it is a rename or an undelete.
 
 @SuppressWarnings({"HardCodedStringLiteral"})
@@ -110,6 +110,23 @@ public class AddedFolderInRenamed extends ChangeTestCase {
     assertFolder(myAddedFolderInRenamedFolder, 0);
   }
 
+  protected void checkParentChangesPending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myRenamedParentFolder, 0);
+  }
+
+  protected void checkChildChangePending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertScheduledForAddition(myAddedFolderInOriginalFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myOriginalParentFolder, 1);
+    assertFolder(myAddedFolderInOriginalFolder, 0);
+  }
+
   protected void checkParentChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
@@ -135,7 +152,6 @@ public class AddedFolderInRenamed extends ChangeTestCase {
 
   protected void makeOriginalState() throws VcsException {
     createDirInCommand(myOriginalParentFolder);
-    commit();
   }
 
   protected void makeParentChanges() throws VcsException {

@@ -79,11 +79,11 @@ public class StatusProvider {
     }
     else {
       ChangeType change = ChangeType.fromString(item.getChg());
-      if (item.getDid() != Integer.MIN_VALUE) {
-        TFSVcs.assertTrue(change.isEmpty());
-        return new ServerStatus.Deleted(item);
-      }
-      else {
+      //if (item.getDid() != Integer.MIN_VALUE) {
+      //  TFSVcs.assertTrue(change.isEmpty());
+      //  return new ServerStatus.Deleted(item);
+      //}
+      //else {
         if (change.isEmpty()) {
           TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
           if (item.getLver() < item.getLatest()) {
@@ -122,7 +122,7 @@ public class StatusProvider {
           TFSVcs.assertTrue(item.getLocal() != null);
           return new ServerStatus.RenamedCheckedOut(item);
         }
-      }
+      //}
     }
 
     TFSVcs.LOG.assertTrue(false, "Uncovered case for item " + item.getLocal() != null ? item.getLocal() : item.getTitem());

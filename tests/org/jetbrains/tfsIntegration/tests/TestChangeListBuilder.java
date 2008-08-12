@@ -279,7 +279,13 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     assertFileStatus(path.getIOFile().getPath(), expectedStatus);
   }
 
+  @Nullable
   public Change getAddChange(final FilePath file) {
     return ChangeHelper.getAddChange(getChanges(), file);
+  }
+
+  @Nullable
+  public Change getDeleteChange(final FilePath file) {
+    return ChangeHelper.getDeleteChange(getChanges(), file);
   }
 }

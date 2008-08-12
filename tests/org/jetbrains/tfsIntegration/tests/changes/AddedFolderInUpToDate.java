@@ -75,7 +75,7 @@ public class AddedFolderInUpToDate extends ChildChangeTestCase {
     }
   }
 
-  protected Change getChildChange() throws VcsException {
+  protected Change getPendingChildChange() throws VcsException {
     return getChanges().getAddChange(myAddedFolder);
   }
 

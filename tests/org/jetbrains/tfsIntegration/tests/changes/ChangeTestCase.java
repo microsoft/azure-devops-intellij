@@ -16,13 +16,21 @@
 
 package org.jetbrains.tfsIntegration.tests.changes;
 
+import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import org.jetbrains.tfsIntegration.tests.TFSTestCase;
+import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSChangeList;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.tests.ChangeHelper;
+import org.jetbrains.tfsIntegration.tests.TFSTestCase;
+import org.junit.Assert;
 
-import java.util.Collection;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public abstract class ChangeTestCase extends TFSTestCase {
@@ -30,6 +38,9 @@ public abstract class ChangeTestCase extends TFSTestCase {
   protected static final String ORIGINAL_CONTENT = "original content";
   protected static final String MODIFIED_CONTENT = "modified content";
   protected static final String FILE_CONTENT = "file_content";
+  private static final String PARENT_CHANGES_COMMIT_COMMENT = "parent changes";
+  private static final String CHILD_CHANGES_COMMIT_COMMENT = "child change";
+  private static final String INITIAL_STATE_COMMIT_COMMENT = "initial state";
 
 
   protected abstract void preparePaths();
@@ -54,6 +65,10 @@ public abstract class ChangeTestCase extends TFSTestCase {
 
   protected abstract void checkChildChangeCommittedParentPending() throws VcsException;
 
+  protected abstract void checkParentChangesPending() throws VcsException;
+
+  protected abstract void checkChildChangePending() throws VcsException;
+
 
   protected abstract void makeOriginalState() throws VcsException;
 
@@ -68,42 +83,46 @@ public abstract class ChangeTestCase extends TFSTestCase {
 
 
   protected void doTestPendingAndRollback() throws VcsException, IOException {
-    preparePaths();
-
-    makeOriginalState();
-    checkOriginalStateAfterUpdate();
+    boolean originalStateChangesCommitted = initialize();
 
     makeParentChanges();
+    checkParentChangesPending();
     makeChildChange(true);
     checkParentAndChildChangesPending();
     updateTo(0);
     checkParentAndChildChangesPending();
     rollback(getPendingParentChanges());
     checkChildChangePendingParentRolledBack();
-    rollback(getPendingChildChange(false));
+    final Change childChange = getPendingChildChange(false);
+    if (childChange != null) {
+      rollback(childChange);
+    }
     checkOriginalStateAfterRollbackParentChild();
 
     makeChildChange(false);
+    checkChildChangePending();
     makeParentChanges();
     checkParentAndChildChangesPending();
-    rollback(getPendingChildChange(true));
-    checkParentChangesPendingChildRolledBack();
+    final Change childChange2 = getPendingChildChange(true);
+    if (childChange2 != null) {
+      rollback(childChange2);
+      checkParentChangesPendingChildRolledBack();
+    }
     rollback(getPendingParentChanges());
     checkOriginalStateAfterRollbackParentChild();
   }
 
 
   protected void testCommitParentThenChildChanges() throws VcsException, IOException {
-    preparePaths();
-
-    makeOriginalState();
-    checkOriginalStateAfterUpdate();
+    boolean originalStateChangesCommitted = initialize();
 
     makeParentChanges();
-    commit(getPendingParentChanges(), "parent changes");
+    final Collection<Change> parentChanges = getPendingParentChanges();
+    commit(parentChanges, PARENT_CHANGES_COMMIT_COMMENT);
     checkParentChangesCommitted();
     makeChildChange(true);
-    commit(getPendingChildChange(true), "child change");
+    final Change childChange = getPendingChildChange(true);
+    commit(childChange, CHILD_CHANGES_COMMIT_COMMENT);
     checkParentAndChildChangesCommitted();
 
     updateTo(2);
@@ -112,21 +131,22 @@ public abstract class ChangeTestCase extends TFSTestCase {
     checkParentChangesCommitted();
     updateTo(0);
     checkParentAndChildChangesCommitted();
+
+    assertHistory(parentChanges, childChange, true, originalStateChangesCommitted);
   }
 
   protected void testCommitChildThenParentChanges() throws VcsException, IOException {
-    preparePaths();
+    boolean originalStateChangesCommitted = initialize();
 
-    makeOriginalState();
-    checkOriginalStateAfterUpdate();
     makeChildChange(false);
-    commit(getPendingChildChange(false), "child change");
+    final Change childChange = getPendingChildChange(false);
+    commit(childChange, CHILD_CHANGES_COMMIT_COMMENT);
     checkChildChangeCommitted();
     makeParentChanges();
 
     final Collection<Change> parentChanges = getPendingParentChanges();
     if (!parentChanges.isEmpty()) {
-      commit(parentChanges, "parent changes");
+      commit(parentChanges, PARENT_CHANGES_COMMIT_COMMENT);
       checkParentAndChildChangesCommitted();
     }
 
@@ -144,18 +164,20 @@ public abstract class ChangeTestCase extends TFSTestCase {
       updateTo(0);
       checkParentAndChildChangesCommitted();
     }
+
+    assertHistory(parentChanges, childChange, false, originalStateChangesCommitted);
   }
 
   protected void testCommitParentChangesChildPending() throws VcsException, IOException {
-    preparePaths();
+    boolean originalStateChangesCommitted = initialize();
 
-    makeOriginalState();
-    checkOriginalStateAfterUpdate();
     makeParentChanges();
     makeChildChange(true);
-    commit(getPendingParentChanges(), "parent changes");
+    final Collection<Change> parentChanges = getPendingParentChanges();
+    commit(parentChanges, PARENT_CHANGES_COMMIT_COMMENT);
     checkParentChangesCommittedChildPending();
-    commit(getPendingChildChange(true), "child change");
+    final Change childChange = getPendingChildChange(true);
+    commit(childChange, CHILD_CHANGES_COMMIT_COMMENT);
     checkParentAndChildChangesCommitted();
 
     updateTo(2);
@@ -164,38 +186,107 @@ public abstract class ChangeTestCase extends TFSTestCase {
     checkParentChangesCommitted();
     updateTo(0);
     checkParentAndChildChangesCommitted();
+
+    assertHistory(parentChanges, childChange, true, originalStateChangesCommitted);
   }
 
   protected void testCommitChildChangesParentPending() throws VcsException, IOException {
-    preparePaths();
+    boolean originalStateChangesCommitted = initialize();
 
-    makeOriginalState();
-    checkOriginalStateAfterUpdate();
+    makeChildChange(false);
+    final Change childChangeExpectedInHistory = getPendingChildChange(false);
+    rollback(childChangeExpectedInHistory);
+    checkOriginalStateAfterRollbackParentChild();
+
     makeParentChanges();
     makeChildChange(true);
-    commit(getPendingChildChange(true), "child change");
-    checkChildChangeCommittedParentPending();
+
+    final Change childChangeToCommit = getPendingChildChange(true);
+    if (childChangeToCommit != null) {
+      commit(childChangeToCommit, CHILD_CHANGES_COMMIT_COMMENT);
+      checkChildChangeCommittedParentPending();
+    }
 
     final Collection<Change> parentChanges = getPendingParentChanges();
     if (!parentChanges.isEmpty()) {
-      commit(parentChanges, "parent changes");
+      commit(parentChanges, PARENT_CHANGES_COMMIT_COMMENT);
       checkParentAndChildChangesCommitted();
     }
 
     if (parentChanges.isEmpty()) {
-      updateTo(1);
-      checkOriginalStateAfterUpdate();
-      updateTo(0);
-      checkParentAndChildChangesCommitted();
+      if (childChangeToCommit != null) {
+        updateTo(1);
+        checkOriginalStateAfterUpdate();
+        updateTo(0);
+        checkParentAndChildChangesCommitted();
+      }
     }
     else {
-      updateTo(2);
-      checkOriginalStateAfterUpdate();
-      updateTo(1);
-      checkChildChangeCommitted();
-      updateTo(0);
-      checkParentAndChildChangesCommitted();
+      if (childChangeToCommit != null) {
+        updateTo(2);
+        checkOriginalStateAfterUpdate();
+        updateTo(1);
+        checkChildChangeCommitted();
+        updateTo(0);
+        checkParentAndChildChangesCommitted();
+      }
+      else {
+        updateTo(1);
+        checkOriginalStateAfterUpdate();
+        updateTo(0);
+        checkParentChangesCommitted();
+      }
     }
+
+    assertHistory(parentChanges, childChangeToCommit != null ? childChangeExpectedInHistory : null, false, originalStateChangesCommitted);
+  }
+
+  private void assertHistory(Collection<Change> parentChangesCommitted, Change childChangeCommitted, boolean parentThenChild, boolean originalStateCommited)
+    throws VcsException {
+    final RepositoryLocation location = getVcs().getCommittedChangesProvider().getLocationFor(TfsFileUtil.getFilePath(mySandboxRoot));
+    final List<TFSChangeList> historyList =
+      getVcs().getCommittedChangesProvider().getCommittedChanges(new ChangeBrowserSettings(), location, 0);
+
+    final TFSChangeList childChangelist;
+    if (!parentChangesCommitted.isEmpty()) {
+      if (originalStateCommited) {
+        Assert.assertEquals(childChangeCommitted != null ? 4 : 3, historyList.size());
+      }
+      else {
+        Assert.assertEquals(childChangeCommitted != null ? 3 : 2, historyList.size());
+      }
+      childChangelist = childChangeCommitted != null ? historyList.get(parentThenChild ? 0 : 1) : null;
+
+      TFSChangeList parentChangelist = historyList.get(parentThenChild ? 1 : 0);
+      Assert.assertEquals(PARENT_CHANGES_COMMIT_COMMENT, parentChangelist.getComment());
+      Assert.assertEquals(getUsername(), parentChangelist.getCommitterName());
+      ChangeHelper.assertContains(parentChangesCommitted, parentChangelist.getChanges());
+    }
+    else {
+      Assert.assertEquals(originalStateCommited ? 3 : 2, historyList.size());
+      childChangelist = historyList.get(0);
+    }
+
+    if (childChangeCommitted != null) {
+      Assert.assertEquals(CHILD_CHANGES_COMMIT_COMMENT, childChangelist.getComment());
+      Assert.assertEquals(getUsername(), childChangelist.getCommitterName());
+      ChangeHelper.assertContains(Collections.singletonList(childChangeCommitted), childChangelist.getChanges());
+    }
+  }
+
+  /**
+   * @return true if initial state changes committed
+   */
+  private boolean initialize() throws VcsException {
+    preparePaths();
+
+    makeOriginalState();
+    final List<Change> originalStateChanges = getChanges().getChanges();
+    if (!originalStateChanges.isEmpty()) {
+      commit(originalStateChanges, INITIAL_STATE_COMMIT_COMMENT);
+    }
+    checkOriginalStateAfterUpdate();
+    return !originalStateChanges.isEmpty();
   }
 
 

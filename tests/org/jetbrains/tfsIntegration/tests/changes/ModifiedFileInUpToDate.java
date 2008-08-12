@@ -62,7 +62,6 @@ public class ModifiedFileInUpToDate extends ChildChangeTestCase {
 
   protected void makeOriginalState() throws VcsException {
     createFileInCommand(myFile, ORIGINAL_CONTENT);
-    commit(getChanges().getChanges(), "original state");
   }
 
   protected void makeChildChange() throws IOException, VcsException {
@@ -71,7 +70,7 @@ public class ModifiedFileInUpToDate extends ChildChangeTestCase {
   }
 
   @Nullable
-  protected Change getChildChange() throws VcsException {
+  protected Change getPendingChildChange() throws VcsException {
     return getChanges().getModificationChange(myFile);
   }
 

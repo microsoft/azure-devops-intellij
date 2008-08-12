@@ -20,63 +20,59 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class AddedFileInUpToDate extends ChildChangeTestCase {
+public class RenamedFileInUpToDate extends ChildChangeTestCase {
 
-  private FilePath myAddedFile;
+  private FilePath myOriginalFile;
+  private FilePath myRenamedFile;
 
   protected void preparePaths() {
-    myAddedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "added_file.txt"));
+    myOriginalFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "original.txt"));
+    myRenamedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "renamed.txt"));
   }
 
   protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedFile);
+    getChanges().assertRenamedOrMoved(myOriginalFile, myRenamedFile);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    assertFile(myRenamedFile, FILE_CONTENT, false);
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
     getChanges().assertTotalItems(0);
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myOriginalFile, FILE_CONTENT, false);
   }
 
   protected void checkOriginalStateAfterRollback() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertUnversioned(myAddedFile);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    checkOriginalStateAfterUpdate();
   }
 
   protected void checkChildChangeCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, false);
+    assertFile(myRenamedFile, FILE_CONTENT, false);
   }
 
   protected void makeOriginalState() throws VcsException {
-    // nothing here
+    createFileInCommand(myOriginalFile, FILE_CONTENT);
   }
 
-  protected void makeChildChange() {
-    if (myAddedFile.getIOFile().exists()) {
-      scheduleForAddition(myAddedFile);
-    }
-    else {
-      createFileInCommand(myAddedFile, FILE_CONTENT);
-    }
+  protected void makeChildChange() throws IOException, VcsException {
+    rename(myOriginalFile, myRenamedFile.getName());
   }
 
+  @Nullable
   protected Change getPendingChildChange() throws VcsException {
-    return getChanges().getAddChange(myAddedFile);
+    return getChanges().getMoveChange(myOriginalFile, myRenamedFile);
   }
 
   @Test

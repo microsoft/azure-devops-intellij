@@ -27,6 +27,7 @@ import org.junit.Assert;
 
 import java.util.Collection;
 
+@SuppressWarnings({"ConstantConditions", "HardCodedStringLiteral"})
 public class ChangeHelper {
 
   public static boolean containsAdded(Collection<Change> changes, VirtualFile file) {
@@ -34,6 +35,7 @@ public class ChangeHelper {
   }
 
 
+  @Nullable
   public static Change getAddChange(Collection<Change> changes, FilePath file) {
     for (Change c : changes) {
       if (c.getBeforeRevision() == null && c.getAfterRevision() != null) {
@@ -49,15 +51,20 @@ public class ChangeHelper {
     return getAddChange(changes, file) != null;
   }
 
-  public static boolean containsDeleted(Collection<Change> changes, FilePath file) {
+  @Nullable
+  public static Change getDeleteChange(Collection<Change> changes, FilePath file) {
     for (Change c : changes) {
       if (c.getBeforeRevision() != null && c.getAfterRevision() == null) {
         if (c.getBeforeRevision().getFile().equals(file)) {
-          return true;
+          return c;
         }
       }
     }
-    return false;
+    return null;
+  }
+
+  public static boolean containsDeleted(Collection<Change> changes, FilePath file) {
+    return getDeleteChange(changes, file) != null;
   }
 
   @Nullable
@@ -139,7 +146,18 @@ public class ChangeHelper {
   public static String getPathRemainder(VirtualFile file, VirtualFile rootPath) {
     String pathPrefix = rootPath.getPresentableUrl();
     String path = file.getPresentableUrl();
-    return path.startsWith(pathPrefix) ? path.substring(pathPrefix.length() + 1) : path;
+
+    if (pathPrefix == null || pathPrefix.length() == 0 || !path.startsWith(pathPrefix)) {
+      return path.length() > 0 ? path : file.getPath();
+    }
+    else {
+      if (path.length() == pathPrefix.length()) {
+        return pathPrefix;
+      }
+      else {
+        return path.length() > 0 ? path.substring(pathPrefix.length() + 1) : file.getPath();
+      }
+    }
   }
 
   public static String getPathRemainder(FilePath filePath, VirtualFile rootPath) {
@@ -148,5 +166,30 @@ public class ChangeHelper {
     return path.startsWith(pathPrefix) ? path.substring(pathPrefix.length() + 1) : path;
   }
 
+
+  public static void assertContains(final Collection<Change> subset, final Collection<Change> superset) throws VcsException {
+    for (Change c : subset) {
+      if (c.getType() == Change.Type.NEW) {
+        Assert.assertTrue(containsAdded(superset, c.getAfterRevision().getFile()));
+      }
+      else if (c.getType() == Change.Type.DELETED) {
+        Assert.assertTrue(containsDeleted(superset, c.getBeforeRevision().getFile()));
+      }
+      else if (c.getType() == Change.Type.MODIFICATION) {
+        // TODO can't check content here since change can contain obsolete CurrentContentRevision
+        Assert.assertNotNull(getModificationChange(superset, c.getBeforeRevision().getFile()));
+      }
+      else {
+        final Change moveChange = getMoveChange(superset, c.getBeforeRevision().getFile(), c.getAfterRevision().getFile());
+        Assert.assertEquals(c.getBeforeRevision().getFile().isDirectory(), moveChange.getBeforeRevision().getFile().isDirectory());
+
+        if (!c.getBeforeRevision().getFile().isDirectory()) {
+          // TODO can't check content here since change can contain obsolete CurrentContentRevision
+          //Assert.assertEquals(c.getBeforeRevision().getContent(), moveChange.getBeforeRevision().getContent());
+          //Assert.assertEquals(c.getAfterRevision().getContent(), moveChange.getAfterRevision().getContent());
+        }
+      }
+    }
+  }
 
 }

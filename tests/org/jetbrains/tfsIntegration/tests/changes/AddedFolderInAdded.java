@@ -97,6 +97,22 @@ public class AddedFolderInAdded extends ChangeTestCase {
     checkParentAndChildChangesCommitted(); // see remark 2
   }
 
+  protected void checkParentChangesPending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertScheduledForAddition(myAddedParentFolder);
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myAddedParentFolder, 0);
+  }
+
+  protected void checkChildChangePending() throws VcsException {
+    getChanges().assertTotalItems(2);
+    getChanges().assertUnversioned(myAddedParentFolder); // see remark 1
+    getChanges().assertScheduledForAddition(myAddedChildFolder);
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myAddedParentFolder, 1);
+    assertFolder(myAddedChildFolder, 0);
+  }
+
   protected void checkParentChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 

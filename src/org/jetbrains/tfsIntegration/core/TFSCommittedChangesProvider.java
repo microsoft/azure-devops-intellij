@@ -114,7 +114,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       }
       return result;
     }
-    catch (Exception e) {
+    catch (TfsException e) {
       throw new VcsException(e);
     }
   }
@@ -161,6 +161,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   }
 
   public boolean refreshIncomingWithCommitted() {
+    // TODO
     return false;
   }
 }

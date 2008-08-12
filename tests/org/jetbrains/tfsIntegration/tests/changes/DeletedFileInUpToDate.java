@@ -26,57 +26,50 @@ import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class AddedFileInUpToDate extends ChildChangeTestCase {
+public class DeletedFileInUpToDate extends ChildChangeTestCase {
 
-  private FilePath myAddedFile;
+  private FilePath myDeletedFile;
 
   protected void preparePaths() {
-    myAddedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "added_file.txt"));
+    myDeletedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "deleted_file.txt"));
   }
 
   protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertScheduledForAddition(myAddedFile);
+    getChanges().assertScheduledForDeletion(myDeletedFile);
 
-    assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    assertFolder(mySandboxRoot, 0);
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
     getChanges().assertTotalItems(0);
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myDeletedFile, FILE_CONTENT, false);
   }
 
   protected void checkOriginalStateAfterRollback() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertUnversioned(myAddedFile);
+    getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, true);
+    assertFile(myDeletedFile, FILE_CONTENT, false);
   }
 
   protected void checkChildChangeCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
-    assertFolder(mySandboxRoot, 1);
-    assertFile(myAddedFile, FILE_CONTENT, false);
+    assertFolder(mySandboxRoot, 0);
   }
 
   protected void makeOriginalState() throws VcsException {
-    // nothing here
+    createFileInCommand(myDeletedFile, FILE_CONTENT);
   }
 
   protected void makeChildChange() {
-    if (myAddedFile.getIOFile().exists()) {
-      scheduleForAddition(myAddedFile);
-    }
-    else {
-      createFileInCommand(myAddedFile, FILE_CONTENT);
-    }
+    deleteFileInCommand(myDeletedFile);
   }
 
   protected Change getPendingChildChange() throws VcsException {
-    return getChanges().getAddChange(myAddedFile);
+    return getChanges().getDeleteChange(myDeletedFile);
   }
 
   @Test

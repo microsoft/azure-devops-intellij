@@ -106,7 +106,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
 
     List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
-      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.NonDeleted, ItemType.Any);
+      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.Any, ItemType.Any);
 
     Map<ItemPath, ExtendedItem> local2ExtendedItem = new HashMap<ItemPath, ExtendedItem>();
     for (int i = 0; i < roots.size(); i++) {

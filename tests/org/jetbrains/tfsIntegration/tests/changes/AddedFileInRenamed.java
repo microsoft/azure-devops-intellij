@@ -106,6 +106,23 @@ public class AddedFileInRenamed extends ChangeTestCase {
     assertFile(myAddedFileInRenamedFolder, FILE_CONTENT, false);
   }
 
+  protected void checkParentChangesPending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myRenamedParentFolder, 0);
+  }
+
+  protected void checkChildChangePending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertScheduledForAddition(myAddedFileInOriginalFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myOriginalParentFolder, 1);
+    assertFile(myAddedFileInOriginalFolder, FILE_CONTENT, true);
+  }
+
   protected void checkParentChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
 
@@ -131,7 +148,6 @@ public class AddedFileInRenamed extends ChangeTestCase {
 
   protected void makeOriginalState() throws VcsException {
     createDirInCommand(myOriginalParentFolder);
-    commit();
   }
 
   protected void makeParentChanges() throws VcsException {
@@ -177,7 +193,7 @@ public class AddedFileInRenamed extends ChangeTestCase {
     super.testCommitParentChangesChildPending();
   }
 
-  // don't test this, see remark 1
+  // don't test this, see remark 1 in AddedFolderInRenamed
   //@Test
   //public void testCommitChildChangesParentPending() throws VcsException, IOException {
   //  super.testCommitChildChangesParentPending();

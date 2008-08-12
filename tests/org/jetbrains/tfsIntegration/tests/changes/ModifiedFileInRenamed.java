@@ -126,10 +126,27 @@ public class ModifiedFileInRenamed extends ChangeTestCase {
     assertFile(myFileInRenamedFolder, MODIFIED_CONTENT, false);
   }
 
+  protected void checkParentChangesPending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myRenamedParentFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myRenamedParentFolder, 1);
+    assertFile(myFileInRenamedFolder, ORIGINAL_CONTENT, false);
+  }
+
+  protected void checkChildChangePending() throws VcsException {
+    getChanges().assertTotalItems(1);
+    getChanges().assertModified(myFileInOriginalFolder);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myOriginalParentFolder, 1);
+    assertFile(myFileInOriginalFolder, MODIFIED_CONTENT, true);
+  }
+
   protected void makeOriginalState() throws VcsException {
     createDirInCommand(myOriginalParentFolder);
     createFileInCommand(myFileInOriginalFolder, ORIGINAL_CONTENT);
-    commit();
   }
 
   protected void makeParentChanges() throws VcsException {
