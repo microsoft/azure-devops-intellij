@@ -20,6 +20,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
@@ -176,20 +177,26 @@ public class ChangeHelper {
         Assert.assertTrue(containsDeleted(superset, c.getBeforeRevision().getFile()));
       }
       else if (c.getType() == Change.Type.MODIFICATION) {
-        // TODO can't check content here since change can contain obsolete CurrentContentRevision
-        Assert.assertNotNull(getModificationChange(superset, c.getBeforeRevision().getFile()));
+        final Change modificationChange = getModificationChange(superset, c.getBeforeRevision().getFile());
+        Assert.assertNotNull(modificationChange);
+        assertContent(modificationChange, c.getBeforeRevision().getContent(), c.getAfterRevision().getContent());
       }
       else {
         final Change moveChange = getMoveChange(superset, c.getBeforeRevision().getFile(), c.getAfterRevision().getFile());
         Assert.assertEquals(c.getBeforeRevision().getFile().isDirectory(), moveChange.getBeforeRevision().getFile().isDirectory());
 
         if (!c.getBeforeRevision().getFile().isDirectory()) {
-          // TODO can't check content here since change can contain obsolete CurrentContentRevision
-          //Assert.assertEquals(c.getBeforeRevision().getContent(), moveChange.getBeforeRevision().getContent());
-          //Assert.assertEquals(c.getAfterRevision().getContent(), moveChange.getAfterRevision().getContent());
+          Assert.assertEquals(c.getBeforeRevision().getContent(), moveChange.getBeforeRevision().getContent());
+          Assert.assertEquals(c.getAfterRevision().getContent(), moveChange.getAfterRevision().getContent());
         }
       }
     }
+  }
+
+  public static Change getChangeWithCachedContent(Change change) throws VcsException {
+    ContentRevision beforeRevision = change.getBeforeRevision() != null ? new CachedContentRevision(change.getBeforeRevision()) : null;
+    ContentRevision afterRevision = change.getAfterRevision() != null ? new CachedContentRevision(change.getAfterRevision()) : null;
+    return new Change(beforeRevision, afterRevision, change.getFileStatus());
   }
 
 }

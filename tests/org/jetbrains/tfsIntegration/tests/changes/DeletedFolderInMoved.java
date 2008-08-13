@@ -183,8 +183,8 @@ public class DeletedFolderInMoved extends ChangeTestCase {
     moveFileInCommand(myOriginalParentFolder, mySubfolder2);
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    deleteFileInCommand(parentChangeMade ? myDeletedFolderInMovedFolder : myDeletedFolderInOriginalFolder);
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    deleteFileInCommand(parentChangesState == ParentChangesState.NotDone ? myDeletedFolderInOriginalFolder : myDeletedFolderInMovedFolder);
   }
 
   protected Collection<Change> getPendingParentChanges() throws VcsException {
@@ -192,13 +192,14 @@ public class DeletedFolderInMoved extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return getChanges().getDeleteChange(parentChangesMade ? myDeletedFolderInMovedFolder : myDeletedFolderInOriginalFolder);
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
+    return getChanges()
+      .getDeleteChange(parentChangesState == ParentChangesState.NotDone ? myDeletedFolderInOriginalFolder : myDeletedFolderInMovedFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   @Test

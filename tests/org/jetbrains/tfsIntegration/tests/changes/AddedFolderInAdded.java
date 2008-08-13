@@ -146,8 +146,8 @@ public class AddedFolderInAdded extends ChangeTestCase {
     }
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    if (!parentChangeMade) {
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    if (parentChangesState == ParentChangesState.NotDone) {
       myAddedParentFolder.getIOFile().mkdirs();
       refreshAll();
     }
@@ -165,13 +165,13 @@ public class AddedFolderInAdded extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
     return getChanges().getAddChange(myAddedChildFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   @Test

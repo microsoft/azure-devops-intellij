@@ -149,8 +149,8 @@ public class DeletedFolderInRenamed extends ChangeTestCase {
     renameFileInCommand(myOriginalParentFolder, myRenamedParentFolder.getName());
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    deleteFileInCommand(parentChangeMade ? myDeletedFolderInRenamedFolder : myDeletedFolderOriginalFolder);
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    deleteFileInCommand(parentChangesState == ParentChangesState.NotDone ? myDeletedFolderOriginalFolder : myDeletedFolderInRenamedFolder);
   }
 
   protected Collection<Change> getPendingParentChanges() throws VcsException {
@@ -158,13 +158,14 @@ public class DeletedFolderInRenamed extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return getChanges().getDeleteChange(parentChangesMade ? myDeletedFolderInRenamedFolder : myDeletedFolderOriginalFolder);
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
+    return getChanges()
+      .getDeleteChange(parentChangesState == ParentChangesState.NotDone ? myDeletedFolderOriginalFolder : myDeletedFolderInRenamedFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   @Test

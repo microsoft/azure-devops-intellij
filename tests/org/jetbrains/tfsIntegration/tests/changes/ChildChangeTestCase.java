@@ -80,13 +80,14 @@ public abstract class ChildChangeTestCase extends TFSTestCase {
 
     makeChildChange();
     final Change childChange = getPendingChildChange();
+    final Change changeToCheck = ChangeHelper.getChangeWithCachedContent(childChange);
     commit(childChange, CHILD_CHANGE_COMMIT_COMMENT);
     updateTo(1);
     checkOriginalStateAfterUpdate();
     updateTo(0);
     checkChildChangeCommitted();
 
-    assertHistory(childChange, !originalStateChanges.isEmpty());
+    assertHistory(changeToCheck, !originalStateChanges.isEmpty());
   }
 
   private void assertHistory(Change change, boolean originalStateCommited) throws VcsException {

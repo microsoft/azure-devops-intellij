@@ -28,176 +28,180 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+// REMARK 1:
+// 1. rename child folder
+// 2. then move parent folder
+// 3. try to undo file rename
+// -> TF14059: Unable to process the pending changes requested. The set of pending renames would cause a name collision for <original child folder>
+// does not repeat if child is file - bug in TFS?
+
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class ModifiedFileInMoved extends ChangeTestCase {
-  private FilePath myOriginalParentFolder;
-  private FilePath myMovedParentFolder;
+public class RenamedFolderInMoved extends ChangeTestCase {
+  private static final String FOLDERNAME_RENAMED = "RenamedChild";
 
-  private FilePath myFileInOriginalFolder;
-  private FilePath myFileInMovedFolder;
-
+  private FilePath myParentOriginal;
+  private FilePath myParentMoved;
+  private FilePath myChildOriginalInParentOriginal;
+  private FilePath myChildOriginalInParentMoved;
+  private FilePath myChildRenamedInParentOriginal;
+  private FilePath myChildRenamedInParentMoved;
   private FilePath mySubfolder1;
   private FilePath mySubfolder2;
 
   protected void preparePaths() {
-    final String folderName = "Folder_Original";
-    myOriginalParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), folderName));
     mySubfolder1 = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Subfolder1"));
     mySubfolder2 = VcsUtil.getFilePath(new File(mySubfolder1.getIOFile(), "Subfolder2"));
-    myMovedParentFolder = VcsUtil.getFilePath(new File(mySubfolder2.getIOFile(), folderName));
-    myFileInOriginalFolder = VcsUtil.getFilePath(new File(myOriginalParentFolder.getIOFile(), "file.txt"));
-    myFileInMovedFolder = VcsUtil.getFilePath(new File(myMovedParentFolder.getIOFile(), "file.txt"));
+
+    final String parentFolderName = "ParentFolder";
+    myParentOriginal = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), parentFolderName));
+    myParentMoved = VcsUtil.getFilePath(new File(mySubfolder2.getIOFile(), parentFolderName));
+    final String foldernameOriginal = "OriginalChild";
+    myChildOriginalInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), foldernameOriginal));
+    myChildOriginalInParentMoved = VcsUtil.getFilePath(new File(myParentMoved.getIOFile(), foldernameOriginal));
+    myChildRenamedInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), FOLDERNAME_RENAMED));
+    myChildRenamedInParentMoved = VcsUtil.getFilePath(new File(myParentMoved.getIOFile(), FOLDERNAME_RENAMED));
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myMovedParentFolder);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFolder(mySubfolder1, 1);
-    assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, ORIGINAL_CONTENT, false);
+    checkParentChangesPending();
   }
 
   protected void checkChildChangePendingParentRolledBack() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertModified(myFileInOriginalFolder, ORIGINAL_CONTENT, MODIFIED_CONTENT);
-
-    assertFolder(mySandboxRoot, 2);
-    assertFolder(mySubfolder1, 1);
-    assertFolder(mySubfolder2, 0);
-    assertFolder(myOriginalParentFolder, 1);
-    assertFile(myFileInOriginalFolder, MODIFIED_CONTENT, true);
+    checkChildChangePending();
   }
 
   protected void checkParentAndChildChangesPending() throws VcsException {
     getChanges().assertTotalItems(2);
-    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myMovedParentFolder);
-    getChanges().assertModified(myFileInMovedFolder, ORIGINAL_CONTENT, MODIFIED_CONTENT);
+    getChanges().assertRenamedOrMoved(myParentOriginal, myParentMoved);
+    getChanges().assertRenamedOrMoved(myChildOriginalInParentOriginal, myChildRenamedInParentMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, MODIFIED_CONTENT, true);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildRenamedInParentMoved, 0);
   }
 
   protected void checkOriginalStateAfterRollbackParentChild() throws VcsException {
-    checkOriginalState();
+    checkOriginalStateAfterUpdate();
   }
 
   protected void checkOriginalStateAfterUpdate() throws VcsException {
-    checkOriginalState();
-  }
-
-  private void checkOriginalState() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 2);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 0);
-    assertFolder(myOriginalParentFolder, 1);
-    assertFile(myFileInOriginalFolder, ORIGINAL_CONTENT, false);
+    assertFolder(myParentOriginal, 1);
+    assertFolder(myChildOriginalInParentOriginal, 0);
   }
 
   protected void checkParentChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
+
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, ORIGINAL_CONTENT, false);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildOriginalInParentMoved, 0);
   }
 
   protected void checkChildChangeCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
+
     assertFolder(mySandboxRoot, 2);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 0);
-    assertFolder(myOriginalParentFolder, 1);
-    assertFile(myFileInOriginalFolder, MODIFIED_CONTENT, false);
+    assertFolder(myParentOriginal, 1);
+    assertFolder(myChildRenamedInParentOriginal, 0);
   }
 
   protected void checkParentAndChildChangesCommitted() throws VcsException {
     getChanges().assertTotalItems(0);
+
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, MODIFIED_CONTENT, false);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildRenamedInParentMoved, 0);
   }
 
   protected void checkParentChangesCommittedChildPending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertModified(myFileInMovedFolder, ORIGINAL_CONTENT, MODIFIED_CONTENT);
+    getChanges().assertRenamedOrMoved(myChildOriginalInParentMoved, myChildRenamedInParentMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, MODIFIED_CONTENT, true);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildRenamedInParentMoved, 0);
   }
 
   protected void checkChildChangeCommittedParentPending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myMovedParentFolder);
+    getChanges().assertRenamedOrMoved(myParentOriginal, myParentMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, MODIFIED_CONTENT, false);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildRenamedInParentMoved, 0);
   }
 
   protected void checkParentChangesPending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myOriginalParentFolder, myMovedParentFolder);
+    getChanges().assertRenamedOrMoved(myParentOriginal, myParentMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 1);
-    assertFolder(myMovedParentFolder, 1);
-    assertFile(myFileInMovedFolder, ORIGINAL_CONTENT, false);
+    assertFolder(myParentMoved, 1);
+    assertFolder(myChildOriginalInParentMoved, 0);
   }
 
   protected void checkChildChangePending() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertModified(myFileInOriginalFolder);
+    getChanges().assertRenamedOrMoved(myChildOriginalInParentOriginal, myChildRenamedInParentOriginal);
 
     assertFolder(mySandboxRoot, 2);
     assertFolder(mySubfolder1, 1);
     assertFolder(mySubfolder2, 0);
-    assertFolder(myOriginalParentFolder, 1);
-    assertFile(myFileInOriginalFolder, MODIFIED_CONTENT, true);
+    assertFolder(myParentOriginal, 1);
+    assertFolder(myChildRenamedInParentOriginal, 0);
   }
 
   protected void makeOriginalState() throws VcsException {
-    createDirInCommand(myOriginalParentFolder);
+    createDirInCommand(myParentOriginal);
+    createDirInCommand(myChildOriginalInParentOriginal);
     createDirInCommand(mySubfolder1);
     createDirInCommand(mySubfolder2);
-    createFileInCommand(myFileInOriginalFolder, ORIGINAL_CONTENT);
   }
 
   protected void makeParentChanges() throws VcsException {
-    moveFileInCommand(myOriginalParentFolder, mySubfolder2);
+    moveFileInCommand(myParentOriginal, mySubfolder2);
   }
 
   protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException, IOException {
-    final FilePath file = parentChangesState == ParentChangesState.NotDone ? myFileInOriginalFolder : myFileInMovedFolder;
-    editFiles(file);
-    setFileContent(file, MODIFIED_CONTENT);
+    rename(parentChangesState == ParentChangesState.NotDone ? myChildOriginalInParentOriginal : myChildOriginalInParentMoved,
+           FOLDERNAME_RENAMED);
   }
 
   protected Collection<Change> getPendingParentChanges() throws VcsException {
-    final Change moveChange = getChanges().getMoveChange(myOriginalParentFolder, myMovedParentFolder);
-    return moveChange != null ? Collections.singletonList(moveChange) : Collections.<Change>emptyList();
+    final Change change = getChanges().getMoveChange(myParentOriginal, myParentMoved);
+    return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
   @Nullable
   protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
-    return getChanges()
-      .getModificationChange(parentChangesState == ParentChangesState.NotDone ? myFileInOriginalFolder : myFileInMovedFolder);
+    if (parentChangesState == ParentChangesState.NotDone) {
+      return getChanges().getMoveChange(myChildOriginalInParentOriginal, myChildRenamedInParentOriginal);
+    }
+    else if (parentChangesState == ParentChangesState.Pending) {
+      return getChanges().getMoveChange(myChildOriginalInParentOriginal, myChildRenamedInParentMoved);
+    }
+    else {
+      return getChanges().getMoveChange(myChildOriginalInParentMoved, myChildRenamedInParentMoved);
+    }
   }
 
   @Test
@@ -223,5 +227,9 @@ public class ModifiedFileInMoved extends ChangeTestCase {
   @Test
   public void testCommitChildChangesParentPending() throws VcsException, IOException {
     super.testCommitChildChangesParentPending();
+  }
+
+  protected boolean shouldTestRollbackChildPendingParent() {
+    return false; // see remark 1
   }
 }

@@ -188,8 +188,8 @@ public class AddedFileInMoved extends ChangeTestCase {
     moveFileInCommand(myOriginalParentFolder, mySubfolder2);
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    FilePath file = parentChangeMade ? myAddedFileInMovedFolder : myAddedFileInOriginalFolder;
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    FilePath file = parentChangesState == ParentChangesState.NotDone ? myAddedFileInOriginalFolder : myAddedFileInMovedFolder;
     if (file.getIOFile().exists()) {
       scheduleForAddition(file);
     }
@@ -203,13 +203,14 @@ public class AddedFileInMoved extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return getChanges().getAddChange(parentChangesMade ? myAddedFileInMovedFolder : myAddedFileInOriginalFolder);
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
+    return getChanges()
+      .getAddChange(parentChangesState == ParentChangesState.NotDone ? myAddedFileInOriginalFolder : myAddedFileInMovedFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   @Test

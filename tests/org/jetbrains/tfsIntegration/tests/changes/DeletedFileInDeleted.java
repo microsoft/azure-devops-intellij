@@ -115,8 +115,8 @@ public class DeletedFileInDeleted extends ChangeTestCase {
     deleteFileInCommand(myParentFolder);
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    if (!parentChangeMade) {
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    if (parentChangesState == ParentChangesState.NotDone) {
       deleteFileInCommand(myChildFile);
     }
   }
@@ -126,13 +126,13 @@ public class DeletedFileInDeleted extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return parentChangesMade ? null : getChanges().getDeleteChange(myChildFile);
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
+    return parentChangesState == ParentChangesState.NotDone ? getChanges().getDeleteChange(myChildFile) : null;
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   // don't test it, see remark 1

@@ -158,8 +158,8 @@ public class AddedFolderInRenamed extends ChangeTestCase {
     renameFileInCommand(myOriginalParentFolder, myRenamedParentFolder.getName());
   }
 
-  protected void makeChildChange(boolean parentChangeMade) throws VcsException {
-    FilePath folder = parentChangeMade ? myAddedFolderInRenamedFolder : myAddedFolderInOriginalFolder;
+  protected void makeChildChange(ParentChangesState parentChangesState) throws VcsException {
+    FilePath folder = parentChangesState == ParentChangesState.NotDone ? myAddedFolderInOriginalFolder : myAddedFolderInRenamedFolder;
     if (folder.getIOFile().exists()) {
       scheduleForAddition(folder);
     }
@@ -173,13 +173,14 @@ public class AddedFolderInRenamed extends ChangeTestCase {
     return change != null ? Collections.singletonList(change) : Collections.<Change>emptyList();
   }
 
-  protected Change getPendingChildChange(boolean parentChangesMade) throws VcsException {
-    return getChanges().getAddChange(parentChangesMade ? myAddedFolderInRenamedFolder : myAddedFolderInOriginalFolder);
+  protected Change getPendingChildChange(ParentChangesState parentChangesState) throws VcsException {
+    return getChanges()
+      .getAddChange(parentChangesState == ParentChangesState.NotDone ? myAddedFolderInOriginalFolder : myAddedFolderInRenamedFolder);
   }
 
   @Test
-  public void doTestPendingAndRollback() throws VcsException, IOException {
-    super.doTestPendingAndRollback();
+  public void testPendingAndRollback() throws VcsException, IOException {
+    super.testPendingAndRollback();
   }
 
   @Test
