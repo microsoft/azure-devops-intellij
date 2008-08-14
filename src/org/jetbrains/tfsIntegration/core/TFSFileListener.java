@@ -150,7 +150,7 @@ public class TFSFileListener extends TFSFileListenerBase {
           }
 
           UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(workspace, revertScheduledForAdditionImmediately, ApplyGetOperations.DownloadMode.FORBID);
+            UndoPendingChanges.execute(myProject, workspace, revertScheduledForAdditionImmediately, ApplyGetOperations.DownloadMode.FORBID);
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
             AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);

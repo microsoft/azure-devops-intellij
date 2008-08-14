@@ -31,11 +31,11 @@ import java.util.List;
 
 
 public class SelectLabelPanel {
-  private JTextField nameTextField;
-  private JTextField ownerTextField;
-  private JButton findButton;
+  private JTextField myNameField;
+  private JTextField myOwnerField;
+  private JButton myFindButton;
   private JTable myLabelsTable;
-  private JPanel panel;
+  private JPanel myPanel;
 
   private LabelsTableModel myLabelsTableModel;
 
@@ -104,14 +104,14 @@ public class SelectLabelPanel {
     myLabelsTable.setModel(myLabelsTableModel);
     myLabelsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    findButton.addActionListener(new ActionListener() {
+    myFindButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         try {
-          String owner = ownerTextField.getText().trim();
+          String owner = myOwnerField.getText().trim();
           if ("".equals(owner)) {
             owner = null;
           }
-          String name = nameTextField.getText().trim();
+          String name = myNameField.getText().trim();
           if ("".equals(name)) {
             name = null;
           }
@@ -121,14 +121,14 @@ public class SelectLabelPanel {
         }
         catch (TfsException ex) {
           myLabelsTableModel.setLabels(Collections.<VersionControlLabel>emptyList());
-          Messages.showErrorDialog(ex.getMessage(), "Find Label");
+          Messages.showErrorDialog(myPanel, ex.getMessage(), "Find Label");
         }
       }
     });
   }
 
   public JPanel getPanel() {
-    return panel;
+    return myPanel;
   }
 
   @Nullable

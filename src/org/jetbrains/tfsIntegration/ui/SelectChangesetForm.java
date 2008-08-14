@@ -16,11 +16,12 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
@@ -30,17 +31,17 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 
 public class SelectChangesetForm {
 
@@ -63,6 +64,7 @@ public class SelectChangesetForm {
 
   private final ChangesetsTableModel myChangesetsTableModel;
 
+  private final Project myProject;
   private final WorkspaceInfo myWorkspace;
 
   private final List<Listener> myListeners = new ArrayList<Listener>();
@@ -137,12 +139,15 @@ public class SelectChangesetForm {
     }
   }
 
-  public SelectChangesetForm(final WorkspaceInfo workspace, String serverPath, final WorkspaceInfo workspaceInfo) {
-    myWorkspace = workspaceInfo;
+  public SelectChangesetForm(final Project project, final WorkspaceInfo workspace, String serverPath) {
+    myProject = project;
+    myWorkspace = workspace;
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable.setModel(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+    // TODO select on double click
+    
     myFileField.setText(serverPath);
 
     myFindButton.addActionListener(new ActionListener() {
@@ -172,7 +177,7 @@ public class SelectChangesetForm {
         String initialPath =
           myFileField.getText() != null && myFileField.getText().length() > 0 ? myFileField.getText() : VersionControlPath.ROOT_FOLDER;
 
-        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Item", getPanel(), myWorkspace.getServer(), initialPath, false);
+        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Item", myProject, myWorkspace.getServer(), initialPath, false);
         d.show();
         if (d.isOK()) {
           myFileField.setText(d.getSelectedPath());

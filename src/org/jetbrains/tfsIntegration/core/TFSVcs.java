@@ -20,10 +20,11 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
+import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
@@ -212,6 +213,24 @@ public class TFSVcs extends AbstractVcs {
       myDiffProvider = new TFSDiffProvider(myProject);
     }
     return myDiffProvider;
+  }
+
+  @Nullable
+  public VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {
+    try {
+      int revisionNumber = Integer.parseInt(revisionNumberString);
+      return new VcsRevisionNumber.Int(revisionNumber);
+    }
+    catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  // TODO override AbstractVcs
+
+  @Nullable
+  public UpdateEnvironment getIntegrateEnvironment() {
+    return super.getIntegrateEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
 }

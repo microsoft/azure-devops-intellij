@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.ui.ManageWorkspacesForm;
 
@@ -12,9 +13,9 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
   private ManageWorkspacesForm myManageWorkspacesForm;
 
-  public ChooseWorkspaceStep(final CheckoutWizardModel model) {
+  public ChooseWorkspaceStep(Project project, final CheckoutWizardModel model) {
     super("Source Workspace", model);
-    myManageWorkspacesForm = new ManageWorkspacesForm(ManageWorkspacesForm.Mode.Choose);
+    myManageWorkspacesForm = new ManageWorkspacesForm(project, ManageWorkspacesForm.Mode.Choose);
     myManageWorkspacesForm.addSelectionListener(new ManageWorkspacesForm.Listener() {
       public void selectionChanged(final WorkspaceInfo selection) {
         fireStateChanged();

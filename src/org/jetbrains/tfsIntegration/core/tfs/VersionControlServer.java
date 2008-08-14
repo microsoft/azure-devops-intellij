@@ -28,6 +28,7 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
@@ -159,6 +160,24 @@ public class VersionControlServer {
         TFSVcs.assertTrue(file.isFile());
         changeRequest.setType(ItemType.File);
 
+        return changeRequest;
+      }
+    });
+  }
+
+  public ResultWithFailures<GetOperation> createBranch(final String workspaceName,
+                                                       final String workspaceOwner,
+                                                       ItemPath source,
+                                                       final VersionSpecBase versionSpec,
+                                                       final String targetServerPath) throws TfsException {
+    return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(source), new ChangeRequestProvider() {
+      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
+        ChangeRequest changeRequest = createChangeRequestTemplate();
+        changeRequest.getItem().setItem(itemPath.getServerPath());
+        changeRequest.getItem().setRecurse(RecursionType.Full);
+        changeRequest.setReq(RequestType.Branch);
+        changeRequest.setTarget(targetServerPath);
+        changeRequest.setVspec(versionSpec);
         return changeRequest;
       }
     });
@@ -462,16 +481,15 @@ public class VersionControlServer {
     return result;
   }
 
-  public static void downloadItem(final WorkspaceInfo workspaceInfo, final String downloadKey, OutputStream outputStream)
-    throws TfsException {
-    final String url = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
+  public static void downloadItem(final ServerInfo server, final String downloadKey, OutputStream outputStream) throws TfsException {
+    final String url = server.getUri().toASCIIString() + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
     WebServiceHelper.httpGet(url, outputStream);
   }
 
   /**
    * @deprecated use TFSFileUtil.writeToFile
    */
-  public static void downloadItem(final WorkspaceInfo workspaceInfo,
+  public static void downloadItem(final ServerInfo server,
                                   final String downloadKey,
                                   final File destination,
                                   boolean overwriteReadonly,
@@ -484,7 +502,7 @@ public class VersionControlServer {
         TfsFileUtil.setReadOnlyInEventDispatchThread(destination.getPath(), false);
       }
       fileStream = new FileOutputStream(destination);
-      downloadItem(workspaceInfo, downloadKey, fileStream);
+      downloadItem(server, downloadKey, fileStream);
 
       if (setReadonly) {
         destination.setReadOnly();
@@ -515,7 +533,7 @@ public class VersionControlServer {
   /**
    * @deprecated
    */
-  public static void downloadItem(@NotNull final WorkspaceInfo workspace,
+  public static void downloadItem(@NotNull final ServerInfo server,
                                   @NotNull final GetOperation operation,
                                   boolean setReadOnly,
                                   boolean overwriteReadonly,
@@ -547,7 +565,7 @@ public class VersionControlServer {
             throw new FileOperationException("Failed to create folder '" + targetFile.getParentFile().getPath() + "'");
           }
         }
-        downloadItem(workspace, operation.getDurl(), targetFile, overwriteReadonly, refreshVirtualFile, setReadOnly);
+        downloadItem(server, operation.getDurl(), targetFile, overwriteReadonly, refreshVirtualFile, setReadOnly);
       }
     }
   }
@@ -853,7 +871,7 @@ public class VersionControlServer {
     return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
   }
 
-  /*public Collection<PendingChange> queryPendingSetsByServerItems(final String workspaceName,
+  public Collection<PendingChange> queryPendingSetsByServerItems(final String workspaceName,
                                                              final String workspaceOwnerName,
                                                              final Collection<String> serverItems,
                                                              final RecursionType recursionType) throws TfsException {
@@ -861,8 +879,8 @@ public class VersionControlServer {
     for (String serverItem : serverItems) {
       itemSpecs.add(createItemSpec(serverItem, recursionType));
     }
-    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, recursionType);
-  }*/
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
+  }
 
   private Collection<PendingChange> doQueryPendingSets(final String workspaceName,
                                                        final String workspaceOwnerName,

@@ -53,6 +53,7 @@ public class TFSDiffProvider implements DiffProvider {
       return null;
     }
     else {
+      // TODO fix IDEADEV-26614 (item can have other name in the past -> load content by item id, not by name)
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
       try {

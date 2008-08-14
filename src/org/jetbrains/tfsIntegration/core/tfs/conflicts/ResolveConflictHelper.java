@@ -79,7 +79,8 @@ public class ResolveConflictHelper {
       if (getOperations != null && getOperations.getGetOperation() != null) {
         ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
           .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
-        ApplyGetOperations.execute(myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, null, downloadMode, operationType);
+        ApplyGetOperations
+          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, null, downloadMode, operationType);
       }
     }
     catch (TfsException e) {

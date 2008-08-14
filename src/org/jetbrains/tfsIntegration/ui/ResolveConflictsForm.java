@@ -225,13 +225,13 @@ public class ResolveConflictsForm {
           myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full));
       }
       catch (TfsException e) {
-        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
       }
       catch (IOException e) {
-        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
       }
       catch (VcsException e) {
-        Messages.showErrorDialog(e.getMessage(), "Merge changes");
+        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
       }
     }
 

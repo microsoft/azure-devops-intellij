@@ -88,7 +88,7 @@ public class TFSProjectConfigurable implements Configurable {
     globalSettingsButton.addActionListener(new ActionListener() {
 
       public void actionPerformed(final ActionEvent e) {
-        WorkspacesDialog d = new WorkspacesDialog(WorkspacesDialog.Mode.Manage);
+        WorkspacesDialog d = new WorkspacesDialog(myProject, WorkspacesDialog.Mode.Manage);
         d.show();
       }
     });

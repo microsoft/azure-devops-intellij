@@ -16,24 +16,25 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.TfsPanel;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 
-public class UpdateOptionsPanel implements TfsPanel {
+public class SelectRevisionForm {
+
+  private static final DateFormat DATEFORMAT = SimpleDateFormat.getInstance();
+
   private JPanel myPanel;
   private JRadioButton latestRadioButton;
   private JRadioButton dateRadioButton;
@@ -44,15 +45,16 @@ public class UpdateOptionsPanel implements TfsPanel {
   private TextFieldWithBrowseButton changesetVersionText;
   private JTextField dateText;
 
-  private final WorkspaceInfo myWorkspace;
-  private final Project myProject;
-  private final Collection<ItemPath> myPaths;
+  private WorkspaceInfo myWorkspace;
+  private Project myProject;
+  private Collection<String> myServerPaths;
 
-  public UpdateOptionsPanel(final WorkspaceInfo workspace, Project project, final Collection<ItemPath> paths) {
-    myWorkspace = workspace;
-    myProject = project;
-    myPaths = paths;
+  public SelectRevisionForm(final WorkspaceInfo workspace, Project project, final Collection<String> serverPaths) {
+    this();
+    init(workspace, project, serverPaths);
+  }
 
+  public SelectRevisionForm() {
     final ActionListener radioButtonListener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         updateContols();
@@ -67,7 +69,7 @@ public class UpdateOptionsPanel implements TfsPanel {
 
     changesetVersionText.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myPaths);
+        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myServerPaths);
         d.show();
         if (d.isOK()) {
           changesetVersionText.setText(String.valueOf(d.getChangeset()));
@@ -88,6 +90,12 @@ public class UpdateOptionsPanel implements TfsPanel {
     latestRadioButton.setSelected(true);
   }
 
+  public void init(final WorkspaceInfo workspace, Project project, final Collection<String> serverPaths) {
+    myWorkspace = workspace;
+    myProject = project;
+    myServerPaths = serverPaths;
+  }
+
   private void updateContols() {
     dateText.setEnabled(dateRadioButton.isSelected());
     if (!dateRadioButton.isSelected()) {
@@ -103,30 +111,18 @@ public class UpdateOptionsPanel implements TfsPanel {
     }
   }
 
-  public void reset(TFSProjectConfiguration configuration) {
-    setVersionSpec(configuration.getUpdateWorkspaceInfo(myWorkspace).getVersion());
-  }
-
-  public void apply(TFSProjectConfiguration configuration) throws ConfigurationException {
-    configuration.getUpdateWorkspaceInfo(myWorkspace).setVersion(getVersionSpec());
-  }
-
-  public boolean canApply() {
-    return true;
-  }
-
   public JPanel getPanel() {
     return myPanel;
   }
 
-  public void setDate(Date date) {
+  private void setDate(Date date) {
     if (date == null) {
       return;
     }
-    dateText.setText(SimpleDateFormat.getInstance().format(date));
+    dateText.setText(DATEFORMAT.format(date));
   }
 
-  private void setVersionSpec(VersionSpecBase version) {
+  public void setVersionSpec(VersionSpecBase version) {
     if (version instanceof LatestVersionSpec) {
       latestRadioButton.setSelected(true);
     }
@@ -150,11 +146,11 @@ public class UpdateOptionsPanel implements TfsPanel {
       labelVersionText.setEnabled(true);
       labelVersionText.setText(((LabelVersionSpec)version).getStringRepresentation());
     }
-
     updateContols();
   }
 
-  private VersionSpecBase getVersionSpec() throws ConfigurationException {
+  @Nullable
+  public VersionSpecBase getVersionSpec() {
     if (latestRadioButton.isSelected()) {
       return LatestVersionSpec.INSTANCE;
     }
@@ -164,7 +160,7 @@ public class UpdateOptionsPanel implements TfsPanel {
         return new ChangesetVersionSpec(changeset);
       }
       catch (NumberFormatException e) {
-        throw new ConfigurationException("Incorrect changeset id '" + changesetVersionText.getText() + "'");
+        return null;
       }
     }
     else if (workspaceRadioButton.isSelected()) {
@@ -172,17 +168,17 @@ public class UpdateOptionsPanel implements TfsPanel {
     }
     else if (dateRadioButton.isSelected()) {
       try {
-        return new DateVersionSpec(SimpleDateFormat.getInstance().parse(dateText.getText()));
+        return new DateVersionSpec(DATEFORMAT.parse(dateText.getText()));
       }
       catch (ParseException e) {
-        throw new ConfigurationException("Incorrect date: '" + dateText.getText() + "'");
+        return null;
       }
     }
     else if (labelRadioButton.isSelected()) {
       return LabelVersionSpec.fromStringRepresentation(labelVersionText.getText());
     }
 
-    throw new ConfigurationException("Unknown version spec");
+    return null;
   }
 
 }

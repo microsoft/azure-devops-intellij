@@ -91,4 +91,9 @@ public class ChangeType {
     return myValues.size();
   }
 
+  public void remove(final Value... values) {
+    for (Value value : values) {
+      myValues.remove(value);
+    }
+  }
 }

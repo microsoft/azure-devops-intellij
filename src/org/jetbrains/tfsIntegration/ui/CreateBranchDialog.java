@@ -20,59 +20,45 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
 import javax.swing.*;
-import java.util.Collection;
 
-
-public class SelectChangesetDialog extends DialogWrapper {
+public class CreateBranchDialog extends DialogWrapper {
+  private CreateBranchForm myForm;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
-  private SelectChangesetForm myForm;
   private final String myServerPath;
 
-  public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
+  public CreateBranchDialog(final Project project, final WorkspaceInfo workspace, final String serverPath) {
     super(project, true);
     myProject = project;
     myWorkspace = workspace;
+    myServerPath = serverPath;
 
-    String commonAncestor = serverPaths.iterator().next();
-    for (String path : serverPaths) {
-      commonAncestor = getCommonPart(commonAncestor, path);
-    }
-    myServerPath = commonAncestor;
-
-    setOKButtonText("Choose");
-    setTitle("Find Changeset");
+    setTitle("Create Branch");
     setResizable(true);
     init();
 
-    setOKActionEnabled(false);
-  }
-
-  private static String getCommonPart(final String s1, final String s2) {
-    int i = 0;
-    while (i < Math.min(s1.length(), s2.length()) && s1.charAt(i) == s2.charAt(i)) {
-      i++;
-    }
-    return s1.substring(0, i);
+    setOKActionEnabled(true);
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new SelectChangesetForm(myProject, myWorkspace, myServerPath);
-
-    myForm.addListener(new SelectChangesetForm.Listener() {
-      public void selectionChanged(final Integer changeset) {
-        setOKActionEnabled(changeset != null);
-      }
-    });
-
+    myForm = new CreateBranchForm(myProject, myWorkspace, myServerPath);
     return myForm.getPanel();
   }
 
   @Nullable
-  public Integer getChangeset() {
-    return myForm.getChangeset();
+  public VersionSpecBase getVersionSpec() {
+    return myForm.getVersionSpec();
+  }
+
+  public String getTargetPath() {
+    return myForm.getTargetPath();
+  }
+
+  public boolean isCreateWorkingCopies() {
+    return myForm.isCreateWorkingCopies();
   }
 }

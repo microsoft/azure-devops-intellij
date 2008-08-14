@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.actions;
+package org.jetbrains.tfsIntegration.exceptions;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
+import org.apache.axis2.AxisFault;
+import org.jetbrains.annotations.NonNls;
 
-public class LockAction extends AnAction {
-  public void actionPerformed(final AnActionEvent e) {
-    Project project = e.getData(DataKeys.PROJECT);
-    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
-    
+public class InvalidPathException extends TfsException {
+
+  private static final long serialVersionUID = 1L;
+
+  @NonNls public static final String CODE = "InvalidPathException";
+
+  private final String myPath;
+
+  public InvalidPathException(AxisFault cause) {
+    super(cause);
+    myPath = cause.getMessage();
   }
 
+  public String getMessage() {
+    return "Invalid path: " + myPath;
+  }
 }

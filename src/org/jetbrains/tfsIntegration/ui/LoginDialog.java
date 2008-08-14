@@ -45,9 +45,7 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
   private JPasswordField myPasswordField;
   private JCheckBox myStorePasswordCheckbox;
 
-  public LoginDialog() {
-    this(null, null, null, null, true);
-  }
+  // TODO use project/component as constructor parameter
 
   public LoginDialog(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
     this(initialUri, initialCredentials != null ? initialCredentials.getUserName() : null,

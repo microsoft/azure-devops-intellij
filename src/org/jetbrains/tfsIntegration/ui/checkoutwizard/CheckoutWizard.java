@@ -1,5 +1,6 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.openapi.project.Project;
 import org.jetbrains.tfsIntegration.ui.abstractwizard.AbstractWizard;
 
 import java.util.List;
@@ -7,8 +8,8 @@ import java.util.List;
 public class CheckoutWizard extends AbstractWizard {
   private final CheckoutWizardModel myModel;
 
-  public CheckoutWizard(List<CheckoutWizardStep> steps, CheckoutWizardModel model) {
-    super("Checkout From TFS", null, steps);
+  public CheckoutWizard(Project project, List<CheckoutWizardStep> steps, CheckoutWizardModel model) {
+    super("Checkout From TFS", project, steps);
     myModel = model;
   }
 

@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
@@ -40,7 +41,7 @@ public class UndoPendingChanges {
     }
   }
 
-  public static UndoPendingChangesResult execute(final WorkspaceInfo workspace,
+  public static UndoPendingChangesResult execute(final Project project, final WorkspaceInfo workspace,
                                                  final Collection<ItemPath> paths,
                                                  ApplyGetOperations.DownloadMode downloadMode) {
     if (paths.isEmpty()) {
@@ -66,7 +67,7 @@ public class UndoPendingChanges {
       }
 
       final Collection<VcsException> applyingErrors =
-        ApplyGetOperations.execute(workspace, result.getResult(), null, null, downloadMode, ApplyGetOperations.ProcessMode.UNDO);
+        ApplyGetOperations.execute(project, workspace, result.getResult(), null, null, downloadMode, ApplyGetOperations.ProcessMode.UNDO);
       errors.addAll(applyingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }

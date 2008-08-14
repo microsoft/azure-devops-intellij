@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
@@ -59,6 +60,7 @@ public class ManageWorkspacesForm {
   private JTable myWorkspacesTable;
   private JLabel myWorkspacesLabel;
   private List<Listener> myListeners = new ArrayList<Listener>();
+  private final Project myProject;
   private final Mode myMode;
 
   private enum WorkspacesTableColumn {
@@ -143,12 +145,13 @@ public class ManageWorkspacesForm {
     updateControls();
   }
 
-  public ManageWorkspacesForm(final Mode mode) {
+  public ManageWorkspacesForm(final Project project, final Mode mode) {
+    myProject = project;
     myMode = mode;
     myAddButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         WorkspaceInfo newWorkspaceInfo = new WorkspaceInfo(myServer, myServer.getQualifiedUsername(), Workstation.getComputerName());
-        WorkspaceDialog workspaceDialog = new WorkspaceDialog(newWorkspaceInfo);
+        WorkspaceDialog workspaceDialog = new WorkspaceDialog(myProject, newWorkspaceInfo);
         workspaceDialog.show();
         if (workspaceDialog.isOK()) {
           try {
@@ -161,7 +164,7 @@ public class ManageWorkspacesForm {
           catch (TfsException ex) {
             String message =
               MessageFormat.format("Failed to create workspace ''{0}''.\n{1}", newWorkspaceInfo.getName(), ex.getLocalizedMessage());
-            Messages.showErrorDialog(message, "Create Workspace");
+            Messages.showErrorDialog(myProject, message, "Create Workspace");
           }
         }
       }
@@ -191,7 +194,7 @@ public class ManageWorkspacesForm {
         }
         catch (Exception ex) {
           String message = MessageFormat.format("Failed to refresh workspaces.\n{0}", ex.getLocalizedMessage());
-          Messages.showErrorDialog(message, "Refresh Workspaces");
+          Messages.showErrorDialog(myProject, message, "Refresh Workspaces");
         }
       }
     });
@@ -242,7 +245,7 @@ public class ManageWorkspacesForm {
     try {
       workspace.loadFromServer();
       WorkspaceInfo workspaceCopyToEdit = workspace.getCopy();
-      WorkspaceDialog workspaceDialog = new WorkspaceDialog(workspaceCopyToEdit);
+      WorkspaceDialog workspaceDialog = new WorkspaceDialog(myProject, workspaceCopyToEdit);
       workspaceDialog.show();
       if (workspaceDialog.isOK()) {
         workspaceCopyToEdit.saveToServer();
@@ -254,7 +257,7 @@ public class ManageWorkspacesForm {
     catch (Exception ex) {
       String message =
         MessageFormat.format("Failed to open workspace ''{0}'' for editing.\n{1}", workspace.getName(), ex.getLocalizedMessage());
-      Messages.showErrorDialog(message, "Edit Workspace");
+      Messages.showErrorDialog(myProject, message, "Edit Workspace");
     }
   }
 
@@ -266,7 +269,7 @@ public class ManageWorkspacesForm {
     }
     catch (Exception ex) {
       String message = MessageFormat.format("Failed to delete workspace ''{0}''.\n{1}", workspaceInfo.getName(), ex.getLocalizedMessage());
-      Messages.showErrorDialog(message, "Delete Workspace");
+      Messages.showErrorDialog(myProject, message, "Delete Workspace");
     }
   }
 

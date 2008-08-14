@@ -59,7 +59,7 @@
       <reference id="ChangesView.Rollback"/>
       <separator/>
       <!--action id="Tfs.Label" class="org.jetbrains.tfsIntegration.actions.LabelAction" text="Apply Label..."/-->
-      <!--action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="Branch..."/-->
+      <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="Branch..."/>
       <separator/>
       <reference id="Compare.SameVersion"/>
       <reference id="Compare.LastVersion"/>

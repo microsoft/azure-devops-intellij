@@ -18,9 +18,153 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.ui.CreateBranchDialog;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class BranchAction extends AnAction {
+
   public void actionPerformed(final AnActionEvent e) {
-    throw new UnsupportedOperationException();
+    final Project project = e.getData(DataKeys.PROJECT);
+    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
+
+    try {
+      //noinspection ConstantConditions
+      final FilePath sourceLocalPath = TfsFileUtil.getFilePath(files[0]);
+      final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(sourceLocalPath);
+      final String sourceServerPath = workspace.findServerPathByLocalPath(sourceLocalPath);
+      CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath);
+      d.show();
+      if (!d.isOK()) {
+        return;
+      }
+
+      VersionSpecBase version = d.getVersionSpec();
+      if (version == null) {
+        Messages.showErrorDialog(project, "Invalid version specified", "Create Branch");
+        return;
+      }
+
+      final String targetServerPath = d.getTargetPath();
+      if (d.isCreateWorkingCopies()) {
+        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath);
+        if (targetLocalPath == null) {
+          FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+          d.setTitle("Choose Local Folder");
+          descriptor.setShowFileSystemRoots(true);
+          final String message = MessageFormat.format(
+            "Branch target folder ''{0}'' is not mapped. Select a local directory to create mapping in workspace ''{1}''", targetServerPath,
+            workspace.getName());
+          descriptor.setDescription(message);
+
+          VirtualFile[] selectedFiles = FileChooser.chooseFiles(project, descriptor);
+          if (selectedFiles.length != 1 || selectedFiles[0] == null) {
+            return;
+          }
+
+          workspace.addWorkingFolderInfo(
+            new WorkingFolderInfo(WorkingFolderInfo.Status.Active, TfsFileUtil.getFilePath(selectedFiles[0]), targetServerPath));
+          workspace.saveToServer();
+        }
+      }
+
+      final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
+        .createBranch(workspace.getName(), workspace.getOwnerName(), new ItemPath(sourceLocalPath, sourceServerPath), version,
+                      targetServerPath);
+      if (!createBranchResult.getFailures().isEmpty()) {
+        StringBuilder s = new StringBuilder("Failed to create branch:\n");
+        for (Failure failure : createBranchResult.getFailures()) {
+          s.append(failure.getMessage()).append("\n");
+        }
+        Messages.showErrorDialog(project, s.toString(), "Create Branch");
+        return;
+      }
+
+      if (d.isCreateWorkingCopies()) {
+        final Ref<Collection<VcsException>> downloadErrors = new Ref<Collection<VcsException>>(Collections.<VcsException>emptyList());
+        ProgressManager.getInstance().run(new Task.Modal(project, "Creating target working copies", false) {
+          public void run(final ProgressIndicator indicator) {
+            downloadErrors.set(ApplyGetOperations.execute(project, workspace, createBranchResult.getResult(), indicator, null,
+                                                          ApplyGetOperations.DownloadMode.ALLOW, ApplyGetOperations.ProcessMode.GET));
+          }
+        });
+
+        if (!downloadErrors.get().isEmpty()) {
+          AbstractVcsHelper.getInstance(project).showErrors(new ArrayList<VcsException>(downloadErrors.get()), "Create Branch");
+        }
+
+      }
+      final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS().queryPendingSetsByServerItems(workspace.getName(),
+                                                                                                                    workspace.getOwnerName(),
+                                                                                                                    Collections.singletonList(
+                                                                                                                      targetServerPath),
+                                                                                                                    RecursionType.Full);
+      Collection<String> checkin = new ArrayList<String>();
+      for (PendingChange change : pendingChanges) {
+        if (ChangeType.fromString(change.getChg()).contains(ChangeType.Value.Branch)) {
+          checkin.add(change.getItem());
+        }
+      }
+      final String comment = MessageFormat.format("Branch created from {0}", sourceServerPath);
+      final ResultWithFailures<CheckinResult> checkinResult =
+        workspace.getServer().getVCS().checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment);
+
+      if (!checkinResult.getFailures().isEmpty()) {
+        final List<VcsException> checkinErrors = BeanHelper.getVcsExceptions(checkinResult.getFailures());
+        AbstractVcsHelper.getInstance(project).showErrors(checkinErrors, "Create Branch");
+      }
+
+      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath);
+      if (targetLocalPath != null) {
+        TfsFileUtil.invalidateRecursively(project, targetLocalPath);
+      }
+    }
+    catch (TfsException ex) {
+      String message = "Failed to create branch: " + ex.getMessage();
+      Messages.showErrorDialog(project, message, "Create Branch");
+    }
+  }
+
+  public void update(final AnActionEvent e) {
+    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
+    e.getPresentation().setEnabled(isEnabled(files));
+  }
+
+  private static boolean isEnabled(final VirtualFile[] files) {
+    if (files == null || files.length != 1) {
+      return false;
+    }
+
+    final FilePath localPath = TfsFileUtil.getFilePath(files[0]);
+    try {
+      return Workstation.getInstance().findWorkspace(localPath) != null;
+    }
+    catch (TfsException e) {
+      TFSVcs.LOG.error(e);
+      return false;
+    }
   }
 }

@@ -109,7 +109,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 }
               }
               final Collection<VcsException> applyErrors = ApplyGetOperations
-                .execute(workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW,
+                .execute(myProject, workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW,
                          ApplyGetOperations.ProcessMode.GET);
                 exceptions.addAll(applyErrors);
             }

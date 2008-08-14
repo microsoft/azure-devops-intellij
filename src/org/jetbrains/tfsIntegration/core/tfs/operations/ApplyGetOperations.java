@@ -17,14 +17,17 @@
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
@@ -48,6 +51,7 @@ public class ApplyGetOperations {
   private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
 
 
+  private Project myProject;
   private final WorkspaceInfo myWorkspace;
   private final Collection<GetOperation> myOperations;
   private final @Nullable ProgressIndicator myProgressIndicator;
@@ -76,12 +80,14 @@ public class ApplyGetOperations {
     ERROR
   }
 
-  private ApplyGetOperations(WorkspaceInfo workspace,
+  private ApplyGetOperations(Project project,
+                             WorkspaceInfo workspace,
                              Collection<GetOperation> operations,
                              final @Nullable ProgressIndicator progressIndicator,
                              final @Nullable UpdatedFiles updatedFiles,
                              final DownloadMode downloadMode,
                              final ProcessMode processMode) {
+    myProject = project;
     myWorkspace = workspace;
     myOperations = operations;
     myProgressIndicator = progressIndicator;
@@ -98,14 +104,15 @@ public class ApplyGetOperations {
     ourLocalConflictHandlingType = type;
   }
 
-  public static Collection<VcsException> execute(WorkspaceInfo workspace,
+  public static Collection<VcsException> execute(Project project,
+                                                 WorkspaceInfo workspace,
                                                  Collection<GetOperation> operations,
                                                  final @Nullable ProgressIndicator progressIndicator,
                                                  final @Nullable UpdatedFiles updatedFiles,
                                                  DownloadMode downloadMode,
                                                  ProcessMode operationType) {
     ApplyGetOperations session =
-      new ApplyGetOperations(workspace, operations, progressIndicator, updatedFiles, downloadMode, operationType);
+      new ApplyGetOperations(project, workspace, operations, progressIndicator, updatedFiles, downloadMode, operationType);
     session.execute();
     return session.myErrors;
   }
@@ -164,7 +171,6 @@ public class ApplyGetOperations {
         .updateLocalVersions(myWorkspace.getName(), myWorkspace.getOwnerName(), myUpdateLocalVersions);
     }
     catch (TfsException e) {
-
       myErrors.add(new VcsException(e));
     }
   }
@@ -189,7 +195,7 @@ public class ApplyGetOperations {
     }
 
     updateLocalVersion(operation);
-    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source);
+    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
   }
 
   private void processDeleteFolder(final GetOperation operation) throws TfsException {
@@ -213,7 +219,7 @@ public class ApplyGetOperations {
     }
 
     updateLocalVersion(operation);
-    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source);
+    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
   }
 
   private boolean canDeleteFolder(final File folder) {
@@ -264,7 +270,7 @@ public class ApplyGetOperations {
     }
 
     updateLocalVersion(operation);
-    addToGroup(fileExists ? FileGroup.UPDATED_ID : FileGroup.RESTORED_ID, target);
+    addToGroup(fileExists ? FileGroup.UPDATED_ID : FileGroup.RESTORED_ID, target, operation);
   }
 
   private void processCreateFolder(final GetOperation operation) throws TfsException {
@@ -290,7 +296,7 @@ public class ApplyGetOperations {
 
     updateLocalVersion(operation);
     if (!folderExists) {
-      addToGroup(FileGroup.RESTORED_ID, target);
+      addToGroup(FileGroup.RESTORED_ID, target, operation);
     }
   }
 
@@ -313,7 +319,7 @@ public class ApplyGetOperations {
         }
 
         downloadFile(operation);
-        addToGroup(FileGroup.RESTORED_ID, target);
+        addToGroup(FileGroup.RESTORED_ID, target, operation);
       }
       updateLocalVersion(operation);
       return;
@@ -358,7 +364,7 @@ public class ApplyGetOperations {
 
     if (rename && !download && source.exists()) {
       if (source.renameTo(target)) {
-        addToGroup(FileGroup.UPDATED_ID, target);
+        addToGroup(myProcessMode == ProcessMode.UNDO ? FileGroup.RESTORED_ID : FileGroup.UPDATED_ID, target, operation);
         updateLocalVersion(operation);
       }
       else {
@@ -376,7 +382,7 @@ public class ApplyGetOperations {
       if (operation.getDurl() != null) {
         downloadFile(operation);
         updateLocalVersion(operation);
-        addToGroup(FileGroup.UPDATED_ID, target);
+        addToGroup(myProcessMode == ProcessMode.UNDO ? FileGroup.RESTORED_ID : FileGroup.UPDATED_ID, target, operation);
       }
     }
   }
@@ -418,7 +424,7 @@ public class ApplyGetOperations {
       // source exists, target is not
       if (source.exists()) {
         if (source.renameTo(target)) {
-          addToGroup(FileGroup.UPDATED_ID, target);
+          addToGroup(FileGroup.UPDATED_ID, target, operation);
           updateLocalVersion(operation);
         }
         else {
@@ -434,7 +440,7 @@ public class ApplyGetOperations {
         if (!ChangeType.fromString(operation.getChg()).contains(ChangeType.Value.Add) &&
             (!source.equals(target) || myDownloadMode == DownloadMode.FORCE)) {
           if (createFolder(target)) {
-            addToGroup(FileGroup.CREATED_ID, target);
+            addToGroup(FileGroup.CREATED_ID, target, operation);
           }
           else {
             String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getPath());
@@ -457,13 +463,13 @@ public class ApplyGetOperations {
 
   private void processConflict(final GetOperation operation) {
     File subject = new File(operation.getTlocal() != null ? operation.getTlocal() : operation.getSlocal());
-    addToGroup(FileGroup.MODIFIED_ID, subject);
+    addToGroup(FileGroup.MODIFIED_ID, subject, operation);
   }
 
-  private void addToGroup(String groupId, File file) {
+  private void addToGroup(String groupId, File file, GetOperation operation) {
     if (myUpdatedFiles != null) {
-      // TODO use FileGroup.add(file, vcs, revision)?
-      myUpdatedFiles.getGroupById(groupId).add(file.getPath());
+      int revisionNumber = operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0;
+      myUpdatedFiles.getGroupById(groupId).add(file.getPath(), TFSVcs.getInstance(myProject), new VcsRevisionNumber.Int(revisionNumber));
     }
   }
 
@@ -502,7 +508,7 @@ public class ApplyGetOperations {
     final File target = new File(operation.getTlocal());
     TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
       public void write(final OutputStream outputStream) throws TfsException {
-        VersionControlServer.downloadItem(myWorkspace, operation.getDurl(), outputStream);
+        VersionControlServer.downloadItem(myWorkspace.getServer(), operation.getDurl(), outputStream);
       }
     });
     target.setReadOnly();

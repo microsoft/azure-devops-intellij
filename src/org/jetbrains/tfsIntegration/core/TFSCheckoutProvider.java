@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
@@ -49,11 +50,12 @@ import java.util.List;
 public class TFSCheckoutProvider implements CheckoutProvider {
 
   public void doCheckout(@Nullable final Listener listener) {
+    Project project = null; // TODO: use the right project
     final CheckoutWizardModel model = new CheckoutWizardModel();
-    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model), new ChooseWorkspaceStep(model),
+    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model), new ChooseWorkspaceStep(project, model),
                                                    new ChooseLocalAndServerPathsStep(model), new ChooseServerPathStep(model),
                                                    new SummaryStep(model));
-    CheckoutWizard w = new CheckoutWizard(steps, model);
+    CheckoutWizard w = new CheckoutWizard(project, steps, model);
     w.show();
 
     if (w.isOK()) {
@@ -81,7 +83,8 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
 
-          final Collection<VcsException> applyErrors = ApplyGetOperations.execute(workspace, operations, progressIndicator, null,
+          final Collection<VcsException> applyErrors = ApplyGetOperations.execute(ProjectManager.getInstance().getDefaultProject(),
+                                                                                  workspace, operations, progressIndicator, null,
                                                                                   ApplyGetOperations.DownloadMode.ALLOW,
                                                                                   ApplyGetOperations.ProcessMode.GET);
           errors.addAll(applyErrors);
@@ -92,6 +95,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       }
     };
 
+    // TODO run(Task) ?
     ProgressManager.getInstance()
       .runProcessWithProgressSynchronously(checkoutRunnable, "Checkout from TFS", true, ProjectManager.getInstance().getDefaultProject());
 

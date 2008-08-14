@@ -128,6 +128,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     }
   }
 
+  private final Project myProject;
   private final WorkspaceInfo myWorkspace;
 
   private JTextField myNameField;
@@ -136,8 +137,9 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
   private JTable myFoldersTable;
   private JTextArea myCommentArea;
 
-  public WorkspaceDialog(WorkspaceInfo workspaceInfo) {
-    super((Project)null, true);
+  public WorkspaceDialog(Project project, WorkspaceInfo workspaceInfo) {
+    super(project, true);
+    myProject = project;
     myWorkspace = workspaceInfo;
 
     setResizable(true);
@@ -307,9 +309,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
         d.setShowFileSystemRoots(true);
         d.setDescription("Choose local folder to be mapped to server path");
 
-        String path = "file://" + initialText.trim().replace(File.separatorChar, '/');
-        VirtualFile root = VirtualFileManager.getInstance().findFileByUrl(path);
-        VirtualFile[] files = FileChooser.chooseFiles(panel, d, root);
+        VirtualFile[] files = FileChooser.chooseFiles(panel, d, VcsUtil.getVirtualFile(initialText));
         if (files.length != 1 || files[0] == null) {
           return initialText;
         }
@@ -319,7 +319,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.ServerPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
-        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Folder", getContentPane(), myWorkspace.getServer(), initialText, true);
+        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Folder", myProject, myWorkspace.getServer(), initialText, true);
         d.show();
         if (d.isOK()) {
           final String selectedPath = d.getSelectedPath();
@@ -390,7 +390,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     }
     catch (TfsException e) {
       String message = MessageFormat.format("Failed to refresh workspace ''{0}''.\n{1}", myWorkspace.getName(), e.getLocalizedMessage());
-      Messages.showErrorDialog(message, getTitle());
+      Messages.showErrorDialog(getContentPane(), message, getTitle());
     }
     myFoldersTable.getSelectionModel().clearSelection();
     updateButtons();
