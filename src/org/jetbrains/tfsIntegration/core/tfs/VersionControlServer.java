@@ -22,7 +22,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -486,90 +485,6 @@ public class VersionControlServer {
     WebServiceHelper.httpGet(url, outputStream);
   }
 
-  /**
-   * @deprecated use TFSFileUtil.writeToFile
-   */
-  public static void downloadItem(final ServerInfo server,
-                                  final String downloadKey,
-                                  final File destination,
-                                  boolean overwriteReadonly,
-                                  boolean setReadonly,
-                                  boolean refreshVirtualFile) throws TfsException {
-    TFSVcs.assertTrue(downloadKey != null, "Null download key for destination:" + destination + "'");
-    OutputStream fileStream = null;
-    try {
-      if (overwriteReadonly && destination.isFile()) {
-        TfsFileUtil.setReadOnlyInEventDispatchThread(destination.getPath(), false);
-      }
-      fileStream = new FileOutputStream(destination);
-      downloadItem(server, downloadKey, fileStream);
-
-      if (setReadonly) {
-        destination.setReadOnly();
-      }
-      if (refreshVirtualFile) {
-        TfsFileUtil.refreshVirtualFileContents(destination);
-      }
-    }
-    catch (FileNotFoundException e) {
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''", destination.getPath());
-      throw new FileOperationException(errorMessage);
-    }
-    catch (IOException e) {
-      throw TfsExceptionManager.processException(e);
-    }
-    finally {
-      if (fileStream != null) {
-        try {
-          fileStream.close();
-        }
-        catch (IOException e) {
-          // ignore
-        }
-      }
-    }
-  }
-
-  /**
-   * @deprecated
-   */
-  public static void downloadItem(@NotNull final ServerInfo server,
-                                  @NotNull final GetOperation operation,
-                                  boolean setReadOnly,
-                                  boolean overwriteReadonly,
-                                  boolean refreshVirtualFile) throws TfsException {
-    TFSVcs.assertTrue(operation.getType() == ItemType.Folder || operation.getType() == ItemType.File);
-
-    if (ChangeType.fromString(operation.getChg()).contains(ChangeType.Value.Rename)) {
-      TFSVcs.assertTrue(ChangeType.fromString(operation.getChg()).containsOnly(ChangeType.Value.Rename));
-      TFSVcs.assertTrue(!operation.getSlocal().equals(operation.getTlocal()));
-
-      File source = new File(operation.getSlocal());
-      File target = new File(operation.getTlocal());
-      boolean renameSuccessful = source.renameTo(target);
-      if (!renameSuccessful) {
-        throw new FileOperationException("Failed to rename '" + source.getPath() + "' to '" + target.getPath() + "'");
-      }
-    }
-    else {
-      File targetFile = new File(operation.getSlocal());
-      if (operation.getType() == ItemType.Folder) {
-        if (!targetFile.isDirectory() && !targetFile.mkdirs()) {
-          throw new FileOperationException("Failed to create folder '" + targetFile.getPath() + "'");
-        }
-      }
-      // NOTE: dUrl may be null if we try to get old version of renamed file
-      else if (operation.getDurl() != null) {
-        if (targetFile.getParentFile() != null) {
-          if (!targetFile.getParentFile().isDirectory() && !targetFile.getParentFile().mkdirs()) {
-            throw new FileOperationException("Failed to create folder '" + targetFile.getParentFile().getPath() + "'");
-          }
-        }
-        downloadItem(server, operation.getDurl(), targetFile, overwriteReadonly, refreshVirtualFile, setReadOnly);
-      }
-    }
-  }
-
   public List<Changeset> queryHistory(final String workspaceName,
                                       final String workspaceOwner,
                                       String serverPath,
@@ -652,8 +567,7 @@ public class VersionControlServer {
                                 final VersionSpec versionSpec,
                                 final RecursionType recursionType) throws TfsException {
     final GetRequestParams getRequest = new GetRequestParams(path, recursionType, versionSpec);
-    List<GetOperation> result = get(workspaceName, ownerName, Collections.singletonList(getRequest));
-    return result;
+    return get(workspaceName, ownerName, Collections.singletonList(getRequest));
   }
 
 
@@ -872,9 +786,9 @@ public class VersionControlServer {
   }
 
   public Collection<PendingChange> queryPendingSetsByServerItems(final String workspaceName,
-                                                             final String workspaceOwnerName,
-                                                             final Collection<String> serverItems,
-                                                             final RecursionType recursionType) throws TfsException {
+                                                                 final String workspaceOwnerName,
+                                                                 final Collection<String> serverItems,
+                                                                 final RecursionType recursionType) throws TfsException {
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(serverItems.size());
     for (String serverItem : serverItems) {
       itemSpecs.add(createItemSpec(serverItem, recursionType));
@@ -1045,6 +959,24 @@ public class VersionControlServer {
       result.addAll(Arrays.asList(labels));
     }
     return result;
+  }
+
+  public BranchRelative[] queryBranches(final String workspaceName,
+                                        final String ownerName,
+                                        final String itemServerPath,
+                                        final VersionSpec versionSpec) throws TfsException {
+    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
+
+    ArrayOfArrayOfBranchRelative result =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfBranchRelative>() {
+        public ArrayOfArrayOfBranchRelative executeRequest() throws RemoteException {
+          return myRepository.QueryBranches(workspaceName, ownerName, arrayOfItemSpec, versionSpec);
+        }
+      });
+
+    TFSVcs.assertTrue(result.getArrayOfBranchRelative().length == 1);
+    return result.getArrayOfBranchRelative()[0].getBranchRelative();
   }
 
   //public Map<ItemPath, Item> queryItems(final String workspaceName,

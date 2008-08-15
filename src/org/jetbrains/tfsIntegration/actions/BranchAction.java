@@ -16,9 +16,6 @@
 
 package org.jetbrains.tfsIntegration.actions;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -45,15 +42,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class BranchAction extends AnAction {
+public class BranchAction extends SingleSelectionAction {
 
-  public void actionPerformed(final AnActionEvent e) {
-    final Project project = e.getData(DataKeys.PROJECT);
-    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
-
+  public void actionPerformed(final Project project, final VirtualFile file) {
     try {
-      //noinspection ConstantConditions
-      final FilePath sourceLocalPath = TfsFileUtil.getFilePath(files[0]);
+      final FilePath sourceLocalPath = TfsFileUtil.getFilePath(file);
       final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(sourceLocalPath);
       final String sourceServerPath = workspace.findServerPathByLocalPath(sourceLocalPath);
       CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath);
@@ -148,13 +141,8 @@ public class BranchAction extends AnAction {
     }
   }
 
-  public void update(final AnActionEvent e) {
-    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
-    e.getPresentation().setEnabled(isEnabled(files));
-  }
-
-  private static boolean isEnabled(final VirtualFile[] files) {
-    if (files == null || files.length != 1) {
+  protected boolean isEnabled(final VirtualFile[] files) {
+    if (!super.isEnabled(files)) {
       return false;
     }
 

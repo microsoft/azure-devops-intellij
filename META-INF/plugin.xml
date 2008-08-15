@@ -69,6 +69,8 @@
       <reference id="Vcs.ShowHistoryForBlock"/>
       <reference id="Annotate"/>
       <reference id="ChangesView.Browse"/>
+      <separator/>
+      <action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="Version Control Information..."/>
       <add-to-group group-id="TfsGlobalGroup" anchor="last"/>
       <add-to-group group-id="TfsFilePopupGroup" anchor="last"/>
     </group>
