@@ -1,3 +1,19 @@
+/*
+ * Copyright 2000-2008 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import com.intellij.openapi.diff.ActionButtonPresentation;
@@ -10,11 +26,13 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.peer.PeerFactory;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
@@ -30,12 +48,14 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class ResolveConflictHelper {
-  private Project myProject;
-  private WorkspaceInfo myWorkspace;
+  private final @NotNull Project myProject;
+  private final @NotNull WorkspaceInfo myWorkspace;
+  private final @Nullable UpdatedFiles myUpdatedFiles;
 
-  public ResolveConflictHelper(final Project project, final WorkspaceInfo workspace) {
+  public ResolveConflictHelper(final Project project, final WorkspaceInfo workspace, final UpdatedFiles updatedFiles) {
     myProject = project;
     myWorkspace = workspace;
+    myUpdatedFiles = updatedFiles;
   }
 
   public void conflictResolved(final Conflict conflict,
@@ -80,7 +100,7 @@ public class ResolveConflictHelper {
         ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
           .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
         ApplyGetOperations
-          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, null, downloadMode, operationType);
+          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode, operationType);
       }
     }
     catch (TfsException e) {

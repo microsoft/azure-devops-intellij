@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import com.intellij.openapi.vcs.update.FileGroup;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ConflictType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
-import org.jetbrains.annotations.NonNls;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -52,7 +56,6 @@ public class ResolveConflictsForm {
   private JButton myMergeButton;
   private ItemsTableModel myItemsTableModel;
   private final WorkspaceInfo myWorkspace;
-  private final UpdatedFiles myUpdatedFiles;
   private final List<ItemPath> myPaths;
   private final ResolveConflictHelper myResolveConflictHelper;
 
@@ -62,8 +65,7 @@ public class ResolveConflictsForm {
                               final List<Conflict> conflicts,
                               final UpdatedFiles updatedFiles) {
     myWorkspace = workspace;
-    myUpdatedFiles = updatedFiles;
-    myResolveConflictHelper = new ResolveConflictHelper(project, myWorkspace);
+    myResolveConflictHelper = new ResolveConflictHelper(project, myWorkspace, updatedFiles);
     myPaths = paths;
 
     myItemsTableModel = new ItemsTableModel();
@@ -94,14 +96,13 @@ public class ResolveConflictsForm {
     myAcceptYoursButton.addActionListener(new MergeActionListener() {
       protected void execute(final Conflict conflict) throws TfsException {
         myResolveConflictHelper.acceptYours(conflict);
-        myUpdatedFiles.getGroupById(FileGroup.MODIFIED_ID).add(conflict.getSrclitem());
       }
     });
 
     myAcceptTheirsButton.addActionListener(new MergeActionListener() {
-      protected void execute(final Conflict conflict) throws TfsException, IOException {
+      protected void execute(final Conflict conflict) throws TfsException, IOException, VcsException {
+        final ConflictData conflictData = myResolveConflictHelper.getConflictData(conflict);
         myResolveConflictHelper.acceptTheirs(conflict);
-        myUpdatedFiles.getGroupById(FileGroup.RESTORED_ID).add(conflict.getTgtlitem());
       }
     });
 
@@ -109,7 +110,6 @@ public class ResolveConflictsForm {
       protected void execute(final Conflict conflict) throws TfsException, VcsException {
         final ConflictData conflictData = myResolveConflictHelper.getConflictData(conflict);
         myResolveConflictHelper.acceptMerge(conflict, conflictData);
-        myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(conflictData.targetLocalName);
       }
     });
   }
@@ -128,12 +128,33 @@ public class ResolveConflictsForm {
     myMergeButton.setEnabled(selectedIndices.length > 0);
     for (int index : selectedIndices) {
       Conflict conflict = myItemsTableModel.getConflicts().get(index);
-      if (conflict.getTsitem() == null) {
-        // item deleted on server, so it is
+      if (!canMerge(conflict)) {
         myMergeButton.setEnabled(false);
       }
-      // TODO: disable myMergeButton if names do not conflict and content conflicts and is binary   
     }
+  }
+
+  private static boolean canMerge(final @NotNull Conflict conflict) {
+    boolean isNamespaceConflict =
+      ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
+    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
+      if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit) &&
+          ChangeType.fromString(conflict.getBchg()).contains(ChangeType.Value.Edit)) {
+        return true;
+      }
+      if (conflict.getCtype().equals(ConflictType.Merge) && ChangeType.fromString(conflict.getBchg()).contains(ChangeType.Value.Edit)) {
+        if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit)) {
+          return true;
+        }
+        if (conflict.getIsforced()) {
+          return true;
+        }
+        if ((conflict.getTlmver() != conflict.getBver()) || (conflict.getYlmver() != conflict.getYver())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private static class ItemsTableModel extends AbstractTableModel {
@@ -238,4 +259,5 @@ public class ResolveConflictsForm {
     protected abstract void execute(final Conflict conflict) throws TfsException, IOException, VcsException;
   }
 }
+
 

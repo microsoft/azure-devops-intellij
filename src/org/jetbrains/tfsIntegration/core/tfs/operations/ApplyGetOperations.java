@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 // TODO review file groups
 
 @SuppressWarnings({"HardCodedStringLiteral"})
@@ -184,20 +183,23 @@ public class ApplyGetOperations {
       myErrors.add(new VcsException(errorMessage));
       return;
     }
-    if (source.canWrite()) {
+    if (myProcessMode != ProcessMode.UNDO && source.canWrite()) {
       if (!canOverrideLocalConflictingItem(operation, true)) {
         return;
       }
     }
 
-    if (!FileUtil.delete(source)) {
+    final boolean exists = source.exists();
+    if (exists && !FileUtil.delete(source)) {
       String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
 
     updateLocalVersion(operation);
-    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
+    if (exists) {
+      addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
+    }
   }
 
   private void processDeleteFolder(final GetOperation operation) throws TfsException {

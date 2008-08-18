@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -40,7 +41,7 @@ public class ItemInfoForm {
   private JLabel myLockLabel;
   private JScrollPane myTreePane;
   private JLabel myWorkspaceLabel;
-  private final BranchRelative[] myBranches;
+  private final @Nullable BranchRelative[] myBranches;
 
   public ItemInfoForm(final WorkspaceInfo workspace, final ExtendedItem item, final BranchRelative[] branches) {
     myBranches = branches;
@@ -54,7 +55,7 @@ public class ItemInfoForm {
     myLockLabel.setText(item.getLock() != null ? item.getLock().getValue() : "None");
     myWorkspaceLabel.setText(MessageFormat.format("{0} on server {1}", workspace.getName(), workspace.getServer().getUri()));
 
-    if (branches.length == 1) {
+    if (myBranches == null || myBranches.length == 1) {
       myTreePane.setVisible(false);
       myBranchesLabel.setText("No branches");
     }
@@ -66,14 +67,19 @@ public class ItemInfoForm {
 
   private void createUIComponents() {
     BranchRelative root = null;
-    for (BranchRelative branch : myBranches) {
-      if (branch.getRelfromid() == 0) {
-        root = branch;
-        break;
-      }
+    if (myBranches == null) {
+      myBranchesTree = new JTree();
     }
+    else {
+      for (BranchRelative branch : myBranches) {
+        if (branch.getRelfromid() == 0) {
+          root = branch;
+          break;
+        }
+      }
 
-    myBranchesTree = new JTree(buildTree(root));
+      myBranchesTree = new JTree(buildTree(root));
+    }
 
     //final ColumnInfo[] columns = new ColumnInfo[]{new ColumnInfo("Server Path") {
     //  public Object valueOf(final Object o) {
@@ -112,7 +118,7 @@ public class ItemInfoForm {
           else {
             text = branch.getBranchToItem().getItem();
           }
-          
+
           setText(text);
 
           Font defaultFont = tree.getFont();
