@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -467,7 +468,7 @@ public class ApplyGetOperations {
 
   private void processConflict(final GetOperation operation) {
     File subject = new File(operation.getTlocal() != null ? operation.getTlocal() : operation.getSlocal());
-    addToGroup(FileGroup.MODIFIED_ID, subject, operation);
+    addToGroup(FileGroup. MODIFIED_ID, subject, operation);
   }
 
   private void addToGroup(String groupId, File file, GetOperation operation) {
@@ -526,11 +527,16 @@ public class ApplyGetOperations {
     }
     else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
       String itemName = sourceNotTarget ? operation.getSlocal() : operation.getTlocal();
-      String message =
+      final String message =
         MessageFormat.format("Local conflict detected. Override local item?\n {0}", itemName); // TODO: more detailed message needed
-      String title = "Modify files";
-      int result = Messages.showYesNoDialog(message, title, Messages.getQuestionIcon());
-      if (result == 0) {
+      final String title = "Modify files";
+      final Ref<Integer> result = new Ref<Integer>();
+      TfsFileUtil.executeInEventDispatchThread(new Runnable() {
+        public void run() {
+          result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
+        }
+      });
+      if (result.get() == 0) {
         return true;
       }
       else {

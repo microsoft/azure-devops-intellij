@@ -75,7 +75,7 @@ public class TFSContentRevision implements ContentRevision {
     myServer = workspace.getServer();
     myItem = workspace.getServer().getVCS().queryItem(workspace.getName(), workspace.getOwnerName(),
                                                         VersionControlPath.toTfsRepresentation(myPath), new ChangesetVersionSpec(changeset),
-                                                        DeletedState.NonDeleted, true);
+                                                        DeletedState.Any, true);
   }
 
   public String getContent() {

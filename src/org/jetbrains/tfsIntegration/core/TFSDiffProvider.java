@@ -85,7 +85,7 @@ public class TFSDiffProvider implements DiffProvider {
       String serverPath = workspace.findServerPathByLocalPath(localPath);
       TFSVcs.assertTrue(serverPath != null);
       return workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.NonDeleted);
+        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.Any);
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown

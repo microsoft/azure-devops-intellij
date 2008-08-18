@@ -53,6 +53,12 @@ public class ItemInfoAction extends SingleSelectionAction {
         Messages.showInfoMessage(project, message, title);
         return;
       }
+      if (item.getLver() == Integer.MIN_VALUE) {
+        final String itemType = file.isDirectory() ? "Folder" : "File";
+        final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, file.getPresentableUrl());
+        Messages.showInfoMessage(project, message, title);
+        return;
+      }
 
       final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
       final BranchRelative[] branches = workspace.getServer().getVCS()
