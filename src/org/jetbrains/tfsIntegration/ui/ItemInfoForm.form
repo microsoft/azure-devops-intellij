@@ -24,7 +24,7 @@
         </constraints>
         <properties>
           <labelFor value="98f50"/>
-          <text value="Local &amp;name:"/>
+          <text value="Local name:"/>
         </properties>
       </component>
       <component id="98f50" class="javax.swing.JLabel" binding="myLocalNameLabel">
@@ -43,7 +43,7 @@
         </constraints>
         <properties>
           <labelFor value="fb561"/>
-          <text value="&amp;Latest version:"/>
+          <text value="Latest version:"/>
         </properties>
       </component>
       <component id="fb561" class="javax.swing.JLabel" binding="myLatestVersionLabel">
@@ -62,7 +62,7 @@
         </constraints>
         <properties>
           <labelFor value="6d1d3"/>
-          <text value="&amp;Workspace version:"/>
+          <text value="Local version:"/>
         </properties>
       </component>
       <component id="6d1d3" class="javax.swing.JLabel" binding="myWorkspaceVersionLabel">
@@ -81,7 +81,7 @@
         </constraints>
         <properties>
           <labelFor value="4dec8"/>
-          <text value="&amp;Codepage:"/>
+          <text value="Codepage:"/>
         </properties>
       </component>
       <component id="4dec8" class="javax.swing.JLabel" binding="myEncodingLabel">
@@ -100,7 +100,7 @@
         </constraints>
         <properties>
           <labelFor value="b009f"/>
-          <text value="&amp;Pending changes:"/>
+          <text value="Pending changes:"/>
         </properties>
       </component>
       <component id="b009f" class="javax.swing.JLabel" binding="myPendingChangesLabel">
@@ -119,7 +119,7 @@
         </constraints>
         <properties>
           <labelFor value="a3d6e"/>
-          <text value="&amp;Branches:"/>
+          <text value="Branches:"/>
         </properties>
       </component>
       <vspacer id="b0aa7">
@@ -133,7 +133,7 @@
         </constraints>
         <properties>
           <labelFor value="5423a"/>
-          <text value="&amp;Server name:"/>
+          <text value="Server name:"/>
         </properties>
       </component>
       <scrollpane id="a3d6e" binding="myTreePane">
@@ -155,7 +155,7 @@
         </constraints>
         <properties>
           <labelFor value="b009f"/>
-          <text value="&amp;Deleted at:"/>
+          <text value="Deleted at:"/>
         </properties>
       </component>
       <component id="c4384" class="javax.swing.JLabel" binding="myDeletionIdLabel">
@@ -174,7 +174,7 @@
         </constraints>
         <properties>
           <labelFor value="b009f"/>
-          <text value="L&amp;ock:"/>
+          <text value="Lock:"/>
         </properties>
       </component>
       <component id="2c76c" class="javax.swing.JLabel" binding="myLockLabel">

@@ -46,6 +46,8 @@ import java.util.Collection;
 import java.util.List;
 
 
+// TODO review file groups
+
 @SuppressWarnings({"HardCodedStringLiteral"})
 public class ApplyGetOperations {
   private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
@@ -270,7 +272,7 @@ public class ApplyGetOperations {
     }
 
     updateLocalVersion(operation);
-    addToGroup(fileExists ? FileGroup.UPDATED_ID : FileGroup.RESTORED_ID, target, operation);
+    addToGroup(fileExists ? FileGroup.SKIPPED_ID : FileGroup.CREATED_ID, target, operation);
   }
 
   private void processCreateFolder(final GetOperation operation) throws TfsException {

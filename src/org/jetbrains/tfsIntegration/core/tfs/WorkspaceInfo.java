@@ -30,10 +30,9 @@ import java.util.*;
 
 public class WorkspaceInfo {
 
-  private static final Collection<String> WORKSPACE_NAME_INVALID_CHARS =
-    Arrays.asList(new String[]{"\"", "/", ":", "<", ">", "|", "*", "?"});
+  private static final Collection<String> WORKSPACE_NAME_INVALID_CHARS = Arrays.asList("\"", "/", ":", "<", ">", "|", "*", "?");
 
-  private static final Collection<String> WORKSPACE_NAME_INVALID_ENDING_CHARS = Arrays.asList(new String[]{" ", "."});
+  private static final Collection<String> WORKSPACE_NAME_INVALID_ENDING_CHARS = Arrays.asList(" ", ".");
 
   // TODO: do we need owner name and computer name here?
 
@@ -171,7 +170,7 @@ public class WorkspaceInfo {
   /**
    * @param localPath local path to find server path for
    * @return nearest server path according to one of workspace mappings
-   * @throws org.jetbrains.tfsIntegration.exceptions.TfsException
+   * @throws TfsException
    *          in case of error during request to TFS
    */
   @Nullable
@@ -214,6 +213,7 @@ public class WorkspaceInfo {
     return mapping != null ? mapping.getLocalPathByServerPath(serverPath) : null;
   }
 
+  @Nullable
   public FilePath findLocalPathByServerPath(final @NotNull String serverPath, final boolean isDirectory) throws TfsException {
     final WorkingFolderInfo mapping = findNearestMapping(serverPath);
     return mapping != null ? mapping.getLocalPathByServerPath(serverPath, isDirectory) : null;
