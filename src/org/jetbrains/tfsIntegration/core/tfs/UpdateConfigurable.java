@@ -19,53 +19,62 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
+import org.jetbrains.tfsIntegration.ui.UpdateSettingsForm;
 
 import javax.swing.*;
+import java.util.Collection;
 
-import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
+public class UpdateConfigurable implements Configurable {
 
-public abstract class UpdateConfigurable implements Configurable {
-    public UpdateConfigurable(Project project) {
-        myProject = project;
-    }
+  private final Project myProject;
 
-    private AbstractUpdatePanel myPanel;
+  private final Collection<FilePath> myFiles;
 
-    private final Project myProject;
+  private UpdateSettingsForm myUpdateSettingsForm;
 
-    public String getHelpTopic() {
-      return null; // TODO: help id
-    }
+  public UpdateConfigurable(Project project, final Collection<FilePath> files) {
+    myProject = project;
+    myFiles = files;
+  }
 
+  public String getHelpTopic() {
+    return null; // TODO: help id
+  }
 
-    public void apply() throws ConfigurationException {
-        myPanel.apply(TFSProjectConfiguration.getInstance(myProject)); 
-    }
+  public void apply() throws ConfigurationException {
+    myUpdateSettingsForm.apply(TFSProjectConfiguration.getInstance(myProject));
+  }
 
-    public Icon getIcon() {
-      return null;
-    }
+  public void reset() {
+    myUpdateSettingsForm.reset(TFSProjectConfiguration.getInstance(myProject));
+  }
 
-    public JComponent createComponent() {
-      myPanel = createPanel();
-      return myPanel.getPanel();
-    }
+  @Nls
+  public String getDisplayName() {
+    return "Update";
+  }
 
-    protected abstract AbstractUpdatePanel createPanel();
+  public Icon getIcon() {
+    return null;
+  }
 
-    public boolean isModified() {
-      return false;
-    }
+  public JComponent createComponent() {
+    myUpdateSettingsForm = new UpdateSettingsForm(myProject, myFiles);
+    return myUpdateSettingsForm.getPanel();
+  }
 
-    public void reset() {
-      myPanel.reset(TFSProjectConfiguration.getInstance(myProject)); 
-    }
+  public boolean isModified() {
+    return false;
+  }
 
-    public void disposeUIResources() {
-      myPanel = null;
-    }
+  public void disposeUIResources() {
+    myUpdateSettingsForm = null;
+  }
 
-    protected Project getProject() {
-      return myProject;
-    }
+  protected Project getProject() {
+    return myProject;
+  }
 }

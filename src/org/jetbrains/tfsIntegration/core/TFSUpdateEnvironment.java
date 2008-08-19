@@ -40,7 +40,6 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.ui.ResolveConflictsDialog;
-import org.jetbrains.tfsIntegration.ui.UpdatePanel;
 
 import java.util.*;
 
@@ -80,10 +79,9 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               requests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), recursionType, version));
               TFSProgressUtil.checkCanceled(progressIndicator);
             }
-            List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+            workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
 
             // 2. resolve all conflicts
-            final Ref<Integer> exitCode = new Ref<Integer>(DialogWrapper.CANCEL_EXIT_CODE);
             final List<Conflict> conflicts =
               workspace.getServer().getVCS().queryConflicts(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.Full);
 
@@ -92,16 +90,10 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               // TODO: all the items ids are equal except for branches?
               conflictedItemsIds.add(conflict.getYitemid());
             }
-            if (conflicts.isEmpty()) {
-              exitCode.set(DialogWrapper.OK_EXIT_CODE);
-            }
-            else {
-              resolveConflicts(workspace, paths, exitCode, conflicts, updatedFiles);
-            }
 
-            if (exitCode.get() == DialogWrapper.OK_EXIT_CODE) {
+            if (conflicts.isEmpty() || resolveConflicts(workspace, paths, conflicts, updatedFiles)) {
               // 3. apply get operations at the current state for all the items except that were merged
-              operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+              List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
               for (Iterator<GetOperation> i = operations.iterator(); i.hasNext();) {
                 GetOperation operation = i.next();
                 if (conflictedItemsIds.contains(operation.getItemid())) {
@@ -111,7 +103,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               final Collection<VcsException> applyErrors = ApplyGetOperations
                 .execute(myProject, workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW,
                          ApplyGetOperations.ProcessMode.GET);
-                exceptions.addAll(applyErrors);
+              exceptions.addAll(applyErrors);
             }
             // TODO content roots can be renamed while executing
             TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);
@@ -141,11 +133,14 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     };
   }
 
-  private void resolveConflicts(final WorkspaceInfo workspace,
-                                final List<ItemPath> paths,
-                                final Ref<Integer> exitCode,
-                                final List<Conflict> conflicts,
-                                final UpdatedFiles updatedFiles) {
+  /**
+   * @return true if all the conflicts were resolved
+   */
+  private boolean resolveConflicts(final WorkspaceInfo workspace,
+                                   final List<ItemPath> paths,
+                                   final List<Conflict> conflicts,
+                                   final UpdatedFiles updatedFiles) {
+    final Ref<Integer> exitCode = new Ref<Integer>();
     Runnable runnable = new Runnable() {
       public void run() {
         ResolveConflictsDialog dialog = new ResolveConflictsDialog(myProject, workspace, paths, conflicts, updatedFiles);
@@ -154,6 +149,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       }
     };
     TfsFileUtil.executeInEventDispatchThread(runnable);
+    return exitCode.get() == DialogWrapper.OK_EXIT_CODE;
   }
 
   @Nullable
@@ -161,16 +157,20 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     if (files.isEmpty()) {
       return null;
     }
+    final Ref<Boolean> mappingFound = new Ref<Boolean>(false);
+    try {
+      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          mappingFound.set(true);
+        }
+      });
+    }
+    catch (TfsException e) {
+      // skip for now, errors will be reported by updateDirectories() as part of UpdateSession
+    }
 
-    return new UpdateConfigurable(myProject) {
-      public String getDisplayName() {
-        return "Update";
-      }
-
-      protected AbstractUpdatePanel createPanel() {
-        return new UpdatePanel(myProject, files);
-      }
-    };
-
+    return mappingFound.get() ? new UpdateConfigurable(myProject, files) : null;
   }
+
 }
+
