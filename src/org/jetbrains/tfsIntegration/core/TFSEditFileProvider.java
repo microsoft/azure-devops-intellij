@@ -31,6 +31,8 @@ import java.util.List;
 public class TFSEditFileProvider implements EditFileProvider {
 
   public void editFiles(final VirtualFile[] files) throws VcsException {
+    // TODO handle orphan paths
+    
     Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.ProcessResult<ResultWithFailures<GetOperation>> processResult = WorkstationHelper

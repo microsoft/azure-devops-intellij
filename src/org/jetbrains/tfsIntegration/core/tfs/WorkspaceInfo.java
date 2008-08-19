@@ -111,6 +111,10 @@ public class WorkspaceInfo {
 
   public List<WorkingFolderInfo> getWorkingFolders() throws TfsException {
     loadFromServer();
+    return getWorkingFoldersCached();
+  }
+
+  private List<WorkingFolderInfo> getWorkingFoldersCached() {
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
@@ -136,7 +140,7 @@ public class WorkspaceInfo {
 
   boolean hasMappingCached(FilePath localPath) {
     // don't load data from server
-    for (WorkingFolderInfo mapping : myWorkingFoldersInfos) {
+    for (WorkingFolderInfo mapping : getWorkingFoldersCached()) {
       if (localPath.isUnder(mapping.getLocalPath(), false)) {
         return true;
       }
@@ -147,7 +151,7 @@ public class WorkspaceInfo {
   Collection<FilePath> getMappedChildPathsCached(FilePath localPath) {
     Collection<FilePath> result = new ArrayList<FilePath>();
     // don't load data from server
-    for (WorkingFolderInfo mapping : myWorkingFoldersInfos) {
+    for (WorkingFolderInfo mapping : getWorkingFoldersCached()) {
       if (mapping.getLocalPath().isUnder(localPath, false)) {
         result.add(mapping.getLocalPath());
       }
@@ -170,8 +174,7 @@ public class WorkspaceInfo {
   /**
    * @param localPath local path to find server path for
    * @return nearest server path according to one of workspace mappings
-   * @throws TfsException
-   *          in case of error during request to TFS
+   * @throws TfsException in case of error during request to TFS
    */
   @Nullable
   public String findServerPathByLocalPath(final @NotNull FilePath localPath) throws TfsException {
@@ -230,6 +233,7 @@ public class WorkspaceInfo {
   }
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
+    // TODO checkCurrentOwner(); ?
     myWorkingFoldersInfos.add(workingFolderInfo);
   }
 
