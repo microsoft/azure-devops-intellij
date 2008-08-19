@@ -19,17 +19,18 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
 public class UpdateWorkspaceInfo {
-    public UpdateWorkspaceInfo(VersionSpecBase myVersion) {
-        this.myVersion = myVersion;
-    }
 
-    public VersionSpecBase getVersion() {
-        return myVersion;
-    }
+  private VersionSpecBase myVersion;
 
-    public void setVersion(VersionSpecBase myVersion) {
-        this.myVersion = myVersion;
-    }
+  public UpdateWorkspaceInfo(VersionSpecBase version) {
+    myVersion = version;
+  }
 
-    private VersionSpecBase myVersion;
+  public VersionSpecBase getVersion() {
+    return myVersion;
+  }
+
+  public void setVersion(VersionSpecBase version) {
+    myVersion = version;
+  }
 }

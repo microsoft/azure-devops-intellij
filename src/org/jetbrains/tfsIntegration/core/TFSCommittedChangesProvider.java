@@ -63,6 +63,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
   @Nullable
   public RepositoryLocation getLocationFor(final FilePath root) {
+    // TODO: get child mappings if no current
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(root);
       if (workspace != null) {

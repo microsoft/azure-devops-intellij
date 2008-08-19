@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsException;
@@ -468,7 +469,7 @@ public class ApplyGetOperations {
 
   private void processConflict(final GetOperation operation) {
     File subject = new File(operation.getTlocal() != null ? operation.getTlocal() : operation.getSlocal());
-    addToGroup(FileGroup. MODIFIED_ID, subject, operation);
+    addToGroup(FileGroup.MODIFIED_ID, subject, operation);
   }
 
   private void addToGroup(String groupId, File file, GetOperation operation) {
@@ -536,7 +537,7 @@ public class ApplyGetOperations {
           result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
         }
       });
-      if (result.get() == 0) {
+      if (result.get() == DialogWrapper.OK_EXIT_CODE) {
         return true;
       }
       else {

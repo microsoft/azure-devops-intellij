@@ -49,7 +49,7 @@ public class ResolveConflictsDialog extends DialogWrapper {
     JComponent panel = myResolveConflictsForm.getPanel();
     panel.addPropertyChangeListener(ResolveConflictsForm.CLOSE_PROPERTY, new PropertyChangeListener() {
       public void propertyChange(final PropertyChangeEvent evt) {
-        ResolveConflictsDialog.this.close(DialogWrapper.OK_EXIT_CODE);
+        close(OK_EXIT_CODE);
       }
     });
     return panel;

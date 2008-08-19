@@ -33,31 +33,24 @@ import java.util.HashMap;
 
 @State(
   name = "TFS",
-  storages = {
-    @Storage(
-      id ="other",
-      file = "$WORKSPACE_FILE$"
-    )
-    }
-)
+  storages = {@Storage(
+    id = "other",
+    file = "$WORKSPACE_FILE$")})
 public class TFSProjectConfiguration implements ProjectComponent, PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
 
   @NonNls public static final String COMPONENT_NAME = "TFSProjectConfiguration";
 
-  private Project myProject;
-
   private ConfigurationBean myConfigurationBean;
+
+  public boolean UPDATE_RECURSIVELY = true;
+
+  private final Map<WorkspaceInfo, UpdateWorkspaceInfo> myUpdateWorkspaceInfos = new HashMap<WorkspaceInfo, UpdateWorkspaceInfo>();
 
   public static class ConfigurationBean {
   }
 
-  private TFSProjectConfiguration() {
-    myConfigurationBean = new ConfigurationBean();
-  }
-
   public TFSProjectConfiguration(final Project project) {
-    this();
-    myProject = project;
+    myConfigurationBean = new ConfigurationBean();
   }
 
   @NotNull
@@ -90,16 +83,12 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
     myConfigurationBean = state;
   }
 
-    public boolean UPDATE_RECURSIVELY = true;
-
-    private final Map<WorkspaceInfo, UpdateWorkspaceInfo> myUpdateWorkspaceInfos = new HashMap<WorkspaceInfo, UpdateWorkspaceInfo>();
-
-    public UpdateWorkspaceInfo getUpdateWorkspaceInfo(WorkspaceInfo workspace) {
-      UpdateWorkspaceInfo info = myUpdateWorkspaceInfos.get(workspace);
-      if (info == null) {
-        info = new UpdateWorkspaceInfo(LatestVersionSpec.INSTANCE);
-        myUpdateWorkspaceInfos.put(workspace, info);
-      }
-      return info;
+  public UpdateWorkspaceInfo getUpdateWorkspaceInfo(WorkspaceInfo workspace) {
+    UpdateWorkspaceInfo info = myUpdateWorkspaceInfos.get(workspace);
+    if (info == null) {
+      info = new UpdateWorkspaceInfo(LatestVersionSpec.INSTANCE);
+      myUpdateWorkspaceInfos.put(workspace, info);
     }
+    return info;
+  }
 }
