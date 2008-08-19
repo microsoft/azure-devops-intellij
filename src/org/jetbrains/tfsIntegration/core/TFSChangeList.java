@@ -92,7 +92,7 @@ public class TFSChangeList implements CommittedChangeList {
       .findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
 
     if (localPath == null) {
-      // no mapping for this path, skip
+      // TODO: path can be out of current mapping -> no way to determine local path for it
       return;
     }
 
@@ -129,8 +129,12 @@ public class TFSChangeList implements CommittedChangeList {
       FilePath originalPath = repositoryLocation.getWorkspace()
         .findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
 
-      TFSVcs.assertTrue(originalPath != null);
-      myMovedPaths.put(originalPath, localPath);
+      if (originalPath != null) {
+        myMovedPaths.put(originalPath, localPath);
+      }
+      else {
+        // TODO: original path can be out of current mapping -> no way to determine local path for it
+      }
       return;
     }
 
