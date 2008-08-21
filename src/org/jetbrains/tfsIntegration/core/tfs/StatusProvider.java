@@ -73,13 +73,13 @@ public class StatusProvider {
   }
 
   public static ServerStatus determineServerStatus(final ExtendedItem item) {
-    if (item == null || (item.getLocal() == null && ChangeType.fromString(item.getChg()).isEmpty())) {
+    if (item == null || (item.getLocal() == null && EnumMask.fromString(ChangeType.class, item.getChg()).isEmpty())) {
       // report not downloaded items as unversioned
       return new ServerStatus.Unversioned(item);
     }
     else {
-      ChangeType change = ChangeType.fromString(item.getChg());
-      change.remove(ChangeType.Value.Lock, ChangeType.Value.Branch);
+      EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
+      change.remove(ChangeType.Lock, ChangeType.Branch);
       
       //if (item.getDid() != Integer.MIN_VALUE) {
       //  TFSVcs.assertTrue(change.isEmpty());
@@ -95,30 +95,30 @@ public class StatusProvider {
           return new ServerStatus.UpToDate(item);
         }
       }
-      else if (change.contains(ChangeType.Value.Add)) {
-        TFSVcs.assertTrue(change.contains(ChangeType.Value.Edit) || item.getType() == ItemType.Folder);
-        TFSVcs.assertTrue(change.contains(ChangeType.Value.Encoding));
+      else if (change.contains(ChangeType.Add)) {
+        TFSVcs.assertTrue(change.contains(ChangeType.Edit) || item.getType() == ItemType.Folder);
+        TFSVcs.assertTrue(change.contains(ChangeType.Encoding));
         TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
         return new ServerStatus.ScheduledForAddition(item);
       }
-      else if (change.contains(ChangeType.Value.Delete)) {
+      else if (change.contains(ChangeType.Delete)) {
 //          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete)); // NOTE: may come with "Lock" change 
         //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
         //TFSVcs.assertTrue(item.getLocal() == null);
         return new ServerStatus.ScheduledForDeletion(item);
       }
-      else if (change.contains(ChangeType.Value.Edit) && !change.contains(ChangeType.Value.Rename)) {
+      else if (change.contains(ChangeType.Edit) && !change.contains(ChangeType.Rename)) {
         TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLocal() != null);
         return new ServerStatus.CheckedOutForEdit(item);
       }
-      else if (change.contains(ChangeType.Value.Rename) && !change.contains(ChangeType.Value.Edit)) {
+      else if (change.contains(ChangeType.Rename) && !change.contains(ChangeType.Edit)) {
         return new ServerStatus.Renamed(item);
       }
-      else if (change.contains(ChangeType.Value.Rename) && change.contains(ChangeType.Value.Edit)) {
+      else if (change.contains(ChangeType.Rename) && change.contains(ChangeType.Edit)) {
         TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLocal() != null);

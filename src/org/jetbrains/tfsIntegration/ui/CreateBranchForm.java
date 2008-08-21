@@ -49,7 +49,7 @@ public class CreateBranchForm {
       }
     });
 
-    myRevisionForm.init(workspace, project, Collections.singletonList(serverPath));
+    myRevisionForm.init(project, workspace, Collections.singletonList(serverPath));
   }
 
   @Nullable

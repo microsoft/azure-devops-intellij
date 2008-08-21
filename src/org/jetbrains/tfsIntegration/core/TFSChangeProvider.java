@@ -139,7 +139,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
       // process locally missing items
       for (ExtendedItem serverItem : serverItems) {
-        if (serverItem.getLocal() != null || !ChangeType.fromString(serverItem.getChg()).isEmpty()) {
+        if (serverItem.getLocal() != null || !EnumMask.fromString(ChangeType.class, serverItem.getChg()).isEmpty()) {
           final String localPath;
           if (serverItem.getLocal() != null) {
             localPath = serverItem.getLocal();

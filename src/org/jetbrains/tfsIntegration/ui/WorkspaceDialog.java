@@ -21,9 +21,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.ui.EnumComboBoxModel;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
@@ -55,7 +53,7 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     },
     LocalPath("Local path") {
       public String getValue(WorkingFolderInfo workingFolderInfo) {
-        return FileUtil.toSystemIndependentName(workingFolderInfo.getLocalPath().getPath());
+        return workingFolderInfo.getLocalPath().getPresentableUrl();
       }
     },
     ServerPath("Server path") {

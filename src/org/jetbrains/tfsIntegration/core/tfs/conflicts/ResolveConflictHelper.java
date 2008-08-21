@@ -26,8 +26,8 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vcs.update.FileGroup;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.peer.PeerFactory;
 import com.intellij.vcsUtil.VcsRunnable;
@@ -37,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
@@ -47,6 +48,8 @@ import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
 
 import java.io.IOException;
 import java.util.Arrays;
+
+// TODO use VersionControlPath.toTfsRepresentation() instead of FileUtil.toSystemDependentName() to assign conflict data paths
 
 public class ResolveConflictHelper {
   private final @NotNull Project myProject;
@@ -111,7 +114,7 @@ public class ResolveConflictHelper {
   }
 
   @NotNull
-  public ConflictData getConflictData(final @NotNull Conflict conflict) throws VcsException {
+  private ConflictData getConflictData(final @NotNull Conflict conflict) throws VcsException {
     final ConflictData data = new ConflictData();
     VcsRunnable runnable = new VcsRunnable() {
       public void run() throws VcsException {
@@ -142,13 +145,14 @@ public class ResolveConflictHelper {
     return data;
   }
 
-  public void acceptMerge(final @NotNull Conflict conflict, final ConflictData conflictData) throws TfsException {
+  public void acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
+    ConflictData conflictData = getConflictData(conflict);
     ResolutionType nameResolutionType = isNameConflict(conflict) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
     ResolutionType contentResolutionType = isContentConflict(conflict) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
     String localName = null;
 
     // merge names if needed
-    if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Rename)) {
+    if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename)) {
       MergeNameDialog d = new MergeNameDialog(conflict.getYsitem(), conflict.getTsitem());
       d.show();
       if (d.isOK()) {
@@ -183,7 +187,9 @@ public class ResolveConflictHelper {
 
   public void acceptYours(final @NotNull Conflict conflict) {
     conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, conflict.getSrclitem());
-    myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
+    if (myUpdatedFiles != null) {
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
+    }
   }
 
   public void acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException {
@@ -191,10 +197,10 @@ public class ResolveConflictHelper {
   }
 
   public static boolean isNameConflict(final @NotNull Conflict conflict) {
-    return ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Rename);
+    return EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename);
   }
 
   public static boolean isContentConflict(final @NotNull Conflict conflict) {
-    return ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit);
+    return EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit);
   }
 }

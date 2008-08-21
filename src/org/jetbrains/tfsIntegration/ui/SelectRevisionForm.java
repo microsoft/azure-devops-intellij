@@ -33,7 +33,7 @@ import java.util.Date;
 
 public class SelectRevisionForm {
 
-  private static final DateFormat DATEFORMAT = SimpleDateFormat.getInstance();
+  private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
 
   private JPanel myPanel;
   private JRadioButton latestRadioButton;
@@ -49,9 +49,9 @@ public class SelectRevisionForm {
   private Project myProject;
   private Collection<String> myServerPaths;
 
-  public SelectRevisionForm(final WorkspaceInfo workspace, Project project, final Collection<String> serverPaths) {
+  public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
     this();
-    init(workspace, project, serverPaths);
+    init(project, workspace, serverPaths);
   }
 
   public SelectRevisionForm() {
@@ -90,7 +90,7 @@ public class SelectRevisionForm {
     latestRadioButton.setSelected(true);
   }
 
-  public void init(final WorkspaceInfo workspace, Project project, final Collection<String> serverPaths) {
+  public void init(Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
     myWorkspace = workspace;
     myProject = project;
     myServerPaths = serverPaths;
@@ -119,10 +119,17 @@ public class SelectRevisionForm {
     if (date == null) {
       return;
     }
-    dateText.setText(DATEFORMAT.format(date));
+    dateText.setText(DATE_FORMAT.format(date));
   }
 
   public void setVersionSpec(VersionSpecBase version) {
+    latestRadioButton.setEnabled(true);
+    dateRadioButton.setEnabled(true);
+    changesetRadioButton.setEnabled(true);
+    labelRadioButton.setEnabled(true);
+    workspaceRadioButton.setEnabled(true);
+
+
     if (version instanceof LatestVersionSpec) {
       latestRadioButton.setSelected(true);
     }
@@ -168,7 +175,7 @@ public class SelectRevisionForm {
     }
     else if (dateRadioButton.isSelected()) {
       try {
-        return new DateVersionSpec(DATEFORMAT.parse(dateText.getText()));
+        return new DateVersionSpec(DATE_FORMAT.parse(dateText.getText()));
       }
       catch (ParseException e) {
         return null;
@@ -181,5 +188,16 @@ public class SelectRevisionForm {
     return null;
   }
 
+  public void disable() {
+    latestRadioButton.setSelected(true);
+
+    latestRadioButton.setEnabled(false);
+    dateRadioButton.setEnabled(false);
+    changesetRadioButton.setEnabled(false);
+    labelRadioButton.setEnabled(false);
+    workspaceRadioButton.setEnabled(false);
+
+    updateContols();
+  }
 }
 

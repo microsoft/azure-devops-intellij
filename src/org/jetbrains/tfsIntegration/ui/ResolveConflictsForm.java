@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
@@ -37,11 +38,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.AbstractTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ResolveConflictsForm {
@@ -54,7 +53,7 @@ public class ResolveConflictsForm {
   private JButton myAcceptTheirsButton;
 
   private JButton myMergeButton;
-  private ItemsTableModel myItemsTableModel;
+  private CoflictsTableModel myItemsTableModel;
   private final WorkspaceInfo myWorkspace;
   private final List<ItemPath> myPaths;
   private final ResolveConflictHelper myResolveConflictHelper;
@@ -68,7 +67,7 @@ public class ResolveConflictsForm {
     myResolveConflictHelper = new ResolveConflictHelper(project, myWorkspace, updatedFiles);
     myPaths = paths;
 
-    myItemsTableModel = new ItemsTableModel();
+    myItemsTableModel = new CoflictsTableModel();
     myItemsTable.setModel(myItemsTableModel);
     myItemsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
@@ -101,15 +100,13 @@ public class ResolveConflictsForm {
 
     myAcceptTheirsButton.addActionListener(new MergeActionListener() {
       protected void execute(final Conflict conflict) throws TfsException, IOException, VcsException {
-        final ConflictData conflictData = myResolveConflictHelper.getConflictData(conflict);
         myResolveConflictHelper.acceptTheirs(conflict);
       }
     });
 
     myMergeButton.addActionListener(new MergeActionListener() {
       protected void execute(final Conflict conflict) throws TfsException, VcsException {
-        final ConflictData conflictData = myResolveConflictHelper.getConflictData(conflict);
-        myResolveConflictHelper.acceptMerge(conflict, conflictData);
+        myResolveConflictHelper.acceptMerge(conflict);
       }
     });
   }
@@ -138,12 +135,12 @@ public class ResolveConflictsForm {
     boolean isNamespaceConflict =
       ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
     if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
-      if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit) &&
-          ChangeType.fromString(conflict.getBchg()).contains(ChangeType.Value.Edit)) {
+      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit) &&
+          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
         return true;
       }
-      if (conflict.getCtype().equals(ConflictType.Merge) && ChangeType.fromString(conflict.getBchg()).contains(ChangeType.Value.Edit)) {
-        if (ChangeType.fromString(conflict.getYchg()).contains(ChangeType.Value.Edit)) {
+      if (conflict.getCtype().equals(ConflictType.Merge) && EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
+        if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit)) {
           return true;
         }
         if (conflict.getIsforced()) {
@@ -155,83 +152,6 @@ public class ResolveConflictsForm {
       }
     }
     return false;
-  }
-
-  private static class ItemsTableModel extends AbstractTableModel {
-    private List<Conflict> myConflicts;
-
-    public List<Conflict> getMergeData() {
-      return myConflicts;
-    }
-
-    public String getColumnName(final int column) {
-      return Column.values()[column].getCaption();
-    }
-
-    public int getRowCount() {
-      return myConflicts != null ? myConflicts.size() : 0;
-    }
-
-    public int getColumnCount() {
-      return Column.values().length;
-    }
-
-    public Object getValueAt(final int rowIndex, final int columnIndex) {
-      Conflict conflict = myConflicts.get(rowIndex);
-      return Column.values()[columnIndex].getValue(conflict);
-    }
-
-    public List<Conflict> getConflicts() {
-      return myConflicts;
-    }
-
-    public void setConflicts(final List<Conflict> conflicts) {
-      myConflicts = conflicts;
-      fireTableDataChanged();
-    }
-  }
-
-  private enum Column {
-
-    Name("Name") {
-      public String getValue(Conflict conflict) {
-        return conflict.getSrclitem();
-      }
-    },
-    ConflictType("Conflict type") {
-      public String getValue(Conflict conflict) {
-        ArrayList<String> types = new ArrayList<String>();
-        if (ResolveConflictHelper.isNameConflict(conflict)) {
-          types.add("Rename");
-        }
-        if (ResolveConflictHelper.isContentConflict(conflict)) {
-          types.add("Content");
-        }
-        String res = "";
-        for (String type : types) {
-          if (res.length() == 0) {
-            res = type;
-          }
-          else {
-            res += (", " + type);
-          }
-        }
-        return res;
-      }
-    };
-
-    private String myCaption;
-
-    Column(String caption) {
-      myCaption = caption;
-    }
-
-    public String getCaption() {
-      return myCaption;
-    }
-
-    public abstract String getValue(Conflict conflict);
-
   }
 
   private abstract class MergeActionListener implements ActionListener {
@@ -246,13 +166,16 @@ public class ResolveConflictsForm {
           myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full));
       }
       catch (TfsException e) {
-        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
+        String message = "Failed to resolve conlict.\n" + e.getMessage();
+        Messages.showErrorDialog(myContentPanel, message, "Resolve Conflicts");
       }
       catch (IOException e) {
-        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
+        String message = "Failed to resolve conlict.\n" + e.getMessage();
+        Messages.showErrorDialog(myContentPanel, message, "Resolve Conflicts");
       }
       catch (VcsException e) {
-        Messages.showErrorDialog(myContentPanel, e.getMessage(), "Merge changes");
+        String message = "Failed to resolve conlict.\n" + e.getMessage();
+        Messages.showErrorDialog(myContentPanel, message, "Resolve Conflicts");
       }
     }
 

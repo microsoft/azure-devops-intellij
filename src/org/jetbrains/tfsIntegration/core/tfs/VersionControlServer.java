@@ -28,16 +28,16 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.text.MessageFormat;
 import java.util.*;
 
 public class VersionControlServer {
@@ -659,26 +659,6 @@ public class VersionControlServer {
     return results;
   }
 
-  /**
-   * @deprecated use other addLocalConflict() method
-   */
-  public AddConflictResponse addLocalConflict(final String workspaceName,
-                                              final String workspaceOwner,
-                                              final int itemId,
-                                              final int versionFrom,
-                                              final String sourceLocal) throws TfsException {
-    final ConflictType conflictType = ConflictType.Local;
-    final int pendingChangeId = 0;
-    final int reason = 1; // TODO: ???
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
-      public AddConflictResponse executeRequest() throws RemoteException {
-        return myRepository
-          .AddConflict(workspaceName, workspaceOwner, conflictType, itemId, versionFrom, pendingChangeId, sourceLocal, sourceLocal, reason);
-      }
-    });
-  }
-
-
   public void addLocalConflict(final String workspaceName,
                                final String workspaceOwner,
                                final int itemId,
@@ -822,28 +802,26 @@ public class VersionControlServer {
                                                    final String workspaceOwnerName,
                                                    final Collection<String> serverItems,
                                                    final String comment) throws TfsException {
-
-    ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
+    final ArrayOfString serverItemsArray = new ArrayOfString();
+    for (String serverItem : serverItems) {
+      serverItemsArray.addString(serverItem);
+    }
+    final Changeset changeset = new Changeset();
+    changeset.setCset(0);
+    changeset.setDate(new GregorianCalendar());
+    changeset.setOwner(workspaceOwnerName);
+    changeset.setComment(comment);
+    final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
+    final String checkinOptions = "ValidateCheckinOwner"; // TODO checkin options
 
     CheckInResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckInResponse>() {
       public CheckInResponse executeRequest() throws RemoteException {
-        final ArrayOfString serverItemsArray = new ArrayOfString();
-        for (String serverItem : serverItems) {
-          serverItemsArray.addString(serverItem);
-        }
-        final Changeset changeset = new Changeset();
-        changeset.setCset(0);
-        changeset.setDate(new GregorianCalendar());
-        changeset.setOwner(workspaceOwnerName);
-        changeset.setComment(comment);
-        final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
-        final String checkinOptions = "ValidateCheckinOwner"; // TODO checkin options
-
         return myRepository
           .CheckIn(workspaceName, workspaceOwnerName, serverItemsArray, changeset, checkinNotificationInfo, checkinOptions);
       }
     });
 
+    ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
     if (response.getCheckInResult() != null) {
       result.getResult().add(response.getCheckInResult());
     }
@@ -852,6 +830,24 @@ public class VersionControlServer {
       result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
     }
     return result;
+  }
+
+  public MergeResponse merge(final String workspaceName,
+                             final String ownerName,
+                             String sourceServerPath,
+                             String targetServerPath,
+                             final VersionSpecBase fromVersion,
+                             final VersionSpecBase toVersion) throws TfsException {
+
+    final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
+    final ItemSpec target = createItemSpec(sourceServerPath, null);
+
+    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<MergeResponse>() {
+      public MergeResponse executeRequest() throws RemoteException {
+        return myRepository
+          .Merge(workspaceName, ownerName, source, target, fromVersion, toVersion, MergeOptions.None.name(), LockLevel.Unchanged);
+      }
+    });
   }
 
   //public List<List<Item>> queryItems(final String workspaceName,
@@ -961,10 +957,10 @@ public class VersionControlServer {
     return result;
   }
 
-  public BranchRelative[] queryBranches(final String workspaceName,
-                                        final String ownerName,
-                                        final String itemServerPath,
-                                        final VersionSpec versionSpec) throws TfsException {
+  public Collection<BranchRelative> queryBranches(final String workspaceName,
+                                                  final String ownerName,
+                                                  final String itemServerPath,
+                                                  final VersionSpec versionSpec) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
 
@@ -976,7 +972,24 @@ public class VersionControlServer {
       });
 
     TFSVcs.assertTrue(result.getArrayOfBranchRelative().length == 1);
-    return result.getArrayOfBranchRelative()[0].getBranchRelative();
+    final BranchRelative[] branches = result.getArrayOfBranchRelative()[0].getBranchRelative();
+    return branches != null ? Arrays.asList(branches) : Collections.<BranchRelative>emptyList();
+  }
+
+  public Collection<MergeCandidate> queryMergeCandidates(final String workspaceName,
+                                                         final String ownerName,
+                                                         String sourceServerPath,
+                                                         String targetServerPath) throws TfsException {
+    final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
+    final ItemSpec target = createItemSpec(targetServerPath, RecursionType.Full);
+
+    final ArrayOfMergeCandidate result =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfMergeCandidate>() {
+        public ArrayOfMergeCandidate executeRequest() throws RemoteException {
+          return myRepository.QueryMergeCandidates(workspaceName, ownerName, source, target);
+        }
+      });
+    return result.getMergeCandidate() != null ? Arrays.asList(result.getMergeCandidate()) : Collections.<MergeCandidate>emptyList();
   }
 
   //public Map<ItemPath, Item> queryItems(final String workspaceName,

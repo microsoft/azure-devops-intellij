@@ -54,7 +54,7 @@ public class UpdateConfigurable implements Configurable {
 
   @Nls
   public String getDisplayName() {
-    return "Update";
+    return "Update Project";
   }
 
   public Icon getIcon() {
@@ -62,7 +62,7 @@ public class UpdateConfigurable implements Configurable {
   }
 
   public JComponent createComponent() {
-    myUpdateSettingsForm = new UpdateSettingsForm(myProject, myFiles);
+    myUpdateSettingsForm = new UpdateSettingsForm(myProject, myFiles, getDisplayName());
     return myUpdateSettingsForm.getPanel();
   }
 

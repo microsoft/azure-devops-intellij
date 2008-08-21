@@ -139,8 +139,8 @@ public class TFSFileListener extends TFSFileListenerBase {
           final List<ItemPath> pathsToProcess = new ArrayList<ItemPath>(paths);
 
           for (PendingChange pendingChange : pendingChanges) {
-            final ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
-            if (changeType.contains(ChangeType.Value.Add)) {
+            final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
+            if (changeType.contains(ChangeType.Add)) {
               // TODO: assert that only Edit, Encoding can be here
               final ItemPath itemPath = new ItemPath(VcsUtil.getFilePath(pendingChange.getLocal()), pendingChange.getItem());
               revertScheduledForAdditionImmediately.add(itemPath);

@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -27,6 +28,7 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
+import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -41,14 +43,25 @@ import java.util.List;
 public class UpdateSettingsForm {
   @NonNls private static final String EMPTY = "empty";
 
-  private final Map<WorkspaceInfo, SelectRevisionForm> myWorkspaceRevisions = new HashMap<WorkspaceInfo, SelectRevisionForm>();
+  private static class WorkspaceSettings {
+    public final Collection<String> serverPaths;
+    public VersionSpecBase version = LatestVersionSpec.INSTANCE;
+
+    public WorkspaceSettings(final Collection<String> serverPaths) {
+      this.serverPaths = serverPaths;
+    }
+  }
+
+  private final Map<WorkspaceInfo, WorkspaceSettings> myWorkspaceSettings = new HashMap<WorkspaceInfo, WorkspaceSettings>();
 
   private JPanel myPanel;
   private JCheckBox myRecursiveBox;
   private JList myWorkspacesList;
   private JPanel myWorkspaceSettingsPanel;
+  private SelectRevisionForm mySelectRevisionForm;
+  private WorkspaceInfo mySelectedWorkspace;
 
-  public UpdateSettingsForm(final Project project, Collection<FilePath> roots) {
+  public UpdateSettingsForm(final Project project, Collection<FilePath> roots, final String title) {
     final DefaultListModel listModel = new DefaultListModel();
     try {
       WorkstationHelper.processByWorkspaces(roots, new WorkstationHelper.VoidProcessDelegate() {
@@ -59,9 +72,7 @@ public class UpdateSettingsForm {
           for (ItemPath path : paths) {
             serverPaths.add(path.getServerPath());
           }
-          SelectRevisionForm selectRevisionForm = new SelectRevisionForm(workspace, project, serverPaths);
-          myWorkspaceRevisions.put(workspace, selectRevisionForm);
-          myWorkspaceSettingsPanel.add(selectRevisionForm.getPanel(), workspace.getName());
+          myWorkspaceSettings.put(workspace, new WorkspaceSettings(serverPaths));
         }
       });
     }
@@ -69,9 +80,6 @@ public class UpdateSettingsForm {
       //noinspection ThrowableInstanceNeverThrown
       AbstractVcsHelper.getInstance(project).showError(new VcsException(e), TFSVcs.TFS_NAME);
     }
-
-    final CardLayout layout = (CardLayout)myWorkspaceSettingsPanel.getLayout();
-    myWorkspaceSettingsPanel.add(new JPanel(), EMPTY);
 
     myWorkspacesList.setModel(listModel);
     myWorkspacesList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -92,8 +100,24 @@ public class UpdateSettingsForm {
 
     myWorkspacesList.addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(ListSelectionEvent e) {
-        WorkspaceInfo workspace = ((WorkspaceInfo)myWorkspacesList.getSelectedValue());
-        layout.show(myWorkspaceSettingsPanel, workspace != null ? workspace.getName() : EMPTY);
+        if (mySelectedWorkspace != null) {
+          VersionSpecBase version = mySelectRevisionForm.getVersionSpec();
+          if (version == null) {
+            Messages.showErrorDialog(project, "Invalid version specified", title);
+            version = LatestVersionSpec.INSTANCE;
+          }
+          myWorkspaceSettings.get(mySelectedWorkspace).version = version;
+        }
+
+        mySelectedWorkspace = ((WorkspaceInfo)myWorkspacesList.getSelectedValue());
+        if (mySelectedWorkspace != null) {
+          final WorkspaceSettings workspaceSettings = myWorkspaceSettings.get(mySelectedWorkspace);
+          mySelectRevisionForm.init(project, mySelectedWorkspace, workspaceSettings.serverPaths);
+          mySelectRevisionForm.setVersionSpec(workspaceSettings.version);
+        }
+        else {
+          mySelectRevisionForm.disable();
+        }
       }
     });
 
@@ -105,22 +129,16 @@ public class UpdateSettingsForm {
   public void reset(final TFSProjectConfiguration configuration) {
     myRecursiveBox.setSelected(configuration.UPDATE_RECURSIVELY);
 
-    for (Map.Entry<WorkspaceInfo, SelectRevisionForm> e : myWorkspaceRevisions.entrySet()) {
-      e.getValue().setVersionSpec(configuration.getUpdateWorkspaceInfo(e.getKey()).getVersion());
+    for (Map.Entry<WorkspaceInfo, WorkspaceSettings> e : myWorkspaceSettings.entrySet()) {
+      e.getValue().version = configuration.getUpdateWorkspaceInfo(e.getKey()).getVersion();
     }
   }
 
   public void apply(final TFSProjectConfiguration configuration) throws ConfigurationException {
     configuration.UPDATE_RECURSIVELY = myRecursiveBox.isSelected();
 
-    for (Map.Entry<WorkspaceInfo, SelectRevisionForm> e : myWorkspaceRevisions.entrySet()) {
-      final VersionSpecBase version = e.getValue().getVersionSpec();
-      if (version != null) {
-        configuration.getUpdateWorkspaceInfo(e.getKey()).setVersion(version);
-      }
-      else {
-        throw new ConfigurationException("Invalid version");
-      }
+    for (Map.Entry<WorkspaceInfo, WorkspaceSettings> e : myWorkspaceSettings.entrySet()) {
+      configuration.getUpdateWorkspaceInfo(e.getKey()).setVersion(e.getValue().version);
     }
   }
 

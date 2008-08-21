@@ -26,6 +26,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
@@ -86,7 +87,7 @@ public class TFSChangeList implements CommittedChangeList {
   private void processChange(final TFSRepositoryLocation repositoryLocation,
                              int changeset,
                              final org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change) throws TfsException {
-    ChangeType changeType = ChangeType.fromString(change.getType());
+    final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, change.getType());
 
     final FilePath localPath = repositoryLocation.getWorkspace()
       .findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
@@ -96,29 +97,29 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Value.Add)) {
-      TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
+    if (changeType.contains(ChangeType.Add)) {
+      TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
       if (change.getItem().getType() == ItemType.File) {
-        TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Edit));
+        TFSVcs.assertTrue(changeType.contains(ChangeType.Edit));
       }
       else {
-        TFSVcs.assertTrue(!changeType.contains(ChangeType.Value.Edit));
+        TFSVcs.assertTrue(!changeType.contains(ChangeType.Edit));
       }
-      TFSVcs.assertTrue(!changeType.contains(ChangeType.Value.Delete));
-      TFSVcs.assertTrue(!changeType.contains(ChangeType.Value.Rename));
+      TFSVcs.assertTrue(!changeType.contains(ChangeType.Delete));
+      TFSVcs.assertTrue(!changeType.contains(ChangeType.Rename));
       myAddedPaths.add(localPath);
       return;
     }
 
-    if (changeType.contains(ChangeType.Value.Delete)) {
+    if (changeType.contains(ChangeType.Delete)) {
       TFSVcs.assertTrue(changeType.size() <= 2, "Unexpected change type: " + changeType);
-      TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Value.Delete) || changeType.contains(ChangeType.Value.Rename),
+      TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
                         "Unexpected change type: " + changeType);
       myDeletedPaths.add(localPath);
       return;
     }
 
-    if (changeType.contains(ChangeType.Value.Rename)) {
+    if (changeType.contains(ChangeType.Rename)) {
       List<Changeset> fileHistory = repositoryLocation.getWorkspace().getServer().getVCS().queryHistory(
         repositoryLocation.getWorkspace().getName(), repositoryLocation.getWorkspace().getOwnerName(), change.getItem().getItem(),
         change.getItem().getDid(), null, new ChangesetVersionSpec(changeset), new ChangesetVersionSpec(1),
@@ -138,7 +139,7 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Value.Edit)) {
+    if (changeType.contains(ChangeType.Edit)) {
       //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
       myModifiedPaths.add(localPath);
       return;

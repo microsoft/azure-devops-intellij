@@ -24,17 +24,18 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelati
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 import javax.swing.*;
+import java.util.Collection;
 
 public class ItemInfoDialog extends DialogWrapper {
 
   private final ExtendedItem myExtendedItem;
   private final WorkspaceInfo myWorkspace;
-  private final BranchRelative[] myBranches;
+  private final Collection<BranchRelative> myBranches;
 
   public ItemInfoDialog(final Project project,
                         final WorkspaceInfo workspace,
                         final ExtendedItem extendedItem,
-                        final BranchRelative[] branches, String title) {
+                        final Collection<BranchRelative> branches, String title) {
     super(project, false);
     myWorkspace = workspace;
     myBranches = branches;

@@ -22,7 +22,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.Ref;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.update.FileGroup;
@@ -110,7 +109,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
           }
         });
       for (FilePath orphanPath : orphanPaths) {
-        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(FileUtil.toSystemIndependentName(orphanPath.getPath()));
+        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(orphanPath.getPresentableUrl());
       }
     }
     catch (TfsException e) {

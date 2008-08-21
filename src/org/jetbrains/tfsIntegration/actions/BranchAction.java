@@ -117,7 +117,7 @@ public class BranchAction extends SingleSelectionAction {
                                                                                                                     RecursionType.Full);
       Collection<String> checkin = new ArrayList<String>();
       for (PendingChange change : pendingChanges) {
-        if (ChangeType.fromString(change.getChg()).contains(ChangeType.Value.Branch)) {
+        if (EnumMask.fromString(ChangeType.class, change.getChg()).contains(ChangeType.Branch)) {
           checkin.add(change.getItem());
         }
       }

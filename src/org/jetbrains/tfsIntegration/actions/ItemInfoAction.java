@@ -19,60 +19,57 @@ package org.jetbrains.tfsIntegration.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.ui.ItemInfoDialog;
 
 import java.text.MessageFormat;
+import java.util.Collection;
 
-public class ItemInfoAction extends SingleSelectionAction {
+public class ItemInfoAction extends MappedItemAction {
 
-  protected void actionPerformed(final Project project, final VirtualFile file) {
-    final String title = MessageFormat.format("{0} Information", file.isDirectory() ? "Folder" : "File");
+  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath) {
     try {
-      final FilePath localPath = TfsFileUtil.getFilePath(file);
-      final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
-      if (workspace == null) {
-        final String itemType = file.isDirectory() ? "folder" : "file";
-        final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, file.getPresentableUrl());
-        Messages.showInfoMessage(project, message, title);
-        return;
-      }
       final ExtendedItem item = workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), workspace.findServerPathByLocalPath(localPath), DeletedState.Any);
+        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemPath.getServerPath(), DeletedState.Any);
       if (item == null) {
-        final String itemType = file.isDirectory() ? "Folder" : "File";
-        final String message = MessageFormat.format("{0} ''{1}'' does not exist on server", itemType, file.getPresentableUrl());
-        Messages.showInfoMessage(project, message, title);
+        final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
+        final String message =
+          MessageFormat.format("{0} ''{1}'' does not exist on server", itemType, itemPath.getLocalPath().getPresentableUrl());
+        Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
         return;
       }
       if (item.getLver() == Integer.MIN_VALUE) {
-        final String itemType = file.isDirectory() ? "Folder" : "File";
-        final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, file.getPresentableUrl());
-        Messages.showInfoMessage(project, message, title);
+        final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
+        final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, itemPath.getLocalPath().getPresentableUrl());
+        Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
         return;
       }
 
       final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
-      final BranchRelative[] branches = workspace.getServer().getVCS()
+      final Collection<BranchRelative> branches = workspace.getServer().getVCS()
         .queryBranches(workspace.getName(), workspace.getOwnerName(), serverPath, new ChangesetVersionSpec(item.getLver()));
 
-      ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, title);
+      ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, getActionTitle(itemPath.getLocalPath()));
       d.show();
     }
     catch (TfsException e) {
-      final String itemType = file.isDirectory() ? "folder" : "file";
-      final String message =
-        MessageFormat.format("Failed to obtain information on {0} ''{1}''\n{2}", itemType, file.getPresentableUrl(), e.getMessage());
-      Messages.showInfoMessage(project, message, title);
+      final String itemType = itemPath.getLocalPath().isDirectory() ? "folder" : "file";
+      final String message = MessageFormat
+        .format("Failed to obtain information on {0} ''{1}''\n{2}", itemType, itemPath.getLocalPath().getPresentableUrl(), e.getMessage());
+      Messages.showErrorDialog(project, message, getActionTitle(itemPath.getLocalPath()));
     }
+
+  }
+
+  protected String getActionTitle(@NotNull FilePath localPath) {
+    return MessageFormat.format("{0} Information", localPath.isDirectory() ? "Folder" : "File");
   }
 
 }

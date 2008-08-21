@@ -112,8 +112,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             // upload files
             for (PendingChange pendingChange : pendingChanges) {
               if (pendingChange.getType() == ItemType.File) {
-                ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
-                if (changeType.contains(ChangeType.Value.Edit) || changeType.contains(ChangeType.Value.Add)) {
+                EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
+                if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add)) {
                   workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
                 }
               }
@@ -139,10 +139,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               }
 
               if (pendingChange.getType() == ItemType.File) {
-                ChangeType changeType = ChangeType.fromString(pendingChange.getChg());
-                if (changeType.contains(ChangeType.Value.Edit) ||
-                    changeType.contains(ChangeType.Value.Add) ||
-                    changeType.contains(ChangeType.Value.Rename)) {
+                EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
+                if (changeType.contains(ChangeType.Edit) ||
+                    changeType.contains(ChangeType.Add) ||
+                    changeType.contains(ChangeType.Rename)) {
                   VirtualFile file = VcsUtil.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
                     TfsFileUtil.setReadOnlyInEventDispathThread(file, true);

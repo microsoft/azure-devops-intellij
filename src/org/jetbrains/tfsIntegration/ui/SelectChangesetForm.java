@@ -33,7 +33,6 @@ import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -69,76 +68,6 @@ public class SelectChangesetForm {
 
   private final List<Listener> myListeners = new ArrayList<Listener>();
 
-  private enum Column {
-    Changeset("Changeset", 10) {
-      public String getValue(Changeset changeset) {
-        return String.valueOf(changeset.getCset());
-      }
-    },
-    Date("Date", 15) {
-      public String getValue(Changeset changeset) {
-        return new SimpleDateFormat().format(changeset.getDate().getTime());
-      }
-    },
-    User("User", 20) {
-      public String getValue(Changeset changeset) {
-        return changeset.getOwner();
-      }
-    },
-    Comment("Comment", 50) {
-      public String getValue(Changeset changeset) {
-        return changeset.getComment();
-      }
-    };
-
-    private final String myCaption;
-    private final int myWidth;
-
-    Column(String caption, int width) {
-      myCaption = caption;
-      myWidth = width;
-    }
-
-    public String getCaption() {
-      return myCaption;
-    }
-
-    public abstract String getValue(Changeset changeset);
-
-    public int getWidth() {
-      return myWidth;
-    }
-  }
-
-  private static class ChangesetsTableModel extends AbstractTableModel {
-    private List<Changeset> myChangesets;
-
-    public void setChangesets(List<Changeset> changesets) {
-      myChangesets = changesets;
-      fireTableDataChanged();
-    }
-
-    public List<Changeset> getChangesets() {
-      return myChangesets;
-    }
-
-    public String getColumnName(final int column) {
-      return Column.values()[column].getCaption();
-    }
-
-    public int getRowCount() {
-      return myChangesets != null ? myChangesets.size() : 0;
-    }
-
-    public int getColumnCount() {
-      return Column.values().length;
-    }
-
-    public Object getValueAt(final int rowIndex, final int columnIndex) {
-      return Column.values()[columnIndex].getValue(myChangesets.get(rowIndex));
-    }
-  }
-
   public SelectChangesetForm(final Project project, final WorkspaceInfo workspace, String serverPath) {
     myProject = project;
     myWorkspace = workspace;
@@ -147,7 +76,7 @@ public class SelectChangesetForm {
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
     // TODO select on double click
-    
+
     myFileField.setText(serverPath);
 
     myFindButton.addActionListener(new ActionListener() {

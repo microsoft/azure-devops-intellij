@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -26,6 +25,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
 import java.text.MessageFormat;
+import java.util.Collection;
 
 public class ItemInfoForm {
   private JLabel myServerNameLabel;
@@ -41,9 +41,9 @@ public class ItemInfoForm {
   private JLabel myLockLabel;
   private JScrollPane myTreePane;
   private JLabel myWorkspaceLabel;
-  private final @Nullable BranchRelative[] myBranches;
+  private final Collection<BranchRelative> myBranches;
 
-  public ItemInfoForm(final WorkspaceInfo workspace, final ExtendedItem item, final BranchRelative[] branches) {
+  public ItemInfoForm(final WorkspaceInfo workspace, final ExtendedItem item, final Collection<BranchRelative> branches) {
     myBranches = branches;
     myServerNameLabel.setText(item.getTitem() != null ? item.getTitem() : item.getSitem());
     myLocalNameLabel.setText(item.getLocal());
@@ -55,7 +55,7 @@ public class ItemInfoForm {
     myLockLabel.setText(item.getLock() != null ? item.getLock().getValue() : "None");
     myWorkspaceLabel.setText(MessageFormat.format("{0} on server {1}", workspace.getName(), workspace.getServer().getUri()));
 
-    if (myBranches == null || myBranches.length == 1) {
+    if (myBranches.size() < 2) {
       myTreePane.setVisible(false);
       myBranchesLabel.setText("No branches");
     }

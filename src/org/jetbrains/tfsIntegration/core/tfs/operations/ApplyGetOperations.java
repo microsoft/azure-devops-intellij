@@ -30,10 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
@@ -307,9 +304,9 @@ public class ApplyGetOperations {
   }
 
   private void processFileChange(final GetOperation operation) throws TfsException {
-    final ChangeType changeType = ChangeType.fromString(operation.getChg());
+    final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, operation.getChg());
     boolean download =
-      operation.getSver() != operation.getLver() || (myProcessMode == ProcessMode.UNDO && changeType.contains(ChangeType.Value.Edit));
+      operation.getSver() != operation.getLver() || (myProcessMode == ProcessMode.UNDO && changeType.contains(ChangeType.Edit));
 
     File source = new File(operation.getSlocal());
     File target = new File(operation.getTlocal());
@@ -443,7 +440,7 @@ public class ApplyGetOperations {
         updateLocalVersion(operation);
 
         // don't create folder if undoing locally missing scheduled for addition folder
-        if (!ChangeType.fromString(operation.getChg()).contains(ChangeType.Value.Add) &&
+        if (!EnumMask.fromString(ChangeType.class, operation.getChg()).contains(ChangeType.Add) &&
             (!source.equals(target) || myDownloadMode == DownloadMode.FORCE)) {
           if (createFolder(target)) {
             addToGroup(FileGroup.CREATED_ID, target, operation);

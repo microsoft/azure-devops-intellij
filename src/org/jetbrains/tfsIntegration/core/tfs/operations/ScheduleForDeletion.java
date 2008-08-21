@@ -45,8 +45,8 @@ public class ScheduleForDeletion {
 
       Collection<ItemPath> revert = new ArrayList<ItemPath>();
       for (PendingChange pendingChange : pendingChanges) {
-        ChangeType change = ChangeType.fromString(pendingChange.getChg());
-        if (!change.contains(ChangeType.Value.Delete)) {
+        EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
+        if (!change.contains(ChangeType.Delete)) {
           // TODO assert for possible change types here
           revert.add(new ItemPath(VcsUtil.getFilePath(pendingChange.getLocal()), pendingChange.getItem()));
         }
