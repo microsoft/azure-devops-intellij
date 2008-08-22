@@ -57,6 +57,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                                          final UpdatedFiles updatedFiles,
                                          final ProgressIndicator progressIndicator) throws ProcessCanceledException {
 
+    // TODO we don't want to get a dialog for each workspace!
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       List<FilePath> orphanPaths =

@@ -74,7 +74,4 @@ public class UpdateConfigurable implements Configurable {
     myUpdateSettingsForm = null;
   }
 
-  protected Project getProject() {
-    return myProject;
-  }
 }

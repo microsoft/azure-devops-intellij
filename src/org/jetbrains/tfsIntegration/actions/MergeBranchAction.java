@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.MergeHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
@@ -63,7 +64,7 @@ public class MergeBranchAction extends MappedItemAction {
         MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath.getServerPath(), targetBranches, title);
         d.show();
         if (d.isOK()) {
-          //MergeHelper.execute(itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
+          MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
 
         }
       }

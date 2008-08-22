@@ -100,13 +100,11 @@ public class UpdateSettingsForm {
 
     myWorkspacesList.addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(ListSelectionEvent e) {
-        if (mySelectedWorkspace != null) {
-          VersionSpecBase version = mySelectRevisionForm.getVersionSpec();
-          if (version == null) {
-            Messages.showErrorDialog(project, "Invalid version specified", title);
-            version = LatestVersionSpec.INSTANCE;
-          }
-          myWorkspaceSettings.get(mySelectedWorkspace).version = version;
+        try {
+          applyCurrentValue();
+        }
+        catch (ConfigurationException ex) {
+          Messages.showErrorDialog(project, ex.getMessage(), title);
         }
 
         mySelectedWorkspace = ((WorkspaceInfo)myWorkspacesList.getSelectedValue());
@@ -125,6 +123,18 @@ public class UpdateSettingsForm {
     myWorkspacesList.requestFocus();
   }
 
+  private void applyCurrentValue() throws ConfigurationException {
+    if (mySelectedWorkspace != null) {
+      VersionSpecBase version = mySelectRevisionForm.getVersionSpec();
+      if (version != null) {
+        myWorkspaceSettings.get(mySelectedWorkspace).version = version;
+      }
+      else {
+        throw new ConfigurationException("Invalid version specified");
+      }
+    }
+  }
+
 
   public void reset(final TFSProjectConfiguration configuration) {
     myRecursiveBox.setSelected(configuration.UPDATE_RECURSIVELY);
@@ -135,6 +145,7 @@ public class UpdateSettingsForm {
   }
 
   public void apply(final TFSProjectConfiguration configuration) throws ConfigurationException {
+    applyCurrentValue();
     configuration.UPDATE_RECURSIVELY = myRecursiveBox.isSelected();
 
     for (Map.Entry<WorkspaceInfo, WorkspaceSettings> e : myWorkspaceSettings.entrySet()) {
