@@ -17,8 +17,8 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.diff.DiffProvider;
@@ -28,10 +28,9 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 public class TFSDiffProvider implements DiffProvider {
@@ -43,7 +42,7 @@ public class TFSDiffProvider implements DiffProvider {
 
   @Nullable
   public VcsRevisionNumber getLastRevision(final VirtualFile virtualFile) {
-    ExtendedItem item = getExtendedItembyVirtualFile(virtualFile);
+    ExtendedItem item = TfsUtil.getExtendedItem(myProject, TfsFileUtil.getFilePath(virtualFile), TFSVcs.TFS_NAME);
     return item != null ? new VcsRevisionNumber.Int(item.getLatest()) : VcsRevisionNumber.NULL;
   }
 
@@ -69,28 +68,7 @@ public class TFSDiffProvider implements DiffProvider {
 
   @Nullable
   public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
-    ExtendedItem item = getExtendedItembyVirtualFile(virtualFile);
-    return item != null ? new VcsRevisionNumber.Int(item.getLver()) : VcsRevisionNumber.NULL;
+    return TfsUtil.getCurrentRevisionNumber(myProject, TfsFileUtil.getFilePath(virtualFile));
   }
 
-  @Nullable
-  private ExtendedItem getExtendedItembyVirtualFile(final VirtualFile virtualFile) {
-    FilePath localPath = VcsUtil.getFilePath(virtualFile.getPath());
-    try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(VcsUtil.getFilePath(virtualFile.getPath()));
-      if (workspace == null) {
-        return null;
-      }
-      //noinspection ConstantConditions
-      String serverPath = workspace.findServerPathByLocalPath(localPath);
-      TFSVcs.assertTrue(serverPath != null);
-      return workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.Any);
-    }
-    catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      return null;
-    }
-  }
 }

@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangesUtil;
@@ -27,13 +26,17 @@ import com.intellij.util.ui.ColumnInfo;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,21 +82,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
       return new VcsHistorySession(revisions) {
         public VcsRevisionNumber calcCurrentRevisionNumber() {
-          try {
-            WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(committedPath);
-
-            String serverPath = workspace.findServerPathByLocalPath(committedPath);
-            TFSVcs.assertTrue(serverPath != null);
-            ExtendedItem item = workspace.getServer().getVCS()
-              .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.NonDeleted);
-            if (item != null) {
-              return new VcsRevisionNumber.Int(item.getLver());
-            }
-          }
-          catch (TfsException e) {
-            AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-          }
-          return VcsRevisionNumber.NULL;
+          return TfsUtil.getCurrentRevisionNumber(myProject, committedPath);
         }
       };
     }
@@ -109,7 +98,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
                                                                              Integer.MIN_VALUE, null, itemVersion,
                                                                              new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE,
                                                                              Integer.MAX_VALUE, RecursionType.None);
-    
+
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {
       final Item item = changeset.getChanges().getChange()[0].getItem();
