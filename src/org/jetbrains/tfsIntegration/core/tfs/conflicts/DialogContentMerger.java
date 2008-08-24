@@ -25,7 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.peer.PeerFactory;
 
-public class DialogContentConflictsHandler implements ContentConflictsHandler {
+public class DialogContentMerger implements ContentMerger {
 
     public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
         MergeRequest request = PeerFactory.getInstance().getDiffRequestFactory().createMergeRequest(

@@ -15,12 +15,16 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
+import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.ui.ConflictData;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 
-public interface ContentConflictsHandler {
-    // TODO: improve interface
-    public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath);
+public class DialogNameMerger implements NameMerger {
+  public String mergeName(Conflict conflict) {
+      MergeNameDialog d = new MergeNameDialog(conflict.getYsitem(), conflict.getTsitem());
+      d.show();
+      if (d.isOK()) {
+        return d.getSelectedName();
+      }
+      return null;
+  }
 }

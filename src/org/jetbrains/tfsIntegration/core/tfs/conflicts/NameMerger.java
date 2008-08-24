@@ -17,6 +17,6 @@ package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 
-public interface NameConflictsHandler {
+public interface NameMerger {
     public String mergeName(Conflict conflict);
 }

@@ -45,8 +45,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
   private final Project myProject;
 
   private static ConflictsHandler myConflictsHandler = new DialogConflictsHandler();
-  private static NameConflictsHandler myNameConflictsHandler = new DialogNameConflictsHandler();
-  private static ContentConflictsHandler myContentConflictsHandler = new DialogContentConflictsHandler();
+  private static NameMerger myNameMerger = new DialogNameMerger();
+  private static ContentMerger myContentMerger = new DialogContentMerger();
 
   public static void setResolveConflictsHandler(ConflictsHandler conflictsHandler) {
     myConflictsHandler = conflictsHandler;
@@ -165,19 +165,19 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     return mappingFound.get() ? new UpdateConfigurable(myProject, files) : null;
   }
 
-  public static NameConflictsHandler getNameConflictsHandler() {
-    return myNameConflictsHandler;
+  public static NameMerger getNameConflictsHandler() {
+    return myNameMerger;
   }
 
-  public static void setNameConflictsHandler(NameConflictsHandler nameConflictsHandler) {
-    myNameConflictsHandler = nameConflictsHandler;
+  public static void setNameConflictsHandler(NameMerger nameMerger) {
+    myNameMerger = nameMerger;
   }
 
-  public static ContentConflictsHandler getContentConflictsHandler() {
-    return myContentConflictsHandler;
+  public static ContentMerger getContentConflictsHandler() {
+    return myContentMerger;
   }
 
-  public static void setContentConflictsHandler(ContentConflictsHandler contentConflictsHandler) {
-    myContentConflictsHandler = contentConflictsHandler;
+  public static void setContentConflictsHandler(ContentMerger contentMerger) {
+    myContentMerger = contentMerger;
   }
 }

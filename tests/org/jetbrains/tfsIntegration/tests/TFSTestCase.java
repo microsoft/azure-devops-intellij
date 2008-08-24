@@ -64,8 +64,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     void run() throws Exception;
   }
 
-//  private static final String SERVER = "http://wmw-2003-01:8080/";
-  private static final String SERVER = "http://192.168.230.128:8080/";
+  private static final String SERVER = "http://wmw-2003-01:8080/";
+//  private static final String SERVER = "http://192.168.230.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "TFSSETUP";
   private static final String DOMAIN = "SWIFTTEAMS";

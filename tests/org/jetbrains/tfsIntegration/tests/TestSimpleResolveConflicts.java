@@ -24,8 +24,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.TFSUpdateEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsHandler;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ContentConflictsHandler;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameConflictsHandler;
+import org.jetbrains.tfsIntegration.core.tfs.conflicts.ContentMerger;
+import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
@@ -87,13 +87,13 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     final VirtualFile file = prepareContentConflict();
     int latestRevisionNumber = getLatestRevisionNumber(file);
 
-    TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
+    TFSUpdateEnvironment.setNameConflictsHandler(new NameMerger() {
       public String mergeName(Conflict conflict) {
         Assert.fail("It must be only content conflict!");
         return null;
       }
     });
-    TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
+    TFSUpdateEnvironment.setContentConflictsHandler(new ContentMerger() {
       public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
         try {
           setFileContent(localFile, CONTENT_4);
@@ -141,13 +141,13 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     final VirtualFile file = prepareNameConflict();
     int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
 
-    TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
+    TFSUpdateEnvironment.setNameConflictsHandler(new NameMerger() {
       public String mergeName(Conflict conflict) {
         String yourServerItem = conflict.getYsitem();
         return yourServerItem.replace(NAME_3, NAME_4);
       }
     });
-    TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
+    TFSUpdateEnvironment.setContentConflictsHandler(new ContentMerger() {
       public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
         Assert.fail("It must be only name conflict!");
       }
