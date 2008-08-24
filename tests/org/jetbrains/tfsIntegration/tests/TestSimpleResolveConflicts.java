@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.TFSUpdateEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsHandler;
@@ -50,217 +49,238 @@ import java.util.List;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public class TestSimpleResolveConflicts extends TFSTestCase {
-    private static final String CONTENT_1 = "Content 1";
-    private static final String CONTENT_2 = "Content 2";
-    private static final String CONTENT_3 = "Content 3";
-    private static final String CONTENT_4 = "Content 4";
+  private static final String CONTENT_1 = "Content 1";
+  private static final String CONTENT_2 = "Content 2";
+  private static final String CONTENT_3 = "Content 3";
+  private static final String CONTENT_4 = "Content 4";
 
-    private static final String NAME_1 = "file1.txt";
-    private static final String NAME_2 = "file2.txt";
-    private static final String NAME_3 = "file3.txt";
-    private static final String NAME_4 = "file4.txt";
+  private static final String NAME_1 = "file1.txt";
+  private static final String NAME_2 = "file2.txt";
+  private static final String NAME_3 = "file3.txt";
+  private static final String NAME_4 = "file4.txt";
 
-    @Test
-    public void testContentResolveAcceptYours() throws VcsException, IOException {
-        final VirtualFile file = prepareContentConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(file);
+  @Test
+  public void testContentResolveAcceptYours() throws VcsException, IOException {
+    final VirtualFile file = prepareContentConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(file);
 
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                resolveConflictHelper.acceptYours(conflicts.get(0));
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        assertFile(file, CONTENT_3, true);
-        getChanges().assertTotalItems(1);
-        getChanges().assertModified(file);
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    assertFile(file, CONTENT_3, true);
+    getChanges().assertTotalItems(1);
+    getChanges().assertModified(file);
+  }
+
+  @Test
+  public void testContentResolveAcceptTheirs() throws VcsException, IOException {
+    final VirtualFile file = prepareContentConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(file);
+
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptTheirsConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    assertFile(file, CONTENT_1, false);
+    getChanges().assertTotalItems(0);
+  }
+
+  @Test
+  public void testContentResolveAcceptMerge() throws VcsException, IOException {
+    final VirtualFile file = prepareContentConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(file);
+
+    TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
+      public String mergeName(Conflict conflict) {
+        Assert.fail("It must be only content conflict!");
+        return null;
+      }
+    });
+    TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
+      public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
+        try {
+          setFileContent(localFile, CONTENT_4);
+        }
+        catch (IOException e) {
+          Assert.fail(e.getMessage());
+        }
+      }
+    });
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptMergeConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    assertFile(file, CONTENT_4, true);
+    getChanges().assertTotalItems(1);
+    getChanges().assertModified(file);
+  }
+
+  @Test
+  public void testNameResolveAcceptYours() throws VcsException, IOException {
+    final VirtualFile file = prepareNameConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    assertFile(file, CONTENT_1, false);
+    getChanges().assertTotalItems(1);
+    FilePath pathTo = TfsFileUtil.getFilePath(file);
+    FilePath pathFrom = addChildPath(mySandboxRoot, NAME_2);
+    getChanges().assertRenamedOrMoved(pathFrom, pathTo);
+  }
+
+  @Test
+  public void testNameResolveAcceptTheirs() throws VcsException, IOException {
+    final VirtualFile file = prepareNameConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptTheirsConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    FilePath path = addChildPath(mySandboxRoot, NAME_1);
+    assertFile(path.getVirtualFile(), CONTENT_1, false);
+    getChanges().assertTotalItems(0);
+  }
+
+  @Test
+  public void testNameResolveAcceptMerge() throws VcsException, IOException {
+    final VirtualFile file = prepareNameConflict();
+    int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+
+    TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
+      public String mergeName(Conflict conflict) {
+        String yourServerItem = conflict.getYsitem();
+        return yourServerItem.replace(NAME_3, NAME_4);
+      }
+    });
+    TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
+      public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
+        Assert.fail("It must be only name conflict!");
+      }
+    });
+    TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptMergeConflictsHandler(new SizeConflictsAsserter(1)));
+    update(file, latestRevisionNumber - 1);
+    FilePath pathTo = addChildPath(mySandboxRoot, NAME_4);
+    FilePath pathFrom = addChildPath(mySandboxRoot, NAME_2);
+    assertFile(pathTo.getVirtualFile(), CONTENT_1, false);
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(pathFrom, pathTo);
+  }
+
+  private VirtualFile prepareContentConflict() throws VcsException, IOException {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    final VirtualFile file = createFileInCommand(mySandboxRoot, NAME_1, CONTENT_1);
+    commit(getChanges().getChanges(), "rev. 1");
+    assertFile(file, CONTENT_1, false);
+
+    editFiles(file);
+    setFileContent(file, CONTENT_2);
+    commit(getChanges().getChanges(), "rev. 2");
+    assertFile(file, CONTENT_2, false);
+
+    editFiles(file);
+    setFileContent(file, CONTENT_3);
+    return file;
+  }
+
+  private VirtualFile prepareNameConflict() throws VcsException, IOException {
+    doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
+    doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    final VirtualFile file = createFileInCommand(mySandboxRoot, NAME_1, CONTENT_1);
+    commit(getChanges().getChanges(), "rev. 1");
+    assertFile(file, CONTENT_1, false);
+
+    rename(file, NAME_2);
+    commit(getChanges().getChanges(), "rev. 2");
+    assertFile(file, CONTENT_1, false);
+
+    rename(file, NAME_3);
+    return file;
+  }
+
+  public interface ConflictsAsserter {
+    void assertConflicts(final List<Conflict> conflicts);
+  }
+
+  public static class SizeConflictsAsserter implements ConflictsAsserter {
+    private int mySize;
+
+    public SizeConflictsAsserter(final int size) {
+      mySize = size;
     }
 
-    @Test
-    public void testContentResolveAcceptTheirs() throws VcsException, IOException {
-        final VirtualFile file = prepareContentConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(file);
+    public void assertConflicts(final List<Conflict> conflicts) {
+      Assert.assertTrue(conflicts.size() == mySize);
+    }
+  }
 
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                try {
-                    resolveConflictHelper.acceptTheirs(conflicts.get(0));
-                } catch (TfsException e) {
-                    Assert.fail(e.getMessage());
-                } catch (IOException e) {
-                    Assert.fail(e.getMessage());
-                }
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        assertFile(file, CONTENT_1, false);
-        getChanges().assertTotalItems(0);
+  public static abstract class AbstractTestConflictsHandler implements ConflictsHandler {
+    private ConflictsAsserter myConflictsAsserter;
+
+    public AbstractTestConflictsHandler(ConflictsAsserter conflictsAsserter) {
+      myConflictsAsserter = conflictsAsserter;
     }
 
-    @Test
-    public void testContentResolveAcceptMerge() throws VcsException, IOException {
-        final VirtualFile file = prepareContentConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(file);
-
-        TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
-            public String mergeName(Conflict conflict) {
-                Assert.fail("It must be only content conflict!");
-                return null;
-            }
-        });
-        TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
-            public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
-                try {
-                    setFileContent(localFile, CONTENT_4);
-                } catch (IOException e) {
-                    Assert.fail(e.getMessage());
-                }
-            }
-        });
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                try {
-                    resolveConflictHelper.acceptMerge(conflicts.get(0));
-                } catch (TfsException e) {
-                    Assert.fail(e.getMessage());
-                } catch (VcsException e) {
-                    Assert.fail(e.getMessage());
-                }
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        assertFile(file, CONTENT_4, true);
-        getChanges().assertTotalItems(1);
-        getChanges().assertModified(file);
+    public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
+      myConflictsAsserter.assertConflicts(resolveConflictHelper.getConflicts());
+      return doResolveConflicts(resolveConflictHelper);
     }
 
-    @Test
-    public void testNameResolveAcceptYours() throws VcsException, IOException {
-        final VirtualFile file = prepareNameConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+    abstract boolean doResolveConflicts(ResolveConflictHelper resolveConflictHelper);
+  }
 
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                resolveConflictHelper.acceptYours(conflicts.get(0));
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        assertFile(file, CONTENT_1, false);
-        getChanges().assertTotalItems(1);
-        FilePath pathTo = TfsFileUtil.getFilePath(file);
-        FilePath pathFrom = VcsUtil.getFilePath(pathTo.getIOFile().getPath().replace(NAME_3, NAME_2));
-        getChanges().assertRenamedOrMoved(pathFrom, pathTo);
+  public static class AcceptYoursConflictsHandler extends AbstractTestConflictsHandler {
+    public AcceptYoursConflictsHandler(ConflictsAsserter conflictsAsserter) {
+      super(conflictsAsserter);
     }
 
-    @Test
-    public void testNameResolveAcceptTheirs() throws VcsException, IOException {
-        final VirtualFile file = prepareNameConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
+      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
+      for (Conflict conflict : conflicts) {
+        resolveConflictHelper.acceptYours(conflict);
+      }
+      return true;
+    }
+  }
 
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                try {
-                    resolveConflictHelper.acceptTheirs(conflicts.get(0));
-                } catch (TfsException e) {
-                    Assert.fail(e.getMessage());
-                } catch (IOException e) {
-                    Assert.fail(e.getMessage());
-                }
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        FilePath pathTo = TfsFileUtil.getFilePath(file);
-        FilePath path = VcsUtil.getFilePath(pathTo.getIOFile().getPath().replace(NAME_3, NAME_1));
-        assertFile(path.getVirtualFile(), CONTENT_1, false);
-        getChanges().assertTotalItems(0);
+  public static class AcceptTheirsConflictsHandler extends AbstractTestConflictsHandler {
+    public AcceptTheirsConflictsHandler(ConflictsAsserter conflictsAsserter) {
+      super(conflictsAsserter);
     }
 
-    @Test
-    public void testNameResolveAcceptMerge() throws VcsException, IOException {
-        final VirtualFile file = prepareNameConflict();
-        int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
+    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
+      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
+      for (Conflict conflict : conflicts) {
+        try {
+          resolveConflictHelper.acceptTheirs(conflict);
+        }
+        catch (TfsException e) {
+          Assert.fail(e.getMessage());
+        }
+        catch (IOException e) {
+          Assert.fail(e.getMessage());
+        }
+      }
+      return true;
+    }
+  }
 
-        TFSUpdateEnvironment.setNameConflictsHandler(new NameConflictsHandler() {
-            public String mergeName(Conflict conflict) {
-                String yourServerItem = conflict.getYsitem();
-                return yourServerItem.replace(NAME_3, NAME_4);
-            }
-        });
-        TFSUpdateEnvironment.setContentConflictsHandler(new ContentConflictsHandler() {
-            public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
-              Assert.fail("It must be only name conflict!");
-            }
-        });
-        TFSUpdateEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
-            public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-                List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-                Assert.assertTrue(conflicts.size() == 1);
-                try {
-                    resolveConflictHelper.acceptMerge(conflicts.get(0));
-                } catch (TfsException e) {
-                    Assert.fail(e.getMessage());
-                } catch (VcsException e) {
-                    Assert.fail(e.getMessage());
-                }
-                return true;
-            }
-        });
-        update(file, latestRevisionNumber - 1);
-        FilePath path = TfsFileUtil.getFilePath(file);
-        FilePath pathTo = VcsUtil.getFilePath(path.getIOFile().getPath().replace(NAME_3, NAME_4));
-        FilePath pathFrom = VcsUtil.getFilePath(path.getIOFile().getPath().replace(NAME_3, NAME_2));
-        assertFile(pathTo.getVirtualFile(), CONTENT_1, false);
-        getChanges().assertTotalItems(1);
-        getChanges().assertRenamedOrMoved(pathFrom, pathTo);
+  public static class AcceptMergeConflictsHandler extends AbstractTestConflictsHandler {
+    public AcceptMergeConflictsHandler(ConflictsAsserter conflictsAsserter) {
+      super(conflictsAsserter);
     }
 
-    private VirtualFile prepareContentConflict() throws VcsException, IOException {
-        doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-        doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
-
-        final VirtualFile file = createFileInCommand(mySandboxRoot, NAME_1, CONTENT_1);
-        commit(getChanges().getChanges(), "rev. 1");
-        assertFile(file, CONTENT_1, false);
-
-        editFiles(file);
-        setFileContent(file, CONTENT_2);
-        commit(getChanges().getChanges(), "rev. 2");
-        assertFile(file, CONTENT_2, false);
-
-        editFiles(file);
-        setFileContent(file, CONTENT_3);
-        return file;
+    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
+      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
+      for (Conflict conflict : conflicts) {
+        try {
+          resolveConflictHelper.acceptMerge(conflict);
+        }
+        catch (TfsException e) {
+          Assert.fail(e.getMessage());
+        }
+        catch (VcsException e) {
+          Assert.fail(e.getMessage());
+        }
+      }
+      return true;
     }
-
-    private VirtualFile prepareNameConflict() throws VcsException, IOException {
-        doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-        doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
-
-        final VirtualFile file = createFileInCommand(mySandboxRoot, NAME_1, CONTENT_1);
-        commit(getChanges().getChanges(), "rev. 1");
-        assertFile(file, CONTENT_1, false);
-
-        rename(file, NAME_2);
-        commit(getChanges().getChanges(), "rev. 2");
-        assertFile(file, CONTENT_1, false);
-
-        rename(file, NAME_3);
-        return file;
-    }
-
+  }
 }

@@ -65,7 +65,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
 //  private static final String SERVER = "http://wmw-2003-01:8080/";
-    private static final String SERVER = "http://192.168.230.128:8080/";
+  private static final String SERVER = "http://192.168.230.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "TFSSETUP";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -569,4 +569,11 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     file.setBinaryContent(CharsetToolkit.getUtf8Bytes(content));
   }
 
+  protected FilePath addChildPath(final FilePath parent, final String childName) {
+    return VcsUtil.getFilePath(new File(parent.getIOFile(), childName));
+  }
+
+  protected FilePath addChildPath(final VirtualFile parent, final String childName) {
+    return VcsUtil.getFilePath(new File(new File(parent.getPath()), childName));
+  }
 }
