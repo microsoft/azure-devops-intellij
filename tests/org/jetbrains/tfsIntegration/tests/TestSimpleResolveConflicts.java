@@ -23,18 +23,18 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.TFSUpdateEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsHandler;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ContentMerger;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.ui.ConflictData;
+import org.jetbrains.tfsIntegration.tests.conflicts.AcceptYoursConflictsHandler;
+import org.jetbrains.tfsIntegration.tests.conflicts.AcceptTheirsConflictsHandler;
+import org.jetbrains.tfsIntegration.tests.conflicts.AcceptMergeConflictsHandler;
+import org.jetbrains.tfsIntegration.tests.conflicts.SizeConflictsAsserter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * 1. Create file (rev 1.)
@@ -195,92 +195,4 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     return file;
   }
 
-  public interface ConflictsAsserter {
-    void assertConflicts(final List<Conflict> conflicts);
-  }
-
-  public static class SizeConflictsAsserter implements ConflictsAsserter {
-    private int mySize;
-
-    public SizeConflictsAsserter(final int size) {
-      mySize = size;
-    }
-
-    public void assertConflicts(final List<Conflict> conflicts) {
-      Assert.assertTrue(conflicts.size() == mySize);
-    }
-  }
-
-  public static abstract class AbstractTestConflictsHandler implements ConflictsHandler {
-    private ConflictsAsserter myConflictsAsserter;
-
-    public AbstractTestConflictsHandler(ConflictsAsserter conflictsAsserter) {
-      myConflictsAsserter = conflictsAsserter;
-    }
-
-    public boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) {
-      myConflictsAsserter.assertConflicts(resolveConflictHelper.getConflicts());
-      return doResolveConflicts(resolveConflictHelper);
-    }
-
-    abstract boolean doResolveConflicts(ResolveConflictHelper resolveConflictHelper);
-  }
-
-  public static class AcceptYoursConflictsHandler extends AbstractTestConflictsHandler {
-    public AcceptYoursConflictsHandler(ConflictsAsserter conflictsAsserter) {
-      super(conflictsAsserter);
-    }
-
-    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
-      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-      for (Conflict conflict : conflicts) {
-        resolveConflictHelper.acceptYours(conflict);
-      }
-      return true;
-    }
-  }
-
-  public static class AcceptTheirsConflictsHandler extends AbstractTestConflictsHandler {
-    public AcceptTheirsConflictsHandler(ConflictsAsserter conflictsAsserter) {
-      super(conflictsAsserter);
-    }
-
-    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
-      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-      for (Conflict conflict : conflicts) {
-        try {
-          resolveConflictHelper.acceptTheirs(conflict);
-        }
-        catch (TfsException e) {
-          Assert.fail(e.getMessage());
-        }
-        catch (IOException e) {
-          Assert.fail(e.getMessage());
-        }
-      }
-      return true;
-    }
-  }
-
-  public static class AcceptMergeConflictsHandler extends AbstractTestConflictsHandler {
-    public AcceptMergeConflictsHandler(ConflictsAsserter conflictsAsserter) {
-      super(conflictsAsserter);
-    }
-
-    boolean doResolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
-      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-      for (Conflict conflict : conflicts) {
-        try {
-          resolveConflictHelper.acceptMerge(conflict);
-        }
-        catch (TfsException e) {
-          Assert.fail(e.getMessage());
-        }
-        catch (VcsException e) {
-          Assert.fail(e.getMessage());
-        }
-      }
-      return true;
-    }
-  }
 }
