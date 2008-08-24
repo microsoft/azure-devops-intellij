@@ -132,8 +132,10 @@ public class WorkspaceInfo {
     if (hasCurrentOwner()) {
       if (myOriginalName != null && !myLoaded) {
         Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
-        fromBean(workspaceBean, this);
-        myLoaded = true;
+        if (hasCurrentOwner()) { // owner can already be different if server credentials have been changed while executing this server call
+          fromBean(workspaceBean, this);
+          myLoaded = true;
+        }
       }
     }
   }
@@ -296,10 +298,10 @@ public class WorkspaceInfo {
     }
   }
 
-  static void fromBean(Workspace bean, WorkspaceInfo info) {
-    info.myOriginalName = bean.getName();
-    info.setComment(bean.getComment());
-    info.setTimestamp(bean.getLastAccessDate());
+  static void fromBean(Workspace bean, WorkspaceInfo workspace) {
+    workspace.myOriginalName = bean.getName();
+    workspace.setComment(bean.getComment());
+    workspace.setTimestamp(bean.getLastAccessDate());
     final WorkingFolder[] folders;
     if (bean.getFolders().getWorkingFolder() != null) {
       folders = bean.getFolders().getWorkingFolder();
@@ -314,7 +316,7 @@ public class WorkspaceInfo {
         workingFoldersInfos.add(folderInfo);
       }
     }
-    info.myWorkingFoldersInfos = workingFoldersInfos;
+    workspace.myWorkingFoldersInfos = workingFoldersInfos;
   }
 
   public WorkspaceInfo getCopy() {
