@@ -56,7 +56,7 @@ public class TFSDiffProvider implements DiffProvider {
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
       try {
-        return new TFSContentRevision(path, intRevisionNumber.getValue());
+        return TFSContentRevision.create(path, intRevisionNumber.getValue());
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown

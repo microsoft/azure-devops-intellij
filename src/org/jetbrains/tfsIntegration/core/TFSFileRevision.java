@@ -75,7 +75,7 @@ public class TFSFileRevision implements VcsFileRevision {
     // TODO: encoding
     final String content;
     try {
-      content = new TFSContentRevision(myFilePath, myChangeset).getContent();
+      content = TFSContentRevision.create(myFilePath, myChangeset).getContent();
       myContent = (content != null) ? content.getBytes() : null;
     }
     catch (TfsException e) {

@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
@@ -39,17 +41,19 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
+@SuppressWarnings({"AutoUnboxing"})
 public class TFSChangeList implements CommittedChangeList {
+  private TFSRepositoryLocation myLocation;
+  private final TFSVcs myVcs;
   private int myRevisionNumber;
   private String myAuthor;
   private Date myDate;
   private @NotNull String myComment;
-  private final TFSVcs myVcs;
   private List<Change> myCachedChanges;
-  private Set<FilePath> myModifiedPaths = new HashSet<FilePath>();
+  private Map<FilePath, Integer/*previous revision*/> myModifiedPaths = new HashMap<FilePath, Integer>();
   private Set<FilePath> myAddedPaths = new HashSet<FilePath>();
-  private Set<FilePath> myDeletedPaths = new HashSet<FilePath>();
-  private Map<FilePath, FilePath> myMovedPaths = new HashMap<FilePath, FilePath>();
+  private Map<FilePath, Integer/*previous revision*/> myDeletedPaths = new HashMap<FilePath, Integer>();
+  private Map<FilePath, Pair<FilePath, Integer/*previous revision*/>> myMovedPaths = new HashMap<FilePath, Pair<FilePath, Integer>>();
 
   public TFSChangeList(final TFSVcs vcs, final DataInput stream) {
     myVcs = vcs;
@@ -62,13 +66,81 @@ public class TFSChangeList implements CommittedChangeList {
                        final Date date,
                        final String comment,
                        final TFSVcs vcs) {
+    myLocation = location;
     myRevisionNumber = revisionNumber;
     myAuthor = author;
     myDate = date;
     myComment = comment != null ? comment : "";
     myVcs = vcs;
-    // TODO: load changes lazily?
-    loadChanges(location);
+  }
+
+  public String getCommitterName() {
+    return myAuthor;
+  }
+
+  public Date getCommitDate() {
+    return myDate;
+  }
+
+  public long getNumber() {
+    return myRevisionNumber;
+  }
+
+  public AbstractVcs getVcs() {
+    return myVcs;
+  }
+
+  public Collection<Change> getChanges() {
+    if (myCachedChanges == null) {
+      try {
+        if (myLocation != null) { // otherwise paths were read from stream
+          loadChanges(myLocation);
+        }
+
+        myCachedChanges = new ArrayList<Change>();
+        for (FilePath path : myAddedPaths) {
+          myCachedChanges.add(new Change(null, TFSContentRevision.create(path, myRevisionNumber)));
+        }
+        for (Map.Entry<FilePath, Integer> entry : myDeletedPaths.entrySet()) {
+          myCachedChanges.add(new Change(TFSContentRevision.create(entry.getKey(), entry.getValue()), null));
+        }
+        for (Map.Entry<FilePath, Integer> entry : myModifiedPaths.entrySet()) {
+          TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue());
+          TFSContentRevision afterRevision = TFSContentRevision.create(entry.getKey(), myRevisionNumber);
+          myCachedChanges.add(new Change(beforeRevision, afterRevision));
+        }
+        for (Map.Entry<FilePath, Pair<FilePath, Integer>> entry : myMovedPaths.entrySet()) {
+          TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue().second);
+          TFSContentRevision afterRevision = TFSContentRevision.create(entry.getValue().first, myRevisionNumber);
+          myCachedChanges.add(new Change(beforeRevision, afterRevision));
+        }
+      }
+      catch (TfsException e) {
+        AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      }
+    }
+    return myCachedChanges;
+  }
+
+  @NotNull
+  public String getName() {
+    return myComment;
+  }
+
+  @NotNull
+  public String getComment() {
+    return myComment;
+  }
+
+  void writeToStream(final DataOutput stream) throws IOException {
+    stream.writeInt(myRevisionNumber);
+    stream.writeUTF(myAuthor);
+    stream.writeLong(myDate.getTime());
+    stream.writeUTF(myComment);
+    writePathsInts(stream, myModifiedPaths);
+    writePaths(stream, myAddedPaths);
+    writePathsInts(stream, myDeletedPaths);
+    writeMoved(stream, myMovedPaths);
   }
 
   private void loadChanges(final TFSRepositoryLocation repositoryLocation) {
@@ -97,8 +169,10 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Add)) {
-      TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
+    if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
+      if (changeType.contains(ChangeType.Add)) {
+        TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
+      }
       if (change.getItem().getType() == ItemType.File) {
         TFSVcs.assertTrue(changeType.contains(ChangeType.Edit));
       }
@@ -115,23 +189,19 @@ public class TFSChangeList implements CommittedChangeList {
       TFSVcs.assertTrue(changeType.size() <= 2, "Unexpected change type: " + changeType);
       TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
                         "Unexpected change type: " + changeType);
-      myDeletedPaths.add(localPath);
+
+      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
+      myDeletedPaths.put(localPath, item.getCs());
       return;
     }
 
     if (changeType.contains(ChangeType.Rename)) {
-      List<Changeset> fileHistory = repositoryLocation.getWorkspace().getServer().getVCS().queryHistory(
-        repositoryLocation.getWorkspace().getName(), repositoryLocation.getWorkspace().getOwnerName(), change.getItem().getItem(),
-        change.getItem().getDid(), null, new ChangesetVersionSpec(changeset), new ChangesetVersionSpec(1),
-        new ChangesetVersionSpec(change.getItem().getCs()), 2, RecursionType.None);
-      TFSVcs.assertTrue(fileHistory.size() == 2);
-
-      final Item item = fileHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
+      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
       FilePath originalPath = repositoryLocation.getWorkspace()
         .findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
 
       if (originalPath != null) {
-        myMovedPaths.put(originalPath, localPath);
+        myMovedPaths.put(originalPath, Pair.create(localPath, item.getCs()));
       }
       else {
         // TODO: original path can be out of current mapping -> no way to determine local path for it
@@ -140,77 +210,13 @@ public class TFSChangeList implements CommittedChangeList {
     }
 
     if (changeType.contains(ChangeType.Edit)) {
+      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
       //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
-      myModifiedPaths.add(localPath);
+      myModifiedPaths.put(localPath, item.getCs());
       return;
     }
 
     TFSVcs.error("Unknown change: " + changeType + " for item " + change.getItem().getItem());
-  }
-
-  public String getCommitterName() {
-    return myAuthor;
-  }
-
-  public Date getCommitDate() {
-    return myDate;
-  }
-
-  public long getNumber() {
-    return myRevisionNumber;
-  }
-
-  public AbstractVcs getVcs() {
-    return myVcs;
-  }
-
-  public Collection<Change> getChanges() {
-    if (myCachedChanges == null) {
-      try {
-        myCachedChanges = new ArrayList<Change>();
-        for (FilePath path : myAddedPaths) {
-          myCachedChanges.add(new Change(null, new TFSContentRevision(path, myRevisionNumber)));
-        }
-        for (FilePath path : myDeletedPaths) {
-          myCachedChanges.add(new Change(new TFSContentRevision(path, myRevisionNumber - 1), null));
-        }
-        for (FilePath path : myModifiedPaths) {
-          TFSContentRevision beforeRevision = new TFSContentRevision(path, myRevisionNumber - 1);
-          TFSContentRevision afterRevision = new TFSContentRevision(path, myRevisionNumber);
-          myCachedChanges.add(new Change(beforeRevision, afterRevision));
-        }
-        for (Map.Entry<FilePath, FilePath> e : myMovedPaths.entrySet()) {
-          TFSContentRevision beforeRevision = new TFSContentRevision(e.getKey(), myRevisionNumber - 1);
-          TFSContentRevision afterRevision = new TFSContentRevision(e.getValue(), myRevisionNumber);
-          myCachedChanges.add(new Change(beforeRevision, afterRevision));
-        }
-      }
-      catch (TfsException e) {
-        AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      }
-    }
-    return myCachedChanges;
-  }
-
-  @NotNull
-  public String getName() {
-    return myComment;
-  }
-
-  @NotNull
-  public String getComment() {
-    return myComment;
-  }
-
-  public void writeToStream(final DataOutput stream) throws IOException {
-    stream.writeInt(myRevisionNumber);
-    stream.writeUTF(myAuthor);
-    stream.writeLong(myDate.getTime());
-    stream.writeUTF(myComment);
-    writePaths(stream, myModifiedPaths);
-    writePaths(stream, myAddedPaths);
-    writePaths(stream, myDeletedPaths);
-    writePaths(stream, myMovedPaths);
   }
 
   private void readFromStream(final DataInput stream) {
@@ -219,10 +225,10 @@ public class TFSChangeList implements CommittedChangeList {
       myAuthor = stream.readUTF();
       myDate = new Date(stream.readLong());
       myComment = stream.readUTF();
-      readPaths(stream, myModifiedPaths);
+      readPathsInts(stream, myModifiedPaths);
       readPaths(stream, myAddedPaths);
-      readPaths(stream, myDeletedPaths);
-      readPaths(stream, myMovedPaths);
+      readPathsInts(stream, myDeletedPaths);
+      readMoved(stream, myMovedPaths);
     }
     catch (Exception e) {
       //noinspection ThrowableInstanceNeverThrown
@@ -245,6 +251,23 @@ public class TFSChangeList implements CommittedChangeList {
     }
   }
 
+  private static void writePathsInts(final DataOutput stream, final Map<FilePath, Integer> paths) throws IOException {
+    stream.writeInt(paths.size());
+    for (Map.Entry<FilePath, Integer> e : paths.entrySet()) {
+      writePath(stream, e.getKey());
+      stream.writeInt(e.getValue());
+    }
+  }
+
+  private static void writeMoved(final DataOutput stream, final Map<FilePath, Pair<FilePath, Integer>> paths) throws IOException {
+    stream.writeInt(paths.size());
+    for (Map.Entry<FilePath, Pair<FilePath, Integer>> e : paths.entrySet()) {
+      writePath(stream, e.getKey());
+      writePath(stream, e.getValue().first);
+      stream.writeInt(e.getValue().second);
+    }
+  }
+
   private static void writePath(final DataOutput stream, final FilePath path) throws IOException {
     stream.writeUTF(path.getPath());
     stream.writeBoolean(path.isDirectory());
@@ -264,8 +287,32 @@ public class TFSChangeList implements CommittedChangeList {
     }
   }
 
+  private static void readPathsInts(final DataInput stream, final Map<FilePath, Integer> paths) throws IOException {
+    int count = stream.readInt();
+    for (int i = 0; i < count; i++) {
+      paths.put(readPath(stream), stream.readInt());
+    }
+  }
+
+  private static void readMoved(final DataInput stream, final Map<FilePath, Pair<FilePath, Integer>> paths) throws IOException {
+    int count = stream.readInt();
+    for (int i = 0; i < count; i++) {
+      paths.put(readPath(stream), Pair.create(readPath(stream), stream.readInt()));
+    }
+  }
+
   private static FilePath readPath(final DataInput stream) throws IOException {
     return VcsUtil.getFilePath(stream.readUTF(), stream.readBoolean());
+  }
+
+  private static Item getPreviousVersion(WorkspaceInfo workspace, Item item, int changeset) throws TfsException {
+    List<Changeset> fileHistory = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), item.getItem(),
+                                                                              item.getDid(), null, new ChangesetVersionSpec(changeset),
+                                                                              new ChangesetVersionSpec(1),
+                                                                              new ChangesetVersionSpec(item.getCs()), 2,
+                                                                              RecursionType.None);
+    TFSVcs.assertTrue(fileHistory.size() == 2);
+    return fileHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
   }
 
   // NOTE: equals() and hashCode() used by IDEA to maintain changed files tree state

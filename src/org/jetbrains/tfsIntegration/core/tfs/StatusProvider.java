@@ -80,7 +80,7 @@ public class StatusProvider {
     else {
       EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
       change.remove(ChangeType.Lock, ChangeType.Branch);
-      
+
       //if (item.getDid() != Integer.MIN_VALUE) {
       //  TFSVcs.assertTrue(change.isEmpty());
       //  return new ServerStatus.Deleted(item);
@@ -93,6 +93,16 @@ public class StatusProvider {
         }
         else {
           return new ServerStatus.UpToDate(item);
+        }
+      }
+      else if (change.contains(ChangeType.Merge)) {
+        if (item.getLatest() == Integer.MIN_VALUE) {
+          return new ServerStatus.ScheduledForAddition(item);
+        }
+        else if (change.contains(ChangeType.Rename)) {
+          return new ServerStatus.RenamedCheckedOut(item);
+        } else {
+          return new ServerStatus.CheckedOutForEdit(item);
         }
       }
       else if (change.contains(ChangeType.Add)) {
@@ -127,7 +137,7 @@ public class StatusProvider {
       //}
     }
 
-    TFSVcs.LOG.error("Uncovered case for item " + item.getLocal() != null ? item.getLocal() : item.getTitem());
+    TFSVcs.LOG.error("Uncovered case for item " + (item.getLocal() != null ? item.getLocal() : item.getTitem()));
     return null;
   }
 

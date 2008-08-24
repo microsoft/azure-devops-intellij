@@ -48,7 +48,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void checkedOutForEdit(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
     throws TfsException {
     if (localItemExists) {
-      TFSContentRevision baseRevision = new TFSContentRevision(myWorkspace, extendedItem, false);
+      TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, extendedItem, false);
       builder.processChange(new Change(baseRevision, CurrentContentRevision.create(path.getLocalPath())));
     }
     else {
@@ -100,7 +100,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
     throws TfsException {
     if (localItemExists) {
-      ContentRevision before = new TFSContentRevision(myWorkspace, extendedItem, true);
+      ContentRevision before = TFSContentRevision.create(myWorkspace, extendedItem, true);
       ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
       builder.processChange(new Change(before, after));
     }
@@ -112,7 +112,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
     throws TfsException {
     if (localItemExists) {
-      ContentRevision before = new TFSContentRevision(myWorkspace, extendedItem, true);
+      ContentRevision before = TFSContentRevision.create(myWorkspace, extendedItem, true);
       ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
       builder.processChange(new Change(before, after));
     }

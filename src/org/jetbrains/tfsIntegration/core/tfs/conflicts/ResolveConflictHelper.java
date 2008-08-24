@@ -128,11 +128,11 @@ public class ResolveConflictHelper {
 
           // content
           if (conflict.getYtype() == ItemType.File) {
-            String original = new TFSContentRevision(myWorkspace, conflict.getBitemid(), conflict.getBver()).getContent();
+            String original = TFSContentRevision.create(myWorkspace, conflict.getBitemid(), conflict.getBver()).getContent();
             data.baseContent = original != null ? original : ""; // TODO: why null is not OK?
             String current = CurrentContentRevision.create(VcsUtil.getFilePath(conflict.getSrclitem())).getContent();
             data.localContent = current != null ? current : "";
-            String last = new TFSContentRevision(myWorkspace, conflict.getTitemid(), conflict.getTver()).getContent();
+            String last = TFSContentRevision.create(myWorkspace, conflict.getTitemid(), conflict.getTver()).getContent();
             data.serverContent = last != null ? last : "";
           }
         }
