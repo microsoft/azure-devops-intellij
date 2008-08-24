@@ -197,11 +197,12 @@ public class WebServiceHelper {
     }
   }
 
+  // TODO dialog prompts two times on IDEA start if password was not stored
   private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(serverUri);
     boolean forcePrompt = false;
     while (true) {
-      if (/*credentials.getPassword() == null ||*/ forcePrompt) {
+      if (credentials.getPassword() == null || forcePrompt) {
         final Ref<Credentials> dialogCredentials = new Ref<Credentials>(credentials);
         Runnable runnable = new Runnable() {
           public void run() {
@@ -237,9 +238,9 @@ public class WebServiceHelper {
 
       try {
         T result = delegate.executeRequest(credentials);
-        if (forcePrompt) {
+        //if (forcePrompt) {
           CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
-        }
+        //}
         return result;
       }
       catch (Exception e) {

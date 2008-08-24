@@ -43,6 +43,8 @@ import java.util.List;
 
 // TODO: mnemonics i18n?
 
+// TODO disable save button if name is empty
+
 public class WorkspaceDialog extends DialogWrapper implements ActionListener {
 
   private enum Column {
