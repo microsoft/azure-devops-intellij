@@ -16,12 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import com.intellij.openapi.diff.ActionButtonPresentation;
-import com.intellij.openapi.diff.DiffManager;
-import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -29,25 +25,22 @@ import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.peer.PeerFactory;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSUpdateEnvironment;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.ConflictData;
-import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 // TODO use VersionControlPath.toTfsRepresentation() instead of FileUtil.toSystemDependentName() to assign conflict data paths
 
@@ -55,10 +48,16 @@ public class ResolveConflictHelper {
   private final @NotNull Project myProject;
   private final @NotNull WorkspaceInfo myWorkspace;
   private final @Nullable UpdatedFiles myUpdatedFiles;
+  private List<Conflict> myConflicts;
+  private List<ItemPath> myPaths;
 
-  public ResolveConflictHelper(final Project project, final WorkspaceInfo workspace, final UpdatedFiles updatedFiles) {
+  public ResolveConflictHelper(final Project project,
+                               final WorkspaceInfo workspace,
+                               final List<ItemPath> paths,
+                               final UpdatedFiles updatedFiles) {
     myProject = project;
     myWorkspace = workspace;
+    myPaths = paths;
     myUpdatedFiles = updatedFiles;
   }
 
@@ -104,7 +103,8 @@ public class ResolveConflictHelper {
         ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
           .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
         ApplyGetOperations
-          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode, operationType);
+          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode,
+                   operationType);
       }
     }
     catch (TfsException e) {
@@ -145,22 +145,19 @@ public class ResolveConflictHelper {
     return data;
   }
 
-  public void acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
-    ConflictData conflictData = getConflictData(conflict);
+  public String acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
+    TFSVcs.assertTrue(canMerge(conflict));  // TODO: inserted here for debug purpose, remove later
+    final ConflictData conflictData = getConflictData(conflict);
     ResolutionType nameResolutionType = isNameConflict(conflict) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
     ResolutionType contentResolutionType = isContentConflict(conflict) ? ResolutionType.IGNORED : ResolutionType.NO_CONFLICT;
     String localName = null;
 
     // merge names if needed
     if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename)) {
-      MergeNameDialog d = new MergeNameDialog(conflict.getYsitem(), conflict.getTsitem());
-      d.show();
-      if (d.isOK()) {
-        FilePath newLocalPath = myWorkspace.findLocalPathByServerPath(d.getSelectedName());
-        if (newLocalPath != null) {
-          localName = FileUtil.toSystemDependentName(newLocalPath.getPath());
-          nameResolutionType = ResolutionType.MERGED;
-        }
+      FilePath newLocalPath = myWorkspace.findLocalPathByServerPath(TFSUpdateEnvironment.getNameConflictsHandler().mergeName(conflict));
+      if (newLocalPath != null) {
+        localName = FileUtil.toSystemDependentName(newLocalPath.getPath());
+        nameResolutionType = ResolutionType.MERGED;
       }
     }
     else {
@@ -171,29 +168,25 @@ public class ResolveConflictHelper {
     if (conflict.getYtype() == ItemType.File && contentResolutionType == ResolutionType.IGNORED) {
       final VirtualFile vFile = VcsUtil.getVirtualFile(conflictData.sourceLocalName);
       if (vFile != null) {
-        MergeRequest request = PeerFactory.getInstance().getDiffRequestFactory().createMergeRequest(
-          StreamUtil.convertSeparators(conflictData.serverContent), StreamUtil.convertSeparators(conflictData.localContent),
-          StreamUtil.convertSeparators(conflictData.baseContent), vFile, myProject, ActionButtonPresentation.createApplyButton());
-
-        request.setWindowTitle("Merge " + localName);
-        request.setVersionTitles(new String[]{"Server content (rev. " + conflict.getTver() + ")", "Merge result", "Local content"});
-        // TODO call canShow() first
-        DiffManager.getInstance().getDiffTool().show(request);
+        TFSUpdateEnvironment.getContentConflictsHandler().mergeContent(conflict, conflictData, myProject, vFile, localName);
         contentResolutionType = ResolutionType.MERGED;
       }
     }
     conflictResolved(conflict, nameResolutionType, contentResolutionType, localName);
+    return localName;
   }
 
-  public void acceptYours(final @NotNull Conflict conflict) {
+  public String acceptYours(final @NotNull Conflict conflict) {
     conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, conflict.getSrclitem());
     if (myUpdatedFiles != null) {
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
     }
+    return conflict.getSrclitem();
   }
 
-  public void acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException {
+  public String acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException {
     conflictResolved(conflict, ResolutionType.ACCEPT_THEIRS, ResolutionType.ACCEPT_THEIRS, null);
+    return conflict.getTgtlitem();
   }
 
   public static boolean isNameConflict(final @NotNull Conflict conflict) {
@@ -202,5 +195,42 @@ public class ResolveConflictHelper {
 
   public static boolean isContentConflict(final @NotNull Conflict conflict) {
     return EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit);
+  }
+
+  public void updateConflicts() throws TfsException {
+    myConflicts =
+      myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full);
+  }
+
+  public List<Conflict> getConflicts() {
+    return myConflicts;
+  }
+
+  public static boolean canMerge(final @NotNull Conflict conflict) {
+    boolean isNamespaceConflict =
+      ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
+    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
+      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit) &&
+          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
+        return true;
+      }
+      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename) &&
+          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Rename)) {
+        return true;
+      }
+      if (conflict.getCtype().equals(ConflictType.Merge) &&
+          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
+        if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit)) {
+          return true;
+        }
+        if (conflict.getIsforced()) {
+          return true;
+        }
+        if ((conflict.getTlmver() != conflict.getBver()) || (conflict.getYlmver() != conflict.getYver())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

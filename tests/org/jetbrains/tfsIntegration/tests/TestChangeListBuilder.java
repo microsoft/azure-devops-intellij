@@ -172,7 +172,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
 
   public void assertRenamedOrMoved(String from, String to) {
     Assert
-      .assertNotNull("from=" + from + ", to= " + to + "\n" + toString(), getMoveChange(VcsUtil.getFilePath(from), VcsUtil.getFilePath(to)));
+      .assertNotNull("from=" + from + ", to=" + to + "\n" + toString(), getMoveChange(VcsUtil.getFilePath(from), VcsUtil.getFilePath(to)));
   }
 
   @Nullable

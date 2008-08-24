@@ -16,31 +16,22 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 
 import javax.swing.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.List;
 
 public class ResolveConflictsDialog extends DialogWrapper {
   private ResolveConflictsForm myResolveConflictsForm;
 
-  public ResolveConflictsDialog(final Project project,
-                                final WorkspaceInfo workspace,
-                                final List<ItemPath> paths,
-                                final List<Conflict> conflicts,
-                                final UpdatedFiles updatedFiles) {
-    super(project, true);
+  public ResolveConflictsDialog(final ResolveConflictHelper resolveConflictHelper) {
+    super(true);
     setTitle("Resolve Conflicts");
     setResizable(true);
-    myResolveConflictsForm = new ResolveConflictsForm(workspace, project, paths, conflicts, updatedFiles);
+    myResolveConflictsForm = new ResolveConflictsForm(resolveConflictHelper);
     init();
   }
 

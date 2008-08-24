@@ -16,22 +16,12 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ConflictType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -41,7 +31,6 @@ import javax.swing.event.TableModelListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.List;
 
 public class ResolveConflictsForm {
 
@@ -54,18 +43,10 @@ public class ResolveConflictsForm {
 
   private JButton myMergeButton;
   private CoflictsTableModel myItemsTableModel;
-  private final WorkspaceInfo myWorkspace;
-  private final List<ItemPath> myPaths;
   private final ResolveConflictHelper myResolveConflictHelper;
 
-  public ResolveConflictsForm(final WorkspaceInfo workspace,
-                              Project project,
-                              final List<ItemPath> paths,
-                              final List<Conflict> conflicts,
-                              final UpdatedFiles updatedFiles) {
-    myWorkspace = workspace;
-    myResolveConflictHelper = new ResolveConflictHelper(project, myWorkspace, updatedFiles);
-    myPaths = paths;
+  public ResolveConflictsForm(ResolveConflictHelper resolveConflictHelper) {
+    myResolveConflictHelper = resolveConflictHelper;
 
     myItemsTableModel = new CoflictsTableModel();
     myItemsTable.setModel(myItemsTableModel);
@@ -73,7 +54,7 @@ public class ResolveConflictsForm {
 
     addListeners();
 
-    myItemsTableModel.setConflicts(conflicts);
+    myItemsTableModel.setConflicts(resolveConflictHelper.getConflicts());
   }
 
   private void addListeners() {
@@ -125,33 +106,10 @@ public class ResolveConflictsForm {
     myMergeButton.setEnabled(selectedIndices.length > 0);
     for (int index : selectedIndices) {
       Conflict conflict = myItemsTableModel.getConflicts().get(index);
-      if (!canMerge(conflict)) {
+      if (!ResolveConflictHelper.canMerge(conflict)) {
         myMergeButton.setEnabled(false);
       }
     }
-  }
-
-  private static boolean canMerge(final @NotNull Conflict conflict) {
-    boolean isNamespaceConflict =
-      ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
-    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
-      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit) &&
-          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
-        return true;
-      }
-      if (conflict.getCtype().equals(ConflictType.Merge) && EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
-        if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit)) {
-          return true;
-        }
-        if (conflict.getIsforced()) {
-          return true;
-        }
-        if ((conflict.getTlmver() != conflict.getBver()) || (conflict.getYlmver() != conflict.getYver())) {
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   private abstract class MergeActionListener implements ActionListener {
@@ -162,8 +120,8 @@ public class ResolveConflictsForm {
           Conflict conflict = myItemsTableModel.getConflicts().get(index);
           execute(conflict);
         }
-        myItemsTableModel.setConflicts(
-          myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full));
+        myResolveConflictHelper.updateConflicts();
+        myItemsTableModel.setConflicts(myResolveConflictHelper.getConflicts());
       }
       catch (TfsException e) {
         String message = "Failed to resolve conlict.\n" + e.getMessage();

@@ -654,7 +654,9 @@ public class VersionControlServer {
 
     List<GetOperation> results = new ArrayList<GetOperation>();
     for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
-      results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+      if (arrayOfGetOperation.getGetOperation() != null) {
+        results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+      }
     }
     return results;
   }
