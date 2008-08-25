@@ -412,7 +412,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     if (!supressRefresh) {
       refreshAll();
     }
-    assertFolder(VcsUtil.getFilePath(new File(new File(parent.getPath()), name)), 0);
+    assertFolder(getChildPath(parent, name), 0);
     return result;
   }
 
@@ -569,11 +569,11 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     file.setBinaryContent(CharsetToolkit.getUtf8Bytes(content));
   }
 
-  protected FilePath addChildPath(final FilePath parent, final String childName) {
+  protected static FilePath getChildPath(final FilePath parent, final String childName) {
     return VcsUtil.getFilePath(new File(parent.getIOFile(), childName));
   }
 
-  protected FilePath addChildPath(final VirtualFile parent, final String childName) {
+  protected static FilePath getChildPath(final VirtualFile parent, final String childName) {
     return VcsUtil.getFilePath(new File(new File(parent.getPath()), childName));
   }
 }
