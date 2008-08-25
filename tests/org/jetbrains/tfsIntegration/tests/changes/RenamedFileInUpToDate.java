@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
@@ -33,8 +31,8 @@ public class RenamedFileInUpToDate extends ChildChangeTestCase {
   private FilePath myRenamedFile;
 
   protected void preparePaths() {
-    myOriginalFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "original.txt"));
-    myRenamedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "renamed.txt"));
+    myOriginalFile = getChildPath(mySandboxRoot, "original.txt");
+    myRenamedFile = getChildPath(mySandboxRoot, "renamed.txt");
   }
 
   protected void checkChildChangePending() throws VcsException {

@@ -19,10 +19,8 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,8 +33,8 @@ public class AddedFolderInAdded extends ChangeTestCase {
   private FilePath myAddedChildFolder;
 
   protected void preparePaths() {
-    myAddedParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "AddedFolder"));
-    myAddedChildFolder = VcsUtil.getFilePath(new File(new File(myAddedParentFolder.getPath()), "AddedSubfolder"));
+    myAddedParentFolder = getChildPath(mySandboxRoot, "AddedFolder");
+    myAddedChildFolder = getChildPath(myAddedParentFolder, "AddedSubfolder");
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

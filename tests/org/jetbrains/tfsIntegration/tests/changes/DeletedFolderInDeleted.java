@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,8 +36,8 @@ public class DeletedFolderInDeleted extends ChangeTestCase {
   private FilePath myChildFolder;
 
   protected void preparePaths() {
-    myParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "ParentFolder"));
-    myChildFolder = VcsUtil.getFilePath(new File(myParentFolder.getIOFile(), "ChildFolder"));
+    myParentFolder = getChildPath(mySandboxRoot, "ParentFolder");
+    myChildFolder = getChildPath(myParentFolder, "ChildFolder");
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

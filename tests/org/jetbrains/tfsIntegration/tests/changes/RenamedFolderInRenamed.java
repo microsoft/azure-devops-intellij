@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,13 +38,13 @@ public class RenamedFolderInRenamed extends ChangeTestCase {
   private FilePath myChildRenamedInParentRenamed;
 
   protected void preparePaths() {
-    myParentOriginal = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Original"));
-    myParentRenamed = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Renamed"));
+    myParentOriginal = getChildPath(mySandboxRoot, "Original");
+    myParentRenamed = getChildPath(mySandboxRoot, "Renamed");
     final String filenameOriginal = "ChildOriginal";
-    myChildOriginalInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), filenameOriginal));
-    myChildOriginalInParentRenamed = VcsUtil.getFilePath(new File(myParentRenamed.getIOFile(), filenameOriginal));
-    myChildRenamedInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), CHILDFOLDERNAME_RENAMED));
-    myChildRenamedInParentRenamed = VcsUtil.getFilePath(new File(myParentRenamed.getIOFile(), CHILDFOLDERNAME_RENAMED));
+    myChildOriginalInParentOriginal = getChildPath(myParentOriginal, filenameOriginal);
+    myChildOriginalInParentRenamed = getChildPath(myParentRenamed, filenameOriginal);
+    myChildRenamedInParentOriginal = getChildPath(myParentOriginal, CHILDFOLDERNAME_RENAMED);
+    myChildRenamedInParentRenamed = getChildPath(myParentRenamed, CHILDFOLDERNAME_RENAMED);
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

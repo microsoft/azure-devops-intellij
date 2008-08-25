@@ -18,12 +18,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
 import org.junit.Test;
-
-import java.io.File;
 
 public class MovedFolder extends TFSTestCase {
 
@@ -49,8 +46,8 @@ public class MovedFolder extends TFSTestCase {
 
     final String foldernameMoved = "Folder_Moved";
     moveFileInCommand(folderOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), foldernameOriginal)), foldernameMoved);
-    FilePath folderMoved = VcsUtil.getFilePath(new File(subfolder2.getIOFile(), foldernameMoved));
+    rename(getChildPath(subfolder2, foldernameOriginal), foldernameMoved);
+    FilePath folderMoved = getChildPath(subfolder2, foldernameMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(subfolder, 1);
@@ -69,7 +66,7 @@ public class MovedFolder extends TFSTestCase {
     assertFolder(folderOriginal, 0);
 
     moveFileInCommand(folderOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), foldernameOriginal)), foldernameMoved);
+    rename(getChildPath(subfolder2, foldernameOriginal), foldernameMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(subfolder, 1);

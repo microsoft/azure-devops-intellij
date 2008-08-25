@@ -24,7 +24,6 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -318,7 +317,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    final FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    final FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -380,7 +379,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    final FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), otherName));
+    final FilePath after = getChildPath(mySandboxRoot, otherName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -399,7 +398,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -419,7 +418,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     rollback(getChanges().getChanges());
@@ -443,7 +442,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     commit(getChanges().getChanges(), "unittest");
@@ -467,7 +466,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     rename(file, originalName);
@@ -716,7 +715,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertLocallyDeleted(after);
   }
 
@@ -761,7 +760,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertLocallyDeleted(after);
   }
 
@@ -803,7 +802,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -823,7 +822,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     rename(file, originalName);
@@ -884,7 +883,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     final String anotherName = "file3.txt";
@@ -892,7 +891,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath anotherFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), anotherName));
+    FilePath anotherFile = getChildPath(mySandboxRoot, anotherName);
     changes.assertRenamedOrMoved(before, anotherFile);
   }
 
@@ -912,7 +911,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     rename(file, originalName);
@@ -942,7 +941,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
   }
 

@@ -21,11 +21,8 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Test;
-
-import java.io.File;
 
 @SuppressWarnings({"HardCodedStringLiteral", "UnusedDeclaration"})
 public class TestComplexOperations extends TFSTestCase {
@@ -344,7 +341,7 @@ public class TestComplexOperations extends TFSTestCase {
     FilePath rootBefore = pendingChanges.rootfolder;
     final String newName = pendingChanges.rootfolder.getName() + "_Renamed";
     renameFileInCommand(pendingChanges.rootfolder, newName);
-    final FilePath rootAfter = VcsUtil.getFilePath(new File(rootBefore.getParentPath().getIOFile(), newName));
+    final FilePath rootAfter = getChildPath(rootBefore.getParentPath(), newName);
     pendingChanges.assertChanges(getChanges(), rootAfter, true);
 
     TestChangeListBuilder changes = getChanges();
@@ -362,7 +359,7 @@ public class TestComplexOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
 
-    final FilePath rootAfter = VcsUtil.getFilePath(new File(rootBefore.getParentPath().getIOFile(), newName));
+    final FilePath rootAfter = getChildPath(rootBefore.getParentPath(), newName);
 
     commit(changes.getMoveChange(rootBefore, rootAfter), "test");
 
@@ -421,7 +418,7 @@ public class TestComplexOperations extends TFSTestCase {
 
     moveFileInCommand(pendingChanges.rootfolder.getVirtualFile(), subfolder);
 
-    final FilePath rootAfter = VcsUtil.getFilePath(new File(subfolder.getPath(), pendingChanges.rootfolder.getName()));
+    final FilePath rootAfter = getChildPath(subfolder, pendingChanges.rootfolder.getName());
     final TestChangeListBuilder changes = getChanges();
     pendingChanges.assertChanges(changes, rootAfter, true);
 
@@ -442,7 +439,7 @@ public class TestComplexOperations extends TFSTestCase {
 
     moveFileInCommand(pendingChanges.rootfolder.getVirtualFile(), subfolder);
 
-    final FilePath rootAfter = VcsUtil.getFilePath(new File(subfolder.getPath(), pendingChanges.rootfolder.getName()));
+    final FilePath rootAfter = getChildPath(subfolder, pendingChanges.rootfolder.getName());
     final TestChangeListBuilder changes = getChanges();
     pendingChanges.assertChanges(changes, rootAfter, true);
 
@@ -525,18 +522,18 @@ public class TestComplexOperations extends TFSTestCase {
 
       final String fileRenamedNewName = "renamed.txt";
       rename(fileRenamedOriginal, fileRenamedNewName);
-      fileRenamed = VcsUtil.getFilePath(new File(new File(rootfolder.getPath()), fileRenamedNewName));
+      fileRenamed = getChildPath(rootfolder, fileRenamedNewName);
 
       final String folderRenamedNewName = "Renamed";
       rename(folderRenamedOriginal, folderRenamedNewName);
-      folderRenamed = VcsUtil.getFilePath(new File(new File(rootfolder.getPath()), folderRenamedNewName));
+      folderRenamed = getChildPath(rootfolder, folderRenamedNewName);
 
       editFiles(fileCheckedOut);
       editFiles(fileCheckedOutAndRenamedOriginal);
 
       final String fileCheckedOutAndRenamedNewName = "checkedOutAndRenamed.txt";
       rename(fileCheckedOutAndRenamedOriginal, fileCheckedOutAndRenamedNewName);
-      fileCheckedOutAndRenamed = VcsUtil.getFilePath(new File(new File(rootfolder.getPath()), fileCheckedOutAndRenamedNewName));
+      fileCheckedOutAndRenamed = getChildPath(rootfolder, fileCheckedOutAndRenamedNewName);
 
       deleteFileExternally(fileMissing);
       deleteFileExternally(folderMissing);

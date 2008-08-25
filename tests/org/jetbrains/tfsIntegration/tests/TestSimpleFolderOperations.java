@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -226,7 +224,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    final FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), otherName));
+    final FilePath after = getChildPath(mySandboxRoot, otherName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -243,7 +241,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
   }
 
@@ -260,7 +258,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     rollback(getChanges().getChanges());
@@ -281,7 +279,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertRenamedOrMoved(before, after);
 
     commit(getChanges().getChanges(), "unittest");
@@ -416,7 +414,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
 
     final TestChangeListBuilder changes = getChanges();
     changes.assertTotalItems(1);
-    FilePath after = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), newName));
+    FilePath after = getChildPath(mySandboxRoot, newName);
     changes.assertLocallyDeleted(after);
   }
 

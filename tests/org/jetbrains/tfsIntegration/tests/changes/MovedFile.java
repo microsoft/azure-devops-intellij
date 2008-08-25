@@ -18,12 +18,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
 import org.junit.Test;
-
-import java.io.File;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public class MovedFile extends TFSTestCase {
@@ -50,8 +47,8 @@ public class MovedFile extends TFSTestCase {
 
     final String filenameMoved = "file_moved.txt";
     moveFileInCommand(fileOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameOriginal)), filenameMoved);
-    FilePath fileMoved = VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameMoved));
+    rename(getChildPath(subfolder2, filenameOriginal), filenameMoved);
+    FilePath fileMoved = getChildPath(subfolder2, filenameMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(subfolder, 1);
@@ -70,7 +67,7 @@ public class MovedFile extends TFSTestCase {
     assertFile(fileOriginal, fileContent, false);
 
     moveFileInCommand(fileOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameOriginal)), filenameMoved);
+    rename(getChildPath(subfolder2, filenameOriginal), filenameMoved);
 
     assertFolder(mySandboxRoot, 1);
     assertFolder(subfolder, 1);

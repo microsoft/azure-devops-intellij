@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,12 +39,12 @@ public class ModifiedFileInMoved extends ChangeTestCase {
 
   protected void preparePaths() {
     final String folderName = "Folder_Original";
-    myOriginalParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), folderName));
-    mySubfolder1 = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Subfolder1"));
-    mySubfolder2 = VcsUtil.getFilePath(new File(mySubfolder1.getIOFile(), "Subfolder2"));
-    myMovedParentFolder = VcsUtil.getFilePath(new File(mySubfolder2.getIOFile(), folderName));
-    myFileInOriginalFolder = VcsUtil.getFilePath(new File(myOriginalParentFolder.getIOFile(), "file.txt"));
-    myFileInMovedFolder = VcsUtil.getFilePath(new File(myMovedParentFolder.getIOFile(), "file.txt"));
+    myOriginalParentFolder = getChildPath(mySandboxRoot, folderName);
+    mySubfolder1 = getChildPath(mySandboxRoot, "Subfolder1");
+    mySubfolder2 = getChildPath(mySubfolder1, "Subfolder2");
+    myMovedParentFolder = getChildPath(mySubfolder2, folderName);
+    myFileInOriginalFolder = getChildPath(myOriginalParentFolder, "file.txt");
+    myFileInMovedFolder = getChildPath(myMovedParentFolder, "file.txt");
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

@@ -17,13 +17,12 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -42,12 +41,12 @@ public class UpToDateFolderInMoved extends ParentChangeTestCase {
     final String filename = "up_to_date.txt";
     final String foldernameOriginal = "Folder_Original";
 
-    myParentFolderOriginal = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), foldernameOriginal));
-    myChildFolderOriginal = VcsUtil.getFilePath(new File(new File(myParentFolderOriginal.getPath()), filename));
-    mySubfolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Subfolder"));
-    mySubfolder2 = VcsUtil.getFilePath(new File(new File(mySubfolder.getPath()), "Subfolder2"));
-    myParentFolderMoved = VcsUtil.getFilePath(new File(new File(mySubfolder2.getPath()), foldernameOriginal));
-    myChildFolderInMovedFolder = VcsUtil.getFilePath(new File(new File(myParentFolderMoved.getPath()), filename));
+    myParentFolderOriginal = getChildPath(mySandboxRoot, foldernameOriginal);
+    myChildFolderOriginal = getChildPath(myParentFolderOriginal, filename);
+    mySubfolder = getChildPath(mySandboxRoot, "Subfolder");
+    mySubfolder2 = getChildPath(mySubfolder, "Subfolder2");
+    myParentFolderMoved = getChildPath(mySubfolder2, foldernameOriginal);
+    myChildFolderInMovedFolder = getChildPath(myParentFolderMoved, filename);
   }
 
   protected void makeOriginalState() throws VcsException {

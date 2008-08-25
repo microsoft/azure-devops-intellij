@@ -17,13 +17,11 @@
 package org.jetbrains.tfsIntegration.tests.changes;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -42,10 +40,10 @@ public class UpToDateFileInRenamed extends ParentChangeTestCase {
     final String filename = "up_to_date.txt";
     final String foldernameOriginal = "Folder_Original";
 
-    myParentFolderOriginal = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), foldernameOriginal));
-    myChildFileOriginal = VcsUtil.getFilePath(new File(new File(myParentFolderOriginal.getPath()), filename));
-    myParentFolderRenamed = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), FOLDERNAME_RENAMED));
-    mychildFileInRenamedFolder = VcsUtil.getFilePath(new File(new File(myParentFolderRenamed.getPath()), filename));
+    myParentFolderOriginal = getChildPath(mySandboxRoot, foldernameOriginal);
+    myChildFileOriginal = getChildPath(myParentFolderOriginal, filename);
+    myParentFolderRenamed = getChildPath(mySandboxRoot, FOLDERNAME_RENAMED);
+    mychildFileInRenamedFolder = getChildPath(myParentFolderRenamed, filename);
   }
 
   protected void makeOriginalState() throws VcsException {

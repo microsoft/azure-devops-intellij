@@ -120,7 +120,7 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     assertFile(file, CONTENT_1, false);
     getChanges().assertTotalItems(1);
     FilePath pathTo = TfsFileUtil.getFilePath(file);
-    FilePath pathFrom = addChildPath(mySandboxRoot, NAME_2);
+    FilePath pathFrom = getChildPath(mySandboxRoot, NAME_2);
     getChanges().assertRenamedOrMoved(pathFrom, pathTo);
   }
 
@@ -131,7 +131,7 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
 
     TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptTheirsConflictsHandler(new SizeConflictsAsserter(1)));
     update(file, latestRevisionNumber - 1);
-    FilePath path = addChildPath(mySandboxRoot, NAME_1);
+    FilePath path = getChildPath(mySandboxRoot, NAME_1);
     assertFile(path.getVirtualFile(), CONTENT_1, false);
     getChanges().assertTotalItems(0);
   }
@@ -154,8 +154,8 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     });
     TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptMergeConflictsHandler(new SizeConflictsAsserter(1)));
     update(file, latestRevisionNumber - 1);
-    FilePath pathTo = addChildPath(mySandboxRoot, NAME_4);
-    FilePath pathFrom = addChildPath(mySandboxRoot, NAME_2);
+    FilePath pathTo = getChildPath(mySandboxRoot, NAME_4);
+    FilePath pathFrom = getChildPath(mySandboxRoot, NAME_2);
     assertFile(pathTo.getVirtualFile(), CONTENT_1, false);
     getChanges().assertTotalItems(1);
     getChanges().assertRenamedOrMoved(pathFrom, pathTo);

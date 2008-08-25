@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,17 +47,17 @@ public class RenamedFolderInMoved extends ChangeTestCase {
   private FilePath mySubfolder2;
 
   protected void preparePaths() {
-    mySubfolder1 = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Subfolder1"));
-    mySubfolder2 = VcsUtil.getFilePath(new File(mySubfolder1.getIOFile(), "Subfolder2"));
+    mySubfolder1 = getChildPath(mySandboxRoot, "Subfolder1");
+    mySubfolder2 = getChildPath(mySubfolder1, "Subfolder2");
 
     final String parentFolderName = "ParentFolder";
-    myParentOriginal = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), parentFolderName));
-    myParentMoved = VcsUtil.getFilePath(new File(mySubfolder2.getIOFile(), parentFolderName));
+    myParentOriginal = getChildPath(mySandboxRoot, parentFolderName);
+    myParentMoved = getChildPath(mySubfolder2, parentFolderName);
     final String foldernameOriginal = "OriginalChild";
-    myChildOriginalInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), foldernameOriginal));
-    myChildOriginalInParentMoved = VcsUtil.getFilePath(new File(myParentMoved.getIOFile(), foldernameOriginal));
-    myChildRenamedInParentOriginal = VcsUtil.getFilePath(new File(myParentOriginal.getIOFile(), FOLDERNAME_RENAMED));
-    myChildRenamedInParentMoved = VcsUtil.getFilePath(new File(myParentMoved.getIOFile(), FOLDERNAME_RENAMED));
+    myChildOriginalInParentOriginal = getChildPath(myParentOriginal, foldernameOriginal);
+    myChildOriginalInParentMoved = getChildPath(myParentMoved, foldernameOriginal);
+    myChildRenamedInParentOriginal = getChildPath(myParentOriginal, FOLDERNAME_RENAMED);
+    myChildRenamedInParentMoved = getChildPath(myParentMoved, FOLDERNAME_RENAMED);
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

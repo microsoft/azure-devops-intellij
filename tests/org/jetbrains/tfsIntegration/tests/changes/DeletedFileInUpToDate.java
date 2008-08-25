@@ -19,10 +19,8 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
@@ -31,7 +29,7 @@ public class DeletedFileInUpToDate extends ChildChangeTestCase {
   private FilePath myDeletedFile;
 
   protected void preparePaths() {
-    myDeletedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "deleted_file.txt"));
+    myDeletedFile = getChildPath(mySandboxRoot, "deleted_file.txt");
   }
 
   protected void checkChildChangePending() throws VcsException {

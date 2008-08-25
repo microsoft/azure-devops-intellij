@@ -16,16 +16,15 @@
 
 package org.jetbrains.tfsIntegration.tests.changes;
 
-import org.junit.Test;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
-import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.VcsConfiguration;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
+import org.junit.Test;
 
 import java.io.IOException;
-import java.io.File;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 public class MovedModifiedFile extends TFSTestCase {
@@ -54,8 +53,8 @@ public class MovedModifiedFile extends TFSTestCase {
 
     final String filenameMoved = "file_moved.txt";
     moveFileInCommand(fileOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameOriginal)), filenameMoved);
-    FilePath fileMoved = VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameMoved));
+    rename(getChildPath(subfolder2, filenameOriginal), filenameMoved);
+    FilePath fileMoved = getChildPath(subfolder2, filenameMoved);
     editFiles(VcsUtil.getVirtualFile(fileMoved.getIOFile()));
     final String fileContentModified = "content_modified";
     setFileContent(fileMoved, fileContentModified);
@@ -77,7 +76,7 @@ public class MovedModifiedFile extends TFSTestCase {
     assertFile(fileOriginal, fileContentOriginal, false);
 
     moveFileInCommand(fileOriginal, subfolder2.getVirtualFile());
-    rename(VcsUtil.getFilePath(new File(subfolder2.getIOFile(), filenameOriginal)), filenameMoved);
+    rename(getChildPath(subfolder2, filenameOriginal), filenameMoved);
     editFiles(VcsUtil.getVirtualFile(fileMoved.getIOFile()));
     setFileContent(fileMoved, fileContentModified);
 

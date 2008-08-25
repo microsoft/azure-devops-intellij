@@ -19,11 +19,9 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,10 +35,10 @@ public class ModifiedFileInRenamed extends ChangeTestCase {
   private FilePath myFileInRenamedFolder;
 
   protected void preparePaths() {
-    myOriginalParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Folder_Original"));
-    myRenamedParentFolder = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "Folder_Renamed"));
-    myFileInOriginalFolder = VcsUtil.getFilePath(new File(myOriginalParentFolder.getIOFile(), "file.txt"));
-    myFileInRenamedFolder = VcsUtil.getFilePath(new File(myRenamedParentFolder.getIOFile(), "file.txt"));
+    myOriginalParentFolder = getChildPath(mySandboxRoot, "Folder_Original");
+    myRenamedParentFolder = getChildPath(mySandboxRoot, "Folder_Renamed");
+    myFileInOriginalFolder = getChildPath(myOriginalParentFolder, "file.txt");
+    myFileInRenamedFolder = getChildPath(myRenamedParentFolder, "file.txt");
   }
 
   protected void checkParentChangesPendingChildRolledBack() throws VcsException {

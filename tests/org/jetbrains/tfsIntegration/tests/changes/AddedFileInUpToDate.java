@@ -19,10 +19,8 @@ package org.jetbrains.tfsIntegration.tests.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.vcsUtil.VcsUtil;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
@@ -31,7 +29,7 @@ public class AddedFileInUpToDate extends ChildChangeTestCase {
   private FilePath myAddedFile;
 
   protected void preparePaths() {
-    myAddedFile = VcsUtil.getFilePath(new File(new File(mySandboxRoot.getPath()), "added_file.txt"));
+    myAddedFile = getChildPath(mySandboxRoot, "added_file.txt");
   }
 
   protected void checkChildChangePending() throws VcsException {
