@@ -87,7 +87,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       };
     }
     catch (TfsException e) {
-      throw new VcsException(e.getMessage(), e);
+      throw new VcsException(e);
     }
   }
 

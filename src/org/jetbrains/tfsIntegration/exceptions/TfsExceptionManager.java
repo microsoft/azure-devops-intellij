@@ -116,6 +116,8 @@ public class TfsExceptionManager {
         return new UnauthorizedException(axisFault);
       case HttpStatus.SC_BAD_GATEWAY:
         return new HostNotFoundException(axisFault);
+      case HttpStatus.SC_NOT_FOUND:
+        return new HostNotApplicableException(axisFault);
       default:
         return new ConnectionFailedException(axisFault, errorCode);
     }

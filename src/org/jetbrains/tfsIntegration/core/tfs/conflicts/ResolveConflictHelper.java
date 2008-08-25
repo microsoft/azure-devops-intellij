@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
@@ -64,52 +63,44 @@ public class ResolveConflictHelper {
   public void conflictResolved(final Conflict conflict,
                                final ResolutionType nameResolutionType,
                                final ResolutionType contentResolutionType,
-                               final String newLocalPath) {
-    // send "conflict resolved" to server
-    try {
-      Resolution resolution = Resolution.AcceptMerge;
-      if (contentResolutionType == ResolutionType.ACCEPT_YOURS && nameResolutionType == ResolutionType.ACCEPT_YOURS) {
-        resolution = Resolution.AcceptYours;
-      }
-      if (contentResolutionType == ResolutionType.ACCEPT_THEIRS && nameResolutionType == ResolutionType.ACCEPT_THEIRS) {
-        resolution = Resolution.AcceptTheirs;
-      }
-      VersionControlServer.ResolveConflictParams resolveConflictParams =
-        new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2, newLocalPath);
-
-      ResolveResponse response =
-        myWorkspace.getServer().getVCS().resolveConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), resolveConflictParams);
-
-      final ArrayOfGetOperation getOperations;
-      final ApplyGetOperations.ProcessMode operationType;
-      if (resolution == Resolution.AcceptTheirs) {
-        getOperations = response.getUndoOperations();
-        operationType = ApplyGetOperations.ProcessMode.UNDO;
-        TFSVcs.assertTrue(response.getResolveResult().getGetOperation() == null);
-      }
-      else if (resolution == Resolution.AcceptYoursRenameTheirs) {
-        // Currently it is not possible in our implementation...
-        TFSVcs.error("AcceptYoursRenameTheirs resolution type not supported");
-        getOperations = null;
-        operationType = null;
-      }
-      else { //  resolution == Resolution.AcceptMerge || resolution == Resolution.AcceptYours
-        getOperations = response.getResolveResult();
-        operationType = ApplyGetOperations.ProcessMode.RESOLVE;
-        TFSVcs.assertTrue(response.getUndoOperations().getGetOperation() == null);
-      }
-      // TODO check for null not needed?
-      if (getOperations != null && getOperations.getGetOperation() != null) {
-        ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
-          .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
-        ApplyGetOperations
-          .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode,
-                   operationType);
-      }
+                               final String newLocalPath) throws TfsException {
+    Resolution resolution = Resolution.AcceptMerge;
+    if (contentResolutionType == ResolutionType.ACCEPT_YOURS && nameResolutionType == ResolutionType.ACCEPT_YOURS) {
+      resolution = Resolution.AcceptYours;
     }
-    catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(myProject).showError(new VcsException("Conflict resolution failed.", e), TFSVcs.TFS_NAME);
+    if (contentResolutionType == ResolutionType.ACCEPT_THEIRS && nameResolutionType == ResolutionType.ACCEPT_THEIRS) {
+      resolution = Resolution.AcceptTheirs;
+    }
+    VersionControlServer.ResolveConflictParams resolveConflictParams =
+      new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2, newLocalPath);
+
+    ResolveResponse response =
+      myWorkspace.getServer().getVCS().resolveConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), resolveConflictParams);
+
+    final ArrayOfGetOperation getOperations;
+    final ApplyGetOperations.ProcessMode operationType;
+    if (resolution == Resolution.AcceptTheirs) {
+      getOperations = response.getUndoOperations();
+      operationType = ApplyGetOperations.ProcessMode.UNDO;
+      TFSVcs.assertTrue(response.getResolveResult().getGetOperation() == null);
+    }
+    else if (resolution == Resolution.AcceptYoursRenameTheirs) {
+      // Currently it is not possible in our implementation...
+      TFSVcs.error("AcceptYoursRenameTheirs resolution type not supported");
+      getOperations = null;
+      operationType = null;
+    }
+    else { //  resolution == Resolution.AcceptMerge || resolution == Resolution.AcceptYours
+      getOperations = response.getResolveResult();
+      operationType = ApplyGetOperations.ProcessMode.RESOLVE;
+      TFSVcs.assertTrue(response.getUndoOperations().getGetOperation() == null);
+    }
+    // TODO check for null not needed?
+    if (getOperations != null && getOperations.getGetOperation() != null) {
+      ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
+        .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
+      ApplyGetOperations
+        .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode, operationType);
     }
   }
 
@@ -156,7 +147,7 @@ public class ResolveConflictHelper {
     if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename)) {
       FilePath newLocalPath = myWorkspace.findLocalPathByServerPath(TFSUpdateEnvironment.getNameConflictsHandler().mergeName(conflict));
       if (newLocalPath != null) {
-        localName = FileUtil.toSystemDependentName(newLocalPath.getPath());
+        localName = VersionControlPath.toTfsRepresentation(newLocalPath);
         nameResolutionType = ResolutionType.MERGED;
       }
     }
@@ -176,7 +167,7 @@ public class ResolveConflictHelper {
     return localName;
   }
 
-  public String acceptYours(final @NotNull Conflict conflict) {
+  public String acceptYours(final @NotNull Conflict conflict) throws TfsException {
     conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, conflict.getSrclitem());
     if (myUpdatedFiles != null) {
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());

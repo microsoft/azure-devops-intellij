@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core.tfs.conflicts;
+package org.jetbrains.tfsIntegration.exceptions;
 
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.apache.axis2.AxisFault;
 
-public interface ConflictsHandler {
-    boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) throws TfsException;
+public class HostNotApplicableException extends TfsException {
+
+  private static final long serialVersionUID = 1L;
+
+  public HostNotApplicableException(AxisFault cause) {
+    super(cause);
+  }
+
+  @Override
+  public String getMessage() {
+    return "Specified host has no TFS installed";
+  }
+
 }

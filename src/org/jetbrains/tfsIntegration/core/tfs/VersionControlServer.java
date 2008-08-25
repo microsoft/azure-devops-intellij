@@ -539,6 +539,7 @@ public class VersionControlServer {
                                       int maxCount
 
   ) throws TfsException {
+    // TODO WorkspaceVersionSpec instead of LatestVersionSpec ?!!
     return queryHistory(workspaceName, workspaceOwner, serverPath, deletionId, user, LatestVersionSpec.INSTANCE, versionFrom, versionTo,
                         maxCount, RecursionType.Full);
   }
