@@ -315,6 +315,11 @@ public class TFSChangeList implements CommittedChangeList {
     return fileHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
   }
 
+  // NOTE: toString() is used by IDEA for context menu 'Copy' action in Repository view
+  public String toString() {
+    return myComment;
+  }
+
   // NOTE: equals() and hashCode() used by IDEA to maintain changed files tree state
   public boolean equals(final Object o) {
     if (this == o) return true;
