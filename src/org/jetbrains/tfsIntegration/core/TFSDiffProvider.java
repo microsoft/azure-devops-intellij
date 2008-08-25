@@ -30,8 +30,11 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 
 public class TFSDiffProvider implements DiffProvider {
   private @NotNull final Project myProject;
@@ -52,17 +55,28 @@ public class TFSDiffProvider implements DiffProvider {
       return null;
     }
     else {
-      // TODO fix IDEADEV-26614 (item can have other name in the past -> load content by item id, not by name)
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
-      final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
       try {
-        return TFSContentRevision.create(path, intRevisionNumber.getValue());
+        WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(path);
+        if (workspace == null) {
+          return null;
+        }
+        //noinspection ConstantConditions
+        String serverPath = workspace.findServerPathByLocalPath(path);
+        ExtendedItem item = workspace.getServer().getVCS()
+          .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.Any);
+
+        if (item == null) {
+          return null;
+        }
+        final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
+        return TFSContentRevision.create(workspace, item.getItemid(), intRevisionNumber.getValue());
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown
-        AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+        AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFS_NAME);
+        return null;
       }
-      return null;
     }
   }
 
