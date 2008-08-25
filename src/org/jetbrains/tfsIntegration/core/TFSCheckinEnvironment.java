@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
@@ -130,7 +131,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               commitFailed.add(failure.getItem());
             }
 
-            Collection<FilePath> invalidate = new ArrayList<FilePath>(pendingChanges.size());
+            Collection<FilePath> invalidateRoots = new ArrayList<FilePath>(pendingChanges.size());
+            Collection<FilePath> invalidateFiles = new ArrayList<FilePath>();
             // set readonly status for files
             for (PendingChange pendingChange : pendingChanges) {
               TFSVcs.assertTrue(pendingChange.getItem() != null);
@@ -138,20 +140,31 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 continue;
               }
 
+              EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
               if (pendingChange.getType() == ItemType.File) {
-                EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
-                if (changeType.contains(ChangeType.Edit) ||
-                    changeType.contains(ChangeType.Add) ||
-                    changeType.contains(ChangeType.Rename)) {
+                if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Rename)) {
                   VirtualFile file = VcsUtil.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
                     TfsFileUtil.setReadOnlyInEventDispathThread(file, true);
                   }
                 }
               }
-              invalidate.add(VcsUtil.getFilePath(pendingChange.getLocal()));
+
+              // TODO don't add recursive invalidate
+              // TODO if Rename, invalidate old and new items?
+              final FilePath path = VcsUtil.getFilePath(pendingChange.getLocal());
+              invalidateRoots.add(path);
+              if (changeType.contains(ChangeType.Add)) {
+                // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
+                final FilePath vcsRoot = TfsFileUtil.getFilePath(ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor(path));
+                for (FilePath parent = path.getParentPath();
+                     parent != null && parent.isUnder(vcsRoot, false);
+                     parent = parent.getParentPath()) {
+                  invalidateFiles.add(parent);
+                }
+              }
             }
-            TfsFileUtil.invalidateRecursively(myProject, invalidate);
+            TfsFileUtil.invalidate(myProject, invalidateRoots, invalidateFiles);
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown

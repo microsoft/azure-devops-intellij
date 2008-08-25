@@ -121,6 +121,23 @@ public class TfsFileUtil {
     });
   }
 
+  public static void invalidate(final Project project, final Collection<FilePath> roots, final Collection<FilePath> files) {
+    if (roots.isEmpty() && files.isEmpty()) {
+      return;
+    }
+
+    ApplicationManager.getApplication().runReadAction(new Runnable() {
+      public void run() {
+        for (FilePath root : roots) {
+          VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(root);
+        }
+        for (FilePath file : files) {
+          VcsDirtyScopeManager.getInstance(project).fileDirty(file);
+        }
+      }
+    });
+  }
+
   public static void invalidateRecursively(final Project project, final FilePath rootDir) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
