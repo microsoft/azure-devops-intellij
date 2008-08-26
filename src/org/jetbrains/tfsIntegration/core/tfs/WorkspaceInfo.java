@@ -200,11 +200,11 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  private WorkingFolderInfo findNearestMapping(final @NotNull String serverPath) throws TfsException {
+  private WorkingFolderInfo findNearestMapping(final @NotNull String serverPath, boolean isDirectory) throws TfsException {
     // TODO FIXME need to find nearest mapping!!!!!
     WorkingFolderInfo mapping = null;
     for (WorkingFolderInfo folderInfo : getWorkingFolders()) {
-      if (folderInfo.getLocalPathByServerPath(serverPath) != null &&
+      if (folderInfo.getLocalPathByServerPath(serverPath, isDirectory) != null &&
           (mapping == null || folderInfo.getServerPath().startsWith(mapping.getServerPath()))) {
         mapping = folderInfo;
       }
@@ -213,14 +213,8 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  public FilePath findLocalPathByServerPath(final @NotNull String serverPath) throws TfsException {
-    final WorkingFolderInfo mapping = findNearestMapping(serverPath);
-    return mapping != null ? mapping.getLocalPathByServerPath(serverPath) : null;
-  }
-
-  @Nullable
   public FilePath findLocalPathByServerPath(final @NotNull String serverPath, final boolean isDirectory) throws TfsException {
-    final WorkingFolderInfo mapping = findNearestMapping(serverPath);
+    final WorkingFolderInfo mapping = findNearestMapping(serverPath, isDirectory);
     return mapping != null ? mapping.getLocalPathByServerPath(serverPath, isDirectory) : null;
   }
 

@@ -94,7 +94,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
       return false;
     }
     try {
-      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath) == null) {
+      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath, true) == null) {
         return false;
       }
     }

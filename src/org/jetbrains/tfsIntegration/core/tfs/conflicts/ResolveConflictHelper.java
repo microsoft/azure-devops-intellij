@@ -112,9 +112,9 @@ public class ResolveConflictHelper {
 
         try {
           // names
-          FilePath sourceLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getYsitem());
+          FilePath sourceLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getYsitem(), conflict.getYtype() == ItemType.Folder);
           data.sourceLocalName = sourceLocalPath != null ? FileUtil.toSystemDependentName(sourceLocalPath.getPath()) : null;
-          FilePath targetLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getTsitem());
+          FilePath targetLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getTsitem(), conflict.getTtype() == ItemType.Folder);
           data.targetLocalName = targetLocalPath != null ? FileUtil.toSystemDependentName(targetLocalPath.getPath()) : null;
 
           // content
@@ -145,7 +145,9 @@ public class ResolveConflictHelper {
 
     // merge names if needed
     if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename)) {
-      FilePath newLocalPath = myWorkspace.findLocalPathByServerPath(TFSUpdateEnvironment.getNameConflictsHandler().mergeName(conflict));
+      // TODO proper type?
+      final String resultingName = TFSUpdateEnvironment.getNameConflictsHandler().mergeName(conflict);
+      FilePath newLocalPath = myWorkspace.findLocalPathByServerPath(resultingName, conflict.getYtype() == ItemType.Folder);
       if (newLocalPath != null) {
         localName = VersionControlPath.toTfsRepresentation(newLocalPath);
         nameResolutionType = ResolutionType.MERGED;

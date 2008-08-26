@@ -78,7 +78,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           else {
             workspace = model.getWorkspace();
           }
-          localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath()));
+          localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath(), true));
 
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
