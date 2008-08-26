@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,8 +84,13 @@ public abstract class TFSContentRevision implements ContentRevision {
         TFSVcs.assertTrue(item != null, "No item found with id= " + extendedItem.getItemid() + " at revision " + extendedItem.getLver());
 
         //noinspection ConstantConditions
-        final FilePath localPath = workspace
-          .findLocalPathByServerPath(useBasePath ? extendedItem.getSitem() : extendedItem.getTitem(), item.getType() == ItemType.Folder);
+        final FilePath localPath;
+        if (useBasePath) {
+          localPath = workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
+        }
+        else {
+          localPath = VcsUtil.getFilePath(extendedItem.getLocal());
+        }
         TFSVcs.assertTrue(localPath != null, "No mapping found for item :" + item.getItem());
         return new Data(workspace.getServer(), item, extendedItem.getLver(), localPath);
       }

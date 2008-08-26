@@ -280,11 +280,11 @@ public class TFSFileListener extends TFSFileListenerBase {
     }
     final List<VcsException> errors = new ArrayList<VcsException>();
     final Map<ItemPath, FilePath> scheduleMove = new HashMap<ItemPath, FilePath>();
-    final List<ItemPath> checkoutForEditFirst = new ArrayList<ItemPath>();
     try {
       WorkstationHelper.processByWorkspaces(movedPaths.keySet(), new WorkstationHelper.VoidProcessDelegate() {
 
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          // TODO simplify this
           StatusProvider.visitByStatus(workspace, paths, null, new StatusVisitor() {
 
             public void unversioned(final @NotNull ItemPath path, final @Nullable ExtendedItem extendedItem, final boolean localItemExists)
@@ -312,7 +312,6 @@ public class TFSFileListener extends TFSFileListenerBase {
 
             public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
               throws TfsException {
-              checkoutForEditFirst.add(path);
               scheduleMove.put(path, movedPaths.get(path.getLocalPath()));
             }
 
@@ -336,17 +335,6 @@ public class TFSFileListener extends TFSFileListenerBase {
               scheduleMove.put(path, movedPaths.get(path.getLocalPath()));
             }
           });
-
-          final ResultWithFailures<GetOperation> checkoutResult =
-            workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), checkoutForEditFirst);
-          errors.addAll(BeanHelper.getVcsExceptions(checkoutResult.getFailures()));
-
-          for (Failure failure : checkoutResult.getFailures()) {
-            if (failure.getSev() != SeverityType.Warning) {
-              FilePath path = VcsUtil.getFilePath(failure.getLocal());
-              scheduleMove.remove(new ItemPath(path, null));
-            }
-          }
 
           final ResultWithFailures<GetOperation> renameResult =
             workspace.getServer().getVCS().rename(workspace.getName(), workspace.getOwnerName(), scheduleMove);

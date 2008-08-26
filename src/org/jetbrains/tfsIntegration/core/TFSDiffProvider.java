@@ -34,7 +34,6 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 
 public class TFSDiffProvider implements DiffProvider {
   private @NotNull final Project myProject;
@@ -61,11 +60,7 @@ public class TFSDiffProvider implements DiffProvider {
         if (workspace == null) {
           return null;
         }
-        //noinspection ConstantConditions
-        String serverPath = workspace.findServerPathByLocalPath(path);
-        ExtendedItem item = workspace.getServer().getVCS()
-          .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.Any);
-
+        ExtendedItem item = TfsUtil.getExtendedItem(path);
         if (item == null) {
           return null;
         }

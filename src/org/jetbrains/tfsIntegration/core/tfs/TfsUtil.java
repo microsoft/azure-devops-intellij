@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemSpec;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 
 public class TfsUtil {
@@ -35,10 +37,9 @@ public class TfsUtil {
     if (workspace == null) {
       return null;
     }
-    //noinspection ConstantConditions
-    String serverPath = workspace.findServerPathByLocalPath(localPath);
+    final ItemSpec itemSpec = VersionControlServer.createItemSpec(localPath, RecursionType.None);
     return workspace.getServer().getVCS()
-      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), serverPath, DeletedState.Any);
+      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemSpec, DeletedState.Any);
   }
 
 

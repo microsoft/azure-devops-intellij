@@ -102,7 +102,7 @@ public class TFSChangeProvider implements ChangeProvider {
     for (ItemPath root : roots) {
       final VirtualFile file = root.getLocalPath().getVirtualFile();
       RecursionType recursionType = (file != null && file.exists() && !file.isDirectory()) ? RecursionType.None : RecursionType.Full;
-      itemSpecs.add(VersionControlServer.createItemSpec(root.getServerPath(), recursionType));
+      itemSpecs.add(VersionControlServer.createItemSpec(root.getLocalPath(), recursionType));
     }
 
     List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
@@ -119,7 +119,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
       // find 'downloaded' server items for existing local files
       for (FilePath localItem : localItems) {
-        if (workspace.isWorkingFolder(localItem) ) {
+        if (workspace.isWorkingFolder(localItem)) {
           // report mapping root as up to date
           continue;
         }
@@ -145,7 +145,8 @@ public class TFSChangeProvider implements ChangeProvider {
             localPath = serverItem.getLocal();
           }
           else {
-            localPath = workspace.findLocalPathByServerPath(serverItem.getTitem()).getPath();
+            //noinspection ConstantConditions
+            localPath = workspace.findLocalPathByServerPath(serverItem.getTitem(), serverItem.getType() == ItemType.Folder).getPath();
           }
           local2ExtendedItem.put(
             new ItemPath(VcsUtil.getFilePathForDeletedFile(localPath, serverItem.getType() == ItemType.Folder), serverItem.getTitem()),

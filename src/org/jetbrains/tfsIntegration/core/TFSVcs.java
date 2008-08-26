@@ -33,10 +33,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 public class TFSVcs extends AbstractVcs {
 
@@ -235,14 +233,15 @@ public class TFSVcs extends AbstractVcs {
     return super.getIntegrateEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
-  public boolean fileExistsInVcs(final FilePath path) {
-    try {
-      final ExtendedItem extendedItem = TfsUtil.getExtendedItem(path);
-      return extendedItem != null && extendedItem.getLocal() != null;
-    }
-    catch (TfsException e) {
-      // TODO show error message?
-      return false;
-    }
-  }
+  // TODO implement this?
+  //public boolean fileExistsInVcs(final FilePath path) {
+  //  try {
+  //    final ExtendedItem extendedItem = TfsUtil.getExtendedItem(path);
+  //    return extendedItem != null && extendedItem.getLocal() != null;
+  //  }
+  //  catch (TfsException e) {
+  //    // ignore error here
+  //    return false;
+  //  }
+  //}
 }

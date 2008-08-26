@@ -24,12 +24,14 @@ import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.ui.TFSVersionFilterComponent;
 
 import java.io.DataInput;
@@ -67,9 +69,9 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(root);
       if (workspace != null) {
-        String serverPath = workspace.findServerPathByLocalPath(root);
-        if (serverPath != null) {
-          return new TFSRepositoryLocation(serverPath, workspace);
+        final ExtendedItem item = TfsUtil.getExtendedItem(root);
+        if (item != null) {
+          return new TFSRepositoryLocation(item.getSitem(), workspace);
         }
       }
     }

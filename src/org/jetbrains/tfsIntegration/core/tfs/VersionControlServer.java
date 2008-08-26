@@ -77,19 +77,23 @@ public class VersionControlServer {
   /**
    * @param string local or server item
    */
-  public static ItemSpec createItemSpec(final String string, final int deletionId, final RecursionType recursionType) {
-    ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setItem(string);
-    itemSpec.setDid(deletionId);
-    itemSpec.setRecurse(recursionType);
-    return itemSpec;
+  public static ItemSpec createItemSpec(final String string, final RecursionType recursionType) {
+    return createItemSpec(string, Integer.MIN_VALUE, recursionType);
+  }
+
+  public static ItemSpec createItemSpec(final FilePath localPath, final RecursionType recursionType) {
+    return createItemSpec(VersionControlPath.toTfsRepresentation(localPath), Integer.MIN_VALUE, recursionType);
   }
 
   /**
    * @param string local or server item
    */
-  public static ItemSpec createItemSpec(final String string, final RecursionType recursionType) {
-    return createItemSpec(string, Integer.MIN_VALUE, recursionType);
+  private static ItemSpec createItemSpec(final String string, final int deletionId, final RecursionType recursionType) {
+    ItemSpec itemSpec = new ItemSpec();
+    itemSpec.setItem(string);
+    itemSpec.setDid(deletionId);
+    itemSpec.setRecurse(recursionType);
+    return itemSpec;
   }
 
   public List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
@@ -133,7 +137,7 @@ public class VersionControlServer {
   }
 
   private static ChangeRequest createChangeRequestTemplate() {
-    ItemSpec itemSpec = createItemSpec(null, null);
+    ItemSpec itemSpec = createItemSpec((String)null, null);
 
     ChangeRequest changeRequest = new ChangeRequest();
     changeRequest.setDid(Integer.MIN_VALUE);
@@ -327,68 +331,68 @@ public class VersionControlServer {
     }
   }
 
-  public List<ExtendedItem> getChildItems(final String workspaceName,
-                                          final String ownerName,
-                                          final String parentServerPath,
-                                          final DeletedState deletedState,
-                                          final ItemType itemType) throws TfsException {
-    List<List<ExtendedItem>> extendedItems =
-      getChildItems(workspaceName, ownerName, Collections.singletonList(parentServerPath), deletedState, itemType);
+  //public List<ExtendedItem> getChildItems(final String workspaceName,
+  //                                        final String ownerName,
+  //                                        final String parentServerPath,
+  //                                        final DeletedState deletedState,
+  //                                        final ItemType itemType) throws TfsException {
+  //  List<List<ExtendedItem>> extendedItems =
+  //    getChildItems(workspaceName, ownerName, Collections.singletonList(parentServerPath), deletedState, itemType);
+  //
+  //  TFSVcs.assertTrue(extendedItems != null && extendedItems.size() == 1);
+  //  return extendedItems != null ? extendedItems.get(0) : Collections.<ExtendedItem>emptyList();
+  //}
 
-    TFSVcs.assertTrue(extendedItems != null && extendedItems.size() == 1);
-    return extendedItems != null ? extendedItems.get(0) : Collections.<ExtendedItem>emptyList();
-  }
+  //private List<List<ExtendedItem>> getChildItems(final String workspaceName,
+  //                                               final String ownerName,
+  //                                               final List<String> parentsServerPaths,
+  //                                               final DeletedState deletedState,
+  //                                               final ItemType itemType) throws TfsException {
+  //  List<List<ExtendedItem>> result =
+  //    getExtendedItemsByStrings(workspaceName, ownerName, parentsServerPaths, deletedState, RecursionType.OneLevel, itemType);
+  //  // remove parent items
+  //  Iterator<String> pIter = parentsServerPaths.iterator();
+  //  Iterator<List<ExtendedItem>> resIter = result.iterator();
+  //  while (resIter.hasNext() && pIter.hasNext()) {
+  //    String parentServerPath = pIter.next();
+  //    List<ExtendedItem> resList = resIter.next();
+  //    Iterator<ExtendedItem> resListIter = resList.iterator();
+  //    while (resListIter.hasNext()) {
+  //      ExtendedItem childItem = resListIter.next();
+  //      if (parentServerPath.equals(childItem.getSitem())) {
+  //        resListIter.remove();
+  //        break;
+  //      }
+  //    }
+  //  }
+  //  return result;
+  //}
 
-  private List<List<ExtendedItem>> getChildItems(final String workspaceName,
-                                                 final String ownerName,
-                                                 final List<String> parentsServerPaths,
-                                                 final DeletedState deletedState,
-                                                 final ItemType itemType) throws TfsException {
-    List<List<ExtendedItem>> result =
-      getExtendedItemsByStrings(workspaceName, ownerName, parentsServerPaths, deletedState, RecursionType.OneLevel, itemType);
-    // remove parent items
-    Iterator<String> pIter = parentsServerPaths.iterator();
-    Iterator<List<ExtendedItem>> resIter = result.iterator();
-    while (resIter.hasNext() && pIter.hasNext()) {
-      String parentServerPath = pIter.next();
-      List<ExtendedItem> resList = resIter.next();
-      Iterator<ExtendedItem> resListIter = resList.iterator();
-      while (resListIter.hasNext()) {
-        ExtendedItem childItem = resListIter.next();
-        if (parentServerPath.equals(childItem.getSitem())) {
-          resListIter.remove();
-          break;
-        }
-      }
-    }
-    return result;
-  }
+  //private List<List<ExtendedItem>> getExtendedItemsByStrings(final String workspaceName,
+  //                                                          final String ownerName,
+  //                                                          final List<String> parentServerPaths,
+  //                                                          final DeletedState deletedState,
+  //                                                          final RecursionType recursionType,
+  //                                                          final ItemType itemType) throws TfsException {
+  //  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+  //  for (String serverPath : parentServerPaths) {
+  //    itemSpecList.add(createItemSpec(serverPath, recursionType));
+  //  }
+  //  return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
+  //}
 
-  public List<List<ExtendedItem>> getExtendedItemsByStrings(final String workspaceName,
-                                                            final String ownerName,
-                                                            final List<String> parentServerPaths,
-                                                            final DeletedState deletedState,
-                                                            final RecursionType recursionType,
-                                                            final ItemType itemType) throws TfsException {
-    List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-    for (String serverPath : parentServerPaths) {
-      itemSpecList.add(createItemSpec(serverPath, recursionType));
-    }
-    return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
-  }
-
-  public List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
-                                                   final String ownerName,
-                                                   final List<ItemPath> paths,
-                                                   final DeletedState deletedState,
-                                                   final RecursionType recursionType,
-                                                   final ItemType itemType) throws TfsException {
-    List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-    for (ItemPath path : paths) {
-      itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
-    }
-    return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
-  }
+  //public List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
+  //                                                 final String ownerName,
+  //                                                 final List<ItemPath> paths,
+  //                                                 final DeletedState deletedState,
+  //                                                 final RecursionType recursionType,
+  //                                                 final ItemType itemType) throws TfsException {
+  //  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+  //  for (ItemPath path : paths) {
+  //    itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
+  //  }
+  //  return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
+  //}
 
 
   public List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
@@ -421,10 +425,10 @@ public class VersionControlServer {
   @Nullable
   public ExtendedItem getExtendedItem(final String workspaceName,
                                       final String ownerName,
-                                      final String itemServerPath,
+                                      final ItemSpec itemSpec,
                                       final DeletedState deletedState) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, RecursionType.None)});
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{itemSpec});
 
     ArrayOfExtendedItem[] extendedItems =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
@@ -451,7 +455,7 @@ public class VersionControlServer {
     TFSVcs.assertTrue(!paths.isEmpty());
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
     for (ItemPath itemPath : paths) {
-      itemSpecs.add(createItemSpec(itemPath.getServerPath(), RecursionType.None));
+      itemSpecs.add(createItemSpec(itemPath.getLocalPath(), RecursionType.None));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
