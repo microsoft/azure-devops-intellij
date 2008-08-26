@@ -39,6 +39,8 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionTyp
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 @SuppressWarnings({"AutoUnboxing"})
@@ -54,6 +56,8 @@ public class TFSChangeList implements CommittedChangeList {
   private Set<FilePath> myAddedPaths = new HashSet<FilePath>();
   private Map<FilePath, Integer/*previous revision*/> myDeletedPaths = new HashMap<FilePath, Integer>();
   private Map<FilePath, Pair<FilePath, Integer/*previous revision*/>> myMovedPaths = new HashMap<FilePath, Pair<FilePath, Integer>>();
+  private URI myServerUri;
+  private String myWorkspaceName;
 
   public TFSChangeList(final TFSVcs vcs, final DataInput stream) {
     myVcs = vcs;
@@ -72,6 +76,9 @@ public class TFSChangeList implements CommittedChangeList {
     myDate = date;
     myComment = comment != null ? comment : "";
     myVcs = vcs;
+
+    myWorkspaceName = myLocation.getWorkspace().getName();
+    myServerUri = myLocation.getWorkspace().getServer().getUri();
   }
 
   public String getCommitterName() {
@@ -94,7 +101,7 @@ public class TFSChangeList implements CommittedChangeList {
     if (myCachedChanges == null) {
       try {
         if (myLocation != null) { // otherwise paths were read from stream
-          loadChanges(myLocation);
+          loadChanges();
         }
 
         myCachedChanges = new ArrayList<Change>();
@@ -133,6 +140,8 @@ public class TFSChangeList implements CommittedChangeList {
   }
 
   void writeToStream(final DataOutput stream) throws IOException {
+    stream.writeUTF(myServerUri.toString());
+    stream.writeUTF(myWorkspaceName);
     stream.writeInt(myRevisionNumber);
     stream.writeUTF(myAuthor);
     stream.writeLong(myDate.getTime());
@@ -143,12 +152,12 @@ public class TFSChangeList implements CommittedChangeList {
     writeMoved(stream, myMovedPaths);
   }
 
-  private void loadChanges(final TFSRepositoryLocation repositoryLocation) {
+  private void loadChanges() {
     try {
-      Changeset changeset = repositoryLocation.getWorkspace().getServer().getVCS().queryChangeset(myRevisionNumber);
+      Changeset changeset = myLocation.getWorkspace().getServer().getVCS().queryChangeset(myRevisionNumber);
 
       for (org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change : changeset.getChanges().getChange()) {
-        processChange(repositoryLocation, changeset.getCset(), change);
+        processChange(myLocation, changeset.getCset(), change);
       }
     }
     catch (TfsException e) {
@@ -221,6 +230,8 @@ public class TFSChangeList implements CommittedChangeList {
 
   private void readFromStream(final DataInput stream) {
     try {
+      myServerUri = new URI(stream.readUTF());
+      myWorkspaceName = stream.readUTF();
       myRevisionNumber = stream.readInt();
       myAuthor = stream.readUTF();
       myDate = new Date(stream.readLong());
@@ -230,9 +241,13 @@ public class TFSChangeList implements CommittedChangeList {
       readPathsInts(stream, myDeletedPaths);
       readMoved(stream, myMovedPaths);
     }
-    catch (Exception e) {
+    catch (IOException e) {
       //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e), TFSVcs.TFS_NAME);
+    }
+    catch (URISyntaxException e) {
+      //noinspection ThrowableInstanceNeverThrown
+      AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e), TFSVcs.TFS_NAME);
     }
   }
 
@@ -327,10 +342,13 @@ public class TFSChangeList implements CommittedChangeList {
 
     final TFSChangeList that = (TFSChangeList)o;
 
-    return myRevisionNumber == that.myRevisionNumber &&
-           !(myAuthor != null ? !myAuthor.equals(that.myAuthor) : that.myAuthor != null) &&
-           !(myDate != null ? !myDate.equals(that.myDate) : that.myDate != null) &&
-           myComment.equals(that.myComment);
+    if (myRevisionNumber != that.myRevisionNumber) return false;
+    if (myAuthor != null ? !myAuthor.equals(that.myAuthor) : that.myAuthor != null) return false;
+    if (myDate != null ? !myDate.equals(that.myDate) : that.myDate != null) return false;
+    if (myServerUri != null ? !myServerUri.equals(that.myServerUri) : that.myServerUri != null) return false;
+    if (myWorkspaceName != null ? !myWorkspaceName.equals(that.myWorkspaceName) : that.myWorkspaceName != null) return false;
+
+    return true;
   }
 
   public int hashCode() {
@@ -338,7 +356,10 @@ public class TFSChangeList implements CommittedChangeList {
     result = myRevisionNumber;
     result = 31 * result + (myAuthor != null ? myAuthor.hashCode() : 0);
     result = 31 * result + (myDate != null ? myDate.hashCode() : 0);
+    result = 31 * result + (myServerUri != null ? myServerUri.hashCode() : 0);
+    result = 31 * result + (myWorkspaceName != null ? myWorkspaceName.hashCode() : 0);
     return result;
   }
+
 
 }
