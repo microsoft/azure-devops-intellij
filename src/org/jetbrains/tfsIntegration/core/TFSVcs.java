@@ -226,22 +226,4 @@ public class TFSVcs extends AbstractVcs {
     }
   }
 
-  // TODO override AbstractVcs
-
-  @Nullable
-  public UpdateEnvironment getIntegrateEnvironment() {
-    return super.getIntegrateEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
-  }
-
-  // TODO implement this?
-  //public boolean fileExistsInVcs(final FilePath path) {
-  //  try {
-  //    final ExtendedItem extendedItem = TfsUtil.getExtendedItem(path);
-  //    return extendedItem != null && extendedItem.getLocal() != null;
-  //  }
-  //  catch (TfsException e) {
-  //    // ignore error here
-  //    return false;
-  //  }
-  //}
 }
