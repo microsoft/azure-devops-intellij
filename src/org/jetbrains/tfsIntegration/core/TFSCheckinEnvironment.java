@@ -56,8 +56,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   @Nullable
   public String getDefaultMessageFor(final FilePath[] filesToCheckin) {
-    // TODO: correct default checkin message
-    return "";
+    return null;
   }
 
   public String prepareCheckinMessage(final String text) {
@@ -156,11 +155,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               invalidateRoots.add(path);
               if (changeType.contains(ChangeType.Add)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
-                final FilePath vcsRoot = TfsFileUtil.getFilePath(ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor(path));
-                for (FilePath parent = path.getParentPath();
-                     parent != null && parent.isUnder(vcsRoot, false);
-                     parent = parent.getParentPath()) {
-                  invalidateFiles.add(parent);
+                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor(path);
+                if (vcsRoot != null) {
+                  final FilePath vcsRootPath = TfsFileUtil.getFilePath(vcsRoot);
+                  for (FilePath parent = path.getParentPath();
+                       parent != null && parent.isUnder(vcsRootPath, false);
+                       parent = parent.getParentPath()) {
+                    invalidateFiles.add(parent);
+                  }
                 }
               }
             }
