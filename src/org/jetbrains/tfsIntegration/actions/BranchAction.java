@@ -35,6 +35,7 @@ import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.CreateBranchDialog;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -42,13 +43,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class BranchAction extends SingleSelectionAction {
+public class BranchAction extends SingleItemAction {
 
-  public void actionPerformed(final Project project, final VirtualFile file) {
+  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath) {
     try {
-      final FilePath sourceLocalPath = TfsFileUtil.getFilePath(file);
-      final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(sourceLocalPath);
-      final String sourceServerPath = workspace.findServerPathByLocalPath(sourceLocalPath);
+      final FilePath sourceLocalPath = itemPath.getLocalPath();
+      final String sourceServerPath = itemPath.getServerPath();
       CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath);
       d.show();
       if (!d.isOK()) {
@@ -63,7 +63,7 @@ public class BranchAction extends SingleSelectionAction {
 
       final String targetServerPath = d.getTargetPath();
       if (d.isCreateWorkingCopies()) {
-        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath);
+        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
         if (targetLocalPath == null) {
           FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
           d.setTitle("Choose Local Folder");
@@ -130,7 +130,7 @@ public class BranchAction extends SingleSelectionAction {
         AbstractVcsHelper.getInstance(project).showErrors(checkinErrors, "Create Branch");
       }
 
-      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath);
+      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
       if (targetLocalPath != null) {
         TfsFileUtil.invalidateRecursively(project, targetLocalPath);
       }

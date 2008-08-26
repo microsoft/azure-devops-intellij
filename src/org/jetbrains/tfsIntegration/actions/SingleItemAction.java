@@ -20,17 +20,35 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
-public abstract class SingleSelectionAction extends AnAction {
+public abstract class SingleItemAction extends AnAction {
 
-  protected abstract void actionPerformed(Project project, VirtualFile file);
+  protected abstract void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
+    throws TfsException;
 
   public void actionPerformed(final AnActionEvent e) {
     final Project project = e.getData(DataKeys.PROJECT);
     VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
-    //noinspection ConstantConditions
-    actionPerformed(project, files[0]);
+
+    final FilePath localPath = TfsFileUtil.getFilePath(files[0]);
+
+    try {
+      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
+      ExtendedItem item = TfsUtil.getExtendedItem(localPath);
+      execute(project, workspace, new ItemPath(VcsUtil.getFilePath(item.getLocal(), item.getType() == ItemType.Folder), item.getSitem()));
+    }
+    catch (TfsException ex) {
+      Messages.showErrorDialog(project, ex.getMessage(), e.getPresentation().getText());
+    }
   }
 
 
@@ -39,12 +57,19 @@ public abstract class SingleSelectionAction extends AnAction {
     e.getPresentation().setEnabled(isEnabled(files));
   }
 
+
   protected boolean isEnabled(final VirtualFile[] files) {
     if (files == null || files.length != 1) {
       return false;
     }
 
-    return true;
+    try {
+      return TfsUtil.getExtendedItem(TfsFileUtil.getFilePath(files[0])) != null;
+    }
+    catch (TfsException e) {
+      // skip error handling
+      return false;
+    }
   }
 
 }

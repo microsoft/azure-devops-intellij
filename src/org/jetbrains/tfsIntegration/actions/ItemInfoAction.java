@@ -22,53 +22,40 @@ import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.ItemInfoDialog;
 
 import java.text.MessageFormat;
 import java.util.Collection;
 
-public class ItemInfoAction extends MappedItemAction {
+public class ItemInfoAction extends SingleItemAction {
 
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath) {
-    try {
-      final ExtendedItem item = workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemPath.getServerPath(), DeletedState.Any);
-      if (item == null) {
-        final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
-        final String message =
-          MessageFormat.format("{0} ''{1}'' does not exist on server", itemType, itemPath.getLocalPath().getPresentableUrl());
-        Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
-        return;
-      }
-      if (item.getLver() == Integer.MIN_VALUE) {
-        final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
-        final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, itemPath.getLocalPath().getPresentableUrl());
-        Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
-        return;
-      }
-
-      final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
-      final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-        .queryBranches(workspace.getName(), workspace.getOwnerName(), serverPath, new ChangesetVersionSpec(item.getLver()));
-
-      ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, getActionTitle(itemPath.getLocalPath()));
-      d.show();
-    }
-    catch (TfsException e) {
-      final String itemType = itemPath.getLocalPath().isDirectory() ? "folder" : "file";
-      final String message = MessageFormat
-        .format("Failed to obtain information on {0} ''{1}''\n{2}", itemType, itemPath.getLocalPath().getPresentableUrl(), e.getMessage());
-      Messages.showErrorDialog(project, message, getActionTitle(itemPath.getLocalPath()));
+  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
+    throws TfsException {
+    ItemSpec itemSpec = VersionControlServer.createItemSpec(itemPath.getLocalPath(), RecursionType.None);
+    final ExtendedItem item = workspace.getServer().getVCS()
+      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemSpec, DeletedState.Any);
+    
+    //noinspection ConstantConditions
+    if (item.getLver() == Integer.MIN_VALUE) {
+      final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
+      final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, itemPath.getLocalPath().getPresentableUrl());
+      Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
+      return;
     }
 
+    final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
+    final Collection<BranchRelative> branches = workspace.getServer().getVCS()
+      .queryBranches(workspace.getName(), workspace.getOwnerName(), serverPath, new ChangesetVersionSpec(item.getLver()));
+
+    ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, getActionTitle(itemPath.getLocalPath()));
+    d.show();
   }
 
-  protected String getActionTitle(@NotNull FilePath localPath) {
+  private static String getActionTitle(@NotNull FilePath localPath) {
     return MessageFormat.format("{0} Information", localPath.isDirectory() ? "Folder" : "File");
   }
 

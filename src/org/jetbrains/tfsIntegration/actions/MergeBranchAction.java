@@ -33,52 +33,46 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class MergeBranchAction extends MappedItemAction {
+public class MergeBranchAction extends SingleItemAction {
 
-
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath) {
+  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
+    throws TfsException {
     final String title = getActionTitle(itemPath.getLocalPath());
-    try {
-      Collection<Item> targetBranches = new ArrayList<Item>();
-      final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-        .queryBranches(workspace.getName(), workspace.getOwnerName(), itemPath.getServerPath(), LatestVersionSpec.INSTANCE);
+    Collection<Item> targetBranches = new ArrayList<Item>();
+    final Collection<BranchRelative> branches = workspace.getServer().getVCS()
+      .queryBranches(workspace.getName(), workspace.getOwnerName(), itemPath.getServerPath(), LatestVersionSpec.INSTANCE);
 
-      BranchRelative subject = null;
-      for (BranchRelative branch : branches) {
-        if (branch.getReqstd()) {
-          subject = branch;
-          break;
-        }
-      }
-
-      for (BranchRelative branch : branches) {
-        if (branch.getRelfromid() == subject.getReltoid()) {
-          targetBranches.add(branch.getBranchToItem());
-        }
-        else if (branch.getReltoid() == subject.getRelfromid()) {
-          targetBranches.add(branch.getBranchFromItem());
-        }
-      }
-
-      if (!targetBranches.isEmpty()) {
-        MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath.getServerPath(), targetBranches, title);
-        d.show();
-        if (d.isOK()) {
-          MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
-
-        }
-      }
-      else {
-        String message = MessageFormat.format("No target branches found for ''{0}", itemPath.getServerPath());
-        Messages.showWarningDialog(project, message, title);
+    BranchRelative subject = null;
+    for (BranchRelative branch : branches) {
+      if (branch.getReqstd()) {
+        subject = branch;
+        break;
       }
     }
-    catch (TfsException e) {
-      Messages.showWarningDialog(project, e.getMessage(), title);
+
+    for (BranchRelative branch : branches) {
+      if (branch.getRelfromid() == subject.getReltoid()) {
+        targetBranches.add(branch.getBranchToItem());
+      }
+      else if (branch.getReltoid() == subject.getRelfromid()) {
+        targetBranches.add(branch.getBranchFromItem());
+      }
+    }
+
+    if (!targetBranches.isEmpty()) {
+      MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath.getServerPath(), targetBranches, title);
+      d.show();
+      if (d.isOK()) {
+        MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
+      }
+    }
+    else {
+      String message = MessageFormat.format("No target branches found for ''{0}", itemPath.getServerPath());
+      Messages.showWarningDialog(project, message, title);
     }
   }
 
-  protected String getActionTitle(final @NotNull FilePath localPath) {
+  protected static String getActionTitle(final @NotNull FilePath localPath) {
     return "Merge Changes";
   }
 }
