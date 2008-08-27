@@ -32,7 +32,7 @@ public class TFSEditFileProvider implements EditFileProvider {
 
   public void editFiles(final VirtualFile[] files) throws VcsException {
     // TODO handle orphan paths
-    
+
     Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.ProcessResult<ResultWithFailures<GetOperation>> processResult = WorkstationHelper
@@ -63,7 +63,8 @@ public class TFSEditFileProvider implements EditFileProvider {
       for (VcsException error : errors) {
         messages.add(error.getMessage());
       }
-      throw new VcsException(messages);
+      // TODO: VcsException does not correctly support single message case?
+      throw messages.size() > 1 ? new VcsException(messages) : new VcsException(messages.iterator().next());
     }
   }
 
