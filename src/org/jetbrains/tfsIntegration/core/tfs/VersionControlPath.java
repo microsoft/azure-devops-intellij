@@ -18,11 +18,6 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.vcs.FilePath;
 
-/**
- * Created by IntelliJ IDEA.
- * Date: 05.02.2008
- * Time: 1:26:39
- */
 public class VersionControlPath {
   public static final char PATH_SEPARATOR_CHAR = '/'; // TODO IDEA constant for this
   public static final String PATH_SEPARATOR = "" + PATH_SEPARATOR_CHAR;
@@ -44,5 +39,10 @@ public class VersionControlPath {
 
   public static String toTfsRepresentation(String localPath) {
     return localPath.replace(PATH_SEPARATOR_CHAR, '\\'); // TODO need this? .replaceAll("[/]*$", "");
+  }
+
+  public static String getPathToProject(final String serverPath) {
+    int secondSlashPos = serverPath.indexOf("/", ROOT_FOLDER.length());
+    return serverPath.substring(0, secondSlashPos);
   }
 }

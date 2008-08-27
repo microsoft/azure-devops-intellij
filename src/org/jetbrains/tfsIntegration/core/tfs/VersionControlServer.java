@@ -805,21 +805,46 @@ public class VersionControlServer {
     }
   }
 
+  // TODO support checkin notes
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
                                                    final String workspaceOwnerName,
                                                    final Collection<String> serverItems,
                                                    final String comment) throws TfsException {
+    final String serverPathToProject = VersionControlPath.getPathToProject(serverItems.iterator().next());
+    for (String serverItem : serverItems) {
+      TFSVcs.assertTrue(serverPathToProject.equals(VersionControlPath.getPathToProject(serverItem)));
+    }
+    final List<CheckinNoteFieldDefinition> fieldDefinitions = queryCheckinNoteDefinition(serverPathToProject);
+    final ArrayOfCheckinNoteFieldValue fieldValues = new ArrayOfCheckinNoteFieldValue();
+    for (CheckinNoteFieldDefinition fieldDefinition : fieldDefinitions) {
+      final CheckinNoteFieldValue fieldValue = new CheckinNoteFieldValue();
+      fieldValue.setName(fieldDefinition.getName());
+      fieldValue.setVal("");
+      fieldValues.addCheckinNoteFieldValue(fieldValue);
+    }
+
+    final CheckinNote checkinNote = new CheckinNote();
+    checkinNote.setValues(fieldValues);
+
+    final PolicyOverrideInfo policyOverride = new PolicyOverrideInfo();
+
     final ArrayOfString serverItemsArray = new ArrayOfString();
     for (String serverItem : serverItems) {
       serverItemsArray.addString(serverItem);
     }
+
+    final Calendar calendar = Calendar.getInstance();
+    calendar.set(0, 0, 0, 0, 0, 0); // [IDEADEV-29551] commit fails for user from contributers group
+
     final Changeset changeset = new Changeset();
     changeset.setCset(0);
-    changeset.setDate(new GregorianCalendar());
+    changeset.setDate(calendar);
     changeset.setOwner(workspaceOwnerName);
     changeset.setComment(comment);
+    changeset.setCheckinNote(checkinNote);
+    changeset.setPolicyOverride(policyOverride);
     final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
-    final String checkinOptions = "ValidateCheckinOwner"; // TODO checkin options
+    final String checkinOptions = CheckinOptions.ValidateCheckinOwner.name(); // TODO checkin options
 
     CheckInResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckInResponse>() {
       public CheckInResponse executeRequest() throws RemoteException {
@@ -855,6 +880,31 @@ public class VersionControlServer {
           .Merge(workspaceName, ownerName, source, target, fromVersion, toVersion, MergeOptions.None.name(), LockLevel.Unchanged);
       }
     });
+  }
+
+  /**
+   * @return sorted accorging to 'do' attribute
+   */
+  private List<CheckinNoteFieldDefinition> queryCheckinNoteDefinition(final String serverPath) throws TfsException {
+    final ArrayOfString associatedServerItem = new ArrayOfString();
+    associatedServerItem.addString(serverPath);
+
+    final ArrayOfCheckinNoteFieldDefinition result =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
+        public ArrayOfCheckinNoteFieldDefinition executeRequest() throws RemoteException {
+          return myRepository
+            .QueryCheckinNoteDefinition(associatedServerItem);
+        }
+      });
+
+    final List<CheckinNoteFieldDefinition> checkinNoteFields = Arrays.asList(result.getCheckinNoteFieldDefinition());
+    Collections.sort(checkinNoteFields, new Comparator<CheckinNoteFieldDefinition>() {
+      public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
+        return o1.get_do() - o2.get_do();
+      }
+    });
+
+    return checkinNoteFields;
   }
 
   //public List<List<Item>> queryItems(final String workspaceName,
