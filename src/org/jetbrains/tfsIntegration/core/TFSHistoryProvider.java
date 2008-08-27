@@ -20,23 +20,22 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ChangesUtil;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.util.ui.ColumnInfo;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
-import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,21 +67,26 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
   @Nullable
   public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
-    final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
+    //final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
     try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(committedPath);
+      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(filePath);
       if (workspace == null) {
         return null;
       }
 
-      final List<VcsFileRevision> revisions = getRevisions(committedPath, workspace);
-      if (revisions == null) {
+      final ExtendedItem serverItem = TfsUtil.getExtendedItem(filePath);
+      if (serverItem == null) {
+        return null;
+      }
+      
+      final List<VcsFileRevision> revisions = getRevisions(new ItemPath(filePath, serverItem.getSitem()), workspace);
+      if (revisions.isEmpty()) {
         return null;
       }
 
       return new VcsHistorySession(revisions) {
         public VcsRevisionNumber calcCurrentRevisionNumber() {
-          return TfsUtil.getCurrentRevisionNumber(myProject, committedPath);
+          return TfsUtil.getCurrentRevisionNumber(myProject, filePath);
         }
       };
     }
@@ -91,13 +95,9 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     }
   }
 
-  private static List<VcsFileRevision> getRevisions(final FilePath committedPath, WorkspaceInfo workspace) throws TfsException {
-    final WorkspaceVersionSpec itemVersion = new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName());
-    List<Changeset> changesets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(),
-                                                                             workspace.findServerPathByLocalPath(committedPath),
-                                                                             Integer.MIN_VALUE, null, itemVersion,
-                                                                             new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE,
-                                                                             Integer.MAX_VALUE, RecursionType.None);
+  private static List<VcsFileRevision> getRevisions(final ItemPath path, WorkspaceInfo workspace) throws TfsException {
+    List<Changeset> changesets =
+      workspace.getServer().getVCS().queryHistory(workspace, path, null, new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE);
 
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {

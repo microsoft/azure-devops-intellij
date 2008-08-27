@@ -18,9 +18,8 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
@@ -28,7 +27,6 @@ import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -49,7 +47,7 @@ public class SelectChangesetForm {
   }
 
   private JTable myChangesetsTable;
-  private TextFieldWithBrowseButton myFileField;
+  private JTextField myPathField;
   private JTextField myUserField;
   private JRadioButton myAllChangesRadioButton;
   private JRadioButton myChangeNumberRadioButton;
@@ -65,19 +63,21 @@ public class SelectChangesetForm {
 
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
+  private final ItemPath myPath;
 
   private final List<Listener> myListeners = new ArrayList<Listener>();
 
-  public SelectChangesetForm(final Project project, final WorkspaceInfo workspace, String serverPath) {
+  public SelectChangesetForm(final Project project, final WorkspaceInfo workspace, ItemPath itemPath) {
     myProject = project;
     myWorkspace = workspace;
+    myPath = itemPath;
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable.setModel(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
     // TODO select on double click
 
-    myFileField.setText(serverPath);
+    myPathField.setText(itemPath.getLocalPath().getPresentableUrl());
 
     myFindButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -98,19 +98,6 @@ public class SelectChangesetForm {
     myChangesetsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(final ListSelectionEvent e) {
         fireSelectionChanged();
-      }
-    });
-
-    myFileField.getButton().addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        String initialPath =
-          myFileField.getText() != null && myFileField.getText().length() > 0 ? myFileField.getText() : VersionControlPath.ROOT_FOLDER;
-
-        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Item", myProject, myWorkspace.getServer(), initialPath, false);
-        d.show();
-        if (d.isOK()) {
-          myFileField.setText(d.getSelectedPath());
-        }
       }
     });
 
@@ -141,9 +128,8 @@ public class SelectChangesetForm {
       }
 
       getPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      List<Changeset> changesets = myWorkspace.getServer().getVCS().queryHistory(myWorkspace.getName(), myWorkspace.getOwnerName(),
-                                                                                 myFileField.getText(), Integer.MIN_VALUE,
-                                                                                 myUserField.getText(), versionFrom, versionTo, -1);
+      List<Changeset> changesets =
+        myWorkspace.getServer().getVCS().queryHistory(myWorkspace, myPath, myUserField.getText(), versionFrom, versionTo);
       if (changesets.isEmpty()) {
         Messages.showInfoMessage(panel, "No matching changesets found", "Find Changeset");
       }

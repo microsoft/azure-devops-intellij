@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -23,15 +24,15 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 public class TFSRepositoryLocation implements RepositoryLocation {
 
   private final @NotNull WorkspaceInfo myWorkspace;
-  private final @NotNull String myServerPath;
+  private final @NotNull FilePath myLocalPath;
 
-  public TFSRepositoryLocation(final @NotNull String serverPath, final @NotNull WorkspaceInfo workspace) {
-    myServerPath = serverPath;
+  public TFSRepositoryLocation(final @NotNull FilePath localPath, final @NotNull WorkspaceInfo workspace) {
+    myLocalPath = localPath;
     myWorkspace = workspace;
   }
 
   public String toPresentableString() {
-    return getServerPath();
+    return getLocalPath().getPresentableUrl();
   }
 
   @NotNull
@@ -40,12 +41,12 @@ public class TFSRepositoryLocation implements RepositoryLocation {
   }
 
   @NotNull
-  public String getServerPath() {
-    return myServerPath;
+  public FilePath getLocalPath() {
+    return myLocalPath;
   }
 
   public String toString() {
     // IDEA needs this!
-    return myServerPath;
+    return getLocalPath().getPath();
   }
 }

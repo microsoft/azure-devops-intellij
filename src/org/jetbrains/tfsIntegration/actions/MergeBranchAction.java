@@ -22,10 +22,12 @@ import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.MergeHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.ui.MergeBranchDialog;
 
@@ -39,8 +41,9 @@ public class MergeBranchAction extends SingleItemAction {
     throws TfsException {
     final String title = getActionTitle(itemPath.getLocalPath());
     Collection<Item> targetBranches = new ArrayList<Item>();
+    ExtendedItem extendedItem = TfsUtil.getExtendedItem(itemPath.getLocalPath());
     final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(workspace.getName(), workspace.getOwnerName(), itemPath.getServerPath(), LatestVersionSpec.INSTANCE);
+      .queryBranches(workspace.getName(), workspace.getOwnerName(), extendedItem.getTitem(), LatestVersionSpec.INSTANCE);
 
     BranchRelative subject = null;
     for (BranchRelative branch : branches) {
@@ -60,7 +63,7 @@ public class MergeBranchAction extends SingleItemAction {
     }
 
     if (!targetBranches.isEmpty()) {
-      MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath.getServerPath(), targetBranches, title);
+      MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath, targetBranches, title);
       d.show();
       if (d.isOK()) {
         MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());

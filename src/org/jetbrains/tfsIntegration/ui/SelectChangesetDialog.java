@@ -19,28 +19,23 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import javax.swing.*;
-import java.util.Collection;
 
 
 public class SelectChangesetDialog extends DialogWrapper {
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private SelectChangesetForm myForm;
-  private final String myServerPath;
+  private final ItemPath myPath;
 
-  public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
+  public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final ItemPath path) {
     super(project, true);
     myProject = project;
     myWorkspace = workspace;
-
-    String commonAncestor = serverPaths.iterator().next();
-    for (String path : serverPaths) {
-      commonAncestor = getCommonPart(commonAncestor, path);
-    }
-    myServerPath = commonAncestor;
+    myPath = path;
 
     setOKButtonText("Choose");
     setTitle("Find Changeset");
@@ -50,17 +45,9 @@ public class SelectChangesetDialog extends DialogWrapper {
     setOKActionEnabled(false);
   }
 
-  private static String getCommonPart(final String s1, final String s2) {
-    int i = 0;
-    while (i < Math.min(s1.length(), s2.length()) && s1.charAt(i) == s2.charAt(i)) {
-      i++;
-    }
-    return s1.substring(0, i);
-  }
-
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new SelectChangesetForm(myProject, myWorkspace, myServerPath);
+    myForm = new SelectChangesetForm(myProject, myWorkspace, myPath);
 
     myForm.addListener(new SelectChangesetForm.Listener() {
       public void selectionChanged(final Integer changeset) {

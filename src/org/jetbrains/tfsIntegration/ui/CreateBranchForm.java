@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
@@ -26,7 +27,6 @@ import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collections;
 
 public class CreateBranchForm {
   private JTextField mySourceField;
@@ -35,8 +35,8 @@ public class CreateBranchForm {
   private TextFieldWithBrowseButton myTargetField;
   private JPanel myPanel;
 
-  public CreateBranchForm(final Project project, final WorkspaceInfo workspace, String serverPath) {
-    mySourceField.setText(serverPath);
+  public CreateBranchForm(final Project project, final WorkspaceInfo workspace, ItemPath path) {
+    mySourceField.setText(path.getServerPath());
     
     myTargetField.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -49,7 +49,7 @@ public class CreateBranchForm {
       }
     });
 
-    myRevisionForm.init(project, workspace, Collections.singletonList(serverPath));
+    myRevisionForm.init(project, workspace, path);
   }
 
   @Nullable

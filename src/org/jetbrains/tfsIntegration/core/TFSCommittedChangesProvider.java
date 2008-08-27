@@ -22,16 +22,15 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
-import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.TFSVersionFilterComponent;
 
 import java.io.DataInput;
@@ -39,6 +38,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class TFSCommittedChangesProvider implements CachingCommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> {
@@ -69,10 +69,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(root);
       if (workspace != null) {
-        final ExtendedItem item = TfsUtil.getExtendedItem(root);
-        if (item != null) {
-          return new TFSRepositoryLocation(item.getSitem(), workspace);
-        }
+        return new TFSRepositoryLocation(root, workspace);
       }
     }
     catch (TfsException e) {
@@ -91,7 +88,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       // TODO: deletion id
 
       // TODO: if revision and date filters are both set, which one should have priority?
-      VersionSpec versionFrom = null;
+      VersionSpec versionFrom = new ChangesetVersionSpec(1);
       if (settings.getChangeAfterFilter() != null) {
         versionFrom = new ChangesetVersionSpec((int)settings.getChangeAfterFilter().longValue());
       }
@@ -107,9 +104,16 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         versionTo = new DateVersionSpec(settings.getDateBeforeFilter());
       }
 
-      List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(),
-                                                                               tfsRepositoryLocation.getServerPath(), Integer.MIN_VALUE,
-                                                                               settings.getUserFilter(), versionFrom, versionTo, maxCount);
+      ExtendedItem item = TfsUtil.getExtendedItem(tfsRepositoryLocation.getLocalPath());
+      if (item == null) {
+        return Collections.emptyList();
+      }
+      final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
+      final RecursionType recursionType = tfsRepositoryLocation.getLocalPath().isDirectory() ? RecursionType.Full : null;
+      ItemSpec itemSpec = VersionControlServer.createItemSpec(item.getSitem(), recursionType);
+      List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
+                                                                               settings.getUserFilter(), itemVersion, versionFrom,
+                                                                               versionTo, maxCount);
       List<TFSChangeList> result = new ArrayList<TFSChangeList>(changeSets.size());
       for (Changeset changeset : changeSets) {
         result.add(new TFSChangeList(tfsRepositoryLocation, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(),

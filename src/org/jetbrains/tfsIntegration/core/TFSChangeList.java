@@ -29,12 +29,10 @@ import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -321,13 +319,13 @@ public class TFSChangeList implements CommittedChangeList {
   }
 
   private static Item getPreviousVersion(WorkspaceInfo workspace, Item item, int changeset) throws TfsException {
-    List<Changeset> fileHistory = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), item.getItem(),
-                                                                              item.getDid(), null, new ChangesetVersionSpec(changeset),
-                                                                              new ChangesetVersionSpec(1),
-                                                                              new ChangesetVersionSpec(item.getCs()), 2,
-                                                                              RecursionType.None);
-    TFSVcs.assertTrue(fileHistory.size() == 2);
-    return fileHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
+    ItemSpec itemSpec = VersionControlServer.createItemSpec(item.getItem(), item.getDid(), RecursionType.None);
+    List<Changeset> shortHistory = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
+                                                                               null, new ChangesetVersionSpec(changeset),
+                                                                               new ChangesetVersionSpec(1),
+                                                                               new ChangesetVersionSpec(item.getCs()), 2);
+    TFSVcs.assertTrue(shortHistory.size() == 2);
+    return shortHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
   }
 
   // NOTE: toString() is used by IDEA for context menu 'Copy' action in Repository view

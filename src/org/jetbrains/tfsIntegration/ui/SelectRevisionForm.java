@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
@@ -28,7 +29,6 @@ import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 
 public class SelectRevisionForm {
@@ -47,11 +47,11 @@ public class SelectRevisionForm {
 
   private WorkspaceInfo myWorkspace;
   private Project myProject;
-  private Collection<String> myServerPaths;
+  private ItemPath myPath;
 
-  public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
+  public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final ItemPath path) {
     this();
-    init(project, workspace, serverPaths);
+    init(project, workspace, path);
   }
 
   public SelectRevisionForm() {
@@ -69,7 +69,7 @@ public class SelectRevisionForm {
 
     changesetVersionText.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myServerPaths);
+        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myPath);
         d.show();
         if (d.isOK()) {
           changesetVersionText.setText(String.valueOf(d.getChangeset()));
@@ -90,10 +90,10 @@ public class SelectRevisionForm {
     latestRadioButton.setSelected(true);
   }
 
-  public void init(Project project, final WorkspaceInfo workspace, final Collection<String> serverPaths) {
+  public void init(Project project, final WorkspaceInfo workspace, final ItemPath path) {
     myWorkspace = workspace;
     myProject = project;
-    myServerPaths = serverPaths;
+    myPath = path;
   }
 
   private void updateContols() {

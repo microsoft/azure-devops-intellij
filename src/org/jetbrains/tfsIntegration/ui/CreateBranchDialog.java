@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
@@ -28,13 +29,13 @@ public class CreateBranchDialog extends DialogWrapper {
   private CreateBranchForm myForm;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
-  private final String myServerPath;
+  private final ItemPath myPath;
 
-  public CreateBranchDialog(final Project project, final WorkspaceInfo workspace, final String serverPath) {
+  public CreateBranchDialog(final Project project, final WorkspaceInfo workspace, final ItemPath path) {
     super(project, true);
     myProject = project;
     myWorkspace = workspace;
-    myServerPath = serverPath;
+    myPath = path;
 
     setTitle("Create Branch");
     setResizable(true);
@@ -45,7 +46,7 @@ public class CreateBranchDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new CreateBranchForm(myProject, myWorkspace, myServerPath);
+    myForm = new CreateBranchForm(myProject, myWorkspace, myPath);
     return myForm.getPanel();
   }
 

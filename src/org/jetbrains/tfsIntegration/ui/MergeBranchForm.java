@@ -18,24 +18,24 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.MergeCandidate;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public class MergeBranchForm {
@@ -65,26 +65,26 @@ public class MergeBranchForm {
   private JPanel myChangesetsPanel;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
-  private final String mySourceServerPath;
+  private final ItemPath mySourcePath;
   private final JTable myChangesetsTable;
   private final ChangesetsTableModel myChangesetsTableModel;
   private final List<Listener> myListeners = new ArrayList<Listener>();
 
-  public MergeBranchForm(Project project, WorkspaceInfo workspace, String sourceServerPath, final Collection<Item> targetBranches) {
+  public MergeBranchForm(Project project, WorkspaceInfo workspace, ItemPath sourcePath, final Collection<Item> targetBranches) {
     myProject = project;
     myWorkspace = workspace;
-    mySourceServerPath = sourceServerPath;
+    mySourcePath = sourcePath;
 
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable = new JTable(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 
-    mySelectRevisionForm = new SelectRevisionForm(myProject, myWorkspace, Collections.singletonList(sourceServerPath));
+    mySelectRevisionForm = new SelectRevisionForm(myProject, myWorkspace, sourcePath);
 
     myChangesetsPanel.add(mySelectRevisionForm.getPanel(), ChangesType.ALL.toString());
     myChangesetsPanel.add(new JScrollPane(myChangesetsTable), ChangesType.SELECTED.toString());
 
-    mySourceBranchLabel.setText(sourceServerPath);
+    mySourceBranchLabel.setText(sourcePath.getServerPath());
 
     myTargetBranchCombo.setModel(new DefaultComboBoxModel(targetBranches.toArray()));
 
@@ -136,7 +136,7 @@ public class MergeBranchForm {
     });
 
     myChangesTypeCombo.setSelectedIndex(0);
-    mySelectRevisionForm.init(project, workspace, Collections.singletonList(sourceServerPath));
+    mySelectRevisionForm.init(project, workspace, sourcePath);
   }
 
   public JComponent getContentPanel() {
@@ -148,7 +148,7 @@ public class MergeBranchForm {
     List<Changeset> changesets = new ArrayList<Changeset>();
     try {
       final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
-        .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceServerPath, getTargetPath());
+        .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourcePath.getServerPath(), getTargetPath());
       for (MergeCandidate candidate : mergeCandidates) {
         changesets.add(candidate.getChangeset());
       }

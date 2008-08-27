@@ -184,7 +184,7 @@
               <text value="&amp;Find"/>
             </properties>
           </component>
-          <component id="2d06a" class="com.intellij.openapi.ui.TextFieldWithBrowseButton" binding="myFileField">
+          <component id="ca912" class="javax.swing.JTextField" binding="myPathField">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <minimum-size width="150" height="-1"/>
@@ -192,6 +192,7 @@
               </grid>
             </constraints>
             <properties>
+              <editable value="false"/>
               <enabled value="true"/>
             </properties>
           </component>

@@ -45,11 +45,9 @@ import java.util.List;
 
 public class BranchAction extends SingleItemAction {
 
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath) {
+  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath sourcePath) {
     try {
-      final FilePath sourceLocalPath = itemPath.getLocalPath();
-      final String sourceServerPath = itemPath.getServerPath();
-      CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath);
+      CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourcePath);
       d.show();
       if (!d.isOK()) {
         return;
@@ -85,7 +83,7 @@ public class BranchAction extends SingleItemAction {
       }
 
       final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
-        .createBranch(workspace.getName(), workspace.getOwnerName(), new ItemPath(sourceLocalPath, sourceServerPath), version,
+        .createBranch(workspace.getName(), workspace.getOwnerName(), sourcePath, version,
                       targetServerPath);
       if (!createBranchResult.getFailures().isEmpty()) {
         StringBuilder s = new StringBuilder("Failed to create branch:\n");
@@ -121,7 +119,7 @@ public class BranchAction extends SingleItemAction {
           checkin.add(change.getItem());
         }
       }
-      final String comment = MessageFormat.format("Branch created from {0}", sourceServerPath);
+      final String comment = MessageFormat.format("Branch created from {0}", sourcePath.getServerPath());
       final ResultWithFailures<CheckinResult> checkinResult =
         workspace.getServer().getVCS().checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment);
 

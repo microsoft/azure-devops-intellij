@@ -88,7 +88,7 @@ public class VersionControlServer {
   /**
    * @param string local or server item
    */
-  private static ItemSpec createItemSpec(final String string, final int deletionId, final RecursionType recursionType) {
+  public static ItemSpec createItemSpec(final String string, final int deletionId, final RecursionType recursionType) {
     ItemSpec itemSpec = new ItemSpec();
     itemSpec.setItem(string);
     itemSpec.setDid(deletionId);
@@ -489,20 +489,28 @@ public class VersionControlServer {
     WebServiceHelper.httpGet(url, outputStream);
   }
 
+  public List<Changeset> queryHistory(final WorkspaceInfo workspace,
+                                      final ItemPath path,
+                                      final String user,
+                                      final VersionSpec versionFrom,
+                                      final VersionSpec versionTo) throws TfsException {
+    final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
+    ItemSpec itemSpec = createItemSpec(path.getServerPath(), path.getLocalPath().isDirectory() ? RecursionType.Full : null);
+    return queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom,
+                        versionTo, Integer.MAX_VALUE);
+  }
+
   public List<Changeset> queryHistory(final String workspaceName,
                                       final String workspaceOwner,
-                                      String serverPath,
-                                      int deletionId,
+                                      final ItemSpec itemSpec,
                                       final String user,
                                       final VersionSpec itemVersion,
                                       final VersionSpec versionFrom,
                                       final VersionSpec versionTo,
-                                      int maxCount,
-                                      RecursionType recursionType) throws TfsException {
+                                      int maxCount) throws TfsException {
     // TODO: slot mode
     // TODO: include allChangeSets
 
-    final ItemSpec itemSpec = createItemSpec(serverPath, deletionId, recursionType);
     List<Changeset> allChangeSets = new ArrayList<Changeset>();
     int total = maxCount > 0 ? maxCount : Integer.MAX_VALUE;
     final Ref<VersionSpec> versionToCurrent = new Ref<VersionSpec>(versionTo);
@@ -531,21 +539,6 @@ public class VersionControlServer {
       versionToCurrent.set(new ChangesetVersionSpec(lastChangeSet.getCset()));
     }
     return allChangeSets;
-  }
-
-  public List<Changeset> queryHistory(final String workspaceName,
-                                      final String workspaceOwner,
-                                      String serverPath,
-                                      int deletionId,
-                                      final String user,
-                                      final VersionSpec versionFrom,
-                                      final VersionSpec versionTo,
-                                      int maxCount
-
-  ) throws TfsException {
-    // TODO WorkspaceVersionSpec instead of LatestVersionSpec ?!!
-    return queryHistory(workspaceName, workspaceOwner, serverPath, deletionId, user, LatestVersionSpec.INSTANCE, versionFrom, versionTo,
-                        maxCount, RecursionType.Full);
   }
 
   public Workspace[] queryWorkspaces(final String ownerName, final String computer) throws TfsException {
