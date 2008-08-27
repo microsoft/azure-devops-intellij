@@ -22,15 +22,14 @@ import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.TFSUpdateEnvironment;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ContentMerger;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.ui.ConflictData;
-import org.jetbrains.tfsIntegration.tests.conflicts.AcceptYoursConflictsHandler;
-import org.jetbrains.tfsIntegration.tests.conflicts.AcceptTheirsConflictsHandler;
 import org.jetbrains.tfsIntegration.tests.conflicts.AcceptMergeConflictsHandler;
+import org.jetbrains.tfsIntegration.tests.conflicts.AcceptTheirsConflictsHandler;
+import org.jetbrains.tfsIntegration.tests.conflicts.AcceptYoursConflictsHandler;
 import org.jetbrains.tfsIntegration.tests.conflicts.SizeConflictsAsserter;
+import org.jetbrains.tfsIntegration.ui.ConflictData;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -116,11 +115,14 @@ public class TestSimpleResolveConflicts extends TFSTestCase {
     int latestRevisionNumber = getLatestRevisionNumber(mySandboxRoot);
 
     TFSUpdateEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(new SizeConflictsAsserter(1)));
+    getChanges().assertTotalItems(1);
+    FilePath pathFrom = getChildPath(mySandboxRoot, NAME_2);
+    FilePath pathTo = getChildPath(mySandboxRoot, NAME_3);
+    getChanges().assertRenamedOrMoved(pathFrom, pathTo);
     update(file, latestRevisionNumber - 1);
     assertFile(file, CONTENT_1, false);
     getChanges().assertTotalItems(1);
-    FilePath pathTo = TfsFileUtil.getFilePath(file);
-    FilePath pathFrom = getChildPath(mySandboxRoot, NAME_2);
+    pathFrom = getChildPath(mySandboxRoot, NAME_1);
     getChanges().assertRenamedOrMoved(pathFrom, pathTo);
   }
 
