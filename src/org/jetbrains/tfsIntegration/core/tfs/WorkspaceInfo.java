@@ -173,12 +173,14 @@ public class WorkspaceInfo {
     }
   }
 
+
   /**
    * @param localPath local path to find server path for
    * @return nearest server path according to one of workspace mappings
    * @throws TfsException in case of error during request to TFS
    */
   @Nullable
+  // TODO review usage: item can be updated to revision where corresponding server item does not exist
   public String findServerPathByLocalPath(final @NotNull FilePath localPath) throws TfsException {
     final WorkingFolderInfo mapping = findNearestMapping(localPath);
     return mapping != null ? mapping.getServerPathByLocalPath(localPath) : null;
