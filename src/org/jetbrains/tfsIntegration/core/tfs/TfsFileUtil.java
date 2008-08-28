@@ -36,6 +36,8 @@ import java.io.*;
 import java.util.*;
 import java.text.MessageFormat;
 
+// TODO review usage of getFilePath(), getVirtualFile()
+
 public class TfsFileUtil {
 
   public interface ContentWriter {

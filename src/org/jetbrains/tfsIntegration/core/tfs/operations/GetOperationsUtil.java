@@ -16,11 +16,12 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
+import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,12 +33,18 @@ public class GetOperationsUtil {
       TFSVcs.assertTrue(newOperation.getSlocal() != null || newOperation.getTlocal() != null);
       int positionToInsert = result.size();
       if (newOperation.getSlocal() != null) {
-        final FilePath newOpPath = VcsUtil.getFilePath(newOperation.getSlocal());
+        final File newOpPath = new File(newOperation.getSlocal());
         for (int i = 0; i < result.size(); i++) {
           final GetOperation existingOperation = result.get(i);
-          if (existingOperation.getSlocal() == null || VcsUtil.getFilePath(existingOperation.getSlocal()).isUnder(newOpPath, false)) {
-            positionToInsert = i;
-            break;
+          try {
+            if (existingOperation.getSlocal() == null || FileUtil.isAncestor(newOpPath, new File(existingOperation.getSlocal()), false)) {
+              positionToInsert = i;
+              break;
+            }
+          }
+          catch (IOException e) {
+            // why FileUtil.isAncestor() throws IOException?
+            // ignore
           }
         }
       }

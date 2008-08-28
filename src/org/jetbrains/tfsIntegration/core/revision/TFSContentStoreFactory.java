@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -26,6 +27,7 @@ public class TFSContentStoreFactory {
     return new TFSTmpFileStore(serverUri, itemId, revision.getValue());
   }
 
+  @Nullable
   public static TFSContentStore find(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
     return TFSTmpFileStore.find(serverUri, itemId, revision.getValue());
   }
