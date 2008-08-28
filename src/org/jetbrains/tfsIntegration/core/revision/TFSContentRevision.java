@@ -81,11 +81,12 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace,
                                           final @NotNull ExtendedItem extendedItem,
-                                          final @Nullable FilePath pathToOverride) throws TfsException {
+                                          final @Nullable FilePath pathToOverride) {
     return new TFSContentRevision(workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
-        return workspace.getServer().getVCS().queryItemById(extendedItem.getItemid(), extendedItem.getLver(), true);
+        int version = extendedItem.getLver() != Integer.MIN_VALUE ? extendedItem.getLver() : extendedItem.getLatest();
+        return workspace.getServer().getVCS().queryItemById(extendedItem.getItemid(), version, true);
       }
 
       @NotNull
