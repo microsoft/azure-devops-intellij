@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Calendar;
 
 public class SelectRevisionForm {
 
@@ -100,6 +101,8 @@ public class SelectRevisionForm {
     dateText.setEnabled(dateRadioButton.isSelected());
     if (!dateRadioButton.isSelected()) {
       dateText.setText(null);
+    } else {
+      dateText.setText(DATE_FORMAT.format(Calendar.getInstance().getTime()));
     }
     labelVersionText.setEnabled(labelRadioButton.isSelected());
     if (!labelRadioButton.isSelected()) {
