@@ -30,6 +30,7 @@ import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
@@ -73,7 +74,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               public void unversioned(@NotNull final ItemPath path,
                                       final @Nullable ExtendedItem extendedItem,
                                       final boolean localItemExists) throws TfsException {
-                TFSVcs.error("Server status Unversioned when rolling back missing file deletion: " + path.getLocalPath().getPath());
+                TFSVcs
+                  .error("Server status Unversioned when rolling back missing file deletion: " + path.getLocalPath().getPresentableUrl());
               }
 
               public void checkedOutForEdit(@NotNull final ItemPath path,
@@ -92,9 +94,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                                                final @NotNull ExtendedItem extendedItem,
                                                final boolean localItemExists) {
                 TFSVcs
-                  .error("Server status ScheduledForDeletion when rolling back missing file deletion: " + path.getLocalPath().getPath());
-                //undo.add(path);
-                //addForDownload(extendedItem);
+                  .error("Server status ScheduledForDeletion when rolling back missing file deletion: " +
+                         path.getLocalPath().getPresentableUrl());
               }
 
               public void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists)
@@ -132,7 +133,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
 
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
           final Collection<VcsException> downloadErrors = ApplyGetOperations
-            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE, ApplyGetOperations.ProcessMode.GET);
+            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE,
+                     ApplyGetOperations.ProcessMode.GET);
           errors.addAll(downloadErrors);
 
           final UndoPendingChanges.UndoPendingChangesResult undoResult =
@@ -153,17 +155,18 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           // query extended items to determine base (local) version
-          Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
+          //Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
 
           // query GetOperation-s
-          List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(extendedItems.size());
-          for (Map.Entry<ItemPath, ExtendedItem> e : extendedItems.entrySet()) {
-            requests.add(new VersionControlServer.GetRequestParams(e.getKey().getServerPath(), RecursionType.None,
-                                                                   new ChangesetVersionSpec(e.getValue().getLver())));
+          List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(paths.size());
+          final WorkspaceVersionSpec versionSpec = new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName());
+          for (ItemPath e : paths) {
+            requests.add(new VersionControlServer.GetRequestParams(e.getServerPath(), RecursionType.None, versionSpec));
           }
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
           final Collection<VcsException> applyingErrors = ApplyGetOperations
-            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE, ApplyGetOperations.ProcessMode.UNDO);
+            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE,
+                     ApplyGetOperations.ProcessMode.UNDO);
           errors.addAll(applyingErrors);
         }
       });
