@@ -117,7 +117,10 @@ public class TFSChangeList implements CommittedChangeList {
         for (Map.Entry<FilePath, Pair<FilePath, Integer>> entry : myMovedPaths.entrySet()) {
           TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue().second);
           TFSContentRevision afterRevision = TFSContentRevision.create(entry.getValue().first, myRevisionNumber);
-          myCachedChanges.add(new Change(beforeRevision, afterRevision));
+          // Workaround for [IDEADEV-29451]
+          //myCachedChanges.add(new Change(beforeRevision, afterRevision));
+          myCachedChanges.add(new Change(beforeRevision, null));
+          myCachedChanges.add(new Change(null, afterRevision));
         }
       }
       catch (TfsException e) {
