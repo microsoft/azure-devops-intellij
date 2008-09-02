@@ -17,11 +17,9 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
-import java.util.ArrayList;
 
 public class CoflictsTableModel extends AbstractTableModel {
 
@@ -30,27 +28,6 @@ public class CoflictsTableModel extends AbstractTableModel {
     Name("Name") {
       public String getValue(Conflict conflict) {
         return conflict.getSrclitem();
-      }
-    },
-    ConflictType("Conflict type") {
-      public String getValue(Conflict conflict) {
-        ArrayList<String> types = new ArrayList<String>();
-        if (ResolveConflictHelper.isNameConflict(conflict)) {
-          types.add("Rename");
-        }
-        if (ResolveConflictHelper.isContentConflict(conflict)) {
-          types.add("Content");
-        }
-        String res = "";
-        for (String type : types) {
-          if (res.length() == 0) {
-            res = type;
-          }
-          else {
-            res += (", " + type);
-          }
-        }
-        return res;
       }
     };
 
