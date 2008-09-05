@@ -132,7 +132,7 @@ public class TFSFileListener extends TFSFileListenerBase {
           RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
           final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-            .queryPendingSetsByPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
 
           final List<ItemPath> revertScheduledForAdditionImmediately = new ArrayList<ItemPath>();
 

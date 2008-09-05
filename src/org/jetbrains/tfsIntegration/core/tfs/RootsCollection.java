@@ -36,6 +36,7 @@ public abstract class RootsCollection<T> implements Collection<T> {
       super(items);
     }
 
+    @NotNull
     protected FilePath getFilePath(final FilePath filePath) {
       return filePath;
     }
@@ -50,6 +51,7 @@ public abstract class RootsCollection<T> implements Collection<T> {
       super(items);
     }
 
+    @NotNull
     protected FilePath getFilePath(final ItemPath itemPath) {
       return itemPath.getLocalPath();
     }
@@ -85,6 +87,7 @@ public abstract class RootsCollection<T> implements Collection<T> {
   }
 
   public <T> T[] toArray(final T[] a) {
+    //noinspection SuspiciousToArrayCall
     return myRoots.toArray(a);
   }
 

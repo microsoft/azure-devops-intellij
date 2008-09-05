@@ -41,7 +41,7 @@ public class ScheduleForDeletion {
       RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
       final Collection<PendingChange> pendingChanges =
-        workspace.getServer().getVCS().queryPendingSetsByPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+        workspace.getServer().getVCS().queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
 
       Collection<ItemPath> revert = new ArrayList<ItemPath>();
       for (PendingChange pendingChange : pendingChanges) {

@@ -102,7 +102,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           try {
             // get pending changes for given items
             Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-              .queryPendingSetsByPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None);
+              .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None);
 
             if (pendingChanges.isEmpty()) {
               return;

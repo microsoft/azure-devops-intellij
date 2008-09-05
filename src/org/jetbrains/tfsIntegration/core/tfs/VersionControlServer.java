@@ -754,7 +754,7 @@ public class VersionControlServer {
     WebServiceHelper.httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null);
   }
 
-  public Collection<PendingChange> queryPendingSetsByPaths(final String workspaceName,
+  public Collection<PendingChange> queryPendingSetsByLocalPaths(final String workspaceName,
                                                            final String workspaceOwnerName,
                                                            final Collection<ItemPath> paths,
                                                            final RecursionType recursionType) throws TfsException {
