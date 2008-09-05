@@ -114,26 +114,47 @@ public class TestHistoryProvider extends TFSTestCase {
       Assert.assertEquals(getUsername(), changelist2.getCommitterName());
 
       String dump = ChangeHelper.toString(changelist2.getChanges(), mySandboxRoot);
-      Assert.assertEquals(dump, 10, changelist2.getChanges().size());
       Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileCreated));
       Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathDeleted));
       Assert.assertTrue(dump, ChangeHelper.containsModified(changelist2.getChanges(), fileModified));
       ChangeHelper
         .assertModified(changelist2.getChanges(), TfsFileUtil.getFilePath(fileModified), fileModifiedContent1, fileModifiedContent2);
 
-      Change renamedChange = ChangeHelper.getMoveChange(changelist2.getChanges(), filepathRenamed_original, fileRenamed);
-      Assert.assertNotNull(renamedChange);
-      ChangeHelper.assertContent(renamedChange, fileRenamedContent, fileRenamedContent);
-
-      Change renamedModifiedChange = ChangeHelper
-        .getMoveChange(changelist2.getChanges(), filepathRenamedModified_original, fileRenamedModified);
-      Assert.assertNotNull(dump, renamedModifiedChange);
-      ChangeHelper.assertContent(renamedModifiedChange, fileRenamedModifiedContent1, fileRenamedModifiedContent2);
-      Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathSubfolderDeleted));
-      Assert.assertNotNull(dump, ChangeHelper.getMoveChange(changelist2.getChanges(), filepathSubfolderRenamedOriginal, subfolderRenamed));
       Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), subfolderA));
       Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), subfolderB));
-      Assert.assertNotNull(dump, ChangeHelper.getMoveChange(changelist2.getChanges(), filepathSubfolderMovedOriginal, subfolderMoved));
+      Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathSubfolderDeleted));
+
+      if (TFSChangeList.IDEADEV_29451_WORKAROUND) {
+        Assert.assertEquals(dump, 14, changelist2.getChanges().size());
+        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathRenamed_original, fileRenamedContent));
+        Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileRenamed, fileRenamedContent));
+
+        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathRenamedModified_original, fileRenamedModifiedContent1));
+        Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileRenamedModified, fileRenamedModifiedContent2));
+
+        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathSubfolderRenamedOriginal));
+        Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), subfolderRenamed));
+
+        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathSubfolderMovedOriginal));
+        Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), subfolderMoved));
+      }
+      else {
+        Assert.assertEquals(dump, 10, changelist2.getChanges().size());
+
+        Change renamedChange = ChangeHelper.getMoveChange(changelist2.getChanges(), filepathRenamed_original, fileRenamed);
+        Assert.assertNotNull(renamedChange);
+        ChangeHelper.assertContent(renamedChange, fileRenamedContent, fileRenamedContent);
+
+        Change renamedModifiedChange = ChangeHelper
+          .getMoveChange(changelist2.getChanges(), filepathRenamedModified_original, fileRenamedModified);
+        Assert.assertNotNull(dump, renamedModifiedChange);
+        ChangeHelper.assertContent(renamedModifiedChange, fileRenamedModifiedContent1, fileRenamedModifiedContent2);
+
+        Assert
+          .assertNotNull(dump, ChangeHelper.getMoveChange(changelist2.getChanges(), filepathSubfolderRenamedOriginal, subfolderRenamed));
+
+        Assert.assertNotNull(dump, ChangeHelper.getMoveChange(changelist2.getChanges(), filepathSubfolderMovedOriginal, subfolderMoved));
+      }
     }
 
     final VcsHistorySession session = getVcs().getVcsHistoryProvider().createSessionFor(TfsFileUtil.getFilePath(fileRenamedModified));

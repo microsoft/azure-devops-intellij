@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSChangeList;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Assert;
 
@@ -35,6 +36,10 @@ public class ChangeHelper {
     return containsAdded(changes, TfsFileUtil.getFilePath(file));
   }
 
+  public static boolean containsAdded(Collection<Change> changes, VirtualFile file, String content) throws VcsException {
+    final Change addChange = getAddChange(changes, TfsFileUtil.getFilePath(file));
+    return addChange != null && content.equals(addChange.getAfterRevision().getContent());
+  }
 
   @Nullable
   public static Change getAddChange(Collection<Change> changes, FilePath file) {
@@ -66,6 +71,11 @@ public class ChangeHelper {
 
   public static boolean containsDeleted(Collection<Change> changes, FilePath file) {
     return getDeleteChange(changes, file) != null;
+  }
+
+  public static boolean containsDeleted(Collection<Change> changes, FilePath file, String content) throws VcsException {
+    final Change deleteChange = getDeleteChange(changes, file);
+    return deleteChange != null && content.equals(deleteChange.getBeforeRevision().getContent());
   }
 
   @Nullable
@@ -182,12 +192,22 @@ public class ChangeHelper {
         assertContent(modificationChange, c.getBeforeRevision().getContent(), c.getAfterRevision().getContent());
       }
       else {
-        final Change moveChange = getMoveChange(superset, c.getBeforeRevision().getFile(), c.getAfterRevision().getFile());
-        Assert.assertEquals(c.getBeforeRevision().getFile().isDirectory(), moveChange.getBeforeRevision().getFile().isDirectory());
+        if (TFSChangeList.IDEADEV_29451_WORKAROUND) {
+          final Change deleteChange = getDeleteChange(superset, c.getBeforeRevision().getFile());
+          final Change addChange = getAddChange(superset, c.getAfterRevision().getFile());
+          if (!c.getBeforeRevision().getFile().isDirectory()) {
+            Assert.assertEquals(c.getBeforeRevision().getContent(), deleteChange.getBeforeRevision().getContent());
+            Assert.assertEquals(c.getAfterRevision().getContent(), addChange.getAfterRevision().getContent());
+          }
+        }
+        else {
+          final Change moveChange = getMoveChange(superset, c.getBeforeRevision().getFile(), c.getAfterRevision().getFile());
+          Assert.assertEquals(c.getBeforeRevision().getFile().isDirectory(), moveChange.getBeforeRevision().getFile().isDirectory());
 
-        if (!c.getBeforeRevision().getFile().isDirectory()) {
-          Assert.assertEquals(c.getBeforeRevision().getContent(), moveChange.getBeforeRevision().getContent());
-          Assert.assertEquals(c.getAfterRevision().getContent(), moveChange.getAfterRevision().getContent());
+          if (!c.getBeforeRevision().getFile().isDirectory()) {
+            Assert.assertEquals(c.getBeforeRevision().getContent(), moveChange.getBeforeRevision().getContent());
+            Assert.assertEquals(c.getAfterRevision().getContent(), moveChange.getAfterRevision().getContent());
+          }
         }
       }
     }

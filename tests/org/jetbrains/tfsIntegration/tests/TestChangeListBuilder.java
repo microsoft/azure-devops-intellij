@@ -155,7 +155,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
       assertFileStatus(file, FileStatus.DELETED);
       return;
     }
-    Assert.fail(toString());
+    Assert.fail(ChangeHelper.getPathRemainder(file, myRootPath) + " expected to be scheduled for deletion\n" + toString());
   }
 
   public void assertRenamedOrMoved(FilePath from, FilePath to) {
