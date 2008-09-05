@@ -22,22 +22,25 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemSpec;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+
+import java.util.Collection;
 
 public class TfsUtil {
 
   @Nullable
   public static ExtendedItem getExtendedItem(final FilePath localPath) throws TfsException {
-    WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
-    if (workspace == null) {
+    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
+    if (workspaces.isEmpty()) {
       return null;
     }
     final ItemSpec itemSpec = VersionControlServer.createItemSpec(localPath, RecursionType.None);
+    final WorkspaceInfo workspace = workspaces.iterator().next();
     return workspace.getServer().getVCS()
       .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemSpec, DeletedState.Any);
   }

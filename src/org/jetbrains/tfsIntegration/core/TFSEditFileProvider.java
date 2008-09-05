@@ -36,7 +36,7 @@ public class TFSEditFileProvider implements EditFileProvider {
     Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       WorkstationHelper.ProcessResult<ResultWithFailures<GetOperation>> processResult = WorkstationHelper
-        .processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.ProcessDelegate<ResultWithFailures<GetOperation>>() {
+        .processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.ProcessDelegate<ResultWithFailures<GetOperation>>() {
           public ResultWithFailures<GetOperation> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths)
             throws TfsException {
             return workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);

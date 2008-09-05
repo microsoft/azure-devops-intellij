@@ -35,6 +35,8 @@ import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
+import java.util.Collection;
+
 public class TFSDiffProvider implements DiffProvider {
   private @NotNull final Project myProject;
 
@@ -56,8 +58,8 @@ public class TFSDiffProvider implements DiffProvider {
     else {
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       try {
-        WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(path);
-        if (workspace == null) {
+        Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(path, false);
+        if (workspaces.isEmpty()) {
           return null;
         }
         ExtendedItem item = TfsUtil.getExtendedItem(path);
@@ -65,7 +67,7 @@ public class TFSDiffProvider implements DiffProvider {
           return null;
         }
         final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
-        return TFSContentRevision.create(workspace, item.getItemid(), intRevisionNumber.getValue());
+        return TFSContentRevision.create(workspaces.iterator().next(), item.getItemid(), intRevisionNumber.getValue());
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown

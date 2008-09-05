@@ -72,7 +72,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       List<FilePath> orphanPaths =
-        WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
 
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
@@ -152,7 +152,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     }
     final Ref<Boolean> mappingFound = new Ref<Boolean>(false);
     try {
-      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           mappingFound.set(true);
         }

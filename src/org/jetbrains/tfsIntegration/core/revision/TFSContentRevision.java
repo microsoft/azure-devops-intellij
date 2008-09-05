@@ -36,6 +36,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collection;
 
 public abstract class TFSContentRevision implements ContentRevision {
 
@@ -114,11 +115,12 @@ public abstract class TFSContentRevision implements ContentRevision {
   }
 
   public static TFSContentRevision create(final @NotNull FilePath path, final int changeset) throws TfsException {
-    final WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(path);
-    if (workspace == null) {
+    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(path, false);
+    if (workspaces.isEmpty()) {
       throw new OperationFailedException("Cannot find mapping for item " + path.getPresentableUrl());
     }
 
+    final WorkspaceInfo workspace = workspaces.iterator().next();
     return new TFSContentRevision(workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {

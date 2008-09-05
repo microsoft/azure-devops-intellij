@@ -39,10 +39,12 @@ public abstract class SingleItemAction extends AnAction {
     final Project project = e.getData(DataKeys.PROJECT);
     VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
 
+    // checked by isEnabled()
+    //noinspection ConstantConditions
     final FilePath localPath = TfsFileUtil.getFilePath(files[0]);
 
     try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
+      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath, false).iterator().next();
       ExtendedItem item = TfsUtil.getExtendedItem(localPath);
       execute(project, workspace, new ItemPath(VcsUtil.getFilePath(item.getLocal(), item.getType() == ItemType.Folder), item.getSitem()));
     }

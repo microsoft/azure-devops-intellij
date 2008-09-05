@@ -66,21 +66,8 @@ public class TFSChangeProvider implements ChangeProvider {
     roots.addAll(dirtyScope.getDirtyFiles());
 
     try {
-      // unwrap child workspaces
-      // TODO: is it always correct to use RootsCollection.FilePathRootsCollection instead of HashSet?
-      Set<FilePath> mappedRoots = new HashSet<FilePath>();
-      for (FilePath root : roots) {
-        Set<FilePath> mappedPaths = Workstation.getInstance().findChildMappedPaths(root);
-        if (!mappedPaths.isEmpty()) {
-          mappedRoots.addAll(mappedPaths);
-        }
-        else {
-          mappedRoots.add(root);
-        }
-      }
-
       // ingore orphan roots here
-      WorkstationHelper.processByWorkspaces(mappedRoots, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           processWorkspace(workspace, paths, builder, progress);
         }
@@ -110,12 +97,12 @@ public class TFSChangeProvider implements ChangeProvider {
 
     Map<ItemPath, ExtendedItem> local2ExtendedItem = new HashMap<ItemPath, ExtendedItem>();
     for (int i = 0; i < roots.size(); i++) {
-      ItemPath path = roots.get(i);
+      ItemPath root = roots.get(i);
 
       Collection<ExtendedItem> serverItems = extendedItemsResult.get(i);
       Collection<FilePath> localItems = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
-      localItems.add(path.getLocalPath());
-      addExistingFilesRecursively(localItems, path.getLocalPath().getVirtualFile());
+      localItems.add(root.getLocalPath());
+      addExistingFilesRecursively(localItems, root.getLocalPath().getVirtualFile());
 
       // find 'downloaded' server items for existing local files
       for (FilePath localItem : localItems) {
@@ -134,7 +121,8 @@ public class TFSChangeProvider implements ChangeProvider {
         if (serverItem != null) {
           serverItems.remove(serverItem);
         }
-        local2ExtendedItem.put(new ItemPath(localItem, workspace.findServerPathByLocalPath(localItem)), serverItem);
+        local2ExtendedItem
+          .put(new ItemPath(localItem, workspace.findServerPathsByLocalPath(localItem, false).iterator().next()), serverItem);
       }
 
       // process locally missing items

@@ -63,7 +63,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   public List<VcsException> rollbackMissingFileDeletion(final List<FilePath> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           Map<ItemPath, ServerStatus> local2serverStatus = StatusProvider.determineServerStatus(workspace, paths);
           final List<VersionControlServer.GetRequestParams> download = new ArrayList<VersionControlServer.GetRequestParams>();
@@ -152,7 +152,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           // query extended items to determine base (local) version
           //Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
@@ -188,7 +188,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   private List<VcsException> undoPendingChanges(final List<FilePath> localPaths) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(localPaths, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(localPaths, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           UndoPendingChanges.UndoPendingChangesResult undoResult =
             UndoPendingChanges.execute(myProject, workspace, paths, ApplyGetOperations.DownloadMode.ALLOW);

@@ -68,7 +68,7 @@ public class UpdateSettingsForm {
   public UpdateSettingsForm(final Project project, Collection<FilePath> roots, final String title) {
     final DefaultListModel listModel = new DefaultListModel();
     try {
-      WorkstationHelper.processByWorkspaces(roots, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           final Map<ItemPath, ExtendedItem> items = workspace.getExtendedItems(paths);
 
@@ -174,7 +174,7 @@ public class UpdateSettingsForm {
 
     final VirtualFile ancestor = VfsUtil.getCommonAncestor(p1.getLocalPath().getVirtualFile(), p2.getLocalPath().getVirtualFile());
     FilePath ancestorPath = TfsFileUtil.getFilePath(ancestor);
-    return new ItemPath(ancestorPath, workspace.findServerPathByLocalPath(ancestorPath));
+    return new ItemPath(ancestorPath, workspace.findServerPathsByLocalPath(ancestorPath, false).iterator().next());
   }
 
 

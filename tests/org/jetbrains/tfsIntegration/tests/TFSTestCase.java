@@ -65,7 +65,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   private static final String SERVER = "http://wmw-2003-01:8080/";
-//  private static final String SERVER = "http://192.168.230.128:8080/";
+  //  private static final String SERVER = "http://192.168.230.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "TFSSETUP";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -209,7 +209,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private void createServerFolder(FilePath path, String comment) throws VcsException {
     try {
-      ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathByLocalPath(path));
+      ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathsByLocalPath(path, false).iterator().next());
       final ResultWithFailures<GetOperation> addResult = myTestWorkspace.getServer().getVCS()
         .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
       if (!addResult.getFailures().isEmpty()) {

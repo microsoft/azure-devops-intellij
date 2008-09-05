@@ -227,54 +227,49 @@ public class Workstation {
     }
   }
 
-  @Nullable
-  public WorkspaceInfo findWorkspace(final @NotNull FilePath localPath) throws TfsException {
-    WorkspaceInfo workspaceWithCachedMappingFound = null;
+  public Collection<WorkspaceInfo> findWorkspace(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+    // try cached working folders first
+    Collection<WorkspaceInfo> resultCached = new ArrayList<WorkspaceInfo>();
     for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
-      if (workspace.hasMappingCached(localPath)) {
-        workspaceWithCachedMappingFound = workspace;
-        break;
+      if (workspace.hasMappingCached(localPath, considerChildMappings)) {
+        resultCached.add(workspace);
+        if (!considerChildMappings) {
+          // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces
+          break;
+        }
       }
     }
 
-    if (workspaceWithCachedMappingFound != null) {
+    if (!resultCached.isEmpty()) {
       // given path is mapped according to cached mapping info -> reload and check with server info
-      if (workspaceWithCachedMappingFound.findNearestMapping(localPath) != null) {
-        return workspaceWithCachedMappingFound;
+      for (WorkspaceInfo workspace : resultCached) {
+        if (!workspace.hasMapping(localPath, considerChildMappings)) {
+          throw new WorkspaceHasNoMappingException(workspace);
+        }
       }
-      else {
-        throw new WorkspaceHasNoMappingException(workspaceWithCachedMappingFound);
-      }
+      return resultCached;
     }
     else {
       // TODO: if server is unavailable, don't try every workspace on it
       // TODO: exclude servers that are unavailable during current application run
-      // cached information can be out of date -> try to reload all the workspaces and search again
+      // not found in cached info, but workspaces may be out of date -> try to search all the workspaces reloaded
+      Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
       for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
         try {
-          if (workspace.findNearestMapping(localPath) != null) {
-            return workspace;
+          if (workspace.hasMapping(localPath, considerChildMappings)) {
+            result.add(workspace);
+            if (!considerChildMappings) {
+              // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces
+              return result;
+            }
           }
         }
         catch (TfsException e) {
           // skip
         }
       }
-      return null;
+      return result;
     }
   }
 
-  public Set<FilePath> findChildMappedPaths(final FilePath root) throws TfsException {
-    Set<FilePath> result = new HashSet<FilePath>();
-
-    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
-      Collection<FilePath> paths = workspace.getMappedChildPathsCached(root);
-      if (!paths.isEmpty()) {
-        result.addAll(workspace.getMappedChildPaths(root));
-      }
-    }
-
-    // TODO: should we force reload of all the workspaces with no respect of their cache information?
-    return result;
-  }
 }

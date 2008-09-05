@@ -41,7 +41,8 @@ public class UndoPendingChanges {
     }
   }
 
-  public static UndoPendingChangesResult execute(final Project project, final WorkspaceInfo workspace,
+  public static UndoPendingChangesResult execute(final Project project,
+                                                 final WorkspaceInfo workspace,
                                                  final Collection<ItemPath> paths,
                                                  ApplyGetOperations.DownloadMode downloadMode) {
     if (paths.isEmpty()) {
@@ -61,8 +62,8 @@ public class UndoPendingChanges {
         if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
           FilePath sourcePath = VcsUtil.getFilePath(getOperation.getSlocal());
           FilePath targetPath = VcsUtil.getFilePath(getOperation.getTlocal());
-          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathByLocalPath(sourcePath)),
-                          new ItemPath(targetPath, workspace.findServerPathByLocalPath(targetPath)));
+          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false).iterator().next()),
+                          new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false).iterator().next()));
         }
       }
 

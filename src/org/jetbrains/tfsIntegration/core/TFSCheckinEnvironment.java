@@ -97,7 +97,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
             // get pending changes for given items
@@ -186,7 +186,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
           errors.addAll(schedulingErrors);
@@ -205,7 +205,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     // TODO: schedule parent folders?
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
           exceptions.addAll(schedulingErrors);

@@ -67,9 +67,9 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   public RepositoryLocation getLocationFor(final FilePath root) {
     // TODO: get child mappings if no current
     try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(root);
-      if (workspace != null) {
-        return new TFSRepositoryLocation(root, workspace);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(root, false);
+      if (!workspaces.isEmpty()) {
+        return new TFSRepositoryLocation(root, workspaces.iterator().next());
       }
     }
     catch (TfsException e) {

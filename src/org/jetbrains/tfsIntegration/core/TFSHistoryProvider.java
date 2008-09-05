@@ -39,6 +39,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collection;
 
 public class TFSHistoryProvider implements VcsHistoryProvider {
   private @NotNull final Project myProject;
@@ -69,8 +70,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
     //final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
     try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(filePath);
-      if (workspace == null) {
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(filePath, false);
+      if (workspaces.isEmpty()) {
         return null;
       }
 
@@ -78,8 +79,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       if (serverItem == null) {
         return null;
       }
-      
-      final List<VcsFileRevision> revisions = getRevisions(new ItemPath(filePath, serverItem.getSitem()), workspace);
+
+      final List<VcsFileRevision> revisions = getRevisions(new ItemPath(filePath, serverItem.getSitem()), workspaces.iterator().next());
       if (revisions.isEmpty()) {
         return null;
       }

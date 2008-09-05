@@ -84,9 +84,10 @@ public class WorkstationHelper {
    * @return paths for which workspace was not found (orphan paths)
    */
   // TODO process orphan paths in every caller
-  public static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths, final VoidProcessDelegate delegate)
-    throws TfsException {
-    OneToOneProcessResult<Object> result = processByWorkspaces(localPaths, new OneToOneProcessDelegate<Object>() {
+  public static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths,
+                                                   boolean considerChildMappings,
+                                                   final VoidProcessDelegate delegate) throws TfsException {
+    OneToOneProcessResult<Object> result = processByWorkspaces(localPaths, considerChildMappings, new OneToOneProcessDelegate<Object>() {
       public Map<ItemPath, Object> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
         delegate.executeRequest(workspace, paths);
         return Collections.emptyMap();
@@ -95,10 +96,11 @@ public class WorkstationHelper {
     return result.orphanPaths;
   }
 
-  public static <T> ProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths, final ProcessDelegate<T> delegate)
-    throws TfsException {
+  public static <T> ProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths,
+                                                         boolean considerChildMappings,
+                                                         final ProcessDelegate<T> delegate) throws TfsException {
     final Ref<T> results = new Ref<T>();
-    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
+    List<FilePath> workspaceNotFoundLocalPaths = processByWorkspaces(localPaths, considerChildMappings, new WorkspaceProcessor() {
       public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
         results.set(delegate.executeRequest(workspace, paths));
       }
@@ -106,10 +108,11 @@ public class WorkstationHelper {
     return new ProcessResult<T>(results.get(), workspaceNotFoundLocalPaths);
   }
 
-  public static <T> OneToOneProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths, final OneToOneProcessDelegate<T> delegate)
-    throws TfsException {
+  public static <T> OneToOneProcessResult<T> processByWorkspaces(Collection<FilePath> localPaths,
+                                                                 boolean considerChildMappings,
+                                                                 final OneToOneProcessDelegate<T> delegate) throws TfsException {
     final Map<ItemPath, T> overallResults = new HashMap<ItemPath, T>(localPaths.size());
-    List<FilePath> orphanPaths = processByWorkspaces(localPaths, new WorkspaceProcessor() {
+    List<FilePath> orphanPaths = processByWorkspaces(localPaths, considerChildMappings, new WorkspaceProcessor() {
       public void process(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
         Map<ItemPath, T> serverPath2result = delegate.executeRequest(workspace, paths);
         for (ItemPath itemPath : paths) {
@@ -122,22 +125,26 @@ public class WorkstationHelper {
 
   /**
    * @param localPaths paths of local items
-   * @param processor operation processor
+   * @param processor  operation processor
    * @return local paths for which workspace was not found
    * @throws TfsException in case error occurs
    */
-  private static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths, WorkspaceProcessor processor) throws TfsException {
+  private static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths,
+                                                    boolean considerChildMappings,
+                                                    WorkspaceProcessor processor) throws TfsException {
     List<FilePath> orphanPaths = new ArrayList<FilePath>();
     Map<WorkspaceInfo, List<FilePath>> workspace2localPaths = new HashMap<WorkspaceInfo, List<FilePath>>();
     for (FilePath localPath : localPaths) {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath);
-      if (workspace != null) {
-        List<FilePath> workspaceLocalPaths = workspace2localPaths.get(workspace);
-        if (workspaceLocalPaths == null) {
-          workspaceLocalPaths = new ArrayList<FilePath>();
-          workspace2localPaths.put(workspace, workspaceLocalPaths);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, considerChildMappings);
+      if (!workspaces.isEmpty()) {
+        for (WorkspaceInfo workspace : workspaces) {
+          List<FilePath> workspaceLocalPaths = workspace2localPaths.get(workspace);
+          if (workspaceLocalPaths == null) {
+            workspaceLocalPaths = new ArrayList<FilePath>();
+            workspace2localPaths.put(workspace, workspaceLocalPaths);
+          }
+          workspaceLocalPaths.add(localPath);
         }
-        workspaceLocalPaths.add(localPath);
       }
       else {
         orphanPaths.add(localPath);
@@ -148,7 +155,18 @@ public class WorkstationHelper {
       List<FilePath> currentLocalPaths = workspace2localPaths.get(workspace);
       List<ItemPath> currentItemPaths = new ArrayList<ItemPath>(currentLocalPaths.size());
       for (FilePath localPath : currentLocalPaths) {
-        currentItemPaths.add(new ItemPath(localPath, workspace.findServerPathByLocalPath(localPath)));
+        Collection<String> serverPaths = workspace.findServerPathsByLocalPath(localPath, considerChildMappings);
+        if (!considerChildMappings) {
+          // optimization + actual isDirectory flag
+          currentItemPaths.add(new ItemPath(localPath, serverPaths.iterator().next()));
+        }
+        else {
+          for (String serverPath : serverPaths) {
+            // isDirectory = true since (child) mappings can be set for folders, not for files
+            //noinspection ConstantConditions
+            currentItemPaths.add(new ItemPath(workspace.findLocalPathByServerPath(serverPath, true), serverPath));
+          }
+        }
       }
       processor.process(workspace, currentItemPaths);
     }
