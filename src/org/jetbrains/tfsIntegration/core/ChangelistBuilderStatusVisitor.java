@@ -66,7 +66,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   }
 
   public void scheduledForDeletion(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
-    builder.processChange(new Change(TFSContentRevision.create(myWorkspace, extendedItem, null), null));
+    builder.processChange(new Change(TFSContentRevision.create(myWorkspace, extendedItem, path.getLocalPath()), null));
   }
 
   public void outOfDate(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
