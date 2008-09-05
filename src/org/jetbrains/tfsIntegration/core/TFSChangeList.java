@@ -28,8 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
@@ -189,12 +189,12 @@ public class TFSChangeList implements CommittedChangeList {
     if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
       if (changeType.contains(ChangeType.Add)) {
         TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
-      }
-      if (change.getItem().getType() == ItemType.File) {
-        TFSVcs.assertTrue(changeType.contains(ChangeType.Edit));
-      }
-      else {
-        TFSVcs.assertTrue(!changeType.contains(ChangeType.Edit));
+        if (change.getItem().getType() == ItemType.File) {
+          TFSVcs.assertTrue(changeType.contains(ChangeType.Edit));
+        }
+        else {
+          TFSVcs.assertTrue(!changeType.contains(ChangeType.Edit));
+        }
       }
       TFSVcs.assertTrue(!changeType.contains(ChangeType.Delete));
       TFSVcs.assertTrue(!changeType.contains(ChangeType.Rename));
