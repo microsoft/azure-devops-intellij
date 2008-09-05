@@ -43,6 +43,9 @@ import java.util.*;
 
 @SuppressWarnings({"AutoUnboxing"})
 public class TFSChangeList implements CommittedChangeList {
+
+  public static final boolean IDEADEV_29451_WORKAROUND = true; // report rename(a->b) as delete(a) + add(b)
+
   private TFSRepositoryLocation myLocation;
   private final TFSVcs myVcs;
   private int myRevisionNumber;
@@ -117,10 +120,14 @@ public class TFSChangeList implements CommittedChangeList {
         for (Map.Entry<FilePath, Pair<FilePath, Integer>> entry : myMovedPaths.entrySet()) {
           TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue().second);
           TFSContentRevision afterRevision = TFSContentRevision.create(entry.getValue().first, myRevisionNumber);
-          // Workaround for [IDEADEV-29451]
-          //myCachedChanges.add(new Change(beforeRevision, afterRevision));
-          myCachedChanges.add(new Change(beforeRevision, null));
-          myCachedChanges.add(new Change(null, afterRevision));
+
+          if (IDEADEV_29451_WORKAROUND) {
+            myCachedChanges.add(new Change(beforeRevision, null));
+            myCachedChanges.add(new Change(null, afterRevision));
+          }
+          else {
+            myCachedChanges.add(new Change(beforeRevision, afterRevision));
+          }
         }
       }
       catch (TfsException e) {
