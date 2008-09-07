@@ -170,7 +170,7 @@ public class ResolveConflictHelper {
   }
 
   public String acceptYours(final @NotNull Conflict conflict) throws TfsException {
-    conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, conflict.getSrclitem());
+    conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, null);
     if (myUpdatedFiles != null) {
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
     }
