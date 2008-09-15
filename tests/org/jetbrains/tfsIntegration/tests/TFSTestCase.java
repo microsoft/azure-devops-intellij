@@ -447,7 +447,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void moveFileInCommand(final FilePath file, final FilePath newParent) {
-    moveFileInCommand(file, VcsUtil.getVirtualFile(newParent.getIOFile()));
+    final VirtualFile newParentFile = VcsUtil.getVirtualFile(newParent.getIOFile());
+    Assert.assertNotNull("Target folder " + newParent.getPresentableUrl() + " not exists", newParentFile);
+    moveFileInCommand(file, newParentFile);
   }
 
   protected void deleteFileInCommand(final VirtualFile file) {
