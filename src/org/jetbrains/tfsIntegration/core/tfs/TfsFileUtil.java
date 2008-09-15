@@ -29,17 +29,19 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 
 import java.io.*;
-import java.util.*;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 // TODO review usage of getFilePath(), getVirtualFile()
 
 public class TfsFileUtil {
-
   public interface ContentWriter {
     void write(OutputStream outputStream) throws TfsException;
   }
@@ -182,12 +184,6 @@ public class TfsFileUtil {
     }
   }
 
-  public static final Comparator<FilePath> PATH_COMPARATOR = new Comparator<FilePath>() {
-    public int compare(final FilePath o1, final FilePath o2) {
-      return o1.getPath().compareTo(o2.getPath());
-    }
-  };
-
   public static void refreshAndInvalidate(final Project project, final Collection<VirtualFile> roots, boolean async) {
     refreshAndInvalidate(project, roots.toArray(new VirtualFile[roots.size()]), async);
   }
@@ -274,5 +270,16 @@ public class TfsFileUtil {
     }
     return false;
   }
+
+  public static boolean isFileWritable(FilePath localPath) {
+    VirtualFile file = localPath.getVirtualFile();
+    return file.isWritable() && !file.isDirectory();
+  }
+
+  public static boolean localItemExists(FilePath localPath) {
+    VirtualFile file = localPath.getVirtualFile();
+    return file != null && file.isValid() && file.exists();
+  }
+
 
 }

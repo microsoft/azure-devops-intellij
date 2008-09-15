@@ -17,16 +17,19 @@
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class ScheduleForDeletion {
 
@@ -40,15 +43,15 @@ public class ScheduleForDeletion {
     try {
       RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
-      final Collection<PendingChange> pendingChanges =
-        workspace.getServer().getVCS().queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+      final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
+        .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
 
-      Collection<ItemPath> revert = new ArrayList<ItemPath>();
+      Collection<String> revert = new ArrayList<String>();
       for (PendingChange pendingChange : pendingChanges) {
         EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
         if (!change.contains(ChangeType.Delete)) {
           // TODO assert for possible change types here
-          revert.add(new ItemPath(VcsUtil.getFilePath(pendingChange.getLocal()), pendingChange.getItem()));
+          revert.add(pendingChange.getItem());
         }
       }
 
@@ -62,25 +65,61 @@ public class ScheduleForDeletion {
         undoneRoots.add(undoneRoot != null ? undoneRoot : originalRoot);
       }
 
-      Map<ItemPath, ExtendedItem> serverItems = workspace.getServer().getVCS()
-        .getExtendedItems(workspace.getName(), workspace.getOwnerName(), undoneRoots, DeletedState.NonDeleted);
+      final List<FilePath> scheduleForDeletion = new ArrayList<FilePath>();
+      StatusProvider.visitByStatus(workspace, undoneRoots, false, null, new StatusVisitor() {
 
-      List<ItemPath> scheduleForDeletion = new ArrayList<ItemPath>();
-      for (Map.Entry<ItemPath, ExtendedItem> e : serverItems.entrySet()) {
-        ServerStatus serverStatus = StatusProvider.determineServerStatus(e.getValue());
-        if (serverStatus instanceof ServerStatus.Unversioned == false &&
-            serverStatus instanceof ServerStatus.Deleted == false &&
-            serverStatus instanceof ServerStatus.ScheduledForDeletion == false) {
-          scheduleForDeletion.add(e.getKey());
+        public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+          throws TfsException {
+          // ignore
         }
-      }
+
+        public void deleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
+          // ignore
+        }
+
+        public void checkedOutForEdit(final @NotNull FilePath localPath,
+                                      final boolean localItemExists,
+                                      final @NotNull ServerStatus serverStatus) throws TfsException {
+          scheduleForDeletion.add(localPath);
+        }
+
+        public void scheduledForAddition(final @NotNull FilePath localPath,
+                                         final boolean localItemExists,
+                                         final @NotNull ServerStatus serverStatus) {
+          scheduleForDeletion.add(localPath);
+        }
+
+        public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                         final boolean localItemExists,
+                                         final @NotNull ServerStatus serverStatus) {
+          // ignore
+        }
+
+        public void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+          throws TfsException {
+          scheduleForDeletion.add(localPath);
+        }
+
+        public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+          throws TfsException {
+          scheduleForDeletion.add(localPath);
+        }
+
+        public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+          throws TfsException {
+          scheduleForDeletion.add(localPath);
+        }
+
+        public void renamedCheckedOut(final @NotNull FilePath localPath,
+                                      final boolean localItemExists,
+                                      final @NotNull ServerStatus serverStatus) throws TfsException {
+          scheduleForDeletion.add(localPath);
+        }
+      });
 
       ResultWithFailures<GetOperation> schedulingForDeletionResults =
-        workspace.getServer().getVCS().scheduleForDeletion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
+        workspace.getServer().getVCS().scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
       errors.addAll(BeanHelper.getVcsExceptions(schedulingForDeletionResults.getFailures()));
-
-      workspace.getServer().getVCS()
-        .updateLocalVersionsByGetOperations(workspace.getName(), workspace.getOwnerName(), schedulingForDeletionResults.getResult());
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
         String localPath = getOperation.getSlocal();

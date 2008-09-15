@@ -161,16 +161,19 @@ public class TFSVcs extends AbstractVcs {
   public static void assertTrue(boolean condition, @NonNls String message) {
     // TODO: inline with assert statement
     LOG.assertTrue(condition, message);
+    if (!condition) {
+      error(message);
+    }
   }
 
   public static void error(@NonNls String message) {
     // TODO: inline with assert statement
     LOG.error(message);
+    throw new RuntimeException("Assertion failed: " + message);
   }
 
   public static void assertTrue(final boolean condition) {
-    // TODO: inline with assert statement
-    LOG.assertTrue(condition);
+    assertTrue(condition, "");
   }
 
   @Nullable

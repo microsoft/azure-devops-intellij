@@ -331,7 +331,7 @@ public class WorkspaceInfo {
   //  return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
   //}
 
-  public Map<ItemPath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
+  public Map<FilePath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
   }
 

@@ -16,112 +16,147 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
 
 public abstract class ServerStatus {
+  public final int localVer;
+  public final int itemId;
+  public final boolean isDirectory;
+  public @Nullable final String sourceItem;
+  public @Nullable final String targetItem;
 
-  protected final @Nullable ExtendedItem myExtendedItem;
-  
-  protected ServerStatus(final @Nullable ExtendedItem extendedItem) {
-    myExtendedItem = extendedItem;
+  protected ServerStatus(final int localVer,
+                         final int itemId,
+                         final boolean isDirectory,
+                         final String sourceItem,
+                         final String targetItem) {
+    this.localVer = localVer;
+    this.itemId = itemId;
+    this.isDirectory = isDirectory;
+    this.sourceItem = sourceItem;
+    this.targetItem = targetItem;
   }
 
-  public abstract void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException;
+  protected ServerStatus(final @NotNull PendingChange pendingChange) {
+    this(pendingChange.getVer(), pendingChange.getItemid(), pendingChange.getType() == ItemType.Folder, pendingChange.getSrcitem(),
+         pendingChange.getItem());
+  }
+
+  protected ServerStatus(final @NotNull ExtendedItem extendedItem) {
+    this(extendedItem.getLver(), extendedItem.getItemid(), extendedItem.getType() == ItemType.Folder, extendedItem.getSitem(),
+         extendedItem.getTitem());
+  }
+
+  public abstract void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+    throws TfsException;
 
   public String toString() {
     return getClass().getName().substring(getClass().getName().lastIndexOf("$") + 1);
   }
 
   public static class Unversioned extends ServerStatus {
-    protected Unversioned(final @Nullable ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected Unversioned(final @Nullable ExtendedItem item) {
+      super(0, 0, false, null, null);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.unversioned(path, myExtendedItem,  localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.unversioned(localPath, localItemExists, this);
     }
   }
 
-  public static class Deleted extends ServerStatus {
-    public Deleted(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+  /*public static class Deleted extends ServerStatus {
+    protected Deleted(final @Nullable ExtendedItem item) {
+      super(item);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.deleted(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.deleted(localPath, localItemExists, this);
     }
-  }
+  }*/
 
   public static class CheckedOutForEdit extends ServerStatus {
-    public CheckedOutForEdit(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected CheckedOutForEdit(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.checkedOutForEdit(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.checkedOutForEdit(localPath, localItemExists, this);
     }
   }
 
   public static class ScheduledForAddition extends ServerStatus {
-    public ScheduledForAddition(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected ScheduledForAddition(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
+
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.scheduledForAddition(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.scheduledForAddition(localPath, localItemExists, this);
     }
   }
 
   public static class ScheduledForDeletion extends ServerStatus {
-    public ScheduledForDeletion(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected ScheduledForDeletion(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.scheduledForDeletion(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.scheduledForDeletion(localPath, localItemExists, this);
     }
   }
 
   public static class OutOfDate extends ServerStatus {
-    public OutOfDate(final @NotNull ExtendedItem extendedItem) {
+    protected OutOfDate(final @NotNull ExtendedItem extendedItem) {
       super(extendedItem);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor visitor, boolean localItemExists) throws TfsException {
-      visitor.outOfDate(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.outOfDate(localPath, localItemExists, this);
     }
   }
 
   public static class UpToDate extends ServerStatus {
-    public UpToDate(final @NotNull ExtendedItem extendedItem) {
+    protected UpToDate(final @NotNull ExtendedItem extendedItem) {
       super(extendedItem);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.upToDate(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.upToDate(localPath, localItemExists, this);
     }
   }
 
   public static class Renamed extends ServerStatus {
-    public Renamed(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected Renamed(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.renamed(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.renamed(localPath, localItemExists, this);
     }
   }
 
   public static class RenamedCheckedOut extends ServerStatus {
-    public RenamedCheckedOut(final @NotNull ExtendedItem extendedItem) {
-      super(extendedItem);
+    protected RenamedCheckedOut(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
     }
 
-    public void visitBy(final @NotNull ItemPath path, final @NotNull StatusVisitor statusVisitor, boolean localItemExists) throws TfsException {
-      statusVisitor.renamedCheckedOut(path, myExtendedItem, localItemExists);
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.renamedCheckedOut(localPath, localItemExists, this);
     }
   }
 

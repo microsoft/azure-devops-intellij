@@ -123,7 +123,7 @@ public class ApplyGetOperations {
     }
 
     // parent folders modificating operations should be processed before children to update affected child paths correctly
-    List<GetOperation> sortedOperations = GetOperationsUtil.sortGetOperations(myOperations);
+    List<GetOperation> sortedOperations = new ArrayList<GetOperation>(myOperations);//GetOperationsUtil.sortGetOperations(myOperations);
     // TODO do we need to sort them or they come in apply order?
 
     try {

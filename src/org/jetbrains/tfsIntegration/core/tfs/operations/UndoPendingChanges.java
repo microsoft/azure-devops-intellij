@@ -16,9 +16,9 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
@@ -33,6 +33,8 @@ public class UndoPendingChanges {
 
   public static class UndoPendingChangesResult {
     public final Collection<VcsException> errors;
+
+    // TODO only local paths are used actually
     public final Map<ItemPath, ItemPath> undonePaths;
 
     public UndoPendingChangesResult(final Map<ItemPath, ItemPath> undonePaths, final Collection<VcsException> errors) {
@@ -43,16 +45,16 @@ public class UndoPendingChanges {
 
   public static UndoPendingChangesResult execute(final Project project,
                                                  final WorkspaceInfo workspace,
-                                                 final Collection<ItemPath> paths,
+                                                 final Collection<String> serverPaths,
                                                  ApplyGetOperations.DownloadMode downloadMode) {
-    if (paths.isEmpty()) {
+    if (serverPaths.isEmpty()) {
       return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
 
     // undo changes
     try {
       ResultWithFailures<GetOperation> result =
-        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), paths);
+        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), serverPaths);
 
       Collection<VcsException> errors = new ArrayList<VcsException>();
       errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));

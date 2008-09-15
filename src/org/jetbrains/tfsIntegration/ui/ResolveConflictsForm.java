@@ -74,7 +74,7 @@ public class ResolveConflictsForm {
     });
 
     myAcceptYoursButton.addActionListener(new MergeActionListener() {
-      protected void execute(final Conflict conflict) throws TfsException {
+      protected void execute(final Conflict conflict) throws TfsException, VcsException {
         myResolveConflictHelper.acceptYours(conflict);
       }
     });

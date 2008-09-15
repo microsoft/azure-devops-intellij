@@ -159,7 +159,12 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   }
 
   public void assertRenamedOrMoved(FilePath from, FilePath to) {
-    Assert.assertNotNull(toString(), getMoveChange(from, to));
+    Assert.assertNotNull("Move expected: " +
+                         ChangeHelper.getPathRemainder(from, myRootPath) +
+                         " -> " +
+                         ChangeHelper.getPathRemainder(to, myRootPath) +
+                         "\n" +
+                         toString(), getMoveChange(from, to));
   }
 
   public void assertRenamedOrMoved(FilePath from, FilePath to, String originalContent, String modifiedContent) throws VcsException {

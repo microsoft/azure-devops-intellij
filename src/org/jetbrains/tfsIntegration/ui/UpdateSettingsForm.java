@@ -70,13 +70,13 @@ public class UpdateSettingsForm {
     try {
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          final Map<ItemPath, ExtendedItem> items = workspace.getExtendedItems(paths);
+          final Map<FilePath, ExtendedItem> items = workspace.getExtendedItems(paths);
 
           listModel.addElement(workspace);
 
           ItemPath ancestor = paths.iterator().next();
-          for (Map.Entry<ItemPath, ExtendedItem> e : items.entrySet()) {
-            ancestor = getAncestor(workspace, ancestor, new ItemPath(e.getKey().getLocalPath(), e.getValue().getSitem()));
+          for (Map.Entry<FilePath, ExtendedItem> e : items.entrySet()) {
+            ancestor = getAncestor(workspace, ancestor, new ItemPath(e.getKey(), e.getValue().getSitem()));
           }
 
           myWorkspaceSettings.put(workspace, new WorkspaceSettings(ancestor));

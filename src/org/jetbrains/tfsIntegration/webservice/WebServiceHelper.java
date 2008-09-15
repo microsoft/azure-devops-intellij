@@ -40,6 +40,7 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -214,10 +215,12 @@ public class WebServiceHelper {
               d.show();
               if (d.isOK()) {
                 dialogCredentials.set(d.getCredentials());
-              } else {
+              }
+              else {
                 dialogCredentials.set(null);
               }
-            } else {
+            }
+            else {
               dialogCredentials.set(actualCredentials);
             }
           }
@@ -237,9 +240,12 @@ public class WebServiceHelper {
       }
 
       try {
-        T result = delegate.executeRequest(credentials);
+        final T result;
+        synchronized (VersionControlServer.class) {
+          result = delegate.executeRequest(credentials);
+        }
         //if (forcePrompt) {
-          CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+        CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
         //}
         return result;
       }

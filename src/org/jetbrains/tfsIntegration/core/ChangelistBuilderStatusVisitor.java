@@ -16,108 +16,119 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.StatusProvider;
-import org.jetbrains.tfsIntegration.core.tfs.StatusVisitor;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 class ChangelistBuilderStatusVisitor implements StatusVisitor {
-  private ChangelistBuilder builder;
-  private WorkspaceInfo myWorkspace;
+  private @NotNull final ChangelistBuilder myChangelistBuilder;
+  private @NotNull final WorkspaceInfo myWorkspace;
 
-  public ChangelistBuilderStatusVisitor(@NotNull ChangelistBuilder builder, final WorkspaceInfo workspace) {
-    this.builder = builder;
+  public ChangelistBuilderStatusVisitor(final @NotNull ChangelistBuilder changelistBuilder, final @NotNull WorkspaceInfo workspace) {
+    myChangelistBuilder = changelistBuilder;
     myWorkspace = workspace;
   }
 
-  public void unversioned(@NotNull final ItemPath path, final @Nullable ExtendedItem extendedItem, final boolean localItemExists) {
+  public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      myChangelistBuilder.processUnversionedFile(localPath.getVirtualFile());
     }
   }
 
-  public void checkedOutForEdit(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+  public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
     throws TfsException {
     if (localItemExists) {
-      TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, extendedItem, path.getLocalPath());
-      builder.processChange(new Change(baseRevision, CurrentContentRevision.create(path.getLocalPath())));
+      TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
+      myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)));
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 
-  public void scheduledForAddition(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
+  public void scheduledForAddition(final @NotNull FilePath localPath,
+                                   final boolean localItemExists,
+                                   final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      builder.processChange(new Change(null, new CurrentContentRevision(path.getLocalPath())));
+      myChangelistBuilder.processChange(new Change(null, new CurrentContentRevision(localPath)));
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 
-  public void scheduledForDeletion(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
-    builder.processChange(new Change(TFSContentRevision.create(myWorkspace, extendedItem, path.getLocalPath()), null));
+  public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                   final boolean localItemExists,
+                                   final @NotNull ServerStatus serverStatus) {
+    TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
+    myChangelistBuilder.processChange(new Change(baseRevision, null));
   }
 
-  public void outOfDate(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
+  public void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatusm) {
     if (localItemExists) {
-      if (StatusProvider.isFileWritable(path)) {
-        builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+      if (TfsFileUtil.isFileWritable(localPath)) {
+        myChangelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
       }
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 
-  public void deleted(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
+  public void deleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      builder.processUnversionedFile(path.getLocalPath().getVirtualFile());
+      myChangelistBuilder.processUnversionedFile(localPath.getVirtualFile());
     }
   }
 
-  public void upToDate(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists) {
+  public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      if (StatusProvider.isFileWritable(path)) {
-        builder.processModifiedWithoutCheckout(path.getLocalPath().getVirtualFile());
+      if (TfsFileUtil.isFileWritable(localPath)) {
+        myChangelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
       }
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 
-  public void renamed(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+  public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
     throws TfsException {
     if (localItemExists) {
-      ContentRevision before = TFSContentRevision.create(myWorkspace, extendedItem, null);
-      ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
-      builder.processChange(new Change(before, after));
+      // sourceItem can't be null for renamed
+      //noinspection ConstantConditions
+      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
+
+      //noinspection ConstantConditions
+      TFSContentRevision before = TFSContentRevision.create(myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
+      ContentRevision after = CurrentContentRevision.create(localPath);
+      myChangelistBuilder.processChange(new Change(before, after));
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 
-  public void renamedCheckedOut(@NotNull final ItemPath path, @NotNull final ExtendedItem extendedItem, final boolean localItemExists)
+  public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
     throws TfsException {
     if (localItemExists) {
-      ContentRevision before = TFSContentRevision.create(myWorkspace, extendedItem, null);
-      ContentRevision after = CurrentContentRevision.create(path.getLocalPath());
-      builder.processChange(new Change(before, after));
+      // sourceItem can't be null for renamed and checked out for edit
+      //noinspection ConstantConditions
+      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
+
+      //noinspection ConstantConditions
+      TFSContentRevision before = TFSContentRevision.create(myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
+      ContentRevision after = CurrentContentRevision.create(localPath);
+      myChangelistBuilder.processChange(new Change(before, after));
     }
     else {
-      builder.processLocallyDeletedFile(path.getLocalPath());
+      myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
 }

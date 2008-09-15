@@ -16,29 +16,33 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
 public interface StatusVisitor {
 
-  void unversioned(final @NotNull ItemPath path, final @Nullable ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void unversioned(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 
-  void checkedOutForEdit(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws
-                                                                                                                                TfsException;
+  void deleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus);
 
-  void scheduledForAddition(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists);
+  void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 
-  void scheduledForDeletion(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists);
+  void scheduledForAddition(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus);
 
-  void outOfDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void scheduledForDeletion(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus);
 
-  void deleted(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists);
+  void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 
-  void upToDate(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 
-  void renamed(final @NotNull ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 
-  void renamedCheckedOut(final ItemPath path, final @NotNull ExtendedItem extendedItem, final boolean localItemExists) throws TfsException;
+  void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 }

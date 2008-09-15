@@ -17,62 +17,146 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StatusProvider {
 
   public static void visitByStatus(final @NotNull WorkspaceInfo workspace,
-                                   final @NotNull List<ItemPath> paths,
-                                   final @Nullable ProgressIndicator progressIndicator,
+                                   final List<ItemPath> roots,
+                                   boolean recursive,
+                                   final @Nullable ProgressIndicator progress,
                                    final @NotNull StatusVisitor statusVisitor) throws TfsException {
-    if (paths.isEmpty()) {
+    if (roots.isEmpty()) {
       return;
     }
-    // TODO: query pending changes for all items here to handle rename/move
 
-    Map<ItemPath, ServerStatus> statuses = determineServerStatus(workspace, paths);
+    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(roots.size());
+    for (ItemPath root : roots) {
+      final VirtualFile file = root.getLocalPath().getVirtualFile();
+      RecursionType recursionType =
+        recursive && (file == null || !file.exists() || file.isDirectory()) ? RecursionType.Full : RecursionType.None;
+      itemSpecs.add(VersionControlServer.createItemSpec(root.getLocalPath(), recursionType));
+    }
 
-    for (Map.Entry<ItemPath, ServerStatus> entry : statuses.entrySet()) {
-      ServerStatus status = entry.getValue();
-      boolean localItemExists = localItemExists(entry.getKey());
-      //System.out
-      //  .println(entry.getKey().getLocalPath().getPath() + ": " + status + (localItemExists ? ", exists locally" : ", missing locally"));
-      status.visitBy(entry.getKey(), statusVisitor, localItemExists);
-      TFSProgressUtil.checkCanceled(progressIndicator);
+    VersionControlServer.ExtendedItemsAndPendingChanges extendedItemsAndPendingChanges = workspace.getServer().getVCS()
+      .getExtendedItemsAndPendingChanges(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.Any, ItemType.Any);
+
+    Map<Integer, PendingChange> pendingChanges = new HashMap<Integer, PendingChange>(extendedItemsAndPendingChanges.pendingChanges.size());
+    for (PendingChange pendingChange : extendedItemsAndPendingChanges.pendingChanges) {
+      pendingChanges.put(pendingChange.getItemid(), pendingChange);
+    }
+
+    TFSProgressUtil.checkCanceled(progress);
+
+
+    Set<Integer> processedExtendedItemsIds = new HashSet<Integer>();
+
+    for (int i = 0; i < roots.size(); i++) {
+      ItemPath root = roots.get(i);
+
+      Map<Integer, ExtendedItem> extendedItems =
+        new HashMap<Integer, ExtendedItem>(extendedItemsAndPendingChanges.extendedItems.get(i).size());
+      for (ExtendedItem extendedItem : extendedItemsAndPendingChanges.extendedItems.get(i)) {
+        extendedItems.put(extendedItem.getItemid(), extendedItem);
+      }
+
+      Collection<FilePath> localItems = new HashSet<FilePath>();
+      localItems.add(root.getLocalPath());
+      if (recursive) {
+        addExistingFilesRecursively(localItems, root.getLocalPath().getVirtualFile());
+      }
+
+      // first process all local items given
+      for (FilePath localItem : localItems) {
+        final String localPath = VersionControlPath.toTfsRepresentation(localItem.getPath());
+
+        ExtendedItem extendedItem = null;
+        PendingChange pendingChange = null;
+        for (PendingChange candidate : pendingChanges.values()) {
+          if (localPath.equals(candidate.getLocal())) {
+            pendingChanges.remove(candidate.getItemid());
+            extendedItem = extendedItems.remove(candidate.getItemid());
+            if (extendedItem == null) {
+              int tt = 0;
+            }
+            TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " + candidate.getLocal());
+            pendingChange = candidate;
+            break;
+          }
+        }
+
+        if (extendedItem == null) {
+          for (ExtendedItem candidate : extendedItems.values()) {
+            if (localPath.equals(candidate.getLocal())) {
+              extendedItem = extendedItems.remove(candidate.getItemid());
+              break;
+            }
+          }
+        }
+
+        if (extendedItem != null) {
+          if (processedExtendedItemsIds.contains(extendedItem.getItemid())) {
+            // same extended item can be reported several times for different roots in case of rename
+            continue;
+          }
+          else {
+            processedExtendedItemsIds.add(extendedItem.getItemid());
+          }
+        }
+
+        final boolean localItemExists = TfsFileUtil.localItemExists(localItem);
+        if (!localItemExists && extendedItem != null) {
+          // if path is the original one from dirtyScope, it may have invalid 'isDirectory' status
+          localItem = VcsUtil.getFilePathForDeletedFile(localPath, extendedItem.getType() == ItemType.Folder);
+        }
+        determineServerStatus(pendingChange, extendedItem).visitBy(localItem, localItemExists, statusVisitor);
+      }
+
+      if (recursive) {
+        // then care about locally deleted
+        for (ExtendedItem extendedItem : extendedItems.values()) {
+          if (processedExtendedItemsIds.contains(extendedItem.getItemid())) {
+            continue;
+          }
+          else {
+            processedExtendedItemsIds.add(extendedItem.getItemid());
+          }
+
+          PendingChange pendingChange = pendingChanges.get(extendedItem.getItemid());
+          if (pendingChange != null || extendedItem.getLocal() != null) {
+            FilePath localPath = VcsUtil.getFilePath(pendingChange != null ? pendingChange.getLocal() : extendedItem.getLocal(),
+                                                     extendedItem.getType() == ItemType.Folder);
+            determineServerStatus(pendingChange, extendedItem).visitBy(localPath, false, statusVisitor);
+          }
+        }
+      }
+
+      TFSProgressUtil.checkCanceled(progress);
     }
   }
 
-  public static Map<ItemPath, ServerStatus> determineServerStatus(WorkspaceInfo workspace, List<ItemPath> paths) throws TfsException {
-    Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
-    Map<ItemPath, ServerStatus> result = new HashMap<ItemPath, ServerStatus>(extendedItems.size());
-
-    for (Map.Entry<ItemPath, ExtendedItem> entry : extendedItems.entrySet()) {
-      final ServerStatus serverStatus;
-      if (workspace.isWorkingFolder(entry.getKey().getLocalPath())) {
-        // TODO mapping root folder should be always reported as up to date?
-        // TODO creating status instance with improper extended item bean
-        serverStatus = new ServerStatus.UpToDate(entry.getValue());
+  private static void addExistingFilesRecursively(final @NotNull Collection<FilePath> result, final @Nullable VirtualFile root) {
+    if (root != null && root.exists()) {
+      result.add(TfsFileUtil.getFilePath(root));
+      if (root.isDirectory()) {
+        for (VirtualFile child : root.getChildren()) {
+          addExistingFilesRecursively(result, child);
+        }
       }
-      else {
-        serverStatus = determineServerStatus(entry.getValue());
-      }
-      result.put(entry.getKey(), serverStatus);
     }
-    return result;
   }
 
-  public static ServerStatus determineServerStatus(final ExtendedItem item) {
+  private static ServerStatus determineServerStatus(final @Nullable PendingChange pendingChange, final @Nullable ExtendedItem item) {
     if (item == null || (item.getLocal() == null && EnumMask.fromString(ChangeType.class, item.getChg()).isEmpty())) {
       // report not downloaded items as unversioned
       return new ServerStatus.Unversioned(item);
@@ -81,6 +165,11 @@ public class StatusProvider {
       EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
       change.remove(ChangeType.Lock, ChangeType.Branch);
 
+      // in spite of extendedItem.getChg() is not empty, pending change can be
+      if (change.isEmpty() ? pendingChange != null : pendingChange == null) {
+        int t = 0;
+      }
+      TFSVcs.assertTrue(change.isEmpty() ? pendingChange == null : pendingChange != null, "pending change exists or missing unexpecteldy");
       //if (item.getDid() != Integer.MIN_VALUE) {
       //  TFSVcs.assertTrue(change.isEmpty());
       //  return new ServerStatus.Deleted(item);
@@ -97,12 +186,13 @@ public class StatusProvider {
       }
       else if (change.contains(ChangeType.Merge)) {
         if (item.getLatest() == Integer.MIN_VALUE) {
-          return new ServerStatus.ScheduledForAddition(item);
+          return new ServerStatus.ScheduledForAddition(pendingChange);
         }
         else if (change.contains(ChangeType.Rename)) {
-          return new ServerStatus.RenamedCheckedOut(item);
-        } else {
-          return new ServerStatus.CheckedOutForEdit(item);
+          return new ServerStatus.RenamedCheckedOut(pendingChange);
+        }
+        else {
+          return new ServerStatus.CheckedOutForEdit(pendingChange);
         }
       }
       else if (change.contains(ChangeType.Add)) {
@@ -110,45 +200,36 @@ public class StatusProvider {
         TFSVcs.assertTrue(change.contains(ChangeType.Encoding));
         TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
-        return new ServerStatus.ScheduledForAddition(item);
+        return new ServerStatus.ScheduledForAddition(pendingChange);
       }
       else if (change.contains(ChangeType.Delete)) {
 //          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete)); // NOTE: may come with "Lock" change 
         //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
         //TFSVcs.assertTrue(item.getLocal() == null);
-        return new ServerStatus.ScheduledForDeletion(item);
+        return new ServerStatus.ScheduledForDeletion(pendingChange);
       }
       else if (change.contains(ChangeType.Edit) && !change.contains(ChangeType.Rename)) {
         TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLocal() != null);
-        return new ServerStatus.CheckedOutForEdit(item);
+        return new ServerStatus.CheckedOutForEdit(pendingChange);
       }
       else if (change.contains(ChangeType.Rename) && !change.contains(ChangeType.Edit)) {
-        return new ServerStatus.Renamed(item);
+        return new ServerStatus.Renamed(pendingChange);
       }
       else if (change.contains(ChangeType.Rename) && change.contains(ChangeType.Edit)) {
         TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLocal() != null);
-        return new ServerStatus.RenamedCheckedOut(item);
+        return new ServerStatus.RenamedCheckedOut(pendingChange);
       }
       //}
     }
 
     TFSVcs.LOG.error("Uncovered case for item " + (item.getLocal() != null ? item.getLocal() : item.getTitem()));
+    //noinspection ConstantConditions
     return null;
-  }
-
-  private static boolean localItemExists(ItemPath itemPath) {
-    VirtualFile file = itemPath.getLocalPath().getVirtualFile();
-    return file != null && file.isValid() && file.exists();
-  }
-
-  public static boolean isFileWritable(ItemPath itemPath) {
-    VirtualFile file = itemPath.getLocalPath().getVirtualFile();
-    return file.isWritable() && !file.isDirectory();
   }
 
 }

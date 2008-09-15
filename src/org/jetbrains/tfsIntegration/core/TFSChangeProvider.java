@@ -18,20 +18,14 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * TODO important cases
@@ -61,6 +55,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
     progress.setText("Processing changes");
 
+    // process only roots, filter out child items since requests are recursive anyway
     RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
     roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
     roots.addAll(dirtyScope.getDirtyFiles());
@@ -69,106 +64,12 @@ public class TFSChangeProvider implements ChangeProvider {
       // ingore orphan roots here
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          processWorkspace(workspace, paths, builder, progress);
+          StatusProvider.visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(builder, workspace));
         }
       });
     }
     catch (TfsException e) {
       throw new VcsException(e.getMessage(), e);
-    }
-  }
-
-  //  TODO FIXME respect nearest mapping here!!!
-  private static void processWorkspace(final @NotNull WorkspaceInfo workspace,
-                                       final List<ItemPath> roots,
-                                       ChangelistBuilder builder,
-                                       final @Nullable ProgressIndicator progress) throws TfsException {
-    TFSProgressUtil.checkCanceled(progress);
-
-    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(roots.size());
-    for (ItemPath root : roots) {
-      final VirtualFile file = root.getLocalPath().getVirtualFile();
-      RecursionType recursionType = (file != null && file.exists() && !file.isDirectory()) ? RecursionType.None : RecursionType.Full;
-      itemSpecs.add(VersionControlServer.createItemSpec(root.getLocalPath(), recursionType));
-    }
-
-    List<List<ExtendedItem>> extendedItemsResult = workspace.getServer().getVCS()
-      .getExtendedItems(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.Any, ItemType.Any);
-
-    Map<ItemPath, ExtendedItem> local2ExtendedItem = new HashMap<ItemPath, ExtendedItem>();
-    for (int i = 0; i < roots.size(); i++) {
-      ItemPath root = roots.get(i);
-
-      Collection<ExtendedItem> serverItems = extendedItemsResult.get(i);
-      Collection<FilePath> localItems = new TreeSet<FilePath>(TfsFileUtil.PATH_COMPARATOR);
-      localItems.add(root.getLocalPath());
-      addExistingFilesRecursively(localItems, root.getLocalPath().getVirtualFile());
-
-      // find 'downloaded' server items for existing local files
-      for (FilePath localItem : localItems) {
-        if (workspace.isWorkingFolder(localItem)) {
-          // report mapping root as up to date
-          continue;
-        }
-        ExtendedItem serverItem = null;
-        for (ExtendedItem candidate : serverItems) {
-          if (VersionControlPath.toTfsRepresentation(localItem.getPath()).equals(candidate.getLocal())) {
-            serverItem = candidate;
-            break;
-          }
-        }
-
-        if (serverItem != null) {
-          serverItems.remove(serverItem);
-        }
-        local2ExtendedItem
-          .put(new ItemPath(localItem, workspace.findServerPathsByLocalPath(localItem, false).iterator().next()), serverItem);
-      }
-
-      // process locally missing items
-      for (ExtendedItem serverItem : serverItems) {
-        if (serverItem.getLocal() != null || !EnumMask.fromString(ChangeType.class, serverItem.getChg()).isEmpty()) {
-          final String localPath;
-          if (serverItem.getLocal() != null) {
-            localPath = serverItem.getLocal();
-          }
-          else {
-            //noinspection ConstantConditions
-            localPath = workspace.findLocalPathByServerPath(serverItem.getTitem(), serverItem.getType() == ItemType.Folder).getPath();
-          }
-          local2ExtendedItem.put(
-            new ItemPath(VcsUtil.getFilePathForDeletedFile(localPath, serverItem.getType() == ItemType.Folder), serverItem.getTitem()),
-            serverItem);
-        }
-      }
-    }
-
-    StatusVisitor statusVisitor = new ChangelistBuilderStatusVisitor(builder, workspace);
-    for (Map.Entry<ItemPath, ExtendedItem> entry : local2ExtendedItem.entrySet()) {
-      ItemPath itemPath = entry.getKey();
-      ExtendedItem serverItem = entry.getValue();
-      ServerStatus status = StatusProvider.determineServerStatus(serverItem);
-
-      VirtualFile file = entry.getKey().getLocalPath().getVirtualFile();
-      boolean localItemExists = file != null && file.exists();
-      if (!localItemExists && serverItem != null) {
-        // if path is the original one from dirtyScope, it may have invalid 'isDirectory' status
-        itemPath = new ItemPath(
-          VcsUtil.getFilePathForDeletedFile(itemPath.getLocalPath().getPath(), serverItem.getType() == ItemType.Folder),
-          itemPath.getServerPath());
-      }
-      status.visitBy(itemPath, statusVisitor, localItemExists);
-    }
-  }
-
-  private static void addExistingFilesRecursively(final @NotNull Collection<FilePath> result, final @Nullable VirtualFile root) {
-    if (root != null && root.exists()) {
-      result.add(TfsFileUtil.getFilePath(root));
-      if (root.isDirectory()) {
-        for (VirtualFile child : root.getChildren()) {
-          addExistingFilesRecursively(result, child);
-        }
-      }
     }
   }
 

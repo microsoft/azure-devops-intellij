@@ -38,7 +38,9 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.ConflictData;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 // TODO use VersionControlPath.toTfsRepresentation() instead of FileUtil.toSystemDependentName() to assign conflict data paths
@@ -63,7 +65,7 @@ public class ResolveConflictHelper {
   public void conflictResolved(final Conflict conflict,
                                final ResolutionType nameResolutionType,
                                final ResolutionType contentResolutionType,
-                               final String newLocalPath) throws TfsException {
+                               final String newLocalPath) throws TfsException, VcsException {
     Resolution resolution = Resolution.AcceptMerge;
     if (contentResolutionType == ResolutionType.ACCEPT_YOURS && nameResolutionType == ResolutionType.ACCEPT_YOURS) {
       resolution = Resolution.AcceptYours;
@@ -99,8 +101,16 @@ public class ResolveConflictHelper {
     if (getOperations != null && getOperations.getGetOperation() != null) {
       ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
         .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.ALLOW;
-      ApplyGetOperations
+      final Collection<VcsException> applyErrors = ApplyGetOperations
         .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode, operationType);
+
+      if (!applyErrors.isEmpty()) {
+        Collection<String> messages = new ArrayList<String>(applyErrors.size());
+        for (VcsException e : applyErrors) {
+          messages.addAll(Arrays.asList(e.getMessages()));
+        }
+        throw new VcsException(messages);
+      }
     }
   }
 
@@ -169,7 +179,7 @@ public class ResolveConflictHelper {
     return localName;
   }
 
-  public String acceptYours(final @NotNull Conflict conflict) throws TfsException {
+  public String acceptYours(final @NotNull Conflict conflict) throws TfsException, VcsException {
     conflictResolved(conflict, ResolutionType.ACCEPT_YOURS, ResolutionType.ACCEPT_YOURS, null);
     if (myUpdatedFiles != null) {
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
@@ -177,7 +187,7 @@ public class ResolveConflictHelper {
     return conflict.getSrclitem();
   }
 
-  public String acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException {
+  public String acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException, VcsException {
     conflictResolved(conflict, ResolutionType.ACCEPT_THEIRS, ResolutionType.ACCEPT_THEIRS, null);
     return conflict.getTgtlitem();
   }

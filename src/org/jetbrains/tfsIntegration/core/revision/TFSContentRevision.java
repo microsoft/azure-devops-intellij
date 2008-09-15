@@ -30,7 +30,6 @@ import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
@@ -81,43 +80,31 @@ public abstract class TFSContentRevision implements ContentRevision {
   }
 
   public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace,
-                                          final @NotNull ExtendedItem extendedItem,
-                                          final @Nullable FilePath pathToOverride) {
+                                          final @NotNull FilePath localPath,
+                                          final int changeset,
+                                          final int itemId) {
     return new TFSContentRevision(workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
-        int version = extendedItem.getLver() != Integer.MIN_VALUE ? extendedItem.getLver() : extendedItem.getLatest();
-        return workspace.getServer().getVCS().queryItemById(extendedItem.getItemid(), version, true);
+        return workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
       }
 
       @NotNull
       public FilePath getFile() {
-        if (pathToOverride != null) {
-          return pathToOverride;
-        }
-        else {
-          try {
-            //noinspection ConstantConditions
-            return workspace.findLocalPathByServerPath(extendedItem.getSitem(), extendedItem.getType() == ItemType.Folder);
-          }
-          catch (TfsException e) {
-            //noinspection ConstantConditions
-            return null;
-          }
-        }
+        return localPath;
       }
 
       @NotNull
       public VcsRevisionNumber getRevisionNumber() {
-        return new VcsRevisionNumber.Int(extendedItem.getLver());
+        return new VcsRevisionNumber.Int(changeset);
       }
     };
   }
 
-  public static TFSContentRevision create(final @NotNull FilePath path, final int changeset) throws TfsException {
-    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(path, false);
+  public static TFSContentRevision create(final @NotNull FilePath localPath, final int changeset) throws TfsException {
+    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
     if (workspaces.isEmpty()) {
-      throw new OperationFailedException("Cannot find mapping for item " + path.getPresentableUrl());
+      throw new OperationFailedException("Cannot find mapping for item " + localPath.getPresentableUrl());
     }
 
     final WorkspaceInfo workspace = workspaces.iterator().next();
@@ -125,8 +112,8 @@ public abstract class TFSContentRevision implements ContentRevision {
       @Nullable
       protected Item getItem() throws TfsException {
         return workspace.getServer().getVCS().queryItem(workspace.getName(), workspace.getOwnerName(),
-                                                        VersionControlPath.toTfsRepresentation(path), new ChangesetVersionSpec(changeset),
-                                                        DeletedState.Any, true);
+                                                        VersionControlPath.toTfsRepresentation(localPath),
+                                                        new ChangesetVersionSpec(changeset), DeletedState.Any, true);
       }
 
       @NotNull
@@ -136,7 +123,7 @@ public abstract class TFSContentRevision implements ContentRevision {
 
       @NotNull
       public FilePath getFile() {
-        return path;
+        return localPath;
       }
     };
   }
