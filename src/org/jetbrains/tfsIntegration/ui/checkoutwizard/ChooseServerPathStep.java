@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
 
   private final ServerPathForm myPathForm;
 
-  public ChooseServerPathStep(final CheckoutWizardModel model, Project project) {
+  public ChooseServerPathStep(final CheckoutWizardModel model) {
     super("Choose Source Path", model);
     myPathForm = new ServerPathForm(new ServerTree.PathFilter() {
       public boolean isAcceptablePath(final @NotNull String path) {

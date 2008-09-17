@@ -56,8 +56,8 @@ public class TFSCheckoutProvider implements CheckoutProvider {
     final CheckoutWizardModel model = new CheckoutWizardModel();
     List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model),
                                                    new ChooseWorkspaceStep(project, model),
-                                                   new ChooseLocalAndServerPathsStep(model, project),
-                                                   new ChooseServerPathStep(model, project), new SummaryStep(model));
+                                                   new ChooseLocalAndServerPathsStep(model),
+                                                   new ChooseServerPathStep(model), new SummaryStep(model));
     CheckoutWizard w = new CheckoutWizard(project, steps, model);
     w.show();
 

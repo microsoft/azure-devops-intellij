@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui.abstractwizard;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<Abstr
     }
   };
 
-  public AbstractWizard(String title, Project project, List<? extends AbstractWizardStep> steps) {
+  public AbstractWizard(String title, @Nullable Project project, List<? extends AbstractWizardStep> steps) {
     super(title, project);
     myTitle = title;
 

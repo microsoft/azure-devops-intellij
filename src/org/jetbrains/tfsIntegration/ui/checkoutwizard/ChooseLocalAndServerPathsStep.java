@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +30,7 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
 
   private final LocalAndServerPathsForm myPathsForm;
 
-  public ChooseLocalAndServerPathsStep(final CheckoutWizardModel model, final @NotNull Project project) {
+  public ChooseLocalAndServerPathsStep(final CheckoutWizardModel model) {
     super("Choose Source and Destination Paths", model);
     myPathsForm = new LocalAndServerPathsForm();
     myPathsForm.addListener(new LocalAndServerPathsForm.Listener() {
