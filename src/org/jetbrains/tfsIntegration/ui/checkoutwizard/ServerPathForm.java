@@ -22,22 +22,26 @@ import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import java.awt.*;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerPathForm {
-
   public interface Listener {
+
     void serverPathChanged();
+
   }
 
   private ServerTree myServerTree;
   private JLabel myTitleLabel;
   private JLabel myMessageLabel;
   private JPanel myContentPanel;
+  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final @Nullable ServerTree.PathFilter myPathFilter;
 
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  public ServerPathForm(final ServerTree.PathFilter pathFilter) {
+    myPathFilter = pathFilter;
+  }
 
   private void createUIComponents() {
     myServerTree = new ServerTree(true);
@@ -49,14 +53,8 @@ public class ServerPathForm {
     });
   }
 
-  public void setPathFilter(final @Nullable ServerTree.PathFilter pathFilter) {
-    myServerTree.setPathFilter(pathFilter);
-  }
-
-  public void setServer(ServerInfo server) {
-    myServerTree.setServer(server);
-    String labelText = MessageFormat.format("Source path at {0}", server.getUri());
-    myTitleLabel.setText(labelText);
+  public void configure(ServerInfo server, String initialPath) {
+    myServerTree.configure(server, initialPath, myPathFilter);
   }
 
   public JPanel getContentPanel() {
@@ -66,10 +64,6 @@ public class ServerPathForm {
   @Nullable
   public String getServerPath() {
     return myServerTree.getSelectedPath();
-  }
-
-  public void setServerPath(final String serverPath) {
-    myServerTree.setSelectedPath(serverPath, true);
   }
 
   public void addListener(Listener listener) {

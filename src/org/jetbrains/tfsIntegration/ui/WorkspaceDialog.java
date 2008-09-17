@@ -27,6 +27,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
@@ -39,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 
 // TODO: mnemonics i18n?
@@ -319,7 +321,15 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myFoldersTable.getColumn(Column.ServerPath.getCaption()).setCellEditor(new PathCellEditor(new PathCellEditor.ButtonDelegate() {
 
       public String processButtonClick(final String initialText) {
-        ServerBrowserDialog d = new ServerBrowserDialog("Choose Server Folder", myProject, myWorkspace.getServer(), initialText, true);
+        ServerBrowserDialog d;
+        try {
+          getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+          d = new ServerBrowserDialog("Choose Server Folder", myProject, myWorkspace.getServer(), initialText, true,
+                                      Collections.<ServerBrowserAction>emptyList());
+        }
+        finally {
+          getContentPane().setCursor(Cursor.getDefaultCursor());
+        }
         d.show();
         if (d.isOK()) {
           final String selectedPath = d.getSelectedPath();

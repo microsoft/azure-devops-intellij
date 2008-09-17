@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,10 +33,9 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
 
   private final ServerPathForm myPathForm;
 
-  public ChooseServerPathStep(final CheckoutWizardModel model) {
+  public ChooseServerPathStep(final CheckoutWizardModel model, Project project) {
     super("Choose Source Path", model);
-    myPathForm = new ServerPathForm();
-    myPathForm.setPathFilter(new ServerTree.PathFilter() {
+    myPathForm = new ServerPathForm(new ServerTree.PathFilter() {
       public boolean isAcceptablePath(final @NotNull String path) {
         return isAcceptable(path);
       }
@@ -77,9 +77,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
   }
 
   public void _init() {
-    myPathForm.setServer(myModel.getServer());
-    myPathForm.setServerPath(myModel.getServerPath());
-
+    myPathForm.configure(myModel.getServer(), myModel.getServerPath());
     validate();
   }
 
@@ -107,21 +105,22 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
   private void validate() {
     String serverPath = myPathForm.getServerPath();
     if (serverPath == null || serverPath.length() == 0) {
-      myPathForm.setErrorMessage("Server serverPath is empty");
-    } else {
+      myPathForm.setErrorMessage("Server path is empty");
+    }
+    else {
       try {
         final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true);
         if (localPath != null) {
           String message = MessageFormat.format("Server path ''{0}'' is mapped to ''{1}''", serverPath, localPath.getPresentableUrl());
           myPathForm.setMessage(message);
-        } else {
+        }
+        else {
           String message = MessageFormat.format("No mapping found for ''{0}''", serverPath);
           myPathForm.setErrorMessage(message);
         }
       }
       catch (TfsException e) {
         myPathForm.setErrorMessage(MessageFormat.format("Failed to connect to server. {0}", e.getMessage()));
-        return;
       }
     }
   }

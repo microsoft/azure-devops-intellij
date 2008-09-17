@@ -23,14 +23,6 @@ public class VersionControlPath {
   public static final String PATH_SEPARATOR = "" + PATH_SEPARATOR_CHAR;
   public static final String ROOT_FOLDER = "$/";
 
-  public static boolean isServerItem(final String item) {
-    return item.startsWith(ROOT_FOLDER);
-  }
-
-  //public static String toServerPath(final @NotNull String localPath) {
-  //  return localPath.replaceAll("[\\\\]", PATH_SEPARATOR).replaceAll("[/]*$", "");
-  //}
-
   // TODO consider FileUtil.toSystemDependentPath()
 
   public static String toTfsRepresentation(FilePath localPath) {

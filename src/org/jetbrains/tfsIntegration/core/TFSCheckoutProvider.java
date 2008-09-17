@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -50,11 +52,12 @@ import java.util.List;
 public class TFSCheckoutProvider implements CheckoutProvider {
 
   public void doCheckout(@Nullable final Listener listener) {
-    Project project = null; // TODO: use the right project
+    Project project = DataKeys.PROJECT.getData(DataManager.getInstance().getDataContext());
     final CheckoutWizardModel model = new CheckoutWizardModel();
-    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model), new ChooseWorkspaceStep(project, model),
-                                                   new ChooseLocalAndServerPathsStep(model), new ChooseServerPathStep(model),
-                                                   new SummaryStep(model));
+    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model),
+                                                   new ChooseWorkspaceStep(project, model),
+                                                   new ChooseLocalAndServerPathsStep(model, project),
+                                                   new ChooseServerPathStep(model, project), new SummaryStep(model));
     CheckoutWizard w = new CheckoutWizard(project, steps, model);
     w.show();
 

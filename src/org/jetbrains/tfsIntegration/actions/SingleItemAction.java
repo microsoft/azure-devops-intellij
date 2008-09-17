@@ -55,18 +55,17 @@ public abstract class SingleItemAction extends AnAction {
 
 
   public void update(final AnActionEvent e) {
-    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
-    e.getPresentation().setEnabled(isEnabled(files));
+    e.getPresentation().setEnabled(isEnabled(VcsUtil.getOneVirtualFile(e)));
   }
 
 
-  protected boolean isEnabled(final VirtualFile[] files) {
-    if (files == null || files.length != 1) {
+  protected boolean isEnabled(final VirtualFile file) {
+    if (file == null) {
       return false;
     }
 
     try {
-      return TfsUtil.getExtendedItem(TfsFileUtil.getFilePath(files[0])) != null;
+      return TfsUtil.getExtendedItem(TfsFileUtil.getFilePath(file)) != null;
     }
     catch (TfsException e) {
       // skip error handling

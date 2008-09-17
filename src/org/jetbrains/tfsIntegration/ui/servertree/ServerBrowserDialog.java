@@ -22,45 +22,41 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 
 import javax.swing.*;
-
+import java.awt.*;
+import java.util.Collection;
 
 public class ServerBrowserDialog extends DialogWrapper {
   private final ServerInfo myServer;
+  private final String myInitialPath;
   private final boolean myFoldersOnly;
-  private final ServerTree.PathFilter myPathFilter;
-  private ServerTree myServerTree;
+  private ServerBrowserForm myForm;
+  private final Collection<? extends ServerBrowserAction> myActions;
 
-  public ServerBrowserDialog(String title, final Project project, ServerInfo server, String initialPath, final boolean foldersOnly) {
-    this(title, project, server, initialPath, foldersOnly, null);
-  }
 
   public ServerBrowserDialog(String title,
                              final Project project,
                              ServerInfo server,
-                             String initialPath,
-                             final boolean foldersOnly,
-                             ServerTree.PathFilter pathFilter) {
+                             @Nullable String initialPath,
+                             final boolean foldersOnly, final Collection<? extends ServerBrowserAction> actions) {
     super(project, false);
     myServer = server;
+    myInitialPath = initialPath;
     myFoldersOnly = foldersOnly;
-    myPathFilter = pathFilter;
+    myActions = actions;
 
     setTitle(title);
-    setSize(500, 400);
     init();
-    // TODO support initial path
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myServerTree = new ServerTree(myFoldersOnly);
-    myServerTree.setPathFilter(myPathFilter);
-    myServerTree.setServer(myServer);
-    return myServerTree.getContentPanel();
+    myForm = new ServerBrowserForm(myFoldersOnly, myServer, myInitialPath, null, myActions);
+    myForm.getContentPanel().setPreferredSize(new Dimension(400, 500));
+    return myForm.getContentPanel();
   }
 
   @Nullable
   public String getSelectedPath() {
-    return myServerTree.getSelectedPath();
+    return myForm.getSelectedPath();
   }
 }

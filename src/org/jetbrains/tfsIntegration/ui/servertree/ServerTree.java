@@ -20,16 +20,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.ui.deferredtree.DeferredTree;
+import org.jetbrains.tfsIntegration.ui.deferredtree.SelectedPath;
 
 import javax.swing.*;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.*;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Collection;
 import java.util.List;
-import java.util.StringTokenizer;
 
 public class ServerTree {
 
@@ -45,52 +45,52 @@ public class ServerTree {
 
   private final boolean myFoldersOnly;
   private JPanel myContentPanel;
-  private JTree myTree;
+  private DeferredTree<Item> myTree;
   private final List<SelectionListener> mySelectionListeners = new ArrayList<SelectionListener>();
-  private @Nullable PathFilter myPathFiler;
 
   public ServerTree(final boolean foldersOnly) {
     myFoldersOnly = foldersOnly;
   }
 
   private void createUIComponents() {
-    myTree = new JTree();
+    myTree = new DeferredTree<Item>();
     myTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     myTree.setExpandsSelectedPaths(true);
-    myTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
-      public void valueChanged(final TreeSelectionEvent e) {
+    myTree.addListener(new DeferredTree.Listener<Item>() {
+      public void selectionChanged(final Collection<SelectedPath<Item>> selection) {
         fireSelectionChanged(getSelectedPath());
-      }
-    });
-
-    myTree.setCellRenderer(new DefaultTreeCellRenderer() {
-      public Component getTreeCellRendererComponent(final JTree tree,
-                                                    final Object value,
-                                                    final boolean sel,
-                                                    final boolean expanded,
-                                                    final boolean leaf,
-                                                    final int row,
-                                                    final boolean hasFocus) {
-        Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-        if (value instanceof ServerTreeNode == false) {
-          return component;
-        }
-
-        ServerTreeNode node = (ServerTreeNode)value;
-        if (myFoldersOnly && node.isLeaf()) {
-          setIcon(getClosedIcon());
-        }
-        if (myPathFiler != null && !myPathFiler.isAcceptablePath(node.getFullPath())) {
-          component.setForeground(DISABLED_COLOR);
-        }
-        return component;
       }
     });
   }
 
-  public void setServer(ServerInfo server) {
-    TreeNode rootNode = new ServerTreeNode(server, VersionControlPath.ROOT_FOLDER, myFoldersOnly);
-    ((DefaultTreeModel)myTree.getModel()).setRoot(rootNode);
+  public void configure(final @NotNull ServerInfo server, final @Nullable String pathToSelect, final @Nullable PathFilter pathFilter) {
+    final Item[] itemsToSelect;
+    if (pathToSelect != null) {
+      final String[] tokens = pathToSelect.split(VersionControlPath.PATH_SEPARATOR);
+      List<Item> items = new ArrayList<Item>(tokens.length);
+      for (String token : tokens) {
+        final Item item;
+        if (items.isEmpty()) {
+          item = ServerTreeContentProvider.ROOT;
+        }
+        else {
+          item = new Item();
+          String parentPath = items.get(items.size() - 1).getItem();
+          if (!parentPath.endsWith(VersionControlPath.PATH_SEPARATOR)) {
+            parentPath += VersionControlPath.PATH_SEPARATOR;
+          }
+          item.setItem(parentPath + token);
+        }
+        items.add(item);
+      }
+      itemsToSelect = items.toArray(new Item[items.size()]);
+    }
+    else {
+      itemsToSelect = new Item[0];
+    }
+
+    myTree.setContentProvider(new ServerTreeContentProvider(server, myFoldersOnly), itemsToSelect);
+    myTree.setLabelProvider(new ServerTreeLabelProvider(server.getUri().toString(), pathFilter));
   }
 
   public JPanel getContentPanel() {
@@ -99,60 +99,23 @@ public class ServerTree {
 
   @Nullable
   public String getSelectedPath() {
-    if (myTree.getSelectionPath() != null) {
-      if (myTree.getSelectionPath().getLastPathComponent() instanceof ServerTreeNode) {
-        final ServerTreeNode node = (ServerTreeNode)myTree.getSelectionPath().getLastPathComponent();
-        return node.getFullPath();
+    if (!myTree.getSelectedPaths().isEmpty()) {
+      final SelectedPath<Item> selectedPath = myTree.getSelectedPaths().iterator().next();
+      final Item deepestRealItem = selectedPath.getRealNodes().get(selectedPath.getRealNodes().size() - 1);
+      StringBuilder path = new StringBuilder(deepestRealItem.getItem());
+      for (String virtualItem : selectedPath.getVirtualNodes()) {
+        if (!path.toString().endsWith(VersionControlPath.PATH_SEPARATOR)) {
+          path.append(VersionControlPath.PATH_SEPARATOR);
+        }
+        path.append(virtualItem);
       }
+      return path.toString();
     }
     return null;
   }
 
-  public void setSelectedPath(@Nullable String serverPath, boolean reload) {
-    if (serverPath == null) {
-      serverPath = VersionControlPath.ROOT_FOLDER;
-    }
-
-    // TODO: refactor
-    StringTokenizer tokenizer = new StringTokenizer(serverPath, "/");
-    LinkedList<String> paths = new LinkedList<String>();
-    while (tokenizer.hasMoreTokens()) {
-      String token = tokenizer.nextToken();
-      if (paths.isEmpty()) {
-        paths.add(token + "/");
-      }
-      else {
-        String prevPath = paths.getLast();
-        paths.add(prevPath + (prevPath.endsWith("/") ? "" : "/") + token);
-      }
-    }
-
-    ServerTreeNode root = (ServerTreeNode)myTree.getModel().getRoot();
-    if (paths.isEmpty() || !VersionControlPath.ROOT_FOLDER.equals(paths.getFirst())) {
-      // wrong path --- empty or not starts with "$/"
-      myTree.setSelectionPath(new TreePath(new TreePath(root)));
-      return;
-    }
-
-    ServerTreeNode node = (ServerTreeNode)myTree.getModel().getRoot();
-    paths.removeFirst(); // remove "$/"
-
-    // find nodes from selected path which already in tree
-    while (!paths.isEmpty()) {
-      String path = paths.getFirst();
-      if (reload) {
-        node.markOutOfDate();
-      }
-      ServerTreeNode childNode = node.findChild(path);
-      if (childNode == null) {
-        break;
-      }
-      paths.removeFirst();
-      node = childNode;
-    }
-
-    TreePath treePath = new TreePath((((DefaultTreeModel)myTree.getModel())).getPathToRoot(node));
-    myTree.setSelectionPath(treePath);
+  public void createVirtualFolder() {
+    myTree.createChild(myTree.getSelectionPath());
   }
 
   public void addSelectionListener(SelectionListener listener) {
@@ -161,10 +124,6 @@ public class ServerTree {
 
   public void removeSelectionListener(SelectionListener listener) {
     mySelectionListeners.remove(listener);
-  }
-
-  public void setPathFilter(final @Nullable PathFilter pathFilter) {
-    myPathFiler = pathFilter;
   }
 
   private void fireSelectionChanged(String selection) {

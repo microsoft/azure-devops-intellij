@@ -16,17 +16,23 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
+import java.util.Collection;
 
 public class CreateBranchForm {
   private JTextField mySourceField;
@@ -37,11 +43,19 @@ public class CreateBranchForm {
 
   public CreateBranchForm(final Project project, final WorkspaceInfo workspace, ItemPath path) {
     mySourceField.setText(path.getServerPath());
-    
+
     myTargetField.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ServerBrowserDialog d =
-          new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), myTargetField.getText(), true);
+        Collection<? extends ServerBrowserAction> actions = Arrays.asList(new CreateVirtualFolderAction());
+        ServerBrowserDialog d;
+        try {
+          myPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+          d = new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), myTargetField.getText(),
+                                      true, actions);
+        }
+        finally {
+          myPanel.setCursor(Cursor.getDefaultCursor());
+        }
         d.show();
         if (d.isOK()) {
           myTargetField.setText(d.getSelectedPath());
@@ -67,5 +81,19 @@ public class CreateBranchForm {
 
   public boolean isCreateWorkingCopies() {
     return myCreateLocalWorkingCopiesCheckBox.isSelected();
+  }
+
+  private static class CreateVirtualFolderAction extends ServerBrowserAction {
+    private CreateVirtualFolderAction() {
+      super("Create folder", IconLoader.getIcon("/actions/newFolder.png"));
+    }
+
+    public void actionPerformed(final AnActionEvent e) {
+      getServerTree().createVirtualFolder();
+    }
+
+    public void update(final AnActionEvent e) {
+      e.getPresentation().setEnabled(getServerTree().getSelectedPath() != null);
+    }
   }
 }

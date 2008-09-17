@@ -19,8 +19,8 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
@@ -29,9 +29,9 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
-import java.util.ArrayList;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LocalAndServerPathsForm {
 
@@ -83,9 +83,9 @@ public class LocalAndServerPathsForm {
     myServerTree = new ServerTree(true);
   }
 
-  public void setServer(ServerInfo server) {
-    myServerTree.setServer(server);
-    String labelText = MessageFormat.format("Source path at {0}", server.getUri()); 
+  public void configure(ServerInfo server, String initialPath) {
+    myServerTree.configure(server, initialPath, null);
+    String labelText = MessageFormat.format("Source path at {0}", server.getUri());
     myTitleLabel.setText(labelText);
   }
 
@@ -105,10 +105,6 @@ public class LocalAndServerPathsForm {
   @Nullable
   public String getServerPath() {
     return myServerTree.getSelectedPath();
-  }
-
-  public void setServerPath(final String serverPath) {
-    myServerTree.setSelectedPath(serverPath, true);
   }
 
   public void addListener(Listener listener) {

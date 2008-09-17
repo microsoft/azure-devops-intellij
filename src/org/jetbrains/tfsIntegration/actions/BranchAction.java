@@ -140,14 +140,14 @@ public class BranchAction extends SingleItemAction {
   }
 
   // TODO use base class check?
-  protected boolean isEnabled(final VirtualFile[] files) {
-    if (!super.isEnabled(files)) {
+  protected boolean isEnabled(final VirtualFile file) {
+    if (!super.isEnabled(file)) {
       return false;
     }
 
-    final FilePath localPath = TfsFileUtil.getFilePath(files[0]);
+    final FilePath localPath = TfsFileUtil.getFilePath(file);
     try {
-      return Workstation.getInstance().findWorkspace(localPath, false).isEmpty();
+      return !Workstation.getInstance().findWorkspace(localPath, false).isEmpty();
     }
     catch (TfsException e) {
       TFSVcs.LOG.error(e);

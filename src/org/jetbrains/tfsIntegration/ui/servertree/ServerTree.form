@@ -15,7 +15,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="25de6" class="javax.swing.JTree" binding="myTree" custom-create="true">
+          <component id="e8f1b" class="org.jetbrains.tfsIntegration.ui.deferredtree.DeferredTree" binding="myTree" custom-create="true">
             <constraints/>
             <properties/>
           </component>
@@ -23,4 +23,7 @@
       </scrollpane>
     </children>
   </grid>
+  <inspectionSuppressions>
+    <suppress inspection="NoLabelFor" id="1d49f"/>
+  </inspectionSuppressions>
 </form>
