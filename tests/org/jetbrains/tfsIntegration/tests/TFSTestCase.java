@@ -496,9 +496,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected static void assertFolder(FilePath file, int itemsInside) {
-    Assert.assertTrue(file.getIOFile().isDirectory());
+    Assert.assertTrue("Folder " + file.getPresentableUrl() + " not exists", file.getIOFile().exists());
+    Assert.assertTrue("Folder " + file.getPresentableUrl() + " is a file", file.getIOFile().isDirectory());
     Assert.assertTrue(file.getIOFile().canWrite());
-    Assert.assertEquals(itemsInside, file.getIOFile().list().length);
+    Assert.assertEquals("Wrong children number", itemsInside, file.getIOFile().list().length);
     Assert.assertEquals(itemsInside, file.getIOFile().list().length);
   }
 
@@ -511,7 +512,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected static void assertFile(File file, String content, boolean writable) {
-    Assert.assertTrue(file.isFile());
+    Assert.assertTrue("File " + file + " not exists", file.exists());
+    Assert.assertTrue("File " + file + " is folder", file.isFile());
+
     if (writable) {
       Assert.assertTrue("File " + file + " expected to be writable", file.canWrite());
     }
