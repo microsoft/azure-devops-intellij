@@ -63,7 +63,7 @@ public class CreateBranchForm {
       }
     });
 
-    myRevisionForm.init(project, workspace, path);
+    myRevisionForm.init(project, workspace, path.getServerPath(), path.getLocalPath().isDirectory());
   }
 
   @Nullable

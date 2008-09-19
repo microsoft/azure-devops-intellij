@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import javax.swing.*;
@@ -29,13 +28,15 @@ public class SelectChangesetDialog extends DialogWrapper {
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private SelectChangesetForm myForm;
-  private final ItemPath myPath;
+  private final String myServerPath;
+  private final boolean myRecursive;
 
-  public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final ItemPath path) {
+  public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final String serverPath, final boolean recursive) {
     super(project, true);
     myProject = project;
     myWorkspace = workspace;
-    myPath = path;
+    myServerPath = serverPath;
+    myRecursive = recursive;
 
     setOKButtonText("Choose");
     setTitle("Find Changeset");
@@ -47,7 +48,7 @@ public class SelectChangesetDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new SelectChangesetForm(myProject, myWorkspace, myPath);
+    myForm = new SelectChangesetForm(myProject, myWorkspace, myServerPath, myRecursive);
 
     myForm.addListener(new SelectChangesetForm.Listener() {
       public void selectionChanged(final Integer changeset) {

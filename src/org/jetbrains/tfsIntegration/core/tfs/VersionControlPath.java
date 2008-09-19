@@ -37,4 +37,33 @@ public class VersionControlPath {
     int secondSlashPos = serverPath.indexOf("/", ROOT_FOLDER.length());
     return serverPath.substring(0, secondSlashPos);
   }
+
+  public static boolean isUnder(String parent, String child) {
+    return parent.startsWith(child);
+  }
+
+  public static String getCommonAncestor(final String path1, final String path2) {
+    String[] path1components = getPathComponents(path1);
+    String[] path2components = getPathComponents(path2);
+
+    int lastEqualIdx = 0;
+    while (lastEqualIdx < Math.min(path1components.length, path2components.length) &&
+           path1components[lastEqualIdx].equals(path2components[lastEqualIdx])) {
+      lastEqualIdx++;
+    }
+
+    StringBuilder result = new StringBuilder();
+    for (int i = 0; i < lastEqualIdx; i++) {
+      if (result.length() > 0) {
+        result.append(PATH_SEPARATOR);
+      }
+      result.append(path1components[i]);
+    }
+    return result.toString();
+  }
+
+  private static String[] getPathComponents(final String serverPath1) {
+    return serverPath1.split(PATH_SEPARATOR);
+  }
+
 }

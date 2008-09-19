@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
@@ -48,11 +47,12 @@ public class SelectRevisionForm {
 
   private WorkspaceInfo myWorkspace;
   private Project myProject;
-  private ItemPath myPath;
+  private String myServerPath;
+  private boolean myIsDirectory;
 
-  public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final ItemPath path) {
+  public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final String serverPath, final boolean isDirectory) {
     this();
-    init(project, workspace, path);
+    init(project, workspace, serverPath, isDirectory);
   }
 
   public SelectRevisionForm() {
@@ -70,7 +70,7 @@ public class SelectRevisionForm {
 
     changesetVersionText.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myPath);
+        SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myServerPath, myIsDirectory);
         d.show();
         if (d.isOK()) {
           changesetVersionText.setText(String.valueOf(d.getChangeset()));
@@ -91,10 +91,11 @@ public class SelectRevisionForm {
     latestRadioButton.setSelected(true);
   }
 
-  public void init(Project project, final WorkspaceInfo workspace, final ItemPath path) {
+  public void init(Project project, final WorkspaceInfo workspace, final String serverPath, final boolean isDirectory) {
     myWorkspace = workspace;
     myProject = project;
-    myPath = path;
+    myServerPath = serverPath;
+    myIsDirectory = isDirectory;
   }
 
   private void updateContols() {

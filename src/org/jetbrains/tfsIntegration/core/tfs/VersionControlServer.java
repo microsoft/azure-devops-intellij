@@ -525,12 +525,13 @@ public class VersionControlServer {
   }
 
   public List<Changeset> queryHistory(final WorkspaceInfo workspace,
-                                      final ItemPath path,
+                                      final String serverPath,
+                                      final boolean recursive,
                                       final String user,
                                       final VersionSpec versionFrom,
                                       final VersionSpec versionTo) throws TfsException {
     final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
-    ItemSpec itemSpec = createItemSpec(path.getServerPath(), path.getLocalPath().isDirectory() ? RecursionType.Full : null);
+    ItemSpec itemSpec = createItemSpec(serverPath, recursive ? RecursionType.Full : null);
     return queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo,
                         Integer.MAX_VALUE);
   }

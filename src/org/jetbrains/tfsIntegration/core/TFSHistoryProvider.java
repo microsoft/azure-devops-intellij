@@ -38,8 +38,8 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 
 public class TFSHistoryProvider implements VcsHistoryProvider {
   private @NotNull final Project myProject;
@@ -97,8 +97,9 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   }
 
   private static List<VcsFileRevision> getRevisions(final ItemPath path, WorkspaceInfo workspace) throws TfsException {
-    List<Changeset> changesets =
-      workspace.getServer().getVCS().queryHistory(workspace, path, null, new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE);
+    List<Changeset> changesets = workspace.getServer().getVCS().queryHistory(workspace, path.getServerPath(),
+                                                                             path.getLocalPath().isDirectory(), null,
+                                                                             new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE);
 
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {

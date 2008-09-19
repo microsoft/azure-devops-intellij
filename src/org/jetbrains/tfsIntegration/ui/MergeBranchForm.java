@@ -79,7 +79,8 @@ public class MergeBranchForm {
     myChangesetsTable = new JTable(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 
-    mySelectRevisionForm = new SelectRevisionForm(myProject, myWorkspace, sourcePath);
+    mySelectRevisionForm =
+      new SelectRevisionForm(myProject, myWorkspace, sourcePath.getServerPath(), sourcePath.getLocalPath().isDirectory());
 
     myChangesetsPanel.add(mySelectRevisionForm.getPanel(), ChangesType.ALL.toString());
     myChangesetsPanel.add(new JScrollPane(myChangesetsTable), ChangesType.SELECTED.toString());
@@ -136,7 +137,7 @@ public class MergeBranchForm {
     });
 
     myChangesTypeCombo.setSelectedIndex(0);
-    mySelectRevisionForm.init(project, workspace, sourcePath);
+    mySelectRevisionForm.init(project, workspace, sourcePath.getServerPath(), sourcePath.getLocalPath().isDirectory());
   }
 
   public JComponent getContentPanel() {

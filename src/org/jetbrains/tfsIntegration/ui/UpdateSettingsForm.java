@@ -22,37 +22,38 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UpdateSettingsForm {
-  @NonNls private static final String EMPTY = "empty";
 
   private static class WorkspaceSettings {
-    public final ItemPath ancestor;
+    public final String serverPath;
+    public final boolean isDirectory;
     public VersionSpecBase version = LatestVersionSpec.INSTANCE;
 
-    public WorkspaceSettings(final ItemPath ancestor) {
-      this.ancestor = ancestor;
+    public WorkspaceSettings(final String serverPath, final boolean isDirectory) {
+      this.serverPath = serverPath;
+      this.isDirectory = isDirectory;
     }
   }
 
@@ -74,12 +75,21 @@ public class UpdateSettingsForm {
 
           listModel.addElement(workspace);
 
-          ItemPath ancestor = paths.iterator().next();
-          for (Map.Entry<FilePath, ExtendedItem> e : items.entrySet()) {
-            ancestor = getAncestor(workspace, ancestor, new ItemPath(e.getKey(), e.getValue().getSitem()));
+          // determine common ancestor of all the paths
+          ExtendedItem someExtendedItem = items.values().iterator().next();
+          WorkspaceSettings workspaceSettings =
+            new WorkspaceSettings(someExtendedItem.getSitem(), someExtendedItem.getType() == ItemType.Folder);
+          for (ExtendedItem extendedItem : items.values()) {
+            final String path1 = workspaceSettings.serverPath;
+            final String path2 = extendedItem.getSitem();
+            if (VersionControlPath.isUnder(path2, path1)) {
+              workspaceSettings = new WorkspaceSettings(path2, extendedItem.getType() == ItemType.Folder);
+            }
+            else if (!VersionControlPath.isUnder(path1, path2)) {
+              workspaceSettings = new WorkspaceSettings(VersionControlPath.getCommonAncestor(path1, path2), true);
+            }
           }
-
-          myWorkspaceSettings.put(workspace, new WorkspaceSettings(ancestor));
+          myWorkspaceSettings.put(workspace, workspaceSettings);
         }
       });
     }
@@ -117,7 +127,7 @@ public class UpdateSettingsForm {
         mySelectedWorkspace = ((WorkspaceInfo)myWorkspacesList.getSelectedValue());
         if (mySelectedWorkspace != null) {
           final WorkspaceSettings workspaceSettings = myWorkspaceSettings.get(mySelectedWorkspace);
-          mySelectRevisionForm.init(project, mySelectedWorkspace, workspaceSettings.ancestor);
+          mySelectRevisionForm.init(project, mySelectedWorkspace, workspaceSettings.serverPath, workspaceSettings.isDirectory);
           mySelectRevisionForm.setVersionSpec(workspaceSettings.version);
         }
         else {
@@ -162,19 +172,6 @@ public class UpdateSettingsForm {
 
   public JComponent getPanel() {
     return myPanel;
-  }
-
-  private static ItemPath getAncestor(final WorkspaceInfo workspace, final ItemPath p1, final ItemPath p2) throws TfsException {
-    if (p1.getLocalPath().isUnder(p2.getLocalPath(), false)) {
-      return p2;
-    }
-    if (p2.getLocalPath().isUnder(p1.getLocalPath(), false)) {
-      return p1;
-    }
-
-    final VirtualFile ancestor = VfsUtil.getCommonAncestor(p1.getLocalPath().getVirtualFile(), p2.getLocalPath().getVirtualFile());
-    FilePath ancestorPath = TfsFileUtil.getFilePath(ancestor);
-    return new ItemPath(ancestorPath, workspace.findServerPathsByLocalPath(ancestorPath, false).iterator().next());
   }
 
 
