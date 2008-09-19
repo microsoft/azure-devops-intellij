@@ -40,7 +40,6 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -198,19 +197,21 @@ public class WebServiceHelper {
     }
   }
 
-  // TODO dialog prompts two times on IDEA start if password was not stored
-  private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
+  private synchronized static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
+    final Credentials originalStoredCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+
     Credentials credentials = CredentialsManager.getInstance().getCredentials(serverUri);
     boolean forcePrompt = false;
     while (true) {
       if (credentials.getPassword() == null || forcePrompt) {
-        final Ref<Credentials> dialogCredentials = new Ref<Credentials>(credentials);
+        final Ref<Credentials> dialogCredentials = new Ref<Credentials>(originalStoredCredentials);
+
         Runnable runnable = new Runnable() {
           public void run() {
             // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
             Credentials actualCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
             //noinspection ConstantConditions
-            if (actualCredentials.equalsTo(dialogCredentials.get())) {
+            if (actualCredentials.equalsTo(originalStoredCredentials)) {
               final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
               d.show();
               if (d.isOK()) {
@@ -225,6 +226,7 @@ public class WebServiceHelper {
             }
           }
         };
+
         if (ApplicationManager.getApplication().isDispatchThread()) {
           runnable.run();
         }
@@ -241,12 +243,10 @@ public class WebServiceHelper {
 
       try {
         final T result;
-        synchronized (VersionControlServer.class) {
-          result = delegate.executeRequest(credentials);
-        }
-        //if (forcePrompt) {
+        TFSVcs.assertTrue(credentials.getPassword() != null);
+
+        result = delegate.executeRequest(credentials);
         CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
-        //}
         return result;
       }
       catch (Exception e) {
