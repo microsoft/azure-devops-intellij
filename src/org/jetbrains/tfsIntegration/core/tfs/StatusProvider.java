@@ -29,6 +29,8 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.*;
 
+// Note: if item is renamed (moved), same local item and pending change reported by server for source and target names
+
 public class StatusProvider {
 
   public static void visitByStatus(final @NotNull WorkspaceInfo workspace,
@@ -56,20 +58,16 @@ public class StatusProvider {
       pendingChanges.put(pendingChange.getItemid(), pendingChange);
     }
 
-    TFSProgressUtil.checkCanceled(progress);
-
-
-    Set<Integer> processedExtendedItemsIds = new HashSet<Integer>();
-
-    for (int i = 0; i < roots.size(); i++) {
-      ItemPath root = roots.get(i);
-
-      Map<Integer, ExtendedItem> extendedItems =
-        new HashMap<Integer, ExtendedItem>(extendedItemsAndPendingChanges.extendedItems.get(i).size());
-      for (ExtendedItem extendedItem : extendedItemsAndPendingChanges.extendedItems.get(i)) {
+    Map<Integer, ExtendedItem> extendedItems = new HashMap<Integer, ExtendedItem>();
+    for (List<ExtendedItem> items : extendedItemsAndPendingChanges.extendedItems) {
+      for (ExtendedItem extendedItem : items) {
         extendedItems.put(extendedItem.getItemid(), extendedItem);
       }
+    }
 
+    TFSProgressUtil.checkCanceled(progress);
+
+    for (ItemPath root : roots) {
       Collection<FilePath> localItems = new HashSet<FilePath>();
       localItems.add(root.getLocalPath());
       if (recursive) {
@@ -82,13 +80,12 @@ public class StatusProvider {
 
         ExtendedItem extendedItem = null;
         PendingChange pendingChange = null;
+
+        // TODO: what is faster: to search throughout pending changes or extended items?
+
         for (PendingChange candidate : pendingChanges.values()) {
           if (localPath.equals(candidate.getLocal())) {
-            pendingChanges.remove(candidate.getItemid());
             extendedItem = extendedItems.remove(candidate.getItemid());
-            if (extendedItem == null) {
-              int tt = 0;
-            }
             TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " + candidate.getLocal());
             pendingChange = candidate;
             break;
@@ -104,16 +101,6 @@ public class StatusProvider {
           }
         }
 
-        if (extendedItem != null) {
-          if (processedExtendedItemsIds.contains(extendedItem.getItemid())) {
-            // same extended item can be reported several times for different roots in case of rename
-            continue;
-          }
-          else {
-            processedExtendedItemsIds.add(extendedItem.getItemid());
-          }
-        }
-
         final boolean localItemExists = TfsFileUtil.localItemExists(localItem);
         if (!localItemExists && extendedItem != null) {
           // if path is the original one from dirtyScope, it may have invalid 'isDirectory' status
@@ -121,27 +108,19 @@ public class StatusProvider {
         }
         determineServerStatus(pendingChange, extendedItem).visitBy(localItem, localItemExists, statusVisitor);
       }
+      TFSProgressUtil.checkCanceled(progress);
+    }
 
-      if (recursive) {
-        // then care about locally deleted
-        for (ExtendedItem extendedItem : extendedItems.values()) {
-          if (processedExtendedItemsIds.contains(extendedItem.getItemid())) {
-            continue;
-          }
-          else {
-            processedExtendedItemsIds.add(extendedItem.getItemid());
-          }
-
-          PendingChange pendingChange = pendingChanges.get(extendedItem.getItemid());
-          if (pendingChange != null || extendedItem.getLocal() != null) {
-            FilePath localPath = VcsUtil.getFilePath(pendingChange != null ? pendingChange.getLocal() : extendedItem.getLocal(),
-                                                     extendedItem.getType() == ItemType.Folder);
-            determineServerStatus(pendingChange, extendedItem).visitBy(localPath, false, statusVisitor);
-          }
+    if (recursive) {
+      // then care about locally deleted
+      for (ExtendedItem extendedItem : extendedItems.values()) {
+        PendingChange pendingChange = pendingChanges.get(extendedItem.getItemid());
+        if (pendingChange != null || extendedItem.getLocal() != null) {
+          FilePath localPath = VcsUtil.getFilePath(pendingChange != null ? pendingChange.getLocal() : extendedItem.getLocal(),
+                                                   extendedItem.getType() == ItemType.Folder);
+          determineServerStatus(pendingChange, extendedItem).visitBy(localPath, false, statusVisitor);
         }
       }
-
-      TFSProgressUtil.checkCanceled(progress);
     }
   }
 
@@ -169,7 +148,8 @@ public class StatusProvider {
       if (change.isEmpty() ? pendingChange != null : pendingChange == null) {
         int t = 0;
       }
-      TFSVcs.assertTrue(change.isEmpty() ? pendingChange == null : pendingChange != null, "pending change exists or missing unexpecteldy");
+      TFSVcs.assertTrue(change.isEmpty() ? pendingChange == null : pendingChange != null,
+                        "pending change exists or missing unexpecteldy for " + item.getLocal());
       //if (item.getDid() != Integer.MIN_VALUE) {
       //  TFSVcs.assertTrue(change.isEmpty());
       //  return new ServerStatus.Deleted(item);

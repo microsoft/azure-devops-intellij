@@ -356,7 +356,7 @@ public class TFSFileListener extends TFSFileListenerBase {
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
           for (GetOperation getOperation : renameResult.getResult()) {
             invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal()));
-            invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
+            //invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
           }
           TfsFileUtil.invalidateRecursively(myProject, invalidate);
         }
