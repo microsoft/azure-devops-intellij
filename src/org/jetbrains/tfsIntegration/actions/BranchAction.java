@@ -28,14 +28,15 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.CreateBranchDialog;
-import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
