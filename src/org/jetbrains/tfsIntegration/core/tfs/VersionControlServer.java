@@ -23,8 +23,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -37,7 +37,6 @@ import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -772,7 +771,6 @@ public class VersionControlServer {
 
 
   public void uploadItem(final WorkspaceInfo workspaceInfo, PendingChange change) throws TfsException, IOException {
-
     final String uploadUrl = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.UPLOAD_ASMX;
     File file = new File(change.getLocal());
     long fileLength = file.length();
@@ -782,10 +780,9 @@ public class VersionControlServer {
     parts.add(new StringPart(WORKSPACE_NAME_FIELD, workspaceInfo.getName()));
     parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
     parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    change.getHash().writeTo(os);
-    parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(os.toByteArray()), "UTF-8"))); // TODO: check encoding!
-    // TODO: handle files to large to fit in a single POST
+    final byte[] hash = TfsFileUtil.calculateMD5(file);
+    parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(hash), "UTF-8"))); // TODO: check encoding!
+    // TODO: handle files too large to fit in a single POST
     parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
     FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
     parts.add(filePart);

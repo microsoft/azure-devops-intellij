@@ -33,6 +33,8 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 
 import java.io.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import java.util.List;
 // TODO review usage of getFilePath(), getVirtualFile()
 
 public class TfsFileUtil {
+
   public interface ContentWriter {
     void write(OutputStream outputStream) throws TfsException;
   }
@@ -281,5 +284,35 @@ public class TfsFileUtil {
     return file != null && file.isValid() && file.exists();
   }
 
+  public static byte[] calculateMD5(File file) throws IOException {
+    final MessageDigest digest;
+    try {
+      //noinspection HardCodedStringLiteral
+      digest = MessageDigest.getInstance("MD5");
+    }
+    catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
 
+    InputStream is = null;
+    try {
+      is = new BufferedInputStream(new FileInputStream(file));
+      byte[] buffer = new byte[8192];
+      int read;
+      while ((read = is.read(buffer)) > 0) {
+        digest.update(buffer, 0, read);
+      }
+      return digest.digest();
+    }
+    finally {
+      if (is != null) {
+        try {
+          is.close();
+        }
+        catch (IOException e) {
+          // skip
+        }
+      }
+    }
+  }
 }
