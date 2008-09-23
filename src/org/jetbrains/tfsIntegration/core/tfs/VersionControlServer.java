@@ -18,17 +18,22 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.ClientServiceClientServiceSoap12Stub;
+import org.jetbrains.tfsIntegration.stubs.GroupSecurityServiceGroupSecurityServiceSoap12Stub;
+import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
@@ -41,28 +46,36 @@ import java.rmi.RemoteException;
 import java.util.*;
 
 public class VersionControlServer {
-  private Repository myRepository;
   //private URI myUri;
   //private Guid myGuid = new Guid();
 
   //public static final String Upload = "Upload";
   //public static final String Download = "Download";
   //public static final int EncodingBinary = -1;
-  public static final String WORKSPACE_NAME_FIELD = "wsname";
-  public static final String WORKSPACE_OWNER_FIELD = "wsowner";
-  public static final String RANGE_FIELD = "range";
-  public static final String LENGTH_FIELD = "filelength";
-  public static final String HASH_FIELD = "hash";
-  public static final String SERVER_ITEM_FIELD = "item";
-  public static final String CONTENT_FIELD = "content";
+  @NonNls public static final String WORKSPACE_NAME_FIELD = "wsname";
+  @NonNls public static final String WORKSPACE_OWNER_FIELD = "wsowner";
+  @NonNls public static final String RANGE_FIELD = "range";
+  @NonNls public static final String LENGTH_FIELD = "filelength";
+  @NonNls public static final String HASH_FIELD = "hash";
+  @NonNls public static final String SERVER_ITEM_FIELD = "item";
+  @NonNls public static final String CONTENT_FIELD = "content";
 
   public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
   public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
 
+  private final RepositoryRepositorySoap12Stub myRepository;
+  private final ClientServiceClientServiceSoap12Stub myWorkItemTrackingClientService;
+  private final GroupSecurityServiceGroupSecurityServiceSoap12Stub myGroupSecurity;
+
   public VersionControlServer(URI uri) {
     //myUri = uri;
     try {
-      myRepository = new Repository(this, uri);
+      final ConfigurationContext configContext = WebServiceHelper.getStubConfigurationContext();
+      myRepository = new RepositoryRepositorySoap12Stub(configContext, uri.toString() + TFSConstants.VERSION_CONTROL_ASMX);
+      myWorkItemTrackingClientService =
+        new ClientServiceClientServiceSoap12Stub(configContext, uri.toString() + TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX);
+      myGroupSecurity =
+        new GroupSecurityServiceGroupSecurityServiceSoap12Stub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_ASMX);
     }
     catch (Exception e) {
       TFSVcs.LOG.error("Failed to initialize web service stub", e);
