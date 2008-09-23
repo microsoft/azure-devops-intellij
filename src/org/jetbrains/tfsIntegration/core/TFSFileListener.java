@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionTyp
 
 import java.util.*;
 
-public class TFSFileListener extends TFSFileListenerBase {
+public class TFSFileListener extends VcsVFSListener {
 
   public TFSFileListener(Project project, TFSVcs vcs) {
     super(project, vcs);
