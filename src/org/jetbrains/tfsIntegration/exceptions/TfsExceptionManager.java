@@ -118,6 +118,8 @@ public class TfsExceptionManager {
         return new HostNotFoundException(axisFault);
       case HttpStatus.SC_NOT_FOUND:
         return new HostNotApplicableException(axisFault);
+      case HttpStatus.SC_FORBIDDEN:
+        return new ForbiddenException(axisFault);
       default:
         return new ConnectionFailedException(axisFault, errorCode);
     }
