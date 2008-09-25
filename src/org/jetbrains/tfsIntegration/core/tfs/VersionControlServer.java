@@ -432,7 +432,6 @@ public class VersionControlServer {
   public ExtendedItemsAndPendingChanges getExtendedItemsAndPendingChanges(final String workspaceName,
                                                                           final String ownerName,
                                                                           final List<ItemSpec> itemsSpecs,
-                                                                          final DeletedState deletedState,
                                                                           final ItemType itemType) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
@@ -440,7 +439,7 @@ public class VersionControlServer {
     final Ref<PendingSet[]> pendingSetsRef = new Ref<PendingSet[]>();
     WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
-        extendedItemsRef.set(myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, deletedState, itemType)
+        extendedItemsRef.set(myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, DeletedState.NonDeleted, itemType)
           .getArrayOfExtendedItem());
         pendingSetsRef.set(myRepository.QueryPendingSets(workspaceName, ownerName, workspaceName, ownerName, arrayOfItemSpec, false)
           .getQueryPendingSetsResult().getPendingSet());
@@ -454,6 +453,7 @@ public class VersionControlServer {
       List<ExtendedItem> currentList = extendedItem.getExtendedItem() != null
                                        ? new ArrayList<ExtendedItem>(Arrays.asList(extendedItem.getExtendedItem()))
                                        : Collections.<ExtendedItem>emptyList();
+      // no need to chooseExtendedItem() since DeletedState.NonDeleted specified
       extendedItems.add(currentList);
     }
 
@@ -472,10 +472,11 @@ public class VersionControlServer {
   @Nullable
   public ExtendedItem getExtendedItem(final String workspaceName,
                                       final String ownerName,
-                                      final ItemSpec itemSpec,
+                                      final FilePath localPath,
+                                      final RecursionType recursionType,
                                       final DeletedState deletedState) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(new ItemSpec[]{itemSpec});
+    arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(localPath, recursionType)});
 
     ArrayOfExtendedItem[] extendedItems =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
@@ -489,10 +490,38 @@ public class VersionControlServer {
     //noinspection ConstantConditions
     ExtendedItem[] resultItems = extendedItems[0].getExtendedItem();
     if (resultItems != null) {
-      TFSVcs.assertTrue(resultItems.length == 1);
-      return resultItems[0];
+      return chooseExtendedItem(resultItems);
     }
+
     return null;
+  }
+
+  private static ExtendedItem chooseExtendedItem(ExtendedItem[] extendedItems) {
+    // server may report more than one extended item for given local name if item with same name was created and deleted several times
+
+    TFSVcs.assertTrue(extendedItems.length > 0);
+    if (extendedItems.length > 1) {
+      // choose item that has non-null 'local' field...
+      for (ExtendedItem candidate : extendedItems) {
+        if (candidate.getLocal() != null) {
+          return candidate;
+        }
+      }
+
+      //  ...or latest one if not found
+      ExtendedItem latest = extendedItems[0];
+      for (ExtendedItem candidate : extendedItems) {
+        if (candidate.getLocal() != null) {
+          if (candidate.getLatest() > latest.getLatest()) {
+            latest = candidate;
+          }
+        }
+      }
+      return latest;
+    }
+    else {
+      return extendedItems[0];
+    }
   }
 
   public Map<FilePath, ExtendedItem> getExtendedItems(final String workspaceName,
@@ -517,13 +546,13 @@ public class VersionControlServer {
 
     TFSVcs.assertTrue(extendedItems != null && extendedItems.length == paths.size());
     Map<FilePath, ExtendedItem> result = new HashMap<FilePath, ExtendedItem>();
+
     //noinspection ConstantConditions
     for (int i = 0; i < extendedItems.length; i++) {
       ExtendedItem[] resultItems = extendedItems[i].getExtendedItem();
       ExtendedItem item = null;
       if (resultItems != null) {
-        TFSVcs.assertTrue(resultItems.length == 1);
-        item = resultItems[0];
+        item = chooseExtendedItem(resultItems);
       }
       result.put(paths.get(i).getLocalPath(), item);
     }
@@ -782,7 +811,7 @@ public class VersionControlServer {
     parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
     final byte[] hash = TfsFileUtil.calculateMD5(file);
     parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(hash), "UTF-8"))); // TODO: check encoding!
-    // TODO: handle files too large to fit in a single POST
+// TODO: handle files too large to fit in a single POST
     parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
     FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
     parts.add(filePart);
@@ -936,53 +965,53 @@ public class VersionControlServer {
     return checkinNoteFields;
   }
 
-  //public List<List<Item>> queryItems(final String workspaceName,
-  //                                   final String ownerName,
-  //                                   final List<ItemPath> paths,
-  //                                   final VersionSpec versionSpec,
-  //                                   final DeletedState deletedState,
-  //                                   final RecursionType recursionType,
-  //                                   final ItemType itemType,
-  //                                   final boolean generateDownloadUrl) throws TfsException {
-  //  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-  //  for (ItemPath path : paths) {
-  //    ItemSpec itemSpec = new ItemSpec();
-  //    itemSpec.setItem(path.getSelectedPath());
-  //    itemSpec.setRecurse(recursionType);
-  //    itemSpecList.add(itemSpec);
-  //  }
-  //  return queryItems(workspaceName, ownerName, itemSpecList, versionSpec, deletedState, itemType, generateDownloadUrl);
-  //}
+//public List<List<Item>> queryItems(final String workspaceName,
+//                                   final String ownerName,
+//                                   final List<ItemPath> paths,
+//                                   final VersionSpec versionSpec,
+//                                   final DeletedState deletedState,
+//                                   final RecursionType recursionType,
+//                                   final ItemType itemType,
+//                                   final boolean generateDownloadUrl) throws TfsException {
+//  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+//  for (ItemPath path : paths) {
+//    ItemSpec itemSpec = new ItemSpec();
+//    itemSpec.setItem(path.getSelectedPath());
+//    itemSpec.setRecurse(recursionType);
+//    itemSpecList.add(itemSpec);
+//  }
+//  return queryItems(workspaceName, ownerName, itemSpecList, versionSpec, deletedState, itemType, generateDownloadUrl);
+//}
 
-  //public List<List<Item>> queryItems(final String workspaceName,
-  //                                   final String ownerName,
-  //                                   final List<ItemSpec> itemsSpecs,
-  //                                   final VersionSpec versionSpec,
-  //                                   final DeletedState deletedState,
-  //                                   final ItemType itemType,
-  //                                   final boolean generateDownloadUrl) throws TfsException {
-  //  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-  //  arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
-  //  List<List<Item>> result = new ArrayList<List<Item>>();
-  //  ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
-  //    public ItemSet[] executeRequest() throws RemoteException {
-  //      return myRepository.QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, itemType, generateDownloadUrl)
-  //        .getItemSet();
-  //    }
-  //  });
-  //
-  //  TFSVcs.assertTrue(items != null && items.length == itemsSpecs.size());
-  //  //noinspection ConstantConditions
-  //  for (ItemSet item : items) {
-  //    List<Item> resultItemsList = new ArrayList<Item>();
-  //    Item[] resultItems = item.getItems().getItem();
-  //    if (resultItems != null) {
-  //      resultItemsList.addAll(Arrays.asList(resultItems));
-  //    }
-  //    result.add(resultItemsList);
-  //  }
-  //  return result;
-  //}
+//public List<List<Item>> queryItems(final String workspaceName,
+//                                   final String ownerName,
+//                                   final List<ItemSpec> itemsSpecs,
+//                                   final VersionSpec versionSpec,
+//                                   final DeletedState deletedState,
+//                                   final ItemType itemType,
+//                                   final boolean generateDownloadUrl) throws TfsException {
+//  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+//  arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
+//  List<List<Item>> result = new ArrayList<List<Item>>();
+//  ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
+//    public ItemSet[] executeRequest() throws RemoteException {
+//      return myRepository.QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, itemType, generateDownloadUrl)
+//        .getItemSet();
+//    }
+//  });
+//
+//  TFSVcs.assertTrue(items != null && items.length == itemsSpecs.size());
+//  //noinspection ConstantConditions
+//  for (ItemSet item : items) {
+//    List<Item> resultItemsList = new ArrayList<Item>();
+//    Item[] resultItems = item.getItems().getItem();
+//    if (resultItems != null) {
+//      resultItemsList.addAll(Arrays.asList(resultItems));
+//    }
+//    result.add(resultItemsList);
+//  }
+//  return result;
+//}
 
   @Nullable
   public Item queryItem(final String workspaceName,
@@ -1003,7 +1032,7 @@ public class VersionControlServer {
     });
 
     TFSVcs.assertTrue(items != null && items.length == 1);
-    //noinspection ConstantConditions
+//noinspection ConstantConditions
     Item[] resultItems = items[0].getItems().getItem();
     if (resultItems != null) {
       TFSVcs.assertTrue(resultItems.length == 1);

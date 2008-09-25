@@ -22,10 +22,12 @@ import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.ui.ItemInfoDialog;
 
 import java.text.MessageFormat;
@@ -35,9 +37,8 @@ public class ItemInfoAction extends SingleItemAction {
 
   protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
     throws TfsException {
-    ItemSpec itemSpec = VersionControlServer.createItemSpec(itemPath.getLocalPath(), RecursionType.None);
     final ExtendedItem item = workspace.getServer().getVCS()
-      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemSpec, DeletedState.Any);
+      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemPath.getLocalPath(), RecursionType.None, DeletedState.Any);
     
     //noinspection ConstantConditions
     if (item.getLver() == Integer.MIN_VALUE) {

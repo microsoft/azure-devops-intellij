@@ -51,7 +51,7 @@ public class StatusProvider {
     }
 
     VersionControlServer.ExtendedItemsAndPendingChanges extendedItemsAndPendingChanges = workspace.getServer().getVCS()
-      .getExtendedItemsAndPendingChanges(workspace.getName(), workspace.getOwnerName(), itemSpecs, DeletedState.Any, ItemType.Any);
+      .getExtendedItemsAndPendingChanges(workspace.getName(), workspace.getOwnerName(), itemSpecs, ItemType.Any);
 
     Map<Integer, PendingChange> pendingChanges = new HashMap<Integer, PendingChange>(extendedItemsAndPendingChanges.pendingChanges.size());
     for (PendingChange pendingChange : extendedItemsAndPendingChanges.pendingChanges) {

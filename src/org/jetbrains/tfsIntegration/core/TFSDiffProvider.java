@@ -32,8 +32,12 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.Collection;
 
@@ -46,8 +50,29 @@ public class TFSDiffProvider implements DiffProvider {
 
   @Nullable
   public VcsRevisionNumber getLastRevision(final VirtualFile virtualFile) {
-    ExtendedItem item = TfsUtil.getExtendedItem(myProject, TfsFileUtil.getFilePath(virtualFile), TFSVcs.TFS_NAME);
-    return item != null ? new VcsRevisionNumber.Int(item.getLatest()) : VcsRevisionNumber.NULL;
+    final FilePath localPath = TfsFileUtil.getFilePath(virtualFile);
+    try {
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
+      if (workspaces.isEmpty()) {
+        return VcsRevisionNumber.NULL;
+      }
+      final WorkspaceInfo workspace = workspaces.iterator().next();
+      final ExtendedItem extendedItem = workspace.getServer().getVCS()
+        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
+      if (extendedItem == null) {
+        return VcsRevisionNumber.NULL;
+      }
+      // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
+      // so we need to query item by name
+      final Item item = workspace.getServer().getVCS()
+        .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
+                   false);
+      return item != null ? new VcsRevisionNumber.Int(item.getCs()) : VcsRevisionNumber.NULL;
+    }
+    catch (TfsException e) {
+      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      return VcsRevisionNumber.NULL;
+    }
   }
 
   @Nullable
