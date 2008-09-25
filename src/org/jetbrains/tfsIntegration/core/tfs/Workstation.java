@@ -265,7 +265,7 @@ public class Workstation {
           }
         }
         catch (TfsException e) {
-          // skip
+          // if some server failed, try next one, otherwise user will get strange error messages
         }
       }
       return result;
