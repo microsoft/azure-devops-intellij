@@ -423,8 +423,7 @@ public class TestSimpleFileOperations extends TFSTestCase {
 
     rollback(getChanges().getChanges());
 
-    getChanges().assertTotalItems(1);
-    getChanges().assertHijacked(before);
+    getChanges().assertTotalItems(0);
   }
 
   // modified [rename] -> commit -> up to date

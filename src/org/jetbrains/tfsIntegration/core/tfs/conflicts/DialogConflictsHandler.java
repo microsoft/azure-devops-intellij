@@ -15,22 +15,20 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.util.Ref;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.ui.ResolveConflictsDialog;
 
 public class DialogConflictsHandler implements ConflictsHandler {
-  public boolean resolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
-    final Ref<Integer> exitCode = new Ref<Integer>(DialogWrapper.CANCEL_EXIT_CODE);
-    Runnable runnable = new Runnable() {
+  public void resolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
+    if (resolveConflictHelper.getConflicts().isEmpty()) {
+      return;
+    }
+
+    TfsFileUtil.executeInEventDispatchThread(new Runnable() {
       public void run() {
-          ResolveConflictsDialog dialog = new ResolveConflictsDialog(resolveConflictHelper);
-          dialog.show();
-          exitCode.set(dialog.getExitCode());
+        ResolveConflictsDialog d = new ResolveConflictsDialog(resolveConflictHelper);
+        d.show();
       }
-    };
-    TfsFileUtil.executeInEventDispatchThread(runnable);
-    return exitCode.get() == DialogWrapper.OK_EXIT_CODE;
+    });
   }
 }

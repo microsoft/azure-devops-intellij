@@ -15,7 +15,7 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import org.jetbrains.tfsIntegration.ui.ConflictData;
+import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.diff.ActionButtonPresentation;
@@ -27,10 +27,10 @@ import com.intellij.peer.PeerFactory;
 
 public class DialogContentMerger implements ContentMerger {
 
-    public void mergeContent(Conflict conflict, ConflictData conflictData, Project project, VirtualFile localFile, String localPath) {
+    public void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath) {
         MergeRequest request = PeerFactory.getInstance().getDiffRequestFactory().createMergeRequest(
-                StreamUtil.convertSeparators(conflictData.serverContent), StreamUtil.convertSeparators(conflictData.localContent),
-                StreamUtil.convertSeparators(conflictData.baseContent), localFile, project, ActionButtonPresentation.createApplyButton());
+                StreamUtil.convertSeparators(contentTriplet.serverContent), StreamUtil.convertSeparators(contentTriplet.localContent),
+                StreamUtil.convertSeparators(contentTriplet.baseContent), localFile, project, ActionButtonPresentation.createApplyButton());
 
         request.setWindowTitle("Merge " + localPath);
         request.setVersionTitles(new String[]{"Server content (rev. " + conflict.getTver() + ")", "Merge result", "Local content"});

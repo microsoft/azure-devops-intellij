@@ -16,7 +16,16 @@
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.annotations.Nullable;
 
 public interface NameMerger {
-    public String mergeName(Conflict conflict);
+  
+  /**
+   * @param workspace
+   * @param conflict
+   * @return null if user cancelled
+   */
+    @Nullable
+    String mergeName(final WorkspaceInfo workspace, Conflict conflict);
 }

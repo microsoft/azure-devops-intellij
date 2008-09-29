@@ -19,5 +19,5 @@ package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 public interface ConflictsHandler {
-    boolean resolveConflicts(ResolveConflictHelper resolveConflictHelper) throws TfsException;
+    void resolveConflicts(ResolveConflictHelper resolveConflictHelper) throws TfsException;
 }

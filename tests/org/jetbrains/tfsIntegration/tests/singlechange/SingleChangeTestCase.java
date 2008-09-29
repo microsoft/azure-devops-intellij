@@ -99,7 +99,7 @@ public abstract class SingleChangeTestCase extends TFSTestCase {
     TFSChangeList changelist = historyList.get(0);
 
     Assert.assertEquals(CHILD_CHANGE_COMMIT_COMMENT, changelist.getComment());
-    Assert.assertEquals(getUsername(), changelist.getCommitterName());
+    Assert.assertEquals(getUsername().toUpperCase(), changelist.getCommitterName());
     ChangeHelper.assertContains(Collections.singletonList(change), changelist.getChanges());
   }
 

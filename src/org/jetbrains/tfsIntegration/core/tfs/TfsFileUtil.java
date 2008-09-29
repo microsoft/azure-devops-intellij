@@ -28,14 +28,11 @@ import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.exceptions.FileOperationException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -228,7 +225,7 @@ public class TfsFileUtil {
   }
 
 
-  public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter) throws TfsException {
+  public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter) throws TfsException, IOException {
     TFSVcs.assertTrue(!destination.isDirectory(), destination + " expected to be a file");
     OutputStream fileStream = null;
     try {
@@ -242,13 +239,6 @@ public class TfsFileUtil {
       //if (refreshVirtualFile) {
       //  refreshVirtualFileContents(destination);
       //}
-    }
-    catch (FileNotFoundException e) {
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''", destination.getPath());
-      throw new FileOperationException(errorMessage);
-    }
-    catch (IOException e) {
-      throw TfsExceptionManager.processException(e);
     }
     finally {
       if (fileStream != null) {

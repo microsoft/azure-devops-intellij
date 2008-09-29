@@ -84,8 +84,7 @@ public class BranchAction extends SingleItemAction {
       }
 
       final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
-        .createBranch(workspace.getName(), workspace.getOwnerName(), sourcePath, version,
-                      targetServerPath);
+        .createBranch(workspace.getName(), workspace.getOwnerName(), sourcePath, version, targetServerPath);
       if (!createBranchResult.getFailures().isEmpty()) {
         StringBuilder s = new StringBuilder("Failed to create branch:\n");
         for (Failure failure : createBranchResult.getFailures()) {
@@ -100,7 +99,7 @@ public class BranchAction extends SingleItemAction {
         ProgressManager.getInstance().run(new Task.Modal(project, "Creating target working copies", false) {
           public void run(final ProgressIndicator indicator) {
             downloadErrors.set(ApplyGetOperations.execute(project, workspace, createBranchResult.getResult(), indicator, null,
-                                                          ApplyGetOperations.DownloadMode.ALLOW, ApplyGetOperations.ProcessMode.GET));
+                                                          ApplyGetOperations.DownloadMode.ALLOW));
           }
         });
 

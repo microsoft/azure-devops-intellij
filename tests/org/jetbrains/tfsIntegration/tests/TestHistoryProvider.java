@@ -93,7 +93,7 @@ public class TestHistoryProvider extends TFSTestCase {
       final TFSChangeList changelist1 = historyList.get(1);
 
       Assert.assertEquals(comment1, changelist1.getComment());
-      Assert.assertEquals(getUsername(), changelist1.getCommitterName());
+      Assert.assertEquals(getUsername().toUpperCase(), changelist1.getCommitterName());
 
       String dump = ChangeHelper.toString(changelist1.getChanges(), mySandboxRoot);
       Assert.assertEquals(dump, 9, changelist1.getChanges().size());
@@ -111,7 +111,7 @@ public class TestHistoryProvider extends TFSTestCase {
     {
       final TFSChangeList changelist2 = historyList.get(0);
       Assert.assertEquals(comment2, changelist2.getComment());
-      Assert.assertEquals(getUsername(), changelist2.getCommitterName());
+      Assert.assertEquals(getUsername().toUpperCase(), changelist2.getCommitterName());
 
       String dump = ChangeHelper.toString(changelist2.getChanges(), mySandboxRoot);
       Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileCreated));
@@ -129,7 +129,8 @@ public class TestHistoryProvider extends TFSTestCase {
         Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathRenamed_original, fileRenamedContent));
         Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileRenamed, fileRenamedContent));
 
-        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathRenamedModified_original, fileRenamedModifiedContent1));
+        Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathRenamedModified_original,
+                                                             fileRenamedModifiedContent1));
         Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileRenamedModified, fileRenamedModifiedContent2));
 
         Assert.assertTrue(dump, ChangeHelper.containsDeleted(changelist2.getChanges(), filepathSubfolderRenamedOriginal));

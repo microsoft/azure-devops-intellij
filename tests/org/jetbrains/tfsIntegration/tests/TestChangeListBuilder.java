@@ -139,7 +139,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
       assertFileStatus(file, FileStatus.ADDED);
       return;
     }
-    Assert.fail(toString());
+    Assert.fail(file + " expected to be scheduled for addition\n" + toString());
   }
 
   public void assertScheduledForDeletion(VirtualFile file) {

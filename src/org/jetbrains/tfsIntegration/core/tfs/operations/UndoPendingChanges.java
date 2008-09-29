@@ -46,7 +46,7 @@ public class UndoPendingChanges {
   public static UndoPendingChangesResult execute(final Project project,
                                                  final WorkspaceInfo workspace,
                                                  final Collection<String> serverPaths,
-                                                 ApplyGetOperations.DownloadMode downloadMode) {
+                                                 final boolean forbidDownload) {
     if (serverPaths.isEmpty()) {
       return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
@@ -69,8 +69,11 @@ public class UndoPendingChanges {
         }
       }
 
+
+      final ApplyGetOperations.DownloadMode downloadMode =
+        forbidDownload ? ApplyGetOperations.DownloadMode.FORBID : ApplyGetOperations.DownloadMode.FORCE;
       final Collection<VcsException> applyingErrors =
-        ApplyGetOperations.execute(project, workspace, result.getResult(), null, null, downloadMode, ApplyGetOperations.ProcessMode.UNDO);
+        ApplyGetOperations.execute(project, workspace, result.getResult(), null, null, downloadMode);
       errors.addAll(applyingErrors);
       return new UndoPendingChangesResult(undonePaths, errors);
     }

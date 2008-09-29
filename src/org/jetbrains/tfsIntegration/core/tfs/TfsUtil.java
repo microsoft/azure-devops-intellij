@@ -28,6 +28,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class TfsUtil {
@@ -62,4 +63,18 @@ public class TfsUtil {
 
   }
 
+  public static VcsException collectExceptions(Collection<VcsException> exceptions) {
+    if (exceptions.size() == 1) {
+      // TODO: VcsException does not correctly support single message case?
+      return exceptions.iterator().next();
+    }
+    else {
+      Collection<String> messages = new ArrayList<String>(exceptions.size());
+      for (VcsException exception : exceptions) {
+        messages.add(exception.getMessage());
+      }
+      return new VcsException(messages);
+    }
+  }
+  
 }

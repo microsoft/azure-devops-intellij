@@ -19,35 +19,41 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 
 import javax.swing.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 public class ResolveConflictsDialog extends DialogWrapper {
-  private ResolveConflictsForm myResolveConflictsForm;
+  private final ResolveConflictHelper myResolveConflictHelper;
 
   public ResolveConflictsDialog(final ResolveConflictHelper resolveConflictHelper) {
     super(true);
+    myResolveConflictHelper = resolveConflictHelper;
     setTitle("Resolve Conflicts");
     setResizable(true);
-    myResolveConflictsForm = new ResolveConflictsForm(resolveConflictHelper);
+    setOKButtonText("Close");
     init();
+  }
+
+  protected void doOKAction() {
+    for (Conflict conflict : myResolveConflictHelper.getConflicts()) {
+      myResolveConflictHelper.skip(conflict);
+    }
+    super.doOKAction();
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    JComponent panel = myResolveConflictsForm.getPanel();
-    panel.addPropertyChangeListener(ResolveConflictsForm.CLOSE_PROPERTY, new PropertyChangeListener() {
-      public void propertyChange(final PropertyChangeEvent evt) {
-        close(OK_EXIT_CODE);
+    ResolveConflictsForm resolveConflictsForm = new ResolveConflictsForm(myResolveConflictHelper);
+    resolveConflictsForm.addListener(new ResolveConflictsForm.Listener() {
+      public void close() {
+        ResolveConflictsDialog.this.close(OK_EXIT_CODE);
       }
     });
-    return panel;
+    return resolveConflictsForm.getPanel();
   }
 
   protected Action[] createActions() {
-    setCancelButtonText("Close");
-    return new Action[]{getCancelAction()};
+    return new Action[]{getOKAction()};
   }
 }

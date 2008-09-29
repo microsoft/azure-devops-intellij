@@ -93,10 +93,6 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     return String.valueOf(myPasswordField.getPassword());
   }
 
-  protected Action[] createActions() {
-    return new Action[]{getOKAction(), getCancelAction()};
-  }
-
   protected String getDimensionServiceKey() {
     return "tfs.loginDialog";
   }

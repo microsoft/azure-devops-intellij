@@ -83,13 +83,15 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           }
           localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath(), true));
 
+          // TODO when checking out after working folder mappings were changed, GetOps may contain inappropriate 'move' operations
+
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
 
           final Collection<VcsException> applyErrors = ApplyGetOperations.execute(ProjectManager.getInstance().getDefaultProject(),
                                                                                   workspace, operations, progressIndicator, null,
-                                                                                  ApplyGetOperations.DownloadMode.ALLOW,
-                                                                                  ApplyGetOperations.ProcessMode.GET);
+                                                                                  ApplyGetOperations.DownloadMode.ALLOW);
+          // TODO: DownloadMode.FORCE?
           errors.addAll(applyErrors);
         }
         catch (TfsException e) {

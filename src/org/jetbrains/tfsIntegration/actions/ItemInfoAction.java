@@ -39,7 +39,7 @@ public class ItemInfoAction extends SingleItemAction {
     throws TfsException {
     final ExtendedItem item = workspace.getServer().getVCS()
       .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemPath.getLocalPath(), RecursionType.None, DeletedState.Any);
-    
+
     //noinspection ConstantConditions
     if (item.getLver() == Integer.MIN_VALUE) {
       final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";

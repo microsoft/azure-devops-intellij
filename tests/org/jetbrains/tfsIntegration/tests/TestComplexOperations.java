@@ -298,12 +298,11 @@ public class TestComplexOperations extends TFSTestCase {
 
     TestChangeListBuilder changes = getChanges();
 
-    changes.assertTotalItems(5);
+    changes.assertTotalItems(4);
     changes.assertUnversioned(pendingChanges.folderUnversioned);
     changes.assertUnversioned(pendingChanges.fileUnversioned);
     changes.assertUnversioned(pendingChanges.fileToAdd);
     changes.assertUnversioned(pendingChanges.folderToAdd);
-    changes.assertHijacked(pendingChanges.fileRenamedOriginal);
   }
 
   // pending changes -> delete, schedule for deletion
@@ -555,14 +554,15 @@ public class TestComplexOperations extends TFSTestCase {
       }
 
       changes.assertLocallyDeleted(replaceInPath(fileMissing, rootfolder, newRootFolder));
-      changes.assertHijacked(replaceInPath(fileHijacked, rootfolder, newRootFolder));
+      changes.assertLocallyDeleted(replaceInPath(folderMissing, rootfolder, newRootFolder));
       changes.assertUnversioned(replaceInPath(fileUnversioned, rootfolder, newRootFolder));
+      changes.assertUnversioned(replaceInPath(folderUnversioned, rootfolder, newRootFolder));
       changes.assertModified(replaceInPath(fileCheckedOut, rootfolder, newRootFolder));
+      changes.assertHijacked(replaceInPath(fileHijacked, rootfolder, newRootFolder));
       changes.assertScheduledForAddition(replaceInPath(fileToAdd, rootfolder, newRootFolder));
       changes.assertScheduledForDeletion(replaceInPath(fileToDelete, rootfolder, newRootFolder));
       changes.assertScheduledForAddition(replaceInPath(folderToAdd, rootfolder, newRootFolder));
       changes.assertScheduledForDeletion(replaceInPath(folderToDelete, rootfolder, newRootFolder));
-      changes.assertLocallyDeleted(replaceInPath(folderMissing, rootfolder, newRootFolder));
 
       if (pending) {
         changes.assertRenamedOrMoved(fileRenamedOriginal, replaceInPath(fileRenamed, rootfolder, newRootFolder));

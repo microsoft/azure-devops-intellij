@@ -59,12 +59,7 @@ public class TFSEditFileProvider implements EditFileProvider {
       throw new VcsException(e);
     }
     if (!errors.isEmpty()) {
-      Collection<String> messages = new ArrayList<String>(errors.size());
-      for (VcsException error : errors) {
-        messages.add(error.getMessage());
-      }
-      // TODO: VcsException does not correctly support single message case?
-      throw messages.size() > 1 ? new VcsException(messages) : new VcsException(messages.iterator().next());
+      throw TfsUtil.collectExceptions(errors);
     }
   }
 

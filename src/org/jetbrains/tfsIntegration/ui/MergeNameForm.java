@@ -16,58 +16,110 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.ui.DocumentAdapter;
+import org.jetbrains.annotations.Nullable;
+
 import javax.swing.*;
-import java.awt.event.ActionListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class MergeNameForm {
-  private JRadioButton myKeepLocalRadioButton;
-  private JRadioButton myTakeServerRadioButton;
-  private JRadioButton myUseAnotherRadioButton;
-  private JTextField myAnotherNameTextField;
+  public interface Listener {
+    void selectedPathChanged();
+  }
+
+  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+
+  private final String myYoursPath;
+  private final String myTheirsPath;
+
+  private JRadioButton myYoursRadioButton;
+  private JRadioButton myTheirsRadioButton;
+  private JRadioButton myUseCustomRadioButton;
+  private JTextField myCustomPathTextField;
   private JPanel myContentPanel;
-  private String myLocalName;
-  private String myServerName;
+  private JLabel myErrorLabel;
 
-  public MergeNameForm(final String localName, final String serverName) {
-    myLocalName = localName;
-    myServerName = serverName;
+  public MergeNameForm(final String yoursName, final String theirsName) {
+    myYoursPath = yoursName;
+    myTheirsPath = theirsName;
 
-    myKeepLocalRadioButton.setText(myKeepLocalRadioButton.getText() + " (" + myLocalName + ")");
-    myKeepLocalRadioButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent ae) {
-          myAnotherNameTextField.setEnabled(false);
-        }
+    myYoursRadioButton.setText(myYoursRadioButton.getText() + " (" + myYoursPath + ")");
+    myYoursRadioButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        update();
+      }
     });
 
-    myTakeServerRadioButton.setText(myTakeServerRadioButton.getText() + " (" + myServerName + ")");
-    myTakeServerRadioButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent ae) {
-          myAnotherNameTextField.setEnabled(false);
-        }
+    myTheirsRadioButton.setText(myTheirsRadioButton.getText() + " (" + myTheirsPath + ")");
+    myTheirsRadioButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        update();
+      }
     });
-    myAnotherNameTextField.setText(myLocalName);
-    myUseAnotherRadioButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent ae) {
-          myAnotherNameTextField.setEnabled(true);
-        }
+    myCustomPathTextField.setText(myYoursPath);
+    myUseCustomRadioButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent ae) {
+        update();
+      }
     });
+
+    myCustomPathTextField.setText(myYoursPath);
+    
+    myCustomPathTextField.getDocument().addDocumentListener(new DocumentAdapter() {
+      protected void textChanged(final DocumentEvent e) {
+        fireSelectedPathChanged();
+      }
+    });
+
+    myErrorLabel.setText(" ");
+  }
+
+  private void update() {
+    myCustomPathTextField.setEnabled(myUseCustomRadioButton.isSelected());
+    fireSelectedPathChanged();
   }
 
   public JComponent getPanel() {
     return myContentPanel;
   }
 
-  public String getSelectedName() {
-    if (myKeepLocalRadioButton.isSelected()) {
-      return myLocalName;
+  @Nullable
+  public String getSelectedPath() {
+    if (myYoursRadioButton.isSelected()) {
+      return myYoursPath;
     }
-    else if (myTakeServerRadioButton.isSelected()) {
-      return myServerName;
+    else if (myTheirsRadioButton.isSelected()) {
+      return myTheirsPath;
     }
-    else if (myUseAnotherRadioButton.isSelected()) {
-      return myAnotherNameTextField.getText();
+    else if (myUseCustomRadioButton.isSelected()) {
+      return myCustomPathTextField.getText();
     }
-    return null;
+    throw new IllegalStateException("Unexpected state");
   }
+
+  public void addListener(Listener listener) {
+    myListeners.add(listener);
+  }
+
+  public void removeListener(Listener listener) {
+    myListeners.remove(listener);
+  }
+
+  private void fireSelectedPathChanged() {
+    String customName = myCustomPathTextField.getText();
+    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
+    for (Listener listener : listeners) {
+      listener.selectedPathChanged();
+    }
+  }
+
+  public void setErrorText(final String errorMessage) {
+    myErrorLabel.setText(errorMessage);
+  }
+
+
 }

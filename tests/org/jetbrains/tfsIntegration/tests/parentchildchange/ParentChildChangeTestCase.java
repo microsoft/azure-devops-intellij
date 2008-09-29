@@ -302,7 +302,7 @@ public abstract class ParentChildChangeTestCase extends TFSTestCase {
 
       TFSChangeList parentChangelist = historyList.get(parentThenChild ? 1 : 0);
       Assert.assertEquals(PARENT_CHANGES_COMMIT_COMMENT, parentChangelist.getComment());
-      Assert.assertEquals(getUsername(), parentChangelist.getCommitterName());
+      Assert.assertEquals(getUsername().toUpperCase(), parentChangelist.getCommitterName());
       ChangeHelper.assertContains(Collections.singletonList(parentChangeCommitted), parentChangelist.getChanges());
     }
     else {
@@ -312,7 +312,7 @@ public abstract class ParentChildChangeTestCase extends TFSTestCase {
 
     if (childChangeCommitted != null) {
       Assert.assertEquals(CHILD_CHANGES_COMMIT_COMMENT, childChangelist.getComment());
-      Assert.assertEquals(getUsername(), childChangelist.getCommitterName());
+      Assert.assertEquals(getUsername().toUpperCase(), childChangelist.getCommitterName());
       ChangeHelper.assertContains(Collections.singletonList(childChangeCommitted), childChangelist.getChanges());
     }
   }

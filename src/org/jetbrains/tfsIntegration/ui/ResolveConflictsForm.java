@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
@@ -31,10 +30,14 @@ import javax.swing.event.TableModelListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class ResolveConflictsForm {
 
-  @NonNls public static final String CLOSE_PROPERTY = "ResolveConflictsForm.close";
+  public interface Listener {
+    void close();
+  }
 
   private JTable myItemsTable;
   private JPanel myContentPanel;
@@ -44,6 +47,8 @@ public class ResolveConflictsForm {
   private JButton myMergeButton;
   private CoflictsTableModel myItemsTableModel;
   private final ResolveConflictHelper myResolveConflictHelper;
+
+  private final Collection<Listener> myListeners = new ArrayList<Listener>();
 
   public ResolveConflictsForm(ResolveConflictHelper resolveConflictHelper) {
     myResolveConflictHelper = resolveConflictHelper;
@@ -97,8 +102,20 @@ public class ResolveConflictsForm {
   }
 
   private void fireClose() {
-    getPanel().firePropertyChange(CLOSE_PROPERTY, false, true);
+    Listener [] listeners = myListeners.toArray(new Listener[myListeners.size()]);
+    for (Listener listener : listeners) {
+      listener.close();
+    }
   }
+
+  public void addListener(Listener listener) {
+    myListeners.add(listener);
+  }
+
+  public void removeListener(Listener listener) {
+    myListeners.remove(listener);
+  }
+
 
   private void enableButtons(final int[] selectedIndices) {
     myAcceptYoursButton.setEnabled(selectedIndices.length > 0);
@@ -120,7 +137,7 @@ public class ResolveConflictsForm {
           Conflict conflict = myItemsTableModel.getConflicts().get(index);
           execute(conflict);
         }
-        myResolveConflictHelper.updateConflicts();
+        myResolveConflictHelper.reloadConflicts();
         myItemsTableModel.setConflicts(myResolveConflictHelper.getConflicts());
       }
       catch (TfsException e) {
@@ -139,6 +156,7 @@ public class ResolveConflictsForm {
 
     protected abstract void execute(final Conflict conflict) throws TfsException, IOException, VcsException;
   }
+
 }
 
 

@@ -64,7 +64,7 @@ public class TFSTmpFileStore implements TFSContentStore {
     return myTfsTmpDir;
   }
 
-  public void saveContent(TfsFileUtil.ContentWriter contentWriter) throws TfsException {
+  public void saveContent(TfsFileUtil.ContentWriter contentWriter) throws TfsException, IOException {
     TfsFileUtil.setFileContent(myTmpFile, contentWriter);
   }
 

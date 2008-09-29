@@ -137,12 +137,10 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
 
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
           final Collection<VcsException> downloadErrors = ApplyGetOperations
-            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE,
-                     ApplyGetOperations.ProcessMode.GET);
+            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE);
           errors.addAll(downloadErrors);
 
-          final UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(myProject, workspace, undo, ApplyGetOperations.DownloadMode.ALLOW);
+          final UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(myProject, workspace, undo, false);
           errors.addAll(undoResult.errors);
         }
       });
@@ -168,9 +166,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
             requests.add(new VersionControlServer.GetRequestParams(e.getServerPath(), RecursionType.None, versionSpec));
           }
           List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
-          final Collection<VcsException> applyingErrors = ApplyGetOperations
-            .execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE,
-                     ApplyGetOperations.ProcessMode.UNDO);
+          final Collection<VcsException> applyingErrors =
+            ApplyGetOperations.execute(myProject, workspace, operations, null, null, ApplyGetOperations.DownloadMode.FORCE);
           errors.addAll(applyingErrors);
         }
       });
@@ -198,8 +195,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           for (ItemPath itemPath : paths) {
             serverPaths.add(itemPath.getServerPath());
           }
-          UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(myProject, workspace, serverPaths, ApplyGetOperations.DownloadMode.ALLOW);
+          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(myProject, workspace, serverPaths, false);
           errors.addAll(undoResult.errors);
           List<VirtualFile> refresh = new ArrayList<VirtualFile>(paths.size());
           for (ItemPath path : paths) {

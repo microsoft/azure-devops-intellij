@@ -17,20 +17,26 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
+import java.text.MessageFormat;
 
 public class MergeNameDialog extends DialogWrapper {
   private MergeNameForm myMergeNameForm;
-  private String myLocalName;
-  private String myServerName;
-  private String mySelectedName;
+  private final WorkspaceInfo myWorkspace;
+  private final String myLocalName;
+  private final String myServerName;
 
-  public MergeNameDialog(String localName, String serverName) {
+  public MergeNameDialog(final WorkspaceInfo workspace, String yourName, String theirsName) {
     super(false);
-    myLocalName = localName;
-    myServerName = serverName;
+    myWorkspace = workspace;
+    myLocalName = yourName;
+    myServerName = theirsName;
     setTitle("Merge Changes");
     setResizable(true);
     init();
@@ -39,13 +45,41 @@ public class MergeNameDialog extends DialogWrapper {
   @Nullable
   protected JComponent createCenterPanel() {
     myMergeNameForm = new MergeNameForm(myLocalName, myServerName);
+    myMergeNameForm.addListener(new MergeNameForm.Listener() {
+      public void selectedPathChanged() {
+        String errorMessage = validate(myMergeNameForm.getSelectedPath());
+        myMergeNameForm.setErrorText(errorMessage);
+        getOKAction().setEnabled(errorMessage == null);
+      }
+    });
     return myMergeNameForm.getPanel();
   }
 
-
-  public String getSelectedName() {
-    return myMergeNameForm.getSelectedName();
+  @NotNull
+  public String getSelectedPath() {
+    // it is not null if validated
+    //noinspection ConstantConditions
+    return myMergeNameForm.getSelectedPath();
   }
 
-  // TODO: validate selected name!!!
+  @Nullable
+  private String validate(String path) {
+    if (path == null || path.length() == 0) {
+      return "Path is empty";
+    }
+
+    // TODO valid filesystem name?
+
+    try {
+      if (myWorkspace.findLocalPathByServerPath(path, false) == null) {
+        return MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''", path, myWorkspace.getName());
+      }
+    }
+    catch (TfsException e) {
+      Messages.showErrorDialog(e.getMessage(), "Merge");
+      close(CANCEL_EXIT_CODE);
+    }
+    return null;
+  }
+  
 }
