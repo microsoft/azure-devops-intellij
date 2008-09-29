@@ -195,7 +195,6 @@ public class TFSVcs extends AbstractVcs {
     }
   }
 
-  @Override
   @NotNull
   public CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> getCommittedChangesProvider() {
     if (myCommittedChangesProvider == null) {
@@ -229,4 +228,8 @@ public class TFSVcs extends AbstractVcs {
     }
   }
 
+  @Nullable
+  public String getRevisionPattern() {
+    return ourIntegerPattern;
+  }
 }
