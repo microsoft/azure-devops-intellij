@@ -38,6 +38,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LocalVersionUpdate;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -59,23 +60,15 @@ public class ApplyGetOperations {
   private final Collection<VcsException> myErrors = new ArrayList<VcsException>();
   private final Collection<LocalVersionUpdate> myUpdateLocalVersions = new ArrayList<LocalVersionUpdate>();
   private final DownloadMode myDownloadMode;
-  private final ProcessMode myProcessMode;
 
   public enum DownloadMode {
     FORCE,
     ALLOW,
-    FORBID
-  }
-
-  public enum ProcessMode {
-    GET,
-    UNDO,
-    RESOLVE
+    FORBID,
+    MERGE
   }
 
   public enum LocalConflictHandlingType {
-    OVERRIDE_LOCAL_ITEM,
-    REPORT_LOCAL_CONFLICT,
     SHOW_MESSAGE,
     ERROR
   }
@@ -85,15 +78,13 @@ public class ApplyGetOperations {
                              Collection<GetOperation> operations,
                              final @Nullable ProgressIndicator progressIndicator,
                              final @Nullable UpdatedFiles updatedFiles,
-                             final DownloadMode downloadMode,
-                             final ProcessMode processMode) {
+                             final DownloadMode downloadMode) {
     myProject = project;
     myWorkspace = workspace;
     myOperations = operations;
     myProgressIndicator = progressIndicator;
     myUpdatedFiles = updatedFiles;
     myDownloadMode = downloadMode;
-    myProcessMode = processMode;
   }
 
   public static LocalConflictHandlingType getLocalConflictHandlingType() {
@@ -109,10 +100,8 @@ public class ApplyGetOperations {
                                                  Collection<GetOperation> operations,
                                                  final @Nullable ProgressIndicator progressIndicator,
                                                  final @Nullable UpdatedFiles updatedFiles,
-                                                 DownloadMode downloadMode,
-                                                 ProcessMode operationType) {
-    ApplyGetOperations session =
-      new ApplyGetOperations(project, workspace, operations, progressIndicator, updatedFiles, downloadMode, operationType);
+                                                 DownloadMode downloadMode) {
+    ApplyGetOperations session = new ApplyGetOperations(project, workspace, operations, progressIndicator, updatedFiles, downloadMode);
     session.execute();
     return session.myErrors;
   }
@@ -182,16 +171,12 @@ public class ApplyGetOperations {
       myErrors.add(new VcsException(errorMessage));
       return;
     }
-    if (myProcessMode != ProcessMode.UNDO && source.canWrite()) {
-      if (!canOverrideLocalConflictingItem(operation, true)) {
-        return;
-      }
+    if (source.canWrite() && !canOverrideLocalConflictingItem(operation, true)) {
+      return;
     }
 
     final boolean exists = source.exists();
-    if (exists && !FileUtil.delete(source)) {
-      String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", source.getPath());
-      myErrors.add(new VcsException(errorMessage));
+    if (!deleteFile(source)) {
       return;
     }
 
@@ -209,20 +194,245 @@ public class ApplyGetOperations {
       return;
     }
 
+    // TODO: if force, delete anyway?
     if (!canDeleteFolder(source)) {
       String errorMessage = MessageFormat.format("Failed to delete folder ''{0}'' because it is not empty", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
 
-    if (!FileUtil.delete(source)) {
-      String errorMessage = MessageFormat.format("Failed to delete folder ''{0}''", source.getPath());
-      myErrors.add(new VcsException(errorMessage));
+    boolean exists = source.exists();
+    if (!deleteFile(source)) {
       return;
     }
 
     updateLocalVersion(operation);
-    addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
+    if (exists) {
+      addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
+    }
+  }
+
+  private void processCreateFile(final @NotNull GetOperation operation) throws TfsException {
+    File target = new File(operation.getTlocal());
+    if (target.isDirectory()) {
+      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with the same name exists", target.getPath());
+      myErrors.add(new VcsException(errorMessage));
+      return;
+    }
+
+    if (target.canWrite()) {
+      if (!canOverrideLocalConflictingItem(operation, false)) {
+        return;
+      }
+      if (!FileUtil.delete(target)) {
+        String errorMessage = MessageFormat.format("Failed to overwrite file ''{0}''", target.getPath());
+        myErrors.add(new VcsException(errorMessage));
+        return;
+      }
+    }
+
+    if (!createFolder(target.getParentFile())) {
+      return;
+    }
+
+    if (downloadFile(operation)) {
+      updateLocalVersion(operation);
+      addToGroup(FileGroup.CREATED_ID, target, operation);
+    }
+  }
+
+  private void processCreateFolder(final GetOperation operation) throws TfsException {
+    File target = new File(operation.getTlocal());
+    if (target.isFile() && target.canWrite() && !canOverrideLocalConflictingItem(operation, false)) {
+      return;
+    }
+
+    if (target.isFile() && !FileUtil.delete(target)) {
+      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''. File with the same name exists", target.getPath());
+      myErrors.add(new VcsException(errorMessage));
+      return;
+    }
+
+    boolean folderExists = target.exists();
+    if (!createFolder(target)) {
+      return;
+    }
+
+    updateLocalVersion(operation);
+    if (!folderExists) {
+      addToGroup(FileGroup.CREATED_ID, target, operation);
+    }
+  }
+
+  private void processFileChange(final GetOperation operation) throws TfsException {
+    File source = new File(operation.getSlocal());
+    File target = new File(operation.getTlocal());
+    final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
+
+    if (source.equals(target) &&
+        operation.getLver() == operation.getSver() &&
+        (change.containsOnly(ChangeType.Rename) || (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
+      // rename + source=target means rename of parent folder 
+      // not an explicit change, nothing to do
+      updateLocalVersion(operation);
+      return;
+    }
+
+    if (!source.equals(target) && source.canWrite()) {
+      if (canOverrideLocalConflictingItem(operation, true)) {
+        if (myDownloadMode == DownloadMode.FORCE && !deleteFile(source)) {
+          return;
+        }
+      }
+      else {
+        return;
+      }
+    }
+
+    if (!source.equals(target) && source.isDirectory() && (!canOverrideLocalConflictingItem(operation, true) || !deleteFile(source))) {
+      return;
+    }
+
+    if (target.isDirectory()) {
+      // Note: TFC does not report local conflict in this case
+      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with same name exists", target.getPath());
+      myErrors.add(new VcsException(errorMessage));
+      return;
+    }
+
+    // don't ask 2nd time if source = target
+    if (target.canWrite() && !target.equals(source) && !canOverrideLocalConflictingItem(operation, false)) {
+      return;
+    }
+
+    if (!createFolder(target.getParentFile())) {
+      return;
+    }
+
+    if (myDownloadMode == DownloadMode.FORCE || operation.getLver() != operation.getSver()) {
+      // remove source, create target
+      // don't download file if undoing Add
+      if ((source.equals(target) || deleteFile(source)) && (change.contains(ChangeType.Add) || downloadFile(operation))) {
+        updateLocalVersion(operation);
+        if (source.equals(target)) {
+          addToGroup(FileGroup.UPDATED_ID, target, operation);
+        }
+        else {
+          addToGroup(FileGroup.REMOVED_FROM_REPOSITORY_ID, source, operation);
+          addToGroup(FileGroup.CREATED_ID, target, operation);
+        }
+      }
+      return;
+    }
+
+    if (!target.exists()) {
+      if (source.exists()) {
+        // source exists (so it is a file), target is not
+        if (rename(source, target)) {
+          addToGroup(FileGroup.UPDATED_ID, target, operation);
+          updateLocalVersion(operation);
+        }
+      }
+      else {
+        // source & target not exist
+        // don't create file if undoing locally missing scheduled for addition file
+        if (!change.contains(ChangeType.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
+          if (downloadFile(operation)) {
+            addToGroup(FileGroup.CREATED_ID, target, operation);
+            updateLocalVersion(operation);
+          }
+        }
+      }
+    }
+    else {
+      // target exists
+      if (!source.equals(target)) {
+        deleteFile(source);
+      }
+      updateLocalVersion(operation);
+    }
+  }
+
+  private void processFolderChange(final GetOperation operation) throws TfsException {
+    File source = new File(operation.getSlocal());
+    File target = new File(operation.getTlocal());
+    final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
+
+    if (source.equals(target) &&
+        operation.getLver() == operation.getSver() &&
+        (change.containsOnly(ChangeType.Rename) || (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
+      // rename + source=target means rename of parent folder
+      // not an explicit change, nothing to do
+      updateLocalVersion(operation);
+      return;
+    }
+
+    // redundand check source.equals(target) for consistency with processFileChange() 
+    if (!source.equals(target) && source.isFile() && !source.canWrite() && !deleteFile(source)) {
+      return;
+    }
+
+    if (target.isFile() && !target.canWrite() && !deleteFile(target)) {
+      return;
+    }
+
+    if (target.isFile() && target.canWrite() && (!canOverrideLocalConflictingItem(operation, false) || !deleteFile(target))) {
+      return;
+    }
+
+    if (!createFolder(target.getParentFile())) {
+      return;
+    }
+
+    if (!target.exists()) {
+      if (source.isDirectory()) {
+        // source exists, target is not
+        if (rename(source, target)) {
+          addToGroup(FileGroup.UPDATED_ID, target, operation);
+          updateLocalVersion(operation);
+        }
+      }
+      else {
+        // source & target not exist
+        // don't create folder if undoing locally missing scheduled for addition folder
+        if (!change.contains(ChangeType.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
+          if (createFolder(target)) {
+            addToGroup(FileGroup.CREATED_ID, target, operation);
+            updateLocalVersion(operation);
+          }
+        }
+      }
+    }
+    else {
+      // target exists
+      if (!source.equals(target)) {
+        deleteFile(source);
+      }
+      updateLocalVersion(operation);
+    }
+  }
+
+  private void processConflict(final GetOperation operation) {
+    //File subject = new File(operation.getTlocal() != null ? operation.getTlocal() : operation.getSlocal());
+    //addToGroup(FileGroup.MODIFIED_ID, subject, operation);
+  }
+
+  private void addToGroup(String groupId, File file, GetOperation operation) {
+    if (myUpdatedFiles != null) {
+      int revisionNumber = operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0;
+      myUpdatedFiles.getGroupById(groupId).add(file.getPath(), TFSVcs.getInstance(myProject), new VcsRevisionNumber.Int(revisionNumber));
+    }
+  }
+
+  private boolean deleteFile(File target) {
+    if (myDownloadMode != DownloadMode.FORBID && !FileUtil.delete(target)) {
+      String errorMessage = MessageFormat.format("Failed to delete {0} ''{1}''", target.isFile() ? "file" : "folder", target.getPath());
+      myErrors.add(new VcsException(errorMessage));
+      return false;
+    }
+    else {
+      return true;
+    }
   }
 
   private boolean canDeleteFolder(final File folder) {
@@ -254,270 +464,58 @@ public class ApplyGetOperations {
     return true;
   }
 
-  private void processCreateFile(final @NotNull GetOperation operation) throws TfsException {
-    if (!ensureTargetIsReadonlyFile(operation)) {
-      return;
-    }
-
-    File target = new File(operation.getTlocal());
-
-    if (!target.getParentFile().exists() && !createFolder(target.getParentFile())) {
-      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getParentFile().getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    boolean fileExists = target.exists();
-    if (operation.getDurl() != null) {
-      downloadFile(operation);
-    }
-
-    updateLocalVersion(operation);
-    addToGroup(fileExists ? FileGroup.SKIPPED_ID : FileGroup.CREATED_ID, target, operation);
-  }
-
-  private void processCreateFolder(final GetOperation operation) throws TfsException {
-    File target = new File(operation.getTlocal());
-    if (target.isFile() && target.canWrite()) {
-      if (!canOverrideLocalConflictingItem(operation, false)) {
-        return;
-      }
-    }
-
-    if (target.isFile() && !FileUtil.delete(target)) {
-      String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", target.getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    boolean folderExists = target.exists();
-    if (!folderExists && !createFolder(target)) {
+  private boolean createFolder(File target) {
+    if (myDownloadMode != DownloadMode.FORBID && !target.exists() && !target.mkdirs()) {
       String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    updateLocalVersion(operation);
-    if (!folderExists) {
-      addToGroup(FileGroup.RESTORED_ID, target, operation);
-    }
-  }
-
-  private void processFileChange(final GetOperation operation) throws TfsException {
-    final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, operation.getChg());
-    boolean download =
-      operation.getSver() != operation.getLver() || (myProcessMode == ProcessMode.UNDO && changeType.contains(ChangeType.Edit));
-
-    File source = new File(operation.getSlocal());
-    File target = new File(operation.getTlocal());
-
-    boolean rename = !source.equals(target);
-
-    if (!rename && !download) {
-      if (myDownloadMode == DownloadMode.FORCE && operation.getDurl() != null) {
-        if (!target.getParentFile().exists() && !createFolder(target.getParentFile())) {
-          String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getParentFile().getPath());
-          myErrors.add(new VcsException(errorMessage));
-          return;
-        }
-
-        downloadFile(operation);
-        addToGroup(FileGroup.RESTORED_ID, target, operation);
-      }
-      updateLocalVersion(operation);
-      return;
-    }
-
-    if (!target.getParentFile().exists() && !createFolder(target.getParentFile())) {
-      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getParentFile().getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    if (target.isDirectory()) {
-      // Note: TFC does not report local conflict in this case
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with same name exists", target.getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    if (source.isDirectory() || (source.canWrite() && myProcessMode != ProcessMode.UNDO)) {
-      if (canOverrideLocalConflictingItem(operation, true)) {
-        // remove source
-        if (!FileUtil.delete(source)) {
-          String errorMessage = MessageFormat.format("Failed to delete ''{0}''", source.getPath());
-
-          myErrors.add(new VcsException(errorMessage));
-          return;
-        }
-      }
-      else {
-        return;
-      }
-    }
-
-    if (target.canWrite() && myProcessMode != ProcessMode.UNDO) {
-      if (!canOverrideLocalConflictingItem(operation, false)) {
-        String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", target.getPath());
-
-        myErrors.add(new VcsException(errorMessage));
-        return;
-      }
-    }
-
-    if (rename && !download && source.exists()) {
-      if (source.renameTo(target)) {
-        addToGroup(myProcessMode == ProcessMode.UNDO ? FileGroup.RESTORED_ID : FileGroup.UPDATED_ID, target, operation);
-        updateLocalVersion(operation);
-      }
-      else {
-        String errorMessage = MessageFormat.format("Failed to rename file ''{0}'' to ''{1}''", source.getPath(), target.getPath());
-        myErrors.add(new VcsException(errorMessage));
-      }
-    }
-    else {
-      if (rename && !FileUtil.delete(source)) {
-        String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", source.getPath());
-        myErrors.add(new VcsException(errorMessage));
-        return;
-      }
-
-      if (operation.getDurl() != null) {
-        downloadFile(operation);
-        updateLocalVersion(operation);
-        addToGroup(myProcessMode == ProcessMode.UNDO ? FileGroup.RESTORED_ID : FileGroup.UPDATED_ID, target, operation);
-      }
-    }
-  }
-
-  private void processFolderChange(final GetOperation operation) throws TfsException {
-    File source = new File(operation.getSlocal());
-    File target = new File(operation.getTlocal());
-
-    if (source.isFile() && !source.canWrite() && !FileUtil.delete(source)) {
-      String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", source.getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    if (target.isFile() && !target.canWrite() && !FileUtil.delete(target)) {
-      String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", target.getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    if (target.isFile() && target.canWrite()) {
-      if (!canOverrideLocalConflictingItem(operation, false)) {
-        return;
-      }
-      if (!FileUtil.delete(target)) {
-        String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", target.getPath());
-        myErrors.add(new VcsException(errorMessage));
-        return;
-      }
-    }
-
-    if (!target.getParentFile().exists() && !createFolder(target.getParentFile())) {
-      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''.", target.getParentFile().getPath());
-      myErrors.add(new VcsException(errorMessage));
-      return;
-    }
-
-    if (!target.exists()) {
-      // source exists, target is not
-      if (source.exists()) {
-        if (source.renameTo(target)) {
-          addToGroup(FileGroup.UPDATED_ID, target, operation);
-          updateLocalVersion(operation);
-        }
-        else {
-          String errorMessage = MessageFormat.format("Failed to rename folder ''{0}'' to ''{1}''", source.getPath(), target.getPath());
-          myErrors.add(new VcsException(errorMessage));
-        }
-      }
-      // source & target not exist
-      else {
-        updateLocalVersion(operation);
-
-        // don't create folder if undoing locally missing scheduled for addition folder
-        if (!EnumMask.fromString(ChangeType.class, operation.getChg()).contains(ChangeType.Add) &&
-            (!source.equals(target) || myDownloadMode == DownloadMode.FORCE)) {
-          if (createFolder(target)) {
-            addToGroup(FileGroup.CREATED_ID, target, operation);
-          }
-          else {
-            String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getPath());
-            myErrors.add(new VcsException(errorMessage));
-          }
-        }
-      }
-    }
-    // target exists
-    else {
-      updateLocalVersion(operation);
-      if (!source.equals(target)) {
-        if (!FileUtil.delete(source)) {
-          String errorMessage = MessageFormat.format("Failed to delete folder ''{0}''", source.getPath());
-          myErrors.add(new VcsException(errorMessage));
-        }
-      }
-    }
-  }
-
-  private void processConflict(final GetOperation operation) {
-    File subject = new File(operation.getTlocal() != null ? operation.getTlocal() : operation.getSlocal());
-    addToGroup(FileGroup.MODIFIED_ID, subject, operation);
-  }
-
-  private void addToGroup(String groupId, File file, GetOperation operation) {
-    if (myUpdatedFiles != null) {
-      int revisionNumber = operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0;
-      myUpdatedFiles.getGroupById(groupId).add(file.getPath(), TFSVcs.getInstance(myProject), new VcsRevisionNumber.Int(revisionNumber));
-    }
-  }
-
-  private boolean ensureTargetIsReadonlyFile(GetOperation operation) throws TfsException {
-    File targetFile = new File(operation.getTlocal());
-    if (targetFile.isDirectory()) {
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with the same name exists", targetFile.getPath());
-
       myErrors.add(new VcsException(errorMessage));
       return false;
     }
-
-    if (targetFile.canWrite()) {
-      if (canOverrideLocalConflictingItem(operation, false)) {
-        if (!FileUtil.delete(targetFile)) {
-          String errorMessage = MessageFormat.format("Failed to delete file ''{0}''", targetFile.getPath());
-
-          myErrors.add(new VcsException(errorMessage));
-        }
-      }
-      else {
-        return false;
-      }
+    else {
+      return true;
     }
-    return true;
   }
 
-  private boolean createFolder(File target) {
-    return myDownloadMode == DownloadMode.FORBID || target.mkdirs();
+  private boolean rename(File source, File target) {
+    if (myDownloadMode != DownloadMode.FORBID && !source.equals(target) && !source.renameTo(target)) {
+      String errorMessage = MessageFormat
+        .format("Failed to rename {0} ''{1}'' to ''{2}''", source.isFile() ? "file" : "folder", source.getPath(), target.getPath());
+      myErrors.add(new VcsException(errorMessage));
+      return false;
+    }
+    else {
+      return true;
+    }
   }
 
-  private void downloadFile(final GetOperation operation) throws TfsException {
+  private boolean downloadFile(final GetOperation operation) throws TfsException {
+    TFSVcs.assertTrue(operation.getDurl() != null, "Null download url for " + operation.getTlocal());
+
     if (myDownloadMode == DownloadMode.FORBID) {
-      return;
+      return true;
     }
+
     final File target = new File(operation.getTlocal());
-    TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
-      public void write(final OutputStream outputStream) throws TfsException {
-        VersionControlServer.downloadItem(myWorkspace.getServer(), operation.getDurl(), outputStream);
-      }
-    });
-    target.setReadOnly();
+    try {
+      TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
+        public void write(final OutputStream outputStream) throws TfsException {
+          VersionControlServer.downloadItem(myWorkspace.getServer(), operation.getDurl(), outputStream);
+        }
+      });
+      target.setReadOnly();
+      return true;
+    }
+    catch (IOException e) {
+      String errorMessage = MessageFormat.format("Failed to write to file ''{0}'': {1}", target.getPath(), e.getMessage());
+      myErrors.add(new VcsException(errorMessage));
+      return false;
+    }
   }
 
   private boolean canOverrideLocalConflictingItem(final GetOperation operation, boolean sourceNotTarget) throws TfsException {
+    if (myDownloadMode == DownloadMode.FORCE || myDownloadMode == DownloadMode.MERGE) {
+      return true;
+    }
+
     LocalConflictHandlingType conflictHandlingType = getLocalConflictHandlingType();
     if (conflictHandlingType == LocalConflictHandlingType.ERROR) {
       throw new OperationFailedException(
@@ -541,9 +539,6 @@ public class ApplyGetOperations {
         reportLocalConflict(operation, sourceNotTarget);
         return false;
       }
-    }
-    else if (conflictHandlingType == LocalConflictHandlingType.OVERRIDE_LOCAL_ITEM) {
-      return true;
     }
     else {
       throw new IllegalArgumentException("Unknown conflict handling type: " + conflictHandlingType);
