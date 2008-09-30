@@ -62,18 +62,13 @@ public class ResolveConflictHelper {
   public void acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
     TFSVcs.assertTrue(canMerge(conflict));
 
-    FilePath sourceLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getYsitem(), conflict.getYtype() == ItemType.Folder);
-    final String sourceLocalName = sourceLocalPath != null ? VersionControlPath.toTfsRepresentation(sourceLocalPath.getPath()) : null;
-    FilePath targetLocalPath = myWorkspace.findLocalPathByServerPath(conflict.getTsitem(), conflict.getTtype() == ItemType.Folder);
-    final String targetLocalName = targetLocalPath != null ? VersionControlPath.toTfsRepresentation(targetLocalPath.getPath()) : null;
-
     final ContentTriplet contentTriplet = new ContentTriplet();
     VcsRunnable runnable = new VcsRunnable() {
       public void run() throws VcsException {
         try {
           if (conflict.getYtype() == ItemType.File) {
             String original = TFSContentRevision.create(myWorkspace, conflict.getBitemid(), conflict.getBver()).getContent();
-            contentTriplet.baseContent = original != null ? original : ""; // TODO: why null is not OK?
+            contentTriplet.baseContent = original != null ? original : "";
             String current = CurrentContentRevision.create(VcsUtil.getFilePath(conflict.getSrclitem())).getContent();
             contentTriplet.localContent = current != null ? current : "";
             String last = TFSContentRevision.create(myWorkspace, conflict.getTitemid(), conflict.getTver()).getContent();
@@ -81,7 +76,7 @@ public class ResolveConflictHelper {
           }
         }
         catch (TfsException e) {
-          throw new VcsException("Unable to get content for item " + sourceLocalName);
+          throw new VcsException("Unable to get content for item " + conflict.getSrclitem());
         }
       }
     };
@@ -105,18 +100,18 @@ public class ResolveConflictHelper {
       localName = VersionControlPath.toTfsRepresentation(mergedLocalPath);
     }
     else {
-      localName = targetLocalName;
+      localName = conflict.getTgtlitem();
     }
 
     // merge content
     if (isContentConflict(conflict)) {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
-      final VirtualFile vFile = VcsUtil.getVirtualFile(sourceLocalName);
+      final VirtualFile vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
       if (vFile != null) {
         ConflictsEnvironment.getContentConflictsHandler().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
       }
       else {
-        String errorMessage = MessageFormat.format("File ''{0}'' is missing", sourceLocalName);
+        String errorMessage = MessageFormat.format("File ''{0}'' is missing", conflict.getSrclitem());
         throw new VcsException(errorMessage);
       }
     }
@@ -184,27 +179,21 @@ public class ResolveConflictHelper {
     ResolveResponse response =
       myWorkspace.getServer().getVCS().resolveConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), resolveConflictParams);
 
-    final ArrayOfGetOperation getOperations;
-    if (resolution == Resolution.AcceptTheirs) {
-      getOperations = response.getUndoOperations();
-      TFSVcs.assertTrue(response.getResolveResult().getGetOperation() == null);
-    }
-    else if (resolution == Resolution.AcceptMerge || resolution == Resolution.AcceptYours) {
-      getOperations = response.getResolveResult();
-      TFSVcs.assertTrue(response.getUndoOperations().getGetOperation() == null);
-    }
-    else {
-      TFSVcs.error("Unsupported resolution type: " + resolution);
-      getOperations = null;
-    }
-
-    // TODO check for null not needed?
-    if (getOperations != null && getOperations.getGetOperation() != null) {
+    if (response.getResolveResult().getGetOperation() != null) {
       ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
         .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.MERGE;
 
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, myWorkspace, Arrays.asList(getOperations.getGetOperation()), null, myUpdatedFiles, downloadMode);
+        .execute(myProject, myWorkspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles, downloadMode);
+      if (!applyErrors.isEmpty()) {
+        throw TfsUtil.collectExceptions(applyErrors);
+      }
+    }
+
+    if (response.getUndoOperations().getGetOperation() != null) {
+      final Collection<VcsException> applyErrors = ApplyGetOperations
+        .execute(myProject, myWorkspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles,
+                 ApplyGetOperations.DownloadMode.FORCE);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }

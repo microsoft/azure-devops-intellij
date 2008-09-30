@@ -15,20 +15,20 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
 
 public class DialogNameMerger implements NameMerger {
-  
+
   @Nullable
   public String mergeName(final WorkspaceInfo workspace, Conflict conflict) {
-      MergeNameDialog d = new MergeNameDialog(workspace, conflict.getYsitem(), conflict.getTsitem());
-      d.show();
-      if (d.isOK()) {
-        return d.getSelectedPath();
-      }
-      return null;
+    MergeNameDialog d = new MergeNameDialog(workspace, conflict.getYsitemsrc(), conflict.getTsitem());
+    d.show();
+    if (d.isOK()) {
+      return d.getSelectedPath();
+    }
+    return null;
   }
 }
