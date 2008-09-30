@@ -45,4 +45,7 @@ public interface StatusVisitor {
 
   void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
     throws TfsException;
+
+  void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException;
 }

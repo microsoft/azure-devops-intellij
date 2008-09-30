@@ -100,7 +100,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
                                   final boolean localItemExists,
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
               //noinspection ConstantConditions
-              addForDownload(localPath, localItemExists, serverStatus.targetItem, serverStatus.localVer);
+              addForDownload(serverStatus);
             }
 
             public void deleted(final @NotNull FilePath localPath,
@@ -112,7 +112,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
             public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
               throws TfsException {
               //noinspection ConstantConditions
-              addForDownload(localPath, localItemExists, serverStatus.targetItem, serverStatus.localVer);
+              addForDownload(serverStatus);
             }
 
             public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
@@ -126,12 +126,17 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               undo.add(serverStatus.targetItem);
             }
 
-            private void addForDownload(final @NotNull FilePath localPath,
-                                        final boolean localItemExists,
-                                        final @NotNull String serverItem,
-                                        int version) {
-              download.add(new VersionControlServer.GetRequestParams(serverItem, RecursionType.None, new ChangesetVersionSpec(version)));
+            public void undeleted(final @NotNull FilePath localPath,
+                                  final boolean localItemExists,
+                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+              addForDownload(serverStatus);
             }
+
+            private void addForDownload(final @NotNull ServerStatus serverStatus) {
+              download.add(new VersionControlServer.GetRequestParams(serverStatus.targetItem, RecursionType.None,
+                                                                     new ChangesetVersionSpec(serverStatus.localVer)));
+            }
+
 
           });
 

@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
@@ -79,19 +80,19 @@ public class ScheduleForDeletion {
         public void checkedOutForEdit(final @NotNull FilePath localPath,
                                       final boolean localItemExists,
                                       final @NotNull ServerStatus serverStatus) throws TfsException {
-          scheduleForDeletion.add(localPath);
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
 
         public void scheduledForAddition(final @NotNull FilePath localPath,
                                          final boolean localItemExists,
                                          final @NotNull ServerStatus serverStatus) {
-          scheduleForDeletion.add(localPath);
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
 
         public void scheduledForDeletion(final @NotNull FilePath localPath,
                                          final boolean localItemExists,
                                          final @NotNull ServerStatus serverStatus) {
-          // ignore
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
 
         public void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
@@ -106,13 +107,19 @@ public class ScheduleForDeletion {
 
         public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
           throws TfsException {
-          scheduleForDeletion.add(localPath);
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
 
         public void renamedCheckedOut(final @NotNull FilePath localPath,
                                       final boolean localItemExists,
                                       final @NotNull ServerStatus serverStatus) throws TfsException {
-          scheduleForDeletion.add(localPath);
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
+        }
+
+        public void undeleted(final @NotNull FilePath localPath,
+                                      final boolean localItemExists,
+                                      final @NotNull ServerStatus serverStatus) throws TfsException {
+          TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
       });
 

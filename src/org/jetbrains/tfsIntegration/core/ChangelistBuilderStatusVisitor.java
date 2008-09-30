@@ -23,7 +23,10 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ServerStatus;
+import org.jetbrains.tfsIntegration.core.tfs.StatusVisitor;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 class ChangelistBuilderStatusVisitor implements StatusVisitor {
@@ -131,4 +134,10 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
       myChangelistBuilder.processLocallyDeletedFile(localPath);
     }
   }
+
+  public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+    throws TfsException {
+    checkedOutForEdit(localPath, localItemExists, serverStatus);
+  }
+
 }

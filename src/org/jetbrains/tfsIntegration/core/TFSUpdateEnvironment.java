@@ -91,8 +91,10 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             // resolve all conflicts
             ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, paths, updatedFiles);
             resolveConflictHelper.reloadConflicts();
-            ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
-            
+            if (!resolveConflictHelper.getConflicts().isEmpty()) {
+              ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+            }
+
             // TODO content roots can be renamed while executing
             TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);
           }

@@ -160,4 +160,15 @@ public abstract class ServerStatus {
     }
   }
 
+  public static class Undeleted extends ServerStatus {
+    protected Undeleted(final @NotNull PendingChange pendingChange) {
+      super(pendingChange);
+    }
+
+    public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+      throws TfsException {
+      statusVisitor.undeleted(localPath, localItemExists, this);
+    }
+  }
+
 }

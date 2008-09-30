@@ -45,7 +45,7 @@ public class ResolveConflictsForm {
   private JButton myAcceptTheirsButton;
 
   private JButton myMergeButton;
-  private CoflictsTableModel myItemsTableModel;
+  private final CoflictsTableModel myItemsTableModel;
   private final ResolveConflictHelper myResolveConflictHelper;
 
   private final Collection<Listener> myListeners = new ArrayList<Listener>();
@@ -102,7 +102,7 @@ public class ResolveConflictsForm {
   }
 
   private void fireClose() {
-    Listener [] listeners = myListeners.toArray(new Listener[myListeners.size()]);
+    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
     for (Listener listener : listeners) {
       listener.close();
     }
@@ -120,13 +120,15 @@ public class ResolveConflictsForm {
   private void enableButtons(final int[] selectedIndices) {
     myAcceptYoursButton.setEnabled(selectedIndices.length > 0);
     myAcceptTheirsButton.setEnabled(selectedIndices.length > 0);
-    myMergeButton.setEnabled(selectedIndices.length > 0);
+    boolean mergeEnabled = selectedIndices.length > 0;
     for (int index : selectedIndices) {
       Conflict conflict = myItemsTableModel.getConflicts().get(index);
       if (!ResolveConflictHelper.canMerge(conflict)) {
-        myMergeButton.setEnabled(false);
+        mergeEnabled = false;
+        break;
       }
     }
+    myMergeButton.setEnabled(mergeEnabled);
   }
 
   private abstract class MergeActionListener implements ActionListener {

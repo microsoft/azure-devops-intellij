@@ -90,7 +90,7 @@ public class ResolveConflictHelper {
     final String localName;
     if (isNameConflict(conflict)) {
       // TODO proper type?
-      final String mergedServerPath = ConflictsEnvironment.getNameConflictsHandler().mergeName(myWorkspace, conflict);
+      final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(myWorkspace, conflict);
       if (mergedServerPath == null) {
         // user cancelled
         return;
@@ -108,7 +108,7 @@ public class ResolveConflictHelper {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
       final VirtualFile vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
       if (vFile != null) {
-        ConflictsEnvironment.getContentConflictsHandler().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
+        ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
       }
       else {
         String errorMessage = MessageFormat.format("File ''{0}'' is missing", conflict.getSrclitem());
@@ -121,7 +121,9 @@ public class ResolveConflictHelper {
   public void acceptYours(final @NotNull Conflict conflict) throws TfsException, VcsException {
     conflictResolved(conflict, Resolution.AcceptYours, null);
     // no actions will be executed so fill UpdatedFiles explicitly
-    skip(conflict);
+    if (myUpdatedFiles != null) {
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
+    }
   }
 
   public void acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException, VcsException {
@@ -192,7 +194,7 @@ public class ResolveConflictHelper {
 
     if (response.getUndoOperations().getGetOperation() != null) {
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, myWorkspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles,
+        .execute(myProject, myWorkspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, myUpdatedFiles,
                  ApplyGetOperations.DownloadMode.FORCE);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);

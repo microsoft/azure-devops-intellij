@@ -203,6 +203,8 @@ public class StatusProvider {
         TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
         TFSVcs.assertTrue(item.getLocal() != null);
         return new ServerStatus.RenamedCheckedOut(pendingChange);
+      } else if (change.contains(ChangeType.Undelete)) {
+        return new ServerStatus.Undeleted(pendingChange);
       }
       //}
     }

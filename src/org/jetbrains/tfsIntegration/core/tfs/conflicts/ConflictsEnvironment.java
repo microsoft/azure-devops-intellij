@@ -22,19 +22,19 @@ public class ConflictsEnvironment {
   private static NameMerger ourNameMerger = new DialogNameMerger();
   private static ContentMerger ourContentMerger = new DialogContentMerger();
 
-  public static NameMerger getNameConflictsHandler() {
+  public static NameMerger getNameMerger() {
     return ourNameMerger;
   }
 
-  public static void setNameConflictsHandler(NameMerger nameMerger) {
+  public static void setNameMerger(NameMerger nameMerger) {
     ourNameMerger = nameMerger;
   }
 
-  public static ContentMerger getContentConflictsHandler() {
+  public static ContentMerger getContentMerger() {
     return ourContentMerger;
   }
 
-  public static void setContentConflictsHandler(ContentMerger contentMerger) {
+  public static void setContentMerger(ContentMerger contentMerger) {
     ourContentMerger = contentMerger;
   }
 

@@ -197,7 +197,6 @@ public class TFSChangeList implements CommittedChangeList {
         }
       }
       TFSVcs.assertTrue(!changeType.contains(ChangeType.Delete));
-      TFSVcs.assertTrue(!changeType.contains(ChangeType.Rename));
       myAddedPaths.add(localPath);
       return;
     }

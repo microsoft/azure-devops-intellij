@@ -111,6 +111,12 @@ public class TFSFileListener extends VcsVFSListener {
               // TODO: add local conflict
             }
 
+            public void undeleted(final @NotNull FilePath localPath,
+                                  final boolean localItemExists,
+                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+              // TODO: add local conflict
+            }
+
           });
         }
       });
@@ -139,15 +145,15 @@ public class TFSFileListener extends VcsVFSListener {
           final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
             .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
 
-          final List<String> revertScheduledForAdditionImmediately = new ArrayList<String>();
+          final List<String> revertImmediately = new ArrayList<String>();
 
           final List<ItemPath> pathsToProcess = new ArrayList<ItemPath>(paths);
 
           for (PendingChange pendingChange : pendingChanges) {
             final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
-            if (changeType.contains(ChangeType.Add)) {
+            if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
               // TODO: assert that only Edit, Encoding can be here
-              revertScheduledForAdditionImmediately.add(pendingChange.getItem());
+              revertImmediately.add(pendingChange.getItem());
               final FilePath localPath = VcsUtil.getFilePath(pendingChange.getLocal());
               excludeFromFurtherProcessing(localPath);
               final ItemPath itemPath = new ItemPath(localPath, pendingChange.getItem());
@@ -156,7 +162,7 @@ public class TFSFileListener extends VcsVFSListener {
           }
 
           UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(myProject, workspace, revertScheduledForAdditionImmediately, true);
+            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true);
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
             AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
@@ -213,6 +219,12 @@ public class TFSFileListener extends VcsVFSListener {
                                           final boolean localItemExists,
                                           final @NotNull ServerStatus serverStatus) throws TfsException {
               // keep for further processing
+            }
+
+            public void undeleted(final @NotNull FilePath localPath,
+                                          final boolean localItemExists,
+                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+              TFSVcs.error("Failed to revert undeleted: " + localPath.getPresentableUrl());
             }
           });
         }
@@ -345,6 +357,12 @@ public class TFSFileListener extends VcsVFSListener {
             public void renamedCheckedOut(final @NotNull FilePath localPath,
                                           final boolean localItemExists,
                                           final @NotNull ServerStatus serverStatus) throws TfsException {
+              scheduleMove.put(localPath, movedPaths.get(localPath));
+            }
+
+            public void undeleted(final @NotNull FilePath localPath,
+                                  final boolean localItemExists,
+                                  final @NotNull ServerStatus serverStatus) throws TfsException {
               scheduleMove.put(localPath, movedPaths.get(localPath));
             }
           });
