@@ -309,7 +309,7 @@ public class ApplyGetOperations {
       return;
     }
 
-    if (myDownloadMode == DownloadMode.FORCE || operation.getLver() != operation.getSver()) {
+    if (myDownloadMode == DownloadMode.FORCE || (myDownloadMode != DownloadMode.MERGE && operation.getLver() != operation.getSver())) {
       // remove source, create target
       // don't download file if undoing Add
       if ((source.equals(target) || deleteFile(source)) && (change.contains(ChangeType.Add) || downloadFile(operation))) {

@@ -16,12 +16,17 @@
 
 package org.jetbrains.tfsIntegration.tests.conflicts;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.io.ReadOnlyAttributeUtil;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 import org.junit.Assert;
 
 import java.io.IOException;
@@ -32,9 +37,13 @@ public abstract class TestConflicts extends TFSTestCase {
 
   protected static final String BASE_FILENAME = "base.txt";
   protected static final String YOURS_FILENAME = "yours.txt";
+  protected static final String THEIRS_FILENAME = "theirs.txt";
+  protected static final String MERGED_FILENAME = "merged.txt";
+
   protected static final String BASE_CONTENT = "base_content";
   protected static final String THEIRS_CONTENT = "theirs_content";
   protected static final String YOURS_CONTENT = "yours_content";
+  protected static final String MERGED_CONTENT = "merged_content";
 
   private enum Resolution {
     AcceptYours, AcceptTheirs, Merge
@@ -42,6 +51,7 @@ public abstract class TestConflicts extends TFSTestCase {
 
   protected abstract boolean canMerge();
 
+  @SuppressWarnings({"MethodMayBeStatic"})
   protected int getExpectedConflictsCount() {
     return 1;
   }
@@ -54,12 +64,7 @@ public abstract class TestConflicts extends TFSTestCase {
 
   protected abstract void makeLocalChanges() throws IOException, VcsException;
 
-  @Nullable
-  protected abstract NameMerger getNameMerger();
-
-  @Nullable
-  protected abstract ContentMerger getContentMerger();
-
+  protected abstract void checkConflictProperties(Conflict conflict) throws TfsException;
 
   protected abstract void checkResolvedYoursState() throws VcsException;
 
@@ -67,12 +72,37 @@ public abstract class TestConflicts extends TFSTestCase {
 
   protected abstract void checkResolvedMergeState() throws VcsException;
 
+  @Nullable
+  protected String getExpectedBaseContent() {
+    Assert.fail("not supported");
+    return null;
+  }
+
+  @Nullable
+  protected String getExpectedYoursContent() {
+    Assert.fail("not supported");
+    return null;
+  }
+
+  @Nullable
+  protected String getExpectedTheirsContent() {
+    Assert.fail("not supported");
+    return null;
+  }
+
+  @Nullable
+  protected abstract String mergeContent();
+
+  @Nullable
+  protected abstract String mergeName() throws TfsException;
+
   private void doTest(final Resolution resolution) throws VcsException, IOException {
     ConflictsEnvironment.setResolveConflictsHandler(new ConflictsHandler() {
       public void resolveConflicts(final ResolveConflictHelper resolveConflictHelper) throws TfsException {
         List<Conflict> conflicts = resolveConflictHelper.getConflicts();
         Assert.assertEquals("Expected conflicts count differs: ", getExpectedConflictsCount(), conflicts.size());
         for (Conflict conflict : conflicts) {
+          checkConflictProperties(conflict);
           try {
             if (resolution == Resolution.AcceptYours) {
               resolveConflictHelper.acceptYours(conflict);
@@ -100,8 +130,33 @@ public abstract class TestConflicts extends TFSTestCase {
       }
     });
 
-    ConflictsEnvironment.setNameMerger(getNameMerger());
-    ConflictsEnvironment.setContentMerger(getContentMerger());
+    ConflictsEnvironment.setNameMerger(new NameMerger() {
+      @Nullable
+      public String mergeName(final WorkspaceInfo workspace, final Conflict conflict) {
+        try {
+          return TestConflicts.this.mergeName();
+        }
+        catch (TfsException e) {
+          Assert.fail(e.getMessage());
+          return null;
+        }
+      }
+    });
+
+    ConflictsEnvironment.setContentMerger(new ContentMerger() {
+      public void mergeContent(final Conflict conflict,
+                               final ContentTriplet contentTriplet,
+                               final Project project,
+                               final VirtualFile targetFile,
+                               final String localPathToDisplay) throws IOException, VcsException {
+        Assert.assertEquals(getExpectedBaseContent(), contentTriplet.baseContent);
+        Assert.assertEquals(getExpectedYoursContent(), contentTriplet.localContent);
+        Assert.assertEquals(getExpectedTheirsContent(), contentTriplet.serverContent);
+
+        ReadOnlyAttributeUtil.setReadOnlyAttribute(targetFile, false);
+        setFileContent(targetFile, TestConflicts.this.mergeContent());
+      }
+    });
 
     preparePaths();
     prepareBaseRevision();

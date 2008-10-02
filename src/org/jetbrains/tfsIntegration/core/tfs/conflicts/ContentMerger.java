@@ -16,12 +16,16 @@
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
+import java.io.IOException;
+
 public interface ContentMerger {
 
-  void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile targetFile, String localPathToDisplay);
-  
+  void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile targetFile, String localPathToDisplay)
+    throws IOException, VcsException;
+
 }

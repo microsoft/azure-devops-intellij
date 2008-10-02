@@ -19,8 +19,12 @@ package org.jetbrains.tfsIntegration.tests.conflicts;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ContentMerger;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -56,7 +60,7 @@ public class TestFileYoursRenamedModifiedTheirsMissing extends TestConflicts {
 
   protected void checkResolvedYoursState() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myBaseFile, myYoursFile);
+    getChanges().assertRenamedOrMoved(myBaseFile, myYoursFile, BASE_CONTENT, YOURS_CONTENT);
 
     assertFolder(mySandboxRoot, 1);
     assertFile(myYoursFile, YOURS_CONTENT, true);
@@ -72,13 +76,27 @@ public class TestFileYoursRenamedModifiedTheirsMissing extends TestConflicts {
     Assert.fail("can't merge");
   }
 
-  @Nullable
-  protected NameMerger getNameMerger() {
-    return null;
+  protected void checkConflictProperties(final Conflict conflict) throws TfsException {
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit, ChangeType.Rename));
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getSrclitem());
+    Assert.assertNull(conflict.getTgtlitem());
+    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitem());
+    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitemsrc());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getTsitem());
   }
 
   @Nullable
-  protected ContentMerger getContentMerger() {
+  protected String mergeName() throws TfsException {
+    Assert.fail("not supported");
+    return null;
+  }
+
+
+  @Nullable
+  protected String mergeContent() {
+    Assert.fail("not supported");
     return null;
   }
 

@@ -60,9 +60,13 @@ import java.util.*;
 @SuppressWarnings({"ConstantConditions", "HardCodedStringLiteral"})
 public abstract class TFSTestCase extends AbstractVcsTestCase {
 
-  protected interface RunnableWithExceptions {
-    void run() throws Exception;
+  protected enum TfsServerVersion {
+    TFS_2005_RTM,
+    TFS_2005_SP1,
+    TFS_2008
   }
+
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
 
   private static final String SERVER = "http://tfs-2005-01:8080/";
   //  private static final String SERVER = "http://192.168.230.128:8080/";
@@ -73,6 +77,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private static final String WORKSPACE_NAME_PREFIX = "__testWorkspace_";
   private static final String SANDBOX_PREFIX = "sandbox_";
+
 
   private TempDirTestFixture myTempDirFixture;
   protected WorkspaceInfo myTestWorkspace;
@@ -580,5 +585,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected static FilePath getChildPath(final VirtualFile parent, final String childName) {
     return VcsUtil.getFilePath(new File(new File(parent.getPath()), childName));
+  }
+
+  protected String findServerPath(final FilePath localPath) throws TfsException {
+    return myTestWorkspace.findServerPathsByLocalPath(localPath, false).iterator().next();
   }
 }

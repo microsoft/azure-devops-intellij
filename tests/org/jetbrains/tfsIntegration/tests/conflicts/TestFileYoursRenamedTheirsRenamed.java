@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
@@ -30,16 +31,22 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
+public class TestFileYoursRenamedTheirsRenamed extends TestConflicts {
 
   private FilePath myBaseFile;
+  private FilePath myYoursFile;
+  private FilePath myTheirsFile;
+  private FilePath myMergedFile;
 
   protected boolean canMerge() {
-    return false;
+    return true;
   }
 
   protected void preparePaths() {
     myBaseFile = getChildPath(mySandboxRoot, BASE_FILENAME);
+    myYoursFile = getChildPath(mySandboxRoot, YOURS_FILENAME);
+    myTheirsFile = getChildPath(mySandboxRoot, THEIRS_FILENAME);
+    myMergedFile = getChildPath(mySandboxRoot, MERGED_FILENAME);
   }
 
   protected void prepareBaseRevision() {
@@ -47,52 +54,57 @@ public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
   }
 
   protected void prepareTargetRevision() throws VcsException, IOException {
-    deleteFileInCommand(myBaseFile);
+    rename(myBaseFile, THEIRS_FILENAME);
   }
 
   protected void makeLocalChanges() throws IOException, VcsException {
-    editFiles(myBaseFile);
-    setFileContent(myBaseFile, YOURS_CONTENT);
+    rename(myBaseFile, YOURS_FILENAME);
   }
 
   protected void checkResolvedYoursState() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertModified(myBaseFile);
+    getChanges().assertRenamedOrMoved(myTheirsFile, myYoursFile, BASE_CONTENT, BASE_CONTENT);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myBaseFile, YOURS_CONTENT, true);
+    assertFile(myYoursFile, BASE_CONTENT, false);
   }
 
   protected void checkResolvedTheirsState() throws VcsException {
     getChanges().assertTotalItems(0);
 
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myTheirsFile, BASE_CONTENT, false);
   }
 
   protected void checkResolvedMergeState() throws VcsException {
-    Assert.fail("can't merge");
-  }
+    getChanges().assertTotalItems(1);
+    getChanges().assertRenamedOrMoved(myTheirsFile, myMergedFile, BASE_CONTENT, BASE_CONTENT);
 
-  @Nullable
-  protected String mergeName() {
-    Assert.fail("can't merge");
-    return null;
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myMergedFile, BASE_CONTENT, false);
   }
 
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit));
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFile), conflict.getSrclitem());
-    Assert.assertNull(conflict.getTgtlitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Rename));
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Rename));
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getSrclitem());
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getTgtlitem());
+
+    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitem());
+    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitemsrc());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getTsitem());
+    Assert.assertEquals(findServerPath(myTheirsFile), conflict.getTsitem());
   }
 
   @Nullable
+  protected String mergeName() throws TfsException {
+    return findServerPath(myMergedFile);
+  }
+
+
+  @Nullable
   protected String mergeContent() {
-    Assert.fail("Not supported");
+    Assert.fail("not supported");
     return null;
   }
 

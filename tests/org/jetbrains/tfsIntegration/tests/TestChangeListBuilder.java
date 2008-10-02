@@ -32,6 +32,7 @@ import org.junit.Assert;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"HardCodedStringLiteral"})
 public class TestChangeListBuilder extends MockChangelistBuilder {
 
   private final VirtualFile myRootPath;
@@ -169,9 +170,11 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
 
   public void assertRenamedOrMoved(FilePath from, FilePath to, String originalContent, String modifiedContent) throws VcsException {
     final Change moveChange = getMoveChange(from, to);
-    Assert.assertNotNull(toString(), moveChange);
-    Assert.assertEquals(moveChange.getBeforeRevision().getContent(), originalContent);
-    Assert.assertEquals(moveChange.getAfterRevision().getContent(), modifiedContent);
+    Assert.assertNotNull(
+      "Expected " + ChangeHelper.getPathRemainder(from, myRootPath) + " -> " + ChangeHelper.getPathRemainder(to, myRootPath) + "\n" + toString(),
+      moveChange);
+    Assert.assertEquals(originalContent, moveChange.getBeforeRevision().getContent());
+    Assert.assertEquals(modifiedContent, moveChange.getAfterRevision().getContent());
   }
 
 
@@ -214,7 +217,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
 
   public void assertModified(FilePath file, String originalContent, String modifiedContent) throws VcsException {
     final Change change = ChangeHelper.getModificationChange(getChanges(), file);
-    Assert.assertNotNull(change);
+    Assert.assertNotNull(ChangeHelper.getPathRemainder(file, myRootPath) + " expected to be modified\n" + toString(), change);
     Assert.assertEquals(originalContent, change.getBeforeRevision().getContent());
     Assert.assertEquals(modifiedContent, change.getAfterRevision().getContent());
   }
@@ -271,7 +274,7 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
     }
     else {
       final FileStatus realStatus = FileStatusManager.getInstance(myProject).getStatus(file);
-      Assert.assertTrue("FileStatus " + realStatus + " while expected " + expectedStatus, realStatus == expectedStatus);
+      Assert.assertEquals("FileStatus " + realStatus + " while expected " + expectedStatus, realStatus, expectedStatus);
     }
   }
 

@@ -30,12 +30,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
+public class TestFileYoursModifiedTheirsModified extends TestConflicts {
 
   private FilePath myBaseFile;
 
   protected boolean canMerge() {
-    return false;
+    return true;
   }
 
   protected void preparePaths() {
@@ -47,7 +47,8 @@ public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
   }
 
   protected void prepareTargetRevision() throws VcsException, IOException {
-    deleteFileInCommand(myBaseFile);
+    editFiles(myBaseFile);
+    setFileContent(myBaseFile, THEIRS_CONTENT);
   }
 
   protected void makeLocalChanges() throws IOException, VcsException {
@@ -57,7 +58,7 @@ public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
 
   protected void checkResolvedYoursState() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertModified(myBaseFile);
+    getChanges().assertModified(myBaseFile, THEIRS_CONTENT, YOURS_CONTENT);
 
     assertFolder(mySandboxRoot, 1);
     assertFile(myBaseFile, YOURS_CONTENT, true);
@@ -66,11 +67,28 @@ public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
   protected void checkResolvedTheirsState() throws VcsException {
     getChanges().assertTotalItems(0);
 
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myBaseFile, THEIRS_CONTENT, false);
   }
 
   protected void checkResolvedMergeState() throws VcsException {
-    Assert.fail("can't merge");
+    getChanges().assertTotalItems(1);
+
+    getChanges().assertModified(myBaseFile, THEIRS_CONTENT, MERGED_CONTENT);
+
+    assertFolder(mySandboxRoot, 1);
+    assertFile(myBaseFile, MERGED_CONTENT, true);
+  }
+
+  protected void checkConflictProperties(final Conflict conflict) throws TfsException {
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit));
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Edit));
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFile), conflict.getSrclitem());
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFile), conflict.getTgtlitem());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
+    Assert.assertEquals(findServerPath(myBaseFile), conflict.getTsitem());
   }
 
   @Nullable
@@ -79,21 +97,24 @@ public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
     return null;
   }
 
-  protected void checkConflictProperties(final Conflict conflict) throws TfsException {
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit));
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFile), conflict.getSrclitem());
-    Assert.assertNull(conflict.getTgtlitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getTsitem());
+  @Nullable
+  protected String mergeContent() {
+    return MERGED_CONTENT;
   }
 
   @Nullable
-  protected String mergeContent() {
-    Assert.fail("Not supported");
-    return null;
+  protected String getExpectedBaseContent() {
+    return BASE_CONTENT;
+  }
+
+  @Nullable
+  protected String getExpectedYoursContent() {
+    return YOURS_CONTENT;
+  }
+
+  @Nullable
+  protected String getExpectedTheirsContent() {
+    return THEIRS_CONTENT;
   }
 
   @Test

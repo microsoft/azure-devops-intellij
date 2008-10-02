@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.Arrays;
 
 // TODO use EnumSet
 //public class EnumMask<T extends Enum<T>> {
@@ -64,6 +64,15 @@ public class EnumMask<T extends Enum<T>> {
     return myValues.containsAll(Arrays.asList(values));
   }
 
+  public boolean containsAny(final Enum<T>... values) {
+    for (Enum<T> value : values) {
+      if (myValues.contains(value)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public boolean containsOnly(final Enum<T>... values) {
     return myValues.size() == values.length && contains(values);
   }
@@ -85,7 +94,7 @@ public class EnumMask<T extends Enum<T>> {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (Enum<T> value : myValues) {
-      if (sb.length() > 0) {        
+      if (sb.length() > 0) {
         sb.append(" ");
       }
       sb.append(value.toString());

@@ -108,7 +108,12 @@ public class ResolveConflictHelper {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
       final VirtualFile vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
       if (vFile != null) {
-        ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
+        try {
+          ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
+        }
+        catch (IOException e) {
+          throw new VcsException(e);
+        }
       }
       else {
         String errorMessage = MessageFormat.format("File ''{0}'' is missing", conflict.getSrclitem());
@@ -146,20 +151,19 @@ public class ResolveConflictHelper {
   }
 
   public static boolean canMerge(final @NotNull Conflict conflict) {
+    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
+    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
+
     boolean isNamespaceConflict =
       ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
     if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
-      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit) &&
-          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
+      boolean yourRenamedOrModified = yourChange.containsAny(ChangeType.Rename, ChangeType.Edit);
+      boolean baseRenamedOrModified = baseChange.containsAny(ChangeType.Rename, ChangeType.Edit);
+      if (yourRenamedOrModified && baseRenamedOrModified) {
         return true;
       }
-      if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename) &&
-          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Rename)) {
-        return true;
-      }
-      if (conflict.getCtype().equals(ConflictType.Merge) &&
-          EnumMask.fromString(ChangeType.class, conflict.getBchg()).contains(ChangeType.Edit)) {
-        if (EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit)) {
+      if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType.Edit)) {
+        if (yourChange.contains(ChangeType.Edit)) {
           return true;
         }
         if (conflict.getIsforced()) {
@@ -203,11 +207,15 @@ public class ResolveConflictHelper {
   }
 
   private static boolean isNameConflict(final @NotNull Conflict conflict) {
-    return EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Rename);
+    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
+    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
+    return yourChange.contains(ChangeType.Rename) || baseChange.contains(ChangeType.Rename);
   }
 
   private static boolean isContentConflict(final @NotNull Conflict conflict) {
-    return EnumMask.fromString(ChangeType.class, conflict.getYchg()).contains(ChangeType.Edit);
+    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
+    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
+    return yourChange.contains(ChangeType.Edit) || baseChange.contains(ChangeType.Edit);
   }
 
 }
