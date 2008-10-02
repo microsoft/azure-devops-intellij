@@ -19,8 +19,6 @@ package org.jetbrains.tfsIntegration.tests;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
-import org.jetbrains.tfsIntegration.tests.conflicts.AcceptYoursConflictsHandler;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -119,7 +117,7 @@ public class TestComplexResolveConflicts extends TFSTestCase {
     prepareRevisions();
     renameFolder();
 
-    ConflictsEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(1));
+    //ConflictsEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(1));
     updateTo(4);
     FilePath folderFrom = getChildPath(mySandboxRoot, FOLDER_NAME_2);
     FilePath folderTo = getChildPath(mySandboxRoot, FOLDER_NAME_3);
