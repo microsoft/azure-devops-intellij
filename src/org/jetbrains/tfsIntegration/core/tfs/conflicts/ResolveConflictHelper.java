@@ -156,12 +156,14 @@ public class ResolveConflictHelper {
 
     boolean isNamespaceConflict =
       ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
-    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
+    if (!isNamespaceConflict) {
       boolean yourRenamedOrModified = yourChange.containsAny(ChangeType.Rename, ChangeType.Edit);
       boolean baseRenamedOrModified = baseChange.containsAny(ChangeType.Rename, ChangeType.Edit);
       if (yourRenamedOrModified && baseRenamedOrModified) {
         return true;
       }
+    }
+    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
       if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType.Edit)) {
         if (yourChange.contains(ChangeType.Edit)) {
           return true;

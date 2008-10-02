@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.NameMerger;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.junit.Assert;
@@ -30,7 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursModifiedTheirsMissing extends TestConflicts {
+public class TestFileYoursModifiedTheirsMissing extends TestFileConflicts {
 
   private FilePath myBaseFile;
 

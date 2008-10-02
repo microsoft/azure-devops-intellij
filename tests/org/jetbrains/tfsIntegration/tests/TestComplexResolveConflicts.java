@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.tests;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
-import org.junit.Test;
 
 import java.io.IOException;
 
@@ -112,20 +111,20 @@ public class TestComplexResolveConflicts extends TFSTestCase {
     assertFile(file, CONTENT_3, true);
   }
 
-  @Test
-  public void testRenameFolderAcceptYours() throws VcsException, IOException {
-    prepareRevisions();
-    renameFolder();
-
-    //ConflictsEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(1));
-    updateTo(4);
-    FilePath folderFrom = getChildPath(mySandboxRoot, FOLDER_NAME_2);
-    FilePath folderTo = getChildPath(mySandboxRoot, FOLDER_NAME_3);
-
-    // TODO: write correct asserts
-    //assertFolder(folderTo, 1);
-    //getChanges().assertTotalItems(1);
-    //getChanges().assertRenamedOrMoved(folderFrom, folderTo);
-  }
+  //@Test
+  //public void testRenameFolderAcceptYours() throws VcsException, IOException {
+  //  prepareRevisions();
+  //  renameFolder();
+  //
+  //  //ConflictsEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(1));
+  //  updateTo(4);
+  //  FilePath folderFrom = getChildPath(mySandboxRoot, FOLDER_NAME_2);
+  //  FilePath folderTo = getChildPath(mySandboxRoot, FOLDER_NAME_3);
+  //
+  //  // TODO: write correct asserts
+  //  //assertFolder(folderTo, 1);
+  //  //getChanges().assertTotalItems(1);
+  //  //getChanges().assertRenamedOrMoved(folderFrom, folderTo);
+  //}
 
 }

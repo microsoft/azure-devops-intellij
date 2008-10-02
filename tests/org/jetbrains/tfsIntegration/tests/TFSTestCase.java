@@ -66,7 +66,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
 
   private static final String SERVER = "http://tfs-2005-01:8080/";
   //  private static final String SERVER = "http://192.168.230.128:8080/";

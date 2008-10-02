@@ -29,77 +29,81 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursRenamedTheirsMissing extends TestFileConflicts {
+@SuppressWarnings({"HardCodedStringLiteral"})
+public class TestFolderYoursAddedTheirsAdded extends TestFolderConflicts {
 
-  private FilePath myBaseFile;
-  private FilePath myYoursFile;
+  private FilePath myBaseFolder;
+
+  protected boolean testUpdateToThePast() {
+    return true;
+  }
 
   protected boolean canMerge() {
     return false;
   }
 
   protected void preparePaths() {
-    myBaseFile = getChildPath(mySandboxRoot, BASE_FILENAME);
-    myYoursFile = getChildPath(mySandboxRoot, YOURS_FILENAME);
+    myBaseFolder = getChildPath(mySandboxRoot, BASE_FOLDERNAME);
   }
 
-  protected void prepareBaseRevision() {
-    createFileInCommand(myBaseFile, BASE_CONTENT);
+  protected void prepareBaseRevision() throws VcsException {
+    createDirInCommand(myBaseFolder);
+    commit(getChanges().getChanges(), "0-th revision");
+    deleteFileInCommand(myBaseFolder);
   }
 
   protected void prepareTargetRevision() throws VcsException, IOException {
-    deleteFileInCommand(myBaseFile);
+    Assert.fail("Not supported");
   }
 
   protected void makeLocalChanges() throws IOException, VcsException {
-    rename(myBaseFile, YOURS_FILENAME);
+    createDirInCommand(myBaseFolder);
   }
 
   protected void checkResolvedYoursState() throws VcsException {
-    getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myBaseFile, myYoursFile);
-
-    assertFolder(mySandboxRoot, 1);
-    assertFile(myYoursFile, BASE_CONTENT, false);
+    Assert.fail("Not supported");
   }
 
   protected void checkResolvedTheirsState() throws VcsException {
     getChanges().assertTotalItems(0);
 
-    assertFolder(mySandboxRoot, 0);
+    assertFolder(mySandboxRoot, 1);
+    assertFolder(myBaseFolder, 0);
   }
 
   protected void checkResolvedMergeState() throws VcsException {
     Assert.fail("can't merge");
   }
 
-  protected void checkConflictProperties(final Conflict conflict) throws TfsException {
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Rename));
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getSrclitem());
-    Assert.assertNull(conflict.getTgtlitem());
-    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitem());
-    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitemsrc());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getTsitem());
+  @Nullable
+  protected String mergeName() {
+    Assert.fail("can't merge");
+    return null;
   }
 
-  @Nullable
-  protected String mergeName() throws TfsException {
-    Assert.fail("not supported");
-    return null;
+  protected void checkConflictProperties(final Conflict conflict) throws TfsException {
+    Assert.assertTrue(
+      EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Add, ChangeType.Encoding));
+    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.None));
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFolder), conflict.getSrclitem());
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFolder), conflict.getTgtlitem());
+    Assert.assertEquals(findServerPath(myBaseFolder), conflict.getYsitem());
+    Assert.assertEquals(findServerPath(myBaseFolder), conflict.getYsitemsrc());
+    Assert.assertNull(conflict.getBsitem());
+    Assert.assertEquals(findServerPath(myBaseFolder), conflict.getTsitem());
   }
 
   @Nullable
   protected String mergeContent() {
-    Assert.fail("not supported");
+    Assert.fail("Not supported");
     return null;
   }
 
-  @Test
-  public void testAcceptYours() throws VcsException, IOException {
-    super.testAcceptYours();
-  }
+  /// don't test, otherwise TF14052: Cannot specify AcceptYours to resolve a namespace conflict.
+  //@Test
+  //public void testAcceptYours() throws VcsException, IOException {
+  //  super.testAcceptYours();
+  //}
 
   @Test
   public void testAcceptTheirs() throws VcsException, IOException {

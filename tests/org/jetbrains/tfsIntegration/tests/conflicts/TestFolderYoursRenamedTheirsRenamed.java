@@ -29,74 +29,74 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursRenamedTheirsRenamed extends TestFileConflicts {
+public class TestFolderYoursRenamedTheirsRenamed extends TestFolderConflicts {
 
-  private FilePath myBaseFile;
-  private FilePath myYoursFile;
-  private FilePath myTheirsFile;
-  private FilePath myMergedFile;
+  private FilePath myBaseFolder;
+  private FilePath myYoursFolder;
+  private FilePath myTheirsFolder;
+  private FilePath myMergedFolder;
 
   protected boolean canMerge() {
     return true;
   }
 
   protected void preparePaths() {
-    myBaseFile = getChildPath(mySandboxRoot, BASE_FILENAME);
-    myYoursFile = getChildPath(mySandboxRoot, YOURS_FILENAME);
-    myTheirsFile = getChildPath(mySandboxRoot, THEIRS_FILENAME);
-    myMergedFile = getChildPath(mySandboxRoot, MERGED_FILENAME);
+    myBaseFolder = getChildPath(mySandboxRoot, BASE_FOLDERNAME);
+    myYoursFolder = getChildPath(mySandboxRoot, YOURS_FOLDERNAME);
+    myTheirsFolder = getChildPath(mySandboxRoot, THEIRS_FOLDERNAME);
+    myMergedFolder = getChildPath(mySandboxRoot, MERGED_FOLDERNAME);
   }
 
   protected void prepareBaseRevision() {
-    createFileInCommand(myBaseFile, BASE_CONTENT);
+    createDirInCommand(myBaseFolder);
   }
 
   protected void prepareTargetRevision() throws VcsException, IOException {
-    rename(myBaseFile, THEIRS_FILENAME);
+    rename(myBaseFolder, THEIRS_FOLDERNAME);
   }
 
   protected void makeLocalChanges() throws IOException, VcsException {
-    rename(myBaseFile, YOURS_FILENAME);
+    rename(myBaseFolder, YOURS_FOLDERNAME);
   }
 
   protected void checkResolvedYoursState() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myTheirsFile, myYoursFile, BASE_CONTENT, BASE_CONTENT);
+    getChanges().assertRenamedOrMoved(myTheirsFolder, myYoursFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myYoursFile, BASE_CONTENT, false);
+    assertFolder(myYoursFolder, 0);
   }
 
   protected void checkResolvedTheirsState() throws VcsException {
     getChanges().assertTotalItems(0);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myTheirsFile, BASE_CONTENT, false);
+    assertFolder(myTheirsFolder, 0);
   }
 
   protected void checkResolvedMergeState() throws VcsException {
     getChanges().assertTotalItems(1);
-    getChanges().assertRenamedOrMoved(myTheirsFile, myMergedFile, BASE_CONTENT, BASE_CONTENT);
+    getChanges().assertRenamedOrMoved(myTheirsFolder, myMergedFolder);
 
     assertFolder(mySandboxRoot, 1);
-    assertFile(myMergedFile, BASE_CONTENT, false);
+    assertFolder(myMergedFolder, 0);
   }
 
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Rename));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Rename));
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getSrclitem());
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFile), conflict.getTgtlitem());
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFolder), conflict.getSrclitem());
+    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myYoursFolder), conflict.getTgtlitem());
 
-    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitem());
-    Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitemsrc());
-    Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());
-    Assert.assertEquals(findServerPath(myTheirsFile), conflict.getTsitem());
+    Assert.assertEquals(findServerPath(myYoursFolder), conflict.getYsitem());
+    Assert.assertEquals(findServerPath(myYoursFolder), conflict.getYsitemsrc());
+    Assert.assertEquals(findServerPath(myBaseFolder), conflict.getBsitem());
+    Assert.assertEquals(findServerPath(myTheirsFolder), conflict.getTsitem());
   }
 
   @Nullable
   protected String mergeName() throws TfsException {
-    return findServerPath(myMergedFile);
+    return findServerPath(myMergedFolder);
   }
 
 
