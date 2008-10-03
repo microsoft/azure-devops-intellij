@@ -59,6 +59,7 @@ public class UndoPendingChanges {
       Collection<VcsException> errors = new ArrayList<VcsException>();
       errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
 
+      // TODO fill renamed paths map in ApplyGetOperations
       Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();
       for (GetOperation getOperation : result.getResult()) {
         if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
