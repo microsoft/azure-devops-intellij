@@ -227,19 +227,23 @@ public class Workstation {
     }
   }
 
-  public Collection<WorkspaceInfo> findWorkspace(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+  public Collection<WorkspaceInfo> findWorkspaceCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
     // try cached working folders first
-    Collection<WorkspaceInfo> resultCached = new ArrayList<WorkspaceInfo>();
+    Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
       if (workspace.hasMappingCached(localPath, considerChildMappings)) {
-        resultCached.add(workspace);
+        result.add(workspace);
         if (!considerChildMappings) {
           // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces
           break;
         }
       }
     }
+    return result;
+  }
 
+  public Collection<WorkspaceInfo> findWorkspace(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+    final Collection<WorkspaceInfo> resultCached = findWorkspaceCached(localPath, considerChildMappings);
     if (!resultCached.isEmpty()) {
       // given path is mapped according to cached mapping info -> reload and check with server info
       for (WorkspaceInfo workspace : resultCached) {

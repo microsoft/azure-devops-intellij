@@ -34,7 +34,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 public class TFSVcs extends AbstractVcs {
 
@@ -134,13 +133,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public boolean isVersionedDirectory(final VirtualFile dir) {
-    try {
-      return !Workstation.getInstance().findWorkspace(TfsFileUtil.getFilePath(dir), false).isEmpty();
-    }
-    catch (TfsException e) {
-      LOG.info(e);
-    }
-    return false;
+    return !Workstation.getInstance().findWorkspaceCached(TfsFileUtil.getFilePath(dir), false).isEmpty();
   }
 
   @Nullable
