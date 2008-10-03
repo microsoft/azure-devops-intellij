@@ -51,7 +51,7 @@ public class ServerBrowserForm {
     myPathFilter = pathFilter;
     myActions = actions;
 
-    updateControls(myTree.getSelectedPath());
+    updateControls(myTree.getSelectedItem());
   }
 
   private void createUIComponents() {
@@ -59,7 +59,7 @@ public class ServerBrowserForm {
     myTree.configure(myServer, myInitialPath, myPathFilter);
 
     myTree.addSelectionListener(new ServerTree.SelectionListener() {
-      public void selectionChanged(final String selection) {
+      public void selectionChanged(final ServerTree.SelectedItem selection) {
         updateControls(selection);
       }
     });
@@ -77,8 +77,8 @@ public class ServerBrowserForm {
     }
   }
 
-  private void updateControls(final String selection) {
-    String text = MessageFormat.format("Selected path: {0}", selection != null ? selection : "none");
+  private void updateControls(final ServerTree.SelectedItem selection) {
+    String text = MessageFormat.format("Selected path: {0}", selection != null ? selection.path : "none");
     mySelectedPathLabel.setText(text);
     updateActions();
   }
@@ -96,7 +96,7 @@ public class ServerBrowserForm {
   }
 
   @Nullable
-  public String getSelectedPath() {
-    return myTree.getSelectedPath();
+  public ServerTree.SelectedItem getSelectedPath() {
+    return myTree.getSelectedItem();
   }
 }

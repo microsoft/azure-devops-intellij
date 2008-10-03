@@ -19,31 +19,28 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 
 import javax.swing.*;
-import java.util.Collection;
 
 public class MergeBranchDialog extends DialogWrapper {
-  private final ItemPath mySourcePath;
-  private final Collection<Item> myTargetBranches;
+  private final String mySourcePath;
+  private final boolean mySourceIsDirectory;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private MergeBranchForm myMergeBranchForm;
 
   public MergeBranchDialog(Project project,
                            final WorkspaceInfo workspace,
-                           final ItemPath sourcePath,
-                           final Collection<Item> targetBranches,
+                           final String sourcePath,
+                           final boolean sourceIsDirectory,
                            String title) {
     super(project, false);
     myProject = project;
     myWorkspace = workspace;
     mySourcePath = sourcePath;
-    myTargetBranches = targetBranches;
+    mySourceIsDirectory = sourceIsDirectory;
 
     setTitle(title);
     setResizable(true);
@@ -67,7 +64,7 @@ public class MergeBranchDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myMergeBranchForm = new MergeBranchForm(myProject, myWorkspace, mySourcePath, myTargetBranches);
+    myMergeBranchForm = new MergeBranchForm(myProject, myWorkspace, mySourcePath, mySourceIsDirectory, getTitle());
 
     myMergeBranchForm.addListener(new MergeBranchForm.Listener() {
       public void stateChanged(final boolean canFinish) {

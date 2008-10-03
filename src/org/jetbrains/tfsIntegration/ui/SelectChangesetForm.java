@@ -150,7 +150,7 @@ public class SelectChangesetForm {
       Messages.showErrorDialog(panel, "Invalid date specified", "Find Changeset");
     }
     finally {
-      getPanel().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+      getPanel().setCursor(Cursor.getDefaultCursor());
     }
   }
 

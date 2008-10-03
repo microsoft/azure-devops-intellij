@@ -26,6 +26,7 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import java.awt.*;
@@ -58,7 +59,8 @@ public class CreateBranchForm {
         }
         d.show();
         if (d.isOK()) {
-          myTargetField.setText(d.getSelectedPath());
+          final ServerTree.SelectedItem selectedPath = d.getSelectedPath();
+          myTargetField.setText(selectedPath != null ? selectedPath.path : null);
         }
       }
     });
@@ -93,7 +95,7 @@ public class CreateBranchForm {
     }
 
     public void update(final AnActionEvent e) {
-      e.getPresentation().setEnabled(getServerTree().getSelectedPath() != null);
+      e.getPresentation().setEnabled(getServerTree().getSelectedItem() != null);
     }
   }
 }

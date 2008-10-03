@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.ui.deferredtree.DeferredTree;
 import org.jetbrains.tfsIntegration.ui.deferredtree.SelectedPath;
 
@@ -34,11 +35,21 @@ import java.util.List;
 public class ServerTree {
 
   public interface SelectionListener {
-    void selectionChanged(String selection);
+    void selectionChanged(SelectedItem selection);
   }
 
   public interface PathFilter {
     boolean isAcceptablePath(final @NotNull String path);
+  }
+
+  public static class SelectedItem {
+    public final String path;
+    public final boolean isDirectory;
+
+    public SelectedItem(final String path, final boolean directory) {
+      this.path = path;
+      isDirectory = directory;
+    }
   }
 
   private static final Color DISABLED_COLOR = Color.GRAY;
@@ -58,7 +69,7 @@ public class ServerTree {
     myTree.setExpandsSelectedPaths(true);
     myTree.addListener(new DeferredTree.Listener<Item>() {
       public void selectionChanged(final Collection<SelectedPath<Item>> selection) {
-        fireSelectionChanged(getSelectedPath());
+        fireSelectionChanged(getSelectedItem());
       }
     });
   }
@@ -98,18 +109,20 @@ public class ServerTree {
   }
 
   @Nullable
-  public String getSelectedPath() {
+  public SelectedItem getSelectedItem() {
     if (!myTree.getSelectedPaths().isEmpty()) {
       final SelectedPath<Item> selectedPath = myTree.getSelectedPaths().iterator().next();
       final Item deepestRealItem = selectedPath.getRealNodes().get(selectedPath.getRealNodes().size() - 1);
+      boolean isDirectory = deepestRealItem.getType() == ItemType.Folder;
       StringBuilder path = new StringBuilder(deepestRealItem.getItem());
       for (String virtualItem : selectedPath.getVirtualNodes()) {
         if (!path.toString().endsWith(VersionControlPath.PATH_SEPARATOR)) {
           path.append(VersionControlPath.PATH_SEPARATOR);
         }
         path.append(virtualItem);
+        isDirectory = false;
       }
-      return path.toString();
+      return new SelectedItem(path.toString(), isDirectory);
     }
     return null;
   }
@@ -126,10 +139,10 @@ public class ServerTree {
     mySelectionListeners.remove(listener);
   }
 
-  private void fireSelectionChanged(String selection) {
+  private void fireSelectionChanged(SelectedItem selectedItem ) {
     SelectionListener[] listeners = mySelectionListeners.toArray(new SelectionListener[mySelectionListeners.size()]);
     for (SelectionListener listener : listeners) {
-      listener.selectionChanged(selection);
+      listener.selectionChanged(selectedItem);
     }
   }
 

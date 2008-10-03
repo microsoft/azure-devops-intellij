@@ -29,6 +29,7 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -332,9 +333,9 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
         }
         d.show();
         if (d.isOK()) {
-          final String selectedPath = d.getSelectedPath();
+          final ServerTree.SelectedItem selectedPath = d.getSelectedPath();
           if (selectedPath != null) {
-            return selectedPath;
+            return selectedPath.path;
           }
         }
         return initialText;

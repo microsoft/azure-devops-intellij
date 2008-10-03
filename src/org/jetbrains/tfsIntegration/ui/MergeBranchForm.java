@@ -18,15 +18,20 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.MergeCandidate;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -34,8 +39,11 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class MergeBranchForm {
@@ -57,39 +65,63 @@ public class MergeBranchForm {
     }
   }
 
-  private JLabel mySourceBranchLabel;
-  private JComboBox myTargetBranchCombo;
+  private TextFieldWithBrowseButton mySourceField;
+  private JComboBox myTargetCombo;
   private JComboBox myChangesTypeCombo;
   private SelectRevisionForm mySelectRevisionForm;
   private JPanel myContentPanel;
   private JPanel myChangesetsPanel;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
-  private final ItemPath mySourcePath;
   private final JTable myChangesetsTable;
   private final ChangesetsTableModel myChangesetsTableModel;
+  private final String myDialogTitle;
   private final List<Listener> myListeners = new ArrayList<Listener>();
+  private boolean mySourceIsDirectory;
 
-  public MergeBranchForm(Project project, WorkspaceInfo workspace, ItemPath sourcePath, final Collection<Item> targetBranches) {
+  public MergeBranchForm(final Project project,
+                         final WorkspaceInfo workspace,
+                         String initialSourcePath,
+                         boolean initialSourcePathIsDirectory,
+                         final String dialogTitle) {
     myProject = project;
     myWorkspace = workspace;
-    mySourcePath = sourcePath;
+    myDialogTitle = dialogTitle;
 
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable = new JTable(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 
-    mySelectRevisionForm =
-      new SelectRevisionForm(myProject, myWorkspace, sourcePath.getServerPath(), sourcePath.getLocalPath().isDirectory());
+    mySelectRevisionForm = new SelectRevisionForm();
 
     myChangesetsPanel.add(mySelectRevisionForm.getPanel(), ChangesType.ALL.toString());
     myChangesetsPanel.add(new JScrollPane(myChangesetsTable), ChangesType.SELECTED.toString());
 
-    mySourceBranchLabel.setText(sourcePath.getServerPath());
+    mySourceField.setText(initialSourcePath);
+    mySourceIsDirectory = initialSourcePathIsDirectory;
 
-    myTargetBranchCombo.setModel(new DefaultComboBoxModel(targetBranches.toArray()));
+    mySourceField.getButton().addActionListener(new ActionListener() {
+      public void actionPerformed(final ActionEvent e) {
+        ServerBrowserDialog d = new ServerBrowserDialog("Choose source item", project, workspace.getServer(), mySourceField.getText(),
+                                                        false, Collections.<ServerBrowserAction>emptyList());
+        d.show();
+        if (d.isOK()) {
+          final ServerTree.SelectedItem selectedPath = d.getSelectedPath();
+          mySourceField.setText(selectedPath != null ? selectedPath.path : null);
+          mySourceIsDirectory = selectedPath == null || selectedPath.isDirectory;
+        }
+        updateOnSourceChange();
+      }
+    });
+    mySourceField.getTextField().addFocusListener(new FocusAdapter() {
+      public void focusLost(final FocusEvent e) {
+        mySourceIsDirectory = true;
+        updateOnSourceChange();
+      }
+    });
 
-    myTargetBranchCombo.setRenderer(new DefaultListCellRenderer() {
+    myTargetCombo.setModel(new DefaultComboBoxModel());
+    myTargetCombo.setRenderer(new DefaultListCellRenderer() {
       public Component getListCellRendererComponent(final JList list,
                                                     final Object value,
                                                     final int index,
@@ -104,11 +136,9 @@ public class MergeBranchForm {
       }
     });
 
-    myTargetBranchCombo.setSelectedIndex(0);
-    myTargetBranchCombo.addActionListener(new ActionListener() {
+    myTargetCombo.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ChangesType changesType = (ChangesType)myChangesTypeCombo.getSelectedItem();
-        if (changesType == ChangesType.SELECTED) {
+        if (myChangesTypeCombo.getSelectedItem() == ChangesType.SELECTED) {
           updateChangesetsTable();
         }
       }
@@ -118,26 +148,24 @@ public class MergeBranchForm {
 
     myChangesTypeCombo.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ChangesType changesType = (ChangesType)myChangesTypeCombo.getSelectedItem();
-        if (changesType == ChangesType.SELECTED) {
+        if (myChangesTypeCombo.getSelectedItem() == ChangesType.SELECTED) {
           updateChangesetsTable();
         }
-        ((CardLayout)myChangesetsPanel.getLayout()).show(myChangesetsPanel, changesType.toString());
-        fireStateChanged(changesType == ChangesType.ALL);
+        ((CardLayout)myChangesetsPanel.getLayout()).show(myChangesetsPanel, myChangesTypeCombo.getSelectedItem().toString());
+        fireStateChanged();
       }
     });
 
     myChangesetsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(final ListSelectionEvent e) {
-        ChangesType changesType = (ChangesType)myChangesTypeCombo.getSelectedItem();
-        if (changesType == ChangesType.SELECTED) {
-          fireStateChanged(myChangesetsTable.getSelectedRowCount() > 0);
-        }
+        fireStateChanged();
       }
     });
 
     myChangesTypeCombo.setSelectedIndex(0);
-    mySelectRevisionForm.init(project, workspace, sourcePath.getServerPath(), sourcePath.getLocalPath().isDirectory());
+    mySelectRevisionForm.init(project, workspace, initialSourcePath, initialSourcePathIsDirectory);
+
+    updateOnSourceChange();
   }
 
   public JComponent getContentPanel() {
@@ -145,26 +173,28 @@ public class MergeBranchForm {
   }
 
   private void updateChangesetsTable() {
-    getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     List<Changeset> changesets = new ArrayList<Changeset>();
-    try {
-      final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
-        .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourcePath.getServerPath(), getTargetPath());
-      for (MergeCandidate candidate : mergeCandidates) {
-        changesets.add(candidate.getChangeset());
+    if (myTargetCombo.getSelectedIndex() != -1) {
+      try {
+        getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
+          .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath());
+        for (MergeCandidate candidate : mergeCandidates) {
+          changesets.add(candidate.getChangeset());
+        }
       }
-    }
-    catch (TfsException e) {
-      Messages.showErrorDialog(myProject, e.getMessage(), "Query Merge Changesets");
-    }
-    finally {
-      getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+      catch (TfsException e) {
+        Messages.showErrorDialog(myProject, e.getMessage(), myDialogTitle);
+      }
+      finally {
+        getContentPanel().setCursor(Cursor.getDefaultCursor());
+      }
     }
     myChangesetsTableModel.setChangesets(changesets);
   }
 
   public String getTargetPath() {
-    Item targetBranch = (Item)myTargetBranchCombo.getSelectedItem();
+    Item targetBranch = (Item)myTargetCombo.getSelectedItem();
     return targetBranch.getItem();
   }
 
@@ -202,12 +232,65 @@ public class MergeBranchForm {
     myListeners.remove(listener);
   }
 
-  private void fireStateChanged(final boolean canFinish) {
+  private void fireStateChanged() {
+    boolean canFinish = canFinish();
     Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
     for (Listener listener : listeners) {
       listener.stateChanged(canFinish);
     }
   }
 
+  private boolean canFinish() {
+    ChangesType changesType = (ChangesType)myChangesTypeCombo.getSelectedItem();
+    if (changesType == ChangesType.SELECTED) {
+      if (myChangesetsTable.getSelectedRowCount() == 0) {
+        return false;
+      }
+    }
+
+    if (myTargetCombo.getSelectedIndex() == -1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private void updateOnSourceChange() {
+    final Collection<Item> targetBranches = new ArrayList<Item>();
+    try {
+      getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+      final Collection<BranchRelative> allBranches =
+        myWorkspace.getServer().getVCS().queryBranches(mySourceField.getText(), LatestVersionSpec.INSTANCE);
+
+      BranchRelative subject = null;
+      for (BranchRelative branch : allBranches) {
+        if (branch.getReqstd()) {
+          subject = branch;
+          break;
+        }
+      }
+
+      for (BranchRelative branch : allBranches) {
+        if ((branch.getRelfromid() == subject.getReltoid() || branch.getReltoid() == subject.getRelfromid()) &&
+            branch.getBranchToItem().getDid() == Integer.MIN_VALUE) {
+          targetBranches.add(branch.getBranchToItem());
+        }
+      }
+    }
+    catch (TfsException e) {
+      Messages.showErrorDialog(myProject, e.getMessage(), myDialogTitle);
+    }
+    finally {
+      getContentPanel().setCursor(Cursor.getDefaultCursor());
+    }
+
+    ((DefaultComboBoxModel)myTargetCombo.getModel()).removeAllElements();
+    for (Item targetBranch : targetBranches) {
+      ((DefaultComboBoxModel)myTargetCombo.getModel()).addElement(targetBranch);
+    }
+    mySelectRevisionForm.init(myProject, myWorkspace, mySourceField.getText(), mySourceIsDirectory);
+    fireStateChanged();
+  }
 
 }

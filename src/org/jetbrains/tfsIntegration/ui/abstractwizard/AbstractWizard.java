@@ -71,7 +71,7 @@ public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<Abstr
     }
     catch (final CommitStepException exc) {
       if (currentStep.showWaitCursorOnCommit()) {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        getContentPane().setCursor(Cursor.getDefaultCursor());
       }
       if (exc.getMessage().length() > 0) { // TODO: use custom exception class
         Messages.showErrorDialog(getContentPane(), exc.getMessage());
@@ -80,7 +80,7 @@ public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<Abstr
     }
     finally {
       if (currentStep.showWaitCursorOnCommit()) {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        getContentPane().setCursor(Cursor.getDefaultCursor());
       }
     }
 

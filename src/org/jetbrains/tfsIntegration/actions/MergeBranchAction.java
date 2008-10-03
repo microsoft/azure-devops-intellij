@@ -17,59 +17,29 @@
 package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.MergeHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.ui.MergeBranchDialog;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public class MergeBranchAction extends SingleItemAction {
 
   protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
     throws TfsException {
     final String title = getActionTitle(itemPath.getLocalPath());
-    Collection<Item> targetBranches = new ArrayList<Item>();
     ExtendedItem extendedItem = TfsUtil.getExtendedItem(itemPath.getLocalPath());
-    final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(extendedItem.getTitem(), LatestVersionSpec.INSTANCE);
 
-    BranchRelative subject = null;
-    for (BranchRelative branch : branches) {
-      if (branch.getReqstd()) {
-        subject = branch;
-        break;
-      }
-    }
-
-    for (BranchRelative branch : branches) {
-      if ((branch.getRelfromid() == subject.getReltoid() || branch.getReltoid() == subject.getRelfromid()) &&
-          branch.getBranchToItem().getDid() == Integer.MIN_VALUE) {
-        targetBranches.add(branch.getBranchToItem());
-      }
-    }
-
-    if (!targetBranches.isEmpty()) {
-      MergeBranchDialog d = new MergeBranchDialog(project, workspace, itemPath, targetBranches, title);
-      d.show();
-      if (d.isOK()) {
-        MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
-      }
-    }
-    else {
-      String message = MessageFormat.format("No target branches found for ''{0}", itemPath.getServerPath());
-      Messages.showWarningDialog(project, message, title);
+    MergeBranchDialog d =
+      new MergeBranchDialog(project, workspace, extendedItem.getTitem(), extendedItem.getType() == ItemType.Folder, title);
+    d.show();
+    if (d.isOK()) {
+      MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
     }
   }
 

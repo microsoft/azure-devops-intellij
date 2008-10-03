@@ -47,7 +47,7 @@ public class ServerPathForm {
     myServerTree = new ServerTree(true);
 
     myServerTree.addSelectionListener(new ServerTree.SelectionListener() {
-      public void selectionChanged(final String selection) {
+      public void selectionChanged(final ServerTree.SelectedItem selection) {
         fireServerPathChanged();
       }
     });
@@ -63,7 +63,8 @@ public class ServerPathForm {
 
   @Nullable
   public String getServerPath() {
-    return myServerTree.getSelectedPath();
+    final ServerTree.SelectedItem selectedItem = myServerTree.getSelectedItem();
+    return selectedItem != null ? selectedItem.path : null;
   }
 
   public void addListener(Listener listener) {

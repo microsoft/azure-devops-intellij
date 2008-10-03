@@ -56,7 +56,7 @@ public class ServerBrowserDialog extends DialogWrapper {
   }
 
   @Nullable
-  public String getSelectedPath() {
+  public ServerTree.SelectedItem getSelectedPath() {
     return myForm.getSelectedPath();
   }
 }
