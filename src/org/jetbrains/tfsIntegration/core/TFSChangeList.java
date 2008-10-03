@@ -186,7 +186,7 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
+    if (changeType.containsAny(ChangeType.Add, ChangeType.Undelete, ChangeType.Branch)) {
       if (changeType.contains(ChangeType.Add)) {
         TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
         if (change.getItem().getType() == ItemType.File) {
