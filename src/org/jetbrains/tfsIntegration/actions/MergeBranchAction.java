@@ -43,7 +43,7 @@ public class MergeBranchAction extends SingleItemAction {
     Collection<Item> targetBranches = new ArrayList<Item>();
     ExtendedItem extendedItem = TfsUtil.getExtendedItem(itemPath.getLocalPath());
     final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(workspace.getName(), workspace.getOwnerName(), extendedItem.getTitem(), LatestVersionSpec.INSTANCE);
+      .queryBranches(extendedItem.getTitem(), LatestVersionSpec.INSTANCE);
 
     BranchRelative subject = null;
     for (BranchRelative branch : branches) {
@@ -54,11 +54,9 @@ public class MergeBranchAction extends SingleItemAction {
     }
 
     for (BranchRelative branch : branches) {
-      if (branch.getRelfromid() == subject.getReltoid()) {
+      if ((branch.getRelfromid() == subject.getReltoid() || branch.getReltoid() == subject.getRelfromid()) &&
+          branch.getBranchToItem().getDid() == Integer.MIN_VALUE) {
         targetBranches.add(branch.getBranchToItem());
-      }
-      else if (branch.getReltoid() == subject.getRelfromid()) {
-        targetBranches.add(branch.getBranchFromItem());
       }
     }
 

@@ -50,7 +50,7 @@ public class ItemInfoAction extends SingleItemAction {
 
     final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
     final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(workspace.getName(), workspace.getOwnerName(), serverPath, new ChangesetVersionSpec(item.getLver()));
+      .queryBranches(serverPath, new ChangesetVersionSpec(item.getLver()));
 
     ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, getActionTitle(itemPath.getLocalPath()));
     d.show();

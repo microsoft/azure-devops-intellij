@@ -1072,9 +1072,7 @@ public class VersionControlServer {
     return result;
   }
 
-  public Collection<BranchRelative> queryBranches(final String workspaceName,
-                                                  final String ownerName,
-                                                  final String itemServerPath,
+  public Collection<BranchRelative> queryBranches(final String itemServerPath,
                                                   final VersionSpec versionSpec) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
@@ -1082,7 +1080,7 @@ public class VersionControlServer {
     ArrayOfArrayOfBranchRelative result =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfBranchRelative>() {
         public ArrayOfArrayOfBranchRelative executeRequest() throws RemoteException {
-          return myRepository.QueryBranches(workspaceName, ownerName, arrayOfItemSpec, versionSpec);
+          return myRepository.QueryBranches(null, null, arrayOfItemSpec, versionSpec);
         }
       });
 
