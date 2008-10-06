@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
@@ -61,12 +62,17 @@ public class TFSChangeProvider implements ChangeProvider {
     roots.addAll(dirtyScope.getDirtyFiles());
 
     try {
+      final Ref<Boolean> mappingFound = Ref.create(false);
       // ingore orphan roots here
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           StatusProvider.visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(builder, workspace));
+          mappingFound.set(true);
         }
       });
+      if (!mappingFound.get()) {
+        throw new VcsException("No Team Foundation Server mapping found");
+      }
     }
     catch (TfsException e) {
       throw new VcsException(e.getMessage(), e);
