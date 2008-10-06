@@ -159,6 +159,7 @@ public class Workstation {
                 for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
                   List<WorkingFolderInfo> workingFolders;
                   try {
+                    // TODO call workspaceInfo.getWorkingFoldersCached() to aviod reloading all the workspaces 
                     workingFolders = workspaceInfo.getWorkingFolders();
                   }
                   catch (TfsException e) {
