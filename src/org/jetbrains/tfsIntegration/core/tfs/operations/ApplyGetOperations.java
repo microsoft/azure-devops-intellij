@@ -129,6 +129,9 @@ public class ApplyGetOperations {
           // conflict will be resolved later
           processConflict(operationToExecute);
         }
+        else if (operationToExecute.getSlocal() == null && operationToExecute.getTlocal() == null) {
+          updateLocalVersion(operationToExecute);
+        }
         else if (operationToExecute.getTlocal() == null) {
           if (operationToExecute.getType() == ItemType.File) {
             processDeleteFile(operationToExecute);

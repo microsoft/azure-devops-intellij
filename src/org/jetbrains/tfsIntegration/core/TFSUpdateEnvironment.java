@@ -58,14 +58,12 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
   public UpdateSession updateDirectories(@NotNull final FilePath[] contentRoots,
                                          final UpdatedFiles updatedFiles,
                                          final ProgressIndicator progressIndicator) throws ProcessCanceledException {
-
     // TODO we don't want to get a dialog for each workspace!
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       List<FilePath> orphanPaths =
         WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
             TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myProject);
@@ -81,19 +79,19 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               requests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), recursionType, version));
               TFSProgressUtil.checkCanceled(progressIndicator);
             }
-            // call get() to let server know revision interested in
+            
             List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
             // execute GetOperation-s, conflicting ones will be skipped
             final Collection<VcsException> applyErrors = ApplyGetOperations
               .execute(myProject, workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
             exceptions.addAll(applyErrors);
 
-            // resolve all conflicts
-            ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, paths, updatedFiles);
-            resolveConflictHelper.reloadConflicts();
-            if (!resolveConflictHelper.getConflicts().isEmpty()) {
-              ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
-            }
+              // resolve all conflicts
+              ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, paths, updatedFiles);
+              resolveConflictHelper.reloadConflicts();
+              if (!resolveConflictHelper.getConflicts().isEmpty()) {
+                ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+              }
 
             // TODO content roots can be renamed while executing
             TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);

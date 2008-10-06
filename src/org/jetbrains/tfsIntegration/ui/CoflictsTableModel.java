@@ -27,7 +27,7 @@ public class CoflictsTableModel extends AbstractTableModel {
 
     Name("Name") {
       public String getValue(Conflict conflict) {
-        return conflict.getSrclitem();
+        return conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
       }
     };
 
@@ -76,5 +76,5 @@ public class CoflictsTableModel extends AbstractTableModel {
     myConflicts = conflicts;
     fireTableDataChanged();
   }
-  
+
 }

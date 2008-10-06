@@ -127,7 +127,8 @@ public class ResolveConflictHelper {
     conflictResolved(conflict, Resolution.AcceptYours, null);
     // no actions will be executed so fill UpdatedFiles explicitly
     if (myUpdatedFiles != null) {
-      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
+      String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }
 
@@ -137,7 +138,8 @@ public class ResolveConflictHelper {
 
   public void skip(final @NotNull Conflict conflict) {
     if (myUpdatedFiles != null) {
-      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getSrclitem());
+      String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }
 
