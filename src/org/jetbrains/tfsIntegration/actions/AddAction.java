@@ -18,9 +18,53 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class AddAction extends AnAction {
+
   public void actionPerformed(AnActionEvent e) {
-    throw new UnsupportedOperationException();
+    final Project project = e.getData(DataKeys.PROJECT);
+    final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
+
+    //noinspection ConstantConditions
+    final List<VcsException> exceptions =
+      TFSVcs.getInstance(project).getCheckinEnvironment().scheduleUnversionedFilesForAddition(Arrays.asList(files));
+
+    //noinspection ConstantConditions
+    if (!exceptions.isEmpty()) {
+      AbstractVcsHelper.getInstance(project).showErrors(exceptions, TFSVcs.TFS_NAME);
+    }
   }
+
+  public void update(final AnActionEvent e) {
+    final Project project = e.getData(DataKeys.PROJECT);
+    final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
+    e.getPresentation().setEnabled(isEnabled(project, files));
+  }
+
+  private static boolean isEnabled(Project project, VirtualFile[] files) {
+    FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
+    if (files.length == 0) {
+      return false;
+    }
+    for (VirtualFile file : files) {
+      final FileStatus fileStatus = fileStatusManager.getStatus(file);
+      if (fileStatus != FileStatus.UNKNOWN) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 }

@@ -47,7 +47,7 @@
     <group id="TfsGroup" text="TFS">
       <!--action id="Tfs.Share" class="org.jetbrains.tfsIntegration.actions.ShareProjectAction" text="Share project..."/-->
       <separator/>
-      <!--action id="Tfs.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="Add"/-->
+      <action id="Tfs.Add" class="org.jetbrains.tfsIntegration.actions.AddAction" text="Add"/>
       <reference id="CheckinFiles"/>
       <reference id="UpdateFiles"/>
       <reference id="IntegrateFiles"/>
