@@ -24,12 +24,10 @@ import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class LoginDialog extends DialogWrapper implements ActionListener {
+public class LoginDialog extends DialogWrapper {
 
   private static final Logger LOG = Logger.getInstance(LoginDialog.class.getName());
 
@@ -219,10 +217,6 @@ public class LoginDialog extends DialogWrapper implements ActionListener {
     else {
       return myPasswordField;
     }
-  }
-
-  public void actionPerformed(final ActionEvent e) {
-    // do nothing
   }
 
   public Credentials getCredentials() {

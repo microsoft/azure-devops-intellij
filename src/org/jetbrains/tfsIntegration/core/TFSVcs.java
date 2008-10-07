@@ -114,12 +114,10 @@ public class TFSVcs extends AbstractVcs {
     return myProjectConfiguration;
   }
 
-  @Nullable
   public ChangeProvider getChangeProvider() {
     return new TFSChangeProvider(myProject);
   }
 
-  @Nullable
   public CheckinEnvironment getCheckinEnvironment() {
     if (myTFSCheckinEnvironment == null) {
       myTFSCheckinEnvironment = new TFSCheckinEnvironment(myProject);
@@ -127,7 +125,6 @@ public class TFSVcs extends AbstractVcs {
     return myTFSCheckinEnvironment;
   }
 
-  @Nullable
   public RollbackEnvironment getRollbackEnvironment() {
     return new TFSRollbackEnvironment(myProject);
   }
@@ -140,19 +137,12 @@ public class TFSVcs extends AbstractVcs {
     return !Workstation.getInstance().findWorkspaceCached(TfsFileUtil.getFilePath(dir), false).isEmpty();
   }
 
-  @Nullable
   public EditFileProvider getEditFileProvider() {
     return new TFSEditFileProvider();
   }
 
-  @Nullable
   public UpdateEnvironment getUpdateEnvironment() {
     return new TFSUpdateEnvironment(myProject);
-  }
-
-  @Nullable
-  public UpdateEnvironment getStatusEnvironment() {
-    return super.getStatusEnvironment();    //To change body of overridden methods use File | Settings | File Templates.
   }
 
   public static void assertTrue(boolean condition, @NonNls String message) {
