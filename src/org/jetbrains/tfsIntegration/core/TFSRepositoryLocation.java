@@ -18,35 +18,41 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class TFSRepositoryLocation implements RepositoryLocation {
 
-  private final @NotNull WorkspaceInfo myWorkspace;
-  private final @NotNull FilePath myLocalPath;
+  private final Map<WorkspaceInfo, List<FilePath>> myPathsByWorkspaces;
 
-  public TFSRepositoryLocation(final @NotNull FilePath localPath, final @NotNull WorkspaceInfo workspace) {
-    myLocalPath = localPath;
-    myWorkspace = workspace;
+  public TFSRepositoryLocation(final Map<WorkspaceInfo, List<FilePath>> pathsByWorkspaces) {
+    myPathsByWorkspaces = pathsByWorkspaces;
+  }
+
+  public Map<WorkspaceInfo, List<FilePath>> getPathsByWorkspaces() {
+    return myPathsByWorkspaces;
   }
 
   public String toPresentableString() {
-    return getLocalPath().getPresentableUrl();
-  }
-
-  @NotNull
-  public WorkspaceInfo getWorkspace() {
-    return myWorkspace;
-  }
-
-  @NotNull
-  public FilePath getLocalPath() {
-    return myLocalPath;
+    if (myPathsByWorkspaces.size() == 1 && myPathsByWorkspaces.values().iterator().next().size() == 1) {
+      return myPathsByWorkspaces.values().iterator().next().iterator().next().getPresentableUrl();
+    }
+    else {
+      return "Multiple paths";
+    }
   }
 
   public String toString() {
     // IDEA needs this!
-    return getLocalPath().getPath();
+    StringBuilder s = new StringBuilder();
+    for (Collection<FilePath> paths : myPathsByWorkspaces.values()) {
+      for (FilePath path : paths) {
+        s.append(path.getPath());
+      }
+    }
+    return s.toString();
   }
 }

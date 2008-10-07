@@ -22,10 +22,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
@@ -36,10 +33,7 @@ import org.jetbrains.tfsIntegration.ui.TFSVersionFilterComponent;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class TFSCommittedChangesProvider implements CachingCommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> {
   private final Project myProject;
@@ -65,11 +59,15 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
   @Nullable
   public RepositoryLocation getLocationFor(final FilePath root) {
-    // TODO: get child mappings if no current
+    final Map<WorkspaceInfo, List<FilePath>> pathsByWorkspaces = new HashMap<WorkspaceInfo, List<FilePath>>();
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(root, false);
-      if (!workspaces.isEmpty()) {
-        return new TFSRepositoryLocation(root, workspaces.iterator().next());
+      WorkstationHelper.processByWorkspaces(Collections.singletonList(root), true, new WorkstationHelper.VoidProcessDelegate() {
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          pathsByWorkspaces.put(workspace, TfsUtil.getLocalPaths(paths));
+        }
+      });
+      if (!pathsByWorkspaces.isEmpty()) {
+        return new TFSRepositoryLocation(pathsByWorkspaces);
       }
     }
     catch (TfsException e) {
@@ -81,43 +79,46 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
                                                  final RepositoryLocation location,
                                                  final int maxCount) throws VcsException {
+    // TODO: deletion id
+    // TODO: if revision and date filters are both set, which one should have priority?
+    VersionSpec versionFrom = new ChangesetVersionSpec(1);
+    if (settings.getChangeAfterFilter() != null) {
+      versionFrom = new ChangesetVersionSpec((int)settings.getChangeAfterFilter().longValue());
+    }
+    if (settings.getDateAfterFilter() != null) {
+      versionFrom = new DateVersionSpec(settings.getDateAfterFilter());
+    }
+
+    VersionSpec versionTo = LatestVersionSpec.INSTANCE;
+    if (settings.getChangeBeforeFilter() != null) {
+      versionTo = new ChangesetVersionSpec((int)settings.getChangeBeforeFilter().longValue());
+    }
+    if (settings.getDateBeforeFilter() != null) {
+      versionTo = new DateVersionSpec(settings.getDateBeforeFilter());
+    }
+
+    TFSRepositoryLocation tfsRepositoryLocation = (TFSRepositoryLocation)location;
 
     try {
-      TFSRepositoryLocation tfsRepositoryLocation = (TFSRepositoryLocation)location;
-      final WorkspaceInfo workspace = tfsRepositoryLocation.getWorkspace();
-      // TODO: deletion id
-
-      // TODO: if revision and date filters are both set, which one should have priority?
-      VersionSpec versionFrom = new ChangesetVersionSpec(1);
-      if (settings.getChangeAfterFilter() != null) {
-        versionFrom = new ChangesetVersionSpec((int)settings.getChangeAfterFilter().longValue());
-      }
-      if (settings.getDateAfterFilter() != null) {
-        versionFrom = new DateVersionSpec(settings.getDateAfterFilter());
-      }
-
-      VersionSpec versionTo = LatestVersionSpec.INSTANCE;
-      if (settings.getChangeBeforeFilter() != null) {
-        versionTo = new ChangesetVersionSpec((int)settings.getChangeBeforeFilter().longValue());
-      }
-      if (settings.getDateBeforeFilter() != null) {
-        versionTo = new DateVersionSpec(settings.getDateBeforeFilter());
-      }
-
-      ExtendedItem item = TfsUtil.getExtendedItem(tfsRepositoryLocation.getLocalPath());
-      if (item == null) {
-        return Collections.emptyList();
-      }
-      final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
-      final RecursionType recursionType = tfsRepositoryLocation.getLocalPath().isDirectory() ? RecursionType.Full : null;
-      ItemSpec itemSpec = VersionControlServer.createItemSpec(item.getSitem(), recursionType);
-      List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
-                                                                               settings.getUserFilter(), itemVersion, versionFrom,
-                                                                               versionTo, maxCount);
-      List<TFSChangeList> result = new ArrayList<TFSChangeList>(changeSets.size());
-      for (Changeset changeset : changeSets) {
-        result.add(new TFSChangeList(tfsRepositoryLocation, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(),
-                                     changeset.getComment(), myVcs));
+      List<TFSChangeList> result = new ArrayList<TFSChangeList>();
+      for (Map.Entry<WorkspaceInfo, List<FilePath>> entry : tfsRepositoryLocation.getPathsByWorkspaces().entrySet()) {
+        WorkspaceInfo workspace = entry.getKey();
+        final Map<FilePath, ExtendedItem> extendedItems = workspace.getExtendedItems(entry.getValue());
+        for (Map.Entry<FilePath, ExtendedItem> localPath2ExtendedItem : extendedItems.entrySet()) {
+          if (localPath2ExtendedItem.getValue() == null) {
+            return Collections.emptyList();
+          }
+          final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
+          final RecursionType recursionType = localPath2ExtendedItem.getKey().isDirectory() ? RecursionType.Full : null;
+          ItemSpec itemSpec = VersionControlServer.createItemSpec(localPath2ExtendedItem.getValue().getSitem(), recursionType);
+          List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
+                                                                                   settings.getUserFilter(), itemVersion, versionFrom,
+                                                                                   versionTo, maxCount);
+          for (Changeset changeset : changeSets) {
+            result.add(new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(),
+                                         changeset.getComment(), myVcs));
+          }
+        }
       }
       return result;
     }

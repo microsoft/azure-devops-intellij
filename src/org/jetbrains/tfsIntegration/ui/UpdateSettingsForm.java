@@ -71,7 +71,7 @@ public class UpdateSettingsForm {
     try {
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          final Map<FilePath, ExtendedItem> items = workspace.getExtendedItems(paths);
+          final Map<FilePath, ExtendedItem> items = workspace.getExtendedItems2(paths);
 
           listModel.addElement(workspace);
 

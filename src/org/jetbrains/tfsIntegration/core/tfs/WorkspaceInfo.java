@@ -331,7 +331,11 @@ public class WorkspaceInfo {
   //  return getServer().getVCS().getExtendedItem(getName(), getOwnerName(), serverPath, DeletedState.Any);
   //}
 
-  public Map<FilePath, ExtendedItem> getExtendedItems(final List<ItemPath> paths) throws TfsException {
+  public Map<FilePath, ExtendedItem> getExtendedItems2(final List<ItemPath> paths) throws TfsException {
+    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), TfsUtil.getLocalPaths(paths), DeletedState.Any);
+  }
+
+  public Map<FilePath, ExtendedItem> getExtendedItems(final List<FilePath> paths) throws TfsException {
     return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
   }
 

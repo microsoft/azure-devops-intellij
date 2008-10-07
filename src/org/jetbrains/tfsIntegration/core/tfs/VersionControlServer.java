@@ -473,12 +473,12 @@ public class VersionControlServer {
 
   public Map<FilePath, ExtendedItem> getExtendedItems(final String workspaceName,
                                                       final String ownerName,
-                                                      final List<ItemPath> paths,
+                                                      final List<FilePath> paths,
                                                       final DeletedState deletedState) throws TfsException {
     TFSVcs.assertTrue(!paths.isEmpty());
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-    for (ItemPath itemPath : paths) {
-      itemSpecs.add(createItemSpec(itemPath.getLocalPath(), RecursionType.None));
+    for (FilePath path : paths) {
+      itemSpecs.add(createItemSpec(path, RecursionType.None));
     }
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
@@ -501,7 +501,7 @@ public class VersionControlServer {
       if (resultItems != null) {
         item = chooseExtendedItem(resultItems);
       }
-      result.put(paths.get(i).getLocalPath(), item);
+      result.put(paths.get(i), item);
     }
 
     return result;

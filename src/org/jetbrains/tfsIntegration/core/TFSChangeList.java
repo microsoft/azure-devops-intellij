@@ -46,7 +46,7 @@ public class TFSChangeList implements CommittedChangeList {
 
   public static final boolean IDEADEV_29451_WORKAROUND = true; // report rename(a->b) as delete(a) + add(b)
 
-  private TFSRepositoryLocation myLocation;
+  private WorkspaceInfo myWorkspace;
   private final TFSVcs myVcs;
   private int myRevisionNumber;
   private String myAuthor;
@@ -65,21 +65,21 @@ public class TFSChangeList implements CommittedChangeList {
     readFromStream(stream);
   }
 
-  public TFSChangeList(final TFSRepositoryLocation location,
+  public TFSChangeList(final WorkspaceInfo workspace,
                        final int revisionNumber,
                        final String author,
                        final Date date,
                        final String comment,
                        final TFSVcs vcs) {
-    myLocation = location;
+    myWorkspace = workspace;
     myRevisionNumber = revisionNumber;
     myAuthor = author;
     myDate = date;
     myComment = comment != null ? comment : "";
     myVcs = vcs;
 
-    myWorkspaceName = myLocation.getWorkspace().getName();
-    myServerUri = myLocation.getWorkspace().getServer().getUri();
+    myWorkspaceName = myWorkspace.getName();
+    myServerUri = myWorkspace.getServer().getUri();
   }
 
   public String getCommitterName() {
@@ -101,7 +101,7 @@ public class TFSChangeList implements CommittedChangeList {
   public Collection<Change> getChanges() {
     if (myCachedChanges == null) {
       try {
-        if (myLocation != null) { // otherwise paths were read from stream
+        if (myWorkspace != null) { // otherwise paths were read from stream
           loadChanges();
         }
 
@@ -162,10 +162,10 @@ public class TFSChangeList implements CommittedChangeList {
 
   private void loadChanges() {
     try {
-      Changeset changeset = myLocation.getWorkspace().getServer().getVCS().queryChangeset(myRevisionNumber);
+      Changeset changeset = myWorkspace.getServer().getVCS().queryChangeset(myRevisionNumber);
 
       for (org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change : changeset.getChanges().getChange()) {
-        processChange(myLocation, changeset.getCset(), change);
+        processChange(changeset.getCset(), change);
       }
     }
     catch (TfsException e) {
@@ -173,13 +173,12 @@ public class TFSChangeList implements CommittedChangeList {
     }
   }
 
-  private void processChange(final TFSRepositoryLocation repositoryLocation,
-                             int changeset,
-                             final org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change) throws TfsException {
+  private void processChange(int changeset, final org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change)
+    throws TfsException {
     final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, change.getType());
 
-    final FilePath localPath = repositoryLocation.getWorkspace()
-      .findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
+    final FilePath localPath =
+      myWorkspace.findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
 
     if (localPath == null) {
       // TODO: path can be out of current mapping -> no way to determine local path for it
@@ -206,14 +205,14 @@ public class TFSChangeList implements CommittedChangeList {
       TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
                         "Unexpected change type: " + changeType);
 
-      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
+      Item item = getPreviousVersion(change.getItem(), changeset);
       myDeletedPaths.put(localPath, item.getCs());
       return;
     }
 
     if (changeType.contains(ChangeType.Rename)) {
-      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
-      FilePath originalPath = repositoryLocation.getWorkspace()
+      Item item = getPreviousVersion(change.getItem(), changeset);
+      FilePath originalPath = myWorkspace
         .findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
 
       if (originalPath != null) {
@@ -226,7 +225,7 @@ public class TFSChangeList implements CommittedChangeList {
     }
 
     if (changeType.contains(ChangeType.Edit)) {
-      Item item = getPreviousVersion(repositoryLocation.getWorkspace(), change.getItem(), changeset);
+      Item item = getPreviousVersion(change.getItem(), changeset);
       //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
       myModifiedPaths.put(localPath, item.getCs());
       return;
@@ -327,12 +326,12 @@ public class TFSChangeList implements CommittedChangeList {
     return VcsUtil.getFilePath(stream.readUTF(), stream.readBoolean());
   }
 
-  private static Item getPreviousVersion(WorkspaceInfo workspace, Item item, int changeset) throws TfsException {
+  private Item getPreviousVersion(Item item, int changeset) throws TfsException {
     ItemSpec itemSpec = VersionControlServer.createItemSpec(item.getItem(), item.getDid(), RecursionType.None);
-    List<Changeset> shortHistory = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
-                                                                               null, new ChangesetVersionSpec(changeset),
-                                                                               new ChangesetVersionSpec(1),
-                                                                               new ChangesetVersionSpec(item.getCs()), 2);
+    List<Changeset> shortHistory = myWorkspace.getServer().getVCS().queryHistory(myWorkspace.getName(), myWorkspace.getOwnerName(),
+                                                                                 itemSpec, null, new ChangesetVersionSpec(changeset),
+                                                                                 new ChangesetVersionSpec(1),
+                                                                                 new ChangesetVersionSpec(item.getCs()), 2);
     TFSVcs.assertTrue(shortHistory.size() == 2);
     return shortHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
   }

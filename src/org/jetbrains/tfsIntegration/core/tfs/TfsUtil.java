@@ -30,6 +30,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionTyp
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class TfsUtil {
 
@@ -76,5 +77,12 @@ public class TfsUtil {
       return new VcsException(messages);
     }
   }
-  
+
+  public static List<FilePath> getLocalPaths(final List<ItemPath> paths) {
+    List<FilePath> localPaths = new ArrayList<FilePath>(paths.size());
+    for (ItemPath path : paths) {
+      localPaths.add(path.getLocalPath());
+    }
+    return localPaths;
+  }
 }
