@@ -32,9 +32,9 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.SelectWorkItemsDialog;
@@ -226,9 +226,11 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               checkIn.add(pendingChange.getItem());
             }
 
+            final WorkItemsDialogState state = myWorkItems.get(workspace.getServer());
+            final Map<WorkItem, CheckinWorkItemAction> workItemActions =
+              state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
-              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment,
-                       myWorkItems.get(workspace.getServer()).getWorkItemsActions());
+              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions);
             errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
