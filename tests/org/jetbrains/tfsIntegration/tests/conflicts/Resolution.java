@@ -16,19 +16,6 @@
 
 package org.jetbrains.tfsIntegration.tests.conflicts;
 
-@SuppressWarnings({"HardCodedStringLiteral"})
-abstract class TestFileConflict extends TestSingleConflict {
-
-  protected static final String BASE_FILENAME = "base.txt";
-  protected static final String YOURS_FILENAME = "yours.txt";
-  protected static final String THEIRS_FILENAME = "theirs.txt";
-  protected static final String MERGED_FILENAME = "merged.txt";
-
-
-  protected static final String BASE_CONTENT = "base_content";
-  protected static final String THEIRS_CONTENT = "theirs_content";
-  protected static final String YOURS_CONTENT = "yours_content";
-  protected static final String MERGED_CONTENT = "merged_content";
-
-
+enum Resolution {
+  AcceptYours, AcceptTheirs, Merge
 }

@@ -33,18 +33,9 @@ import java.io.IOException;
 import java.util.List;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-abstract class TestConflicts extends TFSTestCase {
-
-  private enum Resolution {
-    AcceptYours, AcceptTheirs, Merge
-  }
+abstract class TestSingleConflict extends TFSTestCase {
 
   protected abstract boolean canMerge();
-
-  @SuppressWarnings({"MethodMayBeStatic"})
-  protected int getExpectedConflictsCount() {
-    return 1;
-  }
 
   protected boolean updateToThePast() {
     return false;
@@ -152,7 +143,7 @@ abstract class TestConflicts extends TFSTestCase {
 
     public void resolveConflicts(final ResolveConflictHelper resolveConflictHelper) throws TfsException {
       List<Conflict> conflicts = resolveConflictHelper.getConflicts();
-      Assert.assertEquals("Expected conflicts count differs: ", getExpectedConflictsCount(), conflicts.size());
+      Assert.assertEquals("Expected conflicts count differs: ", 1, conflicts.size());
       for (Conflict conflict : conflicts) {
         checkConflictProperties(conflict);
         try {
@@ -186,7 +177,7 @@ abstract class TestConflicts extends TFSTestCase {
     @Nullable
     public String mergeName(final WorkspaceInfo workspace, final Conflict conflict) {
       try {
-        return TestConflicts.this.mergeName();
+        return TestSingleConflict.this.mergeName();
       }
       catch (TfsException e) {
         Assert.fail(e.getMessage());
@@ -206,7 +197,7 @@ abstract class TestConflicts extends TFSTestCase {
       Assert.assertEquals(getExpectedTheirsContent(), contentTriplet.serverContent);
 
       ReadOnlyAttributeUtil.setReadOnlyAttribute(targetFile, false);
-      setFileContent(targetFile, TestConflicts.this.mergeContent());
+      setFileContent(targetFile, TestSingleConflict.this.mergeContent());
     }
   }
 }

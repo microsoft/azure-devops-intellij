@@ -17,7 +17,7 @@
 package org.jetbrains.tfsIntegration.tests.conflicts;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-abstract class TestFolderConflict extends TestConflicts {
+abstract class TestFolderConflict extends TestSingleConflict {
 
   protected static final String BASE_FOLDERNAME = "Base";
   protected static final String YOURS_FOLDERNAME = "Yours";
