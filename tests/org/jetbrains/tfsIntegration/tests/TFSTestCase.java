@@ -39,10 +39,12 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinResult;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.junit.After;
@@ -66,9 +68,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
 
-  private static final String SERVER = "http://tfs-2005-01:8080/";
+  private static final String SERVER = "http://tfs-2008-01:8080/";
   //  private static final String SERVER = "http://192.168.230.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "tfssetup";
@@ -222,7 +224,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       }
 
       final ResultWithFailures<CheckinResult> checkinResult = myTestWorkspace.getServer().getVCS()
-        .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment);
+        .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment,
+                 Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
       if (!checkinResult.getFailures().isEmpty()) {
         throw BeanHelper.getVcsException(checkinResult.getFailures().iterator().next());
       }
@@ -237,13 +240,21 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   //  myTestWorkspace.getServer().getVCS()
   //    .scheduleForDeletion(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
   //  myTestWorkspace.getServer().getVCS().checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(),
-  //                                               Collections.singletonList(itemPath.getSelectedPath()), path.getPath() + "  deleted");
+  //                                               Collections.singletonList(itemPath.getSelectedItem()), path.getPath() + "  deleted");
   //}
 
   protected void commit(final Collection<Change> changes, final String comment) {
     final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(new ArrayList<Change>(changes), comment);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
+  }
+
+  protected void commitThrowException(final Collection<Change> changes, final String comment) throws VcsException {
+    final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(new ArrayList<Change>(changes), comment);
+    refreshAll();
+    if (!errors.isEmpty()) {
+      throw new VcsException(getMessage(errors));
+    }
   }
 
   protected void commit(Change change, final String comment) {
