@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFolderYoursRenamedTheirsMissing extends TestFolderConflicts {
+public class TestFolderYoursRenamedTheirsMissing extends TestFolderConflict {
 
   private FilePath myBaseFolder;
   private FilePath myYoursFolder;

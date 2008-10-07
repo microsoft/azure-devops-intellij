@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class TestFolderYoursAddedTheirsAdded extends TestFolderConflicts {
+public class TestFolderYoursAddedTheirsAdded extends TestFolderConflict {
 
   private FilePath myBaseFolder;
 

@@ -17,11 +17,18 @@
 package org.jetbrains.tfsIntegration.tests.conflicts;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-abstract class TestFolderConflicts extends TestConflicts {
+abstract class TestFileConflict extends TestConflicts {
 
-  protected static final String BASE_FOLDERNAME = "Base";
-  protected static final String YOURS_FOLDERNAME = "Yours";
-  protected static final String THEIRS_FOLDERNAME = "Theirs";
-  protected static final String MERGED_FOLDERNAME = "Merged";
+  protected static final String BASE_FILENAME = "base.txt";
+  protected static final String YOURS_FILENAME = "yours.txt";
+  protected static final String THEIRS_FILENAME = "theirs.txt";
+  protected static final String MERGED_FILENAME = "merged.txt";
+
+
+  protected static final String BASE_CONTENT = "base_content";
+  protected static final String THEIRS_CONTENT = "theirs_content";
+  protected static final String YOURS_CONTENT = "yours_content";
+  protected static final String MERGED_CONTENT = "merged_content";
+
 
 }

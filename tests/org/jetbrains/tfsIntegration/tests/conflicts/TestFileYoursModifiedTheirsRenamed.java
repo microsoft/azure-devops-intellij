@@ -34,7 +34,7 @@ import java.io.IOException;
 // In the same time TFS 2005 RTM server does not return any get operation
 //
 
-public class TestFileYoursModifiedTheirsRenamed extends TestFileConflicts {
+public class TestFileYoursModifiedTheirsRenamed extends TestFileConflict {
 
   private FilePath myBaseFile;
   private FilePath myTheirsFile;

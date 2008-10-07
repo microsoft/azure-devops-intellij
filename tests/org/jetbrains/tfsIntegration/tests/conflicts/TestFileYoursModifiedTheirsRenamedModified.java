@@ -29,7 +29,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class TestFileYoursModifiedTheirsRenamedModified extends TestFileConflicts {
+public class TestFileYoursModifiedTheirsRenamedModified extends TestFileConflict {
 
   private FilePath myBaseFile;
   private FilePath myTheirsFile;

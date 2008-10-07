@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
-public class TestFileYoursDeletedTheirsDeleted extends TestFileConflicts {
+public class TestFileYoursDeletedTheirsDeleted extends TestFileConflict {
 
   private FilePath myBaseFile;
 
