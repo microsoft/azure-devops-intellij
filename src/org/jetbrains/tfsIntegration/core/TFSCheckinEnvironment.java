@@ -69,7 +69,6 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     final JTextField summaryField = new JTextField(5);
     summaryField.setEditable(false);
     panel.add(summaryField, BorderLayout.CENTER);
-    updateSummary(summaryField);
 
     JButton selectButton = new JButton("Select...");
     selectButton.addActionListener(new ActionListener() {
@@ -119,7 +118,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
       public void restoreState() {
         myWorkItems.clear();
-        summaryField.setText(null);
+        updateSummary(summaryField);
       }
     };
   }
@@ -185,7 +184,6 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   @Nullable
   public List<VcsException> commit(final List<Change> changes, final String preparedComment) {
-    // TODO: add parent folders
     final List<FilePath> files = new ArrayList<FilePath>();
     for (Change change : changes) {
       FilePath path = null;
