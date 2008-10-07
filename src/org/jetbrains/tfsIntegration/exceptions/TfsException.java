@@ -20,6 +20,10 @@ public abstract class TfsException extends Exception {
 
   private static final long serialVersionUID = 1L;
 
+  public TfsException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
+
   public TfsException(final Throwable cause) {
     super(cause != null ? cause.getMessage() : null, cause);
   }

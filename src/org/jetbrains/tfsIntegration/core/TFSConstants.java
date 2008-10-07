@@ -31,7 +31,7 @@ public final class TFSConstants {
   @NonNls public static final String DOWNLOAD_ASMX = "VersionControl/v1.0/item.asmx";
   @NonNls public static final String UPLOAD_ASMX = "VersionControl/v1.0/upload.asmx";
   @NonNls public static final String WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX = "WorkItemTracking/v1.0/ClientService.asmx";
-  @NonNls public static final String GROUP_SECURITY_ASMX = "Services/v1.0/GroupSecurityService.asmx";
+  @NonNls public static final String GROUP_SECURITY_SERVICE_ASMX = "Services/v1.0/GroupSecurityService.asmx";
 
 
   public static File getConfigFolder() {

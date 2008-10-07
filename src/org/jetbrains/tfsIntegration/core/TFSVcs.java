@@ -47,6 +47,7 @@ public class TFSVcs extends AbstractVcs {
   private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
   private VcsHistoryProvider myTFSHistoryProvider;
   private DiffProvider myDiffProvider;
+  private TFSCheckinEnvironment myTFSCheckinEnvironment;
 
   public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
     super(project);
@@ -120,7 +121,10 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public CheckinEnvironment getCheckinEnvironment() {
-    return new TFSCheckinEnvironment(myProject);
+    if (myTFSCheckinEnvironment == null) {
+      myTFSCheckinEnvironment = new TFSCheckinEnvironment(myProject);
+    }
+    return myTFSCheckinEnvironment;
   }
 
   @Nullable

@@ -24,17 +24,27 @@ import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemField;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemSerialize;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.ClientServiceClientServiceSoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.GroupSecurityServiceGroupSecurityServiceSoap12Stub;
 import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
+import org.jetbrains.tfsIntegration.stubs.services.authorization.Identity;
+import org.jetbrains.tfsIntegration.stubs.services.authorization.QueryMembership;
+import org.jetbrains.tfsIntegration.stubs.services.authorization.SearchFactor;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfInt;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfString;
+import org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import java.io.File;
@@ -64,7 +74,7 @@ public class VersionControlServer {
 
   private final RepositoryRepositorySoap12Stub myRepository;
   private final ClientServiceClientServiceSoap12Stub myWorkItemTrackingClientService;
-  private final GroupSecurityServiceGroupSecurityServiceSoap12Stub myGroupSecurity;
+  private final GroupSecurityServiceGroupSecurityServiceSoap12Stub myGroupSecurityService;
 
   public VersionControlServer(URI uri) {
     //myUri = uri;
@@ -73,8 +83,8 @@ public class VersionControlServer {
       myRepository = new RepositoryRepositorySoap12Stub(configContext, uri.toString() + TFSConstants.VERSION_CONTROL_ASMX);
       myWorkItemTrackingClientService =
         new ClientServiceClientServiceSoap12Stub(configContext, uri.toString() + TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX);
-      myGroupSecurity =
-        new GroupSecurityServiceGroupSecurityServiceSoap12Stub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_ASMX);
+      myGroupSecurityService =
+        new GroupSecurityServiceGroupSecurityServiceSoap12Stub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_SERVICE_ASMX);
     }
     catch (Exception e) {
       TFSVcs.LOG.error("Failed to initialize web service stub", e);
@@ -355,69 +365,6 @@ public class VersionControlServer {
       return Collections.emptyList();
     }
   }
-
-  //public List<ExtendedItem> getChildItems(final String workspaceName,
-  //                                        final String ownerName,
-  //                                        final String parentServerPath,
-  //                                        final DeletedState deletedState,
-  //                                        final ItemType itemType) throws TfsException {
-  //  List<List<ExtendedItem>> extendedItems =
-  //    getChildItems(workspaceName, ownerName, Collections.singletonList(parentServerPath), deletedState, itemType);
-  //
-  //  TFSVcs.assertTrue(extendedItems != null && extendedItems.size() == 1);
-  //  return extendedItems != null ? extendedItems.get(0) : Collections.<ExtendedItem>emptyList();
-  //}
-
-  //private List<List<ExtendedItem>> getChildItems(final String workspaceName,
-  //                                               final String ownerName,
-  //                                               final List<String> parentsServerPaths,
-  //                                               final DeletedState deletedState,
-  //                                               final ItemType itemType) throws TfsException {
-  //  List<List<ExtendedItem>> result =
-  //    getExtendedItemsByStrings(workspaceName, ownerName, parentsServerPaths, deletedState, RecursionType.OneLevel, itemType);
-  //  // remove parent items
-  //  Iterator<String> pIter = parentsServerPaths.iterator();
-  //  Iterator<List<ExtendedItem>> resIter = result.iterator();
-  //  while (resIter.hasNext() && pIter.hasNext()) {
-  //    String parentServerPath = pIter.next();
-  //    List<ExtendedItem> resList = resIter.next();
-  //    Iterator<ExtendedItem> resListIter = resList.iterator();
-  //    while (resListIter.hasNext()) {
-  //      ExtendedItem childItem = resListIter.next();
-  //      if (parentServerPath.equals(childItem.getSitem())) {
-  //        resListIter.remove();
-  //        break;
-  //      }
-  //    }
-  //  }
-  //  return result;
-  //}
-
-  //private List<List<ExtendedItem>> getExtendedItemsByStrings(final String workspaceName,
-  //                                                          final String ownerName,
-  //                                                          final List<String> parentServerPaths,
-  //                                                          final DeletedState deletedState,
-  //                                                          final RecursionType recursionType,
-  //                                                          final ItemType itemType) throws TfsException {
-  //  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-  //  for (String serverPath : parentServerPaths) {
-  //    itemSpecList.add(createItemSpec(serverPath, recursionType));
-  //  }
-  //  return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
-  //}
-
-  //public List<List<ExtendedItem>> getExtendedItems(final String workspaceName,
-  //                                                 final String ownerName,
-  //                                                 final List<ItemPath> paths,
-  //                                                 final DeletedState deletedState,
-  //                                                 final RecursionType recursionType,
-  //                                                 final ItemType itemType) throws TfsException {
-  //  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-  //  for (ItemPath path : paths) {
-  //    itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
-  //  }
-  //  return getExtendedItems(workspaceName, ownerName, itemSpecList, deletedState, itemType);
-  //}
 
   public static class ExtendedItemsAndPendingChanges {
     public final List<List<ExtendedItem>> extendedItems;
@@ -867,7 +814,9 @@ public class VersionControlServer {
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
                                                    final String workspaceOwnerName,
                                                    final Collection<String> serverItems,
-                                                   final String comment) throws TfsException {
+                                                   final String comment,
+                                                   final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions)
+    throws TfsException {
     final String serverPathToProject = VersionControlPath.getPathToProject(serverItems.iterator().next());
     for (String serverItem : serverItems) {
       TFSVcs.assertTrue(serverPathToProject.equals(VersionControlPath.getPathToProject(serverItem)));
@@ -902,6 +851,7 @@ public class VersionControlServer {
     changeset.setCheckinNote(checkinNote);
     changeset.setPolicyOverride(policyOverride);
     final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
+    checkinNotificationInfo.setWorkItemInfo(toArrayOfCheckinNotificationWorkItemInfo(workItemsActions));
     final String checkinOptions = CheckinOptions.ValidateCheckinOwner.name(); // TODO checkin options
 
     CheckInResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckInResponse>() {
@@ -920,6 +870,28 @@ public class VersionControlServer {
       result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
     }
     return result;
+  }
+
+  @Nullable
+  private static ArrayOfCheckinNotificationWorkItemInfo toArrayOfCheckinNotificationWorkItemInfo(final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions) {
+    if (workItemsActions.size() == 0) {
+      return null;
+    }
+    List<CheckinNotificationWorkItemInfo> checkinNotificationWorkItemInfoArray =
+      new ArrayList<CheckinNotificationWorkItemInfo>(workItemsActions.size());
+    for (Map.Entry<WorkItem, CheckinWorkItemAction> e : workItemsActions.entrySet()) {
+      if (e.getValue() != CheckinWorkItemAction.None) {
+        CheckinNotificationWorkItemInfo checkinNotificationWorkItemInfo = new CheckinNotificationWorkItemInfo();
+        checkinNotificationWorkItemInfo.setId(e.getKey().getId());
+        checkinNotificationWorkItemInfo.setCheckinAction(e.getValue());
+        checkinNotificationWorkItemInfoArray.add(checkinNotificationWorkItemInfo);
+      }
+    }
+
+    ArrayOfCheckinNotificationWorkItemInfo arrayOfCheckinNotificationWorkItemInfo = new ArrayOfCheckinNotificationWorkItemInfo();
+    arrayOfCheckinNotificationWorkItemInfo.setCheckinNotificationWorkItemInfo(
+      checkinNotificationWorkItemInfoArray.toArray(new CheckinNotificationWorkItemInfo[checkinNotificationWorkItemInfoArray.size()]));
+    return arrayOfCheckinNotificationWorkItemInfo;
   }
 
   public MergeResponse merge(final String workspaceName,
@@ -964,54 +936,6 @@ public class VersionControlServer {
 
     return checkinNoteFields;
   }
-
-//public List<List<Item>> queryItems(final String workspaceName,
-//                                   final String ownerName,
-//                                   final List<ItemPath> paths,
-//                                   final VersionSpec versionSpec,
-//                                   final DeletedState deletedState,
-//                                   final RecursionType recursionType,
-//                                   final ItemType itemType,
-//                                   final boolean generateDownloadUrl) throws TfsException {
-//  List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-//  for (ItemPath path : paths) {
-//    ItemSpec itemSpec = new ItemSpec();
-//    itemSpec.setItem(path.getSelectedPath());
-//    itemSpec.setRecurse(recursionType);
-//    itemSpecList.add(itemSpec);
-//  }
-//  return queryItems(workspaceName, ownerName, itemSpecList, versionSpec, deletedState, itemType, generateDownloadUrl);
-//}
-
-//public List<List<Item>> queryItems(final String workspaceName,
-//                                   final String ownerName,
-//                                   final List<ItemSpec> itemsSpecs,
-//                                   final VersionSpec versionSpec,
-//                                   final DeletedState deletedState,
-//                                   final ItemType itemType,
-//                                   final boolean generateDownloadUrl) throws TfsException {
-//  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-//  arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
-//  List<List<Item>> result = new ArrayList<List<Item>>();
-//  ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
-//    public ItemSet[] executeRequest() throws RemoteException {
-//      return myRepository.QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, itemType, generateDownloadUrl)
-//        .getItemSet();
-//    }
-//  });
-//
-//  TFSVcs.assertTrue(items != null && items.length == itemsSpecs.size());
-//  //noinspection ConstantConditions
-//  for (ItemSet item : items) {
-//    List<Item> resultItemsList = new ArrayList<Item>();
-//    Item[] resultItems = item.getItems().getItem();
-//    if (resultItems != null) {
-//      resultItemsList.addAll(Arrays.asList(resultItems));
-//    }
-//    result.add(resultItemsList);
-//  }
-//  return result;
-//}
 
   @Nullable
   public Item queryItem(final String workspaceName,
@@ -1072,8 +996,7 @@ public class VersionControlServer {
     return result;
   }
 
-  public Collection<BranchRelative> queryBranches(final String itemServerPath,
-                                                  final VersionSpec versionSpec) throws TfsException {
+  public Collection<BranchRelative> queryBranches(final String itemServerPath, final VersionSpec versionSpec) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
 
@@ -1105,118 +1028,160 @@ public class VersionControlServer {
     return result.getMergeCandidate() != null ? Arrays.asList(result.getMergeCandidate()) : Collections.<MergeCandidate>emptyList();
   }
 
-  //public Map<ItemPath, Item> queryItems(final String workspaceName,
-  //                                      final String ownerName,
-  //                                      final List<ItemPath> paths,
-  //                                      final VersionSpec versionSpec,
-  //                                      final DeletedState deletedState,
-  //                                      final boolean generateDownloadUrl) throws TfsException {
-  //  final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-  //  for (ItemPath itemPath : paths) {
-  //    ItemSpec iSpec = new ItemSpec();
-  //    iSpec.setItem(itemPath.getSelectedPath());
-  //    iSpec.setRecurse(RecursionType.None);
-  //    itemSpecs.add(iSpec);
-  //  }
-  //  final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-  //  arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
-  //
-  //  ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
-  //    public ItemSet[] executeRequest() throws RemoteException {
-  //      return myRepository
-  //        .QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, ItemType.Any, generateDownloadUrl)
-  //        .getItemSet();
-  //    }
-  //  });
-  //
-  //  TFSVcs.assertTrue(items != null && items.length == paths.size());
-  //  Map<ItemPath, Item> result = new HashMap<ItemPath, Item>();
-  //  //noinspection ConstantConditions
-  //  for (int i = 0; i < items.length; i++) {
-  //    Item[] resultItems = items[i].getItems().getItem();
-  //    Item item = null;
-  //    if (resultItems != null) {
-  //      TFSVcs.assertTrue(resultItems.length == 1);
-  //      item = resultItems[0];
-  //    }
-  //    result.put(paths.get(i), item);
-  //  }
-  //
-  //  return result;
-  //}
+  // GroupSecurityService
+
+  /**
+   * <code>ReadIdentity</code> request to <code>&lt;tfs_server&gt;/Services/v1.0/GroupSecurityService.asmx</code>.
+   * <code>SearchFactor</code> is set to "<code>AccountName</code>", <code>QueryMembership</code> is set to "<code>None</code>".
+   *
+   * @param qualifiedUsername user name including domain (e.g. "MY_DOMAIN\\MY_USER_NAME")
+   * @return
+   * @throws TfsException
+   */
+  public Identity readIdentity(String qualifiedUsername) throws TfsException {
+    final SearchFactor searchFactor = SearchFactor.AccountName;
+    final String factorValue = qualifiedUsername;
+    final QueryMembership queryMembership = QueryMembership.None;
+
+    return WebServiceHelper.executeRequest(myGroupSecurityService, new WebServiceHelper.Delegate<Identity>() {
+      public Identity executeRequest() throws RemoteException {
+        return myGroupSecurityService.ReadIdentity(searchFactor, factorValue, queryMembership);
+      }
+    });
+  }
+
+  // WorkItemTracking
+  private static RequestHeader3 generateRequestHeader() {
+    RequestHeader requestHeader = new RequestHeader();
+    requestHeader.setId("uuid:" + UUID.randomUUID().toString());
+
+    RequestHeader3 requestHeader3 = new RequestHeader3();
+    requestHeader3.setRequestHeader(requestHeader);
+    return requestHeader3;
+  }
+
+  public List<WorkItem> queryWorkItems(Query_type01 query) throws TfsException {
+    query.setXmlns("");
+
+    final PsQuery_type1 psQuery_type1 = new PsQuery_type1();
+    psQuery_type1.setQuery(query);
+
+    QueryWorkitemsResponse queryWorkitemsResponse =
+      WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<QueryWorkitemsResponse>() {
+        public QueryWorkitemsResponse executeRequest() throws RemoteException {
+          return myWorkItemTrackingClientService.QueryWorkitems(psQuery_type1, generateRequestHeader());
+        }
+      });
+
+    final List<Integer> ids = parseWorkItemsIds(queryWorkitemsResponse);
+    Collections.sort(ids);
+    return pageWorkitemsByIds(ids);
+  }
+
+  private static List<Integer> parseWorkItemsIds(final QueryWorkitemsResponse queryWorkitemsResponse) {
+    Id_type0[] ids_type0 = queryWorkitemsResponse.getResultIds().getQueryIds().getId();
+
+    List<Integer> workItemsIdSet = new ArrayList<Integer>();
+    if (ids_type0 != null) {
+      for (Id_type0 id_type0 : ids_type0) {
+        int startIndex = id_type0.getS();
+
+        // end index can be Integer.MIN_VALUE if the attribute is not really present in soap response
+        int endIndex = id_type0.getE();
+
+        if (endIndex > startIndex) {
+          for (int i = startIndex; i <= endIndex; i++) {
+            workItemsIdSet.add(i);
+          }
+        }
+        else {
+          workItemsIdSet.add(startIndex);
+        }
+      }
+    }
+    return workItemsIdSet;
+  }
+
+  private List<WorkItem> pageWorkitemsByIds(Collection<Integer> workItemsIds) throws TfsException {
+    if (workItemsIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    int[] idsAsArray = new int[workItemsIds.size()];
+    int i = 0;
+
+    for (final Integer id : workItemsIds) {
+      idsAsArray[i++] = id;
+    }
+
+    final org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfInt workitemIds =
+      new org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfInt();
+    workitemIds.set_int(idsAsArray);
+
+    final org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfString workItemFields =
+      new org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfString();
+
+    List<String> serializedFields = new ArrayList<String>();
+    for (WorkItemField field : WorkItemSerialize.FIELDS) {
+      serializedFields.add(field.getSerialized());
+    }
+    workItemFields.setString(serializedFields.toArray(new String[serializedFields.size()]));
+
+    PageWorkitemsByIdsResponse pageWorkitemsByIdsResponse =
+      WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
+        public PageWorkitemsByIdsResponse executeRequest() throws RemoteException {
+          return myWorkItemTrackingClientService
+            .PageWorkitemsByIds(workitemIds, workItemFields, null, GregorianCalendar.getInstance(), false, null, generateRequestHeader());
+        }
+      });
+
+    List<WorkItem> workItems = new ArrayList<WorkItem>();
+    for (R_type0 row : pageWorkitemsByIdsResponse.getItems().getTable().getRows().getR()) {
+      workItems.add(WorkItemSerialize.createFromFields(row.getF()));
+    }
+    return workItems;
+  }
+
+  public void updateWorkItemsAfterCheckin(final String workspaceOwnerName,
+                                          final Map<WorkItem, CheckinWorkItemAction> workItems,
+                                          final int changeSet) throws TfsException {
+    if (workItems.isEmpty()) {
+      return;
+    }
+
+    String identity = readIdentity(workspaceOwnerName).getDisplayName();
+    for (WorkItem workItem : workItems.keySet()) {
+      CheckinWorkItemAction checkinWorkItemAction = workItems.get(workItem);
+      if (checkinWorkItemAction != CheckinWorkItemAction.None) {
+        updateWorkItem(workItem, checkinWorkItemAction, changeSet, identity);
+      }
+    }
+  }
+
+  private void updateWorkItem(WorkItem workItem, CheckinWorkItemAction action, int changeSet, String identity) throws TfsException {
+    UpdateWorkItem_type0 updateWorkItem_type0 = new UpdateWorkItem_type0();
+    updateWorkItem_type0.setWorkItemID(workItem.getId());
+    updateWorkItem_type0.setRevision(workItem.getRevision());
+    updateWorkItem_type0.setObjectType("WorkItem");
+    updateWorkItem_type0
+      .setComputedColumns(WorkItemSerialize.generateComputedColumnsForUpdateRequest(workItem.getType(), action));
+    updateWorkItem_type0
+      .setColumns(WorkItemSerialize.generateColumnsForUpdateRequest(workItem.getType(), workItem.getReason(), action, identity));
+    updateWorkItem_type0.setInsertText(WorkItemSerialize.generateInsertTextForUpdateRequest(action, changeSet));
+    updateWorkItem_type0.setInsertResourceLink(WorkItemSerialize.generateInsertResourceLinkforUpdateRequest(changeSet));
+
+    Package_type00 package_type00 = new Package_type00();
+    package_type00.setXmlns("");
+    package_type00.setUpdateWorkItem(updateWorkItem_type0);
+
+    final Package_type1 package_type_1 = new Package_type1();
+    package_type_1.setPackage(package_type00);
+
+    WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.VoidDelegate() {
+      public void executeRequest() throws RemoteException {
+        myWorkItemTrackingClientService.Update(package_type_1, null, generateRequestHeader());
+      }
+    });
+  }
 
 }
-
-// ***************************************************
-// not used by now
-//
-//  public LabelResult[] createLabel(VersionControlLabel label, LabelItemSpec[] labelSpecs, LabelChildOption childOption) throws Exception {
-//    Workspace workspace = getWorkspace(labelSpecs[0].getItemSpec().getItem());
-//    ArrayOfLabelItemSpec ls = new ArrayOfLabelItemSpec();
-//    ls.setLabelItemSpec(labelSpecs);
-//    return myRepository.LabelItem(workspace.getName(), workspace.getOwner(), label, ls, childOption).getLabelItemResult()
-//      .getLabelResult();
-//  }
-//
-//  public LabelResult[] unlabelItem(String labelName, String labelScope, ItemSpec[] itemSpecs, VersionSpec version) throws Exception {
-//    Workspace workspace = getWorkspace(itemSpecs[0].getItem());
-//    ArrayOfItemSpec is = new ArrayOfItemSpec();
-//    is.setItemSpec(itemSpecs);
-//    return myRepository.UnlabelItem(workspace.getName(), workspace.getOwner(), labelName, labelScope, is, version).getUnlabelItemResult()
-//      .getLabelResult();
-//  }
-//
-//  public Workspace createWorkspace(String name, String owner) throws UnknownHostException, RemoteException {
-//    return createWorkspace(name, owner, null, new WorkingFolder[0], Workstation.getComputerName());
-//  }
-//
-//  @Nullable
-//  public ArrayOfBranchRelative[] getBranchHistory(ItemSpec[] itemSpecs, VersionSpec version) throws Exception {
-//    if (itemSpecs.length == 0) {
-//      return null;
-//    }
-//    ArrayOfItemSpec is = new ArrayOfItemSpec();
-//    is.setItemSpec(itemSpecs);
-//    Workspace workspace = getWorkspace(itemSpecs[0].getItem());
-//    return myRepository.QueryBranches(workspace.getName(), workspace.getOwner(), is, version).getArrayOfBranchRelative();
-//  }
-//
-//  public Changeset getChangeset(int changesetId) throws RemoteException {
-//    return getChangeset(changesetId, false, false);
-//  }
-//
-//  public Changeset getChangeset(int changesetId, boolean includeChanges, boolean includeDownloadInfo) throws RemoteException {
-//    return myRepository.QueryChangeset(changesetId, includeChanges, includeDownloadInfo);
-//  }
-//
-//  public int getLatestChangesetId() throws RemoteException {
-//    RepositoryProperties properties = myRepository.GetRepositoryProperties(new GetRepositoryProperties());
-//    return properties.getLcset();
-//  }
-//
-//  public VersionControlLabel[] queryLabels(String labelName, String labelScope, String owner, boolean includeItems) throws RemoteException {
-//    return myRepository.QueryLabels(null, null, labelName, labelScope, owner, null, VersionSpecBase.getLatest(), includeItems, false)
-//      .getVersionControlLabel();
-//  }
-//
-//  public ItemSecurity[] getPermissions(String[] items, RecursionType recursion) {
-//    return getPermissions(null, items, recursion);
-//  }
-//
-//  public Shelveset[] queryShelvesets(String shelvesetName, String shelvesetOwner) throws RemoteException {
-//    return myRepository.QueryShelvesets(shelvesetName, shelvesetOwner).getShelveset();
-//  }
-//
-//
-//  public Guid getServerGuid() {
-//    return myGuid;
-//  }
-//
-//  private Repository getRepository() {
-//    return myRepository;
-//  }
-//
-//  URI getUri() {
-//    return myUri;
-//  }
-//

@@ -31,7 +31,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -120,8 +120,8 @@ public class BranchAction extends SingleItemAction {
         }
       }
       final String comment = MessageFormat.format("Branch created from {0}", sourcePath.getServerPath());
-      final ResultWithFailures<CheckinResult> checkinResult =
-        workspace.getServer().getVCS().checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment);
+      final ResultWithFailures<CheckinResult> checkinResult = workspace.getServer().getVCS()
+        .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
 
       if (!checkinResult.getFailures().isEmpty()) {
         final List<VcsException> checkinErrors = BeanHelper.getVcsExceptions(checkinResult.getFailures());

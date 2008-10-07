@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -31,28 +32,132 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.ui.SelectWorkItemsDialog;
+import org.jetbrains.tfsIntegration.ui.WorkItemsDialogState;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.List;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
-
   private @NotNull final Project myProject;
+  private Map<ServerInfo, WorkItemsDialogState> myWorkItems = new HashMap<ServerInfo, WorkItemsDialogState>();
 
   public TFSCheckinEnvironment(@NotNull final Project project) {
     myProject = project;
   }
 
   @Nullable
-  public RefreshableOnComponent createAdditionalOptionsPanel(final CheckinProjectPanel panel) {
-    return null;  // TODO: implement
+  public RefreshableOnComponent createAdditionalOptionsPanel(final CheckinProjectPanel checkinProjectPanel) {
+    final JComponent panel = new JPanel();
+    panel.setLayout(new BorderLayout());
+
+    JLabel workItemsLabel = new JLabel("Work Items: ");
+    panel.add(workItemsLabel, BorderLayout.WEST);
+
+    final JTextField summaryField = new JTextField(5);
+    summaryField.setEditable(false);
+    panel.add(summaryField, BorderLayout.CENTER);
+    updateSummary(summaryField);
+
+    JButton selectButton = new JButton("Select...");
+    selectButton.addActionListener(new ActionListener() {
+
+      public void actionPerformed(final ActionEvent event) {
+        try {
+          if (myWorkItems.isEmpty()) {
+            Collection<FilePath> filePaths = new ArrayList<FilePath>(checkinProjectPanel.getFiles().size());
+            for (File file : checkinProjectPanel.getFiles()) {
+              filePaths.add(VcsUtil.getFilePath(file));
+            }
+            WorkstationHelper.processByWorkspaces(filePaths, false, new WorkstationHelper.VoidProcessDelegate() {
+              public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+                myWorkItems.put(workspace.getServer(), new WorkItemsDialogState());
+              }
+            });
+          }
+          Map<ServerInfo, WorkItemsDialogState> dialogState = new HashMap<ServerInfo, WorkItemsDialogState>(myWorkItems.size());
+          for (Map.Entry<ServerInfo, WorkItemsDialogState> e : myWorkItems.entrySet()) {
+            dialogState.put(e.getKey(), e.getValue().createCopy());
+          }
+
+          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myProject, dialogState);
+          d.show();
+          if (d.isOK()) {
+            myWorkItems = dialogState;
+            updateSummary(summaryField);
+          }
+        }
+        catch (TfsException e) {
+          Messages.showErrorDialog(myProject, e.getMessage(), "Checkin");
+        }
+      }
+    });
+    panel.add(selectButton, BorderLayout.EAST);
+
+    return new RefreshableOnComponent() {
+      public JComponent getComponent() {
+        return panel;
+      }
+
+      public void refresh() {
+      }
+
+      public void saveState() {
+      }
+
+      public void restoreState() {
+        myWorkItems.clear();
+        summaryField.setText(null);
+      }
+    };
+  }
+
+  private void updateSummary(final JTextField summaryField) {
+    summaryField.setText(getSummary());
+    summaryField.setCaretPosition(0);
+  }
+
+  private String getSummary() {
+    StringBuffer summary = new StringBuffer();
+    for (Map.Entry<ServerInfo, WorkItemsDialogState> e : myWorkItems.entrySet()) {
+      List<Map.Entry<WorkItem, CheckinWorkItemAction>> sortedActions =
+        new ArrayList<Map.Entry<WorkItem, CheckinWorkItemAction>>(e.getValue().getWorkItemsActions().entrySet());
+      Collections.sort(sortedActions, new Comparator<Map.Entry<WorkItem, CheckinWorkItemAction>>() {
+        public int compare(final Map.Entry<WorkItem, CheckinWorkItemAction> e1, final Map.Entry<WorkItem, CheckinWorkItemAction> e2) {
+          //noinspection AutoUnboxing
+          return e1.getKey().getId() - e2.getKey().getId();
+        }
+      });
+      for (Map.Entry<WorkItem, CheckinWorkItemAction> itemAction : sortedActions) {
+        final String actionLabel;
+        if (CheckinWorkItemAction.Resolve == itemAction.getValue()) {
+          actionLabel = "R";
+        }
+        else if (CheckinWorkItemAction.Associate == itemAction.getValue()) {
+          actionLabel = "A";
+        }
+        else {
+          throw new IllegalStateException("Invalid action: " + itemAction.getValue());
+        }
+        if (summary.length() > 0) {
+          summary.append(",");
+        }
+        summary.append(MessageFormat.format("{0}({1})", itemAction.getKey().getId(), actionLabel));
+      }
+    }
+    return summary.length() > 0 ? summary.toString() : "(None)";
   }
 
   @Nullable
@@ -122,7 +227,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             }
 
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
-              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment);
+              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment,
+                       myWorkItems.get(workspace.getServer()).getWorkItemsActions());
             errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
@@ -165,6 +271,13 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                     invalidateFiles.add(parent);
                   }
                 }
+              }
+
+              if (commitFailed.isEmpty()) {
+                CheckinResult checkinResult = result.getResult().iterator().next();
+                workspace.getServer().getVCS()
+                  .updateWorkItemsAfterCheckin(workspace.getOwnerName(), myWorkItems.get(workspace.getServer()).getWorkItemsActions(),
+                                               checkinResult.getCset());
               }
             }
             TfsFileUtil.invalidate(myProject, invalidateRoots, invalidateFiles);
