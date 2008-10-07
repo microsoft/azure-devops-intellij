@@ -46,7 +46,7 @@ abstract class TestConflicts extends TFSTestCase {
     return 1;
   }
 
-  protected boolean testUpdateToThePast() {
+  protected boolean updateToThePast() {
     return false;
   }
 
@@ -99,7 +99,7 @@ abstract class TestConflicts extends TFSTestCase {
       preparePaths();
       prepareBaseRevision();
       commit(getChanges().getChanges(), "Base revision");
-      if (testUpdateToThePast()) {
+      if (updateToThePast()) {
         makeLocalChanges();
         updateTo(1);
       }

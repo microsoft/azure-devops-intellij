@@ -34,7 +34,7 @@ public class TestFileYoursAddedTheirsAdded extends TestFileConflict {
 
   private FilePath myBaseFile;
 
-  protected boolean testUpdateToThePast() {
+  protected boolean updateToThePast() {
     return true;
   }
 
