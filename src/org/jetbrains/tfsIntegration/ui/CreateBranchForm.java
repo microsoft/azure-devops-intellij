@@ -21,7 +21,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
@@ -42,20 +41,20 @@ public class CreateBranchForm {
   private TextFieldWithBrowseButton myTargetField;
   private JPanel myPanel;
 
-  public CreateBranchForm(final Project project, final WorkspaceInfo workspace, ItemPath path) {
-    mySourceField.setText(path.getServerPath());
+  public CreateBranchForm(final Project project, final WorkspaceInfo workspace, String serverPath, boolean isDirectory, final Component dialogPane) {
+    mySourceField.setText(serverPath);
 
     myTargetField.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         Collection<? extends ServerBrowserAction> actions = Arrays.asList(new CreateVirtualFolderAction());
         ServerBrowserDialog d;
         try {
-          myPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+          dialogPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
           d = new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), myTargetField.getText(),
                                       true, actions);
         }
         finally {
-          myPanel.setCursor(Cursor.getDefaultCursor());
+          dialogPane.setCursor(Cursor.getDefaultCursor());
         }
         d.show();
         if (d.isOK()) {
@@ -65,7 +64,7 @@ public class CreateBranchForm {
       }
     });
 
-    myRevisionForm.init(project, workspace, path.getServerPath(), path.getLocalPath().isDirectory());
+    myRevisionForm.init(project, workspace, serverPath, isDirectory);
   }
 
   @Nullable

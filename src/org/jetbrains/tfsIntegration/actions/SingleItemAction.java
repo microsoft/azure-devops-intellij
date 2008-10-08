@@ -22,55 +22,72 @@ import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collection;
 
 public abstract class SingleItemAction extends AnAction {
 
-  protected abstract void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
-    throws TfsException;
+  private static final Collection<FileStatus> ALLOWED_STATUSES =
+    Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE);
+
+  protected abstract void execute(final @NotNull Project project,
+                                  final @NotNull WorkspaceInfo workspace,
+                                  final @NotNull FilePath localPath,
+                                  final @NotNull ExtendedItem extendedItem) throws TfsException;
+
+  protected Collection<FileStatus> getAllowedStatuses() {
+    return ALLOWED_STATUSES;
+  }
 
   public void actionPerformed(final AnActionEvent e) {
     final Project project = e.getData(DataKeys.PROJECT);
-    VirtualFile[] files = e.getData(DataKeys.VIRTUAL_FILE_ARRAY);
+    VirtualFile file = VcsUtil.getOneVirtualFile(e);
 
     // checked by isEnabled()
     //noinspection ConstantConditions
-    final FilePath localPath = TfsFileUtil.getFilePath(files[0]);
+    final FilePath localPath = TfsFileUtil.getFilePath(file);
 
     try {
       WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath, false).iterator().next();
       ExtendedItem item = TfsUtil.getExtendedItem(localPath);
-      execute(project, workspace, new ItemPath(VcsUtil.getFilePath(item.getLocal(), item.getType() == ItemType.Folder), item.getSitem()));
+      if (item != null) {
+        //noinspection ConstantConditions
+        execute(project, workspace, localPath, item);
+      }
+      else {
+        final String itemType = localPath.isDirectory() ? "Folder" : "File";
+        final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
+        Messages.showErrorDialog(project, message, e.getPresentation().getText());
+      }
     }
     catch (TfsException ex) {
       Messages.showErrorDialog(project, ex.getMessage(), e.getPresentation().getText());
     }
   }
 
-
   public void update(final AnActionEvent e) {
-    e.getPresentation().setEnabled(isEnabled(VcsUtil.getOneVirtualFile(e)));
+    e.getPresentation().setEnabled(isEnabled(e.getData(DataKeys.PROJECT), VcsUtil.getOneVirtualFile(e)));
   }
 
-
-  protected boolean isEnabled(final VirtualFile file) {
+  protected final boolean isEnabled(final Project project, final VirtualFile file) {
     if (file == null) {
       return false;
     }
-
-    try {
-      return TfsUtil.getExtendedItem(TfsFileUtil.getFilePath(file)) != null;
-    }
-    catch (TfsException e) {
-      // skip error handling
-      return false;
-    }
+    final FileStatus status = FileStatusManager.getInstance(project).getStatus(file);
+    return getAllowedStatuses().contains(status);
   }
 
 }

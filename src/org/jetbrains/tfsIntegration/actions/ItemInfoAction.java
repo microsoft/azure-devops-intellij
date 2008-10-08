@@ -19,45 +19,50 @@ package org.jetbrains.tfsIntegration.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 import org.jetbrains.tfsIntegration.ui.ItemInfoDialog;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collection;
 
 public class ItemInfoAction extends SingleItemAction {
 
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
-    throws TfsException {
-    final ExtendedItem item = workspace.getServer().getVCS()
-      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), itemPath.getLocalPath(), RecursionType.None, DeletedState.Any);
+  private static final Collection<FileStatus> ALLOWED_STATUSES =
+    Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE, FileStatus.ADDED);
 
+  protected Collection<FileStatus> getAllowedStatuses() {
+    return ALLOWED_STATUSES;
+  }
+
+  protected void execute(final @NotNull Project project,
+                         final @NotNull WorkspaceInfo workspace,
+                         final @NotNull FilePath localPath,
+                         final @NotNull ExtendedItem extendedItem) throws TfsException {
     //noinspection ConstantConditions
-    if (item.getLver() == Integer.MIN_VALUE) {
-      final String itemType = itemPath.getLocalPath().isDirectory() ? "Folder" : "File";
-      final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, itemPath.getLocalPath().getPresentableUrl());
-      Messages.showInfoMessage(project, message, getActionTitle(itemPath.getLocalPath()));
+    if (extendedItem.getLver() == Integer.MIN_VALUE) {
+      final String itemType = localPath.isDirectory() ? "Folder" : "File";
+      final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
+      Messages.showInfoMessage(project, message, getActionTitle(localPath.isDirectory()));
       return;
     }
 
-    final String serverPath = item.getTitem() != null ? item.getTitem() : item.getSitem();
+    final String serverPath = extendedItem.getTitem() != null ? extendedItem.getTitem() : extendedItem.getSitem();
     final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(serverPath, new ChangesetVersionSpec(item.getLver()));
+      .queryBranches(serverPath, new ChangesetVersionSpec(extendedItem.getLver()));
 
-    ItemInfoDialog d = new ItemInfoDialog(project, workspace, item, branches, getActionTitle(itemPath.getLocalPath()));
+    ItemInfoDialog d = new ItemInfoDialog(project, workspace, extendedItem, branches, getActionTitle(localPath.isDirectory()));
     d.show();
   }
 
-  private static String getActionTitle(@NotNull FilePath localPath) {
-    return MessageFormat.format("{0} Information", localPath.isDirectory() ? "Folder" : "File");
+  private static String getActionTitle(boolean isDirectory) {
+    return MessageFormat.format("{0} Information", isDirectory ? "Folder" : "File");
   }
 
 }

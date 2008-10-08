@@ -192,13 +192,13 @@ public class VersionControlServer {
 
   public ResultWithFailures<GetOperation> createBranch(final String workspaceName,
                                                        final String workspaceOwner,
-                                                       ItemPath source,
+                                                       final String sourceServerPath,
                                                        final VersionSpecBase versionSpec,
                                                        final String targetServerPath) throws TfsException {
-    return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(source), false, new ChangeRequestProvider<ItemPath>() {
-      public ChangeRequest createChangeRequest(final ItemPath itemPath) {
+    return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(sourceServerPath), false, new ChangeRequestProvider<String>() {
+      public ChangeRequest createChangeRequest(final String serverPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
-        changeRequest.getItem().setItem(itemPath.getServerPath());
+        changeRequest.getItem().setItem(serverPath);
         changeRequest.getItem().setRecurse(RecursionType.Full);
         changeRequest.setReq(RequestType.Branch);
         changeRequest.setTarget(targetServerPath);

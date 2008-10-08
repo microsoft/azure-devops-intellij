@@ -20,8 +20,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.MergeHelper;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -30,16 +28,17 @@ import org.jetbrains.tfsIntegration.ui.MergeBranchDialog;
 
 public class MergeBranchAction extends SingleItemAction {
 
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath itemPath)
-    throws TfsException {
-    final String title = getActionTitle(itemPath.getLocalPath());
-    ExtendedItem extendedItem = TfsUtil.getExtendedItem(itemPath.getLocalPath());
+  protected void execute(final @NotNull Project project,
+                         final @NotNull WorkspaceInfo workspace,
+                         final @NotNull FilePath localPath,
+                         final @NotNull ExtendedItem extendedItem) throws TfsException {
+    final String title = getActionTitle(localPath);
 
     MergeBranchDialog d =
-      new MergeBranchDialog(project, workspace, extendedItem.getTitem(), extendedItem.getType() == ItemType.Folder, title);
+      new MergeBranchDialog(project, workspace, extendedItem.getSitem(), extendedItem.getType() == ItemType.Folder, title);
     d.show();
     if (d.isOK()) {
-      MergeHelper.execute(project, workspace, itemPath.getServerPath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
+      MergeHelper.execute(project, workspace, extendedItem.getSitem(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
     }
   }
 

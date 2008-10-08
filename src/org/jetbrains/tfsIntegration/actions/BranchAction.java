@@ -29,11 +29,10 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.CreateBranchDialog;
@@ -46,9 +45,13 @@ import java.util.List;
 
 public class BranchAction extends SingleItemAction {
 
-  protected void execute(final @NotNull Project project, final @NotNull WorkspaceInfo workspace, final @NotNull ItemPath sourcePath) {
+  protected void execute(final @NotNull Project project,
+                         final @NotNull WorkspaceInfo workspace,
+                         final @NotNull FilePath sourceLocalPath,
+                         final @NotNull ExtendedItem sourceExtendedItem) {
     try {
-      CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourcePath);
+      final String sourceServerPath = sourceExtendedItem.getSitem();
+      CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath, sourceExtendedItem.getType() == ItemType.Folder);
       d.show();
       if (!d.isOK()) {
         return;
@@ -84,7 +87,7 @@ public class BranchAction extends SingleItemAction {
       }
 
       final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
-        .createBranch(workspace.getName(), workspace.getOwnerName(), sourcePath, version, targetServerPath);
+        .createBranch(workspace.getName(), workspace.getOwnerName(), sourceServerPath, version, targetServerPath);
       if (!createBranchResult.getFailures().isEmpty()) {
         StringBuilder s = new StringBuilder("Failed to create branch:\n");
         for (Failure failure : createBranchResult.getFailures()) {
@@ -119,7 +122,7 @@ public class BranchAction extends SingleItemAction {
           checkin.add(change.getItem());
         }
       }
-      final String comment = MessageFormat.format("Branch created from {0}", sourcePath.getServerPath());
+      final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
       final ResultWithFailures<CheckinResult> checkinResult = workspace.getServer().getVCS()
         .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
 
@@ -138,20 +141,5 @@ public class BranchAction extends SingleItemAction {
       Messages.showErrorDialog(project, message, "Create Branch");
     }
   }
-
-  // TODO use base class check?
-  protected boolean isEnabled(final VirtualFile file) {
-    if (!super.isEnabled(file)) {
-      return false;
-    }
-
-    final FilePath localPath = TfsFileUtil.getFilePath(file);
-    try {
-      return !Workstation.getInstance().findWorkspace(localPath, false).isEmpty();
-    }
-    catch (TfsException e) {
-      TFSVcs.LOG.error(e);
-      return false;
-    }
-  }
+  
 }
