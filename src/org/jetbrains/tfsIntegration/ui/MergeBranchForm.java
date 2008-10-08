@@ -37,10 +37,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -78,6 +75,7 @@ public class MergeBranchForm {
   private final String myDialogTitle;
   private final List<Listener> myListeners = new ArrayList<Listener>();
   private boolean mySourceIsDirectory;
+  private final FocusListener mySourceFieldFocusListener;
 
   public MergeBranchForm(final Project project,
                          final WorkspaceInfo workspace,
@@ -113,12 +111,14 @@ public class MergeBranchForm {
         updateOnSourceChange();
       }
     });
-    mySourceField.getTextField().addFocusListener(new FocusAdapter() {
+
+    mySourceFieldFocusListener = new FocusAdapter() {
       public void focusLost(final FocusEvent e) {
         mySourceIsDirectory = true;
         updateOnSourceChange();
       }
-    });
+    };
+    mySourceField.getTextField().addFocusListener(mySourceFieldFocusListener);
 
     myTargetCombo.setModel(new DefaultComboBoxModel());
     myTargetCombo.setRenderer(new DefaultListCellRenderer() {
@@ -164,8 +164,6 @@ public class MergeBranchForm {
 
     myChangesTypeCombo.setSelectedIndex(0);
     mySelectRevisionForm.init(project, workspace, initialSourcePath, initialSourcePathIsDirectory);
-
-    updateOnSourceChange();
   }
 
   public JComponent getContentPanel() {
@@ -291,6 +289,10 @@ public class MergeBranchForm {
     }
     mySelectRevisionForm.init(myProject, myWorkspace, mySourceField.getText(), mySourceIsDirectory);
     fireStateChanged();
+  }
+
+  public void close() {
+    mySourceField.getTextField().removeFocusListener(mySourceFieldFocusListener);
   }
 
 }

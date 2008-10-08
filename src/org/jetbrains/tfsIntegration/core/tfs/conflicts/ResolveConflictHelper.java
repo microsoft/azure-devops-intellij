@@ -29,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -38,6 +37,7 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -46,16 +46,15 @@ public class ResolveConflictHelper {
   private final @NotNull Project myProject;
   private final @NotNull WorkspaceInfo myWorkspace;
   private final @Nullable UpdatedFiles myUpdatedFiles;
-  private List<Conflict> myConflicts;
-  private List<ItemPath> myPaths;
+  private final List<Conflict> myConflicts;
 
   public ResolveConflictHelper(final Project project,
                                final WorkspaceInfo workspace,
-                               final List<ItemPath> paths,
+                               final Collection<Conflict> conflicts,
                                final UpdatedFiles updatedFiles) {
     myProject = project;
     myWorkspace = workspace;
-    myPaths = paths;
+    myConflicts = new ArrayList<Conflict>(conflicts);
     myUpdatedFiles = updatedFiles;
   }
 
@@ -143,13 +142,8 @@ public class ResolveConflictHelper {
     }
   }
 
-  public void reloadConflicts() throws TfsException {
-    myConflicts =
-      myWorkspace.getServer().getVCS().queryConflicts(myWorkspace.getName(), myWorkspace.getOwnerName(), myPaths, RecursionType.Full);
-  }
-
   public List<Conflict> getConflicts() {
-    return myConflicts;
+    return new ArrayList<Conflict>(myConflicts);
   }
 
   public static boolean canMerge(final @NotNull Conflict conflict) {
@@ -208,6 +202,7 @@ public class ResolveConflictHelper {
         throw TfsUtil.collectExceptions(applyErrors);
       }
     }
+    myConflicts.remove(conflict);
   }
 
   private static boolean isNameConflict(final @NotNull Conflict conflict) {
@@ -220,6 +215,17 @@ public class ResolveConflictHelper {
     final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
     final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
     return yourChange.contains(ChangeType.Edit) || baseChange.contains(ChangeType.Edit);
+  }
+
+  public static Collection<Conflict> getUnresolvedConflicts(Collection<Conflict> conflicts) {
+    Collection<Conflict> result = new ArrayList<Conflict>();
+    for (Conflict c : conflicts) {
+      if (!c.getIsresolved()) {
+        TFSVcs.assertTrue(c.getCid() != 0);
+        result.add(c);
+      }
+    }
+    return result;
   }
 
 }

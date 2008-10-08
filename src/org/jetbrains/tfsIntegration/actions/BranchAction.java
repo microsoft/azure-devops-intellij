@@ -18,9 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
@@ -99,12 +97,13 @@ public class BranchAction extends SingleItemAction {
 
       if (d.isCreateWorkingCopies()) {
         final Ref<Collection<VcsException>> downloadErrors = new Ref<Collection<VcsException>>(Collections.<VcsException>emptyList());
-        ProgressManager.getInstance().run(new Task.Modal(project, "Creating target working copies", false) {
-          public void run(final ProgressIndicator indicator) {
-            downloadErrors.set(ApplyGetOperations.execute(project, workspace, createBranchResult.getResult(), indicator, null,
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+          public void run() {
+            downloadErrors.set(ApplyGetOperations.execute(project, workspace, createBranchResult.getResult(),
+                                                          ProgressManager.getInstance().getProgressIndicator(), null,
                                                           ApplyGetOperations.DownloadMode.ALLOW));
           }
-        });
+        }, "Creating target working copies", false, project);
 
         if (!downloadErrors.get().isEmpty()) {
           AbstractVcsHelper.getInstance(project).showErrors(new ArrayList<VcsException>(downloadErrors.get()), "Create Branch");
@@ -141,5 +140,5 @@ public class BranchAction extends SingleItemAction {
       Messages.showErrorDialog(project, message, "Create Branch");
     }
   }
-  
+
 }

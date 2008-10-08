@@ -75,4 +75,14 @@ public class MergeBranchDialog extends DialogWrapper {
     return myMergeBranchForm.getContentPanel();
   }
 
+  protected void doOKAction() {
+    myMergeBranchForm.close();
+    super.doOKAction();
+  }
+
+  public void doCancelAction() {
+    myMergeBranchForm.close();
+    super.doCancelAction();
+  }
+  
 }

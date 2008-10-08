@@ -100,7 +100,6 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       }
     };
 
-    // TODO run(Task) ?
     ProgressManager.getInstance()
       .runProcessWithProgressSynchronously(checkoutRunnable, "Checkout from TFS", true, ProjectManager.getInstance().getDefaultProject());
 

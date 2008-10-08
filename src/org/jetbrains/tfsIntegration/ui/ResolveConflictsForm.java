@@ -139,7 +139,6 @@ public class ResolveConflictsForm {
           Conflict conflict = myItemsTableModel.getConflicts().get(index);
           execute(conflict);
         }
-        myResolveConflictHelper.reloadConflicts();
         myItemsTableModel.setConflicts(myResolveConflictHelper.getConflicts());
       }
       catch (TfsException e) {

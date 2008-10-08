@@ -36,6 +36,7 @@ import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
@@ -79,19 +80,20 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               requests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), recursionType, version));
               TFSProgressUtil.checkCanceled(progressIndicator);
             }
-            
+
             List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
             // execute GetOperation-s, conflicting ones will be skipped
             final Collection<VcsException> applyErrors = ApplyGetOperations
               .execute(myProject, workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
             exceptions.addAll(applyErrors);
 
-              // resolve all conflicts
-              ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, paths, updatedFiles);
-              resolveConflictHelper.reloadConflicts();
-              if (!resolveConflictHelper.getConflicts().isEmpty()) {
-                ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
-              }
+            Collection<Conflict> conflicts =
+              workspace.getServer().getVCS().queryConflicts(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.Full);
+            conflicts = ResolveConflictHelper.getUnresolvedConflicts(conflicts);
+            if (!conflicts.isEmpty()) {
+              ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, conflicts, updatedFiles);
+              ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+            }
 
             // TODO content roots can be renamed while executing
             TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);

@@ -195,17 +195,18 @@ public class VersionControlServer {
                                                        final String sourceServerPath,
                                                        final VersionSpecBase versionSpec,
                                                        final String targetServerPath) throws TfsException {
-    return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(sourceServerPath), false, new ChangeRequestProvider<String>() {
-      public ChangeRequest createChangeRequest(final String serverPath) {
-        ChangeRequest changeRequest = createChangeRequestTemplate();
-        changeRequest.getItem().setItem(serverPath);
-        changeRequest.getItem().setRecurse(RecursionType.Full);
-        changeRequest.setReq(RequestType.Branch);
-        changeRequest.setTarget(targetServerPath);
-        changeRequest.setVspec(versionSpec);
-        return changeRequest;
-      }
-    });
+    return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(sourceServerPath), false,
+                       new ChangeRequestProvider<String>() {
+                         public ChangeRequest createChangeRequest(final String serverPath) {
+                           ChangeRequest changeRequest = createChangeRequestTemplate();
+                           changeRequest.getItem().setItem(serverPath);
+                           changeRequest.getItem().setRecurse(RecursionType.Full);
+                           changeRequest.setReq(RequestType.Branch);
+                           changeRequest.setTarget(targetServerPath);
+                           changeRequest.setVspec(versionSpec);
+                           return changeRequest;
+                         }
+                       });
   }
 
   public ResultWithFailures<GetOperation> scheduleForAddition(final String workspaceName, final String workspaceOwner, List<ItemPath> paths)
@@ -692,10 +693,10 @@ public class VersionControlServer {
   }
 
 
-  public List<Conflict> queryConflicts(final String workspaceName,
-                                       final String ownerName,
-                                       final List<ItemPath> paths,
-                                       final RecursionType recursionType) throws TfsException {
+  public Collection<Conflict> queryConflicts(final String workspaceName,
+                                             final String ownerName,
+                                             final List<ItemPath> paths,
+                                             final RecursionType recursionType) throws TfsException {
     List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
     for (ItemPath path : paths) {
       itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
@@ -902,7 +903,7 @@ public class VersionControlServer {
                              final VersionSpecBase toVersion) throws TfsException {
 
     final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
-    final ItemSpec target = createItemSpec(sourceServerPath, null);
+    final ItemSpec target = createItemSpec(targetServerPath, null);
 
     return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<MergeResponse>() {
       public MergeResponse executeRequest() throws RemoteException {
