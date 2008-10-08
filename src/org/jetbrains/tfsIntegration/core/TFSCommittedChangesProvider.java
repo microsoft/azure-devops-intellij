@@ -105,19 +105,37 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         WorkspaceInfo workspace = entry.getKey();
         final Map<FilePath, ExtendedItem> extendedItems = workspace.getExtendedItems(entry.getValue());
         for (Map.Entry<FilePath, ExtendedItem> localPath2ExtendedItem : extendedItems.entrySet()) {
-          if (localPath2ExtendedItem.getValue() == null) {
-            return Collections.emptyList();
+          ExtendedItem extendedItem = localPath2ExtendedItem.getValue();
+          if (extendedItem == null) {
+            continue;
           }
+          int itemLatestVersion = getLatestChangesetId(workspace, settings.getUserFilter(), extendedItem);
+
+          if (versionFrom instanceof ChangesetVersionSpec) {
+            ChangesetVersionSpec changesetVersionFrom = (ChangesetVersionSpec)versionFrom;
+            if (changesetVersionFrom.getChangeSetId() > itemLatestVersion) {
+              continue;
+            }
+          }
+
+          if (versionTo instanceof ChangesetVersionSpec) {
+            ChangesetVersionSpec changesetVersionTo = (ChangesetVersionSpec)versionTo;
+            if (changesetVersionTo.getChangeSetId() > itemLatestVersion) {
+              versionTo = new ChangesetVersionSpec(itemLatestVersion);
+            }
+          }
+
           final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
           final RecursionType recursionType = localPath2ExtendedItem.getKey().isDirectory() ? RecursionType.Full : null;
-          ItemSpec itemSpec = VersionControlServer.createItemSpec(localPath2ExtendedItem.getValue().getSitem(), recursionType);
+          ItemSpec itemSpec = VersionControlServer.createItemSpec(extendedItem.getSitem(), recursionType);
+
           List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
-                                                                                   settings.getUserFilter(), itemVersion, versionFrom,
-                                                                                   versionTo, maxCount);
+                                                                   settings.getUserFilter(), itemVersion, versionFrom, versionTo, maxCount);
           for (Changeset changeset : changeSets) {
             result.add(new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(),
                                          changeset.getComment(), myVcs));
           }
+
         }
       }
       return result;
@@ -125,6 +143,20 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     catch (TfsException e) {
       throw new VcsException(e);
     }
+  }
+
+  private static int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
+    if (extendedItem.getType() == ItemType.File) {
+      return extendedItem.getLatest();
+    }
+    final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
+    final VersionSpec versionFrom = new ChangesetVersionSpec(1);
+    final VersionSpec versionTo = LatestVersionSpec.INSTANCE;
+    final int maxCount = 1;
+    ItemSpec itemSpec = VersionControlServer.createItemSpec(extendedItem.getSitem(), RecursionType.Full);
+    List<Changeset> changeSets = workspace.getServer().getVCS()
+      .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo, maxCount);
+    return changeSets.get(0).getCset();
   }
 
   public ChangeListColumn[] getColumns() {
