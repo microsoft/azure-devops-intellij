@@ -118,16 +118,6 @@ public class WorkspaceInfo {
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
-  public Collection<FilePath> getMappedChildPaths(FilePath root) throws TfsException {
-    Collection<FilePath> result = new ArrayList<FilePath>();
-    for (WorkingFolderInfo workingFolder : getWorkingFolders()) {
-      if (workingFolder.getLocalPath().isUnder(root, false)) {
-        result.add(workingFolder.getLocalPath());
-      }
-    }
-    return result;
-  }
-
   public void loadFromServer() throws TfsException {
     if (hasCurrentOwner()) {
       if (myOriginalName != null && !myLoaded) {
@@ -145,7 +135,8 @@ public class WorkspaceInfo {
   }
 
   boolean hasMapping(FilePath localPath, boolean considerChildMappings) throws TfsException {
-    return hasMapping(getWorkingFolders(), localPath, considerChildMappings);
+    // post-check current owner since it might have just been changed dirung getWorkingFolders() call
+    return hasMapping(getWorkingFolders(), localPath, considerChildMappings) && hasCurrentOwner();
   }
 
   boolean hasCurrentOwner() {
@@ -218,15 +209,6 @@ public class WorkspaceInfo {
     return mapping;
   }
 
-
-  public boolean isWorkingFolder(final @NotNull FilePath localPath) throws TfsException {
-    for (WorkingFolderInfo folderInfo : getWorkingFolders()) {
-      if (folderInfo.getLocalPath().equals(localPath)) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
     // TODO checkCurrentOwner(); ?
