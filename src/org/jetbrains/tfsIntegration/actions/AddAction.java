@@ -54,16 +54,18 @@ public class AddAction extends AnAction {
   }
 
   private static boolean isEnabled(Project project, VirtualFile[] files) {
-    FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
     if (files.length == 0) {
       return false;
     }
+    
+    FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
     for (VirtualFile file : files) {
       final FileStatus fileStatus = fileStatusManager.getStatus(file);
       if (fileStatus != FileStatus.UNKNOWN) {
         return false;
       }
     }
+
     return true;
   }
 
