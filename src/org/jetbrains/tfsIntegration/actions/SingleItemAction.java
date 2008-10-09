@@ -61,17 +61,21 @@ public abstract class SingleItemAction extends AnAction {
     final FilePath localPath = TfsFileUtil.getFilePath(file);
 
     try {
-      WorkspaceInfo workspace = Workstation.getInstance().findWorkspace(localPath, false).iterator().next();
-      ExtendedItem item = TfsUtil.getExtendedItem(localPath);
-      if (item != null) {
-        //noinspection ConstantConditions
-        execute(project, workspace, localPath, item);
+      Collection<WorkspaceInfo> workspace = Workstation.getInstance().findWorkspace(localPath, false);
+      if (workspace.isEmpty()) {
+        final String itemType = localPath.isDirectory() ? "folder" : "file";
+        final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, localPath.getPresentableUrl());
+        Messages.showErrorDialog(project, message, e.getPresentation().getText());
+        return;
       }
-      else {
+      ExtendedItem item = TfsUtil.getExtendedItem(localPath);
+      if (item == null) {
         final String itemType = localPath.isDirectory() ? "Folder" : "File";
         final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
         Messages.showErrorDialog(project, message, e.getPresentation().getText());
       }
+      //noinspection ConstantConditions
+      execute(project, workspace.iterator().next(), localPath, item);
     }
     catch (TfsException ex) {
       Messages.showErrorDialog(project, ex.getMessage(), e.getPresentation().getText());
