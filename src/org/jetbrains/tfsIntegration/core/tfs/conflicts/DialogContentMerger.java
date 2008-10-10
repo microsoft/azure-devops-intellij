@@ -15,19 +15,22 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import org.jetbrains.tfsIntegration.ui.ContentTriplet;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.diff.ActionButtonPresentation;
 import com.intellij.openapi.diff.DiffManager;
-import com.intellij.openapi.util.io.StreamUtil;
+import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.peer.PeerFactory;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 public class DialogContentMerger implements ContentMerger {
 
     public void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath) {
+      TFSVcs.assertTrue(localFile.isWritable(), localFile.getPresentableUrl() + " should be writable");
+
         MergeRequest request = PeerFactory.getInstance().getDiffRequestFactory().createMergeRequest(
                 StreamUtil.convertSeparators(contentTriplet.serverContent), StreamUtil.convertSeparators(contentTriplet.localContent),
                 StreamUtil.convertSeparators(contentTriplet.baseContent), localFile, project, ActionButtonPresentation.createApplyButton());

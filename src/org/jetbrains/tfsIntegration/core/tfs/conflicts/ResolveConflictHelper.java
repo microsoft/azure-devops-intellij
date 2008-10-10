@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
+import com.intellij.util.io.ReadOnlyAttributeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -108,6 +109,7 @@ public class ResolveConflictHelper {
       final VirtualFile vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
       if (vFile != null) {
         try {
+          ReadOnlyAttributeUtil.setReadOnlyAttribute(vFile, false);
           ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
         }
         catch (IOException e) {
