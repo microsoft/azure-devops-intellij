@@ -157,16 +157,6 @@ public class Workstation {
                 savePerformer.startElement(XmlConstants.SERVER_INFO, serverAttributes);
 
                 for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
-                  List<WorkingFolderInfo> workingFolders;
-                  try {
-                    // TODO call workspaceInfo.getWorkingFoldersCached() to aviod reloading all the workspaces 
-                    workingFolders = workspaceInfo.getWorkingFolders();
-                  }
-                  catch (TfsException e) {
-                    LOG.info("Failed to update workspace " + workspaceInfo.getName(), e);
-                    continue;
-                  }
-
                   Map<String, String> workspaceAttributes = new HashMap<String, String>();
                   workspaceAttributes.put(XmlConstants.NAME_ATTR, workspaceInfo.getName());
                   workspaceAttributes.put(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
@@ -176,7 +166,7 @@ public class Workstation {
                   savePerformer.startElement(XmlConstants.WORKSPACE_INFO, workspaceAttributes);
                   savePerformer.startElement(XmlConstants.MAPPED_PATHS);
 
-                  for (WorkingFolderInfo folderInfo : workingFolders) {
+                  for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersCached()) {
                     Map<String, String> pathAttributes = new HashMap<String, String>();
                     pathAttributes.put(XmlConstants.PATH_ATTR, VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
                     savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");

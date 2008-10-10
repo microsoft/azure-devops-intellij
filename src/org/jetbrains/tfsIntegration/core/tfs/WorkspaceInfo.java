@@ -114,7 +114,7 @@ public class WorkspaceInfo {
     return getWorkingFoldersCached();
   }
 
-  private List<WorkingFolderInfo> getWorkingFoldersCached() {
+  List<WorkingFolderInfo> getWorkingFoldersCached() {
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
