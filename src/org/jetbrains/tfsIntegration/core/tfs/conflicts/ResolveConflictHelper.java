@@ -23,9 +23,9 @@ import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
-import com.intellij.util.io.ReadOnlyAttributeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -62,21 +62,25 @@ public class ResolveConflictHelper {
   public void acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
     TFSVcs.assertTrue(canMerge(conflict));
 
+    final String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+
     final ContentTriplet contentTriplet = new ContentTriplet();
     VcsRunnable runnable = new VcsRunnable() {
       public void run() throws VcsException {
+        // virtual file can be out of the current project so force its discovery
+        TfsFileUtil.refreshAndFindFile(localPath);
         try {
           if (conflict.getYtype() == ItemType.File) {
             String original = TFSContentRevision.create(myWorkspace, conflict.getBitemid(), conflict.getBver()).getContent();
             contentTriplet.baseContent = original != null ? original : "";
-            String current = CurrentContentRevision.create(VcsUtil.getFilePath(conflict.getSrclitem())).getContent();
+            String current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
             contentTriplet.localContent = current != null ? current : "";
             String last = TFSContentRevision.create(myWorkspace, conflict.getTitemid(), conflict.getTver()).getContent();
             contentTriplet.serverContent = last != null ? last : "";
           }
         }
         catch (TfsException e) {
-          throw new VcsException("Unable to get content for item " + conflict.getSrclitem());
+          throw new VcsException("Unable to get content for item " + localPath);
         }
       }
     };
@@ -106,7 +110,7 @@ public class ResolveConflictHelper {
     // merge content
     if (isContentConflict(conflict)) {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
-      final VirtualFile vFile = VcsUtil.getVirtualFile(conflict.getSrclitem());
+      final VirtualFile vFile = VcsUtil.getVirtualFile(localPath);
       if (vFile != null) {
         try {
           ReadOnlyAttributeUtil.setReadOnlyAttribute(vFile, false);
@@ -117,7 +121,7 @@ public class ResolveConflictHelper {
         }
       }
       else {
-        String errorMessage = MessageFormat.format("File ''{0}'' is missing", conflict.getSrclitem());
+        String errorMessage = MessageFormat.format("File ''{0}'' is missing", localPath);
         throw new VcsException(errorMessage);
       }
     }
@@ -149,7 +153,12 @@ public class ResolveConflictHelper {
   }
 
   public static boolean canMerge(final @NotNull Conflict conflict) {
+    if (conflict.getSrclitem() == null) {
+      return false;
+    }
+    
     final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
+    final EnumMask<ChangeType> yourLocalChange = EnumMask.fromString(ChangeType.class, conflict.getYlchg());
     final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
 
     boolean isNamespaceConflict =
@@ -163,7 +172,7 @@ public class ResolveConflictHelper {
     }
     if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
       if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType.Edit)) {
-        if (yourChange.contains(ChangeType.Edit)) {
+        if (yourLocalChange.contains(ChangeType.Edit)) {
           return true;
         }
         if (conflict.getIsforced()) {

@@ -19,9 +19,11 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.RefreshQueue;
 import com.intellij.peer.PeerFactory;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
@@ -224,8 +226,22 @@ public class TfsFileUtil {
     });
   }
 
+  public static VirtualFile refreshAndFindFile(final String path) {
+    final Ref<VirtualFile> file = new Ref<VirtualFile>();
+    executeInEventDispatchThread(new Runnable() {
+      public void run() {
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+          public void run() {
+            file.set(VirtualFileManager.getInstance().refreshAndFindFileByUrl(path));
+          }
+        });
+      }
+    });
+    return file.get();
+  }
 
-  public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter) throws TfsException, IOException {
+  public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter)
+    throws TfsException, IOException {
     TFSVcs.assertTrue(!destination.isDirectory(), destination + " expected to be a file");
     OutputStream fileStream = null;
     try {
