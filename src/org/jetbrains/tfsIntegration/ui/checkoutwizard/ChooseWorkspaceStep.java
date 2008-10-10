@@ -18,10 +18,13 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.ui.ManageWorkspacesForm;
 
 import javax.swing.*;
+import java.util.List;
 
 public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
@@ -65,6 +68,22 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
   }
 
   public void _commit(final boolean finishChosen) throws CommitStepException {
+    final WorkspaceInfo newWorkspace = myManageWorkspacesForm.getSelectedWorkspace();
+
+    // let's select first mapped path for newly selected workspace 
+    //noinspection ConstantConditions
+    if (!newWorkspace.equals(myModel.getWorkspace())) {
+      try {
+        //noinspection ConstantConditions
+        final List<WorkingFolderInfo> workingFolders = newWorkspace.getWorkingFolders();
+        if (!workingFolders.isEmpty()) {
+          myModel.setServerPath(workingFolders.get(0).getServerPath());
+        }
+      }
+      catch (TfsException e) {
+        throw new CommitStepException(e.getMessage());
+      }
+    }
     myModel.setWorkspace(myManageWorkspacesForm.getSelectedWorkspace());
   }
 
