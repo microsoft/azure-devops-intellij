@@ -145,6 +145,7 @@ public class WebServiceHelper {
 
     return executeRequest(serverUri.get(), new InnerDelegate<T>() {
       public T executeRequest(final Credentials credentials) throws Exception {
+        setupStub(stub);
         setCredentials(stub, credentials, serverUri.get());
         setProxy(stub);
         return delegate.executeRequest();
