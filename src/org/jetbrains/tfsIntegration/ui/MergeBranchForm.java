@@ -191,6 +191,10 @@ public class MergeBranchForm {
     myChangesetsTableModel.setChangesets(changesets);
   }
 
+  public String getSourcePath() {
+    return mySourceField.getText();
+  }
+
   public String getTargetPath() {
     Item targetBranch = (Item)myTargetCombo.getSelectedItem();
     return targetBranch.getItem();

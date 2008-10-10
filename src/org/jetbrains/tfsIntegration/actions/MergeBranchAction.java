@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -35,10 +36,8 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.MergeResponse;
 import org.jetbrains.tfsIntegration.ui.MergeBranchDialog;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.text.MessageFormat;
+import java.util.*;
 
 public class MergeBranchAction extends SingleItemAction {
 
@@ -46,7 +45,7 @@ public class MergeBranchAction extends SingleItemAction {
                          final @NotNull WorkspaceInfo workspace,
                          final @NotNull FilePath localPath,
                          final @NotNull ExtendedItem extendedItem) throws TfsException {
-    final String title = getActionTitle(localPath);
+    final String title = "Merge Branch Changes";
 
     MergeBranchDialog d =
       new MergeBranchDialog(project, workspace, extendedItem.getSitem(), extendedItem.getType() == ItemType.Folder, title);
@@ -56,8 +55,7 @@ public class MergeBranchAction extends SingleItemAction {
     }
 
     final MergeResponse mergeResponse = workspace.getServer().getVCS()
-      .merge(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), d.getTargetPath(), d.getFromVersion(),
-             d.getToVersion());
+      .merge(workspace.getName(), workspace.getOwnerName(), d.getSourcePath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
 
     final List<VcsException> errors = new ArrayList<VcsException>();
     if (mergeResponse.getMergeResult().getGetOperation() != null) {
@@ -68,27 +66,38 @@ public class MergeBranchAction extends SingleItemAction {
                      ProgressManager.getInstance().getProgressIndicator(), null, ApplyGetOperations.DownloadMode.ALLOW);
           errors.addAll(applyErrors);
         }
-      }, "Merge", false, project);
+      }, title, false, project);
     }
-    if (mergeResponse.getConflicts().getConflict() != null) {
-      Collection<Conflict> unresolvedConflicts =
-        ResolveConflictHelper.getUnresolvedConflicts(Arrays.asList(mergeResponse.getConflicts().getConflict()));
-      if (!unresolvedConflicts.isEmpty()) {
-        ResolveConflictHelper resolveConflictHelper =
-          new ResolveConflictHelper(project, workspace, unresolvedConflicts, null);
-        ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
-      }
+
+    Collection<Conflict> unresolvedConflicts =
+      ResolveConflictHelper.getUnresolvedConflicts(mergeResponse.getConflicts().getConflict() != null ? Arrays
+        .asList(mergeResponse.getConflicts().getConflict()) : Collections.<Conflict>emptyList());
+
+    if (!unresolvedConflicts.isEmpty()) {
+      ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(project, workspace, unresolvedConflicts, null);
+      ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
     }
+
     if (mergeResponse.getFailures().getFailure() != null) {
       errors.addAll(BeanHelper.getVcsExceptions(Arrays.asList(mergeResponse.getFailures().getFailure())));
     }
 
-    if (!errors.isEmpty()) {
+    if (errors.isEmpty()) {
+      if (unresolvedConflicts.isEmpty()) {
+        if (mergeResponse.getMergeResult().getGetOperation() != null) {
+          String message =
+            MessageFormat.format("Changes merged successfully from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
+          Messages.showInfoMessage(project, message, title);
+        }
+        else {
+          String message = MessageFormat.format("No changes to merge from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
+          Messages.showInfoMessage(project, message, title);
+        }
+      }
+    }
+    else {
       AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFS_NAME);
     }
   }
 
-  protected static String getActionTitle(final @NotNull FilePath localPath) {
-    return "Merge Changes";
-  }
 }

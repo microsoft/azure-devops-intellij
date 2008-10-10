@@ -47,6 +47,10 @@ public class MergeBranchDialog extends DialogWrapper {
     init();
   }
 
+  public String getSourcePath() {
+    return myMergeBranchForm.getSourcePath();
+  }
+
   public String getTargetPath() {
     return myMergeBranchForm.getTargetPath();
 
@@ -84,5 +88,5 @@ public class MergeBranchDialog extends DialogWrapper {
     myMergeBranchForm.close();
     super.doCancelAction();
   }
-  
+
 }
