@@ -41,7 +41,11 @@ public class CreateBranchForm {
   private TextFieldWithBrowseButton myTargetField;
   private JPanel myPanel;
 
-  public CreateBranchForm(final Project project, final WorkspaceInfo workspace, String serverPath, boolean isDirectory, final Component dialogPane) {
+  public CreateBranchForm(final Project project,
+                          final WorkspaceInfo workspace,
+                          String serverPath,
+                          boolean isDirectory,
+                          final Component dialogPane) {
     mySourceField.setText(serverPath);
 
     myTargetField.addActionListener(new ActionListener() {
@@ -50,8 +54,8 @@ public class CreateBranchForm {
         ServerBrowserDialog d;
         try {
           dialogPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-          d = new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), myTargetField.getText(),
-                                      true, actions);
+          String serverPath = myTargetField.getText() != null && myTargetField.getText().length() > 0 ? myTargetField.getText() : mySourceField.getText();
+          d = new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), serverPath, true, actions);
         }
         finally {
           dialogPane.setCursor(Cursor.getDefaultCursor());
