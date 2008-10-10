@@ -108,8 +108,8 @@ public class BranchAction extends SingleItemAction {
         if (!downloadErrors.get().isEmpty()) {
           AbstractVcsHelper.getInstance(project).showErrors(new ArrayList<VcsException>(downloadErrors.get()), "Create Branch");
         }
-
       }
+
       final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS().queryPendingSetsByServerItems(workspace.getName(),
                                                                                                                     workspace.getOwnerName(),
                                                                                                                     Collections.singletonList(
@@ -134,6 +134,10 @@ public class BranchAction extends SingleItemAction {
       if (targetLocalPath != null) {
         TfsFileUtil.invalidateRecursively(project, targetLocalPath);
       }
+
+      String message =
+        MessageFormat.format("''{0}'' branched successfully to ''{1}''.", sourceServerPath, targetServerPath);
+      Messages.showInfoMessage(project, message, "Create Branch");
     }
     catch (TfsException ex) {
       String message = "Failed to create branch: " + ex.getMessage();
