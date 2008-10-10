@@ -184,6 +184,10 @@ public class WorkspaceInfo {
     return parentMapping != null ? parentMapping.getLocalPathByServerPath(serverPath, isDirectory) : null;
   }
 
+  public boolean hasLocalPathForServerPath(final @NotNull String serverPath) throws TfsException {
+    return findLocalPathByServerPath(serverPath, false) != null;
+  }
+
   // TODO inline?
   @Nullable
   private WorkingFolderInfo findNearestParentMapping(final @NotNull FilePath localPath) throws TfsException {

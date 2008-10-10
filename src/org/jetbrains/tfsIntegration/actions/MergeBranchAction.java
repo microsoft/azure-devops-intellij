@@ -54,6 +54,12 @@ public class MergeBranchAction extends SingleItemAction {
       return;
     }
 
+    if (!workspace.hasLocalPathForServerPath(d.getTargetPath())) {
+      String message = MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''.", d.getTargetPath(), workspace.getName());
+      Messages.showErrorDialog(project, message, title);
+      return;
+    }
+
     final MergeResponse mergeResponse = workspace.getServer().getVCS()
       .merge(workspace.getName(), workspace.getOwnerName(), d.getSourcePath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
 

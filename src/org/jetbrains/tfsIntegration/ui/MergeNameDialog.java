@@ -71,7 +71,7 @@ public class MergeNameDialog extends DialogWrapper {
     // TODO valid filesystem name?
 
     try {
-      if (myWorkspace.findLocalPathByServerPath(path, false) == null) {
+      if (!myWorkspace.hasLocalPathForServerPath(path)) {
         return MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''", path, myWorkspace.getName());
       }
     }
