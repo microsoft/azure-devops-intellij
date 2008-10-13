@@ -45,7 +45,7 @@ public class ResolveConflictsForm {
   private JButton myAcceptTheirsButton;
 
   private JButton myMergeButton;
-  private final CoflictsTableModel myItemsTableModel;
+  private final ConflictsTableModel myItemsTableModel;
   private final ResolveConflictHelper myResolveConflictHelper;
 
   private final Collection<Listener> myListeners = new ArrayList<Listener>();
@@ -53,7 +53,7 @@ public class ResolveConflictsForm {
   public ResolveConflictsForm(ResolveConflictHelper resolveConflictHelper) {
     myResolveConflictHelper = resolveConflictHelper;
 
-    myItemsTableModel = new CoflictsTableModel();
+    myItemsTableModel = new ConflictsTableModel();
     myItemsTable.setModel(myItemsTableModel);
     myItemsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 

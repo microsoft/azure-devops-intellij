@@ -21,7 +21,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
-public class CoflictsTableModel extends AbstractTableModel {
+public class ConflictsTableModel extends AbstractTableModel {
 
   private enum Column {
 
