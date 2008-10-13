@@ -161,7 +161,9 @@ public class Workstation {
                   workspaceAttributes.put(XmlConstants.NAME_ATTR, workspaceInfo.getName());
                   workspaceAttributes.put(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
                   workspaceAttributes.put(XmlConstants.COMPUTER_ATTR, workspaceInfo.getComputer());
-                  workspaceAttributes.put(XmlConstants.COMMENT_ATTR, workspaceInfo.getComment());
+                  if (workspaceInfo.getComment() != null) {
+                    workspaceAttributes.put(XmlConstants.COMMENT_ATTR, workspaceInfo.getComment());
+                  }
                   workspaceAttributes.put(XmlConstants.TIMESTAMP_ATTR, ConverterUtil.convertToString(workspaceInfo.getTimestamp()));
                   savePerformer.startElement(XmlConstants.WORKSPACE_INFO, workspaceAttributes);
                   savePerformer.startElement(XmlConstants.MAPPED_PATHS);
