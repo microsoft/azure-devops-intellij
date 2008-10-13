@@ -130,7 +130,7 @@ public class DeferredTree<T> extends JTree {
         for (Enumeration<?> children = currentNode.children(); children.hasMoreElements();) {
           TreeNode child = (TreeNode)children.nextElement();
 
-          if (child instanceof DeferredTreeNode && !child.isLeaf()) {
+          if (child instanceof DeferredTreeNode) {
             final DeferredTreeNode<T> found = find((DeferredTreeNode<T>)child, pathToFind, depth + 1);
             if (found != null) {
               return found;
