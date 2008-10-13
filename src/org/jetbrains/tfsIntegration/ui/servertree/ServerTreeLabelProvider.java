@@ -25,14 +25,13 @@ import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.ui.deferredtree.LabelProvider;
+import org.jetbrains.tfsIntegration.ui.UiConstants;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class ServerTreeLabelProvider implements LabelProvider<Item> {
 
-  @NonNls private static final Icon ICON_FILE = UIManager.getIcon("Tree.leafIcon");
-  @NonNls private static final Icon ICON_FOLDER = UIManager.getIcon("Tree.closedIcon");
   @NonNls private static final Icon ICON_VIRTUAL_FOLDER = IconLoader.getIcon("/actions/newFolder.png");
   private static final Icon ICON_ERROR = IconLoader.findIcon("/icons/error.gif");
 
@@ -57,7 +56,7 @@ public class ServerTreeLabelProvider implements LabelProvider<Item> {
   }
 
   public Icon getIcon(final @NotNull Item item) {
-    return item.getType() == ItemType.Folder ? ICON_FOLDER : ICON_FILE;
+    return item.getType() == ItemType.Folder ? UiConstants.ICON_FOLDER : UiConstants.ICON_FILE;
   }
 
   @Nullable

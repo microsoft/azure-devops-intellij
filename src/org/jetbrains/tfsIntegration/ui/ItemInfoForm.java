@@ -16,18 +16,27 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.util.ui.treetable.TreeTable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
+import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
+import org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable;
+import org.jetbrains.tfsIntegration.ui.treetable.TreeTableColumn;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class ItemInfoForm {
+
   private JLabel myServerNameLabel;
   private JLabel myLocalNameLabel;
   private JLabel myLatestVersionLabel;
@@ -35,13 +44,29 @@ public class ItemInfoForm {
   private JLabel myEncodingLabel;
   private JLabel myPendingChangesLabel;
   private JLabel myBranchesLabel;
-  private JTree myBranchesTree;
+  private TreeTable myBranchesTree;
   private JPanel myPanel;
   private JLabel myDeletionIdLabel;
   private JLabel myLockLabel;
   private JScrollPane myTreePane;
   private JLabel myWorkspaceLabel;
   private final Collection<BranchRelative> myBranches;
+
+  private static final TreeTableColumn<BranchRelative> SERVER_PATH_COLUMN = new TreeTableColumn<BranchRelative>("Server Path", 350) {
+    public String getPresentableString(final BranchRelative value) {
+      return value.getBranchToItem().getItem();
+    }
+  };
+
+  private static final TreeTableColumn<BranchRelative> TREE_TABLE_COLUMN =
+    new TreeTableColumn<BranchRelative>("Branched from Version", 150) {
+      public String getPresentableString(final BranchRelative value) {
+        if (value.getBranchFromItem() != null) {
+          return MessageFormat.format("{0}", value.getBranchFromItem().getCs());
+        }
+        return "";
+      }
+    };
 
   public ItemInfoForm(final WorkspaceInfo workspace, final ExtendedItem item, final Collection<BranchRelative> branches) {
     myBranches = branches;
@@ -66,78 +91,43 @@ public class ItemInfoForm {
   }
 
   private void createUIComponents() {
-    BranchRelative root = null;
-    if (myBranches == null) {
-      myBranchesTree = new JTree();
-    }
-    else {
-      for (BranchRelative branch : myBranches) {
-        if (branch.getRelfromid() == 0) {
-          root = branch;
-          break;
-        }
-      }
-
-      myBranchesTree = new JTree(buildTree(root));
-    }
-
-    //final ColumnInfo[] columns = new ColumnInfo[]{new ColumnInfo("Server Path") {
-    //  public Object valueOf(final Object o) {
-    //    final Object userObject = ((DefaultMutableTreeNode)o).getUserObject();
-    //    return ((BranchRelative)userObject).getBranchToItem().getItem();
-    //  }
-    //}, new ColumnInfo("Branched from Version") {
-    //  public Object valueOf(final Object o) {
-    //    final Object userObject = ((DefaultMutableTreeNode)o).getUserObject();
-    //    return ((BranchRelative)userObject).getBranchToItem().getCs();
-    //  }
-    //}};
-    //
-    //ListTreeTableModelOnColumns model = new ListTreeTableModelOnColumns(buildTree(root), columns);
-    //myBranchesTree = new TreeTable(model);
-
-
-    myBranchesTree.setCellRenderer(new DefaultTreeCellRenderer() {
-      public Component getTreeCellRendererComponent(final JTree tree,
-                                                    final Object value,
-                                                    final boolean sel,
-                                                    final boolean expanded,
-                                                    final boolean leaf,
-                                                    final int row,
-                                                    final boolean hasFocus) {
-        final Component c = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-
-        final Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
-        if (userObject instanceof BranchRelative) {
-          BranchRelative branch = (BranchRelative)userObject;
-
-          final String text;
-          if (branch.getBranchFromItem() != null) {
-            text = MessageFormat.format("{0} ({1})", branch.getBranchToItem().getItem(), branch.getBranchFromItem().getCs());
-          }
-          else {
-            text = branch.getBranchToItem().getItem();
-          }
-
-          setText(text);
-
-          Font defaultFont = tree.getFont();
-          Font boldFont = new Font(defaultFont.getName(), Font.BOLD, defaultFont.getSize());
-          setFont(branch.getReqstd() ? boldFont : defaultFont);
-        }
-        return c;
-      }
-    });
+    List<TreeTableColumn<BranchRelative>> columns = Arrays.asList(SERVER_PATH_COLUMN, TREE_TABLE_COLUMN);
+    myBranchesTree = new CustomTreeTable<BranchRelative>(columns, new ContentProviderImpl(), new CellRendererImpl(), false, false);
   }
 
-  private DefaultMutableTreeNode buildTree(BranchRelative root) {
-    DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode(root);
-    rootNode.setUserObject(root);
-    for (BranchRelative branch : myBranches) {
-      if (branch.getRelfromid() == root.getReltoid()) {
-        rootNode.add(buildTree(branch));
+  private class ContentProviderImpl implements ContentProvider<BranchRelative> {
+    public BranchRelative getRoot() {
+      for (BranchRelative branch : myBranches) {
+        if (branch.getRelfromid() == 0) {
+          return branch;
+        }
+      }
+      return null;
+    }
+
+    public Collection<BranchRelative> getChildren(final @NotNull BranchRelative parent) {
+      final Collection<BranchRelative> children = new ArrayList<BranchRelative>();
+      for (BranchRelative branch : myBranches) {
+        if (branch.getRelfromid() == parent.getReltoid()) {
+          children.add(branch);
+        }
+      }
+      return children;
+    }
+  }
+
+  private static class CellRendererImpl extends CellRenderer<BranchRelative> {
+    public void render(final CustomTreeTable<BranchRelative> treeTable,
+                       final TreeTableColumn<BranchRelative> column,
+                       final BranchRelative value,
+                       final JLabel cell) {
+      super.render(treeTable, column, value, cell);
+      Font defaultFont = treeTable.getFont();
+      Font boldFont = new Font(defaultFont.getName(), Font.BOLD, defaultFont.getSize());
+      cell.setFont(value.getReqstd() ? boldFont : defaultFont);
+      if (column == SERVER_PATH_COLUMN) {
+        cell.setIcon(value.getBranchToItem().getType() == ItemType.Folder ? UiConstants.ICON_FOLDER : UiConstants.ICON_FILE);
       }
     }
-    return rootNode;
   }
 }

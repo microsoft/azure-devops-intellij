@@ -143,7 +143,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="cf7b2" class="javax.swing.JTree" binding="myBranchesTree" custom-create="true">
+          <component id="62edf" class="com.intellij.util.ui.treetable.TreeTable" binding="myBranchesTree" custom-create="true">
             <constraints/>
             <properties/>
           </component>
