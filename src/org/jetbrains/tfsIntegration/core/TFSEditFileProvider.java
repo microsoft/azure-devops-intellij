@@ -33,27 +33,22 @@ public class TFSEditFileProvider implements EditFileProvider {
   public void editFiles(final VirtualFile[] files) throws VcsException {
     // TODO handle orphan paths
 
-    Collection<VcsException> errors = new ArrayList<VcsException>();
+    final Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.ProcessResult<ResultWithFailures<GetOperation>> processResult = WorkstationHelper
-        .processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.ProcessDelegate<ResultWithFailures<GetOperation>>() {
-          public ResultWithFailures<GetOperation> executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths)
-            throws TfsException {
-            return workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+          final ResultWithFailures<GetOperation> processResult =
+            workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
+          for (GetOperation getOperation : processResult.getResult()) {
+            TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
+            VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
+            if (file != null && file.isValid() && !file.isDirectory()) {
+              TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+            }
           }
-        });
-
-      if (processResult.results != null) {
-        errors.addAll(BeanHelper.getVcsExceptions(processResult.results.getFailures()));
-
-        for (GetOperation getOp : processResult.results.getResult()) {
-          String localPath = getOp.getSlocal(); // TODO determine GetOperation local path
-          VirtualFile file = VcsUtil.getVirtualFile(localPath);
-          if (file != null && file.isValid() && !file.isDirectory()) {
-            TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
-          }
+          errors.addAll(BeanHelper.getVcsExceptions(processResult.getFailures()));
         }
-      }
+      });
     }
     catch (TfsException e) {
       throw new VcsException(e);
