@@ -65,6 +65,9 @@ public class TfsUtil {
   }
 
   public static VcsException collectExceptions(Collection<VcsException> exceptions) {
+    if (exceptions.isEmpty()) {
+      throw new IllegalArgumentException("No exceptions to collect");
+    }
     if (exceptions.size() == 1) {
       // TODO: VcsException does not correctly support single message case?
       return exceptions.iterator().next();
