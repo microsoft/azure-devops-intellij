@@ -272,13 +272,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                   }
                 }
               }
-
-              if (commitFailed.isEmpty()) {
-                CheckinResult checkinResult = result.getResult().iterator().next();
-                workspace.getServer().getVCS()
-                  .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
-              }
             }
+
+            if (commitFailed.isEmpty()) {
+              CheckinResult checkinResult = result.getResult().iterator().next();
+              workspace.getServer().getVCS()
+                .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
+            }
+
             TfsFileUtil.invalidate(myProject, invalidateRoots, invalidateFiles);
           }
           catch (IOException e) {
