@@ -117,7 +117,7 @@ public class LoginDialog extends DialogWrapper {
     gc.fill = GridBagConstraints.HORIZONTAL;
 
     // TODO
-    myUriField = new JFormattedTextField(myInitialUri);
+    myUriField = new JTextField(myInitialUri != null ? myInitialUri.toString() : null);
     urlLabel.setLabelFor(myUriField);
     myUriField.setEditable(myAllowUrlChange);
     panel.add(myUriField, gc);
