@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -59,16 +58,13 @@ public class SelectChangesetForm {
   private JPanel panel;
 
   private final ChangesetsTableModel myChangesetsTableModel;
-
-  private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private final String myServerPath;
   private final boolean myRecursive;
 
   private final List<Listener> myListeners = new ArrayList<Listener>();
 
-  public SelectChangesetForm(final Project project, final WorkspaceInfo workspace, String serverPath, boolean recursive) {
-    myProject = project;
+  public SelectChangesetForm(final WorkspaceInfo workspace, String serverPath, boolean recursive) {
     myWorkspace = workspace;
     myServerPath = serverPath;
     myRecursive = recursive;
@@ -128,7 +124,7 @@ public class SelectChangesetForm {
         }
       }
 
-      getPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
       List<Changeset> changesets = myWorkspace.getServer().getVCS()
         .queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo);
 
@@ -150,7 +146,7 @@ public class SelectChangesetForm {
       Messages.showErrorDialog(panel, "Invalid date specified", "Find Changeset");
     }
     finally {
-      getPanel().setCursor(Cursor.getDefaultCursor());
+      getContentPane().setCursor(Cursor.getDefaultCursor());
     }
   }
 
@@ -170,7 +166,7 @@ public class SelectChangesetForm {
     }
   }
 
-  public JPanel getPanel() {
+  public JComponent getContentPane() {
     return panel;
   }
 

@@ -48,7 +48,7 @@ public class SelectChangesetDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new SelectChangesetForm(myProject, myWorkspace, myServerPath, myRecursive);
+    myForm = new SelectChangesetForm(myWorkspace, myServerPath, myRecursive);
 
     myForm.addListener(new SelectChangesetForm.Listener() {
       public void selectionChanged(final Integer changeset) {
@@ -56,7 +56,7 @@ public class SelectChangesetDialog extends DialogWrapper {
       }
     });
 
-    return myForm.getPanel();
+    return myForm.getContentPane();
   }
 
   @Nullable

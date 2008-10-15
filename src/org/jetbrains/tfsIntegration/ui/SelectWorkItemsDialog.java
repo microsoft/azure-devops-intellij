@@ -35,8 +35,8 @@ public class SelectWorkItemsDialog extends DialogWrapper {
   }
 
   protected JComponent createCenterPanel() {
-    final SelectWorkItemsPanel panel = new SelectWorkItemsPanel(myState, getTitle(), getContentPane());
-    return panel.getContentPane();
+    final SelectWorkItemsForm form = new SelectWorkItemsForm(myState, getTitle(), getContentPane());
+    return form.getContentPane();
   }
 
 }

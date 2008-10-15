@@ -31,7 +31,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.Map;
 
-public class SelectWorkItemsPanel {
+public class SelectWorkItemsForm {
   private JPanel myContentPane;
   private JComboBox myServersCombo;
   private JComboBox myQueriesCombo;
@@ -44,7 +44,7 @@ public class SelectWorkItemsPanel {
   private final String myTitle;
   private final Component myDialogPane;
 
-  public SelectWorkItemsPanel(final Map<ServerInfo, WorkItemsDialogState> state, final String title, final Component dialogPane) {
+  public SelectWorkItemsForm(final Map<ServerInfo, WorkItemsDialogState> state, final String title, final Component dialogPane) {
     myTitle = title;
     myDialogPane = dialogPane;
     myState = state;
