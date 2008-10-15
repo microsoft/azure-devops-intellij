@@ -87,7 +87,7 @@ public class WorkspaceInfo {
   }
 
   public void setName(final String name) {
-    checkCurrentOwner();
+    checkCurrentOwnerAndComputer();
     myModifiedName = name;
   }
 
@@ -96,7 +96,7 @@ public class WorkspaceInfo {
   }
 
   public void setComment(final String comment) {
-    checkCurrentOwner();
+    checkCurrentOwnerAndComputer();
     myComment = comment;
   }
 
@@ -105,7 +105,7 @@ public class WorkspaceInfo {
   }
 
   public void setTimestamp(final Calendar timestamp) {
-    checkCurrentOwner();
+    checkCurrentOwnerAndComputer();
     myTimestamp = timestamp;
   }
 
@@ -119,10 +119,10 @@ public class WorkspaceInfo {
   }
 
   public void loadFromServer() throws TfsException {
-    if (hasCurrentOwner()) {
+    if (hasCurrentOwnerAndComputer()) {
       if (myOriginalName != null && !myLoaded) {
         Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
-        if (hasCurrentOwner()) { // owner can already be different if server credentials have been changed while executing this server call
+        if (hasCurrentOwnerAndComputer()) { // owner can already be different if server credentials have been changed while executing this server call
           fromBean(workspaceBean, this);
           myLoaded = true;
         }
@@ -136,16 +136,22 @@ public class WorkspaceInfo {
 
   boolean hasMapping(FilePath localPath, boolean considerChildMappings) throws TfsException {
     // post-check current owner since it might have just been changed dirung getWorkingFolders() call
-    return hasMapping(getWorkingFolders(), localPath, considerChildMappings) && hasCurrentOwner();
+    return hasMapping(getWorkingFolders(), localPath, considerChildMappings) && hasCurrentOwnerAndComputer();
   }
 
-  boolean hasCurrentOwner() {
+  boolean hasCurrentOwnerAndComputer() {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(getServer().getUri());
-    return credentials != null && credentials.getQualifiedUsername().equalsIgnoreCase(getOwnerName());
+    if (credentials == null || !credentials.getQualifiedUsername().equalsIgnoreCase(getOwnerName())) {
+      return false;
+    }
+    if (!Workstation.getComputerName().equalsIgnoreCase(getComputer())) {
+      return false;
+    }
+    return true;
   }
 
-  private void checkCurrentOwner() {
-    if (!hasCurrentOwner()) {
+  private void checkCurrentOwnerAndComputer() {
+    if (!hasCurrentOwnerAndComputer()) {
       throw new IllegalStateException("Workspace " + getName() + " has other owner");
     }
   }
@@ -215,17 +221,17 @@ public class WorkspaceInfo {
 
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
-    // TODO checkCurrentOwner(); ?
+    // TODO checkCurrentOwnerAndComputer(); ?
     myWorkingFoldersInfos.add(workingFolderInfo);
   }
 
   public void removeWorkingFolderInfo(final WorkingFolderInfo folderInfo) {
-    checkCurrentOwner();
+    checkCurrentOwnerAndComputer();
     myWorkingFoldersInfos.remove(folderInfo);
   }
 
   public void saveToServer() throws TfsException {
-    checkCurrentOwner();
+    checkCurrentOwnerAndComputer();
     if (myOriginalName != null) {
       getServer().getVCS().updateWorkspace(myOriginalName, getOwnerName(), toBean(this));
     }

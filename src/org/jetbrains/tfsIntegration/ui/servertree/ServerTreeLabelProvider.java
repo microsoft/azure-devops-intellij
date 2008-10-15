@@ -56,6 +56,9 @@ public class ServerTreeLabelProvider implements LabelProvider<Item> {
   }
 
   public Icon getIcon(final @NotNull Item item) {
+    if (VersionControlPath.ROOT_FOLDER.equals(item.getItem())) {
+      return UiConstants.ICON_TEAM_SERVER;
+    }
     return item.getType() == ItemType.Folder ? UiConstants.ICON_FOLDER : UiConstants.ICON_FILE;
   }
 

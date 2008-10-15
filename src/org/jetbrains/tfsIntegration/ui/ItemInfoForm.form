@@ -143,7 +143,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="62edf" class="com.intellij.util.ui.treetable.TreeTable" binding="myBranchesTree" custom-create="true">
+          <component id="9fd11" class="org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable" binding="myBranchesTree" custom-create="true">
             <constraints/>
             <properties/>
           </component>

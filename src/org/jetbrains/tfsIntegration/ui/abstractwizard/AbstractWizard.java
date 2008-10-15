@@ -60,6 +60,32 @@ public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<Abstr
     init();
   }
 
+  protected void doPreviousAction() {
+    // Commit data of current step
+    final AbstractWizardStep currentStep = mySteps.get(myCurrentStep);
+    try {
+      if (currentStep.showWaitCursorOnCommit()) {
+        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+      }
+      currentStep._commitPrev();
+    }
+    catch (final CommitStepCancelledException e) {
+      return;
+    }
+    catch (CommitStepException e) {
+      Messages.showErrorDialog(getContentPane(), e.getMessage());
+      return;
+    }
+    finally {
+      if (currentStep.showWaitCursorOnCommit()) {
+        getContentPane().setCursor(Cursor.getDefaultCursor());
+      }
+    }
+
+    myCurrentStep = getPreviousStep(myCurrentStep);
+    updateStep();
+  }
+
   protected void doNextAction() {
     // Commit data of current step
     final AbstractWizardStep currentStep = mySteps.get(myCurrentStep);
@@ -69,13 +95,11 @@ public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<Abstr
       }
       currentStep._commit(false);
     }
-    catch (final CommitStepException exc) {
-      if (currentStep.showWaitCursorOnCommit()) {
-        getContentPane().setCursor(Cursor.getDefaultCursor());
-      }
-      if (exc.getMessage().length() > 0) { // TODO: use custom exception class
-        Messages.showErrorDialog(getContentPane(), exc.getMessage());
-      }
+    catch (final CommitStepCancelledException e) {
+      return;
+    }
+    catch (CommitStepException e) {
+      Messages.showErrorDialog(getContentPane(), e.getMessage());
       return;
     }
     finally {

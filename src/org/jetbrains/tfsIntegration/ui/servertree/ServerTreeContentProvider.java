@@ -24,6 +24,7 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.ui.deferredtree.ContentProvider;
+import org.jetbrains.tfsIntegration.ui.deferredtree.ContentProviderException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -51,12 +52,17 @@ public class ServerTreeContentProvider implements ContentProvider<Item> {
     return parent == null || parent.getType() == ItemType.Folder;
   }
 
-  public Collection<Item> getChildren(final @Nullable Item parent) throws TfsException {
+  public Collection<Item> getChildren(final @Nullable Item parent) throws ContentProviderException {
     if (parent == null) {
       return Collections.singletonList(ROOT);
     }
     else {
-      return myServer.getVCS().getChildItems(parent.getItem(), myFoldersOnly);
+      try {
+        return myServer.getVCS().getChildItems(parent.getItem(), myFoldersOnly);
+      }
+      catch (TfsException e) {
+        throw new ContentProviderException(e);
+      }
     }
   }
 

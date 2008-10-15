@@ -18,13 +18,19 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
+import org.jetbrains.tfsIntegration.ui.AuthenticationHelper;
 import org.jetbrains.tfsIntegration.ui.ManageWorkspacesForm;
+import org.jetbrains.tfsIntegration.ui.abstractwizard.CommitStepCancelledException;
 
 import javax.swing.*;
 import java.util.List;
+import java.text.MessageFormat;
 
 public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
@@ -34,24 +40,26 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
   public ChooseWorkspaceStep(Project project, final CheckoutWizardModel model) {
     super("Source Workspace", model);
-    myManageWorkspacesForm = new ManageWorkspacesForm(project, ManageWorkspacesForm.Mode.Choose);
+    myManageWorkspacesForm = new ManageWorkspacesForm(project);
     myManageWorkspacesForm.addSelectionListener(new ManageWorkspacesForm.Listener() {
-      public void selectionChanged(final WorkspaceInfo selection) {
+      public void selectionChanged() {
         fireStateChanged();
-      }
-
-      public void chosen(final WorkspaceInfo selection) {
-        fireGoNext();
       }
     });
   }
 
+  @NotNull
   public Object getStepId() {
     return ID;
   }
 
   public Object getNextStepId() {
-    return ChooseServerPathStep.ID;
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      return ChooseServerPathStep.ID;
+    }
+    else {
+      return ChooseLocalAndServerPathsStep.ID;
+    }
   }
 
   public Object getPreviousStepId() {
@@ -59,32 +67,66 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
   }
 
   public boolean isComplete() {
-    return myManageWorkspacesForm.getSelectedWorkspace() != null;
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      return myManageWorkspacesForm.getSelectedWorkspace() != null;
+    }
+    else {
+      return myManageWorkspacesForm.getSelectedServer() != null;
+    }
   }
 
   public void _init() {
-    myManageWorkspacesForm.setServer(myModel.getServer());
-    myManageWorkspacesForm.setSelectedWorkspace(myModel.getWorkspace());
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      setTitle("Source Workspace");
+      myManageWorkspacesForm.setShowWorkspaces(true);
+      myManageWorkspacesForm.setSelectedWorkspace(myModel.getWorkspace());
+    }
+    else {
+      setTitle("Source Server");
+      myManageWorkspacesForm.setShowWorkspaces(false);
+      myManageWorkspacesForm.setSelectedServer(myModel.getServer());
+    }
   }
 
-  public void _commit(final boolean finishChosen) throws CommitStepException {
-    final WorkspaceInfo newWorkspace = myManageWorkspacesForm.getSelectedWorkspace();
-
-    // let's select first mapped path for newly selected workspace 
-    //noinspection ConstantConditions
-    if (!newWorkspace.equals(myModel.getWorkspace())) {
-      try {
-        //noinspection ConstantConditions
-        final List<WorkingFolderInfo> workingFolders = newWorkspace.getWorkingFolders();
-        if (!workingFolders.isEmpty()) {
-          myModel.setServerPath(workingFolders.get(0).getServerPath());
+  public void commit(CommitType commitType) throws CommitStepException {
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      final WorkspaceInfo workspace = myManageWorkspacesForm.getSelectedWorkspace();
+      if (workspace != null) {
+        myModel.setServer(workspace.getServer());
+      }
+      myModel.setWorkspace(workspace);
+      if (commitType == CommitType.Next || commitType == CommitType.Finish) {
+        // let's select first mapped path for newly selected workspace
+        try {
+          // workspace can't be null here
+          //noinspection ConstantConditions
+          final List<WorkingFolderInfo> workingFolders = workspace.getWorkingFolders();
+          if (!workingFolders.isEmpty()) {
+            myModel.setServerPath(workingFolders.get(0).getServerPath());
+          }
+          else {
+            String message = MessageFormat.format("Workspace ''{0}'' has no mappings.", workspace.getName());
+            throw new CommitStepException(message);
+          }
+        }
+        catch (UserCancelledException e) {
+          throw new CommitStepCancelledException();
+        }
+        catch (TfsException e) {
+          throw new CommitStepException(e.getMessage());
         }
       }
-      catch (TfsException e) {
-        throw new CommitStepException(e.getMessage());
+    }
+    else {
+      final ServerInfo server = myManageWorkspacesForm.getSelectedServer();
+      myModel.setServer(server);
+      if (commitType == CommitType.Next || commitType == CommitType.Finish) {
+        //noinspection ConstantConditions
+        if (AuthenticationHelper.authenticate(server.getUri(), false, false) == null) {
+          throw new CommitStepCancelledException();
+        }
       }
     }
-    myModel.setWorkspace(myManageWorkspacesForm.getSelectedWorkspace());
   }
 
   public JComponent getComponent() {
@@ -92,6 +134,6 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
   }
 
   public boolean showWaitCursorOnCommit() {
-    return false;
+    return true;
   }
 }

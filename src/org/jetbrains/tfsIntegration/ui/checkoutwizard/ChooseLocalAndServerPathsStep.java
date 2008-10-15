@@ -58,7 +58,7 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
 
   @Nullable
   public Object getPreviousStepId() {
-    return ChooseModeStep.ID;
+    return ChooseWorkspaceStep.ID;
   }
 
   public boolean isComplete() {
@@ -84,7 +84,7 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
     validate();
   }
 
-  public void _commit(final boolean finishChosen) throws CommitStepException {
+  public void commit(CommitType commitType) throws CommitStepException {
     if (validateLocalPath(myPathsForm.getLocalPath()) == null) {
       myModel.setDestinationFolder(myPathsForm.getLocalPath());
     }

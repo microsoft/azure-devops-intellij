@@ -28,7 +28,11 @@ import java.util.List;
 
 public abstract class AbstractWizardStep implements Step {
 
-  private final String myTitle;
+  protected enum CommitType {
+    Prev, Next, Finish
+  }
+
+  private String myTitle;
 
   interface Listener extends StepListener {
     void doNextAction();
@@ -43,11 +47,19 @@ public abstract class AbstractWizardStep implements Step {
   public void _init() {
   }
 
-  public void _commit(boolean finishChosen) throws CommitStepException {
+  public final void _commitPrev() throws CommitStepException {
+    commit(CommitType.Prev);
+  }
+  public final void _commit(boolean finishChosen) throws CommitStepException {
+    commit(finishChosen ? CommitType.Finish :  CommitType.Next);
   }
 
   public void addStepListener(Listener listener) {
     myListeners.add(listener);
+  }
+
+  protected void setTitle(final String title) {
+    myTitle = title;
   }
 
   protected void fireStateChanged() {
@@ -80,6 +92,8 @@ public abstract class AbstractWizardStep implements Step {
   public abstract boolean isComplete();
 
   public abstract boolean showWaitCursorOnCommit();
+
+  protected abstract void commit(CommitType commitType) throws CommitStepException;
 
   public String getTitle() {
     return myTitle;

@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui.treetable;
+package org.jetbrains.tfsIntegration.ui.abstractwizard;
 
-import org.jetbrains.annotations.NotNull;
+import com.intellij.ide.wizard.CommitStepException;
 
-import java.util.Collection;
-
-public interface ContentProvider<T> {
-
-  Collection<? extends T> getRoots();
-
-  Collection<? extends T> getChildren(final @NotNull T parent);
-
+public class CommitStepCancelledException extends CommitStepException {
+  public CommitStepCancelledException() {
+    super("User cancelled");
+  }
 }

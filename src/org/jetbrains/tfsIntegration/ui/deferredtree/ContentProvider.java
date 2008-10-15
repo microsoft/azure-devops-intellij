@@ -31,7 +31,7 @@ public interface ContentProvider<T> {
   /**
    * @param item can be null for tree root, collection of one or zero items should be returned in this case
    */
-  Collection<T> getChildren(final @Nullable T item) throws Exception;
+  Collection<T> getChildren(final @Nullable T item) throws ContentProviderException ;
 
   boolean equals(final @NotNull T item1, final @NotNull T item2);
 

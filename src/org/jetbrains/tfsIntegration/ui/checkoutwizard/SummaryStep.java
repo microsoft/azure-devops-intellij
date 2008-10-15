@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,12 @@ public class SummaryStep extends CheckoutWizardStep {
 
   @Nullable
   public Object getPreviousStepId() {
-    return myModel.getMode() == CheckoutWizardModel.Mode.Auto ? ChooseLocalAndServerPathsStep.ID : ChooseServerPathStep.ID;
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      return ChooseServerPathStep.ID;
+    }
+    else {
+      return ChooseLocalAndServerPathsStep.ID;
+    }
   }
 
   public boolean isComplete() {
@@ -56,6 +62,10 @@ public class SummaryStep extends CheckoutWizardStep {
 
   public boolean showWaitCursorOnCommit() {
     return false;
+  }
+
+  protected void commit(final CommitType commitType) throws CommitStepException {
+    // nothing here
   }
 
   public JComponent getComponent() {

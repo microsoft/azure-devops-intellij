@@ -58,12 +58,12 @@ public class ChooseModeStep extends CheckoutWizardStep {
 
   @Nullable
   public Object getNextStepId() {
-    return myCheckoutModeForm.isAutoModeSelected() ? ChooseLocalAndServerPathsStep.ID : ChooseWorkspaceStep.ID;
+    return ChooseWorkspaceStep.ID;
   }
 
   @Nullable
   public Object getPreviousStepId() {
-    return ChooseServerStep.ID;
+    return null;
   }
 
   public boolean isComplete() {
@@ -77,8 +77,8 @@ public class ChooseModeStep extends CheckoutWizardStep {
   }
 
   public void _init() {
-    myCheckoutModeForm.setAutoModeSelected(myModel.getMode() == CheckoutWizardModel.Mode.Auto);
     myCheckoutModeForm.setNewWorkspaceName(myModel.getNewWorkspaceName());
+    myCheckoutModeForm.setAutoModeSelected(myModel.getMode() == CheckoutWizardModel.Mode.Auto);
 
     if (myCheckoutModeForm.isAutoModeSelected()) {
       myCheckoutModeForm.setErrorMessage(validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()));
@@ -88,7 +88,7 @@ public class ChooseModeStep extends CheckoutWizardStep {
     }
   }
 
-  public void _commit(final boolean finishChosen) throws CommitStepException {
+  public void commit(CommitType commitType) throws CommitStepException {
     myModel.setMode(myCheckoutModeForm.isAutoModeSelected() ? CheckoutWizardModel.Mode.Auto : CheckoutWizardModel.Mode.Manual);
     if (validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()) == null) {
       myModel.setNewWorkspaceName(myCheckoutModeForm.getNewWorkspaceName());
@@ -103,6 +103,7 @@ public class ChooseModeStep extends CheckoutWizardStep {
     return false;
   }
 
+  @Nullable
   public String validateWorkspaceName(String name) {
     if (name.length() == 0) {
       return "Workspace name is empty";
@@ -110,13 +111,6 @@ public class ChooseModeStep extends CheckoutWizardStep {
     if (!WorkspaceInfo.isValidName(name)) {
       return "Workspace name contains invalid symbols";
     }
-
-    for (WorkspaceInfo existingWorkspace : myModel.getServer().getWorkspacesForCurrentOwner()) {
-      if (existingWorkspace.getName().equalsIgnoreCase(name)) {
-        return "Workspace with a given name already exists";
-      }
-    }
-
     return null;
   }
 

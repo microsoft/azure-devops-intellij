@@ -111,7 +111,7 @@ public class DeferredTree<T> extends JTree {
         ((DefaultTreeModel)getModel()).setRoot(null);
       }
     }
-    catch (Exception e) {
+    catch (ContentProviderException e) {
       ErrorNode errorNode = new ErrorNode(e.getMessage());
       ((DefaultTreeModel)getModel()).setRoot(errorNode);
     }

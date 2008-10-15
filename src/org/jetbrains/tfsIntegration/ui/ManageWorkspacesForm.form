@@ -7,76 +7,97 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="d8595" class="javax.swing.JLabel" binding="myWorkspacesLabel">
+      <component id="d8595" class="javax.swing.JLabel" binding="myTitleLabel">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
           <gridbag top="0" left="0" bottom="5" right="0" weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties>
           <labelFor value="195ee"/>
-          <text resource-bundle="org/jetbrains/tfsIntegration/core/TFSBundle" key="workspacesdialog.label.workspaceslist"/>
+          <text value="&amp;Servers and Workspaces:"/>
         </properties>
       </component>
       <scrollpane id="195ee">
         <constraints>
-          <grid row="1" column="0" row-span="5" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="18" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="1" use-parent-layout="false"/>
           <gridbag weightx="1.0" weighty="1.0"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
-          <component id="4063e" class="javax.swing.JTable" binding="myWorkspacesTable" custom-create="true">
+          <component id="e9271" class="org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable" binding="myTable" custom-create="true">
             <constraints/>
             <properties/>
           </component>
         </children>
       </scrollpane>
-      <component id="d3acf" class="javax.swing.JButton" binding="myReloadButton" default-binding="true">
+      <grid id="3fce4" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-          <gridbag top="0" left="3" bottom="3" right="5" weightx="0.0" weighty="0.0"/>
-        </constraints>
-        <properties>
-          <icon value="vcs/refresh.png"/>
-          <text value="&amp;Reload list"/>
-        </properties>
-      </component>
-      <component id="6cf06" class="javax.swing.JButton" binding="myDeleteButton" default-binding="true">
-        <constraints>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-          <gridbag top="0" left="3" bottom="3" right="5" weightx="0.0" weighty="0.0"/>
-        </constraints>
-        <properties>
-          <icon value="general/remove.png"/>
-          <text value="&amp;Delete"/>
-        </properties>
-      </component>
-      <component id="59df2" class="javax.swing.JButton" binding="myAddButton" default-binding="true">
-        <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-          <gridbag top="0" left="3" bottom="3" right="5" weightx="0.0" weighty="0.0"/>
-        </constraints>
-        <properties>
-          <icon value="general/add.png"/>
-          <text value="&amp;Add..."/>
-        </properties>
-      </component>
-      <component id="bc413" class="javax.swing.JButton" binding="myEditButton" default-binding="true">
-        <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-          <gridbag top="0" left="3" bottom="3" right="5" weightx="0.0" weighty="0.0"/>
-        </constraints>
-        <properties>
-          <icon value="general/editItemInSection.png"/>
-          <text value="&amp;Edit..."/>
-        </properties>
-      </component>
-      <vspacer id="9b8e5">
-        <constraints>
-          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
           <gridbag weightx="0.0" weighty="0.0"/>
         </constraints>
-      </vspacer>
+        <properties/>
+        <border type="empty" title="Team Servers"/>
+        <children>
+          <component id="59df2" class="javax.swing.JButton" binding="myAddServerButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <icon value="general/add.png"/>
+              <text value="&amp;Add..."/>
+            </properties>
+          </component>
+          <component id="26074" class="javax.swing.JButton" binding="myRemoveServerButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <icon value="general/remove.png"/>
+              <text value="&amp;Remove"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="e2b45" binding="myWorkspacesPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="11" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <gridbag top="10" left="0" bottom="0" right="0" weightx="0.0" weighty="0.0"/>
+        </constraints>
+        <properties/>
+        <border type="empty" title="Workspaces:"/>
+        <children>
+          <component id="70014" class="javax.swing.JButton" binding="myCreateWorkspaceButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <icon value="general/add.png"/>
+              <text value="&amp;Create..."/>
+            </properties>
+          </component>
+          <component id="bc413" class="javax.swing.JButton" binding="myEditWorkspaceButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <icon value="general/editItemInSection.png"/>
+              <text value="&amp;Edit..."/>
+            </properties>
+          </component>
+          <component id="6cf06" class="javax.swing.JButton" binding="myDeleteWorkspaceButton">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <icon value="general/remove.png"/>
+              <text value="&amp;Delete"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
     </children>
   </grid>
 </form>

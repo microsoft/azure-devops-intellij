@@ -264,14 +264,6 @@ public class TFSChangeList implements CommittedChangeList {
     }
   }
 
-  private static void writePaths(final DataOutput stream, final Map<FilePath, FilePath> paths) throws IOException {
-    stream.writeInt(paths.size());
-    for (Map.Entry<FilePath, FilePath> e : paths.entrySet()) {
-      writePath(stream, e.getKey());
-      writePath(stream, e.getValue());
-    }
-  }
-
   private static void writePathsInts(final DataOutput stream, final Map<FilePath, Integer> paths) throws IOException {
     stream.writeInt(paths.size());
     for (Map.Entry<FilePath, Integer> e : paths.entrySet()) {
@@ -298,13 +290,6 @@ public class TFSChangeList implements CommittedChangeList {
     int count = stream.readInt();
     for (int i = 0; i < count; i++) {
       paths.add(readPath(stream));
-    }
-  }
-
-  private static void readPaths(final DataInput stream, final Map<FilePath, FilePath> paths) throws IOException {
-    int count = stream.readInt();
-    for (int i = 0; i < count; i++) {
-      paths.put(readPath(stream), readPath(stream));
     }
   }
 

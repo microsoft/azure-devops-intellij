@@ -18,7 +18,7 @@ package org.jetbrains.tfsIntegration.ui.treetable;
 
 import javax.swing.*;
 
-public abstract class CellRenderer<T> {
+public class CellRenderer<T> {
   protected void render(final CustomTreeTable<T> treeTable, TreeTableColumn<T> column, T value, JLabel cell) {
     cell.setText(column.getPresentableString(value));
   }

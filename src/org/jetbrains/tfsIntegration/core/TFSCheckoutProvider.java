@@ -54,7 +54,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
   public void doCheckout(@Nullable final Listener listener) {
     Project project = DataKeys.PROJECT.getData(DataManager.getInstance().getDataContext());
     final CheckoutWizardModel model = new CheckoutWizardModel();
-    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseServerStep(model), new ChooseModeStep(model),
+    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseModeStep(model),
                                                    new ChooseWorkspaceStep(project, model),
                                                    new ChooseLocalAndServerPathsStep(model),
                                                    new ChooseServerPathStep(model), new SummaryStep(model));

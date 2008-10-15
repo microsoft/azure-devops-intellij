@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.ui.WorkspacesDialog;
+import org.jetbrains.tfsIntegration.ui.ManageWorkspacesDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -88,7 +88,7 @@ public class TFSProjectConfigurable implements Configurable {
     globalSettingsButton.addActionListener(new ActionListener() {
 
       public void actionPerformed(final ActionEvent e) {
-        WorkspacesDialog d = new WorkspacesDialog(myProject, WorkspacesDialog.Mode.Manage);
+        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);
         d.show();
       }
     });

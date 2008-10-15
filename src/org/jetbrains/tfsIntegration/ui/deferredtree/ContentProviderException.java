@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui.treetable;
+package org.jetbrains.tfsIntegration.ui.deferredtree;
 
-import org.jetbrains.annotations.NotNull;
+public class ContentProviderException extends Exception {
+  public ContentProviderException() {
+  }
 
-import java.util.Collection;
+  public ContentProviderException(final String message) {
+    super(message);
+  }
 
-public interface ContentProvider<T> {
+  public ContentProviderException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
 
-  Collection<? extends T> getRoots();
-
-  Collection<? extends T> getChildren(final @NotNull T parent);
-
+  public ContentProviderException(final Throwable cause) {
+    super(cause);
+  }
 }

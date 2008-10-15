@@ -80,7 +80,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
     validate();
   }
 
-  public void _commit(final boolean finishChosen) throws CommitStepException {
+  public void commit(CommitType commitType) throws CommitStepException {
     if (isAcceptable(myPathForm.getServerPath())) {
       myModel.setServerPath(myPathForm.getServerPath());
     }

@@ -71,10 +71,10 @@ public class Workstation {
     return null;
   }
 
-  public List<WorkspaceInfo> getAllWorkspacesForCurrentOwner() {
+  public List<WorkspaceInfo> getAllWorkspacesForCurrentOwnerAndComputer() {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (ServerInfo serverInfo : getServers()) {
-      result.addAll(serverInfo.getWorkspacesForCurrentOwner());
+      result.addAll(serverInfo.getWorkspacesForCurrentOwnerAndComputer());
     }
     return result;
   }
@@ -223,7 +223,7 @@ public class Workstation {
   public Collection<WorkspaceInfo> findWorkspaceCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
     // try cached working folders first
     Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
+    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer()) {
       if (workspace.hasMappingCached(localPath, considerChildMappings)) {
         result.add(workspace);
         if (!considerChildMappings) {
@@ -251,7 +251,7 @@ public class Workstation {
       // TODO: exclude servers that are unavailable during current application run
       // not found in cached info, but workspaces may be out of date -> try to search all the workspaces reloaded
       Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-      for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwner()) {
+      for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer()) {
         try {
           if (workspace.hasMapping(localPath, considerChildMappings)) {
             result.add(workspace);

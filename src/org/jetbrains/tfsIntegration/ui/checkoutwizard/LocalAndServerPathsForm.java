@@ -29,7 +29,6 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,8 +84,6 @@ public class LocalAndServerPathsForm {
 
   public void configure(ServerInfo server, String initialPath) {
     myServerTree.configure(server, initialPath, null);
-    String labelText = MessageFormat.format("Source path at {0}", server.getUri());
-    myTitleLabel.setText(labelText);
   }
 
   public String getLocalPath() {

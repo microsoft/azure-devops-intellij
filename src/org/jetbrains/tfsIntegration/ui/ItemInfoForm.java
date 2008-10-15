@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.util.ui.treetable.TreeTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
@@ -30,9 +29,7 @@ import org.jetbrains.tfsIntegration.ui.treetable.TreeTableColumn;
 import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
 
 public class ItemInfoForm {
@@ -44,7 +41,7 @@ public class ItemInfoForm {
   private JLabel myEncodingLabel;
   private JLabel myPendingChangesLabel;
   private JLabel myBranchesLabel;
-  private TreeTable myBranchesTree;
+  private CustomTreeTable<BranchRelative> myBranchesTree;
   private JPanel myPanel;
   private JLabel myDeletionIdLabel;
   private JLabel myLockLabel;
@@ -52,14 +49,14 @@ public class ItemInfoForm {
   private JLabel myWorkspaceLabel;
   private final Collection<BranchRelative> myBranches;
 
-  private static final TreeTableColumn<BranchRelative> SERVER_PATH_COLUMN = new TreeTableColumn<BranchRelative>("Server Path", 350) {
+  private static final TreeTableColumn<BranchRelative> SERVER_PATH_COLUMN = new TreeTableColumn<BranchRelative>("Server path", 350) {
     public String getPresentableString(final BranchRelative value) {
       return value.getBranchToItem().getItem();
     }
   };
 
   private static final TreeTableColumn<BranchRelative> TREE_TABLE_COLUMN =
-    new TreeTableColumn<BranchRelative>("Branched from Version", 150) {
+    new TreeTableColumn<BranchRelative>("Branched from version", 150) {
       public String getPresentableString(final BranchRelative value) {
         if (value.getBranchFromItem() != null) {
           return MessageFormat.format("{0}", value.getBranchFromItem().getCs());
@@ -93,16 +90,17 @@ public class ItemInfoForm {
   private void createUIComponents() {
     List<TreeTableColumn<BranchRelative>> columns = Arrays.asList(SERVER_PATH_COLUMN, TREE_TABLE_COLUMN);
     myBranchesTree = new CustomTreeTable<BranchRelative>(columns, new ContentProviderImpl(), new CellRendererImpl(), false, false);
+    myBranchesTree.expandAll();
   }
 
   private class ContentProviderImpl implements ContentProvider<BranchRelative> {
-    public BranchRelative getRoot() {
+    public Collection<BranchRelative> getRoots() {
       for (BranchRelative branch : myBranches) {
         if (branch.getRelfromid() == 0) {
-          return branch;
+          return Collections.singletonList(branch);
         }
       }
-      return null;
+      return Collections.emptyList();
     }
 
     public Collection<BranchRelative> getChildren(final @NotNull BranchRelative parent) {

@@ -47,6 +47,7 @@ public class ServerInfo {
     myWorkspaceInfos.add(workspaceInfo);
   }
 
+  // TODO replace with getPresentableUri() where needed
   public URI getUri() {
     return myUri;
   }
@@ -62,10 +63,10 @@ public class ServerInfo {
     return credentials != null ? credentials.getQualifiedUsername() : null;
   }
 
-  public List<WorkspaceInfo> getWorkspacesForCurrentOwner() {
+  public List<WorkspaceInfo> getWorkspacesForCurrentOwnerAndComputer() {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (WorkspaceInfo workspaceInfo : getWorkspaces()) {
-      if (workspaceInfo.hasCurrentOwner()) {
+      if (workspaceInfo.hasCurrentOwnerAndComputer()) {
         result.add(workspaceInfo);
       }
     }
