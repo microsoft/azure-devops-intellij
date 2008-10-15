@@ -22,35 +22,14 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.ui.ManageWorkspacesDialog;
+import org.jetbrains.tfsIntegration.ui.ProjectConfigurableForm;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class TFSProjectConfigurable implements Configurable {
 
-  private static class WorkspaceInfoComboItem {
-
-    private final WorkspaceInfo myWorkspaceInfo;
-
-    private WorkspaceInfoComboItem(final WorkspaceInfo workspaceInfo) {
-      myWorkspaceInfo = workspaceInfo;
-    }
-
-    public WorkspaceInfo getWorkspaceInfo() {
-      return myWorkspaceInfo;
-    }
-
-    public String toString() {
-      return getWorkspaceInfo().getName();
-    }
-  }
-
   private Project myProject;
-  private JComponent myComponent;
+  private ProjectConfigurableForm myComponent;
 
   public TFSProjectConfigurable(Project project) {
     myProject = project;
@@ -74,42 +53,11 @@ public class TFSProjectConfigurable implements Configurable {
   }
 
   public JComponent createComponent() {
-    myComponent = new JPanel(new GridBagLayout());
-
-    GridBagConstraints gc = new GridBagConstraints();
-    gc = new GridBagConstraints();
-    gc.gridx = 0;
-    gc.gridy = 1;
-    gc.insets = new Insets(20, 0, 0, 0);
-    gc.anchor = GridBagConstraints.NORTHWEST;
-    JButton globalSettingsButton = new JButton("Global settings...");
-    myComponent.add(globalSettingsButton, gc);
-
-    globalSettingsButton.addActionListener(new ActionListener() {
-
-      public void actionPerformed(final ActionEvent e) {
-        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);
-        d.show();
-      }
-    });
-
-    gc = new GridBagConstraints();
-    gc.gridx = 0;
-    gc.gridy = 1;
-    gc.gridwidth = 3;
-    gc.weightx = 2;
-    gc.weighty = 1;
-    gc.fill = GridBagConstraints.BOTH;
-
-    myComponent.add(new JPanel(), gc);
-
-    return myComponent;
+    myComponent = new ProjectConfigurableForm(myProject);
+    return myComponent.getContentPane();
   }
 
   public boolean isModified() {
-    if (myProject.isDefault()) {
-      return false;
-    }
     return false; 
   }
 
