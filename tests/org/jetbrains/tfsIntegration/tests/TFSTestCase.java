@@ -39,13 +39,11 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinResult;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.junit.After;
 import org.junit.Assert;
@@ -68,9 +66,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
 
-  private static final String SERVER = "http://tfs-2008-01:8080/";
+  private static final String SERVER = "http://tfs-2005-01:8080/";
   //  private static final String SERVER = "http://192.168.230.128:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "tfssetup";
@@ -179,7 +177,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private void createNewWorkspaceFor(File root) throws URISyntaxException, TfsException {
     final String workspaceName = WORKSPACE_NAME_PREFIX + Workstation.getComputerName();
     final ServerInfo server = Workstation.getInstance().getServer(new URI(SERVER));
-    for (WorkspaceInfo workspace : server.getWorkspacesForCurrentOwner()) {
+    for (WorkspaceInfo workspace : server.getWorkspacesForCurrentOwnerAndComputer()) {
       if (workspace.getName().equals(workspaceName)) {
         removeWorkspace(workspace);
         break;
@@ -601,4 +599,12 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected String findServerPath(final FilePath localPath) throws TfsException {
     return myTestWorkspace.findServerPathsByLocalPath(localPath, false).iterator().next();
   }
+
+  protected int getItemId(final FilePath path) throws TfsException {
+    final ExtendedItem extendedItem = myTestWorkspace.getServer().getVCS()
+      .getExtendedItem(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), path, RecursionType.None, DeletedState.NonDeleted);
+    return extendedItem.getItemid();
+  }
+
+
 }

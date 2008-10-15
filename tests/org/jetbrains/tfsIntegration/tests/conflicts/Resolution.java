@@ -16,6 +16,6 @@
 
 package org.jetbrains.tfsIntegration.tests.conflicts;
 
-enum Resolution {
+public enum Resolution {
   AcceptYours, AcceptTheirs, Merge
 }
