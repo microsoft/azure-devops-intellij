@@ -201,9 +201,9 @@ public class TFSChangeList implements CommittedChangeList {
     }
 
     if (changeType.contains(ChangeType.Delete)) {
-      TFSVcs.assertTrue(changeType.size() <= 2, "Unexpected change type: " + changeType);
-      TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
-                        "Unexpected change type: " + changeType);
+      TFSVcs.assertTrue(changeType.size() <= 3, "Unexpected change type: " + changeType); // can be merge
+      //TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
+      //                  "Unexpected change type: " + changeType);
 
       Item item = getPreviousVersion(change.getItem(), changeset);
       myDeletedPaths.put(localPath, item.getCs());
@@ -224,7 +224,7 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Edit)) {
+    if (changeType.containsAny(ChangeType.Edit, ChangeType.Merge)) {
       Item item = getPreviousVersion(change.getItem(), changeset);
       //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));
       myModifiedPaths.put(localPath, item.getCs());

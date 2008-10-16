@@ -87,6 +87,10 @@ public abstract class ServerStatus {
       super(pendingChange);
     }
 
+    public CheckedOutForEdit(final @NotNull ExtendedItem item) {
+      super(item);
+    }
+
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
       throws TfsException {
       statusVisitor.checkedOutForEdit(localPath, localItemExists, this);
@@ -96,7 +100,10 @@ public abstract class ServerStatus {
   public static class ScheduledForAddition extends ServerStatus {
     protected ScheduledForAddition(final @NotNull PendingChange pendingChange) {
       super(pendingChange);
+    }
 
+    protected ScheduledForAddition(final @NotNull ExtendedItem extendedItem) {
+      super(extendedItem);
     }
 
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
@@ -108,6 +115,10 @@ public abstract class ServerStatus {
   public static class ScheduledForDeletion extends ServerStatus {
     protected ScheduledForDeletion(final @NotNull PendingChange pendingChange) {
       super(pendingChange);
+    }
+
+    public ScheduledForDeletion(final @NotNull ExtendedItem item) {
+      super(item);
     }
 
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
@@ -143,6 +154,10 @@ public abstract class ServerStatus {
       super(pendingChange);
     }
 
+    public Renamed(final @NotNull ExtendedItem item) {
+      super(item);
+    }
+
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
       throws TfsException {
       statusVisitor.renamed(localPath, localItemExists, this);
@@ -154,6 +169,10 @@ public abstract class ServerStatus {
       super(pendingChange);
     }
 
+    public RenamedCheckedOut(final @NotNull ExtendedItem item) {
+      super(item);
+    }
+
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
       throws TfsException {
       statusVisitor.renamedCheckedOut(localPath, localItemExists, this);
@@ -163,6 +182,10 @@ public abstract class ServerStatus {
   public static class Undeleted extends ServerStatus {
     protected Undeleted(final @NotNull PendingChange pendingChange) {
       super(pendingChange);
+    }
+
+    public Undeleted(final @NotNull ExtendedItem item) {
+      super(item);
     }
 
     public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)

@@ -136,77 +136,90 @@ public class StatusProvider {
   }
 
   private static ServerStatus determineServerStatus(final @Nullable PendingChange pendingChange, final @Nullable ExtendedItem item) {
-    if (item == null || (item.getLocal() == null && EnumMask.fromString(ChangeType.class, item.getChg()).isEmpty())) {
-      // report not downloaded items as unversioned
+    if (item == null) {
       return new ServerStatus.Unversioned(item);
     }
-    else {
-      EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
-      change.remove(ChangeType.Lock, ChangeType.Branch);
 
-      // in spite of extendedItem.getChg() is not empty, pending change can be
-      if (change.isEmpty() ? pendingChange != null : pendingChange == null) {
-        int t = 0;
+    EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
+    change.remove(ChangeType.Lock);
+
+    if (item.getLocal() == null && change.isEmpty()) {
+      // TODO report not downloaded items as unversioned ?
+      return new ServerStatus.Unversioned(item);
+    }
+
+    if (change.isEmpty()) {
+      TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
+      if (item.getLver() < item.getLatest()) {
+        return new ServerStatus.OutOfDate(item);
       }
-      TFSVcs.assertTrue(change.isEmpty() ? pendingChange == null : pendingChange != null,
-                        "pending change exists or missing unexpecteldy for " + item.getLocal());
-      //if (item.getDid() != Integer.MIN_VALUE) {
-      //  TFSVcs.assertTrue(change.isEmpty());
-      //  return new ServerStatus.Deleted(item);
-      //}
-      //else {
-      if (change.isEmpty()) {
-        TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
-        if (item.getLver() < item.getLatest()) {
-          return new ServerStatus.OutOfDate(item);
-        }
-        else {
-          return new ServerStatus.UpToDate(item);
-        }
+      else {
+        return new ServerStatus.UpToDate(item);
       }
-      else if (change.contains(ChangeType.Merge)) {
-        if (item.getLatest() == Integer.MIN_VALUE) {
-          return new ServerStatus.ScheduledForAddition(pendingChange);
-        }
-        else if (change.contains(ChangeType.Rename)) {
-          return new ServerStatus.RenamedCheckedOut(pendingChange);
-        }
-        else {
-          return new ServerStatus.CheckedOutForEdit(pendingChange);
-        }
-      }
-      else if (change.contains(ChangeType.Add)) {
-        TFSVcs.assertTrue(change.contains(ChangeType.Edit) || item.getType() == ItemType.Folder);
-        TFSVcs.assertTrue(change.contains(ChangeType.Encoding));
-        TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
-        TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
+    }
+
+    if (change.contains(ChangeType.Add) ||
+        (change.containsAny(ChangeType.Merge, ChangeType.Branch) && item.getLatest() == Integer.MIN_VALUE)) {
+      //TFSVcs.assertTrue(change.contains(ChangeType.Edit) || item.getType() == ItemType.Folder);
+      TFSVcs.assertTrue(change.contains(ChangeType.Encoding));
+      TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
+      TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
+      if (pendingChange != null) {
         return new ServerStatus.ScheduledForAddition(pendingChange);
       }
-      else if (change.contains(ChangeType.Delete)) {
+      else {
+        return new ServerStatus.ScheduledForAddition(item);
+      }
+    }
+    else if (change.contains(ChangeType.Delete)) {
 //          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete)); // NOTE: may come with "Lock" change 
-        //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
-        //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
-        //TFSVcs.assertTrue(item.getLocal() == null);
+      //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
+      //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
+      //TFSVcs.assertTrue(item.getLocal() == null);
+      if (pendingChange != null) {
         return new ServerStatus.ScheduledForDeletion(pendingChange);
       }
-      else if (change.contains(ChangeType.Edit) && !change.contains(ChangeType.Rename)) {
-        TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
-        TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
-        TFSVcs.assertTrue(item.getLocal() != null);
+      else {
+        return new ServerStatus.ScheduledForDeletion(item);
+      }
+    }
+    else if (change.contains(ChangeType.Edit) && !change.contains(ChangeType.Rename)) {
+      TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
+      TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
+      TFSVcs.assertTrue(item.getLocal() != null);
+      if (pendingChange != null) {
         return new ServerStatus.CheckedOutForEdit(pendingChange);
       }
-      else if (change.contains(ChangeType.Rename) && !change.contains(ChangeType.Edit)) {
+      else {
+        return new ServerStatus.CheckedOutForEdit(item);
+      }
+    }
+    else if (change.contains(ChangeType.Rename) && !change.contains(ChangeType.Edit)) {
+      if (pendingChange != null) {
         return new ServerStatus.Renamed(pendingChange);
       }
-      else if (change.contains(ChangeType.Rename) && change.contains(ChangeType.Edit)) {
-        TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
-        TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
-        TFSVcs.assertTrue(item.getLocal() != null);
+      else {
+        return new ServerStatus.Renamed(item);
+      }
+    }
+    else if (change.contains(ChangeType.Rename) && change.contains(ChangeType.Edit)) {
+      TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
+      TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
+      TFSVcs.assertTrue(item.getLocal() != null);
+      if (pendingChange != null) {
         return new ServerStatus.RenamedCheckedOut(pendingChange);
-      } else if (change.contains(ChangeType.Undelete)) {
+      }
+      else {
+        return new ServerStatus.RenamedCheckedOut(item);
+      }
+    }
+    else if (change.contains(ChangeType.Undelete)) {
+      if (pendingChange != null) {
         return new ServerStatus.Undeleted(pendingChange);
       }
-      //}
+      else {
+        return new ServerStatus.Undeleted(item);
+      }
     }
 
     TFSVcs.LOG.error("Uncovered case for item " + (item.getLocal() != null ? item.getLocal() : item.getTitem()));
