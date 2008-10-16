@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -35,20 +36,29 @@ public class TFSEditFileProvider implements EditFileProvider {
 
     final Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          final ResultWithFailures<GetOperation> processResult =
-            workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
-          for (GetOperation getOperation : processResult.getResult()) {
-            TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
-            VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
-            if (file != null && file.isValid() && !file.isDirectory()) {
-              TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+      Collection<FilePath> orphans =
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+            final ResultWithFailures<GetOperation> processResult =
+              workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
+            for (GetOperation getOperation : processResult.getResult()) {
+              TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
+              VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
+              if (file != null && file.isValid() && !file.isDirectory()) {
+                TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+              }
             }
+            errors.addAll(BeanHelper.getVcsExceptions(processResult.getFailures()));
           }
-          errors.addAll(BeanHelper.getVcsExceptions(processResult.getFailures()));
+        });
+
+      if (!orphans.isEmpty()) {
+        StringBuilder s = new StringBuilder("No mapping found for the following files:\n");
+        for (FilePath path : orphans) {
+          s.append(path.getPresentableUrl()).append("\n");
         }
-      });
+        throw new VcsException(s.toString());
+      }
     }
     catch (TfsException e) {
       throw new VcsException(e);
