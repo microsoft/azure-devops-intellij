@@ -49,7 +49,7 @@ public class MergeNameDialog extends DialogWrapper {
       public void selectedPathChanged() {
         String errorMessage = validate(myMergeNameForm.getSelectedPath());
         myMergeNameForm.setErrorText(errorMessage);
-        getOKAction().setEnabled(errorMessage == null);
+        setOKActionEnabled(errorMessage == null);
       }
     });
     return myMergeNameForm.getPanel();
