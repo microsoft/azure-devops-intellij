@@ -18,14 +18,18 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.WindowManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
@@ -89,16 +93,23 @@ public class MergeBranchAction extends SingleItemAction {
     }
 
     if (errors.isEmpty()) {
-      if (unresolvedConflicts.isEmpty()) {
-        if (mergeResponse.getMergeResult().getGetOperation() != null) {
-          String message =
-            MessageFormat.format("Changes merged successfully from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
-          Messages.showInfoMessage(project, message, title);
+      FilePath targetLocalPath = workspace.findLocalPathByServerPath(d.getTargetPath(), true);
+
+      for (VirtualFile root : ProjectRootManager.getInstance(project).getContentRoots()) {
+        //noinspection ConstantConditions
+        if (targetLocalPath.isUnder(TfsFileUtil.getFilePath(root), false)) {
+          TfsFileUtil.refreshAndInvalidate(project, new FilePath[]{targetLocalPath}, true);
+          break;
         }
-        else {
-          String message = MessageFormat.format("No changes to merge from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
-          Messages.showInfoMessage(project, message, title);
-        }
+      }
+
+      if (unresolvedConflicts.isEmpty() && mergeResponse.getMergeResult().getGetOperation() == null) {
+        String message = MessageFormat.format("No changes to merge from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
+        Messages.showInfoMessage(project, message, title);
+      }
+      else {
+        String message = MessageFormat.format("Changes merged successfully from ''{0}'' to ''{1}''.", d.getSourcePath(), d.getTargetPath());
+        WindowManager.getInstance().getStatusBar(project).setInfo(message);
       }
     }
     else {
