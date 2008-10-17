@@ -38,7 +38,7 @@ public class CreateBranchForm {
   private JTextField mySourceField;
   private SelectRevisionForm myRevisionForm;
   private JCheckBox myCreateLocalWorkingCopiesCheckBox;
-  private TextFieldWithBrowseButton myTargetField;
+  private TextFieldWithBrowseButton.NoPathCompletion myTargetField;
   private JPanel myPanel;
 
   public CreateBranchForm(final Project project,

@@ -49,8 +49,8 @@ public class SelectRevisionForm {
   private JRadioButton changesetRadioButton;
   private JRadioButton labelRadioButton;
   private JRadioButton workspaceRadioButton;
-  private TextFieldWithBrowseButton labelVersionText;
-  private TextFieldWithBrowseButton changesetVersionText;
+  private TextFieldWithBrowseButton.NoPathCompletion labelVersionText;
+  private TextFieldWithBrowseButton.NoPathCompletion changesetVersionText;
   private JTextField dateText;
   private JTextField workspaceText;
 

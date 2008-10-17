@@ -62,7 +62,7 @@ public class MergeBranchForm {
     }
   }
 
-  private TextFieldWithBrowseButton mySourceField;
+  private TextFieldWithBrowseButton.NoPathCompletion mySourceField;
   private JComboBox myTargetCombo;
   private JComboBox myChangesTypeCombo;
   private SelectRevisionForm mySelectRevisionForm;
