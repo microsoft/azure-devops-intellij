@@ -78,6 +78,15 @@ public class WorkspaceInfo {
     return myOwnerName;
   }
 
+  public String getOwnerNameWithoutDomain() {
+    int slashIndex = myOwnerName.indexOf('\\');
+    if (slashIndex > -1 && slashIndex < myOwnerName.length() - 1) {
+      return myOwnerName.substring(slashIndex + 1);
+    } else {
+      return myOwnerName;
+    }
+  }
+
   public String getComputer() {
     return myComputer;
   }

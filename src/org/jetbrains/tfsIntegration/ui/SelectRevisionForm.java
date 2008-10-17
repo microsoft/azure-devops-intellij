@@ -52,6 +52,7 @@ public class SelectRevisionForm {
   private TextFieldWithBrowseButton labelVersionText;
   private TextFieldWithBrowseButton changesetVersionText;
   private JTextField dateText;
+  private JTextField workspaceText;
 
   private WorkspaceInfo myWorkspace;
   private Project myProject;
@@ -75,6 +76,7 @@ public class SelectRevisionForm {
     labelVersionText.getTextField().getDocument().addDocumentListener(documentListener);
     changesetVersionText.getTextField().getDocument().addDocumentListener(documentListener);
     dateText.getDocument().addDocumentListener(documentListener);
+    workspaceText.getDocument().addDocumentListener(documentListener);
 
     final ActionListener radioButtonListener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
@@ -120,6 +122,14 @@ public class SelectRevisionForm {
   }
 
   private void updateContols() {
+    workspaceText.setEnabled(workspaceRadioButton.isSelected());
+    if (!workspaceRadioButton.isSelected()) {
+      workspaceText.setText(null);
+    }
+    else {
+      workspaceText.setText(myWorkspace.getName() + ';' + myWorkspace.getOwnerNameWithoutDomain());
+    }
+
     dateText.setEnabled(dateRadioButton.isSelected());
     if (!dateRadioButton.isSelected()) {
       dateText.setText(null);
@@ -141,13 +151,6 @@ public class SelectRevisionForm {
     return myPanel;
   }
 
-  private void setDate(Date date) {
-    if (date == null) {
-      return;
-    }
-    dateText.setText(DATE_FORMAT.format(date));
-  }
-
   public void setVersionSpec(VersionSpecBase version) {
     latestRadioButton.setEnabled(true);
     dateRadioButton.setEnabled(true);
@@ -160,19 +163,19 @@ public class SelectRevisionForm {
       latestRadioButton.setSelected(true);
     }
     else if (version instanceof ChangesetVersionSpec) {
-      int changeset = ((ChangesetVersionSpec)version).getChangeSetId();
       changesetRadioButton.setSelected(true);
       changesetVersionText.setEnabled(true);
-      changesetVersionText.setText(String.valueOf(changeset));
+      changesetVersionText.setText(version.getPresentableString());
     }
     else if (version instanceof WorkspaceVersionSpec) {
       workspaceRadioButton.setSelected(true);
+      workspaceText.setEnabled(true);
+      workspaceText.setText(version.getPresentableString());
     }
     else if (version instanceof DateVersionSpec) {
-      Date date = ((DateVersionSpec)version).getDate();
       dateRadioButton.setSelected(true);
       dateText.setEnabled(true);
-      setDate(date);
+      dateText.setText(version.getPresentableString());
     }
     else if (version instanceof LabelVersionSpec) {
       labelRadioButton.setSelected(true);
@@ -197,7 +200,7 @@ public class SelectRevisionForm {
       }
     }
     else if (workspaceRadioButton.isSelected()) {
-      return new WorkspaceVersionSpec(myWorkspace.getName(), myWorkspace.getOwnerName());
+      return parseWorkspaceVersionSpec(workspaceText.getText());
     }
     else if (dateRadioButton.isSelected()) {
       try {
@@ -217,6 +220,38 @@ public class SelectRevisionForm {
     }
 
     return null;
+  }
+
+  @Nullable
+  private WorkspaceVersionSpec parseWorkspaceVersionSpec(final String workspaceInfo) {
+    if (workspaceInfo == null || workspaceInfo.length() == 0 || workspaceInfo.charAt(0) == ';') {
+      return null;
+    }
+
+    int semicolonIndex = workspaceInfo.indexOf(';');
+    String workspaceName = semicolonIndex < 0 ? workspaceInfo : workspaceInfo.substring(0, semicolonIndex);
+
+    if (!WorkspaceInfo.isValidName(workspaceName)) {
+      return null;
+    }
+
+    String ownerName = semicolonIndex < 0 || semicolonIndex == workspaceInfo.length() - 1
+                       ? myWorkspace.getOwnerNameWithoutDomain()
+                       : workspaceInfo.substring(semicolonIndex + 1);
+    // remove spaces from the end
+    int newLength = ownerName.length();
+    while (newLength > 0 && ownerName.charAt(newLength - 1) == ' ') {
+      newLength--;
+    }
+
+    if (newLength == 0) {
+      ownerName = myWorkspace.getOwnerNameWithoutDomain();
+    }
+    else if (newLength < ownerName.length()) {
+      ownerName = ownerName.substring(0, newLength);
+    }
+
+    return new WorkspaceVersionSpec(workspaceName, ownerName);
   }
 
   public void disable() {
