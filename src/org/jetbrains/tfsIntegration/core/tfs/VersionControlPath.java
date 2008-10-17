@@ -39,29 +39,29 @@ public class VersionControlPath {
   }
 
   public static boolean isUnder(String parent, String child) {
-    return child.startsWith(parent);
+    return parent.equals(getCommonAncestor(parent, child));
   }
 
   public static int compareParentToChild(String path1, String path2) {
     return path1.compareTo(path2);
   }
 
-  public static String getCommonAncestor(final String path1, final String path2) {
-    String[] path1components = getPathComponents(path1);
-    String[] path2components = getPathComponents(path2);
 
-    int lastEqualIdx = 0;
-    while (lastEqualIdx < Math.min(path1components.length, path2components.length) &&
-           path1components[lastEqualIdx].equals(path2components[lastEqualIdx])) {
-      lastEqualIdx++;
+  public static String getCommonAncestor(final String path1, final String path2) {
+    String[] components1 = getPathComponents(path1);
+    String[] components2 = getPathComponents(path2);
+
+    int i = 0;
+    while (i < Math.min(components1.length, components2.length) && components1[i].equals(components2[i])) {
+      i++;
     }
 
     StringBuilder result = new StringBuilder();
-    for (int i = 0; i < lastEqualIdx; i++) {
-      if (result.length() > 0) {
+    for (int j = 0; j < i; j++) {
+      if (j > 0) {
         result.append(PATH_SEPARATOR);
       }
-      result.append(path1components[i]);
+      result.append(components1[j]);
     }
     return result.toString();
   }

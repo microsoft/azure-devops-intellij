@@ -212,7 +212,7 @@ public class WorkspaceInfo {
     WorkingFolderInfo mapping = null;
     for (WorkingFolderInfo folderInfo : getWorkingFolders()) {
       if (folderInfo.getLocalPathByServerPath(serverPath, isDirectory) != null &&
-          (mapping == null || folderInfo.getServerPath().startsWith(mapping.getServerPath()))) {
+          (mapping == null || VersionControlPath.isUnder(mapping.getServerPath(), folderInfo.getServerPath()))) {
         mapping = folderInfo;
       }
     }
