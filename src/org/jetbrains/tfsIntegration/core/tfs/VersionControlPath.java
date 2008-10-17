@@ -16,7 +16,10 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
+
+import java.util.Arrays;
 
 public class VersionControlPath {
   public static final char PATH_SEPARATOR_CHAR = '/'; // TODO IDEA constant for this
@@ -55,15 +58,7 @@ public class VersionControlPath {
     while (i < Math.min(components1.length, components2.length) && components1[i].equals(components2[i])) {
       i++;
     }
-
-    StringBuilder result = new StringBuilder();
-    for (int j = 0; j < i; j++) {
-      if (j > 0) {
-        result.append(PATH_SEPARATOR);
-      }
-      result.append(components1[j]);
-    }
-    return result.toString();
+    return StringUtil.join(Arrays.asList(components1).subList(0, i), PATH_SEPARATOR);
   }
 
   private static String[] getPathComponents(final String serverPath1) {
