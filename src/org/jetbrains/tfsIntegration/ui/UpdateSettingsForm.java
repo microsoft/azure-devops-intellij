@@ -19,11 +19,8 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -65,6 +62,7 @@ public class UpdateSettingsForm {
   private JPanel myWorkspaceSettingsPanel;
   private SelectRevisionForm mySelectRevisionForm;
   private WorkspaceInfo mySelectedWorkspace;
+  private TfsException myErrorOnInitialization;
 
   public UpdateSettingsForm(final Project project, Collection<FilePath> roots, final String title) {
     final DefaultListModel listModel = new DefaultListModel();
@@ -92,12 +90,16 @@ public class UpdateSettingsForm {
           myWorkspaceSettings.put(workspace, workspaceSettings);
         }
       });
+      myErrorOnInitialization = null;
     }
     catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(project).showError(new VcsException(e), TFSVcs.TFS_NAME);
+      myErrorOnInitialization = e;
     }
 
+    if (myErrorOnInitialization != null) {
+      mySelectRevisionForm.disable(); // in case of list model will stay empty because of error is thrown while enumerating workspaces
+    }
+    
     myWorkspacesList.setModel(listModel);
     myWorkspacesList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -141,6 +143,10 @@ public class UpdateSettingsForm {
   }
 
   private void applyCurrentValue() throws ConfigurationException {
+    if (myErrorOnInitialization != null) {
+      throw new ConfigurationException(myErrorOnInitialization.getMessage());
+    }
+
     if (mySelectedWorkspace != null) {
       VersionSpecBase version = mySelectRevisionForm.getVersionSpec();
       if (version != null) {

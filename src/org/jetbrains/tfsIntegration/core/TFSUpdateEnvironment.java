@@ -137,7 +137,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       });
     }
     catch (TfsException e) {
-      // skip for now, errors will be reported by updateDirectories() as part of UpdateSession
+      return null;
     }
 
     return mappingFound.get() ? new UpdateConfigurable(myProject, files) : null;
