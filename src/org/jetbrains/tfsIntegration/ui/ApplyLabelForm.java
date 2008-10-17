@@ -103,7 +103,7 @@ public class ApplyLabelForm {
     for (int selectedRow : myTable.getSelectedRows()) {
       removalSpecs.add(LabelItemSpecWithItems.createForRemove(myTableModel.getItem(selectedRow)));
     }
-    myLabelModel.addRemovalSpecs(removalSpecs);
+    myLabelModel.addAll(removalSpecs);
     reloadItems();
   }
 

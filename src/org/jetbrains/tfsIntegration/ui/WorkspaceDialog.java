@@ -48,7 +48,7 @@ import java.util.List;
 
 // TODO disable save button if name is empty
 
-public class WorkspaceDialog extends DialogWrapper implements ActionListener {
+public class WorkspaceDialog extends DialogWrapper {
 
   private enum Column {
     Status("Status") {
@@ -415,9 +415,6 @@ public class WorkspaceDialog extends DialogWrapper implements ActionListener {
     myWorkspace.setName(myNameField.getText());
     myWorkspace.setComment(myCommentArea.getText());
     super.doOKAction();
-  }
-
-  public void actionPerformed(final ActionEvent e) {
   }
 
 }

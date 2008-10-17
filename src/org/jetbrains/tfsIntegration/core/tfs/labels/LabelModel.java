@@ -40,15 +40,15 @@ public class LabelModel {
 
   }
 
-  public void addRemovalSpecs(final List<LabelItemSpecWithItems> removalSpecs) {
+  public void addAll(final List<LabelItemSpecWithItems> newSpecs) {
     // add child specs first to have them removed when parent is added 
-    Collections.sort(removalSpecs, ITEM_SPEC_CHILDREN_FIRST);
-    for (LabelItemSpecWithItems spec : removalSpecs) {
+    Collections.sort(newSpecs, ITEM_SPEC_CHILDREN_FIRST);
+    for (LabelItemSpecWithItems spec : newSpecs) {
       add(spec);
     }
   }
 
-  // item sets for for child specs override those for parent ones, so include items that do not appear under child specs
+  // item sets for child specs override those for parent ones, so include items that do not appear under child specs
   public List<ItemAndVersion> calculateItemsToDisplay() {
     Collections.sort(myLabelSpecs, ITEM_SPEC_PARENT_FIRST);
     final List<ItemAndVersion> result = new ArrayList<ItemAndVersion>();

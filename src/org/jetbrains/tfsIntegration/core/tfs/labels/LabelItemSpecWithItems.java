@@ -67,7 +67,4 @@ public class LabelItemSpecWithItems {
     return getLabelItemSpec().getItemSpec().getItem();
   }
 
-  public boolean isRemoval() {
-    return getLabelItemSpec().getEx();
-  }
 }

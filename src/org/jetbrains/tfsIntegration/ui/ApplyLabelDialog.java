@@ -49,6 +49,7 @@ public class ApplyLabelDialog extends DialogWrapper {
     setTitle("Apply Label");
 
     init();
+    setOKActionEnabled(false);
   }
 
   @Nullable
