@@ -336,13 +336,8 @@ public class VersionControlServer {
   }
 
   public List<Item> getChildItems(final String parentServerItem, final boolean foldersOnly) throws TfsException {
-    final ItemSpec itemSpec = new ItemSpec();
-    itemSpec.setDid(Integer.MIN_VALUE);
-    itemSpec.setItem(parentServerItem);
-    itemSpec.setRecurse(RecursionType.OneLevel);
-
     final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
-    itemSpecs.setItemSpec(new ItemSpec[]{itemSpec});
+    itemSpecs.setItemSpec(new ItemSpec[]{createItemSpec(parentServerItem, RecursionType.OneLevel)});
 
     final ArrayOfItemSet arrayOfItemSet = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
       public ArrayOfItemSet executeRequest() throws RemoteException {
@@ -841,12 +836,9 @@ public class VersionControlServer {
       serverItemsArray.addString(serverItem);
     }
 
-    final Calendar calendar = Calendar.getInstance();
-    calendar.set(0, 0, 0, 0, 0, 0); // [IDEADEV-29551] commit fails for user from contributers group
-
     final Changeset changeset = new Changeset();
     changeset.setCset(0);
-    changeset.setDate(calendar);
+    changeset.setDate(TfsUtil.getZeroCalendar());
     changeset.setOwner(workspaceOwnerName);
     changeset.setComment(comment);
     changeset.setCheckinNote(checkinNote);
@@ -966,6 +958,29 @@ public class VersionControlServer {
     return null;
   }
 
+  public List<Item> queryItems(final ItemSpec itemSpec, final VersionSpec version) throws TfsException {
+    final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
+    itemSpecs.setItemSpec(new ItemSpec[]{itemSpec});
+
+    final ArrayOfItemSet arrayOfItemSet = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
+      public ArrayOfItemSet executeRequest() throws RemoteException {
+        return myRepository.QueryItems(null, null, itemSpecs, version, DeletedState.NonDeleted, ItemType.Any, false);
+      }
+    });
+
+    TFSVcs.assertTrue(arrayOfItemSet.getItemSet() != null && arrayOfItemSet.getItemSet().length == 1);
+
+    final ItemSet itemSet = arrayOfItemSet.getItemSet()[0];
+    if (itemSet.getItems() != null && itemSet.getItems().getItem() != null) {
+      List<Item> result = new ArrayList<Item>(itemSet.getItems().getItem().length);
+      result.addAll(Arrays.asList(itemSet.getItems().getItem()));
+      return result;
+    }
+    else {
+      return Collections.emptyList();
+    }
+  }
+
 
   public Changeset queryChangeset(final int changesetId) throws TfsException {
     return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset>() {
@@ -974,7 +989,6 @@ public class VersionControlServer {
       }
     });
   }
-
 
   public List<VersionControlLabel> queryLabels(final String labelName,
                                                final String labelScope,
@@ -995,6 +1009,32 @@ public class VersionControlServer {
       result.addAll(Arrays.asList(labels));
     }
     return result;
+  }
+
+  public ResultWithFailures<LabelResult> labelItem(final String labelName,
+                                                   final String labelComment,
+                                                   final List<LabelItemSpec> labelItemSpecs) throws TfsException {
+    final VersionControlLabel versionControlLabel = new VersionControlLabel();
+    versionControlLabel.setName(labelName);
+    versionControlLabel.setComment(labelComment);
+
+    versionControlLabel.setDate(TfsUtil.getZeroCalendar());
+
+    final ArrayOfLabelItemSpec arrayOfLabelItemSpec = new ArrayOfLabelItemSpec();
+    arrayOfLabelItemSpec.setLabelItemSpec(labelItemSpecs.toArray(new LabelItemSpec[labelItemSpecs.size()]));
+
+    LabelItemResponse labelItemResponse = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<LabelItemResponse>() {
+      public LabelItemResponse executeRequest() throws RemoteException {
+        return myRepository
+          .LabelItem(null, null, versionControlLabel, arrayOfLabelItemSpec, LabelChildOption.Fail);
+      }
+    });
+
+    ArrayOfLabelResult results = labelItemResponse.getLabelItemResult();
+    ArrayOfFailure failures = labelItemResponse.getFailures();
+
+    return new ResultWithFailures<LabelResult>(results == null ? null : results.getLabelResult(),
+                                               failures == null ? null : failures.getFailure());
   }
 
   public Collection<BranchRelative> queryBranches(final String itemServerPath, final VersionSpec versionSpec) throws TfsException {
@@ -1132,7 +1172,7 @@ public class VersionControlServer {
       WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
         public PageWorkitemsByIdsResponse executeRequest() throws RemoteException {
           return myWorkItemTrackingClientService
-            .PageWorkitemsByIds(workitemIds, workItemFields, null, GregorianCalendar.getInstance(), false, null, generateRequestHeader());
+            .PageWorkitemsByIds(workitemIds, workItemFields, null, new GregorianCalendar(), false, null, generateRequestHeader());
         }
       });
 

@@ -18,20 +18,28 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.DocumentAdapter;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.Calendar;
 
 public class SelectRevisionForm {
+
+  public interface Listener {
+    void revisionChanged();
+  }
 
   private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
 
@@ -50,15 +58,28 @@ public class SelectRevisionForm {
   private String myServerPath;
   private boolean myIsDirectory;
 
+  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+
   public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final String serverPath, final boolean isDirectory) {
     this();
     init(project, workspace, serverPath, isDirectory);
   }
 
   public SelectRevisionForm() {
+    final DocumentListener documentListener = new DocumentAdapter() {
+      protected void textChanged(final DocumentEvent e1) {
+        fireRevisionChanged();
+      }
+    };
+
+    labelVersionText.getTextField().getDocument().addDocumentListener(documentListener);
+    changesetVersionText.getTextField().getDocument().addDocumentListener(documentListener);
+    dateText.getDocument().addDocumentListener(documentListener);
+
     final ActionListener radioButtonListener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         updateContols();
+        fireRevisionChanged();
       }
     };
 
@@ -102,8 +123,9 @@ public class SelectRevisionForm {
     dateText.setEnabled(dateRadioButton.isSelected());
     if (!dateRadioButton.isSelected()) {
       dateText.setText(null);
-    } else {
-      dateText.setText(DATE_FORMAT.format(Calendar.getInstance().getTime()));
+    }
+    else {
+      dateText.setText(DATE_FORMAT.format(new Date()));
     }
     labelVersionText.setEnabled(labelRadioButton.isSelected());
     if (!labelRadioButton.isSelected()) {
@@ -155,7 +177,7 @@ public class SelectRevisionForm {
     else if (version instanceof LabelVersionSpec) {
       labelRadioButton.setSelected(true);
       labelVersionText.setEnabled(true);
-      labelVersionText.setText(((LabelVersionSpec)version).getStringRepresentation());
+      labelVersionText.setText(version.getPresentableString());
     }
     updateContols();
   }
@@ -186,7 +208,12 @@ public class SelectRevisionForm {
       }
     }
     else if (labelRadioButton.isSelected()) {
-      return LabelVersionSpec.fromStringRepresentation(labelVersionText.getText());
+      if (labelVersionText.getText().trim().length() > 0) {
+        return LabelVersionSpec.fromStringRepresentation(labelVersionText.getText());
+      }
+      else {
+        return null;
+      }
     }
 
     return null;
@@ -203,5 +230,21 @@ public class SelectRevisionForm {
 
     updateContols();
   }
+
+  private void fireRevisionChanged() {
+    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
+    for (Listener listener : listeners) {
+      listener.revisionChanged();
+    }
+  }
+
+  public void addListener(Listener listener) {
+    myListeners.add(listener);
+  }
+
+  public void removeListener(Listener listener) {
+    myListeners.remove(listener);
+  }
+
 }
 

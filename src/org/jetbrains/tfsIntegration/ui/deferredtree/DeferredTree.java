@@ -19,8 +19,8 @@ package org.jetbrains.tfsIntegration.ui.deferredtree;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -105,6 +105,7 @@ public class DeferredTree<T> extends JTree {
           TreePath p = new TreePath(nodeToSelect.getPath());
           expandPath(p.getParentPath());
           setSelectionPath(p);
+          scrollPathToVisible(p);
         }
       }
       else {

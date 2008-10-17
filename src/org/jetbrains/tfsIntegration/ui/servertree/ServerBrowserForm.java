@@ -99,4 +99,16 @@ public class ServerBrowserForm {
   public ServerTree.SelectedItem getSelectedPath() {
     return myTree.getSelectedItem();
   }
+
+  public boolean isItemSelected() {
+    return myTree.isItemSelected();
+  }
+
+  public void addSelectionListener(final ServerTree.SelectionListener listener) {
+    myTree.addSelectionListener(listener);
+  }
+
+  public void removeSelectionListener(final ServerTree.SelectionListener listener) {
+    myTree.removeSelectionListener(listener);
+  }
 }

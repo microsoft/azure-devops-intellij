@@ -273,7 +273,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     final List<VcsException> errors = new ArrayList<VcsException>();
     errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
     errors.addAll(getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges()));
-    // ??? errors.addAll(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
+    // ??? errors.addRemovalSpecs(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
     errors.addAll(getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles()));
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();

@@ -52,7 +52,7 @@ public class WorkspaceInfo {
     myServerInfo = serverInfo;
     myOwnerName = owner;
     myComputer = computer;
-    myTimestamp = Calendar.getInstance();
+    myTimestamp = new GregorianCalendar();
   }
 
   public WorkspaceInfo(final @NotNull ServerInfo serverInfo,

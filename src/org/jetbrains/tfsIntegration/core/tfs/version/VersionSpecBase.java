@@ -104,4 +104,6 @@ public abstract class VersionSpecBase extends VersionSpec {
     return prefix;
   }
 
+  public abstract String getPresentableString();
+
 }

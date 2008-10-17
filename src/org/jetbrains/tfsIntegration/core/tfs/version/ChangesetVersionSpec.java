@@ -25,11 +25,11 @@ import javax.xml.stream.XMLStreamException;
 public class ChangesetVersionSpec extends VersionSpecBase {
   private int changeSetId;
 
-    public int getChangeSetId() {
-        return changeSetId;
-    }
+  public int getChangeSetId() {
+    return changeSetId;
+  }
 
-    public ChangesetVersionSpec(final int changeSetId) {
+  public ChangesetVersionSpec(final int changeSetId) {
     this.changeSetId = changeSetId;
   }
 
@@ -38,5 +38,9 @@ public class ChangesetVersionSpec extends VersionSpecBase {
     writeVersionAttribute("", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance", xmlWriter);
     writeVersionAttribute("", "xsi:type", "ChangesetVersionSpec", xmlWriter);
     writeVersionAttribute("", "cs", Integer.toString(changeSetId), xmlWriter);
+  }
+
+  public String getPresentableString() {
+    return String.valueOf(changeSetId);
   }
 }

@@ -127,6 +127,10 @@ public class ServerTree {
     return null;
   }
 
+  public boolean isItemSelected() {
+    return !myTree.getSelectedPaths().isEmpty();
+  }
+
   public void createVirtualFolder() {
     myTree.createChild(myTree.getSelectionPath());
   }

@@ -39,7 +39,11 @@ public class VersionControlPath {
   }
 
   public static boolean isUnder(String parent, String child) {
-    return parent.startsWith(child);
+    return child.startsWith(parent);
+  }
+
+  public static int compareParentToChild(String path1, String path2) {
+    return path1.compareTo(path2);
   }
 
   public static String getCommonAncestor(final String path1, final String path2) {

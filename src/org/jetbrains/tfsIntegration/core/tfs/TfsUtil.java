@@ -28,9 +28,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class TfsUtil {
 
@@ -87,5 +85,15 @@ public class TfsUtil {
       localPaths.add(path.getLocalPath());
     }
     return localPaths;
+  }
+
+  /**
+   * @return Gregorian calendar that stores date "0001-01-01T00:00:00.000Z" to be used in requests to TFS server
+   */
+  public static Calendar getZeroCalendar() {
+    final Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+    calendar.clear();
+    calendar.set(1, Calendar.JANUARY, 1, 0, 0, 0);
+    return calendar;
   }
 }

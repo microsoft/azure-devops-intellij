@@ -16,11 +16,64 @@
 
 package org.jetbrains.tfsIntegration.actions;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.wm.WindowManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
+import org.jetbrains.tfsIntegration.core.tfs.ResultWithFailures;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelResult;
+import org.jetbrains.tfsIntegration.ui.ApplyLabelDialog;
 
-public class LabelAction extends AnAction {
-  public void actionPerformed(final AnActionEvent e) {
-    throw new UnsupportedOperationException();
+import java.util.ArrayList;
+import java.util.List;
+import java.text.MessageFormat;
+
+public class LabelAction extends SingleItemAction {
+
+  protected void execute(final @NotNull Project project,
+                         final @NotNull WorkspaceInfo workspace,
+                         final @NotNull FilePath localPath,
+                         final @NotNull ExtendedItem extendedItem) {
+
+    final ApplyLabelDialog d = new ApplyLabelDialog(project, workspace, extendedItem.getSitem());
+    d.show();
+    if (!d.isOK()) {
+      return;
+    }
+
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    try {
+      ResultWithFailures<LabelResult> resultWithFailures =
+        workspace.getServer().getVCS().labelItem(d.getLabelName(), d.getLabelComment(), d.getLabelItemSpecs());
+
+      errors.addAll(BeanHelper.getVcsExceptions(resultWithFailures.getFailures()));
+
+      StringBuffer buffer = new StringBuffer();
+      for (LabelResult labelResult : resultWithFailures.getResult()) {
+        if (buffer.length() > 0) {
+          buffer.append("; ");
+        }
+        String message = MessageFormat.format("Label ''{0}@{1}'' {2}", labelResult.getLabel(), labelResult.getScope(),
+                                              labelResult.getStatus().getValue().toLowerCase());
+        buffer.append(message);
+      }
+      if (buffer.length() > 0) {
+        WindowManager.getInstance().getStatusBar(project).setInfo(buffer.toString());
+      }
+    }
+    catch (TfsException e) {
+      errors.add(new VcsException(e));
+    }
+
+    if (!errors.isEmpty()) {
+      AbstractVcsHelper.getInstance(project).showErrors(errors, "TFS: Apply Label");
+    }
   }
+
 }

@@ -41,16 +41,16 @@ public class LabelVersionSpec extends VersionSpecBase {
     }
   }
 
+  public String getPresentableString() {
+    return myScope != null ? myLabel + "@" + myScope : myLabel;
+  }
+
   public String getLabel() {
     return myLabel;
   }
 
   public String getScope() {
     return myScope;
-  }
-
-  public String getStringRepresentation() {
-    return myScope != null ? myLabel + "@" + myScope : myLabel;
   }
 
   public static LabelVersionSpec fromStringRepresentation(String stringRepresentation) {

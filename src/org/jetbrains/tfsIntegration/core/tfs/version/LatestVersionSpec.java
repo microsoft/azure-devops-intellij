@@ -24,13 +24,18 @@ import javax.xml.stream.XMLStreamException;
 
 public class LatestVersionSpec extends VersionSpecBase {
 
-  public static final LatestVersionSpec INSTANCE = new LatestVersionSpec(); 
+  public static final LatestVersionSpec INSTANCE = new LatestVersionSpec();
 
-  private LatestVersionSpec() {}
+  private LatestVersionSpec() {
+  }
 
-  protected void writeAttributes(final QName parentQName, final OMFactory factory, final MTOMAwareXMLStreamWriter xmlWriter) throws
-                                                                                                                             XMLStreamException {
+  protected void writeAttributes(final QName parentQName, final OMFactory factory, final MTOMAwareXMLStreamWriter xmlWriter)
+    throws XMLStreamException {
     writeVersionAttribute("", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance", xmlWriter);
     writeVersionAttribute("", "xsi:type", "LatestVersionSpec", xmlWriter);
+  }
+
+  public String getPresentableString() {
+    return "Latest";
   }
 }
