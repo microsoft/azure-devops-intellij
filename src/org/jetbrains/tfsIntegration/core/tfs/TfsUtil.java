@@ -24,9 +24,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.DeletedState;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.*;
 
@@ -71,11 +69,14 @@ public class TfsUtil {
       return exceptions.iterator().next();
     }
     else {
-      Collection<String> messages = new ArrayList<String>(exceptions.size());
+      StringBuilder s = new StringBuilder();
       for (VcsException exception : exceptions) {
-        messages.add(exception.getMessage());
+        if (s.length() > 0) {
+          s.append("\n");
+        }
+        s.append(exception.getMessage());
       }
-      return new VcsException(messages);
+      return new VcsException(s.toString());
     }
   }
 
@@ -95,5 +96,15 @@ public class TfsUtil {
     calendar.clear();
     calendar.set(1, Calendar.JANUARY, 1, 0, 0, 0);
     return calendar;
+  }
+
+  public static List<VcsException> getVcsExceptions(Collection<Failure> failures) {
+    final List<VcsException> exceptions = new ArrayList<VcsException>();
+    for (Failure failure : failures) {
+      if (failure.getSev() != SeverityType.Warning) {
+        exceptions.add(new VcsException(failure.getMessage()));
+      }
+    }
+    return exceptions;
   }
 }

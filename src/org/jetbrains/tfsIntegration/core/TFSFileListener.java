@@ -369,7 +369,7 @@ public class TFSFileListener extends VcsVFSListener {
 
           final ResultWithFailures<GetOperation> renameResult =
             workspace.getServer().getVCS().renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove);
-          errors.addAll(BeanHelper.getVcsExceptions(renameResult.getFailures()));
+          errors.addAll(TfsUtil.getVcsExceptions(renameResult.getFailures()));
 
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
           for (GetOperation getOperation : renameResult.getResult()) {

@@ -61,7 +61,10 @@ public abstract class ServerStatus {
   }
 
   public static class Unversioned extends ServerStatus {
-    protected Unversioned(final @Nullable ExtendedItem item) {
+
+    public static final ServerStatus INSTANCE = new Unversioned();
+
+    private Unversioned() {
       super(0, 0, false, null, null);
     }
 

@@ -137,6 +137,10 @@ public class TFSChangeList implements CommittedChangeList {
     return myCachedChanges;
   }
 
+  public Collection<Change> getChangesWithMovedTrees() {
+    return getChanges();
+  }
+
   @NotNull
   public String getName() {
     return myComment;

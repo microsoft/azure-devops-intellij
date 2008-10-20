@@ -23,7 +23,6 @@ import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
@@ -38,29 +37,30 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class ResolveConflictHelper {
   private final @NotNull Project myProject;
-  private final @NotNull WorkspaceInfo myWorkspace;
   private final @Nullable UpdatedFiles myUpdatedFiles;
-  private final List<Conflict> myConflicts;
+  private final Map<Conflict, WorkspaceInfo> myConflict2Workspace = new HashMap<Conflict, WorkspaceInfo>();
 
   public ResolveConflictHelper(final Project project,
-                               final WorkspaceInfo workspace,
-                               final Collection<Conflict> conflicts,
+                               Map<WorkspaceInfo, Collection<Conflict>> workspace2Conflicts,
                                final UpdatedFiles updatedFiles) {
     myProject = project;
-    myWorkspace = workspace;
-    myConflicts = new ArrayList<Conflict>(conflicts);
+
+    for (Map.Entry<WorkspaceInfo, Collection<Conflict>> e : workspace2Conflicts.entrySet()) {
+      for (Conflict conflict : e.getValue()) {
+        myConflict2Workspace.put(conflict, e.getKey());
+      }
+    }
     myUpdatedFiles = updatedFiles;
   }
 
   public void acceptMerge(final @NotNull Conflict conflict) throws TfsException, VcsException {
     TFSVcs.assertTrue(canMerge(conflict));
+
+    final WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
     final String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
 
@@ -71,11 +71,11 @@ public class ResolveConflictHelper {
         TfsFileUtil.refreshAndFindFile(localPath);
         try {
           if (conflict.getYtype() == ItemType.File) {
-            String original = TFSContentRevision.create(myWorkspace, conflict.getBitemid(), conflict.getBver()).getContent();
+            String original = TFSContentRevision.create(workspace, conflict.getBitemid(), conflict.getBver()).getContent();
             contentTriplet.baseContent = original != null ? original : "";
             String current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
             contentTriplet.localContent = current != null ? current : "";
-            String last = TFSContentRevision.create(myWorkspace, conflict.getTitemid(), conflict.getTver()).getContent();
+            String last = TFSContentRevision.create(workspace, conflict.getTitemid(), conflict.getTver()).getContent();
             contentTriplet.serverContent = last != null ? last : "";
           }
         }
@@ -94,12 +94,12 @@ public class ResolveConflictHelper {
     final String localName;
     if (isNameConflict(conflict)) {
       // TODO proper type?
-      final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(myWorkspace, conflict);
+      final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(workspace, conflict);
       if (mergedServerPath == null) {
         // user cancelled
         return;
       }
-      FilePath mergedLocalPath = myWorkspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
+      FilePath mergedLocalPath = workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
       TFSVcs.assertTrue(mergedLocalPath != null);
       localName = VersionControlPath.toTfsRepresentation(mergedLocalPath);
     }
@@ -113,7 +113,7 @@ public class ResolveConflictHelper {
       final VirtualFile vFile = VcsUtil.getVirtualFile(localPath);
       if (vFile != null) {
         try {
-          ReadOnlyAttributeUtil.setReadOnlyAttribute(vFile, false);
+          TfsFileUtil.setReadOnlyInEventDispathThread(vFile, false);
           ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
         }
         catch (IOException e) {
@@ -148,15 +148,15 @@ public class ResolveConflictHelper {
     }
   }
 
-  public List<Conflict> getConflicts() {
-    return new ArrayList<Conflict>(myConflicts);
+  public Collection<Conflict> getConflicts() {
+    return Collections.unmodifiableCollection(myConflict2Workspace.keySet());
   }
 
   public static boolean canMerge(final @NotNull Conflict conflict) {
     if (conflict.getSrclitem() == null) {
       return false;
     }
-    
+
     final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
     final EnumMask<ChangeType> yourLocalChange = EnumMask.fromString(ChangeType.class, conflict.getYlchg());
     final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
@@ -188,18 +188,20 @@ public class ResolveConflictHelper {
 
   private void conflictResolved(final Conflict conflict, final Resolution resolution, final String newLocalPath)
     throws TfsException, VcsException {
+    WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
+
     VersionControlServer.ResolveConflictParams resolveConflictParams =
       new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2, newLocalPath);
 
     ResolveResponse response =
-      myWorkspace.getServer().getVCS().resolveConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), resolveConflictParams);
+      workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams);
 
     if (response.getResolveResult().getGetOperation() != null) {
-      ApplyGetOperations.DownloadMode downloadMode = resolution == Resolution
-        .AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.MERGE;
+      ApplyGetOperations.DownloadMode downloadMode =
+        resolution == Resolution.AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.MERGE;
 
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, myWorkspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles, downloadMode);
+        .execute(myProject, workspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles, downloadMode);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }
@@ -207,13 +209,13 @@ public class ResolveConflictHelper {
 
     if (response.getUndoOperations().getGetOperation() != null) {
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, myWorkspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, myUpdatedFiles,
+        .execute(myProject, workspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, myUpdatedFiles,
                  ApplyGetOperations.DownloadMode.FORCE);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }
     }
-    myConflicts.remove(conflict);
+    myConflict2Workspace.remove(conflict);
   }
 
   private static boolean isNameConflict(final @NotNull Conflict conflict) {

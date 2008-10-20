@@ -13,7 +13,6 @@
     <orderEntry type="library" name="Axis2" level="project" />
     <orderEntry type="library" name="HttpClient" level="project" />
     <orderEntry type="library" name="TFS Stubs" level="project" />
-    <orderEntryProperties />
   </component>
   <component name="copyright">
     <Base>

@@ -24,6 +24,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -229,7 +230,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
               .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions);
-            errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
+            errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
             for (Failure failure : result.getFailures()) {
@@ -331,6 +332,11 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       exceptions.add(new VcsException(e));
     }
     return exceptions;
+  }
+
+  public boolean keepChangeListAfterCommit(final ChangeList changeList) {
+    // TODO IDEA8
+    return true;
   }
 
 }

@@ -34,8 +34,6 @@ public class WorkspaceInfo {
 
   private static final Collection<String> WORKSPACE_NAME_INVALID_ENDING_CHARS = Arrays.asList(" ", ".");
 
-  // TODO: do we need owner name and computer name here?
-
   private final ServerInfo myServerInfo;
   private final String myOwnerName;
   private final String myComputer;

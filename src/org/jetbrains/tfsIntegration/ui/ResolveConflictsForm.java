@@ -30,8 +30,7 @@ import javax.swing.event.TableModelListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 public class ResolveConflictsForm {
 
@@ -50,6 +49,14 @@ public class ResolveConflictsForm {
 
   private final Collection<Listener> myListeners = new ArrayList<Listener>();
 
+  private static final Comparator<? super Conflict> CONFLICTS_COMPARATOR = new Comparator<Conflict>() {
+    public int compare(final Conflict o1, final Conflict o2) {
+      String path1 = ConflictsTableModel.Column.Name.getValue(o1);
+      String path2 = ConflictsTableModel.Column.Name.getValue(o2);
+      return path1.compareTo(path2);
+    }
+  };
+
   public ResolveConflictsForm(ResolveConflictHelper resolveConflictHelper) {
     myResolveConflictHelper = resolveConflictHelper;
 
@@ -59,8 +66,15 @@ public class ResolveConflictsForm {
 
     addListeners();
 
-    myItemsTableModel.setConflicts(resolveConflictHelper.getConflicts());
+    updateConflictsTable();
   }
+
+  private void updateConflictsTable() {
+    final List<Conflict> conflicts = new ArrayList<Conflict>(myResolveConflictHelper.getConflicts());
+    Collections.sort(conflicts, CONFLICTS_COMPARATOR);
+    myItemsTableModel.setConflicts(conflicts);
+  }
+
 
   private void addListeners() {
     myItemsTableModel.addTableModelListener(new TableModelListener() {
@@ -139,7 +153,7 @@ public class ResolveConflictsForm {
           Conflict conflict = myItemsTableModel.getConflicts().get(index);
           execute(conflict);
         }
-        myItemsTableModel.setConflicts(myResolveConflictHelper.getConflicts());
+        updateConflictsTable();
       }
       catch (TfsException e) {
         String message = "Failed to resolve conlict.\n" + e.getMessage();

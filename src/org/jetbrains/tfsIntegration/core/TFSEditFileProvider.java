@@ -28,12 +28,11 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.io.IOException;
 
 public class TFSEditFileProvider implements EditFileProvider {
 
   public void editFiles(final VirtualFile[] files) throws VcsException {
-    // TODO handle orphan paths
-
     final Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       Collection<FilePath> orphans =
@@ -45,10 +44,15 @@ public class TFSEditFileProvider implements EditFileProvider {
               TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
               VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
               if (file != null && file.isValid() && !file.isDirectory()) {
-                TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+                try {
+                  TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+                }
+                catch (IOException e) {
+                  errors.add(new VcsException(e));
+                }
               }
             }
-            errors.addAll(BeanHelper.getVcsExceptions(processResult.getFailures()));
+            errors.addAll(TfsUtil.getVcsExceptions(processResult.getFailures()));
           }
         });
 

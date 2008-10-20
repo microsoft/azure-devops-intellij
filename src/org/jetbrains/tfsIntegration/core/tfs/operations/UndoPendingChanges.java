@@ -20,10 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.vcsUtil.VcsUtil;
-import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.ResultWithFailures;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
@@ -57,7 +54,7 @@ public class UndoPendingChanges {
         workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), serverPaths);
 
       Collection<VcsException> errors = new ArrayList<VcsException>();
-      errors.addAll(BeanHelper.getVcsExceptions(result.getFailures()));
+      errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
 
       // TODO fill renamed paths map in ApplyGetOperations
       Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();

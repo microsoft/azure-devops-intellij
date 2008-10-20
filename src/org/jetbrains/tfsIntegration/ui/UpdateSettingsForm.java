@@ -20,6 +20,7 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.ui.CollectionListModel;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
@@ -36,10 +37,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class UpdateSettingsForm {
 
@@ -65,19 +64,29 @@ public class UpdateSettingsForm {
   private TfsException myErrorOnInitialization;
 
   public UpdateSettingsForm(final Project project, Collection<FilePath> roots, final String title) {
-    final DefaultListModel listModel = new DefaultListModel();
+    final List<WorkspaceInfo> workspaces = new ArrayList<WorkspaceInfo>();
     try {
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          final Map<FilePath, ExtendedItem> items = workspace.getExtendedItems2(paths);
+          final Map<FilePath, ExtendedItem> result = workspace.getExtendedItems2(paths);
+          Collection<ExtendedItem> items = new ArrayList<ExtendedItem>(result.values());
+          for (Iterator<ExtendedItem> i = items.iterator(); i.hasNext();) {
+            if (i.next() == null) {
+              i.remove();
+            }
+          }
 
-          listModel.addElement(workspace);
+          if (items.isEmpty()) {
+            return;
+          }
+
+          workspaces.add(workspace);
 
           // determine common ancestor of all the paths
-          ExtendedItem someExtendedItem = items.values().iterator().next();
+          ExtendedItem someExtendedItem = items.iterator().next();
           WorkspaceSettings workspaceSettings =
             new WorkspaceSettings(someExtendedItem.getSitem(), someExtendedItem.getType() == ItemType.Folder);
-          for (ExtendedItem extendedItem : items.values()) {
+          for (ExtendedItem extendedItem : items) {
             final String path1 = workspaceSettings.serverPath;
             final String path2 = extendedItem.getSitem();
             if (VersionControlPath.isUnder(path2, path1)) {
@@ -99,8 +108,14 @@ public class UpdateSettingsForm {
     if (myErrorOnInitialization != null) {
       mySelectRevisionForm.disable(); // in case of list model will stay empty because of error is thrown while enumerating workspaces
     }
-    
-    myWorkspacesList.setModel(listModel);
+
+    Collections.sort(workspaces, new Comparator<WorkspaceInfo>() {
+      public int compare(final WorkspaceInfo o1, final WorkspaceInfo o2) {
+        return o1.getName().compareTo(o2.getName());
+      }
+    });
+
+    myWorkspacesList.setModel(new CollectionListModel(workspaces));
     myWorkspacesList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
     myWorkspacesList.setCellRenderer(new DefaultListCellRenderer() {

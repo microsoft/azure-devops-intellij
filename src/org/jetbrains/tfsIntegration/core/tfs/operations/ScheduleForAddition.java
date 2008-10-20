@@ -39,7 +39,7 @@ public class ScheduleForAddition {
         VirtualFile file = VcsUtil.getVirtualFile(localPath);
         TfsFileUtil.invalidateFile(project, file);
       }
-      return BeanHelper.getVcsExceptions(serverResults.getFailures());
+      return TfsUtil.getVcsExceptions(serverResults.getFailures());
     }
     catch (TfsException e) {
       return Collections.singletonList(new VcsException(e));

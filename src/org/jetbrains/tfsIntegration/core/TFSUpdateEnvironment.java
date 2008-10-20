@@ -23,10 +23,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.update.FileGroup;
-import com.intellij.openapi.vcs.update.UpdateEnvironment;
-import com.intellij.openapi.vcs.update.UpdateSession;
-import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.openapi.vcs.update.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -40,10 +37,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
   private final Project myProject;
@@ -58,10 +52,12 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
   @NotNull
   public UpdateSession updateDirectories(@NotNull final FilePath[] contentRoots,
                                          final UpdatedFiles updatedFiles,
-                                         final ProgressIndicator progressIndicator) throws ProcessCanceledException {
-    // TODO we don't want to get a dialog for each workspace!
+                                         final ProgressIndicator progressIndicator,
+                                         @NotNull final Ref<SequentialUpdatesContext> context) throws ProcessCanceledException {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
+    TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
     try {
+      final Map<WorkspaceInfo, Collection<Conflict>> workspace2Conflicts = new HashMap<WorkspaceInfo, Collection<Conflict>>();
       List<FilePath> orphanPaths =
         WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -72,7 +68,6 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
               version = configuration.getUpdateWorkspaceInfo(workspace).getVersion();
               recursionType = configuration.UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
             }
-            TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
 
             // 1. query get operations for contentRoots - to let server know which version we need to report corresponding server conflicts
             List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(paths.size());
@@ -89,16 +84,16 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
 
             Collection<Conflict> conflicts =
               workspace.getServer().getVCS().queryConflicts(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.Full);
-            conflicts = ResolveConflictHelper.getUnresolvedConflicts(conflicts);
-            if (!conflicts.isEmpty()) {
-              ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace, conflicts, updatedFiles);
-              ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
-            }
 
-            // TODO content roots can be renamed while executing
-            TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);
+            workspace2Conflicts.put(workspace, ResolveConflictHelper.getUnresolvedConflicts(conflicts));
           }
         });
+
+      if (!workspace2Conflicts.isEmpty()) {
+        ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace2Conflicts, updatedFiles);
+        ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+      }
+
       for (FilePath orphanPath : orphanPaths) {
         updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(orphanPath.getPresentableUrl());
       }
@@ -107,6 +102,9 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       //noinspection ThrowableInstanceNeverThrown
       exceptions.add(new VcsException(e));
     }
+
+    // TODO content roots can be renamed while executing
+    TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);
 
     return new UpdateSession() {
       @NotNull
@@ -143,4 +141,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     return mappingFound.get() ? new UpdateConfigurable(myProject, files) : null;
   }
 
+  public boolean validateOptions(final Collection<FilePath> roots) {
+    // TODO IDEA8
+    return true;
+  }
 }

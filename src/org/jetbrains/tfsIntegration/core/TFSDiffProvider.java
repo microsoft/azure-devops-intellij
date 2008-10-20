@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.diff.DiffProvider;
+import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -49,29 +50,35 @@ public class TFSDiffProvider implements DiffProvider {
   }
 
   @Nullable
-  public VcsRevisionNumber getLastRevision(final VirtualFile virtualFile) {
+  public ItemLatestState getLastRevision(final VirtualFile virtualFile) {
     final FilePath localPath = TfsFileUtil.getFilePath(virtualFile);
     try {
       Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
       if (workspaces.isEmpty()) {
-        return VcsRevisionNumber.NULL;
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
       }
       final WorkspaceInfo workspace = workspaces.iterator().next();
       final ExtendedItem extendedItem = workspace.getServer().getVCS()
         .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
       if (extendedItem == null) {
-        return VcsRevisionNumber.NULL;
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
       }
       // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
       // so we need to query item by name
       final Item item = workspace.getServer().getVCS()
         .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
                    false);
-      return item != null ? new VcsRevisionNumber.Int(item.getCs()) : VcsRevisionNumber.NULL;
+      if (item != null) {
+        VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
+        return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE);
+      }
+      else {
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+      }
     }
     catch (TfsException e) {
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      return VcsRevisionNumber.NULL;
+      return new ItemLatestState(VcsRevisionNumber.NULL, false);
     }
   }
 

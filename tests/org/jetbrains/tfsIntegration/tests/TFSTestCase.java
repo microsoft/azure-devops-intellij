@@ -17,12 +17,14 @@
 package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
@@ -66,10 +68,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_RTM;
 
-  private static final String SERVER = "http://tfs-2005-01:8080/";
-  //  private static final String SERVER = "http://192.168.230.128:8080/";
+  private static final String SERVER = "http://wmw-2003-01:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "tfssetup";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -88,6 +89,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   public void setUp() throws Exception {
     final IdeaTestFixtureFactory fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory();
     myTempDirFixture = fixtureFactory.createTempDirTestFixture();
+    myTempDirFixture.setUp();
 
     //File pluginRoot = new File(PathManager.getHomePath(), "tfsIntegration");
     //if (!pluginRoot.isDirectory()) {
@@ -208,7 +210,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private TestChangeListBuilder getChanges(VirtualFile root) throws VcsException {
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
     TestChangeListBuilder changeListBuilder = new TestChangeListBuilder(mySandboxRoot, myProject);
-    getVcs().getChangeProvider().getChanges(getDirtyScopeForFile(root), changeListBuilder, new EmptyProgressIndicator());
+    // TODO IEA8
+    getVcs().getChangeProvider().getChanges(getDirtyScopeForFile(root), changeListBuilder, new EmptyProgressIndicator(), null);
     return changeListBuilder;
   }
 
@@ -218,14 +221,14 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       final ResultWithFailures<GetOperation> addResult = myTestWorkspace.getServer().getVCS()
         .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
       if (!addResult.getFailures().isEmpty()) {
-        throw BeanHelper.getVcsException(addResult.getFailures().iterator().next());
+        throw TfsUtil.collectExceptions(TfsUtil.getVcsExceptions(addResult.getFailures()));
       }
 
       final ResultWithFailures<CheckinResult> checkinResult = myTestWorkspace.getServer().getVCS()
         .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment,
                  Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
       if (!checkinResult.getFailures().isEmpty()) {
-        throw BeanHelper.getVcsException(checkinResult.getFailures().iterator().next());
+        throw TfsUtil.collectExceptions(TfsUtil.getVcsExceptions(checkinResult.getFailures()));
       }
     }
     catch (TfsException e) {
@@ -273,7 +276,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     final List<VcsException> errors = new ArrayList<VcsException>();
     errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
     errors.addAll(getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges()));
-    // ??? errors.addRemovalSpecs(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
+    // ??? errors.addAll(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
     errors.addAll(getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles()));
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
@@ -570,8 +573,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     configuration.getUpdateWorkspaceInfo(myTestWorkspace).setVersion(new ChangesetVersionSpec(revision));
     configuration.UPDATE_RECURSIVELY = true;
     final UpdatedFiles updatedFiles = UpdatedFiles.create();
-    final UpdateSession session =
-      getVcs().getUpdateEnvironment().updateDirectories(new FilePath[]{TfsFileUtil.getFilePath(root)}, updatedFiles, null);
+    final UpdateSession session = getVcs().getUpdateEnvironment()
+      .updateDirectories(new FilePath[]{TfsFileUtil.getFilePath(root)}, updatedFiles, null, new Ref<SequentialUpdatesContext>());
     Assert.assertTrue(getMessage(session.getExceptions()), session.getExceptions().isEmpty());
     refreshAll();
   }

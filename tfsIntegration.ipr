@@ -120,6 +120,15 @@
           <option name="LABEL_INDENT_SIZE" value="0" />
           <option name="LABEL_INDENT_ABSOLUTE" value="false" />
         </ADDITIONAL_INDENT_OPTIONS>
+        <ADDITIONAL_INDENT_OPTIONS fileType="java">
+          <option name="INDENT_SIZE" value="2" />
+          <option name="CONTINUATION_INDENT_SIZE" value="2" />
+          <option name="TAB_SIZE" value="8" />
+          <option name="USE_TAB_CHARACTER" value="false" />
+          <option name="SMART_TABS" value="false" />
+          <option name="LABEL_INDENT_SIZE" value="0" />
+          <option name="LABEL_INDENT_ABSOLUTE" value="false" />
+        </ADDITIONAL_INDENT_OPTIONS>
         <ADDITIONAL_INDENT_OPTIONS fileType="js">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
@@ -129,10 +138,28 @@
           <option name="LABEL_INDENT_SIZE" value="0" />
           <option name="LABEL_INDENT_ABSOLUTE" value="false" />
         </ADDITIONAL_INDENT_OPTIONS>
+        <ADDITIONAL_INDENT_OPTIONS fileType="jsp">
+          <option name="INDENT_SIZE" value="2" />
+          <option name="CONTINUATION_INDENT_SIZE" value="4" />
+          <option name="TAB_SIZE" value="8" />
+          <option name="USE_TAB_CHARACTER" value="false" />
+          <option name="SMART_TABS" value="false" />
+          <option name="LABEL_INDENT_SIZE" value="0" />
+          <option name="LABEL_INDENT_ABSOLUTE" value="false" />
+        </ADDITIONAL_INDENT_OPTIONS>
         <ADDITIONAL_INDENT_OPTIONS fileType="txt">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
           <option name="TAB_SIZE" value="4" />
+          <option name="USE_TAB_CHARACTER" value="false" />
+          <option name="SMART_TABS" value="false" />
+          <option name="LABEL_INDENT_SIZE" value="0" />
+          <option name="LABEL_INDENT_ABSOLUTE" value="false" />
+        </ADDITIONAL_INDENT_OPTIONS>
+        <ADDITIONAL_INDENT_OPTIONS fileType="xml">
+          <option name="INDENT_SIZE" value="2" />
+          <option name="CONTINUATION_INDENT_SIZE" value="4" />
+          <option name="TAB_SIZE" value="8" />
           <option name="USE_TAB_CHARACTER" value="false" />
           <option name="SMART_TABS" value="false" />
           <option name="LABEL_INDENT_SIZE" value="0" />
@@ -181,6 +208,7 @@
     <option name="ADDITIONAL_OPTIONS_STRING" value="" />
     <option name="MAXIMUM_HEAP_SIZE" value="128" />
   </component>
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>
@@ -370,13 +398,16 @@
     <option name="USE_CLIENT_FILTER" value="true" />
     <option name="CLIENT" value="" />
   </component>
+  <component name="ProjectDetails">
+    <option name="projectName" value="tfsIntegration" />
+  </component>
   <component name="ProjectFileVersion" converted="true" />
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/tfsIntegration.iml" filepath="$PROJECT_DIR$/tfsIntegration.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 7807" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 8890" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="ResourceManagerContainer">
@@ -407,6 +438,244 @@
     <option name="myTilesValidationEnabled" value="true" />
     <option name="myValidatorValidationEnabled" value="true" />
     <option name="myReportErrorsAsWarnings" value="true" />
+  </component>
+  <component name="SvnBranchConfigurationManager">
+    <option name="myConfigurationMap">
+      <map>
+        <entry key="$PROJECT_DIR$">
+          <value>
+            <SvnBranchConfiguration>
+              <option name="branchMap">
+                <map>
+                  <entry key="http://svn.jetbrains.org/idea/BRANCHES">
+                    <value>
+                      <list>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1222690218408" />
+                          <option name="revision" value="19523" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/groovy" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1221226862367" />
+                          <option name="revision" value="19128" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/SelenaMinor" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1218132895151" />
+                          <option name="revision" value="18450" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/DianaM1" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1201177660977" />
+                          <option name="revision" value="13938" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/scala" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1193058207007" />
+                          <option name="revision" value="11811" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/SelenaFinal" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1190721251727" />
+                          <option name="revision" value="11098" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/DemetraMinor" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1187004405743" />
+                          <option name="revision" value="10075" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/SelenaM2" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1179788883415" />
+                          <option name="revision" value="8073" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/testng" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1177673929901" />
+                          <option name="revision" value="7472" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/SelenaM1" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1173437032294" />
+                          <option name="revision" value="6486" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/6.0" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1158837630576" />
+                          <option name="revision" value="3349" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/IRIDA_I18N" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1154020288392" />
+                          <option name="revision" value="2948" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/DemetraBeta" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1131056016585" />
+                          <option name="revision" value="1641" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/BRANCHES/IRIDA" />
+                        </SvnBranchItem>
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="http://svn.jetbrains.org/idea/Test">
+                    <value>
+                      <list>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1219934552831" />
+                          <option name="revision" value="18809" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/Dir1" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1219318308905" />
+                          <option name="revision" value="18671" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/kir.file" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1204649880335" />
+                          <option name="revision" value="14763" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/DirWithExternal" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1198503709340" />
+                          <option name="revision" value="13425" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/ExternalsWithRevNum" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1198503666002" />
+                          <option name="revision" value="13424" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/Dir%20with%20space%20renamed" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1196705296349" />
+                          <option name="revision" value="12969" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/MoveFileTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1195475642369" />
+                          <option name="revision" value="12557" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/RenameDirTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1195221540184" />
+                          <option name="revision" value="12474" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/External" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1193666061976" />
+                          <option name="revision" value="11984" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/DirWithExternalsAndAFile" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1182951242733" />
+                          <option name="revision" value="9083" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/AddFiles" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1182949812755" />
+                          <option name="revision" value="9079" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/Dir2" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1182947132156" />
+                          <option name="revision" value="9076" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/FileContentTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1179154661140" />
+                          <option name="revision" value="7810" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/AdRevolver2" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1179149822533" />
+                          <option name="revision" value="7807" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/ExpandTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1178875440868" />
+                          <option name="revision" value="7729" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/NoveDirTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1163768003364" />
+                          <option name="revision" value="4550" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/web.xml" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1163693331242" />
+                          <option name="revision" value="4537" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/file.txt" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1161688164680" />
+                          <option name="revision" value="4152" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/DirWithExternal4" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1161688060740" />
+                          <option name="revision" value="4151" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/External4" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1156779207850" />
+                          <option name="revision" value="3179" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/DirWithExternal3" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1156769702645" />
+                          <option name="revision" value="3173" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/External3" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1156766074217" />
+                          <option name="revision" value="3170" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/External2" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1156427924498" />
+                          <option name="revision" value="3151" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/CorrJarsTest" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1155044198500" />
+                          <option name="revision" value="3042" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/Test/EmptyDir" />
+                        </SvnBranchItem>
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="http://svn.jetbrains.org/idea/TestSSL">
+                    <value>
+                      <list>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1217410222719" />
+                          <option name="revision" value="18188" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/TestSSL/trunks" />
+                        </SvnBranchItem>
+                        <SvnBranchItem>
+                          <option name="creationDateMillis" value="1217249524958" />
+                          <option name="revision" value="18085" />
+                          <option name="url" value="http://svn.jetbrains.org/idea/TestSSL/branches" />
+                        </SvnBranchItem>
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="branchUrls">
+                <list>
+                  <option value="http://svn.jetbrains.org/idea/BRANCHES" />
+                  <option value="http://svn.jetbrains.org/idea/Test" />
+                  <option value="http://svn.jetbrains.org/idea/TestSSL" />
+                </list>
+              </option>
+              <option name="trunkUrl" value="http://svn.jetbrains.org/idea/Trunk" />
+            </SvnBranchConfiguration>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="myVersion" value="124" />
   </component>
   <component name="SvnChangesBrowserSettings">
     <option name="USE_AUTHOR_FIELD" value="true" />

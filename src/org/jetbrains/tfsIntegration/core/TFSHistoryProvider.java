@@ -48,7 +48,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     myProject = project;
   }
 
-  public ColumnInfo[] getRevisionColumns() {
+  public ColumnInfo[] getRevisionColumns(final VcsHistorySession session) {
     return ColumnInfo.EMPTY_ARRAY;
   }
 
@@ -115,4 +115,10 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   public HistoryAsTreeProvider getTreeHistoryProvider() {
     return null;
   }
+
+  public boolean supportsHistoryForDirectories() {
+    // TODO IDEA8
+    return true;
+  }
+  
 }

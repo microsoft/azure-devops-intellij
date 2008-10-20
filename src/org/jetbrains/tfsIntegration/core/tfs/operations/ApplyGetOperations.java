@@ -352,6 +352,9 @@ public class ApplyGetOperations {
       if (!source.equals(target)) {
         deleteFile(source);
       }
+      if (myDownloadMode == DownloadMode.MERGE) {
+        addToGroup(FileGroup.MERGED_ID, target, operation);
+      }
       updateLocalVersion(operation);
     }
   }

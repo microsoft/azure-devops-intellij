@@ -18,6 +18,8 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
+import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
@@ -58,6 +60,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   }
 
   @Nullable
+  public RepositoryLocation getLocationFor(final FilePath root, final String repositoryPath) {
+    // TODO IDEA8
+    return getLocationFor(root);
+  }
+
   public RepositoryLocation getLocationFor(final FilePath root) {
     final Map<WorkspaceInfo, List<FilePath>> pathsByWorkspaces = new HashMap<WorkspaceInfo, List<FilePath>>();
     try {
@@ -129,11 +136,13 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
           final RecursionType recursionType = localPath2ExtendedItem.getKey().isDirectory() ? RecursionType.Full : null;
           ItemSpec itemSpec = VersionControlServer.createItemSpec(extendedItem.getSitem(), recursionType);
 
-          List<Changeset> changeSets = workspace.getServer().getVCS().queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec,
-                                                                   settings.getUserFilter(), itemVersion, versionFrom, versionTo, maxCount);
+          List<Changeset> changeSets = workspace.getServer().getVCS()
+            .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, settings.getUserFilter(), itemVersion, versionFrom,
+                          versionTo, maxCount);
           for (Changeset changeset : changeSets) {
-            result.add(new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(),
-                                         changeset.getComment(), myVcs));
+            result.add(
+              new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(), changeset.getComment(),
+                                myVcs));
           }
 
         }
@@ -203,5 +212,16 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   public boolean refreshIncomingWithCommitted() {
     // TODO
     return false;
+  }
+
+  public int getUnlimitedCountValue() {
+    // TODO IDEA8
+    return 0;
+  }
+
+  @Nullable
+  public VcsCommittedViewAuxiliary createActions(final DecoratorManager manager, final RepositoryLocation location) {
+    // TODO IDEA8
+    return null;
   }
 }

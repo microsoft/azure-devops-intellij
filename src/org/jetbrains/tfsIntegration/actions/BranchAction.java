@@ -126,7 +126,7 @@ public class BranchAction extends SingleItemAction {
         .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
 
       if (!checkinResult.getFailures().isEmpty()) {
-        final List<VcsException> checkinErrors = BeanHelper.getVcsExceptions(checkinResult.getFailures());
+        final List<VcsException> checkinErrors = TfsUtil.getVcsExceptions(checkinResult.getFailures());
         AbstractVcsHelper.getInstance(project).showErrors(checkinErrors, "Create Branch");
       }
 

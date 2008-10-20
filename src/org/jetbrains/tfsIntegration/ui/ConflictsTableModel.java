@@ -23,7 +23,7 @@ import java.util.List;
 
 public class ConflictsTableModel extends AbstractTableModel {
 
-  private enum Column {
+  public enum Column {
 
     Name("Name") {
       public String getValue(Conflict conflict) {

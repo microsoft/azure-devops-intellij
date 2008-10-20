@@ -16,8 +16,6 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.ide.DataManager;
-import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -30,6 +28,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -51,8 +50,7 @@ import java.util.List;
 
 public class TFSCheckoutProvider implements CheckoutProvider {
 
-  public void doCheckout(@Nullable final Listener listener) {
-    Project project = DataKeys.PROJECT.getData(DataManager.getInstance().getDataContext());
+  public void doCheckout(@NotNull final Project project, @Nullable final Listener listener) {
     final CheckoutWizardModel model = new CheckoutWizardModel();
     List<CheckoutWizardStep> steps = Arrays.asList(new ChooseModeStep(model),
                                                    new ChooseWorkspaceStep(project, model),

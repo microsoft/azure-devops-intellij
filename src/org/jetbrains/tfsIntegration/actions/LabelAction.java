@@ -22,9 +22,9 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.wm.WindowManager;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ResultWithFailures;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelResult;
@@ -52,7 +52,7 @@ public class LabelAction extends SingleItemAction {
       ResultWithFailures<LabelResult> resultWithFailures =
         workspace.getServer().getVCS().labelItem(d.getLabelName(), d.getLabelComment(), d.getLabelItemSpecs());
 
-      errors.addAll(BeanHelper.getVcsExceptions(resultWithFailures.getFailures()));
+      errors.addAll(TfsUtil.getVcsExceptions(resultWithFailures.getFailures()));
 
       StringBuffer buffer = new StringBuffer();
       for (LabelResult labelResult : resultWithFailures.getResult()) {

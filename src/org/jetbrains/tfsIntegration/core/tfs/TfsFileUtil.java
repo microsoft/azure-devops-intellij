@@ -21,11 +21,11 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.RefreshQueue;
-import com.intellij.peer.PeerFactory;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
@@ -61,33 +61,45 @@ public class TfsFileUtil {
   }
 
   public static FilePath getFilePath(@NotNull final VirtualFile f) {
-    return PeerFactory.getInstance().getVcsContextFactory().createFilePathOn(f);
+    return VcsContextFactory.SERVICE.getInstance().createFilePathOn(f);
   }
 
-  public static void setReadOnlyInEventDispathThread(final VirtualFile file, final boolean status) {
+  public static void setReadOnlyInEventDispathThread(final VirtualFile file, final boolean status) throws IOException {
+    final Ref<IOException> exception = new Ref<IOException>();
     executeInEventDispatchThread(new Runnable() {
       public void run() {
-        try {
-          ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
-        }
-        catch (IOException e) {
-          TFSVcs.LOG.error(e);
-        }
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+          public void run() {
+            try {
+              ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
+            }
+            catch (IOException e) {
+              exception.set(e);
+            }
+          }
+        });
       }
     });
+    if (!exception.isNull()) {
+      throw exception.get();
+    }
   }
 
-  public static void setReadOnlyInEventDispatchThread(final String path, final boolean status) {
+  public static void setReadOnlyInEventDispatchThread(final String path, final boolean status) throws IOException {
+    final Ref<IOException> exception = new Ref<IOException>();
     executeInEventDispatchThread(new Runnable() {
       public void run() {
         try {
           ReadOnlyAttributeUtil.setReadOnlyAttribute(path, status);
         }
         catch (IOException e) {
-          TFSVcs.LOG.error(e);
+          exception.set(e);
         }
       }
     });
+    if (!exception.isNull()) {
+      throw exception.get();
+    }
   }
 
   public static void invalidateFiles(final Project project, final Collection<FilePath> files) {

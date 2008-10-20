@@ -20,9 +20,11 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -45,8 +47,14 @@ public class TFSChangeProvider implements ChangeProvider {
     return true;
   }
 
-  public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progress)
-    throws VcsException {
+  public void doCleanup(final List<VirtualFile> files) {
+  }
+
+  public void getChanges(final VcsDirtyScope dirtyScope,
+                         final ChangelistBuilder builder,
+                         final ProgressIndicator progress,
+                         final ChangeListManagerGate addGate) throws VcsException {
+    // TODO IDEA8
     if (myProject.isDisposed()) {
       return;
     }

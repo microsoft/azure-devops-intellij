@@ -27,9 +27,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.WindowManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.tfs.BeanHelper;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
@@ -79,17 +79,19 @@ public class MergeBranchAction extends SingleItemAction {
       }, title, false, project);
     }
 
-    Collection<Conflict> unresolvedConflicts =
-      ResolveConflictHelper.getUnresolvedConflicts(mergeResponse.getConflicts().getConflict() != null ? Arrays
-        .asList(mergeResponse.getConflicts().getConflict()) : Collections.<Conflict>emptyList());
+    Collection<Conflict> unresolvedConflicts = ResolveConflictHelper.getUnresolvedConflicts(
+      mergeResponse.getConflicts().getConflict() != null
+      ? Arrays.asList(mergeResponse.getConflicts().getConflict())
+      : Collections.<Conflict>emptyList());
 
     if (!unresolvedConflicts.isEmpty()) {
-      ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(project, workspace, unresolvedConflicts, null);
+      ResolveConflictHelper resolveConflictHelper =
+        new ResolveConflictHelper(project, Collections.singletonMap(workspace, unresolvedConflicts), null);
       ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
     }
 
     if (mergeResponse.getFailures().getFailure() != null) {
-      errors.addAll(BeanHelper.getVcsExceptions(Arrays.asList(mergeResponse.getFailures().getFailure())));
+      errors.addAll(TfsUtil.getVcsExceptions(Arrays.asList(mergeResponse.getFailures().getFailure())));
     }
 
     if (errors.isEmpty()) {

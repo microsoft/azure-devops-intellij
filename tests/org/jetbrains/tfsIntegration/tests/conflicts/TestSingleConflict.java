@@ -30,7 +30,7 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 import org.junit.Assert;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 @SuppressWarnings({"HardCodedStringLiteral"})
 abstract class TestSingleConflict extends TFSTestCase {
@@ -142,7 +142,7 @@ abstract class TestSingleConflict extends TFSTestCase {
     }
 
     public void resolveConflicts(final ResolveConflictHelper resolveConflictHelper) throws TfsException {
-      List<Conflict> conflicts = resolveConflictHelper.getConflicts();
+      Collection<Conflict> conflicts = resolveConflictHelper.getConflicts();
       Assert.assertEquals("Expected conflicts count differs: ", 1, conflicts.size());
       for (Conflict conflict : conflicts) {
         checkConflictProperties(conflict);

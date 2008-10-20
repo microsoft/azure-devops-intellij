@@ -137,7 +137,7 @@ public class StatusProvider {
 
   private static ServerStatus determineServerStatus(final @Nullable PendingChange pendingChange, final @Nullable ExtendedItem item) {
     if (item == null) {
-      return new ServerStatus.Unversioned(item);
+      return ServerStatus.Unversioned.INSTANCE;
     }
 
     EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
@@ -145,7 +145,7 @@ public class StatusProvider {
 
     if (item.getLocal() == null && change.isEmpty()) {
       // TODO report not downloaded items as unversioned ?
-      return new ServerStatus.Unversioned(item);
+      return ServerStatus.Unversioned.INSTANCE;
     }
 
     if (change.isEmpty()) {

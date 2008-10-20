@@ -125,7 +125,7 @@ public class ScheduleForDeletion {
 
       ResultWithFailures<GetOperation> schedulingForDeletionResults =
         workspace.getServer().getVCS().scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
-      errors.addAll(BeanHelper.getVcsExceptions(schedulingForDeletionResults.getFailures()));
+      errors.addAll(TfsUtil.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
         String localPath = getOperation.getSlocal();
