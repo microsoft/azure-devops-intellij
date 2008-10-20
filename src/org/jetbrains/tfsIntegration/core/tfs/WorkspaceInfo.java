@@ -21,8 +21,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.credentials.Credentials;
-import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
@@ -80,7 +78,8 @@ public class WorkspaceInfo {
     int slashIndex = myOwnerName.indexOf('\\');
     if (slashIndex > -1 && slashIndex < myOwnerName.length() - 1) {
       return myOwnerName.substring(slashIndex + 1);
-    } else {
+    }
+    else {
       return myOwnerName;
     }
   }
@@ -147,8 +146,8 @@ public class WorkspaceInfo {
   }
 
   boolean hasCurrentOwnerAndComputer() {
-    Credentials credentials = CredentialsManager.getInstance().getCredentials(getServer().getUri());
-    if (credentials == null || !credentials.getQualifiedUsername().equalsIgnoreCase(getOwnerName())) {
+    String owner = getServer().getQualifiedUsername();
+    if (owner == null || !owner.equalsIgnoreCase(getOwnerName())) {
       return false;
     }
     if (!Workstation.getComputerName().equalsIgnoreCase(getComputer())) {
@@ -248,7 +247,7 @@ public class WorkspaceInfo {
       getServer().addWorkspaceInfo(this);
     }
     myOriginalName = getName();
-    Workstation.getInstance().updateCacheFile();
+    Workstation.getInstance().update();
   }
 
   private static Workspace toBean(WorkspaceInfo info) throws TfsException {

@@ -17,11 +17,13 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
@@ -45,6 +47,8 @@ public class Workstation {
   private static final Logger LOG = Logger.getInstance(Workstation.class.getName());
 
   private List<ServerInfo> myServerInfos;
+
+  private @Nullable Ref<FilePath> myDuplicateMappedPath;
 
   private Workstation() {
     myServerInfos = loadCache();
@@ -140,7 +144,9 @@ public class Workstation {
     return file;
   }
 
-  void updateCacheFile() {
+  void update() {
+    invalidateDuplicateMappedPath();
+
     File cacheFile = getExistingCacheFile();
     if (cacheFile != null) {
       try {
@@ -201,12 +207,12 @@ public class Workstation {
 
   public void addServer(final ServerInfo serverInfo) {
     myServerInfos.add(serverInfo);
-    updateCacheFile();
+    update();
   }
 
   public void removeServer(final ServerInfo serverInfo) {
     myServerInfos.remove(serverInfo);
-    updateCacheFile();
+    update();
   }
 
   public static String getComputerName() {
@@ -220,7 +226,7 @@ public class Workstation {
     }
   }
 
-  public Collection<WorkspaceInfo> findWorkspaceCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
+  public Collection<WorkspaceInfo> findWorkspacesCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
     // try cached working folders first
     Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer()) {
@@ -235,8 +241,9 @@ public class Workstation {
     return result;
   }
 
-  public Collection<WorkspaceInfo> findWorkspace(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
-    final Collection<WorkspaceInfo> resultCached = findWorkspaceCached(localPath, considerChildMappings);
+  public Collection<WorkspaceInfo> findWorkspaces(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+    checkDuplicateMappings();
+    final Collection<WorkspaceInfo> resultCached = findWorkspacesCached(localPath, considerChildMappings);
     if (!resultCached.isEmpty()) {
       // given path is mapped according to cached mapping info -> reload and check with server info
       for (WorkspaceInfo workspace : resultCached) {
@@ -267,6 +274,46 @@ public class Workstation {
       }
       return result;
     }
+  }
+
+  public void checkDuplicateMappings() throws DuplicateMappingException {
+    if (myDuplicateMappedPath == null) {
+      myDuplicateMappedPath = Ref.create(findDuplicateMappedPath());
+    }
+    //noinspection ConstantConditions
+    if (!myDuplicateMappedPath.isNull()) {
+      //noinspection ConstantConditions
+      throw new DuplicateMappingException(myDuplicateMappedPath.get());
+    }
+  }
+
+  private void invalidateDuplicateMappedPath() {
+    myDuplicateMappedPath = null;
+  }
+
+  @Nullable
+  private FilePath findDuplicateMappedPath() {
+    // don't check duplicate mappings within the same server, server side should take care about this
+    Collection<FilePath> otherServersPaths = new ArrayList<FilePath>();
+    for (ServerInfo server : getServers()) {
+      Collection<FilePath> currentServerPaths = new ArrayList<FilePath>();
+      for (WorkspaceInfo workspace : server.getWorkspacesForCurrentOwnerAndComputer()) {
+        for (WorkingFolderInfo workingFolder : workspace.getWorkingFoldersCached()) {
+          final FilePath currentServerPath = workingFolder.getLocalPath();
+          for (FilePath otherServerPath : otherServersPaths) {
+            if (currentServerPath.isUnder(otherServerPath, false)) {
+              return currentServerPath;
+            }
+            if (otherServerPath.isUnder(currentServerPath, false)) {
+              return otherServerPath;
+            }
+          }
+          currentServerPaths.add(currentServerPath);
+        }
+      }
+      otherServersPaths.addAll(currentServerPaths);
+    }
+    return null;
   }
 
 }

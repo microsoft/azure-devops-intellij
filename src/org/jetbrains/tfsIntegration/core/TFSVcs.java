@@ -134,7 +134,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public boolean isVersionedDirectory(final VirtualFile dir) {
-    return !Workstation.getInstance().findWorkspaceCached(TfsFileUtil.getFilePath(dir), false).isEmpty();
+    return !Workstation.getInstance().findWorkspacesCached(TfsFileUtil.getFilePath(dir), false).isEmpty();
   }
 
   public EditFileProvider getEditFileProvider() {

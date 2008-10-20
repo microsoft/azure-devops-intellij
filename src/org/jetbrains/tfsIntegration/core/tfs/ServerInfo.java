@@ -56,7 +56,6 @@ public class ServerInfo {
     return myGuid;
   }
 
-  // TODO: NotNull?
   @Nullable
   public String getQualifiedUsername() {
     Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
@@ -85,7 +84,7 @@ public class ServerInfo {
       // already deleted
     }
     myWorkspaceInfos.remove(workspaceInfo);
-    Workstation.getInstance().updateCacheFile();
+    Workstation.getInstance().update();
   }
 
   @NotNull
@@ -97,9 +96,8 @@ public class ServerInfo {
   }
 
   public void refreshWorkspacesForCurrentOwner() throws TfsException {
-    Credentials credentials = CredentialsManager.getInstance().getCredentials(getUri());
-    if (credentials != null) {
-      String owner = credentials.getQualifiedUsername();
+    String owner = getQualifiedUsername();
+    if (owner != null) {
       Workspace[] workspaces = getVCS().queryWorkspaces(owner, Workstation.getComputerName());
       for (Iterator<WorkspaceInfo> i = myWorkspaceInfos.iterator(); i.hasNext();) {
         WorkspaceInfo workspaceInfo = i.next();
@@ -113,7 +111,7 @@ public class ServerInfo {
         WorkspaceInfo.fromBean(workspace, workspaceInfo);
         addWorkspaceInfo(workspaceInfo);
       }
-      Workstation.getInstance().updateCacheFile();
+      Workstation.getInstance().update();
     }
   }
 

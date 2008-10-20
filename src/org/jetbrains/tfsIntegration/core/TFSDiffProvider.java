@@ -53,7 +53,7 @@ public class TFSDiffProvider implements DiffProvider {
   public ItemLatestState getLastRevision(final VirtualFile virtualFile) {
     final FilePath localPath = TfsFileUtil.getFilePath(virtualFile);
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
       if (workspaces.isEmpty()) {
         return new ItemLatestState(VcsRevisionNumber.NULL, false);
       }
@@ -90,7 +90,7 @@ public class TFSDiffProvider implements DiffProvider {
     else {
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       try {
-        Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(path, false);
+        Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(path, false);
         if (workspaces.isEmpty()) {
           return null;
         }

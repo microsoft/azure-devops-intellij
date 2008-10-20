@@ -44,7 +44,7 @@ public class WorkstationHelper {
     List<FilePath> orphanPaths = new ArrayList<FilePath>();
     Map<WorkspaceInfo, List<FilePath>> workspace2localPaths = new HashMap<WorkspaceInfo, List<FilePath>>();
     for (FilePath localPath : localPaths) {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, considerChildMappings);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, considerChildMappings);
       if (!workspaces.isEmpty()) {
         for (WorkspaceInfo workspace : workspaces) {
           List<FilePath> workspaceLocalPaths = workspace2localPaths.get(workspace);

@@ -61,7 +61,7 @@ public abstract class SingleItemAction extends AnAction {
     final FilePath localPath = TfsFileUtil.getFilePath(file);
 
     try {
-      Collection<WorkspaceInfo> workspace = Workstation.getInstance().findWorkspace(localPath, false);
+      Collection<WorkspaceInfo> workspace = Workstation.getInstance().findWorkspaces(localPath, false);
       if (workspace.isEmpty()) {
         final String itemType = localPath.isDirectory() ? "folder" : "file";
         final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, localPath.getPresentableUrl());

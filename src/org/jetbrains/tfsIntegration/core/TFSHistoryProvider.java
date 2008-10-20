@@ -70,7 +70,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
     //final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(filePath, false);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(filePath, false);
       if (workspaces.isEmpty()) {
         return null;
       }

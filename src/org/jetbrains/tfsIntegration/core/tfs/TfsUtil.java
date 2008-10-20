@@ -32,7 +32,7 @@ public class TfsUtil {
 
   @Nullable
   public static ExtendedItem getExtendedItem(final FilePath localPath) throws TfsException {
-    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
+    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
     if (workspaces.isEmpty()) {
       return null;
     }

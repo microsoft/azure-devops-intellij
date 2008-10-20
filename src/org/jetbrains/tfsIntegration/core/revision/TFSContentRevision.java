@@ -102,7 +102,7 @@ public abstract class TFSContentRevision implements ContentRevision {
   }
 
   public static TFSContentRevision create(final @NotNull FilePath localPath, final int changeset) throws TfsException {
-    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspace(localPath, false);
+    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
     if (workspaces.isEmpty()) {
       throw new OperationFailedException("Cannot find mapping for item " + localPath.getPresentableUrl());
     }
