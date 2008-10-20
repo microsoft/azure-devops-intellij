@@ -153,8 +153,13 @@ public class UpdateSettingsForm {
       }
     });
 
-    myWorkspacesList.setSelectedIndex(0);
-    myWorkspacesList.requestFocus();
+    if (workspaces.isEmpty()) {
+      mySelectRevisionForm.disable();
+    }
+    else {
+      myWorkspacesList.setSelectedIndex(0);
+      myWorkspacesList.requestFocus();
+    }
   }
 
   private void applyCurrentValue() throws ConfigurationException {
