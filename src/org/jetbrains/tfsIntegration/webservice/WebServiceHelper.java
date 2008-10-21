@@ -16,8 +16,6 @@
 
 package org.jetbrains.tfsIntegration.webservice;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.StreamUtil;
 import org.apache.axis2.Constants;
@@ -40,6 +38,7 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -198,7 +197,7 @@ public class WebServiceHelper {
     }
   }
 
-  private synchronized static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
+  private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
     final Credentials originalStoredCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
 
     Credentials credentials = CredentialsManager.getInstance().getCredentials(serverUri);
@@ -228,12 +227,8 @@ public class WebServiceHelper {
           }
         };
 
-        if (ApplicationManager.getApplication().isDispatchThread()) {
-          runnable.run();
-        }
-        else {
-          ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
-        }
+        TfsFileUtil.executeInEventDispatchThread(runnable);
+
         if (dialogCredentials.get() != null) {
           credentials = dialogCredentials.get();
         }
@@ -242,25 +237,27 @@ public class WebServiceHelper {
         }
       }
 
-      try {
-        final T result;
-        TFSVcs.assertTrue(credentials.getPassword() != null);
+      synchronized (WebServiceHelper.class) {
+        try {
+          final T result;
+          TFSVcs.assertTrue(credentials.getPassword() != null);
 
-        result = delegate.executeRequest(credentials);
-        CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
-        return result;
-      }
-      catch (Exception e) {
-        TfsException tfsException = TfsExceptionManager.processException(e);
-        if (tfsException instanceof UnauthorizedException) {
-          // repeat with login dialog
-          forcePrompt = true;
+          result = delegate.executeRequest(credentials);
+          CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+          return result;
         }
-        else {
-          if (!(tfsException instanceof ConnectionFailedException)) {
-            CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+        catch (Exception e) {
+          TfsException tfsException = TfsExceptionManager.processException(e);
+          if (tfsException instanceof UnauthorizedException) {
+            // repeat with login dialog
+            forcePrompt = true;
           }
-          throw tfsException;
+          else {
+            if (!(tfsException instanceof ConnectionFailedException)) {
+              CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+            }
+            throw tfsException;
+          }
         }
       }
     }
@@ -316,7 +313,7 @@ public class WebServiceHelper {
       httpClient.getState().setCredentials(AuthScope.ANY, new NTCredentials(credentials.getUserName(), credentials.getPassword() != null
                                                                                                        ? credentials.getPassword()
                                                                                                        : null, serverUri.getHost(),
-                                                                                                               credentials.getDomain()));
+                                                                            credentials.getDomain()));
     }
   }
 
