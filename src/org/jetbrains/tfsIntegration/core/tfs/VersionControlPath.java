@@ -55,7 +55,7 @@ public class VersionControlPath {
   }
 
   /**
-   * At one level files are less than subfolders regardless of their names.
+   * At the same level files go before subfolders regardless of the names.
    */
   public static int compareParentToChild(String path1, boolean isDirectory1, String path2, boolean isDrectory2) {
     String[] pathComponents1 = getPathComponents(path1);
@@ -63,7 +63,7 @@ public class VersionControlPath {
 
     final int minLength = Math.min(pathComponents1.length, pathComponents2.length);
 
-    // do not compare last level
+    // first compare all the levels except last one
     for (int i = 0; i < minLength - 1; i++) {
       String s1 = pathComponents1[i];
       String s2 = pathComponents2[i];

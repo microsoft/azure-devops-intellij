@@ -255,6 +255,20 @@ public class VersionControlServer {
     });
   }
 
+  public ResultWithFailures<GetOperation> lockOrUnlockItems(final String workspaceName,
+                                                            final String workspaceOwner,
+                                                            final LockLevel lockLevel,
+                                                            final Collection<ExtendedItem> items) throws TfsException {
+    return pendChanges(workspaceName, workspaceOwner, items, false, new ChangeRequestProvider<ExtendedItem>() {
+      public ChangeRequest createChangeRequest(final ExtendedItem item) {
+        ChangeRequest changeRequest = createChangeRequestTemplate();
+        changeRequest.getItem().setItem(item.getSitem());
+        changeRequest.setReq(RequestType.Lock);
+        changeRequest.setLock(lockLevel);
+        return changeRequest;
+      }
+    });
+  }
 
   private <T> ResultWithFailures<GetOperation> pendChanges(final String workspaceName,
                                                            final String workspaceOwner,
@@ -382,8 +396,8 @@ public class VersionControlServer {
     final Ref<PendingSet[]> pendingSetsRef = new Ref<PendingSet[]>();
     WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
-        extendedItemsRef.set(myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, DeletedState.NonDeleted, itemType)
-          .getArrayOfExtendedItem());
+        extendedItemsRef.set(myRepository
+          .QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, DeletedState.NonDeleted, itemType).getArrayOfExtendedItem());
         pendingSetsRef.set(myRepository.QueryPendingSets(workspaceName, ownerName, workspaceName, ownerName, arrayOfItemSpec, false)
           .getQueryPendingSetsResult().getPendingSet());
       }
@@ -540,8 +554,9 @@ public class VersionControlServer {
 
       Changeset[] currentChangeSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
         public Changeset[] executeRequest() throws RemoteException {
-          return myRepository.QueryHistory(workspaceName, workspaceOwner, itemSpec, itemVersion, user, versionFrom, versionToCurrent.get(),
-                                           batchMax, true, false, false).getChangeset();
+          return myRepository
+            .QueryHistory(workspaceName, workspaceOwner, itemSpec, itemVersion, user, versionFrom, versionToCurrent.get(), batchMax, true,
+                          false, false).getChangeset();
         }
       });
 
@@ -735,8 +750,9 @@ public class VersionControlServer {
     throws TfsException {
     return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ResolveResponse>() {
       public ResolveResponse executeRequest() throws RemoteException {
-        return myRepository.Resolve(workspaceName, workspasceOwnerName, params.conflictId, params.resolution, params.newPath,
-                                    params.encoding, params.lockLevel);
+        return myRepository
+          .Resolve(workspaceName, workspasceOwnerName, params.conflictId, params.resolution, params.newPath, params.encoding,
+                   params.lockLevel);
       }
     });
   }
@@ -915,8 +931,7 @@ public class VersionControlServer {
     final ArrayOfCheckinNoteFieldDefinition result =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
         public ArrayOfCheckinNoteFieldDefinition executeRequest() throws RemoteException {
-          return myRepository
-            .QueryCheckinNoteDefinition(associatedServerItem);
+          return myRepository.QueryCheckinNoteDefinition(associatedServerItem);
         }
       });
 
@@ -943,8 +958,7 @@ public class VersionControlServer {
     ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
       public ItemSet[] executeRequest() throws RemoteException {
         return myRepository
-          .QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, ItemType.Any, generateDownloadUrl)
-          .getItemSet();
+          .QueryItems(workspaceName, ownerName, arrayOfItemSpec, versionSpec, deletedState, ItemType.Any, generateDownloadUrl).getItemSet();
       }
     });
 
@@ -1025,8 +1039,7 @@ public class VersionControlServer {
 
     LabelItemResponse labelItemResponse = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<LabelItemResponse>() {
       public LabelItemResponse executeRequest() throws RemoteException {
-        return myRepository
-          .LabelItem(null, null, versionControlLabel, arrayOfLabelItemSpec, LabelChildOption.Fail);
+        return myRepository.LabelItem(null, null, versionControlLabel, arrayOfLabelItemSpec, LabelChildOption.Fail);
       }
     });
 
@@ -1204,8 +1217,7 @@ public class VersionControlServer {
     updateWorkItem_type0.setWorkItemID(workItem.getId());
     updateWorkItem_type0.setRevision(workItem.getRevision());
     updateWorkItem_type0.setObjectType("WorkItem");
-    updateWorkItem_type0
-      .setComputedColumns(WorkItemSerialize.generateComputedColumnsForUpdateRequest(workItem.getType(), action));
+    updateWorkItem_type0.setComputedColumns(WorkItemSerialize.generateComputedColumnsForUpdateRequest(workItem.getType(), action));
     updateWorkItem_type0
       .setColumns(WorkItemSerialize.generateColumnsForUpdateRequest(workItem.getType(), workItem.getReason(), action, identity));
     updateWorkItem_type0.setInsertText(WorkItemSerialize.generateInsertTextForUpdateRequest(action, changeSet));
