@@ -161,8 +161,8 @@ public class TFSFileListener extends VcsVFSListener {
             }
           }
 
-          UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true);
+          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(myProject, workspace, revertImmediately, true)
+            ;
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
             AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
@@ -222,8 +222,8 @@ public class TFSFileListener extends VcsVFSListener {
             }
 
             public void undeleted(final @NotNull FilePath localPath,
-                                          final boolean localItemExists,
-                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+                                  final boolean localItemExists,
+                                  final @NotNull ServerStatus serverStatus) throws TfsException {
               TFSVcs.error("Failed to revert undeleted: " + localPath.getPresentableUrl());
             }
           });
@@ -267,12 +267,24 @@ public class TFSFileListener extends VcsVFSListener {
   protected void performAdding(final Collection<VirtualFile> addedFiles, final Map<VirtualFile, VirtualFile> copyFromMap) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-          Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
-          errors.addAll(schedulingErrors);
+      final List<FilePath> orphans =
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
+          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
+            errors.addAll(schedulingErrors);
+          }
+        });
+
+      if (!orphans.isEmpty()) {
+        StringBuilder s = new StringBuilder("No Team Foundation Server mapping found for the following items: ");
+        for (FilePath orpan : orphans) {
+          if (s.length() > 0) {
+            s.append("\n");
+          }
+          s.append(orpan.getPresentableUrl()).append(";");
         }
-      });
+        errors.add(new VcsException(s.toString()));
+      }
     }
     catch (TfsException e) {
       errors.add(new VcsException(e));
