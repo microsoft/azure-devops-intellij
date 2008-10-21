@@ -320,12 +320,23 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     // TODO: schedule parent folders?
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-          Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
-          exceptions.addAll(schedulingErrors);
+      final List<FilePath> orphans =
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
+            exceptions.addAll(schedulingErrors);
+          }
+        });
+      if (orphans.isEmpty()) {
+        StringBuilder s = new StringBuilder("No Team Foundation Server mapping found for the following items:");
+        for (FilePath orpan : orphans) {
+          if (s.length() > 0) {
+            s.append("\n");
+          }
+          s.append(orpan.getPresentableUrl());
         }
-      });
+        exceptions.add(new VcsException(s.toString()));
+      }
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
