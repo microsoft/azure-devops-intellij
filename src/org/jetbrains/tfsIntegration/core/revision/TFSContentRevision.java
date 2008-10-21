@@ -36,6 +36,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.text.MessageFormat;
 
 public abstract class TFSContentRevision implements ContentRevision {
 
@@ -111,9 +112,9 @@ public abstract class TFSContentRevision implements ContentRevision {
     return new TFSContentRevision(workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
-        return workspace.getServer().getVCS().queryItem(workspace.getName(), workspace.getOwnerName(),
-                                                        VersionControlPath.toTfsRepresentation(localPath),
-                                                        new ChangesetVersionSpec(changeset), DeletedState.Any, true);
+        return workspace.getServer().getVCS()
+          .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toTfsRepresentation(localPath),
+                     new ChangesetVersionSpec(changeset), DeletedState.Any, true);
       }
 
       @NotNull
@@ -149,6 +150,11 @@ public abstract class TFSContentRevision implements ContentRevision {
     Item item = getItem();
     if (item == null) {
       return null;
+    }
+
+    if (item.getType() == ItemType.Folder) {
+      String message = MessageFormat.format("''{0}'' refers to a directory", getFile().getPresentableUrl());
+      throw new OperationFailedException(message);
     }
 
     final String downloadUrl = item.getDurl();
