@@ -101,9 +101,11 @@ public class SelectWorkItemsForm {
       myWorkItemsTable.getColumnModel().getColumn(i).setPreferredWidth(WorkItemsTableModel.Column.values()[i].getWidth());
     }
 
-    final JComboBox actionCombo =
-      new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
+    final JComboBox actionCombo = new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate})
+      ;
 
+    myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.Checkbox.ordinal())
+      .setCellRenderer(new NoBackgroundBooleanTableCellRenderer());
     myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.CheckinAction.ordinal())
       .setCellEditor(new DefaultCellEditor(actionCombo) {
         @Nullable

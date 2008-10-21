@@ -21,12 +21,16 @@ import com.intellij.ui.DocumentAdapter;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelItemSpecWithItems;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelModel;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelItemSpec;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -96,6 +100,23 @@ public class ApplyLabelForm {
         updateButtons();
       }
     });
+
+    myTable.getColumnModel().getColumn(LabelItemsTableModel.Column.Item.ordinal()).setCellRenderer(new DefaultTableCellRenderer() {
+      @Override
+      public Component getTableCellRendererComponent(final JTable table,
+                                                     final Object value,
+                                                     final boolean isSelected,
+                                                     final boolean hasFocus,
+                                                     final int row,
+                                                     final int column) {
+        final Item item = (Item)value;
+        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        setIcon(item.getType() == ItemType.Folder ? UiConstants.ICON_FOLDER : UiConstants.ICON_FILE);
+        setValue(item.getItem());
+        return this;
+      }
+    });
+
   }
 
   private void removeItems() {

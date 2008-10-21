@@ -17,9 +17,9 @@
 package org.jetbrains.tfsIntegration.core.tfs.labels;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelItemSpec;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 
 import java.util.*;
 
@@ -100,7 +100,7 @@ public class LabelModel {
 
   private static final Comparator<ItemAndVersion> ITEM_AND_VERSION_PARENT_FIRST = new Comparator<ItemAndVersion>() {
     public int compare(final ItemAndVersion o1, final ItemAndVersion o2) {
-      return VersionControlPath.compareParentToChild(o1.getServerPath(), o2.getServerPath());
+      return VersionControlPath.compareParentToChild(o1.getServerPath(), o1.isDirectory(), o2.getServerPath(), o2.isDirectory());
     }
   };
 

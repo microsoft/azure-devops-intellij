@@ -45,10 +45,59 @@ public class VersionControlPath {
     return parent.equals(getCommonAncestor(parent, child));
   }
 
+  /**
+   * Not to be used for UI because files and subfolders at one level are compared lexicographically and may be mixed.
+   *
+   * @see #compareParentToChild(String, boolean, String, boolean)
+   */
   public static int compareParentToChild(String path1, String path2) {
     return path1.compareTo(path2);
   }
 
+  /**
+   * At one level files are less than subfolders regardless of their names.
+   */
+  public static int compareParentToChild(String path1, boolean isDirectory1, String path2, boolean isDrectory2) {
+    String[] pathComponents1 = getPathComponents(path1);
+    String[] pathComponents2 = getPathComponents(path2);
+
+    final int minLength = Math.min(pathComponents1.length, pathComponents2.length);
+
+    // do not compare last level
+    for (int i = 0; i < minLength - 1; i++) {
+      String s1 = pathComponents1[i];
+      String s2 = pathComponents2[i];
+      if (!s1.equals(s2)) {
+        return s1.compareTo(s2);
+      }
+    }
+
+    // compare last level
+    if (pathComponents1.length == pathComponents2.length) {
+      if (isDirectory1 == isDrectory2) {
+        return pathComponents1[pathComponents1.length - 1].compareTo(pathComponents2[pathComponents2.length - 1]);
+      }
+      else {
+        return isDirectory1 ? 1 : -1;
+      }
+    }
+    else {
+      if (pathComponents1.length == minLength && !isDirectory1) {
+        return -1;
+      }
+      else if (pathComponents2.length == minLength && !isDrectory2) {
+        return 1;
+      }
+      else {
+        if (pathComponents1[minLength - 1].equals(pathComponents2[minLength - 1])) {
+          return pathComponents1.length - pathComponents2.length;
+        }
+        else {
+          return pathComponents1[minLength - 1].compareTo(pathComponents2[minLength - 1]);
+        }
+      }
+    }
+  }
 
   public static String getCommonAncestor(final String path1, final String path2) {
     String[] components1 = getPathComponents(path1);

@@ -41,9 +41,6 @@ import java.util.List;
 
 public class ManageWorkspacesForm {
   public interface Listener {
-    /**
-     * @param selection null or instance of WorkspaceInfo or ServerInfo
-     */
     void selectionChanged();
   }
 
@@ -51,7 +48,12 @@ public class ManageWorkspacesForm {
     public String getPresentableString(final Object value) {
       if (value instanceof ServerInfo) {
         final ServerInfo server = (ServerInfo)value;
-        return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+        if (server.getQualifiedUsername() != null) {
+          return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+        }
+        else {
+          return server.getUri().toString();
+        }
       }
       else if (value instanceof WorkspaceInfo) {
         return ((WorkspaceInfo)value).getName();
@@ -283,7 +285,7 @@ public class ManageWorkspacesForm {
         updateControls(null);
       }
       catch (TfsException ex) {
-        // skip 
+        // skip
       }
       return;
     }

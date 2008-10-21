@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.labels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 public class ItemAndVersion {
 
@@ -39,7 +40,11 @@ public class ItemAndVersion {
   }
 
   public String getServerPath() {
-    return getItem().getItem();
+    return myItem.getItem();
+  }
+
+  public boolean isDirectory() {
+    return myItem.getType() == ItemType.Folder;
   }
 
 }

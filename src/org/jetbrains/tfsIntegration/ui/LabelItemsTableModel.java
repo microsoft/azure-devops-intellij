@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.labels.ItemAndVersion;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Collections;
@@ -28,8 +29,8 @@ public class LabelItemsTableModel extends AbstractTableModel {
 
   enum Column {
     Item("Item", 300) {
-      public String getValue(final ItemAndVersion itemAndVersion) {
-        return itemAndVersion.getServerPath();
+      public Item getValue(final ItemAndVersion itemAndVersion) {
+        return itemAndVersion.getItem();
       }},
     Version("Version", 100) {
       public String getValue(final ItemAndVersion itemAndVersion) {
@@ -53,7 +54,7 @@ public class LabelItemsTableModel extends AbstractTableModel {
       return myWidth;
     }
 
-    public abstract String getValue(final ItemAndVersion itemAndVersion);
+    public abstract Object getValue(final ItemAndVersion itemAndVersion);
   }
 
   private List<ItemAndVersion> myContent;

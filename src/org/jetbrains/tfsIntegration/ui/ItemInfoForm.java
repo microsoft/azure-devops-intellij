@@ -74,7 +74,8 @@ public class ItemInfoForm {
     myEncodingLabel.setText(item.getEnc() != Integer.MIN_VALUE ? String.valueOf(item.getEnc()) : "(not applicable)");
     myPendingChangesLabel.setText(item.getChg() != null ? item.getChg() : "(none)");
     myDeletionIdLabel.setText(item.getDid() != Integer.MIN_VALUE ? String.valueOf(item.getDid()) : "(not deleted)");
-    myLockLabel.setText(item.getLock() != null ? item.getLock().getValue() : "None");
+    myLockLabel.setText(
+      item.getLock() != null ? MessageFormat.format("Locked for {0} by {1}", item.getLock().getValue(), item.getLowner()) : "(none)");
     myWorkspaceLabel.setText(MessageFormat.format("{0} on server {1}", workspace.getName(), workspace.getServer().getUri()));
 
     if (myBranches.size() < 2) {
