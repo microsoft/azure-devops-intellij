@@ -210,7 +210,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private TestChangeListBuilder getChanges(VirtualFile root) throws VcsException {
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
     TestChangeListBuilder changeListBuilder = new TestChangeListBuilder(mySandboxRoot, myProject);
-    // TODO IEA8
     getVcs().getChangeProvider().getChanges(getDirtyScopeForFile(root), changeListBuilder, new EmptyProgressIndicator(), null);
     return changeListBuilder;
   }

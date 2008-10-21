@@ -61,7 +61,6 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
   @Nullable
   public RepositoryLocation getLocationFor(final FilePath root, final String repositoryPath) {
-    // TODO IDEA8
     return getLocationFor(root);
   }
 
@@ -205,7 +204,6 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
                                           @Nullable final VcsRevisionNumber localRevision,
                                           final VcsRevisionNumber changeRevision,
                                           final TFSChangeList changeList) {
-    // TODO?
     return localRevision != null && localRevision.compareTo(changeRevision) >= 0;
   }
 
@@ -215,13 +213,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   }
 
   public int getUnlimitedCountValue() {
-    // TODO IDEA8
     return 0;
   }
 
   @Nullable
   public VcsCommittedViewAuxiliary createActions(final DecoratorManager manager, final RepositoryLocation location) {
-    // TODO IDEA8
     return null;
   }
 }

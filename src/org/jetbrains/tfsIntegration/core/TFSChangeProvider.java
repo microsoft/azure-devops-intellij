@@ -54,7 +54,6 @@ public class TFSChangeProvider implements ChangeProvider {
                          final ChangelistBuilder builder,
                          final ProgressIndicator progress,
                          final ChangeListManagerGate addGate) throws VcsException {
-    // TODO IDEA8
     if (myProject.isDisposed()) {
       return;
     }

@@ -117,7 +117,6 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   }
 
   public boolean supportsHistoryForDirectories() {
-    // TODO IDEA8
     return true;
   }
   

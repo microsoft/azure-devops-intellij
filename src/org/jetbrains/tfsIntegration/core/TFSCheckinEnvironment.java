@@ -335,8 +335,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   }
 
   public boolean keepChangeListAfterCommit(final ChangeList changeList) {
-    // TODO IDEA8
-    return true;
+    return false;
   }
 
 }

@@ -142,7 +142,6 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
   }
 
   public boolean validateOptions(final Collection<FilePath> roots) {
-    // TODO IDEA8
     return true;
   }
 }
