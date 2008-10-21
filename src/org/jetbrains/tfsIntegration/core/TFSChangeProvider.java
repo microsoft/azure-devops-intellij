@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -29,6 +30,7 @@ import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.util.List;
+import java.text.MessageFormat;
 
 /**
  * TODO important cases
@@ -78,7 +80,15 @@ public class TFSChangeProvider implements ChangeProvider {
         }
       });
       if (!mappingFound.get()) {
-        throw new VcsException("No Team Foundation Server mapping found");
+        final String message;
+        if (roots.size() > 1) {
+          message = "No Team Foundation Server mapping found";
+        }
+        else {
+          FilePath orphan = roots.iterator().next();
+          message = MessageFormat.format("No Team Foundation Server mapping found for ''{0}''", orphan.getPresentableUrl());
+        }
+        throw new VcsException(message);
       }
     }
     catch (TfsException e) {
