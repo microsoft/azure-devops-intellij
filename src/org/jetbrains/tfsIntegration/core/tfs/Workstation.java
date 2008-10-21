@@ -27,6 +27,7 @@ import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
+import org.jetbrains.tfsIntegration.ui.AuthenticationHelper;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -75,9 +76,20 @@ public class Workstation {
     return null;
   }
 
-  public List<WorkspaceInfo> getAllWorkspacesForCurrentOwnerAndComputer() {
+  private List<WorkspaceInfo> getAllWorkspacesForCurrentOwnerAndComputer(boolean showLoginIfNoCredentials) {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-    for (ServerInfo serverInfo : getServers()) {
+    for (final ServerInfo serverInfo : getServers()) {
+      if (showLoginIfNoCredentials && serverInfo.getQualifiedUsername() == null) {
+        final Ref<Boolean> available = new Ref<Boolean>();
+        TfsFileUtil.executeInEventDispatchThread(new Runnable() {
+          public void run() {
+            available.set(AuthenticationHelper.authenticate(serverInfo.getUri(), false, false) != null);
+          }
+        });
+        if (!available.get()) {
+          continue;
+        }
+      }
       result.addAll(serverInfo.getWorkspacesForCurrentOwnerAndComputer());
     }
     return result;
@@ -229,7 +241,7 @@ public class Workstation {
   public Collection<WorkspaceInfo> findWorkspacesCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
     // try cached working folders first
     Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer()) {
+    for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer(false)) {
       if (workspace.hasMappingCached(localPath, considerChildMappings)) {
         result.add(workspace);
         if (!considerChildMappings) {
@@ -254,11 +266,15 @@ public class Workstation {
       return resultCached;
     }
     else {
-      // TODO: if server is unavailable, don't try every workspace on it
       // TODO: exclude servers that are unavailable during current application run
       // not found in cached info, but workspaces may be out of date -> try to search all the workspaces reloaded
       Collection<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-      for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer()) {
+      Collection<ServerInfo> serversToSkip = new ArrayList<ServerInfo>();
+      for (WorkspaceInfo workspace : getAllWorkspacesForCurrentOwnerAndComputer(true)) {
+        if (serversToSkip.contains(workspace.getServer())) {
+          // if server is somehow unavailable, don't try every workspace on it
+          continue;
+        }
         try {
           if (workspace.hasMapping(localPath, considerChildMappings)) {
             result.add(workspace);
@@ -270,6 +286,7 @@ public class Workstation {
         }
         catch (TfsException e) {
           // if some server failed, try next one, otherwise user will get strange error messages
+          serversToSkip.add(workspace.getServer());
         }
       }
       return result;
