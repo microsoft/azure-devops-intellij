@@ -21,16 +21,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
-import com.intellij.openapi.vcs.changes.ChangeProvider;
-import com.intellij.openapi.vcs.changes.ChangelistBuilder;
-import com.intellij.openapi.vcs.changes.VcsDirtyScope;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.util.List;
 import java.text.MessageFormat;
+import java.util.List;
 
 /**
  * TODO important cases
@@ -68,7 +65,14 @@ public class TFSChangeProvider implements ChangeProvider {
     // process only roots, filter out child items since requests are recursive anyway
     RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
     roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
-    roots.addAll(dirtyScope.getDirtyFiles());
+
+    final ChangeListManager changeListManager = ChangeListManager.getInstance(myProject);
+    for (FilePath dirtyFile : dirtyScope.getDirtyFiles()) {
+      // workaround for IDEADEV-31511 and IDEADEV-31721
+      if (dirtyFile.getVirtualFile() == null || !changeListManager.isIgnoredFile(dirtyFile.getVirtualFile())) {
+        roots.add(dirtyFile);
+      }
+    }
 
     try {
       final Ref<Boolean> mappingFound = Ref.create(false);
@@ -79,7 +83,7 @@ public class TFSChangeProvider implements ChangeProvider {
           mappingFound.set(true);
         }
       });
-      if (!mappingFound.get()) {
+      if (!mappingFound.get() && !roots.isEmpty()) {
         final String message;
         if (roots.size() > 1) {
           message = "No Team Foundation Server mapping found";
