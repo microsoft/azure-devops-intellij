@@ -24,11 +24,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.ResourceBundle;
 
-/**
- * Created by IntelliJ IDEA.
- * Date: 27.01.2008
- * Time: 18:15:25
- */
 public class TFSBundle {
 
   private static Reference<ResourceBundle> ourBundle;

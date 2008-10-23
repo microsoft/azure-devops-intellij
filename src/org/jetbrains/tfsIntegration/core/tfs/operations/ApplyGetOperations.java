@@ -159,8 +159,7 @@ public class ApplyGetOperations {
         }
       }
 
-      myWorkspace.getServer().getVCS()
-        .updateLocalVersions(myWorkspace.getName(), myWorkspace.getOwnerName(), myUpdateLocalVersions);
+      myWorkspace.getServer().getVCS().updateLocalVersions(myWorkspace.getName(), myWorkspace.getOwnerName(), myUpdateLocalVersions);
     }
     catch (TfsException e) {
       myErrors.add(new VcsException(e));
@@ -507,7 +506,11 @@ public class ApplyGetOperations {
           VersionControlServer.downloadItem(myWorkspace.getServer(), operation.getDurl(), outputStream);
         }
       });
-      target.setReadOnly();
+      if (!target.setReadOnly()) {
+        String errorMessage = MessageFormat.format("Failed to write to file ''{0}''", target.getPath());
+        myErrors.add(new VcsException(errorMessage));
+        return false;
+      }
       return true;
     }
     catch (IOException e) {
@@ -529,8 +532,8 @@ public class ApplyGetOperations {
     }
     else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
       String itemName = sourceNotTarget ? operation.getSlocal() : operation.getTlocal();
-      final String message =
-        MessageFormat.format("Local conflict detected. Override local item?\n {0}", itemName); // TODO: more detailed message needed
+      final String message = MessageFormat.format("Local conflict detected. Override local item?\n {0}", itemName)
+        ; // TODO: more detailed message needed
       final String title = "Modify files";
       final Ref<Integer> result = new Ref<Integer>();
       TfsFileUtil.executeInEventDispatchThread(new Runnable() {
@@ -553,10 +556,10 @@ public class ApplyGetOperations {
 
   private void reportLocalConflict(final GetOperation operation, boolean sourceNotTarget) throws TfsException {
     int reason = sourceNotTarget ? VersionControlServer.LOCAL_CONFLICT_REASON_SOURCE : VersionControlServer.LOCAL_CONFLICT_REASON_TARGET;
-    myWorkspace.getServer().getVCS().addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(),
-                                                      operation.getSver(),
-                                                      operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0,
-                                                      operation.getSlocal(), operation.getTlocal(), reason);
+    myWorkspace.getServer().getVCS()
+      .addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(), operation.getSver(),
+                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0, operation.getSlocal(), operation.getTlocal(),
+                        reason);
   }
 
   private void updateLocalVersion(GetOperation operation) {
