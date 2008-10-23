@@ -328,14 +328,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           }
         });
       if (!orphans.isEmpty()) {
-        StringBuilder s = new StringBuilder("No Team Foundation Server mapping found for the following items: ");
+        StringBuilder s = new StringBuilder();
         for (FilePath orpan : orphans) {
           if (s.length() > 0) {
             s.append("\n");
           }
           s.append(orpan.getPresentableUrl()).append(";");
         }
-        exceptions.add(new VcsException(s.toString()));
+        exceptions.add(new VcsException("No Team Foundation Server mapping found for the following items: " + s.toString()));
       }
     }
     catch (TfsException e) {
