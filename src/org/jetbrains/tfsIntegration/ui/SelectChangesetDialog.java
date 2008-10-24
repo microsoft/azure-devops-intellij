@@ -54,6 +54,10 @@ public class SelectChangesetDialog extends DialogWrapper {
       public void selectionChanged(final Integer changeset) {
         setOKActionEnabled(changeset != null);
       }
+
+      public void selected(final Integer changeset) {
+        close(OK_EXIT_CODE);
+      }
     });
 
     return myForm.getContentPane();
@@ -61,6 +65,6 @@ public class SelectChangesetDialog extends DialogWrapper {
 
   @Nullable
   public Integer getChangeset() {
-    return myForm.getChangeset();
+    return myForm.getSelectedChangeset();
   }
 }

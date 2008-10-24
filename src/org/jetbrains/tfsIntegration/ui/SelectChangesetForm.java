@@ -32,16 +32,24 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Date;
 
 public class SelectChangesetForm {
 
+  private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
+
   interface Listener {
     void selectionChanged(Integer changeset);
+
+    void selected(Integer changeset);
   }
 
   private JTable myChangesetsTable;
@@ -98,6 +106,17 @@ public class SelectChangesetForm {
       }
     });
 
+    myChangesetsTable.addMouseListener(new MouseAdapter() {
+      public void mouseClicked(final MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          final Integer changeset = getSelectedChangeset();
+          if (changeset != null) {
+            fireSelected(changeset);
+          }
+        }
+      }
+    });
+
     myAllChangesRadioButton.setSelected(true);
     updateControls();
   }
@@ -125,8 +144,9 @@ public class SelectChangesetForm {
       }
 
       getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      List<Changeset> changesets = myWorkspace.getServer().getVCS()
-        .queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo);
+      List<Changeset> changesets =
+        myWorkspace.getServer().getVCS().queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo)
+        ;
 
       if (changesets.isEmpty()) {
         Messages.showInfoMessage(panel, "No matching changesets found", "Find Changeset");
@@ -164,6 +184,11 @@ public class SelectChangesetForm {
       myFromDateField.setText(null);
       myToDateField.setText(null);
     }
+    else {
+      String currentDate = DATE_FORMAT.format(new Date());
+      myFromDateField.setText(currentDate);
+      myToDateField.setText(currentDate);
+    }
   }
 
   public JComponent getContentPane() {
@@ -171,7 +196,7 @@ public class SelectChangesetForm {
   }
 
   @Nullable
-  public Integer getChangeset() {
+  public Integer getSelectedChangeset() {
     if (myChangesetsTable.getSelectedRowCount() == 1) {
       return myChangesetsTableModel.getChangesets().get(myChangesetsTable.getSelectedRow()).getCset();
     }
@@ -190,11 +215,17 @@ public class SelectChangesetForm {
 
   private void fireSelectionChanged() {
     Listener[] listenersArray = myListeners.toArray(new Listener[myListeners.size()]);
-    Integer changeset = getChangeset();
+    Integer changeset = getSelectedChangeset();
     for (Listener listener : listenersArray) {
       listener.selectionChanged(changeset);
     }
   }
 
+  private void fireSelected(Integer changeset) {
+    Listener[] listenersArray = myListeners.toArray(new Listener[myListeners.size()]);
+    for (Listener listener : listenersArray) {
+      listener.selected(changeset);
+    }
+  }
 
 }
