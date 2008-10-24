@@ -181,6 +181,8 @@ public class ManageWorkspacesForm {
         deleteWorkspace(getSelectedWorkspace());
       }
     });
+
+    updateButtons();
   }
 
   private void createUIComponents() {
