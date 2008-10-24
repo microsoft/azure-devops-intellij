@@ -74,6 +74,10 @@ public class TFSChangeProvider implements ChangeProvider {
       }
     }
 
+    if (roots.isEmpty()) {
+      return;
+    }
+    
     try {
       final Ref<Boolean> mappingFound = Ref.create(false);
       // ingore orphan roots here
@@ -83,7 +87,7 @@ public class TFSChangeProvider implements ChangeProvider {
           mappingFound.set(true);
         }
       });
-      if (!mappingFound.get() && !roots.isEmpty()) {
+      if (!mappingFound.get()) {
         final String message;
         if (roots.size() > 1) {
           message = "No Team Foundation Server mapping found";
