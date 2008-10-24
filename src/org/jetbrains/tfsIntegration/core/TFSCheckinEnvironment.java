@@ -333,7 +333,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           if (s.length() > 0) {
             s.append("\n");
           }
-          s.append(orpan.getPresentableUrl()).append(";");
+          s.append(orpan.getPresentableUrl());
         }
         exceptions.add(new VcsException("No Team Foundation Server mapping found for the following items: " + s.toString()));
       }
