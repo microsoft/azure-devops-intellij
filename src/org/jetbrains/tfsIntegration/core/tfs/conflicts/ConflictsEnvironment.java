@@ -38,14 +38,13 @@ public class ConflictsEnvironment {
     ourContentMerger = contentMerger;
   }
 
-  public static void setResolveConflictsHandler(ConflictsHandler conflictsHandler) {
+  public static void setConflictsHandler(ConflictsHandler conflictsHandler) {
     ourConflictsHandler = conflictsHandler;
   }
 
-  public static ConflictsHandler getResolveConflictsHandler() {
+  public static ConflictsHandler getConflictsHandler() {
     return ourConflictsHandler;
   }
-
 
 
 }

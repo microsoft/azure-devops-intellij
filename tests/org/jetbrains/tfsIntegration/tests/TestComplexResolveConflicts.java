@@ -116,7 +116,7 @@ public class TestComplexResolveConflicts extends TFSTestCase {
   //  prepareRevisions();
   //  renameFolder();
   //
-  //  //ConflictsEnvironment.setResolveConflictsHandler(new AcceptYoursConflictsHandler(1));
+  //  //ConflictsEnvironment.setConflictsHandler(new AcceptYoursConflictsHandler(1));
   //  updateTo(4);
   //  FilePath folderFrom = getChildPath(mySandboxRoot, FOLDER_NAME_2);
   //  FilePath folderTo = getChildPath(mySandboxRoot, FOLDER_NAME_3);

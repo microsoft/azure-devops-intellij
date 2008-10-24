@@ -85,13 +85,16 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             Collection<Conflict> conflicts =
               workspace.getServer().getVCS().queryConflicts(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.Full);
 
-            workspace2Conflicts.put(workspace, ResolveConflictHelper.getUnresolvedConflicts(conflicts));
+            final Collection<Conflict> unresolvedConflicts = ResolveConflictHelper.getUnresolvedConflicts(conflicts);
+            if (!unresolvedConflicts.isEmpty()) {
+              workspace2Conflicts.put(workspace, unresolvedConflicts);
+            }
           }
         });
 
       if (!workspace2Conflicts.isEmpty()) {
         ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace2Conflicts, updatedFiles);
-        ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+        ConflictsEnvironment.getConflictsHandler().resolveConflicts(resolveConflictHelper);
       }
 
       for (FilePath orphanPath : orphanPaths) {

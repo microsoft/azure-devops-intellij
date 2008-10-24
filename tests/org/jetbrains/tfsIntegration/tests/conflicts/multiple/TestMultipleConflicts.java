@@ -83,7 +83,7 @@ abstract class TestMultipleConflicts extends TFSTestCase {
       }
 
       final ConflictsHandlerImpl conflictsHandler = new ConflictsHandlerImpl(itemId2Resolution);
-      ConflictsEnvironment.setResolveConflictsHandler(conflictsHandler);
+      ConflictsEnvironment.setConflictsHandler(conflictsHandler);
       ConflictsEnvironment.setNameMerger(new NameMergerImpl(id2item));
       ConflictsEnvironment.setContentMerger(new ContentMergerImpl(id2item));
 
@@ -101,7 +101,7 @@ abstract class TestMultipleConflicts extends TFSTestCase {
       throw new VcsException(e);
     }
     finally {
-      ConflictsEnvironment.setResolveConflictsHandler(null);
+      ConflictsEnvironment.setConflictsHandler(null);
       ConflictsEnvironment.setNameMerger(null);
       ConflictsEnvironment.setContentMerger(null);
     }

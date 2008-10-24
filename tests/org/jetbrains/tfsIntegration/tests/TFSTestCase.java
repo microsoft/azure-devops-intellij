@@ -41,6 +41,7 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.credentials.Credentials;
 import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
@@ -68,9 +69,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_RTM;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
 
-  private static final String SERVER = "http://wmw-2003-01:8080/";
+  private static final String SERVER = "http://tfs-2005-01:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "tfssetup";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -122,6 +123,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
     doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
     doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
+
+    ConflictsEnvironment.setConflictsHandler(null);
+    ConflictsEnvironment.setContentMerger(null);
+    ConflictsEnvironment.setNameMerger(null);
   }
 
   private void prepareServer() throws URISyntaxException, TfsException {
@@ -148,6 +153,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   @After
   public void tearDown() throws Exception {
+    ConflictsEnvironment.setConflictsHandler(null);
+    ConflictsEnvironment.setContentMerger(null);
+    ConflictsEnvironment.setNameMerger(null);
+
     try {
       removeWorkspace(myTestWorkspace);
     }

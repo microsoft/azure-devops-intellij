@@ -87,7 +87,7 @@ public class MergeBranchAction extends SingleItemAction {
     if (!unresolvedConflicts.isEmpty()) {
       ResolveConflictHelper resolveConflictHelper =
         new ResolveConflictHelper(project, Collections.singletonMap(workspace, unresolvedConflicts), null);
-      ConflictsEnvironment.getResolveConflictsHandler().resolveConflicts(resolveConflictHelper);
+      ConflictsEnvironment.getConflictsHandler().resolveConflicts(resolveConflictHelper);
     }
 
     if (mergeResponse.getFailures().getFailure() != null) {

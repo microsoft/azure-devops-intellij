@@ -82,7 +82,7 @@ abstract class TestSingleConflict extends TFSTestCase {
   protected abstract String mergeName() throws TfsException;
 
   private void doTest(final Resolution resolution) throws VcsException, IOException {
-    ConflictsEnvironment.setResolveConflictsHandler(new ConflictsHandlerImpl(resolution));
+    ConflictsEnvironment.setConflictsHandler(new ConflictsHandlerImpl(resolution));
     ConflictsEnvironment.setNameMerger(new NameMergerImpl());
     ConflictsEnvironment.setContentMerger(new ContentMergerImpl());
 
@@ -116,7 +116,7 @@ abstract class TestSingleConflict extends TFSTestCase {
 
     }
     finally {
-      ConflictsEnvironment.setResolveConflictsHandler(null);
+      ConflictsEnvironment.setConflictsHandler(null);
       ConflictsEnvironment.setNameMerger(null);
       ConflictsEnvironment.setContentMerger(null);
     }
