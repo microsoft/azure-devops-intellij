@@ -208,21 +208,23 @@ public class WebServiceHelper {
 
         Runnable runnable = new Runnable() {
           public void run() {
-            // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
-            Credentials actualCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
-            //noinspection ConstantConditions
-            if (actualCredentials.equalsTo(originalStoredCredentials)) {
-              final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
-              d.show();
-              if (d.isOK()) {
-                dialogCredentials.set(d.getCredentials());
+            synchronized (getLock(serverUri)) {
+              // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
+              Credentials actualCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+              //noinspection ConstantConditions
+              if (actualCredentials.equalsTo(originalStoredCredentials) || actualCredentials.getPassword() == null) {
+                final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
+                d.show();
+                if (d.isOK()) {
+                  dialogCredentials.set(d.getCredentials());
+                }
+                else {
+                  dialogCredentials.set(null);
+                }
               }
               else {
-                dialogCredentials.set(null);
+                dialogCredentials.set(actualCredentials);
               }
-            }
-            else {
-              dialogCredentials.set(actualCredentials);
             }
           }
         };
@@ -237,7 +239,7 @@ public class WebServiceHelper {
         }
       }
 
-      synchronized (WebServiceHelper.class) {
+      synchronized (getLock(serverUri)) {
         try {
           final T result;
           TFSVcs.assertTrue(credentials.getPassword() != null);
@@ -263,6 +265,9 @@ public class WebServiceHelper {
     }
   }
 
+  private static Object getLock(URI serverUri) {
+    return serverUri.toString().intern();
+  }
 
   public static ConfigurationContext getStubConfigurationContext() throws Exception {
     ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
