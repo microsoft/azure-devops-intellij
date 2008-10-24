@@ -71,7 +71,7 @@ public class LoginDialog extends DialogWrapper {
       if (!uriText.endsWith("/")) {
         uriText = uriText.concat("/");
       }
-      return new URI(uriText);
+      return new URI(uriText).normalize();
     }
     catch (URISyntaxException e) {
       LOG.info(e);
