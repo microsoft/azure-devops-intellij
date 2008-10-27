@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.diff.DiffProvider;
@@ -35,7 +36,14 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class TFSVcs extends AbstractVcs {
+
+  public interface RevisionChangedListener {
+    void revisionChanged();
+  }
 
   @NonNls public static final String TFS_NAME = "TFS";
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
@@ -48,6 +56,9 @@ public class TFSVcs extends AbstractVcs {
   private VcsHistoryProvider myTFSHistoryProvider;
   private DiffProvider myDiffProvider;
   private TFSCheckinEnvironment myTFSCheckinEnvironment;
+  private TFSUpdateEnvironment myTFSUpdateEnvironment;
+  private TFSAnnotationProvider myTFSAnnotationProvider;
+  private List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
   public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
     super(project);
@@ -120,7 +131,7 @@ public class TFSVcs extends AbstractVcs {
 
   public CheckinEnvironment getCheckinEnvironment() {
     if (myTFSCheckinEnvironment == null) {
-      myTFSCheckinEnvironment = new TFSCheckinEnvironment(myProject);
+      myTFSCheckinEnvironment = new TFSCheckinEnvironment(this);
     }
     return myTFSCheckinEnvironment;
   }
@@ -142,7 +153,17 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public UpdateEnvironment getUpdateEnvironment() {
-    return new TFSUpdateEnvironment(myProject);
+    if (myTFSUpdateEnvironment == null) {
+      myTFSUpdateEnvironment = new TFSUpdateEnvironment(this);
+    }
+    return myTFSUpdateEnvironment;
+  }
+
+  public AnnotationProvider getAnnotationProvider() {
+    if (myTFSAnnotationProvider == null) {
+      myTFSAnnotationProvider = new TFSAnnotationProvider(this);
+    }
+    return myTFSAnnotationProvider;
   }
 
   public static void assertTrue(boolean condition, @NonNls String message) {
@@ -218,5 +239,21 @@ public class TFSVcs extends AbstractVcs {
   @Nullable
   public String getRevisionPattern() {
     return ourIntegerPattern;
+  }
+
+  public void fireRevisionChanged() {
+    final RevisionChangedListener[] listeners =
+      myRevisionChangedListeners.toArray(new RevisionChangedListener[myRevisionChangedListeners.size()]);
+    for (RevisionChangedListener listener : listeners) {
+      listener.revisionChanged();
+    }
+  }
+
+  public void addRevisionChangedListener(RevisionChangedListener listener) {
+    myRevisionChangedListeners.add(listener);
+  }
+
+  public void removeRevisionChangedListener(RevisionChangedListener listener) {
+    myRevisionChangedListeners.remove(listener);
   }
 }

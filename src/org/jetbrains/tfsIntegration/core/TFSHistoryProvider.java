@@ -25,12 +25,12 @@ import com.intellij.util.ui.ColumnInfo;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
+import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -80,7 +80,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
         return null;
       }
 
-      final List<VcsFileRevision> revisions = getRevisions(new ItemPath(filePath, serverItem.getSitem()), workspaces.iterator().next());
+      final List<VcsFileRevision> revisions =
+        getRevisions(serverItem.getSitem(), filePath.isDirectory(), workspaces.iterator().next(), LatestVersionSpec.INSTANCE);
       if (revisions.isEmpty()) {
         return null;
       }
@@ -96,10 +97,12 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     }
   }
 
-  private static List<VcsFileRevision> getRevisions(final ItemPath path, WorkspaceInfo workspace) throws TfsException {
-    List<Changeset> changesets = workspace.getServer().getVCS().queryHistory(workspace, path.getServerPath(),
-                                                                             path.getLocalPath().isDirectory(), null,
-                                                                             new ChangesetVersionSpec(1), LatestVersionSpec.INSTANCE);
+  public static List<VcsFileRevision> getRevisions(final String serverPath,
+                                                   final boolean isDirectory,
+                                                   WorkspaceInfo workspace,
+                                                   VersionSpecBase versionTo) throws TfsException {
+    List<Changeset> changesets =
+      workspace.getServer().getVCS().queryHistory(workspace, serverPath, isDirectory, null, new ChangesetVersionSpec(1), versionTo);
 
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {
@@ -119,5 +122,5 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   public boolean supportsHistoryForDirectories() {
     return true;
   }
-  
+
 }

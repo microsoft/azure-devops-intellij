@@ -16,15 +16,14 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.ChangeList;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -52,11 +51,11 @@ import java.util.*;
 import java.util.List;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
-  private @NotNull final Project myProject;
+  private final @NotNull TFSVcs myTFSVcs;
   private Map<ServerInfo, WorkItemsDialogState> myWorkItems = new HashMap<ServerInfo, WorkItemsDialogState>();
 
-  public TFSCheckinEnvironment(@NotNull final Project project) {
-    myProject = project;
+  public TFSCheckinEnvironment(final @NotNull TFSVcs tfsVcs) {
+    myTFSVcs = tfsVcs;
   }
 
   @Nullable
@@ -92,7 +91,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             dialogState.put(e.getKey(), e.getValue().createCopy());
           }
 
-          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myProject, dialogState);
+          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myTFSVcs.getProject(), dialogState);
           d.show();
           if (d.isOK()) {
             myWorkItems = dialogState;
@@ -100,7 +99,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           }
         }
         catch (TfsException e) {
-          Messages.showErrorDialog(myProject, e.getMessage(), "Checkin");
+          Messages.showErrorDialog(myTFSVcs.getProject(), e.getMessage(), "Checkin");
         }
       }
     });
@@ -263,7 +262,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               invalidateRoots.add(path);
               if (changeType.contains(ChangeType.Add)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
-                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor(path);
+                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myTFSVcs.getProject()).getVcsRootFor(path);
                 if (vcsRoot != null) {
                   final FilePath vcsRootPath = TfsFileUtil.getFilePath(vcsRoot);
                   for (FilePath parent = path.getParentPath();
@@ -281,7 +280,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
             }
 
-            TfsFileUtil.invalidate(myProject, invalidateRoots, invalidateFiles);
+            TfsFileUtil.invalidate(myTFSVcs.getProject(), invalidateRoots, invalidateFiles);
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown
@@ -294,6 +293,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       //noinspection ThrowableInstanceNeverThrown
       errors.add(new VcsException(e));
     }
+    myTFSVcs.fireRevisionChanged();
     return errors;
   }
 
@@ -303,7 +303,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     try {
       WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
+          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myTFSVcs.getProject(), workspace, paths);
           errors.addAll(schedulingErrors);
         }
       });
@@ -323,7 +323,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       final List<FilePath> orphans =
         WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
+            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myTFSVcs.getProject(), workspace, paths);
             exceptions.addAll(schedulingErrors);
           }
         });

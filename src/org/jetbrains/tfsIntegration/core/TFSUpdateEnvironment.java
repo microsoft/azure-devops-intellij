@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -40,10 +39,10 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionTyp
 import java.util.*;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
-  private final Project myProject;
+  private final @NotNull TFSVcs myTFSVcs;
 
-  TFSUpdateEnvironment(final Project project) {
-    myProject = project;
+  TFSUpdateEnvironment(final @NotNull TFSVcs tfsVcs) {
+    myTFSVcs = tfsVcs;
   }
 
   public void fillGroups(final UpdatedFiles updatedFiles) {
@@ -63,7 +62,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
-            TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myProject);
+            TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myTFSVcs.getProject());
             if (configuration != null) {
               version = configuration.getUpdateWorkspaceInfo(workspace).getVersion();
               recursionType = configuration.UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
@@ -79,7 +78,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
             // execute GetOperation-s, conflicting ones will be skipped
             final Collection<VcsException> applyErrors = ApplyGetOperations
-              .execute(myProject, workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
+              .execute(myTFSVcs.getProject(), workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW)
+              ;
             exceptions.addAll(applyErrors);
 
             Collection<Conflict> conflicts =
@@ -93,7 +93,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
         });
 
       if (!workspace2Conflicts.isEmpty()) {
-        ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myProject, workspace2Conflicts, updatedFiles);
+        ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myTFSVcs.getProject(), workspace2Conflicts, updatedFiles);
         ConflictsEnvironment.getConflictsHandler().resolveConflicts(resolveConflictHelper);
       }
 
@@ -107,7 +107,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     }
 
     // TODO content roots can be renamed while executing
-    TfsFileUtil.refreshAndInvalidate(myProject, contentRoots, false);
+    TfsFileUtil.refreshAndInvalidate(myTFSVcs.getProject(), contentRoots, false);
 
     return new UpdateSession() {
       @NotNull
@@ -116,6 +116,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       }
 
       public void onRefreshFilesCompleted() {
+        myTFSVcs.fireRevisionChanged();
       }
 
       public boolean isCanceled() {
@@ -141,7 +142,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       return null;
     }
 
-    return mappingFound.get() ? new UpdateConfigurable(myProject, files) : null;
+    return mappingFound.get() ? new UpdateConfigurable(myTFSVcs.getProject(), files) : null;
   }
 
   public boolean validateOptions(final Collection<FilePath> roots) {

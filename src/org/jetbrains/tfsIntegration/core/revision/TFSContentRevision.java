@@ -51,7 +51,7 @@ public abstract class TFSContentRevision implements ContentRevision {
   @Nullable
   protected abstract Item getItem() throws TfsException;
 
-  public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace, final int itemId, final int changeset)
+  public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace, final int changeset, final int itemId)
     throws TfsException {
     final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
 
