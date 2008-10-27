@@ -215,6 +215,15 @@ public class ResolveConflictHelper {
         throw TfsUtil.collectExceptions(applyErrors);
       }
     }
+
+    if (response.getResolveResult().getGetOperation() == null &&
+        response.getUndoOperations().getGetOperation() == null &&
+        newLocalPath != null) {
+      // no actions will be executed so fill UpdatedFiles explicitly
+      if (myUpdatedFiles != null) {
+        myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(newLocalPath);
+      }
+    }
     myConflict2Workspace.remove(conflict);
   }
 
