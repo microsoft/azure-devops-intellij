@@ -30,6 +30,7 @@ import java.util.*;
 
 public class TfsUtil {
 
+  // TODO refactor (workspace is searched for the second time)
   @Nullable
   public static ExtendedItem getExtendedItem(final FilePath localPath) throws TfsException {
     Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);

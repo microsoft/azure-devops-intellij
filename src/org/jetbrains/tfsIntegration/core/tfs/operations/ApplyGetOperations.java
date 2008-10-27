@@ -85,6 +85,8 @@ public class ApplyGetOperations {
     myProgressIndicator = progressIndicator;
     myUpdatedFiles = updatedFiles;
     myDownloadMode = downloadMode;
+
+    TFSProgressUtil.setIndeterminate(myProgressIndicator, true);
   }
 
   public static LocalConflictHandlingType getLocalConflictHandlingType() {

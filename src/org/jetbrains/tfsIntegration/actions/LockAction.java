@@ -55,6 +55,7 @@ public class LockAction extends AnAction {
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       public void run() {
         try {
+          ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
           WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
               mappingFound.set(true);
@@ -100,6 +101,7 @@ public class LockAction extends AnAction {
     String title = d.getLockLevel() == LockLevel.None ? "Unlocking..." : "Locking...";
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       public void run() {
+        ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
         exceptions.addAll(lockOrUnlockItems(selectedItems, d.getLockLevel()));
       }
     }, title, false, project);

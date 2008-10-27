@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class TFSProgressUtil {
 
-  public static void checkCanceled(final @Nullable ProgressIndicator progressIndicator) {
+  public static void checkCanceled(final @Nullable ProgressIndicator progressIndicator) throws ProcessCanceledException {
     if (progressIndicator != null && progressIndicator.isCanceled()) {
       throw new ProcessCanceledException();
     }
@@ -38,4 +38,9 @@ public class TFSProgressUtil {
     }
   }
 
+  public static void setIndeterminate(final @Nullable ProgressIndicator progressIndicator, final boolean indeterminate) {
+    if (progressIndicator != null) {
+      progressIndicator.setIndeterminate(indeterminate);
+    }
+  }
 }
