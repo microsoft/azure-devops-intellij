@@ -83,6 +83,7 @@ public class ResolveConflictHelper {
           throw new VcsException("Unable to get content for item " + localPath);
         }
       }
+
     };
 
     if (isContentConflict(conflict)) {
@@ -196,12 +197,14 @@ public class ResolveConflictHelper {
     ResolveResponse response =
       workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams);
 
+    final UpdatedFiles updatedFiles = resolution != Resolution.AcceptMerge ? myUpdatedFiles : null;
+
     if (response.getResolveResult().getGetOperation() != null) {
       ApplyGetOperations.DownloadMode downloadMode =
         resolution == Resolution.AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.MERGE;
 
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, workspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, myUpdatedFiles, downloadMode);
+        .execute(myProject, workspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, updatedFiles, downloadMode);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }
@@ -209,17 +212,14 @@ public class ResolveConflictHelper {
 
     if (response.getUndoOperations().getGetOperation() != null) {
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, workspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, myUpdatedFiles,
+        .execute(myProject, workspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, updatedFiles,
                  ApplyGetOperations.DownloadMode.FORCE);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }
     }
 
-    if (response.getResolveResult().getGetOperation() == null &&
-        response.getUndoOperations().getGetOperation() == null &&
-        newLocalPath != null) {
-      // no actions will be executed so fill UpdatedFiles explicitly
+    if (resolution == Resolution.AcceptMerge) {
       if (myUpdatedFiles != null) {
         myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(newLocalPath);
       }
