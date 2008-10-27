@@ -25,8 +25,16 @@ public class DialogNameMerger implements NameMerger {
 
   @Nullable
   public String mergeName(final WorkspaceInfo workspace, Conflict conflict) {
-    String theirsName = conflict.getCtype() == ConflictType.Merge ? conflict.getYsitem() : conflict.getTsitem();
-    MergeNameDialog d = new MergeNameDialog(workspace, conflict.getYsitemsrc(), theirsName);
+    final String yoursName;
+    final String theirsName;
+    if (conflict.getCtype() == ConflictType.Merge) {
+      yoursName = conflict.getYsitem();
+      theirsName = conflict.getYsitemsrc();
+    } else {
+      yoursName = conflict.getYsitemsrc();
+      theirsName = conflict.getTsitem();
+    }
+    MergeNameDialog d = new MergeNameDialog(workspace, yoursName, theirsName);
     d.show();
     if (d.isOK()) {
       return d.getSelectedPath();
