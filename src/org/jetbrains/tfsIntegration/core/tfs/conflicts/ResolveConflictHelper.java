@@ -71,11 +71,19 @@ public class ResolveConflictHelper {
         TfsFileUtil.refreshAndFindFile(localPath);
         try {
           if (conflict.getYtype() == ItemType.File) {
-            String original = TFSContentRevision.create(workspace, conflict.getBver(), conflict.getBitemid()).getContent();
+            final String current;
+            final String last;
+            if (conflict.getCtype() == ConflictType.Merge) {
+              current = TFSContentRevision.create(workspace, conflict.getTver(), conflict.getTitemid()).getContent();
+              last = TFSContentRevision.create(workspace, conflict.getYver(), conflict.getYitemid()).getContent();
+            }
+            else {
+              current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
+              last = TFSContentRevision.create(workspace, conflict.getTver(), conflict.getTitemid()).getContent();
+            }
+            final String original = TFSContentRevision.create(workspace, conflict.getBver(), conflict.getBitemid()).getContent();
             contentTriplet.baseContent = original != null ? original : "";
-            String current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
             contentTriplet.localContent = current != null ? current : "";
-            String last = TFSContentRevision.create(workspace, conflict.getTver(), conflict.getTitemid()).getContent();
             contentTriplet.serverContent = last != null ? last : "";
           }
         }
