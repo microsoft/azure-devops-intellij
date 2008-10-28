@@ -66,7 +66,12 @@ public class ManageWorkspacesForm {
     public String getPresentableString(final Object value) {
       if (value instanceof ServerInfo) {
         final ServerInfo server = (ServerInfo)value;
-        return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+        if (server.getQualifiedUsername() != null) {
+          return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+        }
+        else {
+          return server.getUri().toString();
+        }
       }
       return "";
     }
