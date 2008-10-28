@@ -163,11 +163,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public String getDefaultMessageFor(final FilePath[] filesToCheckin) {
     return null;
   }
-
-  public String prepareCheckinMessage(final String text) {
-    return text;
-  }
-
+ 
   @Nullable
   @NonNls
   public String getHelpId() {

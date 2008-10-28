@@ -90,7 +90,7 @@ public class ManageWorkspacesForm {
   private JButton myCreateWorkspaceButton;
   private JLabel myTitleLabel;
   private JPanel myWorkspacesPanel;
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  private final List<Listener> myListeners = new ArrayList<Listener>();
   private final Project myProject;
   private boolean myShowWorkspaces = true;
 
@@ -255,17 +255,24 @@ public class ManageWorkspacesForm {
   }
 
   private void createWorkspace(final @NotNull ServerInfo server) {
-    WorkspaceInfo newWorkspace = new WorkspaceInfo(server, server.getQualifiedUsername(), Workstation.getComputerName());
-    WorkspaceDialog d = new WorkspaceDialog(myProject, newWorkspace);
+    if (server.getQualifiedUsername() == null && AuthenticationHelper.authenticate(server.getUri(), false, false) == null) {
+      return;
+    }
+    WorkspaceDialog d = new WorkspaceDialog(myProject, server);
     d.show();
     if (d.isOK()) {
       try {
         getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        //noinspection ConstantConditions
+        WorkspaceInfo newWorkspace = new WorkspaceInfo(server, server.getQualifiedUsername(), Workstation.getComputerName());
+        newWorkspace.setName(d.getWorkspaceName());
+        newWorkspace.setComment(d.getWorkspaceComment());
+        newWorkspace.setWorkingFolders(d.getWorkingFolders());
         newWorkspace.saveToServer();
         updateControls(newWorkspace);
       }
       catch (TfsException e) {
-        String message = MessageFormat.format("Failed to create workspace ''{0}''.\n{1}", newWorkspace.getName(), e.getMessage());
+        String message = MessageFormat.format("Failed to create workspace ''{0}''.\n{1}", d.getWorkspaceName(), e.getMessage());
         Messages.showErrorDialog(myProject, message, "Create Workspace");
       }
       finally {
@@ -291,7 +298,7 @@ public class ManageWorkspacesForm {
       }
       return;
     }
-    catch (Exception e) {
+    catch (TfsException e) {
       String message = MessageFormat.format("Failed to open workspace ''{0}'' for editing.\n{1}", workspace.getName(), e.getMessage());
       Messages.showErrorDialog(myProject, message, "Edit Workspace");
       return;
@@ -300,18 +307,21 @@ public class ManageWorkspacesForm {
       getContentPane().setCursor(Cursor.getDefaultCursor());
     }
 
-    WorkspaceInfo workspaceCopyToEdit = workspace.getCopy();
-    WorkspaceDialog d = new WorkspaceDialog(myProject, workspaceCopyToEdit);
+    WorkspaceInfo modifiedWorkspace = workspace.getCopy();
+    WorkspaceDialog d = new WorkspaceDialog(myProject, modifiedWorkspace);
     d.show();
     if (d.isOK()) {
+      modifiedWorkspace.setName(d.getWorkspaceName());
+      modifiedWorkspace.setComment(d.getWorkspaceComment());
+      modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {
         getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        workspace.getServer().replaceWorkspace(workspace, workspaceCopyToEdit);
-        workspaceCopyToEdit.saveToServer();
-        updateControls(workspaceCopyToEdit);
+        modifiedWorkspace.saveToServer();
+        workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
+        updateControls(modifiedWorkspace);
       }
-      catch (Exception e) {
-        String message = MessageFormat.format("Failed to save workspace ''{0}'' for editing.\n{1}", workspace.getName(), e.getMessage());
+      catch (TfsException e) {
+        String message = MessageFormat.format("Failed to save workspace ''{0}''.\n{1}", workspace.getName(), e.getMessage());
         Messages.showErrorDialog(myProject, message, "Edit Workspace");
       }
       finally {
@@ -329,7 +339,7 @@ public class ManageWorkspacesForm {
         workspace.getServer().deleteWorkspace(workspace);
         updateControls(null);
       }
-      catch (Exception e) {
+      catch (TfsException e) {
         String message = MessageFormat.format("Failed to delete workspace ''{0}''.\n{1}", workspace.getName(), e.getMessage());
         Messages.showErrorDialog(myProject, message, "Delete Workspace");
       }

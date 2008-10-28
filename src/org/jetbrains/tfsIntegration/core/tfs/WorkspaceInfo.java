@@ -217,13 +217,18 @@ public class WorkspaceInfo {
 
 
   public void addWorkingFolderInfo(final WorkingFolderInfo workingFolderInfo) {
-    // TODO checkCurrentOwnerAndComputer(); ?
     myWorkingFoldersInfos.add(workingFolderInfo);
   }
 
   public void removeWorkingFolderInfo(final WorkingFolderInfo folderInfo) {
     checkCurrentOwnerAndComputer();
     myWorkingFoldersInfos.remove(folderInfo);
+  }
+
+  public void setWorkingFolders(final List<WorkingFolderInfo> workingFolders) {
+    checkCurrentOwnerAndComputer();
+    myWorkingFoldersInfos.clear();
+    myWorkingFoldersInfos.addAll(workingFolders);
   }
 
   public void saveToServer() throws TfsException {

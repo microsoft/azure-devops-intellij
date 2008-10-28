@@ -52,7 +52,7 @@ public class ServerInfo {
     return myUri;
   }
 
-  public String getGuid() {
+  String getGuid() {
     return myGuid;
   }
 

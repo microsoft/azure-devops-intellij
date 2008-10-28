@@ -38,7 +38,7 @@
           <gridbag weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties/>
-        <border type="empty" title="Team Servers"/>
+        <border type="empty" title="Team Servers:"/>
         <children>
           <component id="59df2" class="javax.swing.JButton" binding="myAddServerButton">
             <constraints>

@@ -33,15 +33,11 @@ public class WorkingFolderInfo {
   private @NotNull String myServerPath;
   private @NotNull Status myStatus;
 
-  public WorkingFolderInfo() {
-    this(VcsUtil.getFilePath("")); // TODO can do this?
-  }
-
   public WorkingFolderInfo(final FilePath localPath) {
     this(Status.Active, localPath, "");
   }
 
-  public WorkingFolderInfo(final Status status, final FilePath localPath, final String serverPath) {
+  public WorkingFolderInfo(final @NotNull Status status, final @NotNull FilePath localPath, final @NotNull String serverPath) {
     myStatus = status;
     myLocalPath = localPath;
     myServerPath = serverPath;
