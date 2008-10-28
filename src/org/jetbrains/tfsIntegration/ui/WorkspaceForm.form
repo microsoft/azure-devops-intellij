@@ -94,7 +94,7 @@
             <properties>
               <lineWrap value="true"/>
               <rows value="3"/>
-              <text value="comment"/>
+              <text value=""/>
             </properties>
           </component>
         </children>

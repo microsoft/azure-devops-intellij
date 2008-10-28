@@ -87,7 +87,7 @@ class WorkingFoldersTableModel extends AbstractTableModel {
   private List<WorkingFolderInfo> myWorkingFolders;
 
   public void setWorkingFolders(List<WorkingFolderInfo> workingFolders) {
-    myWorkingFolders = new ArrayList<WorkingFolderInfo>(workingFolders);
+    myWorkingFolders = workingFolders;
     fireTableDataChanged();
   }
 

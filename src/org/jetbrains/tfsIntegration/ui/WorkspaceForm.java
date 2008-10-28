@@ -214,13 +214,14 @@ public class WorkspaceForm {
     myServerField.setText(myServer.getUri().toString());
     myOwnerField.setText(myServer.getQualifiedUsername());
     myComputerField.setText(Workstation.getComputerName());
+    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>());
   }
 
   public void init(final @NotNull WorkspaceInfo workspace) throws TfsException {
     init(workspace.getServer());
     myNameField.setText(workspace.getName());
     myCommentField.setText(workspace.getComment());
-    myWorkingFoldersTableModel.setWorkingFolders(workspace.getWorkingFolders());
+    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>(workspace.getWorkingFolders()));
   }
 
   private void updateControls() {
