@@ -53,11 +53,11 @@ public class TFSVcs extends AbstractVcs {
   private VcsShowConfirmationOption myDeleteConfirmation;
   private VcsShowSettingOption myCheckoutOptions;
   private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
-  private VcsHistoryProvider myTFSHistoryProvider;
+  private VcsHistoryProvider myHistoryProvider;
   private DiffProvider myDiffProvider;
-  private TFSCheckinEnvironment myTFSCheckinEnvironment;
-  private TFSUpdateEnvironment myTFSUpdateEnvironment;
-  private TFSAnnotationProvider myTFSAnnotationProvider;
+  private TFSCheckinEnvironment myCheckinEnvironment;
+  private TFSUpdateEnvironment myUpdateEnvironment;
+  private TFSAnnotationProvider myAnnotationProvider;
   private List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
   public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
@@ -130,10 +130,10 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public CheckinEnvironment getCheckinEnvironment() {
-    if (myTFSCheckinEnvironment == null) {
-      myTFSCheckinEnvironment = new TFSCheckinEnvironment(this);
+    if (myCheckinEnvironment == null) {
+      myCheckinEnvironment = new TFSCheckinEnvironment(this);
     }
-    return myTFSCheckinEnvironment;
+    return myCheckinEnvironment;
   }
 
   public RollbackEnvironment getRollbackEnvironment() {
@@ -153,17 +153,17 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public UpdateEnvironment getUpdateEnvironment() {
-    if (myTFSUpdateEnvironment == null) {
-      myTFSUpdateEnvironment = new TFSUpdateEnvironment(this);
+    if (myUpdateEnvironment == null) {
+      myUpdateEnvironment = new TFSUpdateEnvironment(this);
     }
-    return myTFSUpdateEnvironment;
+    return myUpdateEnvironment;
   }
 
   public AnnotationProvider getAnnotationProvider() {
-    if (myTFSAnnotationProvider == null) {
-      myTFSAnnotationProvider = new TFSAnnotationProvider(this);
+    if (myAnnotationProvider == null) {
+      myAnnotationProvider = new TFSAnnotationProvider(this);
     }
-    return myTFSAnnotationProvider;
+    return myAnnotationProvider;
   }
 
   public static void assertTrue(boolean condition, @NonNls String message) {
@@ -212,10 +212,10 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public VcsHistoryProvider getVcsHistoryProvider() {
-    if (myTFSHistoryProvider == null) {
-      myTFSHistoryProvider = new TFSHistoryProvider(myProject);
+    if (myHistoryProvider == null) {
+      myHistoryProvider = new TFSHistoryProvider(myProject);
     }
-    return myTFSHistoryProvider;
+    return myHistoryProvider;
   }
 
   public DiffProvider getDiffProvider() {

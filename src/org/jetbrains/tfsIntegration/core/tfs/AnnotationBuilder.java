@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.util.diff.Diff;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,9 +54,6 @@ public class AnnotationBuilder {
     final Iterator<VcsFileRevision> iterator = revisions.iterator();
     VcsFileRevision revision = iterator.next();
     myAnnotatedContent = contentProvider.getContent(revision);
-    if (myAnnotatedContent == null) {
-      throw new VcsException(MessageFormat.format("Null content for revision {0}", revision.getRevisionNumber().toString()));
-    }
     String[] lines = splitLines(myAnnotatedContent);
 
     myLineRevisions = new VcsFileRevision[lines.length];
@@ -69,13 +65,10 @@ public class AnnotationBuilder {
     while (iterator.hasNext()) {
       final VcsFileRevision previousRevision = iterator.next();
       final String previousContent = contentProvider.getContent(previousRevision);
-      if (previousContent == null) {
-        throw new VcsException(MessageFormat.format("Null content for revision {0}", previousRevision.getRevisionNumber().toString()));
-      }
       final String[] previousLines = splitLines(previousContent);
       final Diff.Change change = Diff.buildChanges(previousLines, lines);
 
-      analyseAllChanges(change, revision);
+      annotateAll(change, revision);
       if (allLinesAnnotated()) {
         break;
       }
@@ -86,17 +79,16 @@ public class AnnotationBuilder {
     fillAllNotAnnotated(revisions.get(revisions.size() - 1));
   }
 
-  private void analyseAllChanges(final Diff.Change change, final VcsFileRevision revision) {
-    Diff.Change ch = change;
-    while (ch != null) {
-      findLinesInsertedByChange(ch, revision);
-      ch = ch.link;
+  private void annotateAll(final Diff.Change changesList, final VcsFileRevision revision) {
+    Diff.Change change = changesList;
+    while (change != null) {
+      annotate(change, revision);
+      change = change.link;
     }
-
-    recalculateLineNumbers(change);
+    recalculateLineNumbers(changesList);
   }
 
-  private void findLinesInsertedByChange(final Diff.Change change, VcsFileRevision revision) {
+  private void annotate(final Diff.Change change, VcsFileRevision revision) {
     if (change.inserted > 0) {
       for (int line = change.line1; line < change.line1 + change.inserted; line++) {
         Integer origLine = myLineNumbers.get(line);
@@ -109,23 +101,23 @@ public class AnnotationBuilder {
     }
   }
 
-  private void recalculateLineNumbers(final Diff.Change change) {
-    Diff.Change ch = change;
+  private void recalculateLineNumbers(final Diff.Change changesList) {
+    Diff.Change change = changesList;
     int removedLinesCount = 0;
-    while (ch != null) {
-      for (int i = 0; i < ch.inserted; i++) {
-        myLineNumbers.remove(ch.line1 - removedLinesCount);
+    while (change != null) {
+      for (int i = 0; i < change.inserted; i++) {
+        myLineNumbers.remove(change.line1 - removedLinesCount);
       }
-      removedLinesCount += ch.inserted;
-      ch = ch.link;
+      removedLinesCount += change.inserted;
+      change = change.link;
     }
 
-    ch = change;
-    while (ch != null) {
-      for (int i = 0; i < ch.deleted; i++) {
-        myLineNumbers.add(ch.line0, null);
+    change = changesList;
+    while (change != null) {
+      for (int i = 0; i < change.deleted; i++) {
+        myLineNumbers.add(change.line0, null);
       }
-      ch = ch.link;
+      change = change.link;
     }
   }
 

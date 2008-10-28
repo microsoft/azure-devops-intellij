@@ -52,7 +52,7 @@ public class LockItemsTableModel extends AbstractTableModel {
     },
     LockOwner("Locked By", 130) {
       public String getValue(final LockItemModel item) {
-        String lockOwner = item.getLockOwnerWithoutDomain();
+        String lockOwner = item.getLockOwner();
         return lockOwner == null ? "" : lockOwner;
       }
     };

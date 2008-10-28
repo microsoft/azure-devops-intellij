@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.util.text.SyncDateFormat;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import java.awt.*;
@@ -37,14 +38,14 @@ import java.util.List;
 
 public class TFSFileAnnotation implements FileAnnotation {
 
-  private final TFSVcs myTFSVcs;
+  private static final SyncDateFormat DATE_FORMAT = new SyncDateFormat(SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT));
+
+  private final TFSVcs myVcs;
   private final WorkspaceInfo myWorkspace;
   private final String myAnnotatedContent;
   private final VcsFileRevision[] myLineRevisions;
 
   private final List<AnnotationListener> myListeners = new ArrayList<AnnotationListener>();
-
-  private static final SyncDateFormat DATE_FORMAT = new SyncDateFormat(SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT));
 
   private final LineAnnotationAspect REVISION_ASPECT = new RevisionAnnotationAspect();
 
@@ -53,27 +54,20 @@ public class TFSFileAnnotation implements FileAnnotation {
       if (lineNumber < myLineRevisions.length) {
         return DATE_FORMAT.format(myLineRevisions[lineNumber].getRevisionDate());
       }
-      return "";
+      else {
+        return "";
+      }
     }
   };
 
   private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspect() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
-        return getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
-      }
-      return "";
-    }
-
-    private String getNameWithoutDomain(final String name) {
-      int slashIndex = name.indexOf('\\');
-      if (slashIndex > -1 && slashIndex < name.length() - 1) {
-        return name.substring(slashIndex + 1);
+        return TfsUtil.getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
       }
       else {
-        return name;
+        return "";
       }
-
     }
   };
 
@@ -90,15 +84,15 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  public TFSFileAnnotation(final TFSVcs tfsVcs,
+  public TFSFileAnnotation(final TFSVcs vcs,
                            final WorkspaceInfo workspace,
                            final String annotatedContent,
                            final VcsFileRevision[] lineRevisions) {
-    myTFSVcs = tfsVcs;
+    myVcs = vcs;
     myWorkspace = workspace;
     myAnnotatedContent = annotatedContent;
     myLineRevisions = lineRevisions;
-    tfsVcs.addRevisionChangedListener(myListener);
+    myVcs.addRevisionChangedListener(myListener);
   }
 
   public void addListener(AnnotationListener listener) {
@@ -110,7 +104,7 @@ public class TFSFileAnnotation implements FileAnnotation {
   }
 
   public void dispose() {
-    myTFSVcs.removeRevisionChangedListener(myListener);
+    myVcs.removeRevisionChangedListener(myListener);
   }
 
   public String getAnnotatedContent() {
@@ -123,10 +117,12 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   public String getToolTip(final int lineNumber) {
     if (lineNumber < myLineRevisions.length) {
-      return MessageFormat.format("Changeset {0}: {1}", myLineRevisions[lineNumber].getRevisionNumber().asString(),
-                                  myLineRevisions[lineNumber].getCommitMessage());
+      String commitMessage = myLineRevisions[lineNumber].getCommitMessage() == null ? "(no comment)" : myLineRevisions[lineNumber].getCommitMessage();
+      return MessageFormat.format("Changeset {0}: {1}", myLineRevisions[lineNumber].getRevisionNumber().asString(), commitMessage);
     }
-    return "";
+    else {
+      return "";
+    }
   }
 
   public VcsRevisionNumber getLineRevisionNumber(final int lineNumber) {
@@ -134,8 +130,8 @@ public class TFSFileAnnotation implements FileAnnotation {
   }
 
   public List<VcsFileRevision> getRevisions() {
-    HashSet<VcsFileRevision> hashSet = new HashSet<VcsFileRevision>(Arrays.asList(myLineRevisions));
-    List<VcsFileRevision> result = new ArrayList<VcsFileRevision>(hashSet);
+    Set<VcsFileRevision> set = new HashSet<VcsFileRevision>(Arrays.asList(myLineRevisions));
+    List<VcsFileRevision> result = new ArrayList<VcsFileRevision>(set);
     Collections.sort(result, REVISION_COMPARATOR);
     return result;
   }
@@ -151,7 +147,9 @@ public class TFSFileAnnotation implements FileAnnotation {
       if (lineNumber < myLineRevisions.length) {
         return myLineRevisions[lineNumber].getRevisionNumber().asString();
       }
-      return "";
+      else {
+        return "";
+      }
     }
 
     public Cursor getCursor(final int lineNumber) {
@@ -166,18 +164,17 @@ public class TFSFileAnnotation implements FileAnnotation {
     public void doAction(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         final VcsFileRevision revision = myLineRevisions[lineNumber];
-        final int revisonNumber = Integer.parseInt(revision.getRevisionNumber().asString());
+        final int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
         final CommittedChangeList changeList =
-          new TFSChangeList(myWorkspace, revisonNumber, revision.getAuthor(), revision.getRevisionDate(), revision.getCommitMessage(),
-                            myTFSVcs);
+          new TFSChangeList(myWorkspace, changeset, revision.getAuthor(), revision.getRevisionDate(), revision.getCommitMessage(), myVcs);
         final String progress = MessageFormat.format("Loading changeset {0}...", revision.getRevisionNumber().asString());
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
           public void run() {
             changeList.getChanges();
           }
-        }, progress, false, myTFSVcs.getProject());
+        }, progress, false, myVcs.getProject());
         final String title = MessageFormat.format("Changeset {0}", revision.getRevisionNumber().asString());
-        AbstractVcsHelper.getInstance(myTFSVcs.getProject()).showChangesListBrowser(changeList, title);
+        AbstractVcsHelper.getInstance(myVcs.getProject()).showChangesListBrowser(changeList, title);
       }
     }
   }

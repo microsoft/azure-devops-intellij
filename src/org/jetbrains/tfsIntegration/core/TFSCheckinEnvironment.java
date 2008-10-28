@@ -51,11 +51,11 @@ import java.util.*;
 import java.util.List;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
-  private final @NotNull TFSVcs myTFSVcs;
+  private final @NotNull TFSVcs myVcs;
   private Map<ServerInfo, WorkItemsDialogState> myWorkItems = new HashMap<ServerInfo, WorkItemsDialogState>();
 
-  public TFSCheckinEnvironment(final @NotNull TFSVcs tfsVcs) {
-    myTFSVcs = tfsVcs;
+  public TFSCheckinEnvironment(final @NotNull TFSVcs vcs) {
+    myVcs = vcs;
   }
 
   @Nullable
@@ -91,7 +91,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             dialogState.put(e.getKey(), e.getValue().createCopy());
           }
 
-          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myTFSVcs.getProject(), dialogState);
+          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myVcs.getProject(), dialogState);
           d.show();
           if (d.isOK()) {
             myWorkItems = dialogState;
@@ -99,7 +99,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           }
         }
         catch (TfsException e) {
-          Messages.showErrorDialog(myTFSVcs.getProject(), e.getMessage(), "Checkin");
+          Messages.showErrorDialog(myVcs.getProject(), e.getMessage(), "Checkin");
         }
       }
     });
@@ -262,7 +262,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               invalidateRoots.add(path);
               if (changeType.contains(ChangeType.Add)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
-                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myTFSVcs.getProject()).getVcsRootFor(path);
+                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myVcs.getProject()).getVcsRootFor(path);
                 if (vcsRoot != null) {
                   final FilePath vcsRootPath = TfsFileUtil.getFilePath(vcsRoot);
                   for (FilePath parent = path.getParentPath();
@@ -280,7 +280,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
             }
 
-            TfsFileUtil.invalidate(myTFSVcs.getProject(), invalidateRoots, invalidateFiles);
+            TfsFileUtil.invalidate(myVcs.getProject(), invalidateRoots, invalidateFiles);
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown
@@ -293,7 +293,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       //noinspection ThrowableInstanceNeverThrown
       errors.add(new VcsException(e));
     }
-    myTFSVcs.fireRevisionChanged();
+    myVcs.fireRevisionChanged();
     return errors;
   }
 
@@ -303,7 +303,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     try {
       WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myTFSVcs.getProject(), workspace, paths);
+          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myVcs.getProject(), workspace, paths);
           errors.addAll(schedulingErrors);
         }
       });
@@ -323,7 +323,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       final List<FilePath> orphans =
         WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myTFSVcs.getProject(), workspace, paths);
+            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myVcs.getProject(), workspace, paths);
             exceptions.addAll(schedulingErrors);
           }
         });

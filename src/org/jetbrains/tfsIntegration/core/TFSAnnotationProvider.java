@@ -25,10 +25,15 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.AnnotationBuilder;
+import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.core.tfs.version.WorkspaceVersionSpec;
@@ -37,16 +42,18 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem
 
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class TFSAnnotationProvider implements AnnotationProvider {
 
   private static final int CURRENT_CHANGESET = 0;
 
-  private final TFSVcs myTFSVcs;
+  private final @NotNull TFSVcs myVcs;
 
-  public TFSAnnotationProvider(final TFSVcs tfsVcs) {
-    myTFSVcs = tfsVcs;
+  public TFSAnnotationProvider(final @NotNull TFSVcs vcs) {
+    myVcs = vcs;
   }
 
   @Nullable
@@ -56,12 +63,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
 
   @Nullable
   public FileAnnotation annotate(final VirtualFile file, final VcsFileRevision revision) throws VcsException {
-    try {
-      return annotate(file, Integer.parseInt(revision.getRevisionNumber().asString()));
-    }
-    catch (NumberFormatException e) {
-      throw new VcsException(MessageFormat.format("Incorrect changeset: {0}", revision.getRevisionNumber().asString()));
-    }
+    return annotate(file, ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue());
   }
 
   @Nullable
@@ -76,32 +78,32 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           TFSProgressUtil.setIndeterminate(progressIndicator, true);
           final FilePath localPath = TfsFileUtil.getFilePath(file);
 
-          final Collection<WorkspaceInfo> workspace = Workstation.getInstance().findWorkspaces(localPath, false);
+          final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
           TFSProgressUtil.checkCanceled(progressIndicator);
-          if (workspace.isEmpty()) {
-            exception.set(new VcsException(MessageFormat.format("No mapping found for file '{0}'", localPath.getPresentableUrl())));
+          if (workspaces.isEmpty()) {
+            exception.set(new VcsException(MessageFormat.format("No mapping found for file ''{0}''", localPath.getPresentableUrl())));
             return;
           }
 
-          final ExtendedItem item = TfsUtil.getExtendedItem(localPath);
-          TFSProgressUtil.checkCanceled(progressIndicator);
-          if (item == null) {
-            exception.set(new VcsException(MessageFormat.format("'{0}' is unversioned", localPath.getPresentableUrl())));
+          final WorkspaceInfo workspace = workspaces.iterator().next();
+          final Map<FilePath, ExtendedItem> path2item = workspace.getExtendedItems(Collections.singletonList(localPath));
+          if (path2item.isEmpty()) {
+            exception.set(new VcsException(MessageFormat.format("''{0}'' is unversioned", localPath.getPresentableUrl())));
             return;
           }
+          TFSProgressUtil.checkCanceled(progressIndicator);
 
-          final WorkspaceInfo ws = workspace.iterator().next();
-          final VersionSpecBase versionSpec =
-            changeset == CURRENT_CHANGESET ? new WorkspaceVersionSpec(ws.getName(), ws.getOwnerName()) : new ChangesetVersionSpec(changeset)
-            ;
-          final List<VcsFileRevision> revisionList = TFSHistoryProvider.getRevisions(item.getSitem(), false, ws, versionSpec);
+          final VersionSpecBase versionSpec = changeset == CURRENT_CHANGESET
+                                              ? new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName())
+                                              : new ChangesetVersionSpec(changeset);
+          final List<VcsFileRevision> revisionList =
+            TFSHistoryProvider.getRevisions(path2item.get(localPath).getSitem(), false, workspace, versionSpec);
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (revisionList.isEmpty()) {
             return;
           }
 
-          TFSProgressUtil.checkCanceled(progressIndicator);
-          result.set(annotate(ws, localPath, item.getItemid(), revisionList));
+          result.set(annotate(workspace, localPath, path2item.get(localPath).getItemid(), revisionList));
         }
         catch (TfsException ex) {
           exception.set(new VcsException(ex));
@@ -113,7 +115,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
     };
 
     if (ApplicationManager.getApplication().isDispatchThread()) {
-      ProgressManager.getInstance().runProcessWithProgressSynchronously(runnable, "Loading Annotations", true, myTFSVcs.getProject());
+      ProgressManager.getInstance().runProcessWithProgressSynchronously(runnable, "Computing Annotations", true, myVcs.getProject());
     }
     else {
       runnable.run();
@@ -136,12 +138,19 @@ public class TFSAnnotationProvider implements AnnotationProvider {
     final AnnotationBuilder annotationBuilder = new AnnotationBuilder(revisions, new AnnotationBuilder.ContentProvider() {
       public String getContent(final VcsFileRevision revision) throws VcsException {
         TFSProgressUtil.checkCanceled(progressIndicator);
-        int changeset = Integer.parseInt(revision.getRevisionNumber().asString());
-        return TFSContentRevision.create(workspace, localPath, changeset, itemId).getContent();
+        int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
+        //noinspection ConstantConditions
+        final String content = TFSContentRevision.create(workspace, localPath, changeset, itemId).getContent();
+        if (content == null) {
+          final String errorMessage =
+            MessageFormat.format("Failed to load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(), changeset);
+          throw new VcsException(errorMessage);
+        }
+        return content;
       }
     });
 
-    return new TFSFileAnnotation(myTFSVcs, workspace, annotationBuilder.getAnnotatedContent(), annotationBuilder.getLineRevisions());
+    return new TFSFileAnnotation(myVcs, workspace, annotationBuilder.getAnnotatedContent(), annotationBuilder.getLineRevisions());
   }
 
   public boolean isAnnotationValid(final VcsFileRevision revision) {

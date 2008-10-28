@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LockLevel;
@@ -65,20 +66,8 @@ public class LockItemModel {
   }
 
   @Nullable
-  public String getLockOwnerWithoutDomain() {
-    String lockOwner = myExtendedItem.getLowner();
-    if (lockOwner == null) {
-      return null;
-    }
-    else {
-      int index = lockOwner.indexOf('\\');
-      if (index >= 0 && index < lockOwner.length() - 1) {
-        return lockOwner.substring(index + 1);
-      }
-      else {
-        return lockOwner;
-      }
-    }
+  public String getLockOwner() {
+    return myExtendedItem.getLowner() != null ? TfsUtil.getNameWithoutDomain(myExtendedItem.getLowner()) : null;
   }
 
   public static final Comparator<LockItemModel> LOCK_ITEM_PARENT_FIRST = new Comparator<LockItemModel>() {

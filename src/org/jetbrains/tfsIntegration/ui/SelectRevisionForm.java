@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.DocumentAdapter;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.*;
 
@@ -127,7 +128,7 @@ public class SelectRevisionForm {
       workspaceText.setText(null);
     }
     else {
-      workspaceText.setText(myWorkspace.getName() + ';' + myWorkspace.getOwnerNameWithoutDomain());
+      workspaceText.setText(myWorkspace.getName() + ';' + TfsUtil.getNameWithoutDomain(myWorkspace.getOwnerName()));
     }
 
     dateText.setEnabled(dateRadioButton.isSelected());
@@ -223,21 +224,20 @@ public class SelectRevisionForm {
   }
 
   @Nullable
-  private WorkspaceVersionSpec parseWorkspaceVersionSpec(final String workspaceInfo) {
-    if (workspaceInfo == null || workspaceInfo.length() == 0 || workspaceInfo.charAt(0) == ';') {
+  private WorkspaceVersionSpec parseWorkspaceVersionSpec(final String versionSpec) {
+    if (versionSpec == null || versionSpec.length() == 0 || versionSpec.charAt(0) == ';') {
       return null;
     }
 
-    int semicolonIndex = workspaceInfo.indexOf(';');
-    String workspaceName = semicolonIndex < 0 ? workspaceInfo : workspaceInfo.substring(0, semicolonIndex);
-
+    int semicolonIndex = versionSpec.indexOf(';');
+    String workspaceName = semicolonIndex < 0 ? versionSpec : versionSpec.substring(0, semicolonIndex);
     if (!WorkspaceInfo.isValidName(workspaceName)) {
       return null;
     }
 
-    String ownerName = semicolonIndex < 0 || semicolonIndex == workspaceInfo.length() - 1
-                       ? myWorkspace.getOwnerNameWithoutDomain()
-                       : workspaceInfo.substring(semicolonIndex + 1);
+    String ownerName = semicolonIndex < 0 || semicolonIndex == versionSpec.length() - 1
+                       ? TfsUtil.getNameWithoutDomain(myWorkspace.getOwnerName())
+                       : versionSpec.substring(semicolonIndex + 1);
     // remove spaces from the end
     int newLength = ownerName.length();
     while (newLength > 0 && ownerName.charAt(newLength - 1) == ' ') {
@@ -245,7 +245,7 @@ public class SelectRevisionForm {
     }
 
     if (newLength == 0) {
-      ownerName = myWorkspace.getOwnerNameWithoutDomain();
+      ownerName = TfsUtil.getNameWithoutDomain(myWorkspace.getOwnerName());
     }
     else if (newLength < ownerName.length()) {
       ownerName = ownerName.substring(0, newLength);

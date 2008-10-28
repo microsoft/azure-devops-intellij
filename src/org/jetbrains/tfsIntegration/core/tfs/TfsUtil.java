@@ -108,4 +108,15 @@ public class TfsUtil {
     }
     return exceptions;
   }
+
+  public static String getNameWithoutDomain(final String qualifiedName) {
+    int slashIndex = qualifiedName.indexOf('\\');
+    if (slashIndex > -1 && slashIndex < qualifiedName.length() - 1) {
+      return qualifiedName.substring(slashIndex + 1);
+    }
+    else {
+      return qualifiedName;
+    }
+  }
+
 }
