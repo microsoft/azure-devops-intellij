@@ -161,15 +161,16 @@ public class WorkspaceInfo {
   // TODO review usage: item can be updated to revision where corresponding server item does not exist
   public Collection<String> findServerPathsByLocalPath(final @NotNull FilePath localPath, boolean considerChildMappings)
     throws TfsException {
-    final WorkingFolderInfo parentMapping = findNearestParentMapping(localPath);
+    final FilePath localPathOnLocalFileSystem = VcsUtil.getFilePath(localPath.getPath(), localPath.isDirectory());
+    final WorkingFolderInfo parentMapping = findNearestParentMapping(localPathOnLocalFileSystem);
     if (parentMapping != null) {
-      return Collections.singletonList(parentMapping.getServerPathByLocalPath(localPath));
+      return Collections.singletonList(parentMapping.getServerPathByLocalPath(localPathOnLocalFileSystem));
     }
 
     if (considerChildMappings) {
       Collection<String> childMappings = new ArrayList<String>();
       for (WorkingFolderInfo workingFolder : getWorkingFolders()) {
-        if (workingFolder.getLocalPath().isUnder(localPath, false)) {
+        if (workingFolder.getLocalPath().isUnder(localPathOnLocalFileSystem, false)) {
           childMappings.add(workingFolder.getServerPath());
         }
       }
@@ -347,8 +348,10 @@ public class WorkspaceInfo {
   }
 
   private static boolean hasMapping(Collection<WorkingFolderInfo> mappings, FilePath localPath, boolean considerChildMappings) {
+    final FilePath localPathOnLocalFileSystem = VcsUtil.getFilePath(localPath.getPath(), localPath.isDirectory());
     for (WorkingFolderInfo mapping : mappings) {
-      if (localPath.isUnder(mapping.getLocalPath(), false) || (considerChildMappings && mapping.getLocalPath().isUnder(localPath, false))) {
+      if (localPathOnLocalFileSystem.isUnder(mapping.getLocalPath(), false) ||
+          (considerChildMappings && mapping.getLocalPath().isUnder(localPathOnLocalFileSystem, false))) {
         return true;
       }
     }
