@@ -38,8 +38,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSChangeList;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.credentials.Credentials;
-import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
@@ -146,9 +146,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       myOriginalServerCredentials = null;
     }
     else {
-      myOriginalServerCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+      myOriginalServerCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
     }
-    CredentialsManager.getInstance().storeCredentials(serverUri, testCredentials);
+    TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
   }
 
   @After
@@ -162,7 +162,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     }
     finally {
       if (myOriginalServerCredentials != null) {
-        CredentialsManager.getInstance().storeCredentials(new URI(SERVER), myOriginalServerCredentials);
+        TFSConfigurationManager.getInstance().storeCredentials(new URI(SERVER), myOriginalServerCredentials);
       }
     }
 

@@ -36,8 +36,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
-import org.jetbrains.tfsIntegration.core.credentials.Credentials;
-import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
@@ -198,9 +198,9 @@ public class WebServiceHelper {
   }
 
   private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
-    final Credentials originalStoredCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+    final Credentials originalStoredCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
 
-    Credentials credentials = CredentialsManager.getInstance().getCredentials(serverUri);
+    Credentials credentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
     boolean forcePrompt = false;
     while (true) {
       if (credentials.getPassword() == null || forcePrompt) {
@@ -210,7 +210,7 @@ public class WebServiceHelper {
           public void run() {
             synchronized (getLock(serverUri)) {
               // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
-              Credentials actualCredentials = CredentialsManager.getInstance().getCredentials(serverUri);
+              Credentials actualCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
               //noinspection ConstantConditions
               if (actualCredentials.equalsTo(originalStoredCredentials) || actualCredentials.getPassword() == null) {
                 final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
@@ -245,7 +245,7 @@ public class WebServiceHelper {
           TFSVcs.assertTrue(credentials.getPassword() != null);
 
           result = delegate.executeRequest(credentials);
-          CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+          TFSConfigurationManager.getInstance().storeCredentials(serverUri, credentials);
           return result;
         }
         catch (Exception e) {
@@ -256,7 +256,7 @@ public class WebServiceHelper {
           }
           else {
             if (!(tfsException instanceof ConnectionFailedException)) {
-              CredentialsManager.getInstance().storeCredentials(serverUri, credentials);
+              TFSConfigurationManager.getInstance().storeCredentials(serverUri, credentials);
             }
             throw tfsException;
           }

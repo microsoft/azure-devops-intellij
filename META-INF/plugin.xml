@@ -19,8 +19,8 @@
   </project-components>
 
   <extensions defaultExtensionNs="com.intellij">
-    <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.credentials.CredentialsManager"
-                        serviceImplementation="org.jetbrains.tfsIntegration.core.credentials.CredentialsManager"/>
+    <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"
+                        serviceImplementation="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"/>
 
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>

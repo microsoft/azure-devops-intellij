@@ -21,7 +21,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
-import org.jetbrains.tfsIntegration.core.credentials.Credentials;
+import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 
 import javax.swing.*;
 import java.awt.*;

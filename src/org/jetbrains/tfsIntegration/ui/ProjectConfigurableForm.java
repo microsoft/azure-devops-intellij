@@ -18,7 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import org.jetbrains.tfsIntegration.core.credentials.CredentialsManager;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -45,7 +45,7 @@ public class ProjectConfigurableForm {
         final String title = "Reset Stored Passwords";
         if (Messages
           .showYesNoDialog(myProject, "Are you sure to reset all stored passwords?", title, Messages.getQuestionIcon()) == 0) {
-          CredentialsManager.getInstance().resetStoredPasswords();
+          TFSConfigurationManager.getInstance().resetStoredPasswords();
           Messages.showInfoMessage(myProject, "Passwords reset successfully.", title);
         }
       }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core.credentials;
+package org.jetbrains.tfsIntegration.core.configuration;
 
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
