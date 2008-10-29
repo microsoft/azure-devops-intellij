@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
@@ -88,11 +89,12 @@ public class ManageWorkspacesForm {
 
   private JPanel myContentPane;
   private JButton myAddServerButton;
-  private JButton myDeleteWorkspaceButton;
-  private JButton myEditWorkspaceButton;
-  private CustomTreeTable<Object> myTable;
   private JButton myRemoveServerButton;
+  private JButton myProxySettingsButton;
   private JButton myCreateWorkspaceButton;
+  private JButton myEditWorkspaceButton;
+  private JButton myDeleteWorkspaceButton;
+  private CustomTreeTable<Object> myTable;
   private JLabel myTitleLabel;
   private JPanel myWorkspacesPanel;
   private final List<Listener> myListeners = new ArrayList<Listener>();
@@ -161,6 +163,13 @@ public class ManageWorkspacesForm {
       }
     });
 
+    myProxySettingsButton.addActionListener(new ActionListener() {
+      public void actionPerformed(final ActionEvent e) {
+        //noinspection ConstantConditions
+        proxySettings(getSelectedServer());
+      }
+    });
+
     myCreateWorkspaceButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         //noinspection ConstantConditions
@@ -205,10 +214,10 @@ public class ManageWorkspacesForm {
     configureTable();
   }
 
-  private void updateControls(WorkspaceInfo workspaceToSelect) {
+  private void updateControls(Object selectedServerOrWorkspace) {
     myTable.updateContent();
     configureTable();
-    myTable.select(workspaceToSelect);
+    myTable.select(selectedServerOrWorkspace);
     //updateButtons();
   }
 
@@ -225,6 +234,7 @@ public class ManageWorkspacesForm {
     final WorkspaceInfo selectedWorkspace = getSelectedWorkspace();
 
     myRemoveServerButton.setEnabled(selectedServer != null);
+    myProxySettingsButton.setEnabled(selectedServer != null);
     myCreateWorkspaceButton.setEnabled(selectedServer != null || selectedWorkspace != null);
     myEditWorkspaceButton.setEnabled(selectedWorkspace != null);
     myDeleteWorkspaceButton.setEnabled(selectedWorkspace != null);
@@ -247,7 +257,7 @@ public class ManageWorkspacesForm {
       finally {
         getContentPane().setCursor(Cursor.getDefaultCursor());
       }
-      updateControls(null);
+      updateControls(newServer);
     }
   }
 
@@ -256,6 +266,15 @@ public class ManageWorkspacesForm {
     if (Messages.showYesNoDialog(myContentPane, warning, "Remove Team Server", Messages.getWarningIcon()) == 0) {
       Workstation.getInstance().removeServer(server);
       updateControls(null);
+    }
+  }
+
+  private void proxySettings(final @NotNull ServerInfo server) {
+    ProxySettingsDialog d = new ProxySettingsDialog(myProject, server.getUri());
+    d.show();
+    if (d.isOK()) {
+      TFSConfigurationManager.getInstance().setProxyUri(server.getUri(), d.getProxyUri());
+      updateControls(server);
     }
   }
 
