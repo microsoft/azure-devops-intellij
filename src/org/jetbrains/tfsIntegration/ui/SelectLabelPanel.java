@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionControlLabel;
 
@@ -116,7 +117,8 @@ public class SelectLabelPanel {
             name = null;
           }
           // TODO respect scope
-          List<VersionControlLabel> labels = workspace.getServer().getVCS().queryLabels(name, "$/", owner, false, null, null, false);
+          List<VersionControlLabel> labels =
+            workspace.getServer().getVCS().queryLabels(name, VersionControlPath.ROOT_FOLDER, owner, false, null, null, false);
           myLabelsTableModel.setLabels(labels);
         }
         catch (TfsException ex) {
