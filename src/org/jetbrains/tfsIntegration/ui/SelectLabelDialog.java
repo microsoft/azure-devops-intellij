@@ -26,7 +26,8 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionContr
 import javax.swing.*;
 
 
-// TODO: disable Ok button is label's table is empty  
+// TODO: disable Ok button if nothing is selected
+// TODO: select by double click
 public class SelectLabelDialog extends DialogWrapper {
   private WorkspaceInfo myWorkspace;
   private TFSVcs myVcs;

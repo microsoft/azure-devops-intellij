@@ -80,8 +80,6 @@ public class SelectChangesetForm {
     myChangesetsTable.setModel(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    // TODO select on double click
-
     myPathField.setText(serverPath);
 
     myFindButton.addActionListener(new ActionListener() {

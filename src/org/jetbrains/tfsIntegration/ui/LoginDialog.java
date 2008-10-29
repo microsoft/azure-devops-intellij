@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright 2000-2008 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +45,7 @@ public class LoginDialog extends DialogWrapper {
   private JCheckBox myStorePasswordCheckbox;
 
   // TODO use project/component as constructor parameter
+  // TODO UI designer
 
   public LoginDialog(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
     this(initialUri, initialCredentials != null ? initialCredentials.getUserName() : null,
