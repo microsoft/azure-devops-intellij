@@ -215,6 +215,10 @@ public class TFSChangeList implements CommittedChangeList {
     }
 
     if (changeType.contains(ChangeType.Rename)) {
+      if (change.getItem().getDid() != Integer.MIN_VALUE) {
+        // the item was deleted in some previous checkin
+        return;
+      }
       Item item = getPreviousVersion(change.getItem(), changeset);
       FilePath originalPath = myWorkspace
         .findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
