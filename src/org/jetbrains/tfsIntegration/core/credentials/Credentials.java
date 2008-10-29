@@ -16,19 +16,23 @@
 
 package org.jetbrains.tfsIntegration.core.credentials;
 
+import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.util.PasswordUtil;
+import com.intellij.util.xmlb.annotations.Tag;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 
+@Tag(value = "credentials")
 public class Credentials {
 
-  private String myUserName;
+  private @NotNull String myUserName;
 
-  private String myDomain;
+  private @NotNull String myDomain;
 
-  private String myPassword;
+  private @Nullable String myPassword;
 
   private boolean myStorePassword;
 
@@ -36,7 +40,10 @@ public class Credentials {
     this("", "", null, false);
   }
 
-  public Credentials(final @NotNull String userName, final @NotNull String domain, final String password, final boolean storePassword) {
+  public Credentials(final @NotNull String userName,
+                     final @NotNull String domain,
+                     final @Nullable String password,
+                     final boolean storePassword) {
     myUserName = userName;
     myDomain = domain;
     myPassword = password;
@@ -51,34 +58,40 @@ public class Credentials {
     return myPassword;
   }
 
+  public void resetPassword() {
+    myPassword = null;
+    myStorePassword = false;
+  }
+
+  @Nullable
+  @Tag(value = "password")
+  public String getEncodedPassword() {
+    return myStorePassword && myPassword != null ? PasswordUtil.encodePassword(myPassword) : null;
+  }
+
+  public void setEncodedPassword(String encodedPassword) {
+    myPassword = encodedPassword != null ? PasswordUtil.decodePassword(encodedPassword) : null;
+    myStorePassword = true;
+  }
+
   @NotNull
+  @Tag(value = "domain")
   public String getDomain() {
     return myDomain;
   }
 
+  public void setDomain(final @NotNull String domain) {
+    myDomain = domain;
+  }
+
   @NotNull
+  @Tag(value = "username")
   public String getUserName() {
     return myUserName;
   }
 
-  void setUserName(final @NotNull String userName) {
+  public void setUserName(final @NotNull String userName) {
     myUserName = userName;
-  }
-
-  void setPassword(String password) {
-    myPassword = password;
-  }
-
-  void setDomain(final @NotNull String domain) {
-    myDomain = domain;
-  }
-
-  public boolean isStorePassword() {
-    return myStorePassword;
-  }
-
-  public void setStorePassword(final boolean storePassword) {
-    myStorePassword = storePassword;
   }
 
   @NotNull
@@ -98,17 +111,12 @@ public class Credentials {
     if (!getDomain().equals(c.getDomain())) {
       return false;
     }
-
-    //noinspection ConstantConditions
-    if (getPassword() != null ? !getPassword().equals(c.getPassword()) : c.getPassword() != null) {
-      return false;
-    }
-    return true;
+    return Comparing.strEqual(getPassword(), c.getPassword());
   }
 
   @NonNls
   public String toString() {
-    return "Credentials[username=" + getUserName() + ",domain=" + getDomain() + ",password=" + getPassword() + "]";
+    return getQualifiedUsername();
   }
 
 }

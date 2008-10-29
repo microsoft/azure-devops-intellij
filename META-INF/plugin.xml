@@ -11,12 +11,6 @@
   <idea-version since-build="8000"/>
   <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
-    <application-components>
-        <component>
-            <implementation-class>org.jetbrains.tfsIntegration.core.credentials.CredentialsManager</implementation-class>
-        </component>
-    </application-components>
-
   <project-components>
     <component>
       <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>
@@ -25,6 +19,9 @@
   </project-components>
 
   <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.credentials.CredentialsManager"
+                        serviceImplementation="org.jetbrains.tfsIntegration.core.credentials.CredentialsManager"/>
+
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
     <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"
