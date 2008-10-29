@@ -69,15 +69,15 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   public URI getProxyUri(@NotNull URI serverUri) {
     final ServerConfiguration serverConfiguration = myServersConfig.get(toString(serverUri));
     try {
-      return serverConfiguration != null ? new URI(serverConfiguration.getProxyUri()) : null;
+      return serverConfiguration == null || serverConfiguration.getProxyUri() == null ? null : new URI(serverConfiguration.getProxyUri());
     }
     catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public void setProxyUri(@NotNull URI serverUri, @NotNull URI proxyUri) {
-    getOrCreateServerConfiguration(serverUri).setProxyUri(toString(proxyUri));
+  public void setProxyUri(@NotNull URI serverUri, @Nullable URI proxyUri) {
+    getOrCreateServerConfiguration(serverUri).setProxyUri(proxyUri == null ? null : proxyUri.toString());
   }
 
   public synchronized void storeCredentials(@NotNull URI serverUri, final @NotNull Credentials credentials) {
