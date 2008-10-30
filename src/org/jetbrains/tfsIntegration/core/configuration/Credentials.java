@@ -111,7 +111,7 @@ public class Credentials {
     if (!getDomain().equals(c.getDomain())) {
       return false;
     }
-    return Comparing.strEqual(getPassword(), c.getPassword());
+    return Comparing.equal(getPassword(), c.getPassword(), true);
   }
 
   @NonNls
