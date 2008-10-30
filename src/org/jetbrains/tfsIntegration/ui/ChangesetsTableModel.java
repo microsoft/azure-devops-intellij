@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 
 import javax.swing.table.AbstractTableModel;
@@ -27,25 +28,23 @@ public class ChangesetsTableModel extends AbstractTableModel {
 
   private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
 
-  // TODO column width
-
-  private enum Column {
-    Changeset("Changeset", 10) {
+  enum Column {
+    Changeset("Changeset", 60) {
       public String getValue(Changeset changeset) {
         return String.valueOf(changeset.getCset());
       }
     },
-    Date("Date", 15) {
+    Date("Date", 95) {
       public String getValue(Changeset changeset) {
         return DATE_FORMAT.format(changeset.getDate().getTime());
       }
     },
-    User("User", 20) {
+    User("User", 90) {
       public String getValue(Changeset changeset) {
-        return changeset.getOwner();
+        return TfsUtil.getNameWithoutDomain(changeset.getOwner());
       }
     },
-    Comment("Comment", 50) {
+    Comment("Comment", 180) {
       public String getValue(Changeset changeset) {
         return changeset.getComment();
       }

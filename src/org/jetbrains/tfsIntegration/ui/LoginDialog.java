@@ -18,9 +18,9 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.net.URI;
@@ -36,16 +36,7 @@ public class LoginDialog extends DialogWrapper {
 
     myLoginForm = new LoginForm(initialUri, initialCredentials, allowUrlChange);
 
-    myLoginForm.addListener(new LoginForm.Listener() {
-      public void stateChanged() {
-        final String errorMessage = getErrorMessage();
-        myLoginForm.setErrorMessage(errorMessage);
-        setOKActionEnabled(errorMessage == null);
-      }
-    });
-
     init();
-    setOKActionEnabled(initialUri != null && initialCredentials != null);
   }
 
   protected JComponent createCenterPanel() {
@@ -54,6 +45,27 @@ public class LoginDialog extends DialogWrapper {
 
   public JComponent getPreferredFocusedComponent() {
     return myLoginForm.getPreferredFocusedComponent();
+  }
+
+  private void updateButtons() {
+    final String errorMessage = getErrorMessage();
+    myLoginForm.setErrorMessage(errorMessage);
+    setOKActionEnabled(errorMessage == null);
+  }
+
+  @Override
+  protected void doOKAction() {
+    if (getErrorMessage() == null) {
+      super.doOKAction();
+    }
+    else {
+      updateButtons();
+      myLoginForm.addListener(new LoginForm.Listener() {
+        public void stateChanged() {
+          updateButtons();
+        }
+      });
+    }
   }
 
   @Nullable

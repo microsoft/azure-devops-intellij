@@ -89,6 +89,9 @@ public class MergeBranchForm {
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable = new JTable(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    for (int i = 0; i < ChangesetsTableModel.Column.values().length; i++) {
+      myChangesetsTable.getColumnModel().getColumn(i).setPreferredWidth(ChangesetsTableModel.Column.values()[i].getWidth());
+    }
 
     mySelectRevisionForm = new SelectRevisionForm();
 

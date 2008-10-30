@@ -79,6 +79,9 @@ public class SelectChangesetForm {
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable.setModel(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    for (int i = 0; i < ChangesetsTableModel.Column.values().length; i++) {
+      myChangesetsTable.getColumnModel().getColumn(i).setPreferredWidth(ChangesetsTableModel.Column.values()[i].getWidth());
+    }
 
     myPathField.setText(serverPath);
 

@@ -20,8 +20,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
 import javax.swing.*;
 import java.net.URI;
@@ -47,12 +47,6 @@ public class ProxySettingsDialog extends DialogWrapper {
     myForm = new ProxySettingsForm(TFSConfigurationManager.getInstance().getProxyUri(myServerUri),
                                    credentials != null ? credentials.getQualifiedUsername() : null);
 
-    myForm.addListener(new ProxySettingsForm.Listener() {
-      public void stateChanged() {
-        updateButtons();
-      }
-    });
-
     return myForm.getContentPane();
   }
 
@@ -60,6 +54,21 @@ public class ProxySettingsDialog extends DialogWrapper {
     String errorMessage = myForm.isValid() ? null : "Please enter valid proxy address.";
     myForm.setMessage(errorMessage);
     setOKActionEnabled(myForm.isValid());
+  }
+
+  @Override
+  protected void doOKAction() {
+    if (myForm.isValid()) {
+      super.doOKAction();
+    }
+    else {
+      updateButtons();
+      myForm.addListener(new ProxySettingsForm.Listener() {
+        public void stateChanged() {
+          updateButtons();
+        }
+      });
+    }
   }
 
   @Nullable

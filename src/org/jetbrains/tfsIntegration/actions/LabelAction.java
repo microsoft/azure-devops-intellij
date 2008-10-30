@@ -57,7 +57,7 @@ public class LabelAction extends SingleItemAction {
       StringBuffer buffer = new StringBuffer();
       for (LabelResult labelResult : resultWithFailures.getResult()) {
         if (buffer.length() > 0) {
-          buffer.append("; ");
+          buffer.append("\n");
         }
         String message = MessageFormat.format("Label ''{0}@{1}'' {2}", labelResult.getLabel(), labelResult.getScope(),
                                               labelResult.getStatus().getValue().toLowerCase());

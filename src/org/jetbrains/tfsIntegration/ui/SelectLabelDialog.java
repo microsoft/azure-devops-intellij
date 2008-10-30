@@ -18,43 +18,46 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionControlLabel;
 
 import javax.swing.*;
 
-
-// TODO: disable Ok button if nothing is selected
-// TODO: select by double click
 public class SelectLabelDialog extends DialogWrapper {
+
   private WorkspaceInfo myWorkspace;
-  private TFSVcs myVcs;
-  private SelectLabelPanel labelPanel;
+  private SelectLabelForm mySelectLabelForm;
 
   public SelectLabelDialog(final Project project, final WorkspaceInfo workspace) {
     super(project, true);
     myWorkspace = workspace;
-    setOKButtonText("Choose");
     setTitle("Choose Label");
-
-    setResizable(true);
+    setOKButtonText("Choose");
 
     init();
+    updateButtons();
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    labelPanel = new SelectLabelPanel(myWorkspace);
-    return labelPanel.getPanel();
+    mySelectLabelForm = new SelectLabelForm(this, myWorkspace);
+    mySelectLabelForm.addListener(new SelectLabelForm.Listener() {
+      public void selectionChanged() {
+        updateButtons();
+      }
+    });
+    return mySelectLabelForm.getContentPane();
   }
 
-  String getLabelString() {
-    VersionControlLabel label = labelPanel.getLabel();
-    if (label == null) {
-      return null;
-    }
+  private void updateButtons() {
+    setOKActionEnabled(mySelectLabelForm.isLabelSelected());
+  }
+
+  @NotNull
+  public String getLabelString() {
+    VersionControlLabel label = mySelectLabelForm.getLabel();
     return label.getName() + "@" + label.getScope();
   }
 }
