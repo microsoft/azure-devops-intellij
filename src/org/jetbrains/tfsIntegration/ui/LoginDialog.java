@@ -17,40 +17,35 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.ui.DocumentAdapter;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
 import java.net.URI;
 
+// TODO pass project
 public class LoginDialog extends DialogWrapper {
 
   private LoginForm myLoginForm;
 
-  // TODO use project/component as constructor parameter
   public LoginDialog(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
-    this(initialUri, initialCredentials != null ? initialCredentials.getUserName() : null,
-         initialCredentials != null ? initialCredentials.getDomain() : null,
-         initialCredentials != null ? initialCredentials.getPassword() : null, allowUrlChange);
-  }
-
-  public LoginDialog(URI initialUri, String initialUsername, String initialDomain, String initialPassword, boolean allowUrlChange) {
     super(false);
     setTitle(TFSBundle.message("logindialog.title"));
 
-    myLoginForm = new LoginForm(initialUri, initialUsername, initialDomain, initialPassword, allowUrlChange);
+    myLoginForm = new LoginForm(initialUri, initialCredentials, allowUrlChange);
 
-    myLoginForm.addUriDocumentListener(new DocumentAdapter() {
-      protected void textChanged(final DocumentEvent e) {
-        updateButtons();
+    myLoginForm.addListener(new LoginForm.Listener() {
+      public void stateChanged() {
+        final String errorMessage = getErrorMessage();
+        myLoginForm.setErrorMessage(errorMessage);
+        setOKActionEnabled(errorMessage == null);
       }
     });
 
     init();
-    setResizable(false);
-    updateButtons();
+    setOKActionEnabled(initialUri != null && initialCredentials != null);
   }
 
   protected JComponent createCenterPanel() {
@@ -61,8 +56,21 @@ public class LoginDialog extends DialogWrapper {
     return myLoginForm.getPreferredFocusedComponent();
   }
 
-  private void updateButtons() {
-    setOKActionEnabled(myLoginForm.getUri() != null);
+  @Nullable
+  private String getErrorMessage() {
+    if (myLoginForm.getUri() == null) {
+      return "Please enter valid server address.";
+    }
+
+    if (StringUtil.isEmptyOrSpaces(myLoginForm.getUsername())) {
+      return "Please enter user name.";
+    }
+
+    if (StringUtil.isEmptyOrSpaces(myLoginForm.getDomain())) {
+      return "Please enter domain.";
+    }
+
+    return null;
   }
 
   public URI getUri() {

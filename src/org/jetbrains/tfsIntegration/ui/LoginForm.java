@@ -18,33 +18,50 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.DocumentAdapter;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoginForm {
+
+  public interface Listener {
+    void stateChanged();
+  }
+
   private JTextField myUriField;
   private JTextField myUsernameField;
   private JTextField myDomainField;
   private JPasswordField myPasswordField;
   private JCheckBox myStorePasswordCheckbox;
   private JPanel myContentPane;
+  private JLabel myMessageLabel;
 
-  public LoginForm(URI initialUri, String initialUsername, String initialDomain, String initialPassword, boolean allowUrlChange) {
-    myUriField.setText(initialUri != null ? initialUri.toString() : "http://");
+  private final List<Listener> myListeners = new ArrayList<Listener>();
+
+  public LoginForm(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
+    myUriField.setText(initialUri != null ? initialUri.toString() : null);
     myUriField.setEditable(allowUrlChange);
-    myUsernameField.setText(initialUsername);
-    myDomainField.setText(initialDomain);
-    myPasswordField.setText(initialPassword);
-  }
+    myUsernameField.setText(initialCredentials != null ? initialCredentials.getUserName() : null);
+    myDomainField.setText(initialCredentials != null ? initialCredentials.getDomain() : null);
+    myPasswordField.setText(initialCredentials != null ? initialCredentials.getPassword() : null);
 
-  public void addUriDocumentListener(final DocumentAdapter documentAdapter) {
-    myUriField.getDocument().addDocumentListener(documentAdapter);
-  }
+    final DocumentListener changeListener = new DocumentAdapter() {
+      @Override
+      protected void textChanged(final DocumentEvent e) {
+        fireStateChanged();
+      }
+    };
 
-  public void removeUrlDocumentListener(final DocumentAdapter documentAdapter) {
-    myUriField.getDocument().removeDocumentListener(documentAdapter);
+    myUriField.getDocument().addDocumentListener(changeListener);
+    myUsernameField.getDocument().addDocumentListener(changeListener);
+    myDomainField.getDocument().addDocumentListener(changeListener);
+    myPasswordField.getDocument().addDocumentListener(changeListener);
   }
 
   public JComponent getPreferredFocusedComponent() {
@@ -63,17 +80,9 @@ public class LoginForm {
     return myContentPane;
   }
 
+  @Nullable
   public URI getUri() {
-    try {
-      String uriText = myUriField.getText();
-      if (!uriText.endsWith("/")) {
-        uriText = uriText.concat("/");
-      }
-      return new URI(uriText).normalize();
-    }
-    catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
+    return TfsUtil.getHostUri(myUriField.getText(), true);
   }
 
   public String getUsername() {
@@ -92,4 +101,22 @@ public class LoginForm {
     return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected());
   }
 
+  private void fireStateChanged() {
+    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
+    for (Listener listener : listeners) {
+      listener.stateChanged();
+    }
+  }
+
+  public void addListener(Listener listener) {
+    myListeners.add(listener);
+  }
+
+  public void removeListener(Listener listener) {
+    myListeners.remove(listener);
+  }
+
+  public void setErrorMessage(final @Nullable String errorMessage) {
+    myMessageLabel.setText(errorMessage);
+  }
 }

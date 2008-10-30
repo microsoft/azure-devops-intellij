@@ -77,13 +77,13 @@ public class TFSChangeProvider implements ChangeProvider {
     if (roots.isEmpty()) {
       return;
     }
-    
+
     try {
       final Ref<Boolean> mappingFound = Ref.create(false);
       // ingore orphan roots here
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          StatusProvider.visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(builder, workspace));
+          StatusProvider.visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(myProject, builder, workspace));
           mappingFound.set(true);
         }
       });

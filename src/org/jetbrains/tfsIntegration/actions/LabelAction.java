@@ -17,22 +17,22 @@
 package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.wm.WindowManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.ResultWithFailures;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelResult;
 import org.jetbrains.tfsIntegration.ui.ApplyLabelDialog;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.text.MessageFormat;
 
 public class LabelAction extends SingleItemAction {
 
@@ -64,7 +64,7 @@ public class LabelAction extends SingleItemAction {
         buffer.append(message);
       }
       if (buffer.length() > 0) {
-        WindowManager.getInstance().getStatusBar(project).setInfo(buffer.toString());
+        TfsUtil.showBalloon(project, MessageType.INFO, buffer.toString());
       }
     }
     catch (TfsException e) {

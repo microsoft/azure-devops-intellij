@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.revision;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -35,27 +36,30 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collection;
 import java.text.MessageFormat;
+import java.util.Collection;
 
 public abstract class TFSContentRevision implements ContentRevision {
+
+  private final Project myProject;
 
   private final ServerInfo myServer;
 
   private String myServerContent;
 
-  protected TFSContentRevision(final ServerInfo server) {
+  protected TFSContentRevision(final Project project, final ServerInfo server) {
+    myProject = project;
     myServer = server;
   }
 
   @Nullable
   protected abstract Item getItem() throws TfsException;
 
-  public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace, final int changeset, final int itemId)
+  public static TFSContentRevision create(final Project project, final @NotNull WorkspaceInfo workspace, final int changeset, final int itemId)
     throws TfsException {
     final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
 
-    return new TFSContentRevision(workspace.getServer()) {
+    return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
         return item;
@@ -80,11 +84,12 @@ public abstract class TFSContentRevision implements ContentRevision {
     };
   }
 
-  public static TFSContentRevision create(final @NotNull WorkspaceInfo workspace,
+  public static TFSContentRevision create(final Project project,
+                                          final @NotNull WorkspaceInfo workspace,
                                           final @NotNull FilePath localPath,
                                           final int changeset,
                                           final int itemId) {
-    return new TFSContentRevision(workspace.getServer()) {
+    return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
         return workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
@@ -102,14 +107,14 @@ public abstract class TFSContentRevision implements ContentRevision {
     };
   }
 
-  public static TFSContentRevision create(final @NotNull FilePath localPath, final int changeset) throws TfsException {
+  public static TFSContentRevision create(final Project project, final @NotNull FilePath localPath, final int changeset) throws TfsException {
     final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
     if (workspaces.isEmpty()) {
       throw new OperationFailedException("Cannot find mapping for item " + localPath.getPresentableUrl());
     }
 
     final WorkspaceInfo workspace = workspaces.iterator().next();
-    return new TFSContentRevision(workspace.getServer()) {
+    return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
         return workspace.getServer().getVCS()
@@ -168,7 +173,7 @@ public abstract class TFSContentRevision implements ContentRevision {
       store.saveContent(new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) {
           try {
-            VersionControlServer.downloadItem(myServer, downloadUrl, outputStream);
+            VersionControlServer.downloadItem(myProject, myServer, downloadUrl, outputStream);
           }
           catch (TfsException e) {
             exception.set(e);

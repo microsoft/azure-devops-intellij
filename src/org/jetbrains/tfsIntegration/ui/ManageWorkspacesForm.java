@@ -166,7 +166,7 @@ public class ManageWorkspacesForm {
     myProxySettingsButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         //noinspection ConstantConditions
-        proxySettings(getSelectedServer());
+        changeProxySettings(getSelectedServer());
       }
     });
 
@@ -241,7 +241,7 @@ public class ManageWorkspacesForm {
   }
 
   private void addServer() {
-    AuthenticationHelper.AuthenticationResult result = AuthenticationHelper.authenticate(null, true, true);
+    AuthenticationHelper.AuthenticationResult result = AuthenticationHelper.authenticate(null);
     if (result != null) {
       ServerInfo newServer = new ServerInfo(result.uri, result.serverGuid);
       Workstation.getInstance().addServer(newServer);
@@ -269,17 +269,17 @@ public class ManageWorkspacesForm {
     }
   }
 
-  private void proxySettings(final @NotNull ServerInfo server) {
+  private void changeProxySettings(final @NotNull ServerInfo server) {
     ProxySettingsDialog d = new ProxySettingsDialog(myProject, server.getUri());
     d.show();
     if (d.isOK()) {
       TFSConfigurationManager.getInstance().setProxyUri(server.getUri(), d.getProxyUri());
-      updateControls(server);
+      //updateControls(server);
     }
   }
 
   private void createWorkspace(final @NotNull ServerInfo server) {
-    if (server.getQualifiedUsername() == null && AuthenticationHelper.authenticate(server.getUri(), false, false) == null) {
+    if (server.getQualifiedUsername() == null && AuthenticationHelper.authenticate(server.getUri()) == null) {
       return;
     }
     WorkspaceDialog d = new WorkspaceDialog(myProject, server);

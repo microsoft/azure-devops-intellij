@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.Date;
 
 public class TFSFileRevision implements VcsFileRevision {
+  private final Project myProject;
   private final Date myDate;
   private byte[] myContent;
   private final String myCommitMessage;
@@ -36,12 +38,14 @@ public class TFSFileRevision implements VcsFileRevision {
   private final int myChangeset;
   private final WorkspaceInfo myWorkspace;
 
-  public TFSFileRevision(final WorkspaceInfo workspace,
+  public TFSFileRevision(final Project project,
+                         final WorkspaceInfo workspace,
                          final FilePath filePath,
                          final Date date,
                          final String commitMessage,
                          final String author,
                          final int changeset) {
+    myProject = project;
     myWorkspace = workspace;
     myDate = date;
     myCommitMessage = commitMessage;
@@ -75,7 +79,7 @@ public class TFSFileRevision implements VcsFileRevision {
     // TODO: encoding
     final String content;
     try {
-      content = TFSContentRevision.create(myFilePath, myChangeset).getContent();
+      content = TFSContentRevision.create(myProject, myFilePath, myChangeset).getContent();
       myContent = (content != null) ? content.getBytes() : null;
     }
     catch (TfsException e) {

@@ -21,11 +21,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.WindowManager;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -109,7 +109,7 @@ public class LockAction extends AnAction {
     if (exceptions.isEmpty()) {
       String message = MessageFormat.format("{0} {1} {2}", selectedItems.size(), selectedItems.size() == 1 ? "item" : "items",
                                             exitCode == LockItemsDialog.LOCK_EXIT_CODE ? "locked" : "unlocked");
-      WindowManager.getInstance().getStatusBar(project).setInfo(message);
+      TfsUtil.showBalloon(project, MessageType.INFO, message);
     }
     else {
       AbstractVcsHelper.getInstance(project).showErrors(exceptions, TFSVcs.TFS_NAME);

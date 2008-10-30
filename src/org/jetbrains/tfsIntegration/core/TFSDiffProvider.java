@@ -99,7 +99,7 @@ public class TFSDiffProvider implements DiffProvider {
           return null;
         }
         final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
-        return TFSContentRevision.create(workspaces.iterator().next(), intRevisionNumber.getValue(), item.getItemid());
+        return TFSContentRevision.create(myProject, workspaces.iterator().next(), intRevisionNumber.getValue(), item.getItemid());
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown

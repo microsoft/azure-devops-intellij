@@ -61,23 +61,33 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
    */
   @Nullable
   public synchronized Credentials getCredentials(@NotNull URI serverUri) {
-    final ServerConfiguration serverConfiguration = myServersConfig.get(toString(serverUri));
+    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
     return serverConfiguration != null ? serverConfiguration.getCredentials() : null;
   }
 
   @Nullable
   public URI getProxyUri(@NotNull URI serverUri) {
-    final ServerConfiguration serverConfiguration = myServersConfig.get(toString(serverUri));
+    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
     try {
-      return serverConfiguration == null || serverConfiguration.getProxyUri() == null ? null : new URI(serverConfiguration.getProxyUri());
+      return serverConfiguration != null && serverConfiguration.getProxyUri() != null ? new URI(serverConfiguration.getProxyUri()) : null;
     }
     catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
   }
 
+  public boolean shouldTryProxy(@NotNull URI serverUri) {
+    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
+    return serverConfiguration != null && serverConfiguration.getProxyUri() != null && !serverConfiguration.isProxyInaccessible();
+  }
+
+  public void setProxyInaccessible(@NotNull URI serverUri) {
+    myServersConfig.get(serverUri.toString()).setProxyInaccessible();
+  }
+
   public void setProxyUri(@NotNull URI serverUri, @Nullable URI proxyUri) {
-    getOrCreateServerConfiguration(serverUri).setProxyUri(proxyUri == null ? null : proxyUri.toString());
+    String proxyUriString = proxyUri != null ? proxyUri.toString() : null;
+    getOrCreateServerConfiguration(serverUri).setProxyUri(proxyUriString);
   }
 
   public synchronized void storeCredentials(@NotNull URI serverUri, final @NotNull Credentials credentials) {
@@ -102,22 +112,13 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   @NotNull
-  private ServerConfiguration getOrCreateServerConfiguration(URI serverUri) {
-    final String uri = toString(serverUri);
-    ServerConfiguration config = myServersConfig.get(uri);
+  private ServerConfiguration getOrCreateServerConfiguration(@NotNull URI serverUri) {
+    ServerConfiguration config = myServersConfig.get(serverUri.toString());
     if (config == null) {
       config = new ServerConfiguration();
-      myServersConfig.put(uri, config);
+      myServersConfig.put(serverUri.toString(), config);
     }
     return config;
   }
 
-  private static String toString(URI uri) {
-    try {
-      return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null).toString();
-    }
-    catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }

@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import org.apache.axis2.context.ConfigurationContext;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
@@ -52,6 +55,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.text.MessageFormat;
 import java.util.*;
 
 public class VersionControlServer {
@@ -517,9 +521,40 @@ public class VersionControlServer {
     return result;
   }
 
-  public static void downloadItem(final ServerInfo server, final String downloadKey, OutputStream outputStream) throws TfsException {
-    final String url = server.getUri().toASCIIString() + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
-    WebServiceHelper.httpGet(url, outputStream);
+  public static void downloadItem(Project project, final ServerInfo server, final String downloadKey, OutputStream outputStream)
+    throws TfsException {
+    final URI serverUri = server.getUri();
+    boolean tryProxy = TFSConfigurationManager.getInstance().shouldTryProxy(serverUri);
+    final String downloadUrl;
+    if (tryProxy) {
+      //noinspection ConstantConditions
+      downloadUrl = TFSConfigurationManager.getInstance().getProxyUri(serverUri).toString() +
+                    TFSConstants.PROXY_DOWNLOAD_ASMX +
+                    "?" +
+                    downloadKey +
+                    "&rid=" +
+                    server.getGuid();
+    }
+    else {
+      downloadUrl = serverUri + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
+    }
+    try {
+      WebServiceHelper.httpGet(serverUri, downloadUrl, outputStream);
+    }
+    catch (TfsException e) {
+      if (tryProxy) {
+        String messageHtml = MessageFormat.format(
+          "Failed to connect to TFS proxy ''{0}''\n{1}\nConnecting to server ''{2}'', proxy will be disabled for the current IDEA run.",
+          TFSConfigurationManager.getInstance().getProxyUri(serverUri), e.getMessage(), serverUri);
+        TFSVcs.LOG.info(messageHtml);
+        TfsUtil.showBalloon(project, MessageType.WARNING, messageHtml);
+        TFSConfigurationManager.getInstance().setProxyInaccessible(server.getUri());
+        downloadItem(project, server, downloadKey, outputStream);
+      }
+      else {
+        throw e;
+      }
+    }
   }
 
   public List<Changeset> queryHistory(final WorkspaceInfo workspace,

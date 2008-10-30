@@ -39,6 +39,9 @@ import java.util.*;
 
 public class Workstation {
 
+  // to be used in tests
+  public static boolean PRESERVE_CONFIG_FILE = false;
+
   // TODO: where is the file if we're not on Windows?
   @NonNls private static final String CONFIG_FILE =
     "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
@@ -78,19 +81,19 @@ public class Workstation {
 
   private List<WorkspaceInfo> getAllWorkspacesForCurrentOwnerAndComputer(boolean showLoginIfNoCredentials) {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-    for (final ServerInfo serverInfo : getServers()) {
-      if (showLoginIfNoCredentials && serverInfo.getQualifiedUsername() == null) {
+    for (final ServerInfo server : getServers()) {
+      if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
         final Ref<Boolean> available = new Ref<Boolean>();
         TfsFileUtil.executeInEventDispatchThread(new Runnable() {
           public void run() {
-            available.set(AuthenticationHelper.authenticate(serverInfo.getUri(), false, false) != null);
+            available.set(AuthenticationHelper.authenticate(server.getUri()) != null);
           }
         });
         if (!available.get()) {
           continue;
         }
       }
-      result.addAll(serverInfo.getWorkspacesForCurrentOwnerAndComputer());
+      result.addAll(server.getWorkspacesForCurrentOwnerAndComputer());
     }
     return result;
   }
@@ -126,6 +129,10 @@ public class Workstation {
    */
   @Nullable
   private static File getExistingCacheFile() {
+    if (PRESERVE_CONFIG_FILE) {
+      return null;
+    }
+    
     //noinspection HardCodedStringLiteral
     File file = new File(System.getProperty("user.home"), CONFIG_FILE);
     if (!file.exists()) {

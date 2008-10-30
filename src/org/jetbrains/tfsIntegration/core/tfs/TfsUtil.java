@@ -16,19 +16,29 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.wm.ToolWindowManager;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
+import javax.swing.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class TfsUtil {
+
+  private static final String CHANGES_TOOLWINDOW_ID = "Changes";
 
   // TODO refactor (workspace is searched for the second time)
   @Nullable
@@ -116,6 +126,45 @@ public class TfsUtil {
     }
     else {
       return qualifiedName;
+    }
+  }
+
+  @Nullable
+  public static URI getHostUri(String uriText, boolean complainOnPath) {
+    try {
+      final URI uri = new URI(uriText).normalize();
+      if (StringUtil.isEmpty(uri.getHost())) {
+        return null;
+      }
+      if (complainOnPath && !"".equals(uri.getPath()) && !"/".equals(uri.getPath())) {
+        return null;
+      }
+      return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), "/", null, null);
+    }
+    catch (URISyntaxException e) {
+      return null;
+    }
+
+  }
+
+  public static void showBalloon(final Project project, final MessageType messageType, final String messageHtml) {
+    Runnable r = new Runnable() {
+      public void run() {
+        final ToolWindowManager manager = ToolWindowManager.getInstance(project);
+        if (Arrays.asList(manager.getToolWindowIds()).contains(CHANGES_TOOLWINDOW_ID)) {
+          manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);
+        }
+        else {
+          // TODO FIXME handle the case when no project is open
+        }
+      }
+    };
+    Application application = ApplicationManager.getApplication();
+    if (application.isDispatchThread()) {
+      r.run();
+    }
+    else {
+      SwingUtilities.invokeLater(r);
     }
   }
 

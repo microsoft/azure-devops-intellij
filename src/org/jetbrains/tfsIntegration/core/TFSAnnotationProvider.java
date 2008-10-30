@@ -97,7 +97,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
                                               ? new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName())
                                               : new ChangesetVersionSpec(changeset);
           final List<VcsFileRevision> revisionList =
-            TFSHistoryProvider.getRevisions(path2item.get(localPath).getSitem(), false, workspace, versionSpec);
+            TFSHistoryProvider.getRevisions(myVcs.getProject(), path2item.get(localPath).getSitem(), false, workspace, versionSpec);
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (revisionList.isEmpty()) {
             return;
@@ -140,7 +140,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
         TFSProgressUtil.checkCanceled(progressIndicator);
         int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
         //noinspection ConstantConditions
-        final String content = TFSContentRevision.create(workspace, localPath, changeset, itemId).getContent();
+        final String content = TFSContentRevision.create(myVcs.getProject(), workspace, localPath, changeset, itemId).getContent();
         if (content == null) {
           final String errorMessage =
             MessageFormat.format("Failed to load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(), changeset);

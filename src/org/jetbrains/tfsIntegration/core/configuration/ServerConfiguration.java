@@ -16,7 +16,9 @@
 
 package org.jetbrains.tfsIntegration.core.configuration;
 
+import com.intellij.openapi.util.Comparing;
 import com.intellij.util.xmlb.annotations.Tag;
+import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +28,8 @@ public class ServerConfiguration {
   private @Nullable Credentials myCredentials;
 
   private @Nullable String myProxyUri;
+
+  private boolean myProxyInaccessible;
 
   public ServerConfiguration() {
   }
@@ -52,5 +56,17 @@ public class ServerConfiguration {
 
   public void setProxyUri(@Nullable final String proxyUri) {
     myProxyUri = proxyUri;
+    if (!Comparing.equal(myProxyUri, proxyUri)) {
+      myProxyInaccessible = false;
+    }
+  }
+
+  @Transient
+  public boolean isProxyInaccessible() {
+    return myProxyInaccessible;
+  }
+
+  public void setProxyInaccessible() {
+    myProxyInaccessible = true;
   }
 }

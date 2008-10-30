@@ -76,6 +76,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private static final String USER = "tfssetup";
   private static final String DOMAIN = "SWIFTTEAMS";
   private static final String PASSWORD = "";
+  private static final String PROXY = "http://tfs-proxy-01:8081/";
+
 
   private static final String WORKSPACE_NAME_PREFIX = "__testWorkspace_";
   private static final String SANDBOX_PREFIX = "sandbox_";
@@ -85,20 +87,16 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected WorkspaceInfo myTestWorkspace;
   protected VirtualFile mySandboxRoot;
   private Credentials myOriginalServerCredentials;
+  private URI myOriginalProxyUri;
 
   @Before
   public void setUp() throws Exception {
+    Workstation.PRESERVE_CONFIG_FILE = true;
+
     final IdeaTestFixtureFactory fixtureFactory = IdeaTestFixtureFactory.getFixtureFactory();
     myTempDirFixture = fixtureFactory.createTempDirTestFixture();
     myTempDirFixture.setUp();
 
-    //File pluginRoot = new File(PathManager.getHomePath(), "tfsIntegration");
-    //if (!pluginRoot.isDirectory()) {
-    // try standalone mode
-    //Class aClass = TFSTestCase.class;
-    //String rootPath = PathManager.getResourceRoot(aClass, "/" + aClass.getName().replace('.', '/') + ".class");
-    //pluginRoot = new File(rootPath).getParentFile().getParentFile().getParentFile();
-    //}
     File localRoot = new File(myTempDirFixture.getTempDirPath());
     localRoot.mkdir();
 
@@ -131,24 +129,29 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private void prepareServer() throws URISyntaxException, TfsException {
     final URI serverUri = new URI(SERVER);
-    ServerInfo server = null;
+
+    myOriginalServerCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
+    myOriginalProxyUri = TFSConfigurationManager.getInstance().getProxyUri(serverUri);
+
+    boolean serverFound = false;
     for (ServerInfo s : Workstation.getInstance().getServers()) {
-      if (s.getUri().equals(serverUri)) {
-        server = s;
-        break;
+      if (!serverUri.equals(s.getUri())) {
+        Workstation.getInstance().removeServer(s);
+      }
+      else {
+        serverFound = true;
       }
     }
+
     final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false);
-    if (server == null) {
+    if (!serverFound) {
       String serverGuid = WebServiceHelper.authenticate(serverUri, testCredentials);
       ServerInfo newServer = new ServerInfo(serverUri, serverGuid);
       Workstation.getInstance().addServer(newServer);
-      myOriginalServerCredentials = null;
     }
-    else {
-      myOriginalServerCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
-    }
+
     TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
+    TFSConfigurationManager.getInstance().setProxyUri(serverUri, PROXY != null ? new URI(PROXY) : null);
   }
 
   @After
@@ -165,6 +168,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
         TFSConfigurationManager.getInstance().storeCredentials(new URI(SERVER), myOriginalServerCredentials);
       }
     }
+
+    TFSConfigurationManager.getInstance().setProxyUri(new URI(SERVER), myOriginalProxyUri);
 
     tearDownProject();
     if (myTempDirFixture != null) {
@@ -188,6 +193,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private void createNewWorkspaceFor(File root) throws URISyntaxException, TfsException {
     final String workspaceName = WORKSPACE_NAME_PREFIX + Workstation.getComputerName();
     final ServerInfo server = Workstation.getInstance().getServer(new URI(SERVER));
+    server.refreshWorkspacesForCurrentOwner();
     for (WorkspaceInfo workspace : server.getWorkspacesForCurrentOwnerAndComputer()) {
       if (workspace.getName().equals(workspaceName)) {
         removeWorkspace(workspace);
@@ -203,14 +209,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private static void removeWorkspace(WorkspaceInfo workspace) throws URISyntaxException, TfsException {
     final ServerInfo server = Workstation.getInstance().getServer(new URI(SERVER));
+    server.refreshWorkspacesForCurrentOwner();
     server.deleteWorkspace(workspace);
   }
-
-  //protected TestChangeListBuilder getChanges() throws VcsException {
-  //  TestChangeListBuilder changeListBuilder = new TestChangeListBuilder();
-  //  getVcs().getChangeProvider().getChanges(getAllDirtyScope(), changeListBuilder, new EmptyProgressIndicator());
-  //  return changeListBuilder;
-  //}
 
   protected TestChangeListBuilder getChanges() throws VcsException {
     return getChanges(mySandboxRoot);
@@ -243,14 +244,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       throw new VcsException(e);
     }
   }
-
-  //private void deleteServerFolder(FilePath path) throws TfsException {
-  //  ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathByLocalPath(path));
-  //  myTestWorkspace.getServer().getVCS()
-  //    .scheduleForDeletion(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
-  //  myTestWorkspace.getServer().getVCS().checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(),
-  //                                               Collections.singletonList(itemPath.getSelectedItem()), path.getPath() + "  deleted");
-  //}
 
   protected void commit(final Collection<Change> changes, final String comment) {
     final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(new ArrayList<Change>(changes), comment);
@@ -329,16 +322,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
   }
 
-  //protected VirtualFile createAndCommitFile(String name, String content) throws VcsException {
-  //  Assert.assertEquals(0, getChanges(mySandboxRoot).assertTotalItems());
-  //
-  //  doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-  //  VirtualFile file = createFileInCommand(mySandboxRoot, name, content);
-  //  commit(getChanges(mySandboxRoot).getChanges(), "");
-  //  Assert.assertEquals(0, getChanges(mySandboxRoot).assertTotalItems());
-  //  return file;
-  //}
-
   protected void editFiles(VirtualFile... files) throws VcsException {
     // TODO: use ReadonlyStatusHandler.getInstance(myProject).ensureFilesWritable(file);
     getVcs().getEditFileProvider().editFiles(files);
@@ -394,10 +377,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected void clearReadonlyStatusExternally(FilePath... files) throws IOException {
     for (FilePath file : files) {
       FileUtil.setReadOnlyAttribute(file.getPath(), false);
-//VcsUtil.refreshFiles(new File[]{new File(file.getPath())}, new Runnable() {
-//  public void run() {
-//  }
-//});
       refreshAll();
     }
   }
@@ -410,11 +389,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     renameFileInCommand(file, newName);
     refreshAll();
   }
-
-  /*public void refreshRecursively(final VirtualFile parent) {
-    TfsFileUtil.refreshRecursively(parent);
-    ChangeListManager.getInstance(myProject).ensureUpToDate(false);
-  }*/
 
   protected VirtualFile createFileInCommand(final VirtualFile parent, final String name, @Nullable final String content) {
     final VirtualFile result = super.createFileInCommand(parent, name, content);

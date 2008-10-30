@@ -107,19 +107,19 @@ public class TFSChangeList implements CommittedChangeList {
 
         myCachedChanges = new ArrayList<Change>();
         for (FilePath path : myAddedPaths) {
-          myCachedChanges.add(new Change(null, TFSContentRevision.create(path, myRevisionNumber)));
+          myCachedChanges.add(new Change(null, TFSContentRevision.create(myVcs.getProject(), path, myRevisionNumber)));
         }
         for (Map.Entry<FilePath, Integer> entry : myDeletedPaths.entrySet()) {
-          myCachedChanges.add(new Change(TFSContentRevision.create(entry.getKey(), entry.getValue()), null));
+          myCachedChanges.add(new Change(TFSContentRevision.create(myVcs.getProject(), entry.getKey(), entry.getValue()), null));
         }
         for (Map.Entry<FilePath, Integer> entry : myModifiedPaths.entrySet()) {
-          TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue());
-          TFSContentRevision afterRevision = TFSContentRevision.create(entry.getKey(), myRevisionNumber);
+          TFSContentRevision beforeRevision = TFSContentRevision.create(myVcs.getProject(), entry.getKey(), entry.getValue());
+          TFSContentRevision afterRevision = TFSContentRevision.create(myVcs.getProject(), entry.getKey(), myRevisionNumber);
           myCachedChanges.add(new Change(beforeRevision, afterRevision));
         }
         for (Map.Entry<FilePath, Pair<FilePath, Integer>> entry : myMovedPaths.entrySet()) {
-          TFSContentRevision beforeRevision = TFSContentRevision.create(entry.getKey(), entry.getValue().second);
-          TFSContentRevision afterRevision = TFSContentRevision.create(entry.getValue().first, myRevisionNumber);
+          TFSContentRevision beforeRevision = TFSContentRevision.create(myVcs.getProject(), entry.getKey(), entry.getValue().second);
+          TFSContentRevision afterRevision = TFSContentRevision.create(myVcs.getProject(), entry.getValue().first, myRevisionNumber);
 
           if (IDEADEV_29451_WORKAROUND) {
             myCachedChanges.add(new Change(beforeRevision, null));

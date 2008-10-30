@@ -21,44 +21,50 @@ import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 
 import javax.swing.*;
 import java.net.URI;
+import java.text.MessageFormat;
 
 public class ProxySettingsDialog extends DialogWrapper {
 
-  private ProxySettingsForm myProxySettingsForm;
+  private ProxySettingsForm myForm;
   private final @NotNull URI myServerUri;
 
   public ProxySettingsDialog(final Project project, final @NotNull URI serverUri) {
     super(project, true);
     myServerUri = serverUri;
-    setTitle(serverUri.toString());
+    String title = MessageFormat.format("Set TFS proxy for server {0}", serverUri);
+    setTitle(title);
 
     init();
-    updateButtons();
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myProxySettingsForm = new ProxySettingsForm(TFSConfigurationManager.getInstance().getProxyUri(myServerUri));
+    Credentials credentials = TFSConfigurationManager.getInstance().getCredentials(myServerUri);
+    myForm = new ProxySettingsForm(TFSConfigurationManager.getInstance().getProxyUri(myServerUri),
+                                   credentials != null ? credentials.getQualifiedUsername() : null);
 
-    myProxySettingsForm.addListener(new ProxySettingsForm.Listener() {
+    myForm.addListener(new ProxySettingsForm.Listener() {
       public void stateChanged() {
         updateButtons();
       }
     });
 
-    return myProxySettingsForm.getContentPane();
+    return myForm.getContentPane();
   }
 
   private void updateButtons() {
-    setOKActionEnabled(myProxySettingsForm.isConsistentState());
+    String errorMessage = myForm.isValid() ? null : "Please enter valid proxy address.";
+    myForm.setMessage(errorMessage);
+    setOKActionEnabled(myForm.isValid());
   }
 
   @Nullable
   public URI getProxyUri() {
-    return myProxySettingsForm.getProxyUri();
+    return myForm.getProxyUri();
   }
 
 }

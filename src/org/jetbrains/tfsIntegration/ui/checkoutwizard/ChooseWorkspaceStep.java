@@ -122,7 +122,7 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
       myModel.setServer(server);
       if (commitType == CommitType.Next || commitType == CommitType.Finish) {
         //noinspection ConstantConditions
-        if (AuthenticationHelper.authenticate(server.getUri(), false, false) == null) {
+        if (AuthenticationHelper.authenticate(server.getUri()) == null) {
           throw new CommitStepCancelledException();
         }
       }

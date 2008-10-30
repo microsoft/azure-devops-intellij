@@ -74,14 +74,14 @@ public class ResolveConflictHelper {
             final String current;
             final String last;
             if (conflict.getCtype() == ConflictType.Merge) {
-              current = TFSContentRevision.create(workspace, conflict.getTver(), conflict.getTitemid()).getContent();
-              last = TFSContentRevision.create(workspace, conflict.getYver(), conflict.getYitemid()).getContent();
+              current = TFSContentRevision.create(myProject, workspace, conflict.getTver(), conflict.getTitemid()).getContent();
+              last = TFSContentRevision.create(myProject, workspace, conflict.getYver(), conflict.getYitemid()).getContent();
             }
             else {
               current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
-              last = TFSContentRevision.create(workspace, conflict.getTver(), conflict.getTitemid()).getContent();
+              last = TFSContentRevision.create(myProject, workspace, conflict.getTver(), conflict.getTitemid()).getContent();
             }
-            final String original = TFSContentRevision.create(workspace, conflict.getBver(), conflict.getBitemid()).getContent();
+            final String original = TFSContentRevision.create(myProject, workspace, conflict.getBver(), conflict.getBitemid()).getContent();
             contentTriplet.baseContent = original != null ? original : "";
             contentTriplet.localContent = current != null ? current : "";
             contentTriplet.serverContent = last != null ? last : "";

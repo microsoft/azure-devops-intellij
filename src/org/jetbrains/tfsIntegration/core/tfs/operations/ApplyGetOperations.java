@@ -505,7 +505,7 @@ public class ApplyGetOperations {
     try {
       TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) throws TfsException {
-          VersionControlServer.downloadItem(myWorkspace.getServer(), operation.getDurl(), outputStream);
+          VersionControlServer.downloadItem(myProject, myWorkspace.getServer(), operation.getDurl(), outputStream);
         }
       });
       if (!target.setReadOnly()) {

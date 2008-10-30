@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.jetbrains.tfsIntegration.ui.LoginForm">
-  <grid id="27dc6" binding="myContentPane" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="myContentPane" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="500" height="400"/>
+      <xy x="20" y="20" width="504" height="400"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -14,12 +14,12 @@
         </constraints>
         <properties>
           <labelFor value="4e824"/>
-          <text value="&amp;Server URL"/>
+          <text value="&amp;Server:"/>
         </properties>
       </component>
       <vspacer id="75294">
         <constraints>
-          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
       <component id="4e824" class="javax.swing.JTextField" binding="myUriField">
@@ -36,7 +36,7 @@
         </constraints>
         <properties>
           <labelFor value="2d817"/>
-          <text value="User &amp;name"/>
+          <text value="User &amp;name:"/>
         </properties>
       </component>
       <component id="2d817" class="javax.swing.JTextField" binding="myUsernameField">
@@ -53,7 +53,7 @@
         </constraints>
         <properties>
           <labelFor value="a4146"/>
-          <text value="&amp;Domain"/>
+          <text value="&amp;Domain:"/>
         </properties>
       </component>
       <component id="a4146" class="javax.swing.JTextField" binding="myDomainField">
@@ -70,7 +70,7 @@
         </constraints>
         <properties>
           <labelFor value="d4d35"/>
-          <text value="&amp;Password"/>
+          <text value="&amp;Password:"/>
         </properties>
       </component>
       <component id="d4d35" class="javax.swing.JPasswordField" binding="myPasswordField">
@@ -80,6 +80,17 @@
           </grid>
         </constraints>
         <properties/>
+      </component>
+      <component id="b445a" class="javax.swing.JLabel" binding="myMessageLabel">
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <minimum-size width="300" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <foreground color="-65536"/>
+          <text value=" "/>
+        </properties>
       </component>
       <component id="6068a" class="javax.swing.JCheckBox" binding="myStorePasswordCheckbox">
         <constraints>

@@ -18,37 +18,41 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.DocumentAdapter;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProxySettingsForm {
 
   private JPanel myContentPane;
-  private JRadioButton myNoProxyRadioButton;
-  private JRadioButton myProxyServerRadioButton;
-  private JTextField myProxyServerTextField;
-
-  private List<Listener> myListeners = new ArrayList<Listener>();
 
   public interface Listener {
     void stateChanged();
   }
 
-  public ProxySettingsForm(URI currentProxyUri) {
-    if (currentProxyUri == null) {
+  private JRadioButton myNoProxyRadioButton;
+  private JRadioButton myProxyServerRadioButton;
+  private JTextField myProxyServerTextField;
+  private JLabel myMessageLabel;
+  private JLabel myInfoLabel;
+  private JLabel myProxyUrlLabel;
+
+  private final List<Listener> myListeners = new ArrayList<Listener>();
+
+  public ProxySettingsForm(@Nullable URI initialProxyUri, @Nullable String serverQualifiedUsername) {
+    if (initialProxyUri == null) {
       myNoProxyRadioButton.setSelected(true);
-      myProxyServerTextField.setText("http://");
     }
     else {
       myProxyServerRadioButton.setSelected(true);
-      myProxyServerTextField.setText(currentProxyUri.toString());
+      myProxyServerTextField.setText(initialProxyUri.toString());
     }
 
     final ActionListener radioButtonListener = new ActionListener() {
@@ -65,19 +69,23 @@ public class ProxySettingsForm {
         fireStateChanged();
       }
     });
-    
+
+    String infoMessage = MessageFormat
+      .format("Credentials to connect to the proxy: {0}", serverQualifiedUsername != null ? serverQualifiedUsername : "(not specified)");
+    myInfoLabel.setText(infoMessage);
+
     updateContols();
   }
 
   private void updateContols() {
+    myProxyServerTextField.setEnabled(myProxyServerRadioButton.isSelected());
+    myInfoLabel.setEnabled(myProxyServerRadioButton.isSelected());
+    myProxyUrlLabel.setEnabled(myProxyServerRadioButton.isSelected());
+
     if (myProxyServerRadioButton.isSelected()) {
-      myProxyServerTextField.setEnabled(true);
       myProxyServerTextField.requestFocus();
-    } else {
-      myProxyServerTextField.setEnabled(false);
     }
   }
-
 
   public JComponent getContentPane() {
     return myContentPane;
@@ -98,8 +106,8 @@ public class ProxySettingsForm {
     myListeners.remove(listener);
   }
 
-  public boolean isConsistentState() {
-    return myNoProxyRadioButton.isSelected() || parseProxyUri(myProxyServerTextField.getText()) != null;
+  public boolean isValid() {
+    return myNoProxyRadioButton.isSelected() || TfsUtil.getHostUri(myProxyServerTextField.getText(), true) != null;
   }
 
   @Nullable
@@ -108,21 +116,12 @@ public class ProxySettingsForm {
       return null;
     }
     else {
-      return parseProxyUri(myProxyServerTextField.getText());
+      return TfsUtil.getHostUri(myProxyServerTextField.getText(), true);
     }
   }
 
-  @Nullable
-  private static URI parseProxyUri(String uriText) {
-    try {
-      if (!uriText.endsWith("/")) {
-        uriText = uriText.concat("/");
-      }
-      return new URI(uriText).normalize();
-    }
-    catch (URISyntaxException e) {
-      return null;
-    }
+  public void setMessage(@Nullable String message) {
+    myMessageLabel.setText(message);
   }
 
 }

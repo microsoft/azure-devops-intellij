@@ -81,7 +81,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       }
 
       final List<VcsFileRevision> revisions =
-        getRevisions(serverItem.getSitem(), filePath.isDirectory(), workspaces.iterator().next(), LatestVersionSpec.INSTANCE);
+        getRevisions(myProject, serverItem.getSitem(), filePath.isDirectory(), workspaces.iterator().next(), LatestVersionSpec.INSTANCE);
       if (revisions.isEmpty()) {
         return null;
       }
@@ -97,7 +97,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     }
   }
 
-  public static List<VcsFileRevision> getRevisions(final String serverPath,
+  public static List<VcsFileRevision> getRevisions(final Project project,
+                                                   final String serverPath,
                                                    final boolean isDirectory,
                                                    WorkspaceInfo workspace,
                                                    VersionSpecBase versionTo) throws TfsException {
@@ -108,8 +109,9 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     for (Changeset changeset : changesets) {
       final Item item = changeset.getChanges().getChange()[0].getItem();
       final FilePath localPath = workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
-      revisions.add(new TFSFileRevision(workspace, localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(),
-                                        changeset.getCset()));
+      revisions.add(
+        new TFSFileRevision(project, workspace, localPath, changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(),
+                            changeset.getCset()));
     }
     return revisions;
   }

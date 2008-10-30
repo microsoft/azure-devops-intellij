@@ -39,6 +39,7 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -52,7 +53,6 @@ import org.jetbrains.tfsIntegration.ui.LoginDialog;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.zip.GZIPInputStream;
 
@@ -132,42 +132,26 @@ public class WebServiceHelper {
   }
 
   public static <T> T executeRequest(final Stub stub, final Delegate<T> delegate) throws TfsException {
-    final Ref<URI> serverUri = new Ref<URI>();
-    try {
-      URI targetEndpoint = new URI(stub._getServiceClient().getOptions().getTo().getAddress());
-      serverUri.set(
-        new URI(targetEndpoint.getScheme(), null, targetEndpoint.getHost(), targetEndpoint.getPort(), null, null, null)); // TODO: trim?
-    }
-    catch (URISyntaxException e) {
-      TFSVcs.LOG.error(e);
-    }
+    final URI serverUri = TfsUtil.getHostUri(stub._getServiceClient().getOptions().getTo().getAddress(), false);
 
-    return executeRequest(serverUri.get(), new InnerDelegate<T>() {
+    return executeRequest(serverUri, new InnerDelegate<T>() {
       public T executeRequest(final Credentials credentials) throws Exception {
         setupStub(stub);
-        setCredentials(stub, credentials, serverUri.get());
+        setCredentials(stub, credentials, serverUri);
         setProxy(stub);
         return delegate.executeRequest();
       }
     });
   }
 
-  public static void httpGet(final String downloadUrl, final OutputStream outputStream) throws TfsException {
+  public static void httpGet(final URI serverUri, final String downloadUrl, final OutputStream outputStream) throws TfsException {
     TFSVcs.assertTrue(downloadUrl != null);
-    final Ref<URI> serverUri = new Ref<URI>();
-    try {
-      URI uri = new URI(downloadUrl);
-      serverUri.set(new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null)); // TODO: trim?
-    }
-    catch (URISyntaxException e) {
-      TFSVcs.LOG.error(e);
-    }
 
-    executeRequest(serverUri.get(), new InnerDelegate<Object>() {
+    executeRequest(serverUri, new InnerDelegate<Object>() {
 
       public Object executeRequest(final Credentials credentials) throws Exception {
         HttpClient httpClient = new HttpClient();
-        setCredentials(httpClient, credentials, serverUri.get());
+        setCredentials(httpClient, credentials, serverUri);
         setProxy(httpClient);
 
         HttpMethod method = new GetMethod(downloadUrl);
@@ -197,22 +181,22 @@ public class WebServiceHelper {
     }
   }
 
+  // TODO get rid of dialogCredentials
   private static <T> T executeRequest(final URI serverUri, InnerDelegate<T> delegate) throws TfsException {
     final Credentials originalStoredCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
-
-    Credentials credentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
+    Credentials currentCredentials = originalStoredCredentials;
     boolean forcePrompt = false;
     while (true) {
-      if (credentials.getPassword() == null || forcePrompt) {
+      if (currentCredentials.getPassword() == null || forcePrompt) {
         final Ref<Credentials> dialogCredentials = new Ref<Credentials>(originalStoredCredentials);
 
         Runnable runnable = new Runnable() {
           public void run() {
             synchronized (getLock(serverUri)) {
               // if another thread was pending to prompt for credentials, it may already succeed and there's no need to ask again
-              Credentials actualCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
+              Credentials recentlyStoredCredentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
               //noinspection ConstantConditions
-              if (actualCredentials.equalsTo(originalStoredCredentials) || actualCredentials.getPassword() == null) {
+              if (recentlyStoredCredentials.equalsTo(originalStoredCredentials) || recentlyStoredCredentials.getPassword() == null) {
                 final LoginDialog d = new LoginDialog(serverUri, dialogCredentials.get(), false);
                 d.show();
                 if (d.isOK()) {
@@ -223,7 +207,7 @@ public class WebServiceHelper {
                 }
               }
               else {
-                dialogCredentials.set(actualCredentials);
+                dialogCredentials.set(recentlyStoredCredentials);
               }
             }
           }
@@ -232,7 +216,7 @@ public class WebServiceHelper {
         TfsFileUtil.executeInEventDispatchThread(runnable);
 
         if (dialogCredentials.get() != null) {
-          credentials = dialogCredentials.get();
+          currentCredentials = dialogCredentials.get();
         }
         else {
           throw new UserCancelledException();
@@ -242,10 +226,10 @@ public class WebServiceHelper {
       synchronized (getLock(serverUri)) {
         try {
           final T result;
-          TFSVcs.assertTrue(credentials.getPassword() != null);
+          TFSVcs.assertTrue(currentCredentials.getPassword() != null);
 
-          result = delegate.executeRequest(credentials);
-          TFSConfigurationManager.getInstance().storeCredentials(serverUri, credentials);
+          result = delegate.executeRequest(currentCredentials);
+          TFSConfigurationManager.getInstance().storeCredentials(serverUri, currentCredentials);
           return result;
         }
         catch (Exception e) {
@@ -256,7 +240,7 @@ public class WebServiceHelper {
           }
           else {
             if (!(tfsException instanceof ConnectionFailedException)) {
-              TFSConfigurationManager.getInstance().storeCredentials(serverUri, credentials);
+              TFSConfigurationManager.getInstance().storeCredentials(serverUri, currentCredentials);
             }
             throw tfsException;
           }
@@ -330,28 +314,17 @@ public class WebServiceHelper {
 
   public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)
     throws TfsException {
-    final Ref<URI> serverUri = new Ref<URI>();
-    try {
-      URI uri = new URI(uploadUrl);
-      serverUri.set(new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), null, null, null)); // TODO: trim?
-    }
-    catch (URISyntaxException e) {
-      TFSVcs.LOG.error(e);
-    }
+    final URI serverUri = TfsUtil.getHostUri(uploadUrl, false);
 
-    executeRequest(serverUri.get(), new InnerDelegate<Object>() {
-
+    executeRequest(serverUri, new InnerDelegate<Object>() {
       public Object executeRequest(final Credentials credentials) throws Exception {
         HttpClient httpClient = new HttpClient();
-        setCredentials(httpClient, credentials, serverUri.get());
+        setCredentials(httpClient, credentials, serverUri);
         setProxy(httpClient);
 
         PostMethod method = new PostMethod(uploadUrl);
         method.setRequestHeader("X-TFS-Version", "1.0.0.0");
         method.setRequestHeader("accept-language", "en-US");
-        //method.setRequestHeader("X-VersionControl-Instance",
-        //                            "ac4d8821-8927-4f07-9acf-adbf71119886, CommandCheckin");
-
         method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
 
         int statusCode = httpClient.executeMethod(method);

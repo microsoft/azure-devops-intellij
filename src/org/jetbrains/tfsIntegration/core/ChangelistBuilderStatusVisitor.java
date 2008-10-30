@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
@@ -30,10 +31,14 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 class ChangelistBuilderStatusVisitor implements StatusVisitor {
+  private @NotNull final Project myProject;
   private @NotNull final ChangelistBuilder myChangelistBuilder;
   private @NotNull final WorkspaceInfo myWorkspace;
 
-  public ChangelistBuilderStatusVisitor(final @NotNull ChangelistBuilder changelistBuilder, final @NotNull WorkspaceInfo workspace) {
+  public ChangelistBuilderStatusVisitor(final @NotNull Project project,
+                                        final @NotNull ChangelistBuilder changelistBuilder,
+                                        final @NotNull WorkspaceInfo workspace) {
+    myProject = project;
     myChangelistBuilder = changelistBuilder;
     myWorkspace = workspace;
   }
@@ -47,7 +52,8 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
     throws TfsException {
     if (localItemExists) {
-      TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
+      TFSContentRevision baseRevision =
+        TFSContentRevision.create(myProject, myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
       myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)));
     }
     else {
@@ -69,7 +75,8 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   public void scheduledForDeletion(final @NotNull FilePath localPath,
                                    final boolean localItemExists,
                                    final @NotNull ServerStatus serverStatus) {
-    TFSContentRevision baseRevision = TFSContentRevision.create(myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
+    TFSContentRevision baseRevision =
+      TFSContentRevision.create(myProject, myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
     myChangelistBuilder.processChange(new Change(baseRevision, null));
   }
 
@@ -109,7 +116,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
       FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
 
       //noinspection ConstantConditions
-      TFSContentRevision before = TFSContentRevision.create(myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
+      TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
       ContentRevision after = CurrentContentRevision.create(localPath);
       myChangelistBuilder.processChange(new Change(before, after));
     }
@@ -126,7 +133,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
       FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
 
       //noinspection ConstantConditions
-      TFSContentRevision before = TFSContentRevision.create(myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
+      TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
       ContentRevision after = CurrentContentRevision.create(localPath);
       myChangelistBuilder.processChange(new Change(before, after));
     }
