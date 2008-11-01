@@ -24,8 +24,6 @@
 
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
-    <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"
-                        serviceImplementation="org.jetbrains.tfsIntegration.core.TFSApplicationSettings"/>
     <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs"/>
   </extensions>
 

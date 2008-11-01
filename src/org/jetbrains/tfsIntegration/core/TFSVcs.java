@@ -45,24 +45,24 @@ public class TFSVcs extends AbstractVcs {
     void revisionChanged();
   }
 
+  // TODO make private
   @NonNls public static final String TFS_NAME = "TFS";
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
-  private TFSProjectConfiguration myProjectConfiguration;
-  private TFSFileListener myFileListener;
+
+  private VcsVFSListener myFileListener;
   private VcsShowConfirmationOption myAddConfirmation;
   private VcsShowConfirmationOption myDeleteConfirmation;
   private VcsShowSettingOption myCheckoutOptions;
   private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
   private VcsHistoryProvider myHistoryProvider;
   private DiffProvider myDiffProvider;
-  private TFSCheckinEnvironment myCheckinEnvironment;
-  private TFSUpdateEnvironment myUpdateEnvironment;
-  private TFSAnnotationProvider myAnnotationProvider;
+  private CheckinEnvironment myCheckinEnvironment;
+  private UpdateEnvironment myUpdateEnvironment;
+  private AnnotationProvider myAnnotationProvider;
   private List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
-  public TFSVcs(Project project, TFSProjectConfiguration projectConfiguration) {
+  public TFSVcs(Project project) {
     super(project);
-    myProjectConfiguration = projectConfiguration;
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
@@ -76,18 +76,15 @@ public class TFSVcs extends AbstractVcs {
 
   @NonNls
   public String getName() {
-    LOG.debug("getName");
     return TFS_NAME;
   }
 
   @NonNls
   public String getDisplayName() {
-    LOG.debug("getDisplayName");
     return "TFS";
   }
 
   public Configurable getConfigurable() {
-    LOG.debug("createConfigurable");
     return new TFSProjectConfigurable(myProject);
   }
 
@@ -99,13 +96,11 @@ public class TFSVcs extends AbstractVcs {
   public void activate() {
     super.activate();
     myFileListener = new TFSFileListener(getProject(), this);
-    TFSApplicationSettings.getInstance().tfsActivated();
   }
 
   @Override
   public void deactivate() {
     myFileListener.dispose();
-    TFSApplicationSettings.getInstance().tfsDeactivated();
     super.deactivate();
   }
 
@@ -119,10 +114,6 @@ public class TFSVcs extends AbstractVcs {
 
   public VcsShowSettingOption getCheckoutOptions() {
     return myCheckoutOptions;
-  }
-
-  public TFSProjectConfiguration getProjectConfiguration() {
-    return myProjectConfiguration;
   }
 
   public ChangeProvider getChangeProvider() {
