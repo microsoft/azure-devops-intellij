@@ -28,7 +28,7 @@ public class ManageWorkspacesDialog extends DialogWrapper {
   public ManageWorkspacesDialog(final Project project) {
     super(project, true);
     myProject = project;
-    setTitle("Manage TFS Workspaces");
+    setTitle("Manage TFS Servers and Workspaces");
     setOKButtonText("Close");
 
     init();

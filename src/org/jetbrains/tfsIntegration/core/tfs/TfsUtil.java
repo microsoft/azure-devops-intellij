@@ -20,21 +20,27 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.ui.popup.Balloon;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.openapi.wm.WindowManager;
+import com.intellij.ui.awt.RelativePoint;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import javax.swing.*;
+import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.List;
 
 public class TfsUtil {
 
@@ -155,7 +161,18 @@ public class TfsUtil {
           manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);
         }
         else {
-          // TODO FIXME handle the case when no project is open
+          final Balloon balloon = JBPopupFactory.getInstance()
+            .createHtmlTextBalloonBuilder(messageHtml.replace("\n", "<br>"), messageType.getDefaultIcon(), messageType.getPopupBackground(),
+                                          null).createBalloon();
+
+          // TODO FIXME what to do if null?
+          if (WindowManager.getInstance().getFrame(project) != null) {
+            final JComponent component = WindowManager.getInstance().getFrame(project).getRootPane();
+            final Rectangle rect = component.getVisibleRect();
+            final Point p = new Point(rect.x + 30, rect.y + rect.height - 10);
+            final RelativePoint point = new RelativePoint(component, p);
+            balloon.show(point, Balloon.Position.under);
+          }
         }
       }
     };
