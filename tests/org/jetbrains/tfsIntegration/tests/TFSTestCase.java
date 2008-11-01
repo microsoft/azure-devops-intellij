@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.*;
@@ -144,9 +145,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     }
 
     final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false);
+    TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
     if (!serverFound) {
-      String serverGuid = WebServiceHelper.authenticate(serverUri, testCredentials);
-      ServerInfo newServer = new ServerInfo(serverUri, serverGuid);
+      Pair<URI, String> uriAndGuid = WebServiceHelper.authenticate(serverUri);
+      ServerInfo newServer = new ServerInfo(serverUri, uriAndGuid.second);
       Workstation.getInstance().addServer(newServer);
     }
 
@@ -323,7 +325,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void editFiles(VirtualFile... files) throws VcsException {
-    // TODO: use ReadonlyStatusHandler.getInstance(myProject).ensureFilesWritable(file);
     getVcs().getEditFileProvider().editFiles(files);
     refreshAll();
   }
@@ -465,7 +466,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void assertFileStatus(VirtualFile file, FileStatus expectedStatus) {
-    Assert.assertTrue(FileStatusManager.getInstance(myProject).getStatus(file) == expectedStatus);
+    Assert.assertEquals(expectedStatus, FileStatusManager.getInstance(myProject).getStatus(file));
   }
 
 
@@ -529,24 +530,20 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
       Assert.fail(e.getMessage());
     }
     finally {
-      if (stream != null) {
-        try {
-          stream.close();
-        }
-        catch (IOException e) {
-          // ingore
-        }
+      try {
+        stream.close();
+      }
+      catch (IOException e) {
+        // ignore
       }
     }
+
   }
 
   protected int getLatestRevisionNumber(VirtualFile file) throws VcsException {
     final RepositoryLocation location = getVcs().getCommittedChangesProvider().getLocationFor(TfsFileUtil.getFilePath(file));
-
-    // maxCount = 0 here to test that ALL the history is accessed properly
-    // TODO do this explicitly
-    final List<TFSChangeList> historyList =
-      getVcs().getCommittedChangesProvider().getCommittedChanges(new ChangeBrowserSettings(), location, 0);
+    final List<TFSChangeList> historyList = getVcs().getCommittedChangesProvider()
+      .getCommittedChanges(new ChangeBrowserSettings(), location, getVcs().getCommittedChangesProvider().getUnlimitedCountValue());
     return (int)historyList.get(0).getNumber();
   }
 

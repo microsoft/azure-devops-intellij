@@ -26,8 +26,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
+import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
-import org.jetbrains.tfsIntegration.ui.AuthenticationHelper;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -86,7 +87,12 @@ public class Workstation {
         final Ref<Boolean> available = new Ref<Boolean>();
         TfsFileUtil.executeInEventDispatchThread(new Runnable() {
           public void run() {
-            available.set(AuthenticationHelper.authenticate(server.getUri()) != null);
+            try {
+                WebServiceHelper.authenticate(server.getUri());
+              available.set(true);
+            } catch (TfsException e) {
+              available.set(false);
+            }
           }
         });
         if (!available.get()) {
@@ -231,6 +237,8 @@ public class Workstation {
 
   public void removeServer(final ServerInfo serverInfo) {
     myServerInfos.remove(serverInfo);
+
+  TFSConfigurationManager.getInstance().remove(serverInfo.getUri());
     update();
   }
 

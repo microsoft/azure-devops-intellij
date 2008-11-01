@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.exceptions;
 import org.apache.axiom.soap.SOAPFaultCode;
 import org.apache.axiom.soap.SOAPFaultSubCode;
 import org.apache.axiom.soap.SOAPFaultValue;
+import org.apache.axiom.soap.SOAPProcessingException;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NoHttpResponseException;
@@ -56,6 +57,9 @@ public class TfsExceptionManager {
     }
     if (axisFault.getCause() instanceof SSLHandshakeException) {
       return new SSLConnectionException((SSLHandshakeException)axisFault.getCause());
+    }
+    if (axisFault.getCause() instanceof SOAPProcessingException) {
+      return new ConnectionFailedException("Invalid server response.");
     }
 
     SOAPFaultCode code = axisFault.getFaultCodeElement();

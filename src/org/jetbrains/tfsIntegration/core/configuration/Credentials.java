@@ -104,7 +104,7 @@ public class Credentials {
     }
   }
 
-  public boolean equalsTo(Credentials c) {
+  public boolean equalsTo(final @NotNull Credentials c) {
     if (!getUserName().equals(c.getUserName())) {
       return false;
     }
@@ -116,7 +116,8 @@ public class Credentials {
 
   @NonNls
   public String toString() {
-    return getQualifiedUsername();
+    //noinspection ConstantConditions
+    return getQualifiedUsername() + "," + (getPassword() != null ? getPassword().replaceAll(".", "x") : "(no password)");
   }
 
 }

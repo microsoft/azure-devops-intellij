@@ -25,18 +25,29 @@ public class ConnectionFailedException extends TfsException {
   private static final int CODE_UNDEFINED = 0;
 
   private final int myHttpStatusCode;
+  private final String myMessage;
 
   public ConnectionFailedException(AxisFault cause, int httpStatusCode) {
     super(cause);
     myHttpStatusCode = httpStatusCode;
+    myMessage = null;
   }
 
   public ConnectionFailedException(AxisFault cause) {
     this(cause, CODE_UNDEFINED);
   }
 
+  public ConnectionFailedException(String message) {
+    super((Throwable)null);
+    myHttpStatusCode = CODE_UNDEFINED;
+    myMessage = message;
+  }
+
   public int getHttpStatusCode() {
     return myHttpStatusCode;
   }
 
+  public String getMessage() {
+    return myMessage != null ? myMessage : super.getMessage();
+  }
 }

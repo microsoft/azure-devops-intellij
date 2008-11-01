@@ -23,6 +23,8 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.MapAnnotation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -108,6 +110,19 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   public State getState() {
+    //try {
+    //  Element element = XmlSerializer.serialize(myServersConfig.values().iterator().next());
+    //  Document d = new Document(element);
+    //  try {
+    //    JDOMUtil.writeDocument(d, "C:\\test.xml", "\n");
+    //  }
+    //  catch (IOException e) {
+    //    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    //  }
+    //}
+    //catch (Exception e) {
+    //  int tt = 0;
+    //}
     return new State(myServersConfig);
   }
 
@@ -120,5 +135,20 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     }
     return config;
   }
+
+  // TODO this class should take Workstation responsibilities!!!
+  public boolean serverKnown(final @NotNull URI uri) {
+    for (ServerInfo server : Workstation.getInstance().getServers()) {
+      if (server.getUri().getHost().equalsIgnoreCase(uri.getHost())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public void remove(final @NotNull URI serverUri) {
+    myServersConfig.remove(serverUri.toString());
+  }
+
 
 }

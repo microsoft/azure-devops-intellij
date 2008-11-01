@@ -24,13 +24,13 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
-import org.jetbrains.tfsIntegration.ui.AuthenticationHelper;
 import org.jetbrains.tfsIntegration.ui.ManageWorkspacesForm;
 import org.jetbrains.tfsIntegration.ui.abstractwizard.CommitStepCancelledException;
+import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import javax.swing.*;
-import java.util.List;
 import java.text.MessageFormat;
+import java.util.List;
 
 public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
@@ -122,8 +122,14 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
       myModel.setServer(server);
       if (commitType == CommitType.Next || commitType == CommitType.Finish) {
         //noinspection ConstantConditions
-        if (AuthenticationHelper.authenticate(server.getUri()) == null) {
+        try {
+          WebServiceHelper.authenticate(server.getUri());
+        }
+        catch (UserCancelledException e) {
           throw new CommitStepCancelledException();
+        }
+        catch (TfsException e) {
+          throw new CommitStepException(e.getMessage());
         }
       }
     }

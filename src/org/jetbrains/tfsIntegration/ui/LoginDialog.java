@@ -105,4 +105,8 @@ public class LoginDialog extends DialogWrapper {
     return myLoginForm.getCredentials();
   }
 
+  public void setMessage(String message) {
+    myLoginForm.setErrorMessage(message);
+  }
+
 }

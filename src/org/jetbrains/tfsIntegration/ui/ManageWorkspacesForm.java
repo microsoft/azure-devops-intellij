@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
@@ -26,10 +27,12 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
 import org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable;
 import org.jetbrains.tfsIntegration.ui.treetable.TreeTableColumn;
+import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -39,6 +42,7 @@ import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.net.URI;
 
 public class ManageWorkspacesForm {
   public interface Listener {
@@ -241,24 +245,29 @@ public class ManageWorkspacesForm {
   }
 
   private void addServer() {
-    AuthenticationHelper.AuthenticationResult result = AuthenticationHelper.authenticate(null);
-    if (result != null) {
-      ServerInfo newServer = new ServerInfo(result.uri, result.serverGuid);
-      Workstation.getInstance().addServer(newServer);
-      try {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        newServer.refreshWorkspacesForCurrentOwner();
-        updateControls(null);
-      }
-      catch (TfsException e) {
-        String message = MessageFormat.format("Failed to reload workspaces.\n{0}", e.getMessage());
-        Messages.showErrorDialog(myProject, message, "Add server");
-      }
-      finally {
-        getContentPane().setCursor(Cursor.getDefaultCursor());
-      }
-      updateControls(newServer);
+    final Pair<URI, String> uriAndGuid;
+    try {
+      uriAndGuid = WebServiceHelper.authenticate(null);
     }
+    catch (TfsException e) {
+      // user cancelled
+      return;
+    }
+    ServerInfo newServer = new ServerInfo(uriAndGuid.first, uriAndGuid.second);
+    Workstation.getInstance().addServer(newServer);
+    try {
+      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+      newServer.refreshWorkspacesForCurrentOwner();
+      updateControls(null);
+    }
+    catch (TfsException e) {
+      String message = MessageFormat.format("Failed to reload workspaces.\n{0}", e.getMessage());
+      Messages.showErrorDialog(myProject, message, "Add server");
+    }
+    finally {
+      getContentPane().setCursor(Cursor.getDefaultCursor());
+    }
+    updateControls(newServer);
   }
 
   private void removeServer(final @NotNull ServerInfo server) {
@@ -279,9 +288,19 @@ public class ManageWorkspacesForm {
   }
 
   private void createWorkspace(final @NotNull ServerInfo server) {
-    if (server.getQualifiedUsername() == null && AuthenticationHelper.authenticate(server.getUri()) == null) {
-      return;
+    if (server.getQualifiedUsername() == null) {
+      try {
+        WebServiceHelper.authenticate(server.getUri());
+      }
+      catch (UserCancelledException e) {
+        return;
+      }
+      catch (TfsException e) {
+        Messages.showErrorDialog(getContentPane(), e.getMessage(), "Create workspace");
+        return;
+      }
     }
+
     WorkspaceDialog d = new WorkspaceDialog(myProject, server);
     d.show();
     if (d.isOK()) {

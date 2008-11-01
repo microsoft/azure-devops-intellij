@@ -117,6 +117,6 @@ public class LoginForm {
   }
 
   public void setErrorMessage(final @Nullable String errorMessage) {
-    myMessageLabel.setText(errorMessage);
+    myMessageLabel.setText(errorMessage != null ? errorMessage : " "); // keep the space for label
   }
 }
