@@ -42,16 +42,20 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     @MapAnnotation(entryTagName = "server", keyAttributeName = "uri", surroundValueWithTag = false)
     public Map<String, ServerConfiguration> config = new HashMap<String, ServerConfiguration>();
 
+    public boolean useIdeaHttpProxy = true;
+
     public State() {
-      this(new HashMap<String, ServerConfiguration>());
+      this(new HashMap<String, ServerConfiguration>(), true);
     }
 
-    public State(final Map<String, ServerConfiguration> config) {
+    public State(final Map<String, ServerConfiguration> config, boolean useIdeaHttpProxy) {
       this.config = config;
+      this.useIdeaHttpProxy = useIdeaHttpProxy;
     }
   }
 
   private Map<String, ServerConfiguration> myServersConfig = new HashMap<String, ServerConfiguration>();
+  private boolean myUseIdeaHttpProxy = true;
 
   @NotNull
   public static synchronized TFSConfigurationManager getInstance() {
@@ -107,6 +111,7 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
 
   public void loadState(final State state) {
     myServersConfig = state.config;
+    myUseIdeaHttpProxy = state.useIdeaHttpProxy;
   }
 
   public State getState() {
@@ -123,7 +128,7 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     //catch (Exception e) {
     //  int tt = 0;
     //}
-    return new State(myServersConfig);
+    return new State(myServersConfig, myUseIdeaHttpProxy);
   }
 
   @NotNull
@@ -150,5 +155,12 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     myServersConfig.remove(serverUri.toString());
   }
 
+  public void setUseIdeaHttpProxy(boolean useIdeaHttpProxy) {
+    myUseIdeaHttpProxy = useIdeaHttpProxy;
+  }
+
+  public boolean useIdeaHttpProxy() {
+    return myUseIdeaHttpProxy;
+  }
 
 }

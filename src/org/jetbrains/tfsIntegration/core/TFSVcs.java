@@ -175,25 +175,6 @@ public class TFSVcs extends AbstractVcs {
     assertTrue(condition, "");
   }
 
-  @Nullable
-  public static String getProxyHost() {
-    if (Boolean.parseBoolean(System.getProperty("TFS.UseFiddler"))) {
-      return "127.0.0.1";
-    }
-    else {
-      return null;
-    }
-  }
-
-  public static int getProxyPort() {
-    if (Boolean.parseBoolean(System.getProperty("TFS.UseFiddler"))) {
-      return 8888;
-    }
-    else {
-      return -1;
-    }
-  }
-
   @NotNull
   public CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> getCommittedChangesProvider() {
     if (myCommittedChangesProvider == null) {

@@ -39,6 +39,7 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.tfs.HTTPProxyInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.*;
@@ -347,22 +348,30 @@ public class WebServiceHelper {
 
   private static void setProxy(Stub stub) {
     final HttpTransportProperties.ProxyProperties proxyProperties;
-    if (TFSVcs.getProxyHost() != null) {
+    final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
+    if (proxy.host != null) {
       proxyProperties = new HttpTransportProperties.ProxyProperties();
-      proxyProperties.setProxyName(TFSVcs.getProxyHost());
-      proxyProperties.setProxyPort(TFSVcs.getProxyPort());
+      proxyProperties.setProxyName(proxy.host);
+      proxyProperties.setProxyPort(proxy.port);
+      proxyProperties.setUserName(proxy.user);
+      proxyProperties.setPassWord(proxy.password);
     }
     else {
       proxyProperties = null;
     }
 
-    Options options = stub._getServiceClient().getOptions();
-    options.setProperty(HTTPConstants.PROXY, proxyProperties);
+    // TODO FIXME axis2 will ignore our proxy settings and will use System property "http.proxyHost" instead if it is set to any value.
+    // This system property may be set if any other Idea plugin (like IDE Talk) invokes HTTPConfigurable.prepareURL() or HTTPConfigurable.setAuthenticator()
+    stub._getServiceClient().getOptions().setProperty(HTTPConstants.PROXY, proxyProperties);
   }
 
   private static void setProxy(HttpClient httpClient) {
-    if (TFSVcs.getProxyHost() != null) {
-      httpClient.getHostConfiguration().setProxy(TFSVcs.getProxyHost(), TFSVcs.getProxyPort());
+    final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
+    if (proxy.host != null) {
+      httpClient.getHostConfiguration().setProxy(proxy.host, proxy.port);
+      if (proxy.user != null) {
+        httpClient.getState().setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxy.user, proxy.password));
+      }
     }
     else {
       httpClient.getHostConfiguration().setProxyHost(null);

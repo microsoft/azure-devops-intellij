@@ -29,22 +29,32 @@ public class ProjectConfigurableForm {
   private JButton myResetPasswordsButton;
   private final Project myProject;
   private JComponent myContentPane;
+  private JCheckBox myUseIdeaHttpProxyCheckBox;
 
   public ProjectConfigurableForm(final Project project) {
     myProject = project;
-    myManageButton.addActionListener(new ActionListener() {
 
+    // TODO FIXME remove this line when HttpConfigurable class will be fixed (will not set system properties "http.proxyHost" and others)
+    myUseIdeaHttpProxyCheckBox.setVisible(false);
+
+    myManageButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);
         d.show();
       }
     });
 
+    myUseIdeaHttpProxyCheckBox.setSelected(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
+    myUseIdeaHttpProxyCheckBox.addActionListener(new ActionListener() {
+      public void actionPerformed(final ActionEvent e) {
+        TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myUseIdeaHttpProxyCheckBox.isSelected());
+      }
+    });
+
     myResetPasswordsButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         final String title = "Reset Stored Passwords";
-        if (Messages
-          .showYesNoDialog(myProject, "Are you sure to reset all stored passwords?", title, Messages.getQuestionIcon()) == 0) {
+        if (Messages.showYesNoDialog(myProject, "Do you want to reset all stored passwords?", title, Messages.getQuestionIcon()) == 0) {
           TFSConfigurationManager.getInstance().resetStoredPasswords();
           Messages.showInfoMessage(myProject, "Passwords reset successfully.", title);
         }
