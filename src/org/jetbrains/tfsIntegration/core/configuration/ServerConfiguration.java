@@ -55,10 +55,10 @@ public class ServerConfiguration {
   }
 
   public void setProxyUri(@Nullable final String proxyUri) {
-    myProxyUri = proxyUri;
     if (!Comparing.equal(myProxyUri, proxyUri)) {
       myProxyInaccessible = false;
     }
+    myProxyUri = proxyUri;
   }
 
   @Transient
