@@ -799,7 +799,7 @@ public class VersionControlServer {
     long fileLength = file.length();
 
     ArrayList<Part> parts = new ArrayList<Part>();
-    parts.add(new StringPart(SERVER_ITEM_FIELD, change.getItem()));
+    parts.add(new StringPart(SERVER_ITEM_FIELD, change.getItem(), "UTF-8"));
     parts.add(new StringPart(WORKSPACE_NAME_FIELD, workspaceInfo.getName()));
     parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
     parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
