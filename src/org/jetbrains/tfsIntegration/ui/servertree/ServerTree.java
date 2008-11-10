@@ -77,9 +77,9 @@ public class ServerTree {
   public void configure(final @NotNull ServerInfo server, final @Nullable String pathToSelect, final @Nullable PathFilter pathFilter) {
     final Item[] itemsToSelect;
     if (pathToSelect != null) {
-      final String[] tokens = pathToSelect.split(VersionControlPath.PATH_SEPARATOR);
-      List<Item> items = new ArrayList<Item>(tokens.length);
-      for (String token : tokens) {
+      final String[] pathComponents = VersionControlPath.getPathComponents(pathToSelect);
+      List<Item> items = new ArrayList<Item>(pathComponents.length);
+      for (String component : pathComponents) {
         final Item item;
         if (items.isEmpty()) {
           item = ServerTreeContentProvider.ROOT;
@@ -90,7 +90,7 @@ public class ServerTree {
           if (!parentPath.endsWith(VersionControlPath.PATH_SEPARATOR)) {
             parentPath += VersionControlPath.PATH_SEPARATOR;
           }
-          item.setItem(parentPath + token);
+          item.setItem(parentPath + component);
         }
         items.add(item);
       }

@@ -23,6 +23,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.*;
 
@@ -60,8 +61,8 @@ public class UndoPendingChanges {
       Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();
       for (GetOperation getOperation : result.getResult()) {
         if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
-          FilePath sourcePath = VcsUtil.getFilePath(getOperation.getSlocal());
-          FilePath targetPath = VcsUtil.getFilePath(getOperation.getTlocal());
+          FilePath sourcePath = VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder);
+          FilePath targetPath = VcsUtil.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
           undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false).iterator().next()),
                           new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false).iterator().next()));
         }

@@ -51,7 +51,7 @@ public class ServerTreeLabelProvider implements LabelProvider<Item> {
       return myServerUri;
     }
     else {
-      return item.getItem().substring(item.getItem().lastIndexOf(VersionControlPath.PATH_SEPARATOR) + 1);
+      return VersionControlPath.getLastComponent(item.getItem());
     }
   }
 

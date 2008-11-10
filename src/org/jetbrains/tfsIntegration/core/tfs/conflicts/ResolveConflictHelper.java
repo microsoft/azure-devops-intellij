@@ -78,7 +78,7 @@ public class ResolveConflictHelper {
               last = TFSContentRevision.create(myProject, workspace, conflict.getYver(), conflict.getYitemid()).getContent();
             }
             else {
-              current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath)).getContent();
+              current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath, false)).getContent();
               last = TFSContentRevision.create(myProject, workspace, conflict.getTver(), conflict.getTitemid()).getContent();
             }
             final String original = TFSContentRevision.create(myProject, workspace, conflict.getBver(), conflict.getBitemid()).getContent();

@@ -76,7 +76,7 @@ public class StatusProvider {
 
       // first process all local items given
       for (FilePath localItem : localItems) {
-        final String localPath = VersionControlPath.toTfsRepresentation(localItem.getPath());
+        final String localPath = VersionControlPath.toTfsRepresentation(localItem);
 
         ExtendedItem extendedItem = null;
         PendingChange pendingChange = null;

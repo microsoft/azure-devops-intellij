@@ -63,7 +63,7 @@ class WorkstationCacheReader extends DefaultHandler {
       myCurrentWorkspaceInfo = new WorkspaceInfo(myCurrentServerInfo, name, owner, computer, comment, timestamp);
     }
     else if (XmlConstants.MAPPED_PATH.equals(qName)) {
-      myCurrentWorkspaceInfo.addWorkingFolderInfo(new WorkingFolderInfo(VcsUtil.getFilePath(attributes.getValue(XmlConstants.PATH_ATTR))));
+      myCurrentWorkspaceInfo.addWorkingFolderInfo(new WorkingFolderInfo(VcsUtil.getFilePath(attributes.getValue(XmlConstants.PATH_ATTR), true)));
     }
   }
 

@@ -32,6 +32,7 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.*;
 
@@ -154,7 +155,7 @@ public class TFSFileListener extends VcsVFSListener {
             if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
               // TODO: assert that only Edit, Encoding can be here
               revertImmediately.add(pendingChange.getItem());
-              final FilePath localPath = VcsUtil.getFilePath(pendingChange.getLocal());
+              final FilePath localPath = VcsUtil.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
               excludeFromFurtherProcessing(localPath);
               final ItemPath itemPath = new ItemPath(localPath, pendingChange.getItem());
               pathsToProcess.remove(itemPath);
@@ -385,7 +386,7 @@ public class TFSFileListener extends VcsVFSListener {
 
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
           for (GetOperation getOperation : renameResult.getResult()) {
-            invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal()));
+            invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder));
             //invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
           }
           TfsFileUtil.invalidateRecursively(myProject, invalidate);

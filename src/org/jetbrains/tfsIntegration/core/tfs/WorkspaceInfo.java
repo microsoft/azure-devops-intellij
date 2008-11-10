@@ -278,7 +278,7 @@ public class WorkspaceInfo {
     WorkingFolderInfo.Status status =
       WorkingFolderType.Cloak.equals(bean.getType()) ? WorkingFolderInfo.Status.Cloaked : WorkingFolderInfo.Status.Active;
     if (bean.getLocal() != null) {
-      return new WorkingFolderInfo(status, VcsUtil.getFilePath(bean.getLocal()), bean.getItem());
+      return new WorkingFolderInfo(status, VcsUtil.getFilePath(bean.getLocal(), true), bean.getItem());
     }
     else {
       TFSVcs.LOG.info("null local folder mapping for " + bean.getItem());

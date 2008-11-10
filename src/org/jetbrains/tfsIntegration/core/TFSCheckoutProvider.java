@@ -140,7 +140,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
     WorkspaceInfo workspace = new WorkspaceInfo(model.getServer(), model.getServer().getQualifiedUsername(), Workstation.getComputerName());
     workspace.setName(model.getNewWorkspaceName());
     workspace.setComment("Autocreated by IDEA for " + model.getServerPath());
-    FilePath localPath = VcsUtil.getFilePath(model.getDestinationFolder());
+    FilePath localPath = VcsUtil.getFilePath(model.getDestinationFolder(), true);
     WorkingFolderInfo workingFolder = new WorkingFolderInfo(WorkingFolderInfo.Status.Active, localPath, model.getServerPath());
     workspace.addWorkingFolderInfo(workingFolder);
     try {

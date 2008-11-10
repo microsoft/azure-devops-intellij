@@ -27,6 +27,7 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,8 +129,7 @@ public class ScheduleForDeletion {
       errors.addAll(TfsUtil.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
-        String localPath = getOperation.getSlocal();
-        TfsFileUtil.invalidateFile(project, VcsUtil.getFilePath(localPath));
+        TfsFileUtil.invalidateFile(project, VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder));
       }
     }
     catch (TfsException e) {

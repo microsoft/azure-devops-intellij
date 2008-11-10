@@ -17,23 +17,19 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 
 import java.util.Arrays;
 
 public class VersionControlPath {
-  public static final char PATH_SEPARATOR_CHAR = '/'; // TODO IDEA constant for this
+  private static final char PATH_SEPARATOR_CHAR = '/';
   public static final String PATH_SEPARATOR = "" + PATH_SEPARATOR_CHAR;
-  public static final String ROOT_FOLDER = "$/";
-
-  // TODO consider FileUtil.toSystemDependentPath()
+  public static final String ROOT_FOLDER = "$" + PATH_SEPARATOR;
 
   public static String toTfsRepresentation(FilePath localPath) {
-    return toTfsRepresentation(localPath.getPath());
-  }
-
-  public static String toTfsRepresentation(String localPath) {
-    return localPath.replace(PATH_SEPARATOR_CHAR, '\\'); // TODO need this? .replaceAll("[/]*$", "");
+    return FileUtil.toSystemDependentName(localPath.getPath());
   }
 
   public static String getPathToProject(final String serverPath) {
@@ -110,8 +106,12 @@ public class VersionControlPath {
     return StringUtil.join(Arrays.asList(components1).subList(0, i), PATH_SEPARATOR);
   }
 
-  private static String[] getPathComponents(final String serverPath1) {
-    return serverPath1.split(PATH_SEPARATOR);
+  public static String getLastComponent(final String serverPath) {
+      return serverPath.substring(serverPath.lastIndexOf(PATH_SEPARATOR) + 1);
+  }
+
+  public static String[] getPathComponents(final String serverPath) {
+    return serverPath.split(PATH_SEPARATOR);
   }
 
 }
