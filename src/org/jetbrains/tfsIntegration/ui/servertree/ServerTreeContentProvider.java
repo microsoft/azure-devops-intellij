@@ -66,15 +66,6 @@ public class ServerTreeContentProvider implements ContentProvider<Item> {
     }
   }
 
-  public String getLabel(final @NotNull Item item) {
-    if (ROOT == item) {
-      return myServer.getUri().toString();
-    }
-    else {
-      return item.getItem().substring(item.getItem().lastIndexOf(VersionControlPath.PATH_SEPARATOR) + 1);
-    }
-  }
-
   public boolean equals(final @NotNull Item item1, final @NotNull Item item2) {
     return item1.getItem().equals(item2.getItem());
   }
