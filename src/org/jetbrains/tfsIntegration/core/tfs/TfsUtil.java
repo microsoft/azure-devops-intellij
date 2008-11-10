@@ -171,7 +171,7 @@ public class TfsUtil {
             final Rectangle rect = component.getVisibleRect();
             final Point p = new Point(rect.x + 30, rect.y + rect.height - 10);
             final RelativePoint point = new RelativePoint(component, p);
-            balloon.show(point, Balloon.Position.under);
+            balloon.show(point, Balloon.Position.below);
           }
         }
       }
