@@ -45,7 +45,7 @@ public class TFSEditFileProvider implements EditFileProvider {
               VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
               if (file != null && file.isValid() && !file.isDirectory()) {
                 try {
-                  TfsFileUtil.setReadOnlyInEventDispathThread(file, false);
+                  TfsFileUtil.setReadOnly(file, false);
                 }
                 catch (IOException e) {
                   errors.add(new VcsException(e));

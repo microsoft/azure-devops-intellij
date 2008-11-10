@@ -23,16 +23,17 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
-import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -85,16 +86,25 @@ public class Workstation {
     for (final ServerInfo server : getServers()) {
       if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
         final Ref<Boolean> available = new Ref<Boolean>();
-        TfsFileUtil.executeInEventDispatchThread(new Runnable() {
-          public void run() {
-            try {
+        try {
+          TfsUtil.runOrInvokeAndWaitNonModal(new Runnable() {
+            public void run() {
+              try {
                 WebServiceHelper.authenticate(server.getUri());
-              available.set(true);
-            } catch (TfsException e) {
-              available.set(false);
+                available.set(true);
+              }
+              catch (TfsException e) {
+                available.set(false);
+              }
             }
-          }
-        });
+          });
+        }
+        catch (InvocationTargetException e) {
+          continue;
+        }
+        catch (InterruptedException e) {
+          continue;
+        }
         if (!available.get()) {
           continue;
         }
@@ -138,7 +148,7 @@ public class Workstation {
     if (PRESERVE_CONFIG_FILE) {
       return null;
     }
-    
+
     //noinspection HardCodedStringLiteral
     File file = new File(System.getProperty("user.home"), CONFIG_FILE);
     if (!file.exists()) {
@@ -238,7 +248,7 @@ public class Workstation {
   public void removeServer(final ServerInfo serverInfo) {
     myServerInfos.remove(serverInfo);
 
-  TFSConfigurationManager.getInstance().remove(serverInfo.getUri());
+    TFSConfigurationManager.getInstance().remove(serverInfo.getUri());
     update();
   }
 

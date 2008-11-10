@@ -132,7 +132,7 @@ public class BranchAction extends SingleItemAction {
 
       final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
       if (targetLocalPath != null) {
-        TfsFileUtil.invalidateRecursively(project, targetLocalPath);
+        TfsFileUtil.markDirtyRecursively(project, targetLocalPath);
       }
 
       String message =

@@ -105,11 +105,11 @@ public class TFSAnnotationProvider implements AnnotationProvider {
 
           result.set(annotate(workspace, localPath, path2item.get(localPath).getItemid(), revisionList));
         }
-        catch (TfsException ex) {
-          exception.set(new VcsException(ex));
+        catch (TfsException e) {
+          exception.set(new VcsException(e));
         }
-        catch (VcsException ex) {
-          exception.set(ex);
+        catch (VcsException e) {
+          exception.set(e);
         }
       }
     };

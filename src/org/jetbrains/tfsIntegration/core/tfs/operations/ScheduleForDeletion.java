@@ -117,19 +117,18 @@ public class ScheduleForDeletion {
           TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
 
-        public void undeleted(final @NotNull FilePath localPath,
-                                      final boolean localItemExists,
-                                      final @NotNull ServerStatus serverStatus) throws TfsException {
+        public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+          throws TfsException {
           TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
       });
 
-      ResultWithFailures<GetOperation> schedulingForDeletionResults =
-        workspace.getServer().getVCS().scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
+      ResultWithFailures<GetOperation> schedulingForDeletionResults = workspace.getServer().getVCS()
+        .scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
       errors.addAll(TfsUtil.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
-        TfsFileUtil.invalidateFile(project, VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder));
+        TfsFileUtil.markFileDirty(project, VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder));
       }
     }
     catch (TfsException e) {

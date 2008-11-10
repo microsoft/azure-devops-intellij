@@ -40,6 +40,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LocalVersion
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -538,11 +539,19 @@ public class ApplyGetOperations {
         ; // TODO: more detailed message needed
       final String title = "Modify files";
       final Ref<Integer> result = new Ref<Integer>();
-      TfsFileUtil.executeInEventDispatchThread(new Runnable() {
-        public void run() {
-          result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
-        }
-      });
+      try {
+        TfsUtil.runOrInvokeAndWaitNonModal(new Runnable() {
+          public void run() {
+            result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
+          }
+        });
+      }
+      catch (InvocationTargetException e) {
+        // ignore
+      }
+      catch (InterruptedException e) {
+        // ignore
+      }
       if (result.get() == DialogWrapper.OK_EXIT_CODE) {
         return true;
       }

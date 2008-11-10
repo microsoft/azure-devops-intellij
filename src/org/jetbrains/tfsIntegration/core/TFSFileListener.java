@@ -389,7 +389,7 @@ public class TFSFileListener extends VcsVFSListener {
             invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder));
             //invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
           }
-          TfsFileUtil.invalidateRecursively(myProject, invalidate);
+          TfsFileUtil.markDirtyRecursively(myProject, invalidate);
         }
       });
     }

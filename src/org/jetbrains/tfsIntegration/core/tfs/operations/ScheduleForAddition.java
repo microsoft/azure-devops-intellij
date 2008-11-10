@@ -37,7 +37,7 @@ public class ScheduleForAddition {
       for (GetOperation getOp : serverResults.getResult()) {
         String localPath = getOp.getTlocal(); // TODO determine GetOperation local path
         VirtualFile file = VcsUtil.getVirtualFile(localPath);
-        TfsFileUtil.invalidateFile(project, file);
+        TfsFileUtil.markFileDirty(project, file);
       }
       return TfsUtil.getVcsExceptions(serverResults.getFailures());
     }

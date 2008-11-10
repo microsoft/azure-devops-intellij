@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
@@ -27,7 +28,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
@@ -38,7 +38,6 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class TFSHistoryProvider implements VcsHistoryProvider {
@@ -68,27 +67,22 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
   @Nullable
   public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
-    //final FilePath committedPath = ChangesUtil.getCommittedPath(myProject, filePath);
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(filePath, false);
-      if (workspaces.isEmpty()) {
-        return null;
-      }
-
-      final ExtendedItem serverItem = TfsUtil.getExtendedItem(filePath);
-      if (serverItem == null) {
+      final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(filePath);
+      if (workspaceAndItem == null || workspaceAndItem.second == null) {
         return null;
       }
 
       final List<VcsFileRevision> revisions =
-        getRevisions(myProject, serverItem.getSitem(), filePath.isDirectory(), workspaces.iterator().next(), LatestVersionSpec.INSTANCE);
+        getRevisions(myProject, workspaceAndItem.second.getSitem(), filePath.isDirectory(), workspaceAndItem.first,
+                     LatestVersionSpec.INSTANCE);
       if (revisions.isEmpty()) {
         return null;
       }
 
       return new VcsHistorySession(revisions) {
         public VcsRevisionNumber calcCurrentRevisionNumber() {
-          return TfsUtil.getCurrentRevisionNumber(myProject, filePath);
+          return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
         }
       };
     }

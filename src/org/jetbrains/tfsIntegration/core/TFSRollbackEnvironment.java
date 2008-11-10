@@ -211,7 +211,7 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
               refresh.add(file);
             }
           }
-          TfsFileUtil.refreshAndInvalidate(myProject, refresh, true);
+          TfsFileUtil.refreshAndMarkDirty(myProject, refresh, true);
         }
       });
       return errors;

@@ -21,6 +21,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -30,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 
@@ -61,21 +61,20 @@ public abstract class SingleItemAction extends AnAction {
     final FilePath localPath = TfsFileUtil.getFilePath(file);
 
     try {
-      Collection<WorkspaceInfo> workspace = Workstation.getInstance().findWorkspaces(localPath, false);
-      if (workspace.isEmpty()) {
+      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(localPath);
+      if (workspaceAndItem == null) {
         final String itemType = localPath.isDirectory() ? "folder" : "file";
         final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, localPath.getPresentableUrl());
         Messages.showErrorDialog(project, message, e.getPresentation().getText());
         return;
       }
-      ExtendedItem item = TfsUtil.getExtendedItem(localPath);
-      if (item == null) {
+      if (workspaceAndItem.second == null) {
         final String itemType = localPath.isDirectory() ? "Folder" : "File";
         final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
         Messages.showErrorDialog(project, message, e.getPresentation().getText());
       }
       //noinspection ConstantConditions
-      execute(project, workspace.iterator().next(), localPath, item);
+      execute(project, workspaceAndItem.first, localPath, workspaceAndItem.second);
     }
     catch (TfsException ex) {
       Messages.showErrorDialog(project, ex.getMessage(), e.getPresentation().getText());

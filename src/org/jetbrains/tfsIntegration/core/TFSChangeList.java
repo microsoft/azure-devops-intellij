@@ -185,7 +185,7 @@ public class TFSChangeList implements CommittedChangeList {
       myWorkspace.findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
 
     if (localPath == null) {
-      // TODO: path can be out of current mapping -> no way to determine local path for it
+      // original path is out of current mappings -> no way to determine local path for it
       return;
     }
 
@@ -227,7 +227,7 @@ public class TFSChangeList implements CommittedChangeList {
         myMovedPaths.put(originalPath, Pair.create(localPath, item.getCs()));
       }
       else {
-        // TODO: original path can be out of current mapping -> no way to determine local path for it
+        // original path is out of current mappings -> no way to determine local path for it
       }
       return;
     }

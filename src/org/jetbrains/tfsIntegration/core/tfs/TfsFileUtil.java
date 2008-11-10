@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
@@ -26,13 +25,14 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.RefreshQueue;
+import com.intellij.ui.GuiUtils;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -64,60 +64,61 @@ public class TfsFileUtil {
     return VcsContextFactory.SERVICE.getInstance().createFilePathOn(f);
   }
 
-  public static void setReadOnlyInEventDispathThread(final VirtualFile file, final boolean status) throws IOException {
+  public static void setReadOnly(final VirtualFile file, final boolean status) throws IOException {
     final Ref<IOException> exception = new Ref<IOException>();
-    executeInEventDispatchThread(new Runnable() {
-      public void run() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-          public void run() {
-            try {
-              ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
+    try {
+      GuiUtils.runOrInvokeAndWait(new Runnable() {
+        public void run() {
+          ApplicationManager.getApplication().runWriteAction(new Runnable() {
+            public void run() {
+              try {
+                ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
+              }
+              catch (IOException e) {
+                exception.set(e);
+              }
             }
-            catch (IOException e) {
-              exception.set(e);
-            }
+          });
+        }
+      });
+    }
+    catch (InvocationTargetException e) {
+      // ignore
+    }
+    catch (InterruptedException e) {
+      // ignore
+    }
+    if (!exception.isNull()) {
+      throw exception.get();
+    }
+  }
+
+  private static void setReadOnly(final String path, final boolean status) throws IOException {
+    final Ref<IOException> exception = new Ref<IOException>();
+    try {
+      GuiUtils.runOrInvokeAndWait(new Runnable() {
+        public void run() {
+          try {
+            ReadOnlyAttributeUtil.setReadOnlyAttribute(path, status);
           }
-        });
-      }
-    });
+          catch (IOException e) {
+            exception.set(e);
+          }
+        }
+      });
+    }
+    catch (InvocationTargetException e) {
+      // ignore
+    }
+    catch (InterruptedException e) {
+      // ignore
+    }
     if (!exception.isNull()) {
       throw exception.get();
     }
   }
 
-  public static void setReadOnlyInEventDispatchThread(final String path, final boolean status) throws IOException {
-    final Ref<IOException> exception = new Ref<IOException>();
-    executeInEventDispatchThread(new Runnable() {
-      public void run() {
-        try {
-          ReadOnlyAttributeUtil.setReadOnlyAttribute(path, status);
-        }
-        catch (IOException e) {
-          exception.set(e);
-        }
-      }
-    });
-    if (!exception.isNull()) {
-      throw exception.get();
-    }
-  }
-
-  public static void invalidateFiles(final Project project, final Collection<FilePath> files) {
-    if (files.isEmpty()) {
-      return;
-    }
-
-    final VcsDirtyScopeManager dirtyScopeManager = VcsDirtyScopeManager.getInstance(project);
-    ApplicationManager.getApplication().runReadAction(new Runnable() {
-      public void run() {
-        for (FilePath file : files) {
-          dirtyScopeManager.fileDirty(file);
-        }
-      }
-    });
-  }
-
-  public static void invalidateFile(final Project project, final FilePath file) {
+  public static void markFileDirty(final Project project, final FilePath file) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).fileDirty(file);
@@ -125,7 +126,7 @@ public class TfsFileUtil {
     });
   }
 
-  public static void invalidateRecursively(final Project project, final Collection<FilePath> roots) {
+  public static void markDirtyRecursively(final Project project, final Collection<FilePath> roots) {
     if (roots.isEmpty()) {
       return;
     }
@@ -139,7 +140,7 @@ public class TfsFileUtil {
     });
   }
 
-  public static void invalidate(final Project project, final Collection<FilePath> roots, final Collection<FilePath> files) {
+  public static void markDirty(final Project project, final Collection<FilePath> roots, final Collection<FilePath> files) {
     if (roots.isEmpty() && files.isEmpty()) {
       return;
     }
@@ -156,7 +157,7 @@ public class TfsFileUtil {
     });
   }
 
-  public static void invalidateRecursively(final Project project, final FilePath rootDir) {
+  public static void markDirtyRecursively(final Project project, final FilePath rootDir) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(rootDir);
@@ -164,7 +165,7 @@ public class TfsFileUtil {
     });
   }
 
-  public static void invalidateFile(final Project project, final VirtualFile file) {
+  public static void markFileDirty(final Project project, final VirtualFile file) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).fileDirty(file);
@@ -172,34 +173,8 @@ public class TfsFileUtil {
     });
   }
 
-  public static void refreshVirtualFileContents(final File file) {
-    final VirtualFile virtualFile = VcsUtil.getVirtualFile(file);
-    final VirtualFile fileToRefresh = virtualFile != null ? virtualFile : VcsUtil.getVirtualFile(file.getParentFile());
-
-    if (fileToRefresh != null) {
-      executeInEventDispatchThread(new Runnable() {
-        public void run() {
-          ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            public void run() {
-              fileToRefresh.refresh(false, false);
-            }
-          });
-        }
-      });
-    }
-  }
-
-  public static void executeInEventDispatchThread(Runnable runnable) {
-    if (ApplicationManager.getApplication().isDispatchThread()) {
-      runnable.run();
-    }
-    else {
-      ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
-    }
-  }
-
-  public static void refreshAndInvalidate(final Project project, final Collection<VirtualFile> roots, boolean async) {
-    refreshAndInvalidate(project, roots.toArray(new VirtualFile[roots.size()]), async);
+  public static void refreshAndMarkDirty(final Project project, final Collection<VirtualFile> roots, boolean async) {
+    refreshAndMarkDirty(project, roots.toArray(new VirtualFile[roots.size()]), async);
   }
 
   public static void refreshAndInvalidate(final Project project, final FilePath[] roots, boolean async) {
@@ -207,10 +182,10 @@ public class TfsFileUtil {
     for (int i = 0; i < roots.length; i++) {
       files[i] = roots[i].getVirtualFile();
     }
-    refreshAndInvalidate(project, files, async);
+    refreshAndMarkDirty(project, files, async);
   }
 
-  public static void refreshAndInvalidate(final Project project, final VirtualFile[] roots, boolean async) {
+  public static void refreshAndMarkDirty(final Project project, final VirtualFile[] roots, boolean async) {
     RefreshQueue.getInstance().refresh(async, true, new Runnable() {
       public void run() {
         for (VirtualFile root : roots) {
@@ -226,29 +201,25 @@ public class TfsFileUtil {
     }, roots);
   }
 
-  public static void refreshRecursively(final VirtualFile parent) {
-    executeInEventDispatchThread(new Runnable() {
-      public void run() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-          public void run() {
-            parent.refresh(false, true);
-          }
-        });
-      }
-    });
-  }
-
   public static VirtualFile refreshAndFindFile(final String path) {
     final Ref<VirtualFile> file = new Ref<VirtualFile>();
-    executeInEventDispatchThread(new Runnable() {
-      public void run() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-          public void run() {
-            file.set(VirtualFileManager.getInstance().refreshAndFindFileByUrl(path));
-          }
-        });
-      }
-    });
+    try {
+      GuiUtils.runOrInvokeAndWait(new Runnable() {
+        public void run() {
+          ApplicationManager.getApplication().runWriteAction(new Runnable() {
+            public void run() {
+              file.set(VirtualFileManager.getInstance().refreshAndFindFileByUrl(path));
+            }
+          });
+        }
+      });
+    }
+    catch (InvocationTargetException e) {
+      // ignore
+    }
+    catch (InterruptedException e) {
+      // ignore
+    }
     return file.get();
   }
 
@@ -258,7 +229,7 @@ public class TfsFileUtil {
     OutputStream fileStream = null;
     try {
       if (destination.exists() && !destination.canWrite()) {
-        setReadOnlyInEventDispatchThread(destination.getPath(), false);
+        setReadOnly(destination.getPath(), false);
       }
       fileStream = new FileOutputStream(destination);
       contentWriter.write(fileStream);

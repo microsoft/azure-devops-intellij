@@ -320,7 +320,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void refreshAll() {
-    TfsFileUtil.refreshAndInvalidate(myProject, Collections.singletonList(mySandboxRoot), false);
+    TfsFileUtil.refreshAndMarkDirty(myProject, Collections.singletonList(mySandboxRoot), false);
     ChangeListManager.getInstance(myProject).ensureUpToDate(false);
   }
 

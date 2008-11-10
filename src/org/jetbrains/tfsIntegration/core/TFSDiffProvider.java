@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.util.Pair;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -90,16 +91,13 @@ public class TFSDiffProvider implements DiffProvider {
     else {
       FilePath path = VcsUtil.getFilePath(virtualFile.getPath());
       try {
-        Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(path, false);
-        if (workspaces.isEmpty()) {
-          return null;
-        }
-        ExtendedItem item = TfsUtil.getExtendedItem(path);
-        if (item == null) {
+        Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(path);
+        if (workspaceAndItem == null || workspaceAndItem.second == null) {
           return null;
         }
         final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
-        return TFSContentRevision.create(myProject, workspaces.iterator().next(), intRevisionNumber.getValue(), item.getItemid());
+        return TFSContentRevision
+          .create(myProject, workspaceAndItem.first, intRevisionNumber.getValue(), workspaceAndItem.second.getItemid());
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown
@@ -111,7 +109,7 @@ public class TFSDiffProvider implements DiffProvider {
 
   @Nullable
   public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
-    return TfsUtil.getCurrentRevisionNumber(myProject, TfsFileUtil.getFilePath(virtualFile));
+    return TfsUtil.getCurrentRevisionNumber(TfsFileUtil.getFilePath(virtualFile));
   }
 
 }

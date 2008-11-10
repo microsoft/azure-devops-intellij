@@ -247,7 +247,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Rename)) {
                   VirtualFile file = VcsUtil.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
-                    TfsFileUtil.setReadOnlyInEventDispathThread(file, true);
+                    TfsFileUtil.setReadOnly(file, true);
                   }
                 }
               }
@@ -276,7 +276,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
             }
 
-            TfsFileUtil.invalidate(myVcs.getProject(), invalidateRoots, invalidateFiles);
+            TfsFileUtil.markDirty(myVcs.getProject(), invalidateRoots, invalidateFiles);
           }
           catch (IOException e) {
             //noinspection ThrowableInstanceNeverThrown

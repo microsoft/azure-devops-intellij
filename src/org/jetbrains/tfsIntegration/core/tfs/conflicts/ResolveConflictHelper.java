@@ -122,7 +122,7 @@ public class ResolveConflictHelper {
       final VirtualFile vFile = VcsUtil.getVirtualFile(localPath);
       if (vFile != null) {
         try {
-          TfsFileUtil.setReadOnlyInEventDispathThread(vFile, false);
+          TfsFileUtil.setReadOnly(vFile, false);
           ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
         }
         catch (IOException e) {

@@ -39,7 +39,7 @@ public class TFSProjectConfigurable implements Configurable {
   @Nls
   public String getDisplayName() {
     return null;
-  }
+  }                               
 
   @Nullable
   public Icon getIcon() {

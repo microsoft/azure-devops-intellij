@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.webservice;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.StreamUtil;
@@ -40,7 +41,6 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.HTTPProxyInfo;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
@@ -54,13 +54,14 @@ import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import java.text.MessageFormat;
 
 public class WebServiceHelper {
 
@@ -103,9 +104,7 @@ public class WebServiceHelper {
       public Pair<URI, String> executeRequest(@NotNull final URI serverUri, @NotNull final Credentials credentials) throws Exception {
         ServerStatusServerStatusSoapStub serverStatusStub =
           new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
-        setupStub(serverStatusStub);
-        setCredentials(serverStatusStub, credentials, serverUri);
-        setProxy(serverStatusStub);
+        setupStub(serverStatusStub, credentials, serverUri);
 
         String connectionCredentials = serverStatusStub.CheckAuthentication(new CheckAuthentication());
         if (!credentials.getQualifiedUsername().equalsIgnoreCase(connectionCredentials)) {
@@ -114,9 +113,7 @@ public class WebServiceHelper {
 
         RegistrationRegistrationSoapStub registrationStub =
           new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
-        setupStub(registrationStub);
-        setCredentials(registrationStub, credentials, serverUri);
-        setProxy(registrationStub);
+        setupStub(registrationStub, credentials, serverUri);
         ArrayOfRegistrationEntry registrationEntries = registrationStub.GetRegistrationEntries(TFS_TOOL_ID);
         for (RegistrationEntry entry : registrationEntries.getRegistrationEntry()) {
           if (TFS_TOOL_ID.equals(entry.getType())) {
@@ -148,9 +145,7 @@ public class WebServiceHelper {
 
     return executeRequest(serverUri, new InnerDelegate<T>() {
       public T executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
-        setupStub(stub);
-        setCredentials(stub, credentials, serverUri);
-        setProxy(stub);
+        setupStub(stub, credentials, serverUri);
         return delegate.executeRequest();
       }
     });
@@ -226,7 +221,9 @@ public class WebServiceHelper {
       if (uri.isNull() || credentials.isNull() || credentials.get().getPassword() == null) {
         Runnable runnable = new Runnable() {
           public void run() {
-            trace(callerThreadId, "got to UI thread, waiting for UI lock [{0}]...", getLock(uri.get()));
+            trace(callerThreadId, "got to UI thread");
+            trace(callerThreadId, "modality state: {0}", ApplicationManager.getApplication().getCurrentModalityState());
+            trace(callerThreadId, "waiting for UI lock [{0}]...", getLock(uri.get()));
             synchronized (getLock(uri.get())) {
               trace(callerThreadId, "got UI lock");
               // if another thread was pending to prompt for credentials with the same server, it may already succeed and there's no need to ask again
@@ -251,6 +248,7 @@ public class WebServiceHelper {
                   d.setMessage(ourErrorMessages.get(uri.get()));
                 }
                 d.show();
+                trace(callerThreadId, "login dialog finished");
                 if (d.isOK()) {
                   // if uri changed, clear error message for old uri
                   if (!uri.isNull() && !d.getUri().equals(uri.get())) {
@@ -275,7 +273,17 @@ public class WebServiceHelper {
         };
 
         trace("waiting for UI thread...");
-        TfsFileUtil.executeInEventDispatchThread(runnable);
+        try {
+          TfsUtil.runOrInvokeAndWaitNonModal(runnable);
+        }
+        catch (InvocationTargetException e) {
+          trace("UI thread interrupted {0}, throwing out", e.getMessage());
+          throw new OperationFailedException(e.getMessage());
+        }
+        catch (InterruptedException e) {
+          trace("UI thread interrupted {0}, throwing out", e.getMessage());
+          throw new OperationFailedException(e.getMessage());
+        }
 
         if (credentials.isNull()) {
           throw new UserCancelledException();
@@ -346,7 +354,35 @@ public class WebServiceHelper {
     return configContext;
   }
 
-  private static void setProxy(Stub stub) {
+  private static void setProxy(HttpClient httpClient) {
+    final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
+    if (proxy.host != null) {
+      httpClient.getHostConfiguration().setProxy(proxy.host, proxy.port);
+      if (proxy.user != null) {
+        httpClient.getState().setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxy.user, proxy.password));
+      }
+    }
+    else {
+      httpClient.getHostConfiguration().setProxyHost(null);
+    }
+  }
+
+  private static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
+    Options options = stub._getServiceClient().getOptions();
+
+    // http params
+    options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
+    options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
+
+    // credentials
+    HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
+    auth.setUsername(credentials.getUserName());
+    auth.setPassword(credentials.getPassword() != null ? credentials.getPassword() : "");
+    auth.setDomain(credentials.getDomain());
+    auth.setHost(serverUri.getHost());
+    options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+
+    // proxy
     final HttpTransportProperties.ProxyProperties proxyProperties;
     final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
     if (proxy.host != null) {
@@ -362,48 +398,15 @@ public class WebServiceHelper {
 
     // TODO FIXME axis2 will ignore our proxy settings and will use System property "http.proxyHost" instead if it is set to any value.
     // This system property may be set if any other Idea plugin (like IDE Talk) invokes HTTPConfigurable.prepareURL() or HTTPConfigurable.setAuthenticator()
-    stub._getServiceClient().getOptions().setProperty(HTTPConstants.PROXY, proxyProperties);
-  }
-
-  private static void setProxy(HttpClient httpClient) {
-    final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
-    if (proxy.host != null) {
-      httpClient.getHostConfiguration().setProxy(proxy.host, proxy.port);
-      if (proxy.user != null) {
-        httpClient.getState().setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxy.user, proxy.password));
-      }
-    }
-    else {
-      httpClient.getHostConfiguration().setProxyHost(null);
-    }
-  }
-
-  private static void setCredentials(final @NotNull Stub stub, final @Nullable Credentials credentials, final @NotNull URI serverUri) {
-    if (credentials != null) {
-      Options options = stub._getServiceClient().getOptions();
-      HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-      auth.setUsername(credentials.getUserName());
-      auth.setPassword(credentials.getPassword() != null ? credentials.getPassword() : "");
-      auth.setDomain(credentials.getDomain());
-      auth.setHost(serverUri.getHost());
-      options.setProperty(HTTPConstants.AUTHENTICATE, auth);
-    }
+    options.setProperty(HTTPConstants.PROXY, proxyProperties);
   }
 
   private static void setCredentials(final @NotNull HttpClient httpClient,
-                                     final @Nullable Credentials credentials,
+                                     final @NotNull Credentials credentials,
                                      final @NotNull URI serverUri) {
-    if (credentials != null) {
-      final NTCredentials ntCreds =
-        new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
-      httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
-    }
-  }
-
-  private static void setupStub(Stub stub) {
-    Options options = stub._getServiceClient().getOptions();
-    options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
-    options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
+    final NTCredentials ntCreds =
+      new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
+    httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
   }
 
   private static InputStream getInputStream(HttpMethod method) throws Exception {
@@ -420,7 +423,15 @@ public class WebServiceHelper {
   @SuppressWarnings({"UnusedDeclaration"})
   private static void trace(long threadId, @NonNls String msg) {
     // you may need this for debugging
-    //System.out.println(String.valueOf(System.currentTimeMillis()) + ", " + String.valueOf(threadId) + ": " + msg);
+    //String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
+    //System.out.println(String.valueOf(System.currentTimeMillis()) +
+    //                   ", thread=" +
+    //                   String.valueOf(threadId) +
+    //                   ", cur thread=" +
+    //                   String.valueOf(Thread.currentThread().getId()) +
+    //                   dispatch +
+    //                   ": " +
+    //                   msg);
   }
 
   private static void trace(@NonNls String msg) {

@@ -16,22 +16,24 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
@@ -41,40 +43,38 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
+import java.lang.reflect.InvocationTargetException;
 
 public class TfsUtil {
 
-  private static final String CHANGES_TOOLWINDOW_ID = "Changes";
+  @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
 
-  // TODO refactor (workspace is searched for the second time)
   @Nullable
-  public static ExtendedItem getExtendedItem(final FilePath localPath) throws TfsException {
+  public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath) throws TfsException {
     Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
     if (workspaces.isEmpty()) {
       return null;
     }
     final WorkspaceInfo workspace = workspaces.iterator().next();
-    return workspace.getServer().getVCS()
+    final ExtendedItem item = workspace.getServer().getVCS()
       .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
+    return Pair.create(workspace, item);
   }
 
-
-  @Nullable
-  public static ExtendedItem getExtendedItem(Project project, final FilePath localPath, final String errorTabTitle) {
+  public static VcsRevisionNumber getCurrentRevisionNumber(FilePath path) {
     try {
-      return getExtendedItem(localPath);
+      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path);
+      return workspaceAndItem != null && workspaceAndItem.second != null
+             ? getCurrentRevisionNumber(workspaceAndItem.second)
+             : VcsRevisionNumber.NULL;
     }
     catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), errorTabTitle);
-      return null;
+      return VcsRevisionNumber.NULL;
     }
   }
 
-  public static VcsRevisionNumber getCurrentRevisionNumber(Project project, FilePath path) {
-    ExtendedItem item = getExtendedItem(project, path, TFSVcs.TFS_NAME);
-    return (item != null && item.getLver() != Integer.MIN_VALUE) ? new VcsRevisionNumber.Int(item.getLver()) : VcsRevisionNumber.NULL;
-
+  public static VcsRevisionNumber getCurrentRevisionNumber(final @NotNull ExtendedItem item) {
+    return item.getLver() != Integer.MIN_VALUE ? new VcsRevisionNumber.Int(item.getLver()) : VcsRevisionNumber.NULL;
   }
 
   public static VcsException collectExceptions(Collection<VcsException> exceptions) {
@@ -109,6 +109,7 @@ public class TfsUtil {
    * @return Gregorian calendar that stores date "0001-01-01T00:00:00.000Z" to be used in requests to TFS server
    */
   public static Calendar getZeroCalendar() {
+    @SuppressWarnings({"HardCodedStringLiteral"})
     final Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
     calendar.clear();
     calendar.set(1, Calendar.JANUARY, 1, 0, 0, 0);
@@ -161,6 +162,7 @@ public class TfsUtil {
           manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);
         }
         else {
+          @SuppressWarnings({"HardCodedStringLiteral"})
           final Balloon balloon = JBPopupFactory.getInstance()
             .createHtmlTextBalloonBuilder(messageHtml.replace("\n", "<br>"), messageType.getDefaultIcon(), messageType.getPopupBackground(),
                                           null).createBalloon();
@@ -176,12 +178,27 @@ public class TfsUtil {
         }
       }
     };
-    Application application = ApplicationManager.getApplication();
-    if (application.isDispatchThread()) {
+
+    if (ApplicationManager.getApplication().isDispatchThread()) {
       r.run();
     }
     else {
       SwingUtilities.invokeLater(r);
+    }
+  }
+
+  // like GuiUtils.runOrInvokeAndWait(), but waiting for non-modal state
+  public static void runOrInvokeAndWaitNonModal(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
+    final Application application = ApplicationManager.getApplication();
+    if (application.isDispatchThread()) {
+      runnable.run();
+    }
+    else {
+      if (application.isReadAccessAllowed()) {
+        application.invokeAndWait(runnable, ModalityState.NON_MODAL);
+        return;
+      }
+      SwingUtilities.invokeAndWait(runnable);
     }
   }
 

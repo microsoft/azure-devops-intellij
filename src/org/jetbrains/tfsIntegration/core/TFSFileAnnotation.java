@@ -25,12 +25,13 @@ import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import com.intellij.ui.GuiUtils;
 import com.intellij.util.text.SyncDateFormat;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -73,14 +74,22 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   private TFSVcs.RevisionChangedListener myListener = new TFSVcs.RevisionChangedListener() {
     public void revisionChanged() {
-      TfsFileUtil.executeInEventDispatchThread(new Runnable() {
-        public void run() {
-          final AnnotationListener[] listeners = myListeners.toArray(new AnnotationListener[myListeners.size()]);
-          for (AnnotationListener listener : listeners) {
-            listener.onAnnotationChanged();
+      try {
+        GuiUtils.runOrInvokeAndWait(new Runnable() {
+          public void run() {
+            final AnnotationListener[] listeners = myListeners.toArray(new AnnotationListener[myListeners.size()]);
+            for (AnnotationListener listener : listeners) {
+              listener.onAnnotationChanged();
+            }
           }
-        }
-      });
+        });
+      }
+      catch (InvocationTargetException e) {
+        // ignore
+      }
+      catch (InterruptedException e) {
+        // ignore
+      }
     }
   };
 
@@ -117,7 +126,8 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   public String getToolTip(final int lineNumber) {
     if (lineNumber < myLineRevisions.length) {
-      String commitMessage = myLineRevisions[lineNumber].getCommitMessage() == null ? "(no comment)" : myLineRevisions[lineNumber].getCommitMessage();
+      String commitMessage =
+        myLineRevisions[lineNumber].getCommitMessage() == null ? "(no comment)" : myLineRevisions[lineNumber].getCommitMessage();
       return MessageFormat.format("Changeset {0}: {1}", myLineRevisions[lineNumber].getRevisionNumber().asString(), commitMessage);
     }
     else {
