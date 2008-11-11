@@ -37,7 +37,10 @@ public class VersionControlPath {
   @SuppressWarnings({"HardCodedStringLiteral"})
   private static final String FAKE_DRIVE_PREFIX = "U:";
 
-  public static String toTfsRepresentation(@NotNull String localPath) {
+  public static String toTfsRepresentation(@Nullable String localPath) {
+    if (localPath == null) {
+      return null;
+    }
     localPath = localPath.replace("/", WINDOWS_PATH_SEPARATOR);
     return SystemInfo.isWindows ? localPath : FAKE_DRIVE_PREFIX + localPath;
   }

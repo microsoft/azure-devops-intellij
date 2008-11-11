@@ -97,7 +97,7 @@ public class ResolveConflictHelper {
     };
 
     if (isContentConflict(conflict)) {
-      // we will need content only if it conflicts 
+      // we will need content only if it conflicts
       VcsUtil.runVcsProcessWithProgress(runnable, "Prepare merge data...", false, myProject);
     }
 
@@ -200,7 +200,7 @@ public class ResolveConflictHelper {
     return false;
   }
 
-  private void conflictResolved(final Conflict conflict, final Resolution resolution, final String newLocalPath)
+  private void conflictResolved(final Conflict conflict, final Resolution resolution, final @Nullable String newLocalPath)
     throws TfsException, VcsException {
     WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
