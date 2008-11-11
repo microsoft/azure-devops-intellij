@@ -49,7 +49,7 @@ public class Workstation {
   @NonNls private static final String CACHE_FILE_WINDOWS =
     "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
 
-  @NonNls private static final String CAHCE_FILE_LINUX = "tfsServers.xml";
+  @NonNls private static final String CACHE_FILE_LINUX = "tfs-servers.xml";
 
   private static Workstation ourInstance;
 
@@ -59,7 +59,7 @@ public class Workstation {
 
   private @Nullable Ref<FilePath> myDuplicateMappedPath;
 
-  private Workstation() {
+    private Workstation() {
     myServerInfos = loadCache();
   }
 
@@ -158,7 +158,7 @@ public class Workstation {
       cacheFile = new File(System.getProperty("user.home"), CACHE_FILE_WINDOWS);
     }
     else {
-      cacheFile = new File(PathManager.getOptionsPath(), CAHCE_FILE_LINUX);
+      cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX);
     }
 
     if (!cacheFile.exists()) {
