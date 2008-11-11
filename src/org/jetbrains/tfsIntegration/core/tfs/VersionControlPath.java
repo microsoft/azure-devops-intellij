@@ -16,11 +16,15 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Arrays;
 
 public class VersionControlPath {
@@ -28,8 +32,27 @@ public class VersionControlPath {
   public static final String PATH_SEPARATOR = "" + PATH_SEPARATOR_CHAR;
   public static final String ROOT_FOLDER = "$" + PATH_SEPARATOR;
 
-  public static String toTfsRepresentation(FilePath localPath) {
+  public static String toSystemDependent(@NotNull FilePath localPath) {
     return FileUtil.toSystemDependentName(localPath.getPath());
+  }
+
+  @Nullable
+  public static String toSystemDependent(@Nullable String localPath) {
+    return localPath != null ? FileUtil.toSystemDependentName(localPath) : null;
+  }
+
+  @Nullable
+  public static FilePath getFilePath(@Nullable String localPath, boolean isDirectory) {
+    return localPath != null ? VcsUtil.getFilePath(FileUtil.toSystemDependentName(localPath), isDirectory) : null;
+  }
+
+  @Nullable
+  public static VirtualFile getVirtualFile(@NotNull String localPath) {
+    return VcsUtil.getVirtualFile(FileUtil.toSystemDependentName(localPath));
+  }
+
+  public static File getFile(String localPath) {
+    return new File(FileUtil.toSystemDependentName(localPath));
   }
 
   public static String getPathToProject(final String serverPath) {
@@ -107,7 +130,7 @@ public class VersionControlPath {
   }
 
   public static String getLastComponent(final String serverPath) {
-      return serverPath.substring(serverPath.lastIndexOf(PATH_SEPARATOR) + 1);
+    return serverPath.substring(serverPath.lastIndexOf(PATH_SEPARATOR) + 1);
   }
 
   public static String[] getPathComponents(final String serverPath) {

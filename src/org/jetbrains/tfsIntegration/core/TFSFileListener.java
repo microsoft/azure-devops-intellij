@@ -155,7 +155,8 @@ public class TFSFileListener extends VcsVFSListener {
             if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
               // TODO: assert that only Edit, Encoding can be here
               revertImmediately.add(pendingChange.getItem());
-              final FilePath localPath = VcsUtil.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
+              final FilePath localPath =
+                VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
               excludeFromFurtherProcessing(localPath);
               final ItemPath itemPath = new ItemPath(localPath, pendingChange.getItem());
               pathsToProcess.remove(itemPath);
@@ -386,7 +387,7 @@ public class TFSFileListener extends VcsVFSListener {
 
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
           for (GetOperation getOperation : renameResult.getResult()) {
-            invalidate.add(VcsUtil.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder));
+            invalidate.add(VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder));
             //invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
           }
           TfsFileUtil.markDirtyRecursively(myProject, invalidate);

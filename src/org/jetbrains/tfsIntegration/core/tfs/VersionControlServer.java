@@ -108,7 +108,7 @@ public class VersionControlServer {
   }
 
   public static ItemSpec createItemSpec(final FilePath localPath, final RecursionType recursionType) {
-    return createItemSpec(VersionControlPath.toTfsRepresentation(localPath), Integer.MIN_VALUE, recursionType);
+    return createItemSpec(VersionControlPath.toSystemDependent(localPath), Integer.MIN_VALUE, recursionType);
   }
 
   /**
@@ -218,7 +218,7 @@ public class VersionControlServer {
     return pendChanges(workspaceName, workspaceOwner, paths, false, new ChangeRequestProvider<ItemPath>() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
-        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(itemPath.getLocalPath()));
+        changeRequest.getItem().setItem(VersionControlPath.toSystemDependent(itemPath.getLocalPath()));
         changeRequest.setReq(RequestType.Add);
 
         File file = itemPath.getLocalPath().getIOFile();
@@ -238,7 +238,7 @@ public class VersionControlServer {
     return pendChanges(workspaceName, workspaceOwner, localPaths, true, new ChangeRequestProvider<FilePath>() {
       public ChangeRequest createChangeRequest(final FilePath localPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
-        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(localPath));
+        changeRequest.getItem().setItem(VersionControlPath.toSystemDependent(localPath));
         changeRequest.setReq(RequestType.Delete);
         return changeRequest;
       }
@@ -251,9 +251,9 @@ public class VersionControlServer {
     return pendChanges(workspaceName, workspaceOwner, movedPaths.keySet(), true, new ChangeRequestProvider<FilePath>() {
       public ChangeRequest createChangeRequest(final FilePath localPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
-        changeRequest.getItem().setItem(VersionControlPath.toTfsRepresentation(localPath));
+        changeRequest.getItem().setItem(VersionControlPath.toSystemDependent(localPath));
         changeRequest.setReq(RequestType.Rename);
-        changeRequest.setTarget(VersionControlPath.toTfsRepresentation(movedPaths.get(localPath)));
+        changeRequest.setTarget(VersionControlPath.toSystemDependent(movedPaths.get(localPath)));
         return changeRequest;
       }
     });
@@ -642,7 +642,7 @@ public class VersionControlServer {
   public static LocalVersionUpdate getLocalVersionUpdate(GetOperation operation) {
     LocalVersionUpdate localVersionUpdate = new LocalVersionUpdate();
     localVersionUpdate.setItemid(operation.getItemid());
-    localVersionUpdate.setTlocal(operation.getTlocal());
+    localVersionUpdate.setTlocal(VersionControlPath.toSystemDependent(operation.getTlocal()));
     localVersionUpdate.setLver(operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0); // 0 for scheduled for addition
     return localVersionUpdate;
   }
@@ -795,7 +795,7 @@ public class VersionControlServer {
 
   public void uploadItem(final WorkspaceInfo workspaceInfo, PendingChange change) throws TfsException, IOException {
     final String uploadUrl = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.UPLOAD_ASMX;
-    File file = new File(change.getLocal());
+    File file = VersionControlPath.getFile(change.getLocal());
     long fileLength = file.length();
 
     ArrayList<Part> parts = new ArrayList<Part>();
@@ -819,7 +819,7 @@ public class VersionControlServer {
                                                                 final RecursionType recursionType) throws TfsException {
     final Collection<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
     for (ItemPath path : paths) {
-      itemSpecs.add(createItemSpec(VersionControlPath.toTfsRepresentation(path.getLocalPath()), recursionType));
+      itemSpecs.add(createItemSpec(VersionControlPath.toSystemDependent(path.getLocalPath()), recursionType));
     }
     return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
   }

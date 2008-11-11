@@ -268,7 +268,7 @@ public class WorkspaceInfo {
   private static WorkingFolder toBean(final WorkingFolderInfo folderInfo) {
     WorkingFolder bean = new WorkingFolder();
     bean.setItem(folderInfo.getServerPath());
-    bean.setLocal(VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
+    bean.setLocal(VersionControlPath.toSystemDependent(folderInfo.getLocalPath()));
     bean.setType(folderInfo.getStatus() == WorkingFolderInfo.Status.Cloaked ? WorkingFolderType.Cloak : WorkingFolderType.Map);
     return bean;
   }
@@ -278,7 +278,8 @@ public class WorkspaceInfo {
     WorkingFolderInfo.Status status =
       WorkingFolderType.Cloak.equals(bean.getType()) ? WorkingFolderInfo.Status.Cloaked : WorkingFolderInfo.Status.Active;
     if (bean.getLocal() != null) {
-      return new WorkingFolderInfo(status, VcsUtil.getFilePath(bean.getLocal(), true), bean.getItem());
+      //noinspection ConstantConditions
+      return new WorkingFolderInfo(status, VersionControlPath.getFilePath(bean.getLocal(), true), bean.getItem());
     }
     else {
       TFSVcs.LOG.info("null local folder mapping for " + bean.getItem());

@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ConflictType;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
@@ -29,10 +30,10 @@ public class ConflictsTableModel extends AbstractTableModel {
     Name("Name") {
       public String getValue(Conflict conflict) {
         if (conflict.getCtype() == ConflictType.Merge) {
-          return conflict.getTgtlitem() != null ? conflict.getTgtlitem() : conflict.getSrclitem();
+          return VersionControlPath.toSystemDependent(conflict.getTgtlitem() != null ? conflict.getTgtlitem() : conflict.getSrclitem());
         }
         else {
-          return conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+          return VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
         }
       }
     };

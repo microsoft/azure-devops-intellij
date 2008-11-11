@@ -64,7 +64,8 @@ public class ServerInfo {
 
   public List<WorkspaceInfo> getWorkspacesForCurrentOwnerAndComputer() {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
-    for (WorkspaceInfo workspaceInfo : getWorkspaces()) {
+    final List<WorkspaceInfo> workspaces = getWorkspaces();
+    for (WorkspaceInfo workspaceInfo : workspaces) {
       if (workspaceInfo.hasCurrentOwnerAndComputer()) {
         result.add(workspaceInfo);
       }

@@ -118,7 +118,7 @@ public class TfsFileUtil {
     }
   }
 
-  public static void markFileDirty(final Project project, final FilePath file) {
+  public static void markFileDirty(final Project project, final @NotNull FilePath file) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).fileDirty(file);
@@ -165,7 +165,7 @@ public class TfsFileUtil {
     });
   }
 
-  public static void markFileDirty(final Project project, final VirtualFile file) {
+  public static void markFileDirty(final Project project, final @NotNull VirtualFile file) {
     ApplicationManager.getApplication().runReadAction(new Runnable() {
       public void run() {
         VcsDirtyScopeManager.getInstance(project).fileDirty(file);
@@ -201,14 +201,13 @@ public class TfsFileUtil {
     }, roots);
   }
 
-  public static VirtualFile refreshAndFindFile(final String path) {
-    final Ref<VirtualFile> file = new Ref<VirtualFile>();
+  public static void refreshAndFindFile(final FilePath path) {
     try {
       GuiUtils.runOrInvokeAndWait(new Runnable() {
         public void run() {
           ApplicationManager.getApplication().runWriteAction(new Runnable() {
             public void run() {
-              file.set(VirtualFileManager.getInstance().refreshAndFindFileByUrl(path));
+              VirtualFileManager.getInstance().refreshAndFindFileByUrl(path.getPath());
             }
           });
         }
@@ -220,7 +219,6 @@ public class TfsFileUtil {
     catch (InterruptedException e) {
       // ignore
     }
-    return file.get();
   }
 
   public static void setFileContent(final @NotNull File destination, final @NotNull ContentWriter contentWriter)

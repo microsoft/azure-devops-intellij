@@ -62,7 +62,10 @@ public class ResolveConflictHelper {
 
     final WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
-    final String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+    @SuppressWarnings({"ConstantConditions"})
+    @NotNull final FilePath localPath = VersionControlPath
+      .getFilePath(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem(), conflict.getYtype() == ItemType.Folder)
+      ;
 
     final ContentTriplet contentTriplet = new ContentTriplet();
     VcsRunnable runnable = new VcsRunnable() {
@@ -78,7 +81,7 @@ public class ResolveConflictHelper {
               last = TFSContentRevision.create(myProject, workspace, conflict.getYver(), conflict.getYitemid()).getContent();
             }
             else {
-              current = CurrentContentRevision.create(VcsUtil.getFilePath(localPath, false)).getContent();
+              current = CurrentContentRevision.create(localPath).getContent();
               last = TFSContentRevision.create(myProject, workspace, conflict.getTver(), conflict.getTitemid()).getContent();
             }
             final String original = TFSContentRevision.create(myProject, workspace, conflict.getBver(), conflict.getBitemid()).getContent();
@@ -88,14 +91,14 @@ public class ResolveConflictHelper {
           }
         }
         catch (TfsException e) {
-          throw new VcsException("Unable to get content for item " + localPath);
+          throw new VcsException("Unable to get content for item " + localPath.getPresentableUrl());
         }
       }
 
     };
 
     if (isContentConflict(conflict)) {
-      // we will need content only if  it conflicts 
+      // we will need content only if it conflicts 
       VcsUtil.runVcsProcessWithProgress(runnable, "Prepare merge data...", false, myProject);
     }
 
@@ -110,16 +113,17 @@ public class ResolveConflictHelper {
       }
       FilePath mergedLocalPath = workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
       TFSVcs.assertTrue(mergedLocalPath != null);
-      localName = VersionControlPath.toTfsRepresentation(mergedLocalPath);
+      localName = VersionControlPath.toSystemDependent(mergedLocalPath);
     }
     else {
-      localName = conflict.getTgtlitem();
+      localName = VersionControlPath.toSystemDependent(conflict.getTgtlitem());
     }
 
     // merge content
     if (isContentConflict(conflict)) {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
-      final VirtualFile vFile = VcsUtil.getVirtualFile(localPath);
+      localPath.refresh();
+      final VirtualFile vFile = localPath.getVirtualFile();
       if (vFile != null) {
         try {
           TfsFileUtil.setReadOnly(vFile, false);
@@ -130,7 +134,7 @@ public class ResolveConflictHelper {
         }
       }
       else {
-        String errorMessage = MessageFormat.format("File ''{0}'' is missing", localPath);
+        String errorMessage = MessageFormat.format("File ''{0}'' is missing", localPath.getPresentableUrl());
         throw new VcsException(errorMessage);
       }
     }
@@ -141,7 +145,8 @@ public class ResolveConflictHelper {
     conflictResolved(conflict, Resolution.AcceptYours, null);
     // no actions will be executed so fill UpdatedFiles explicitly
     if (myUpdatedFiles != null) {
-      String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+      String localPath =
+        VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }
@@ -152,7 +157,8 @@ public class ResolveConflictHelper {
 
   public void skip(final @NotNull Conflict conflict) {
     if (myUpdatedFiles != null) {
-      String localPath = conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem();
+      String localPath =
+        VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }

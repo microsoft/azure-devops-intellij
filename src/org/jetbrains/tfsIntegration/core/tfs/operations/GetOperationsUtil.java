@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.File;
@@ -33,11 +34,12 @@ public class GetOperationsUtil {
       TFSVcs.assertTrue(newOperation.getSlocal() != null || newOperation.getTlocal() != null);
       int positionToInsert = result.size();
       if (newOperation.getSlocal() != null) {
-        final File newOpPath = new File(newOperation.getSlocal());
+        final File newOpPath = VersionControlPath.getFile(newOperation.getSlocal());
         for (int i = 0; i < result.size(); i++) {
           final GetOperation existingOperation = result.get(i);
           try {
-            if (existingOperation.getSlocal() == null || FileUtil.isAncestor(newOpPath, new File(existingOperation.getSlocal()), false)) {
+            if (existingOperation.getSlocal() == null ||
+                FileUtil.isAncestor(newOpPath, VersionControlPath.getFile(existingOperation.getSlocal()), false)) {
               positionToInsert = i;
               break;
             }
@@ -57,7 +59,9 @@ public class GetOperationsUtil {
     // TODO: replaceFirst to handle unix paths: problem if replace /a -> /aa in /a/a/a
     for (GetOperation operationToUpdate : sortedOperations.subList(index + 1, sortedOperations.size())) {
       if (operationToUpdate.getSlocal() != null) {
-        final String updated = operationToUpdate.getSlocal().replace(operation.getSlocal(), operation.getTlocal());
+        final String updated = VersionControlPath.toSystemDependent(operationToUpdate.getSlocal())
+          .replace(VersionControlPath.toSystemDependent(operation.getSlocal()), VersionControlPath.toSystemDependent(operation.getTlocal()))
+          ;
         operationToUpdate.setSlocal(updated);
       }
     }

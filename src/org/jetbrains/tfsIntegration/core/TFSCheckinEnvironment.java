@@ -245,7 +245,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
               if (pendingChange.getType() == ItemType.File) {
                 if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Rename)) {
-                  VirtualFile file = VcsUtil.getVirtualFile(pendingChange.getLocal());
+                  VirtualFile file = VersionControlPath.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
                     TfsFileUtil.setReadOnly(file, true);
                   }
@@ -254,7 +254,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
               // TODO don't add recursive invalidate
               // TODO if Rename, invalidate old and new items?
-              final FilePath path = VcsUtil.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
+              final FilePath path = VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
               invalidateRoots.add(path);
               if (changeType.contains(ChangeType.Add)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin

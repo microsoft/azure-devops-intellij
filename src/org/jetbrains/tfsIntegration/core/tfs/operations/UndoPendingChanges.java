@@ -19,7 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
@@ -61,8 +61,10 @@ public class UndoPendingChanges {
       Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();
       for (GetOperation getOperation : result.getResult()) {
         if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
-          FilePath sourcePath = VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder);
-          FilePath targetPath = VcsUtil.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
+          @SuppressWarnings({"ConstantConditions"})
+          @NotNull FilePath sourcePath = VersionControlPath.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder);
+          @SuppressWarnings({"ConstantConditions"})
+          @NotNull FilePath targetPath = VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
           undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false).iterator().next()),
                           new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false).iterator().next()));
         }

@@ -85,8 +85,8 @@ public class TestFolderYoursAddedTheirsAdded extends TestFolderConflict {
     Assert.assertTrue(
       EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Add, ChangeType.Encoding));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.None));
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFolder), conflict.getSrclitem());
-    Assert.assertEquals(VersionControlPath.toTfsRepresentation(myBaseFolder), conflict.getTgtlitem());
+    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFolder), VersionControlPath.toSystemDependent(conflict.getSrclitem()));
+    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFolder), VersionControlPath.toSystemDependent(conflict.getTgtlitem()));
     Assert.assertEquals(findServerPath(myBaseFolder), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myBaseFolder), conflict.getYsitemsrc());
     Assert.assertNull(conflict.getBsitem());

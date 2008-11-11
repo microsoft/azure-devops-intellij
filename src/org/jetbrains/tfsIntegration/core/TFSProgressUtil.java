@@ -32,8 +32,8 @@ public class TFSProgressUtil {
     return progressIndicator != null && progressIndicator.isCanceled();
   }
 
-  public static void setProgressText(final @Nullable ProgressIndicator progressIndicator, String text) {
-    if (progressIndicator != null) {
+  public static void setProgressText(final @Nullable ProgressIndicator progressIndicator, @Nullable String text) {
+    if (progressIndicator != null && text != null) {
       progressIndicator.setText(text);
     }
   }

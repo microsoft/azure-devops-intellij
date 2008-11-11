@@ -76,7 +76,6 @@ public class StatusProvider {
 
       // first process all local items given
       for (FilePath localItem : localItems) {
-        final String localPath = VersionControlPath.toTfsRepresentation(localItem);
 
         ExtendedItem extendedItem = null;
         PendingChange pendingChange = null;
@@ -84,9 +83,10 @@ public class StatusProvider {
         // TODO: what is faster: to search throughout pending changes or extended items?
 
         for (PendingChange candidate : pendingChanges.values()) {
-          if (localPath.equals(candidate.getLocal())) {
+          if (localItem.equals(VersionControlPath.getFilePath(candidate.getLocal(), candidate.getType() == ItemType.Folder))) {
             extendedItem = extendedItems.remove(candidate.getItemid());
-            TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " + candidate.getLocal());
+            TFSVcs.assertTrue(extendedItem != null,
+                              "pending change without extended item for " + VersionControlPath.toSystemDependent(candidate.getLocal()));
             pendingChange = candidate;
             break;
           }
@@ -94,7 +94,7 @@ public class StatusProvider {
 
         if (extendedItem == null) {
           for (ExtendedItem candidate : extendedItems.values()) {
-            if (localPath.equals(candidate.getLocal())) {
+            if (localItem.equals(VersionControlPath.getFilePath(candidate.getLocal(), candidate.getType() == ItemType.Folder))) {
               extendedItem = extendedItems.remove(candidate.getItemid());
               break;
             }
@@ -104,7 +104,7 @@ public class StatusProvider {
         final boolean localItemExists = TfsFileUtil.localItemExists(localItem);
         if (!localItemExists && extendedItem != null) {
           // if path is the original one from dirtyScope, it may have invalid 'isDirectory' status
-          localItem = VcsUtil.getFilePathForDeletedFile(localPath, extendedItem.getType() == ItemType.Folder);
+          localItem = VcsUtil.getFilePathForDeletedFile(localItem.getPath(), extendedItem.getType() == ItemType.Folder);
         }
         determineServerStatus(pendingChange, extendedItem).visitBy(localItem, localItemExists, statusVisitor);
       }
@@ -116,8 +116,8 @@ public class StatusProvider {
       for (ExtendedItem extendedItem : extendedItems.values()) {
         PendingChange pendingChange = pendingChanges.get(extendedItem.getItemid());
         if (pendingChange != null || extendedItem.getLocal() != null) {
-          FilePath localPath = VcsUtil.getFilePath(pendingChange != null ? pendingChange.getLocal() : extendedItem.getLocal(),
-                                                   extendedItem.getType() == ItemType.Folder);
+          FilePath localPath = VersionControlPath.getFilePath(pendingChange != null ? pendingChange.getLocal() : extendedItem.getLocal(),
+                                                              extendedItem.getType() == ItemType.Folder);
           determineServerStatus(pendingChange, extendedItem).visitBy(localPath, false, statusVisitor);
         }
       }
@@ -222,7 +222,8 @@ public class StatusProvider {
       }
     }
 
-    TFSVcs.LOG.error("Uncovered case for item " + (item.getLocal() != null ? item.getLocal() : item.getTitem()));
+    TFSVcs.LOG.error(
+      "Uncovered case for item " + (item.getLocal() != null ? VersionControlPath.toSystemDependent(item.getLocal()) : item.getTitem()));
     //noinspection ConstantConditions
     return null;
   }

@@ -124,8 +124,9 @@ public class ApplyGetOperations {
 
         GetOperation operationToExecute = sortedOperations.get(i);
 
-        String progressText = (operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
-        TFSProgressUtil.setProgressText(myProgressIndicator, progressText);
+        final String currentPath = VersionControlPath
+          .toSystemDependent(operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
+        TFSProgressUtil.setProgressText(myProgressIndicator, currentPath);
 
         if (operationToExecute.getCnflct()) {
           // TODO can be confict on undo?
@@ -170,7 +171,7 @@ public class ApplyGetOperations {
   }
 
   private void processDeleteFile(final GetOperation operation) throws TfsException {
-    File source = new File(operation.getSlocal());
+    File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isDirectory()) {
       String errorMessage = MessageFormat.format("Failed to delete file ''{0}''. Folder with the same name exists", source.getPath());
       myErrors.add(new VcsException(errorMessage));
@@ -192,7 +193,7 @@ public class ApplyGetOperations {
   }
 
   private void processDeleteFolder(final GetOperation operation) throws TfsException {
-    File source = new File(operation.getSlocal());
+    File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isFile()) {
       String errorMessage = MessageFormat.format("Failed to delete folder ''{0}''. File with the same name exists", source.getPath());
       myErrors.add(new VcsException(errorMessage));
@@ -218,7 +219,7 @@ public class ApplyGetOperations {
   }
 
   private void processCreateFile(final @NotNull GetOperation operation) throws TfsException {
-    File target = new File(operation.getTlocal());
+    File target = VersionControlPath.getFile(operation.getTlocal());
     if (target.isDirectory()) {
       String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with the same name exists", target.getPath());
       myErrors.add(new VcsException(errorMessage));
@@ -247,7 +248,7 @@ public class ApplyGetOperations {
   }
 
   private void processCreateFolder(final GetOperation operation) throws TfsException {
-    File target = new File(operation.getTlocal());
+    File target = VersionControlPath.getFile(operation.getTlocal());
     if (target.isFile() && target.canWrite() && !canOverrideLocalConflictingItem(operation, false)) {
       return;
     }
@@ -270,8 +271,8 @@ public class ApplyGetOperations {
   }
 
   private void processFileChange(final GetOperation operation) throws TfsException {
-    File source = new File(operation.getSlocal());
-    File target = new File(operation.getTlocal());
+    File source = VersionControlPath.getFile(operation.getSlocal());
+    File target = VersionControlPath.getFile(operation.getTlocal());
     final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
 
     if (source.equals(target) &&
@@ -362,8 +363,8 @@ public class ApplyGetOperations {
   }
 
   private void processFolderChange(final GetOperation operation) throws TfsException {
-    File source = new File(operation.getSlocal());
-    File target = new File(operation.getTlocal());
+    File source = VersionControlPath.getFile(operation.getSlocal());
+    File target = VersionControlPath.getFile(operation.getTlocal());
     final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
 
     if (source.equals(target) &&
@@ -454,7 +455,9 @@ public class ApplyGetOperations {
           else {
             boolean childWillBeDeletedAnyway = false;
             for (GetOperation operation : myOperations) {
-              if (operation.getSlocal() != null && new File(operation.getSlocal()).equals(child) && operation.getTlocal() == null) {
+              if (operation.getSlocal() != null &&
+                  VersionControlPath.getFile(operation.getSlocal()).equals(child) &&
+                  operation.getTlocal() == null) {
                 childWillBeDeletedAnyway = true;
                 break;
               }
@@ -496,13 +499,13 @@ public class ApplyGetOperations {
   }
 
   private boolean downloadFile(final GetOperation operation) throws TfsException {
-    TFSVcs.assertTrue(operation.getDurl() != null, "Null download url for " + operation.getTlocal());
+    TFSVcs.assertTrue(operation.getDurl() != null, "Null download url for " + VersionControlPath.toSystemDependent(operation.getTlocal()));
 
     if (myDownloadMode == DownloadMode.FORBID) {
       return true;
     }
 
-    final File target = new File(operation.getTlocal());
+    final File target = VersionControlPath.getFile(operation.getTlocal());
     try {
       TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) throws TfsException {
@@ -530,13 +533,14 @@ public class ApplyGetOperations {
 
     LocalConflictHandlingType conflictHandlingType = getLocalConflictHandlingType();
     if (conflictHandlingType == LocalConflictHandlingType.ERROR) {
-      throw new OperationFailedException(
-        "Local conflict detected for " + (sourceNotTarget ? operation.getSlocal() : operation.getTlocal()));
+      throw new OperationFailedException("Local conflict detected for " +
+                                         VersionControlPath
+                                           .toSystemDependent(sourceNotTarget ? operation.getSlocal() : operation.getTlocal()));
     }
     else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
-      String itemName = sourceNotTarget ? operation.getSlocal() : operation.getTlocal();
-      final String message = MessageFormat.format("Local conflict detected. Override local item?\n {0}", itemName)
-        ; // TODO: more detailed message needed
+      String path = VersionControlPath.toSystemDependent(sourceNotTarget ? operation.getSlocal() : operation.getTlocal());
+      final String message = MessageFormat.format("Local conflict detected. Override local item?\n {0}", path);
+      // TODO: more detailed message needed
       final String title = "Modify files";
       final Ref<Integer> result = new Ref<Integer>();
       try {
@@ -569,8 +573,9 @@ public class ApplyGetOperations {
     int reason = sourceNotTarget ? VersionControlServer.LOCAL_CONFLICT_REASON_SOURCE : VersionControlServer.LOCAL_CONFLICT_REASON_TARGET;
     myWorkspace.getServer().getVCS()
       .addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(), operation.getSver(),
-                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0, operation.getSlocal(), operation.getTlocal(),
-                        reason);
+                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0,
+                        VersionControlPath.toSystemDependent(operation.getSlocal()),
+                        VersionControlPath.toSystemDependent(operation.getTlocal()), reason);
   }
 
   private void updateLocalVersion(GetOperation operation) {

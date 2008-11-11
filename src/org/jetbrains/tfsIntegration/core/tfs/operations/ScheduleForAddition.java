@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
@@ -35,9 +34,10 @@ public class ScheduleForAddition {
       ResultWithFailures<GetOperation> serverResults =
         workspace.getServer().getVCS().scheduleForAddition(workspace.getName(), workspace.getOwnerName(), paths);
       for (GetOperation getOp : serverResults.getResult()) {
-        String localPath = getOp.getTlocal(); // TODO determine GetOperation local path
-        VirtualFile file = VcsUtil.getVirtualFile(localPath);
-        TfsFileUtil.markFileDirty(project, file);
+        VirtualFile file = VersionControlPath.getVirtualFile(getOp.getTlocal());
+        if (file != null && file.isValid()) {
+          TfsFileUtil.markFileDirty(project, file);
+        }
       }
       return TfsUtil.getVcsExceptions(serverResults.getFailures());
     }

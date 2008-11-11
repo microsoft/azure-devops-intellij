@@ -18,7 +18,9 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.application.PathManager;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -45,8 +47,9 @@ public class Workstation {
   public static boolean PRESERVE_CONFIG_FILE = false;
 
   // TODO: where is the file if we're not on Windows?
-  @NonNls private static final String CONFIG_FILE =
-    "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
+  @NonNls private static final String CACHE_FOLDER = "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache";
+
+  @NonNls private static final String CONFIG_FILE_NAME = "VersionControl.config";
 
   private static Workstation ourInstance;
 
@@ -149,13 +152,21 @@ public class Workstation {
       return null;
     }
 
-    //noinspection HardCodedStringLiteral
-    File file = new File(System.getProperty("user.home"), CONFIG_FILE);
-    if (!file.exists()) {
-      file.getParentFile().mkdirs();
-      LOG.info("WorkspaceInfo cache file " + file + " not exists, creating");
+    final File parentFolder;
+    if (SystemInfo.isWindows) {
+      //noinspection HardCodedStringLiteral
+      parentFolder = new File(System.getProperty("user.home"), CACHE_FOLDER);
+    }
+    else {
+      parentFolder = new File(PathManager.getOptionsPath());
+    }
+
+    File cacheFile = new File(parentFolder, CONFIG_FILE_NAME);
+    if (!cacheFile.exists()) {
+      cacheFile.getParentFile().mkdirs();
+      LOG.info("WorkspaceInfo cache file " + cacheFile + " not exists, creating");
       try {
-        XmlUtil.saveFile(file, new XmlUtil.SaveDelegate() {
+        XmlUtil.saveFile(cacheFile, new XmlUtil.SaveDelegate() {
 
           public void doSave(XmlUtil.SavePerformer savePerformer) {
             try {
@@ -176,7 +187,7 @@ public class Workstation {
         LOG.warn("Failed to create workspaces cache file", e);
       }
     }
-    return file;
+    return cacheFile;
   }
 
   void update() {
@@ -211,7 +222,7 @@ public class Workstation {
 
                   for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersCached()) {
                     Map<String, String> pathAttributes = new HashMap<String, String>();
-                    pathAttributes.put(XmlConstants.PATH_ATTR, VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
+                    pathAttributes.put(XmlConstants.PATH_ATTR, VersionControlPath.toSystemDependent(folderInfo.getLocalPath()));
                     savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");
                   }
                   savePerformer.endElement(XmlConstants.MAPPED_PATHS);

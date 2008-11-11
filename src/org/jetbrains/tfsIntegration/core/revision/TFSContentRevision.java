@@ -118,7 +118,7 @@ public abstract class TFSContentRevision implements ContentRevision {
       @Nullable
       protected Item getItem() throws TfsException {
         return workspace.getServer().getVCS()
-          .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toTfsRepresentation(localPath),
+          .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toSystemDependent(localPath),
                      new ChangesetVersionSpec(changeset), DeletedState.Any, true);
       }
 

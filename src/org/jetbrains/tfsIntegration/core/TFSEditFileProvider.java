@@ -17,18 +17,17 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.vcs.EditFileProvider;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.io.IOException;
 
 public class TFSEditFileProvider implements EditFileProvider {
 
@@ -42,7 +41,7 @@ public class TFSEditFileProvider implements EditFileProvider {
               workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
             for (GetOperation getOperation : processResult.getResult()) {
               TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
-              VirtualFile file = VcsUtil.getVirtualFile(getOperation.getSlocal());
+              VirtualFile file = VersionControlPath.getVirtualFile(getOperation.getSlocal());
               if (file != null && file.isValid() && !file.isDirectory()) {
                 try {
                   TfsFileUtil.setReadOnly(file, false);

@@ -19,15 +19,14 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,7 +127,8 @@ public class ScheduleForDeletion {
       errors.addAll(TfsUtil.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {
-        TfsFileUtil.markFileDirty(project, VcsUtil.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder));
+        TfsFileUtil
+          .markFileDirty(project, VersionControlPath.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder));
       }
     }
     catch (TfsException e) {

@@ -17,8 +17,8 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -87,9 +87,9 @@ public class WorkingFolderInfo {
 
   @Nullable
   public FilePath getLocalPathByServerPath(final String serverPath, final boolean isDirectory) {
-    if (getServerPath().length() > 0 && VersionControlPath.isUnder(getServerPath(), serverPath)) {
+    if (!StringUtil.isEmpty(getServerPath()) && VersionControlPath.isUnder(getServerPath(), serverPath)) {
       String remainder = serverPath.substring(getServerPath().length());
-      return VcsUtil.getFilePath(getLocalPath().getPath() + remainder, isDirectory);
+      return VersionControlPath.getFilePath(getLocalPath().getPath() + remainder, isDirectory);
     }
     return null;
   }
