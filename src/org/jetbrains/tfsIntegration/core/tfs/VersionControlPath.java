@@ -16,15 +16,14 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 
 import java.io.File;
 import java.util.Arrays;
@@ -33,6 +32,7 @@ public class VersionControlPath {
   public static final String SERVER_PATH_SEPARATOR = "/";
   public static final String ROOT_FOLDER = "$" + SERVER_PATH_SEPARATOR;
 
+  // TFS does not support unix paths at all so let's pretend we're on windows... (Teamprise does the same)
   private static final String WINDOWS_PATH_SEPARATOR = "\\";
   @SuppressWarnings({"HardCodedStringLiteral"})
   private static final String FAKE_DRIVE_PREFIX = "U:";
@@ -56,12 +56,11 @@ public class VersionControlPath {
     }
 
     final String systemDependent = FileUtil.toSystemDependentName(localPath);
-    if (SystemInfo.isWindows) {
-      return systemDependent;
+    if (!SystemInfo.isWindows && systemDependent.startsWith(FAKE_DRIVE_PREFIX)) {
+      return systemDependent.substring(FAKE_DRIVE_PREFIX.length());
     }
     else {
-      TFSVcs.assertTrue(systemDependent.startsWith(FAKE_DRIVE_PREFIX));
-      return systemDependent.substring(FAKE_DRIVE_PREFIX.length());
+      return systemDependent;
     }
   }
 
