@@ -88,8 +88,8 @@ public class TestFileYoursRenamedModifiedTheirsRenamed extends TestFileConflict 
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit, ChangeType.Rename));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Rename));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myYoursFile), VersionControlPath.toSystemDependent(conflict.getSrclitem()));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myYoursFile), VersionControlPath.toSystemDependent(conflict.getTgtlitem()));
+    Assert.assertEquals(myYoursFile, VersionControlPath.getFilePath(conflict.getSrclitem(), false));
+    Assert.assertEquals(myYoursFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myYoursFile), conflict.getYsitemsrc());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());

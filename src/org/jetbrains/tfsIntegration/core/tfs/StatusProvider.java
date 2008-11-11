@@ -85,8 +85,8 @@ public class StatusProvider {
         for (PendingChange candidate : pendingChanges.values()) {
           if (localItem.equals(VersionControlPath.getFilePath(candidate.getLocal(), candidate.getType() == ItemType.Folder))) {
             extendedItem = extendedItems.remove(candidate.getItemid());
-            TFSVcs.assertTrue(extendedItem != null,
-                              "pending change without extended item for " + VersionControlPath.toSystemDependent(candidate.getLocal()));
+            TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " +
+                                                    VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()));
             pendingChange = candidate;
             break;
           }
@@ -222,8 +222,8 @@ public class StatusProvider {
       }
     }
 
-    TFSVcs.LOG.error(
-      "Uncovered case for item " + (item.getLocal() != null ? VersionControlPath.toSystemDependent(item.getLocal()) : item.getTitem()));
+    TFSVcs.LOG.error("Uncovered case for item " +
+                     (item.getLocal() != null ? VersionControlPath.localPathFromTfsRepresentation(item.getLocal()) : item.getTitem()));
     //noinspection ConstantConditions
     return null;
   }

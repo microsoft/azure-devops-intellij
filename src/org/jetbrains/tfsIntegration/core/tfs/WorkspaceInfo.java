@@ -268,7 +268,7 @@ public class WorkspaceInfo {
   private static WorkingFolder toBean(final WorkingFolderInfo folderInfo) {
     WorkingFolder bean = new WorkingFolder();
     bean.setItem(folderInfo.getServerPath());
-    bean.setLocal(VersionControlPath.toSystemDependent(folderInfo.getLocalPath()));
+    bean.setLocal(VersionControlPath.toTfsRepresentation(folderInfo.getLocalPath()));
     bean.setType(folderInfo.getStatus() == WorkingFolderInfo.Status.Cloaked ? WorkingFolderType.Cloak : WorkingFolderType.Map);
     return bean;
   }

@@ -82,8 +82,8 @@ public class TestFileYoursModifiedTheirsModified extends TestFileConflict {
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Edit));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Edit));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFile), VersionControlPath.toSystemDependent(conflict.getSrclitem()));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFile), VersionControlPath.toSystemDependent(conflict.getTgtlitem()));
+    Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getSrclitem(), false));
+    Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());

@@ -85,8 +85,8 @@ public class TestFileYoursAddedTheirsAdded extends TestFileConflict {
     Assert.assertTrue(
       EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Add, ChangeType.Edit, ChangeType.Encoding));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.None));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFile), VersionControlPath.toSystemDependent(conflict.getSrclitem()));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFile), VersionControlPath.toSystemDependent(conflict.getTgtlitem()));
+    Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getSrclitem(), false));
+    Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
     Assert.assertNull(conflict.getBsitem());

@@ -30,10 +30,10 @@ public class ConflictsTableModel extends AbstractTableModel {
     Name("Name") {
       public String getValue(Conflict conflict) {
         if (conflict.getCtype() == ConflictType.Merge) {
-          return VersionControlPath.toSystemDependent(conflict.getTgtlitem() != null ? conflict.getTgtlitem() : conflict.getSrclitem());
+          return VersionControlPath.localPathFromTfsRepresentation(conflict.getTgtlitem() != null ? conflict.getTgtlitem() : conflict.getSrclitem());
         }
         else {
-          return VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
+          return VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
         }
       }
     };

@@ -76,7 +76,7 @@ public class TestFolderYoursRenamedTheirsMissing extends TestFolderConflict {
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Rename));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myYoursFolder), VersionControlPath.toSystemDependent(conflict.getSrclitem()));
+    Assert.assertEquals(myYoursFolder, VersionControlPath.getFilePath(conflict.getSrclitem(), true));
     Assert.assertNull(conflict.getTgtlitem());
     Assert.assertEquals(findServerPath(myYoursFolder), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myYoursFolder), conflict.getYsitemsrc());

@@ -78,7 +78,7 @@ public class TestFileYoursDeletedTheirsDeleted extends TestFileConflict {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Delete));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Delete));
     Assert.assertNull(conflict.getSrclitem());
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFile), conflict.getTgtlitem());
+    Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitemsrc());
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getBsitem());

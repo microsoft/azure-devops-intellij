@@ -62,8 +62,7 @@ public class ResolveConflictHelper {
 
     final WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
-    @SuppressWarnings({"ConstantConditions"})
-    @NotNull final FilePath localPath = VersionControlPath
+    @SuppressWarnings({"ConstantConditions"}) @NotNull final FilePath localPath = VersionControlPath
       .getFilePath(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem(), conflict.getYtype() == ItemType.Folder)
       ;
 
@@ -111,12 +110,12 @@ public class ResolveConflictHelper {
         // user cancelled
         return;
       }
-      FilePath mergedLocalPath = workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
-      TFSVcs.assertTrue(mergedLocalPath != null);
-      localName = VersionControlPath.toSystemDependent(mergedLocalPath);
+      //noinspection ConstantConditions
+      @NotNull FilePath mergedLocalPath = workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
+      localName = mergedLocalPath.getPath();
     }
     else {
-      localName = VersionControlPath.toSystemDependent(conflict.getTgtlitem());
+      localName = VersionControlPath.localPathFromTfsRepresentation(conflict.getTgtlitem());
     }
 
     // merge content
@@ -146,7 +145,7 @@ public class ResolveConflictHelper {
     // no actions will be executed so fill UpdatedFiles explicitly
     if (myUpdatedFiles != null) {
       String localPath =
-        VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
+        VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }
@@ -158,7 +157,7 @@ public class ResolveConflictHelper {
   public void skip(final @NotNull Conflict conflict) {
     if (myUpdatedFiles != null) {
       String localPath =
-        VersionControlPath.toSystemDependent(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
+        VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
     }
   }
@@ -206,7 +205,8 @@ public class ResolveConflictHelper {
     WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
     VersionControlServer.ResolveConflictParams resolveConflictParams =
-      new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2, newLocalPath);
+      new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2,
+                                                     VersionControlPath.toTfsRepresentation(newLocalPath));
 
     ResolveResponse response =
       workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams);

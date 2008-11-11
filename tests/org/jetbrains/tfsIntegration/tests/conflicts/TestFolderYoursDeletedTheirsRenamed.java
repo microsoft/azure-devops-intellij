@@ -86,7 +86,7 @@ public class TestFolderYoursDeletedTheirsRenamed extends TestFolderConflict {
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Delete));
     Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Rename));
     Assert.assertNull(conflict.getSrclitem());
-    Assert.assertEquals(VersionControlPath.toSystemDependent(myBaseFolder), VersionControlPath.toSystemDependent(conflict.getTgtlitem()));
+    Assert.assertEquals(myBaseFolder, VersionControlPath.getFilePath(conflict.getTgtlitem(), true));
     Assert.assertEquals(findServerPath(myTheirsFolder), conflict.getYsitem());
     Assert.assertEquals(findServerPath(myBaseFolder), conflict.getYsitemsrc());
     Assert.assertEquals(findServerPath(myBaseFolder), conflict.getBsitem());

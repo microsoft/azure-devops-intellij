@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
@@ -76,11 +75,8 @@ public class WorkingFolderInfo {
 
   @Nullable
   String getServerPathByLocalPath(final @NotNull FilePath localPath) {
-    if (getServerPath().length() > 0 && localPath.isUnder(getLocalPath(), false)) {
-      String localPathString = FileUtil.toSystemIndependentName(localPath.getPath());
-      String thisPathString = FileUtil.toSystemIndependentName(getLocalPath().getPath());
-      String remainder = localPathString.substring(thisPathString.length());
-      return getServerPath() + remainder;
+    if (!StringUtil.isEmpty(getServerPath()) && localPath.isUnder(getLocalPath(), false)) {
+      return VersionControlPath.getCombinedServerPath(getLocalPath(), getServerPath(), localPath);
     }
     return null;
   }
@@ -88,8 +84,7 @@ public class WorkingFolderInfo {
   @Nullable
   public FilePath getLocalPathByServerPath(final String serverPath, final boolean isDirectory) {
     if (!StringUtil.isEmpty(getServerPath()) && VersionControlPath.isUnder(getServerPath(), serverPath)) {
-      String remainder = serverPath.substring(getServerPath().length());
-      return VersionControlPath.getFilePath(getLocalPath().getPath() + remainder, isDirectory);
+      return VersionControlPath.getCombinedLocalPath(getLocalPath(), getServerPath(), serverPath, isDirectory);
     }
     return null;
   }

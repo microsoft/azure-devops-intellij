@@ -69,7 +69,7 @@ public class ItemInfoForm {
   public ItemInfoForm(final WorkspaceInfo workspace, final ExtendedItem item, final Collection<BranchRelative> branches) {
     myBranches = branches;
     myServerNameLabel.setText(item.getTitem() != null ? item.getTitem() : item.getSitem());
-    myLocalNameLabel.setText(VersionControlPath.toSystemDependent(item.getLocal()));
+    myLocalNameLabel.setText(VersionControlPath.localPathFromTfsRepresentation(item.getLocal()));
     myLatestVersionLabel.setText(String.valueOf(item.getLatest()));
     myWorkspaceVersionLabel.setText(String.valueOf(item.getLver()));
     myEncodingLabel.setText(item.getEnc() != Integer.MIN_VALUE ? String.valueOf(item.getEnc()) : "(not applicable)");

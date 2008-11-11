@@ -124,8 +124,8 @@ public class ApplyGetOperations {
 
         GetOperation operationToExecute = sortedOperations.get(i);
 
-        final String currentPath = VersionControlPath
-          .toSystemDependent(operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
+        final String currentPath = VersionControlPath.localPathFromTfsRepresentation(
+          operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
         TFSProgressUtil.setProgressText(myProgressIndicator, currentPath);
 
         if (operationToExecute.getCnflct()) {
@@ -499,7 +499,8 @@ public class ApplyGetOperations {
   }
 
   private boolean downloadFile(final GetOperation operation) throws TfsException {
-    TFSVcs.assertTrue(operation.getDurl() != null, "Null download url for " + VersionControlPath.toSystemDependent(operation.getTlocal()));
+    TFSVcs.assertTrue(operation.getDurl() != null,
+                      "Null download url for " + VersionControlPath.localPathFromTfsRepresentation(operation.getTlocal()));
 
     if (myDownloadMode == DownloadMode.FORBID) {
       return true;
@@ -534,11 +535,11 @@ public class ApplyGetOperations {
     LocalConflictHandlingType conflictHandlingType = getLocalConflictHandlingType();
     if (conflictHandlingType == LocalConflictHandlingType.ERROR) {
       throw new OperationFailedException("Local conflict detected for " +
-                                         VersionControlPath
-                                           .toSystemDependent(sourceNotTarget ? operation.getSlocal() : operation.getTlocal()));
+                                         VersionControlPath.localPathFromTfsRepresentation(
+                                           sourceNotTarget ? operation.getSlocal() : operation.getTlocal()));
     }
     else if (conflictHandlingType == LocalConflictHandlingType.SHOW_MESSAGE) {
-      String path = VersionControlPath.toSystemDependent(sourceNotTarget ? operation.getSlocal() : operation.getTlocal());
+      String path = VersionControlPath.localPathFromTfsRepresentation(sourceNotTarget ? operation.getSlocal() : operation.getTlocal());
       final String message = MessageFormat.format("Local conflict detected. Override local item?\n {0}", path);
       // TODO: more detailed message needed
       final String title = "Modify files";
@@ -573,9 +574,8 @@ public class ApplyGetOperations {
     int reason = sourceNotTarget ? VersionControlServer.LOCAL_CONFLICT_REASON_SOURCE : VersionControlServer.LOCAL_CONFLICT_REASON_TARGET;
     myWorkspace.getServer().getVCS()
       .addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(), operation.getSver(),
-                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0,
-                        VersionControlPath.toSystemDependent(operation.getSlocal()),
-                        VersionControlPath.toSystemDependent(operation.getTlocal()), reason);
+                        operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0, operation.getSlocal(), operation.getTlocal(),
+                        reason);
   }
 
   private void updateLocalVersion(GetOperation operation) {

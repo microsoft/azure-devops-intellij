@@ -59,9 +59,7 @@ public class GetOperationsUtil {
     // TODO: replaceFirst to handle unix paths: problem if replace /a -> /aa in /a/a/a
     for (GetOperation operationToUpdate : sortedOperations.subList(index + 1, sortedOperations.size())) {
       if (operationToUpdate.getSlocal() != null) {
-        final String updated = VersionControlPath.toSystemDependent(operationToUpdate.getSlocal())
-          .replace(VersionControlPath.toSystemDependent(operation.getSlocal()), VersionControlPath.toSystemDependent(operation.getTlocal()))
-          ;
+        final String updated = operationToUpdate.getSlocal().replace(operation.getSlocal(), operation.getTlocal());
         operationToUpdate.setSlocal(updated);
       }
     }

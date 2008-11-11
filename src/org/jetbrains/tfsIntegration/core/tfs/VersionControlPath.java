@@ -18,41 +18,62 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 
 import java.io.File;
 import java.util.Arrays;
 
 public class VersionControlPath {
-  private static final char PATH_SEPARATOR_CHAR = '/';
-  public static final String PATH_SEPARATOR = "" + PATH_SEPARATOR_CHAR;
-  public static final String ROOT_FOLDER = "$" + PATH_SEPARATOR;
+  public static final String SERVER_PATH_SEPARATOR = "/";
+  public static final String ROOT_FOLDER = "$" + SERVER_PATH_SEPARATOR;
 
-  public static String toSystemDependent(@NotNull FilePath localPath) {
-    return FileUtil.toSystemDependentName(localPath.getPath());
+  private static final String WINDOWS_PATH_SEPARATOR = "\\";
+  @SuppressWarnings({"HardCodedStringLiteral"})
+  private static final String FAKE_DRIVE_PREFIX = "U:";
+
+  public static String toTfsRepresentation(@NotNull String localPath) {
+    localPath = localPath.replace("/", WINDOWS_PATH_SEPARATOR);
+    return SystemInfo.isWindows ? localPath : FAKE_DRIVE_PREFIX + localPath;
+  }
+
+  public static String toTfsRepresentation(@NotNull FilePath localPath) {
+    return toTfsRepresentation(localPath.getPath());
   }
 
   @Nullable
-  public static String toSystemDependent(@Nullable String localPath) {
-    return localPath != null ? FileUtil.toSystemDependentName(localPath) : null;
+  public static String localPathFromTfsRepresentation(@Nullable String localPath) {
+    if (localPath == null) {
+      return null;
+    }
+
+    final String systemDependent = FileUtil.toSystemDependentName(localPath);
+    if (SystemInfo.isWindows) {
+      return systemDependent;
+    }
+    else {
+      TFSVcs.assertTrue(systemDependent.startsWith(FAKE_DRIVE_PREFIX));
+      return systemDependent.substring(FAKE_DRIVE_PREFIX.length());
+    }
   }
 
   @Nullable
   public static FilePath getFilePath(@Nullable String localPath, boolean isDirectory) {
-    return localPath != null ? VcsUtil.getFilePath(FileUtil.toSystemDependentName(localPath), isDirectory) : null;
+    return localPath != null ? VcsUtil.getFilePath(localPathFromTfsRepresentation(localPath), isDirectory) : null;
   }
 
   @Nullable
   public static VirtualFile getVirtualFile(@NotNull String localPath) {
-    return VcsUtil.getVirtualFile(FileUtil.toSystemDependentName(localPath));
+    return VcsUtil.getVirtualFile(localPathFromTfsRepresentation(localPath));
   }
 
   public static File getFile(String localPath) {
-    return new File(FileUtil.toSystemDependentName(localPath));
+    return new File(localPathFromTfsRepresentation(localPath));
   }
 
   public static String getPathToProject(final String serverPath) {
@@ -126,15 +147,30 @@ public class VersionControlPath {
     while (i < Math.min(components1.length, components2.length) && components1[i].equals(components2[i])) {
       i++;
     }
-    return StringUtil.join(Arrays.asList(components1).subList(0, i), PATH_SEPARATOR);
+    return StringUtil.join(Arrays.asList(components1).subList(0, i), SERVER_PATH_SEPARATOR);
   }
 
   public static String getLastComponent(final String serverPath) {
-    return serverPath.substring(serverPath.lastIndexOf(PATH_SEPARATOR) + 1);
+    return serverPath.substring(serverPath.lastIndexOf(SERVER_PATH_SEPARATOR) + 1);
   }
 
   public static String[] getPathComponents(final String serverPath) {
-    return serverPath.split(PATH_SEPARATOR);
+    return serverPath.split(SERVER_PATH_SEPARATOR);
   }
 
+  public static String getCombinedServerPath(final FilePath localPathBase, final String serverPathBase, final FilePath localPath) {
+    String localPathBaseString = FileUtil.toSystemIndependentName(localPathBase.getPath());
+    String localPathString = FileUtil.toSystemIndependentName(localPath.getPath());
+    return serverPathBase + localPathString.substring(localPathBaseString.length());
+  }
+
+  public static FilePath getCombinedLocalPath(final FilePath localPathBase,
+                                              final String serverPathBase,
+                                              final String serverPath,
+                                              final boolean isDirectory) {
+    String serverPathBaseString = FileUtil.toSystemDependentName(serverPathBase);
+    String serverPathString = FileUtil.toSystemDependentName(serverPath);
+    File localFile = new File(localPathBase.getIOFile(), serverPathString.substring(serverPathBaseString.length()));
+    return VcsUtil.getFilePath(localFile, isDirectory);
+  }
 }

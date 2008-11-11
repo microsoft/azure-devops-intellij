@@ -46,10 +46,10 @@ public class Workstation {
   // to be used in tests
   public static boolean PRESERVE_CONFIG_FILE = false;
 
-  // TODO: where is the file if we're not on Windows?
-  @NonNls private static final String CACHE_FOLDER = "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache";
+  @NonNls private static final String CACHE_FILE_WINDOWS =
+    "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
 
-  @NonNls private static final String CONFIG_FILE_NAME = "VersionControl.config";
+  @NonNls private static final String CAHCE_FILE_LINUX = "tfsServers.xml";
 
   private static Workstation ourInstance;
 
@@ -152,16 +152,15 @@ public class Workstation {
       return null;
     }
 
-    final File parentFolder;
+    final File cacheFile;
     if (SystemInfo.isWindows) {
       //noinspection HardCodedStringLiteral
-      parentFolder = new File(System.getProperty("user.home"), CACHE_FOLDER);
+      cacheFile = new File(System.getProperty("user.home"), CACHE_FILE_WINDOWS);
     }
     else {
-      parentFolder = new File(PathManager.getOptionsPath());
+      cacheFile = new File(PathManager.getOptionsPath(), CAHCE_FILE_LINUX);
     }
 
-    File cacheFile = new File(parentFolder, CONFIG_FILE_NAME);
     if (!cacheFile.exists()) {
       cacheFile.getParentFile().mkdirs();
       LOG.info("WorkspaceInfo cache file " + cacheFile + " not exists, creating");
@@ -222,7 +221,7 @@ public class Workstation {
 
                   for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersCached()) {
                     Map<String, String> pathAttributes = new HashMap<String, String>();
-                    pathAttributes.put(XmlConstants.PATH_ATTR, VersionControlPath.toSystemDependent(folderInfo.getLocalPath()));
+                    pathAttributes.put(XmlConstants.PATH_ATTR, folderInfo.getLocalPath().getPath());
                     savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");
                   }
                   savePerformer.endElement(XmlConstants.MAPPED_PATHS);

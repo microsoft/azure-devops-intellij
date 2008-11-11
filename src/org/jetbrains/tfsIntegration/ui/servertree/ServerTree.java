@@ -87,8 +87,8 @@ public class ServerTree {
         else {
           item = new Item();
           String parentPath = items.get(items.size() - 1).getItem();
-          if (!parentPath.endsWith(VersionControlPath.PATH_SEPARATOR)) {
-            parentPath += VersionControlPath.PATH_SEPARATOR;
+          if (!parentPath.endsWith(VersionControlPath.SERVER_PATH_SEPARATOR)) {
+            parentPath += VersionControlPath.SERVER_PATH_SEPARATOR;
           }
           item.setItem(parentPath + component);
         }
@@ -116,8 +116,8 @@ public class ServerTree {
       boolean isDirectory = deepestRealItem.getType() == ItemType.Folder;
       StringBuilder path = new StringBuilder(deepestRealItem.getItem());
       for (String virtualItem : selectedPath.getVirtualNodes()) {
-        if (!path.toString().endsWith(VersionControlPath.PATH_SEPARATOR)) {
-          path.append(VersionControlPath.PATH_SEPARATOR);
+        if (!path.toString().endsWith(VersionControlPath.SERVER_PATH_SEPARATOR)) {
+          path.append(VersionControlPath.SERVER_PATH_SEPARATOR);
         }
         path.append(virtualItem);
         isDirectory = false;
