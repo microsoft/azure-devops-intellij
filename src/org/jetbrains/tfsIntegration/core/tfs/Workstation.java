@@ -59,7 +59,7 @@ public class Workstation {
 
   private @Nullable Ref<FilePath> myDuplicateMappedPath;
 
-    private Workstation() {
+  private Workstation() {
     myServerInfos = loadCache();
   }
 
@@ -76,8 +76,18 @@ public class Workstation {
 
   @Nullable
   public ServerInfo getServer(URI uri) {
-    for (ServerInfo server : myServerInfos) {
+    for (ServerInfo server : getServers()) {
       if (server.getUri().equals(uri)) {
+        return server;
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  public ServerInfo getServerByInstanceId(final String instanceId) {
+    for (ServerInfo server : getServers()) {
+      if (server.getGuid().equals(instanceId)) {
         return server;
       }
     }

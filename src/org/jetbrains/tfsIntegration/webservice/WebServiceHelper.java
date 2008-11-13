@@ -42,6 +42,8 @@ import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.HTTPProxyInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -119,7 +121,12 @@ public class WebServiceHelper {
           if (TFS_TOOL_ID.equals(entry.getType())) {
             for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes().getRegistrationExtendedAttribute()) {
               if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
-                return Pair.create(serverUri, attribute.getValue());
+                final String instanceId = attribute.getValue();
+                ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
+                if (existingServer != null) {
+                  throw new DuplicateServerInstanceIdException(existingServer.getUri());
+                }
+                return Pair.create(serverUri, instanceId);
               }
             }
           }
@@ -292,7 +299,7 @@ public class WebServiceHelper {
         TFSVcs.assertTrue(uri.get() != null);
         if (initialUri == null && TFSConfigurationManager.getInstance().serverKnown(uri.get())) {
           trace("msg=\"duplicate server uri {0}\"", uri.get());
-          ourErrorMessages.put(uri.get(), "Duplicate server address.");
+          ourErrorMessages.put(uri.get(), "Duplicate server address");
           credentials.get().resetPassword(); // continue with prompt
           continue;
         }
