@@ -16,11 +16,12 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.Pair;
@@ -39,11 +40,11 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
-import java.lang.reflect.InvocationTargetException;
 
 public class TfsUtil {
 
@@ -162,18 +163,36 @@ public class TfsUtil {
           manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);
         }
         else {
-          @SuppressWarnings({"HardCodedStringLiteral"})
-          final Balloon balloon = JBPopupFactory.getInstance()
-            .createHtmlTextBalloonBuilder(messageHtml.replace("\n", "<br>"), messageType.getDefaultIcon(), messageType.getPopupBackground(),
-                                          null).createBalloon();
+          Frame frame = WindowManager.getInstance().getFrame(project);
+          if (frame == null) {
+            final Window activeWindow = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+            if (activeWindow != null) {
+              frame = getParentFrame(activeWindow);
+            }
+          }
 
-          // TODO FIXME what to do if null?
-          if (WindowManager.getInstance().getFrame(project) != null) {
+          if (frame != null) {
+            @SuppressWarnings({"HardCodedStringLiteral"})
+            final Balloon balloon = JBPopupFactory.getInstance()
+              .createHtmlTextBalloonBuilder(messageHtml.replace("\n", "<br>"), messageType.getDefaultIcon(),
+                                            messageType.getPopupBackground(), null).createBalloon();
+
             final JComponent component = WindowManager.getInstance().getFrame(project).getRootPane();
             final Rectangle rect = component.getVisibleRect();
             final Point p = new Point(rect.x + 30, rect.y + rect.height - 10);
             final RelativePoint point = new RelativePoint(component, p);
             balloon.show(point, Balloon.Position.below);
+          }
+          else {
+            if (messageType == MessageType.INFO) {
+              Messages.showInfoMessage(messageHtml, "TFS");
+            }
+            else if (messageType == MessageType.ERROR) {
+              Messages.showErrorDialog(messageHtml, "TFS");
+            }
+            else {
+              Messages.showWarningDialog(messageHtml, "TFS");
+            }
           }
         }
       }
@@ -187,18 +206,26 @@ public class TfsUtil {
     }
   }
 
-  // like GuiUtils.runOrInvokeAndWait(), but waiting for non-modal state
   public static void runOrInvokeAndWaitNonModal(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
     final Application application = ApplicationManager.getApplication();
     if (application.isDispatchThread()) {
       runnable.run();
     }
     else {
-      if (application.isReadAccessAllowed()) {
-        application.invokeAndWait(runnable, ModalityState.NON_MODAL);
-        return;
+      application.invokeAndWait(runnable, ModalityState.NON_MODAL);
+    }
+  }
+
+  @Nullable
+  private static Frame getParentFrame(Window w) {
+    synchronized (w.getTreeLock()) {
+      while (w != null) {
+        if (w instanceof Frame) {
+          return (Frame)w;
+        }
+        w = w.getOwner();
       }
-      SwingUtilities.invokeAndWait(runnable);
+      return null;
     }
   }
 

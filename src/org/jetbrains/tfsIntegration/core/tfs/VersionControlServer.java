@@ -544,7 +544,7 @@ public class VersionControlServer {
     catch (TfsException e) {
       if (tryProxy) {
         String messageHtml = MessageFormat.format(
-          "Failed to connect to TFS proxy ''{0}''\n{1}\nConnecting to server ''{2}'', proxy will be disabled for the current IDEA run.",
+          "Failed to connect to TFS proxy ''{0}'':\n{1}\nConnected to server ''{2}'' directly, proxy will be disabled for the current IDEA run.",
           TFSConfigurationManager.getInstance().getProxyUri(serverUri), e.getMessage(), serverUri);
         TFSVcs.LOG.info(messageHtml);
         TfsUtil.showBalloon(project, MessageType.WARNING, messageHtml);

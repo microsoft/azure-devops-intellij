@@ -41,9 +41,9 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.HTTPProxyInfo;
+import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
-import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -101,8 +101,8 @@ public class WebServiceHelper {
   @NonNls private static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
 
   @NotNull
-  public static Pair<URI, String/*guid*/> authenticate(final @Nullable URI serverUri) throws TfsException {
-    return executeRequest(serverUri, new InnerDelegate<Pair<URI, String>>() {
+  public static Pair<URI, String/*guid*/> authenticate(final @Nullable URI initialServerUri) throws TfsException {
+    return executeRequest(initialServerUri, new InnerDelegate<Pair<URI, String>>() {
       public Pair<URI, String> executeRequest(@NotNull final URI serverUri, @NotNull final Credentials credentials) throws Exception {
         ServerStatusServerStatusSoapStub serverStatusStub =
           new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
@@ -122,9 +122,11 @@ public class WebServiceHelper {
             for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes().getRegistrationExtendedAttribute()) {
               if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
                 final String instanceId = attribute.getValue();
-                ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
-                if (existingServer != null) {
-                  throw new DuplicateServerInstanceIdException(existingServer.getUri());
+                if (initialServerUri == null) {
+                  ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
+                  if (existingServer != null) {
+                    throw new DuplicateServerInstanceIdException(existingServer.getUri());
+                  }
                 }
                 return Pair.create(serverUri, instanceId);
               }
@@ -430,15 +432,16 @@ public class WebServiceHelper {
   @SuppressWarnings({"UnusedDeclaration"})
   private static void trace(long threadId, @NonNls String msg) {
     // you may need this for debugging
-    //String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
-    //System.out.println(String.valueOf(System.currentTimeMillis()) +
-    //                   ", thread=" +
-    //                   String.valueOf(threadId) +
-    //                   ", cur thread=" +
-    //                   String.valueOf(Thread.currentThread().getId()) +
-    //                   dispatch +
-    //                   ": " +
-    //                   msg);
+    String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
+    @NonNls String message = String.valueOf(System.currentTimeMillis()) +
+                       ", thread=" +
+                       String.valueOf(threadId) +
+                       ", cur thread=" +
+                       String.valueOf(Thread.currentThread().getId()) +
+                       dispatch +
+                       ": " +
+                       msg;
+    //System.out.println(message);
   }
 
   private static void trace(@NonNls String msg) {

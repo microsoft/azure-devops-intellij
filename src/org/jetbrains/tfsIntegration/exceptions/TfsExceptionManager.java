@@ -23,6 +23,7 @@ import org.apache.axiom.soap.SOAPProcessingException;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NoHttpResponseException;
+import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
@@ -45,21 +46,31 @@ public class TfsExceptionManager {
     ourExceptionsBySubcodes.put(InvalidPathException.CODE, InvalidPathException.class);
   }
 
-  private static TfsException createTfsException(AxisFault axisFault) {
-    if (axisFault.getCause() instanceof ConnectException) {
-      return new ConnectionFailedException(axisFault);
+  @Nullable
+  private static TfsException createTfsExceptionFromThrowable(Throwable throwable) {
+    if (throwable instanceof ConnectException) {
+      return new ConnectionFailedException(throwable);
     }
-    if (axisFault.getCause() instanceof UnknownHostException) {
-      return new HostNotFoundException(axisFault);
+    if (throwable instanceof UnknownHostException) {
+      return new HostNotFoundException(throwable);
     }
-    if (axisFault.getCause() instanceof NoHttpResponseException) {
-      return new HostNotFoundException(axisFault);
+    if (throwable instanceof NoHttpResponseException) {
+      return new HostNotFoundException(throwable);
     }
-    if (axisFault.getCause() instanceof SSLHandshakeException) {
-      return new SSLConnectionException((SSLHandshakeException)axisFault.getCause());
+    if (throwable instanceof SSLHandshakeException) {
+      return new SSLConnectionException((SSLHandshakeException)throwable);
     }
-    if (axisFault.getCause() instanceof SOAPProcessingException) {
+    if (throwable instanceof SOAPProcessingException) {
       return new ConnectionFailedException("Invalid server response.");
+    }
+    return null;
+  }
+
+  @Nullable
+  private static TfsException createTfsExceptionFromAxisFault(AxisFault axisFault) {
+    TfsException result = createTfsExceptionFromThrowable(axisFault.getCause());
+    if (result != null) {
+      return result;
     }
 
     SOAPFaultCode code = axisFault.getFaultCodeElement();
@@ -101,9 +112,12 @@ public class TfsExceptionManager {
   }
 
   public static TfsException processException(Exception e) {
-    TfsException result = null;
+    TfsException result;
     if (e instanceof AxisFault) {
-      result = createTfsException((AxisFault)e);
+      result = createTfsExceptionFromAxisFault((AxisFault)e);
+    }
+    else {
+      result = createTfsExceptionFromThrowable(e);
     }
     if (e instanceof TfsException) {
       result = (TfsException)e;

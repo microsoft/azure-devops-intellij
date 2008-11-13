@@ -16,8 +16,6 @@
 
 package org.jetbrains.tfsIntegration.exceptions;
 
-import org.apache.axis2.AxisFault;
-
 public class ConnectionFailedException extends TfsException {
 
   private static final long serialVersionUID = 1L;
@@ -27,13 +25,13 @@ public class ConnectionFailedException extends TfsException {
   private final int myHttpStatusCode;
   private final String myMessage;
 
-  public ConnectionFailedException(AxisFault cause, int httpStatusCode) {
+  public ConnectionFailedException(Throwable cause, int httpStatusCode) {
     super(cause);
     myHttpStatusCode = httpStatusCode;
     myMessage = null;
   }
 
-  public ConnectionFailedException(AxisFault cause) {
+  public ConnectionFailedException(Throwable cause) {
     this(cause, CODE_UNDEFINED);
   }
 
