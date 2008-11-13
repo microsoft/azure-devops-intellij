@@ -111,7 +111,7 @@ public class Workstation {
 
   private static List<ServerInfo> loadCache() {
     // TODO: validate against schema
-    File cacheFile = getExistingCacheFile();
+    File cacheFile = getCacheFile(true);
     if (cacheFile != null) {
       try {
         WorkstationCacheReader reader = new WorkstationCacheReader();
@@ -135,11 +135,8 @@ public class Workstation {
   }
 
 
-  /**
-   * @return not null if file exists now
-   */
   @Nullable
-  private static File getExistingCacheFile() {
+  private static File getCacheFile(boolean existingOnly) {
     if (PRESERVE_CONFIG_FILE) {
       return null;
     }
@@ -152,40 +149,17 @@ public class Workstation {
     else {
       cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX);
     }
-
-    if (!cacheFile.exists()) {
-      cacheFile.getParentFile().mkdirs();
-      LOG.info("WorkspaceInfo cache file " + cacheFile + " not exists, creating");
-      try {
-        XmlUtil.saveFile(cacheFile, new XmlUtil.SaveDelegate() {
-
-          public void doSave(XmlUtil.SavePerformer savePerformer) {
-            try {
-              savePerformer.startElement(XmlConstants.ROOT);
-              savePerformer.writeElement(XmlConstants.SERVERS, "");
-              savePerformer.endElement(XmlConstants.ROOT);
-            }
-            catch (SAXException e) {
-              LOG.warn("Failed to create workspaces cache file", e);
-            }
-          }
-        });
-      }
-      catch (IOException e) {
-        LOG.warn("Failed to create workspaces cache file", e);
-      }
-      catch (SAXException e) {
-        LOG.warn("Failed to create workspaces cache file", e);
-      }
-    }
-    return cacheFile;
+    return (cacheFile.exists() || !existingOnly) ? cacheFile : null;
   }
 
   void update() {
     invalidateDuplicateMappedPath();
 
-    File cacheFile = getExistingCacheFile();
+    File cacheFile = getCacheFile(false);
     if (cacheFile != null) {
+      if (!cacheFile.getParentFile().exists()) {
+        cacheFile.getParentFile().mkdirs();
+      }
       try {
         XmlUtil.saveFile(cacheFile, new XmlUtil.SaveDelegate() {
 
