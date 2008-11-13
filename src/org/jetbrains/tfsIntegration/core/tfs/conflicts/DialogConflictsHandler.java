@@ -27,7 +27,7 @@ public class DialogConflictsHandler implements ConflictsHandler {
     }
 
     try {
-      TfsUtil.runOrInvokeAndWaitNonModal(new Runnable() {
+      TfsUtil.runOrInvokeAndWait(new Runnable() {
         public void run() {
           ResolveConflictsDialog d = new ResolveConflictsDialog(resolveConflictHelper);
           d.show();

@@ -283,7 +283,7 @@ public class WebServiceHelper {
 
         trace("waiting for UI thread...");
         try {
-          TfsUtil.runOrInvokeAndWaitNonModal(runnable);
+          TfsUtil.runOrInvokeAndWait(runnable);
         }
         catch (InvocationTargetException e) {
           trace("UI thread interrupted {0}, throwing out", e.getMessage());

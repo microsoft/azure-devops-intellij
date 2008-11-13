@@ -16,11 +16,11 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.application.PathManager;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +35,6 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -98,27 +97,10 @@ public class Workstation {
     List<WorkspaceInfo> result = new ArrayList<WorkspaceInfo>();
     for (final ServerInfo server : getServers()) {
       if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
-        final Ref<Boolean> available = new Ref<Boolean>();
         try {
-          TfsUtil.runOrInvokeAndWaitNonModal(new Runnable() {
-            public void run() {
-              try {
-                WebServiceHelper.authenticate(server.getUri());
-                available.set(true);
-              }
-              catch (TfsException e) {
-                available.set(false);
-              }
-            }
-          });
+          WebServiceHelper.authenticate(server.getUri());
         }
-        catch (InvocationTargetException e) {
-          continue;
-        }
-        catch (InterruptedException e) {
-          continue;
-        }
-        if (!available.get()) {
+        catch (TfsException e) {
           continue;
         }
       }

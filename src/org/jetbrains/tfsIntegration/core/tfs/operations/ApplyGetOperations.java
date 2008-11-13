@@ -545,7 +545,7 @@ public class ApplyGetOperations {
       final String title = "Modify files";
       final Ref<Integer> result = new Ref<Integer>();
       try {
-        TfsUtil.runOrInvokeAndWaitNonModal(new Runnable() {
+        TfsUtil.runOrInvokeAndWait(new Runnable() {
           public void run() {
             result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
           }

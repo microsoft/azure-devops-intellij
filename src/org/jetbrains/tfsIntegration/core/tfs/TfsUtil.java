@@ -31,6 +31,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.ui.awt.RelativePoint;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -164,13 +165,6 @@ public class TfsUtil {
         }
         else {
           Frame frame = WindowManager.getInstance().getFrame(project);
-          if (frame == null) {
-            final Window activeWindow = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-            if (activeWindow != null) {
-              frame = getParentFrame(activeWindow);
-            }
-          }
-
           if (frame != null) {
             @SuppressWarnings({"HardCodedStringLiteral"})
             final Balloon balloon = JBPopupFactory.getInstance()
@@ -206,27 +200,17 @@ public class TfsUtil {
     }
   }
 
-  public static void runOrInvokeAndWaitNonModal(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
+  public static void runOrInvokeAndWait(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
     final Application application = ApplicationManager.getApplication();
     if (application.isDispatchThread()) {
       runnable.run();
     }
     else {
-      application.invokeAndWait(runnable, ModalityState.NON_MODAL);
-    }
-  }
-
-  @Nullable
-  private static Frame getParentFrame(Window w) {
-    synchronized (w.getTreeLock()) {
-      while (w != null) {
-        if (w instanceof Frame) {
-          return (Frame)w;
-        }
-        w = w.getOwner();
+      ModalityState modalityState = ModalityState.NON_MODAL;
+      if (ProgressManager.getInstance().getProgressIndicator() != null) {
+        modalityState = ProgressManager.getInstance().getProgressIndicator().getModalityState();
       }
-      return null;
+      application.invokeAndWait(runnable, modalityState);
     }
   }
-
 }
