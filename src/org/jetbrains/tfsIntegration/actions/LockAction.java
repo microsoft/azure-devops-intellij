@@ -18,7 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
@@ -45,7 +45,7 @@ import java.util.Map;
 public class LockAction extends AnAction {
 
   public void actionPerformed(AnActionEvent e) {
-    final Project project = e.getData(DataKeys.PROJECT);
+    final Project project = e.getData(PlatformDataKeys.PROJECT);
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
 
     final List<LockItemModel> items = new ArrayList<LockItemModel>();
@@ -166,7 +166,7 @@ public class LockAction extends AnAction {
   }
 
   public void update(final AnActionEvent e) {
-    final Project project = e.getData(DataKeys.PROJECT);
+    final Project project = e.getData(PlatformDataKeys.PROJECT);
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
     e.getPresentation().setEnabled(isEnabled(project, files));
   }
