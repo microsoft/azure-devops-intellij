@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
+import com.intellij.openapi.vcs.changes.committed.VcsCommittedListsZipper;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
@@ -57,6 +58,10 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
   public ChangesBrowserSettingsEditor<ChangeBrowserSettings> createFilterUI(final boolean showDateFilter) {
     return new TFSVersionFilterComponent(showDateFilter);
+  }
+
+  public VcsCommittedListsZipper getZipper() {
+    return null;
   }
 
   @Nullable
