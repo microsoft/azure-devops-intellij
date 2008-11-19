@@ -36,6 +36,10 @@ public class TFSRepositoryLocation implements RepositoryLocation {
     return myPathsByWorkspaces;
   }
 
+  public String getKey() {
+    return toString();
+  }
+
   public String toPresentableString() {
     if (myPathsByWorkspaces.size() == 1 && myPathsByWorkspaces.values().iterator().next().size() == 1) {
       return myPathsByWorkspaces.values().iterator().next().iterator().next().getPresentableUrl();
