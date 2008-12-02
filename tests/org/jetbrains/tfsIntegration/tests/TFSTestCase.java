@@ -17,14 +17,15 @@
 package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
-import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
@@ -270,7 +271,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void rollback(final Collection<Change> changes) {
-    final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackChanges(new ArrayList<Change>(changes));
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    getVcs().getRollbackEnvironment().rollbackChanges(new ArrayList<Change>(changes), errors, RollbackProgressListener.EMPTY);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }
@@ -278,7 +280,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   protected void rollbackAll(TestChangeListBuilder builder) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
-    errors.addAll(getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges()));
+    getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges(), errors, RollbackProgressListener.EMPTY);
     // ??? errors.addAll(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
     errors.addAll(getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles()));
     Assert.assertTrue(getMessage(errors), errors.isEmpty());

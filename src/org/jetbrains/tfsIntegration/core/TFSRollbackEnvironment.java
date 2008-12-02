@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
+import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -52,13 +53,13 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   }
 
   @SuppressWarnings({"ConstantConditions"})
-  public List<VcsException> rollbackChanges(final List<Change> changes) {
+  public void rollbackChanges(final List<Change> changes, final List<VcsException> vcsExceptions, @NotNull final RollbackProgressListener listener) {
     List<FilePath> localPaths = new ArrayList<FilePath>();
     for (Change change : changes) {
       ContentRevision revision = change.getType() == Change.Type.DELETED ? change.getBeforeRevision() : change.getAfterRevision();
       localPaths.add(revision.getFile());
     }
-    return undoPendingChanges(localPaths);
+    undoPendingChanges(localPaths, vcsExceptions, listener);
   }
 
   public List<VcsException> rollbackMissingFileDeletion(final List<FilePath> files) {
@@ -185,14 +186,15 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
   }
 
   public void rollbackIfUnchanged(final VirtualFile file) {
-    final List<VcsException> errors = undoPendingChanges(Collections.singletonList(TfsFileUtil.getFilePath(file)));
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    undoPendingChanges(Collections.singletonList(TfsFileUtil.getFilePath(file)), errors, RollbackProgressListener.EMPTY);
     if (!errors.isEmpty()) {
       AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFS_NAME);
     }
   }
 
-  private List<VcsException> undoPendingChanges(final List<FilePath> localPaths) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+  private void undoPendingChanges(final List<FilePath> localPaths, final List<VcsException> errors,
+                                  @NotNull final RollbackProgressListener listener) {
     try {
       WorkstationHelper.processByWorkspaces(localPaths, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -204,6 +206,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           errors.addAll(undoResult.errors);
           List<VirtualFile> refresh = new ArrayList<VirtualFile>(paths.size());
           for (ItemPath path : paths) {
+            listener.accept(path.getLocalPath());
+
             ItemPath undone = undoResult.undonePaths.get(path);
             FilePath subject = (undone != null ? undone : path).getLocalPath();
             VirtualFile file = subject.getVirtualFileParent();
@@ -214,10 +218,9 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           TfsFileUtil.refreshAndMarkDirty(myProject, refresh, true);
         }
       });
-      return errors;
     }
     catch (TfsException e) {
-      return Collections.singletonList(new VcsException("Failed to undo pending changes", e));
+      errors.add(new VcsException("Failed to undo pending changes", e));
     }
   }
 
