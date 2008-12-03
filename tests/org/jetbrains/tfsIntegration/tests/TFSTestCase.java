@@ -279,10 +279,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected void rollbackAll(TestChangeListBuilder builder) {
     final List<VcsException> errors = new ArrayList<VcsException>();
-    errors.addAll(getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted()));
+    getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(builder.getLocallyDeleted(), errors, RollbackProgressListener.EMPTY);
     getVcs().getRollbackEnvironment().rollbackChanges(builder.getChanges(), errors, RollbackProgressListener.EMPTY);
     // ??? errors.addAll(getVcs().getRollbackEnvironment().rollbackIfUnchanged());
-    errors.addAll(getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles()));
+    getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(builder.getHijackedFiles(), errors, RollbackProgressListener.EMPTY);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }
@@ -316,7 +316,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void rollbackHijacked(List<VirtualFile> files) {
-    final List<VcsException> errors = getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(files);
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    getVcs().getRollbackEnvironment().rollbackModifiedWithoutCheckout(files, errors, RollbackProgressListener.EMPTY);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }

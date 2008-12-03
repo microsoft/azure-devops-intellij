@@ -62,8 +62,8 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
     undoPendingChanges(localPaths, vcsExceptions, listener);
   }
 
-  public List<VcsException> rollbackMissingFileDeletion(final List<FilePath> files) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+  public void rollbackMissingFileDeletion(final List<FilePath> files, final List<VcsException> errors,
+                                                        final RollbackProgressListener listener) {
     try {
       WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -152,13 +152,12 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
       });
     }
     catch (TfsException e) {
-      return Collections.singletonList(new VcsException(e.getMessage(), e));
+      errors.add(new VcsException(e.getMessage(), e));
     }
-    return errors;
   }
 
-  public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+  public void rollbackModifiedWithoutCheckout(final List<VirtualFile> files, final List<VcsException> errors,
+                                                            final RollbackProgressListener listener) {
     try {
       WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -177,11 +176,9 @@ public class TFSRollbackEnvironment implements RollbackEnvironment {
           errors.addAll(applyingErrors);
         }
       });
-
-      return errors;
     }
     catch (TfsException e) {
-      return Collections.singletonList(new VcsException("Failed to undo pending changes", e));
+      errors.add(new VcsException("Failed to undo pending changes", e));
     }
   }
 

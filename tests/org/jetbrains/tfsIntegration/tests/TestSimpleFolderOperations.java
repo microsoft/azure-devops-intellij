@@ -18,10 +18,13 @@ package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -107,7 +110,8 @@ public class TestSimpleFolderOperations extends TFSTestCase {
     VirtualFile folder = createDirInCommand(mySandboxRoot, "Folder");
     deleteFileExternally(folder);
 
-    getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Collections.singletonList(TfsFileUtil.getFilePath(folder)));
+    getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Collections.singletonList(TfsFileUtil.getFilePath(folder)),
+                                                                  new ArrayList<VcsException>(), RollbackProgressListener.EMPTY);
 
     getChanges().assertTotalItems(0);
   }
@@ -373,7 +377,7 @@ public class TestSimpleFolderOperations extends TFSTestCase {
     changes.assertTotalItems(1);
     changes.assertLocallyDeleted(path);
 
-    getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Arrays.asList(path));
+    getVcs().getRollbackEnvironment().rollbackMissingFileDeletion(Arrays.asList(path), new ArrayList<VcsException>(), RollbackProgressListener.EMPTY);
     refreshAll();
     getChanges().assertTotalItems(0);
   }
