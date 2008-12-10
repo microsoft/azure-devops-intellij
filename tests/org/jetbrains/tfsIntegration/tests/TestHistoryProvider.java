@@ -93,7 +93,7 @@ public class TestHistoryProvider extends TFSTestCase {
       final TFSChangeList changelist1 = historyList.get(1);
 
       Assert.assertEquals(comment1, changelist1.getComment());
-      Assert.assertEquals(getUsername().toUpperCase(), changelist1.getCommitterName());
+      assertUserNameEqual(changelist1.getCommitterName());
 
       String dump = ChangeHelper.toString(changelist1.getChanges(), mySandboxRoot);
       Assert.assertEquals(dump, 9, changelist1.getChanges().size());
@@ -111,7 +111,7 @@ public class TestHistoryProvider extends TFSTestCase {
     {
       final TFSChangeList changelist2 = historyList.get(0);
       Assert.assertEquals(comment2, changelist2.getComment());
-      Assert.assertEquals(getUsername().toUpperCase(), changelist2.getCommitterName());
+      assertUserNameEqual(changelist2.getCommitterName());
 
       String dump = ChangeHelper.toString(changelist2.getChanges(), mySandboxRoot);
       Assert.assertTrue(dump, ChangeHelper.containsAdded(changelist2.getChanges(), fileCreated));

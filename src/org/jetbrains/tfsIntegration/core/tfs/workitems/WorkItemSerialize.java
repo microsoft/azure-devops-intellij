@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.workitems;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 import org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.*;
+import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -27,9 +28,9 @@ import java.util.List;
 
 public class WorkItemSerialize {
 
-  public static final List<WorkItemField> FIELDS = Arrays.asList(WorkItemField.ID, WorkItemField.ASSIGNED_TO, WorkItemField.STATE,
+  public static final List<WorkItemField> FIELDS = Arrays.asList(WorkItemField.ID, WorkItemField.STATE,
                                                                  WorkItemField.TITLE, WorkItemField.REVISION, WorkItemField.TYPE,
-                                                                 WorkItemField.REASON);
+                                                                 WorkItemField.REASON, WorkItemField.ASSIGNED_TO);
 
   private static final String SERVER_DATE_TIME = "ServerDateTime";
 
@@ -37,19 +38,25 @@ public class WorkItemSerialize {
     Fixed, Completed
   }
 
-  public static WorkItem createFromFields(String[] workItemFieldsValues) {
+  public static WorkItem createFromFields(String[] workItemFieldsValues) throws OperationFailedException {
     try {
       int id = Integer.parseInt(workItemFieldsValues[FIELDS.indexOf(WorkItemField.ID)]);
-      String assignedTo = workItemFieldsValues[FIELDS.indexOf(WorkItemField.ASSIGNED_TO)];
       WorkItem.WorkItemState state = WorkItem.WorkItemState.valueOf(workItemFieldsValues[FIELDS.indexOf(WorkItemField.STATE)]);
       String title = workItemFieldsValues[FIELDS.indexOf(WorkItemField.TITLE)];
       int revision = Integer.parseInt(workItemFieldsValues[FIELDS.indexOf(WorkItemField.REVISION)]);
       WorkItemType type = WorkItemType.fromString(workItemFieldsValues[FIELDS.indexOf(WorkItemField.TYPE)]);
       String reason = workItemFieldsValues[FIELDS.indexOf(WorkItemField.REASON)];
+      @Nullable final String assignedTo;
+      if (workItemFieldsValues.length > FIELDS.indexOf(WorkItemField.ASSIGNED_TO)) {
+        assignedTo = workItemFieldsValues[FIELDS.indexOf(WorkItemField.ASSIGNED_TO)];
+      } else {
+        assignedTo = null;
+      }
       return new WorkItem(id, assignedTo, state, title, revision, type, reason);
     }
     catch (Exception e) {
-      throw new IllegalArgumentException("Incorrect input array", e);
+      // TODO remove this
+      throw new OperationFailedException("Failed to load work item(s): unexpected properties encountered");
     }
   }
 

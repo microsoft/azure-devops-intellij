@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 
 public class WorkItem {
@@ -27,7 +28,7 @@ public class WorkItem {
   // a great many of other properties may be added here if will be needed in UI or elsewhere
   private final int myId;
 
-  private final String myAssignedTo;
+  private @Nullable final String myAssignedTo;
 
   private final WorkItemState myState;
 
@@ -40,7 +41,7 @@ public class WorkItem {
   private final String myReason;
 
   public WorkItem(final int id,
-                  final String assignedTo,
+                  @Nullable final String assignedTo,
                   final WorkItemState state,
                   final String title,
                   final int revision,
@@ -59,7 +60,7 @@ public class WorkItem {
     return myId;
   }
 
-  public String getAssignedTo() {
+  public @Nullable String getAssignedTo() {
     return myAssignedTo;
   }
 

@@ -29,6 +29,9 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.DigestScheme;
+import org.apache.commons.httpclient.auth.BasicScheme;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
@@ -40,10 +43,7 @@ import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-import org.jetbrains.tfsIntegration.core.tfs.HTTPProxyInfo;
-import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
@@ -74,6 +74,17 @@ public class WebServiceHelper {
   private static final Map<URI, Object> ourLocks = Collections.synchronizedMap(new HashMap<URI, Object>());
 
   private static final Map<URI, String> ourErrorMessages = Collections.synchronizedMap(new HashMap<URI, String>());
+
+  static {
+    // keep NTLM scheme first
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.NTLM);
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.DIGEST);
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.BASIC);
+
+    AuthPolicy.registerAuthScheme(AuthPolicy.NTLM, NTLM2Scheme.class);
+    AuthPolicy.registerAuthScheme(AuthPolicy.DIGEST, DigestScheme.class);
+    AuthPolicy.registerAuthScheme(AuthPolicy.BASIC, BasicScheme.class);
+  }
 
   public interface VoidDelegate {
 

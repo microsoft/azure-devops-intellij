@@ -117,7 +117,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
     createNewWorkspaceFor(localRoot);
 
-    createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot), "sandbox " + mySandboxRoot.getName() + "created");
+    createServerFolder(TfsFileUtil.getFilePath(mySandboxRoot), "sandbox " + mySandboxRoot.getName() + " created");
 
     ApplyGetOperations.setLocalConflictHandlingType(ApplyGetOperations.LocalConflictHandlingType.ERROR);
 
@@ -212,8 +212,10 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private static void removeWorkspace(WorkspaceInfo workspace) throws URISyntaxException, TfsException {
     final ServerInfo server = Workstation.getInstance().getServer(new URI(SERVER));
-    server.refreshWorkspacesForCurrentOwner();
-    server.deleteWorkspace(workspace);
+    if (server != null) {
+      server.refreshWorkspacesForCurrentOwner();
+      server.deleteWorkspace(workspace);
+    }
   }
 
   protected TestChangeListBuilder getChanges() throws VcsException {
@@ -481,10 +483,6 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return result;
   }
 
-  protected static String getUsername() {
-    return DOMAIN + "\\" + USER;
-  }
-
   protected static FilePath replaceInPath(FilePath path, FilePath folderFrom, FilePath folderTo) {
     String from = folderFrom.getIOFile().getPath();
     String to = folderTo.getIOFile().getPath();
@@ -591,5 +589,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     return extendedItem.getItemid();
   }
 
+  protected void assertUserNameEqual(String userName) {
+    Assert.assertEquals((DOMAIN + "\\" + USER).toUpperCase(), userName.toUpperCase());
+  }
 
 }

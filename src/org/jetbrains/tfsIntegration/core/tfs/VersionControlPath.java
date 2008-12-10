@@ -96,10 +96,10 @@ public class VersionControlPath {
     return path1.compareTo(path2);
   }
 
-  /**
+  /**                                                                      
    * At the same level files go before subfolders regardless of the names.
    */
-  public static int compareParentToChild(String path1, boolean isDirectory1, String path2, boolean isDrectory2) {
+  public static int compareParentToChild(@NotNull String path1, boolean isDirectory1, @NotNull String path2, boolean isDrectory2) {
     String[] pathComponents1 = getPathComponents(path1);
     String[] pathComponents2 = getPathComponents(path2);
 
@@ -141,7 +141,7 @@ public class VersionControlPath {
     }
   }
 
-  public static String getCommonAncestor(final String path1, final String path2) {
+  public static String getCommonAncestor(final @NotNull String path1, final @NotNull String path2) {
     String[] components1 = getPathComponents(path1);
     String[] components2 = getPathComponents(path2);
 
@@ -152,11 +152,11 @@ public class VersionControlPath {
     return StringUtil.join(Arrays.asList(components1).subList(0, i), SERVER_PATH_SEPARATOR);
   }
 
-  public static String getLastComponent(final String serverPath) {
+  public static String getLastComponent(final @NotNull String serverPath) {
     return serverPath.substring(serverPath.lastIndexOf(SERVER_PATH_SEPARATOR) + 1);
   }
 
-  public static String[] getPathComponents(final String serverPath) {
+  public static String[] getPathComponents(final @NotNull String serverPath) {
     return serverPath.split(SERVER_PATH_SEPARATOR);
   }
 

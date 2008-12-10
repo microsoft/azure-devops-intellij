@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.ui.CollectionListModel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
@@ -47,7 +48,7 @@ public class UpdateSettingsForm {
     public final boolean isDirectory;
     public VersionSpecBase version = LatestVersionSpec.INSTANCE;
 
-    public WorkspaceSettings(final String serverPath, final boolean isDirectory) {
+    public WorkspaceSettings(final @NotNull String serverPath, final boolean isDirectory) {
       this.serverPath = serverPath;
       this.isDirectory = isDirectory;
     }

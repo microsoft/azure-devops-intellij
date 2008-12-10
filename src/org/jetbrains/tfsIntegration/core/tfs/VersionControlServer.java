@@ -970,7 +970,11 @@ public class VersionControlServer {
         }
       });
 
-    final List<CheckinNoteFieldDefinition> checkinNoteFields = Arrays.asList(result.getCheckinNoteFieldDefinition());
+    final CheckinNoteFieldDefinition[] definitions = result.getCheckinNoteFieldDefinition();
+    if (definitions == null) {
+      return Collections.emptyList();
+    }
+    final List<CheckinNoteFieldDefinition> checkinNoteFields = Arrays.asList(definitions);
     Collections.sort(checkinNoteFields, new Comparator<CheckinNoteFieldDefinition>() {
       public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
         return o1.get_do() - o2.get_do();
