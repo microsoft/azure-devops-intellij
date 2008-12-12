@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -32,9 +33,8 @@ import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.ui.UpdateSettingsForm;
 
 import java.util.*;
 
@@ -78,8 +78,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
             // execute GetOperation-s, conflicting ones will be skipped
             final Collection<VcsException> applyErrors = ApplyGetOperations
-              .execute(myVcs.getProject(), workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW)
-              ;
+              .execute(myVcs.getProject(), workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
             exceptions.addAll(applyErrors);
 
             Collection<Conflict> conflicts =
@@ -127,22 +126,63 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
 
   @Nullable
   public Configurable createConfigurable(final Collection<FilePath> files) {
-    if (files.isEmpty()) {
+    final Map<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings> workspacesSettings =
+      new HashMap<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings>();
+    final Ref<TfsException> error = new Ref<TfsException>();
+    Runnable r = new Runnable() {
+      public void run() {
+        try {
+          WorkstationHelper.processByWorkspaces(files, true, new WorkstationHelper.VoidProcessDelegate() {
+            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+              final Map<FilePath, ExtendedItem> result = workspace.getExtendedItems2(paths);
+              Collection<ExtendedItem> items = new ArrayList<ExtendedItem>(result.values());
+              for (Iterator<ExtendedItem> i = items.iterator(); i.hasNext();) {
+                final ExtendedItem extendedItem = i.next();
+                if (extendedItem == null || extendedItem.getSitem() == null) {
+                  i.remove();
+                }
+              }
+
+              if (items.isEmpty()) {
+                return;
+              }
+
+              // determine common ancestor of all the paths
+              ExtendedItem someExtendedItem = items.iterator().next();
+              UpdateSettingsForm.WorkspaceSettings workspaceSettings =
+                new UpdateSettingsForm.WorkspaceSettings(someExtendedItem.getSitem(), someExtendedItem.getType() == ItemType.Folder);
+              for (ExtendedItem extendedItem : items) {
+                final String path1 = workspaceSettings.serverPath;
+                final String path2 = extendedItem.getSitem();
+                if (VersionControlPath.isUnder(path2, path1)) {
+                  workspaceSettings = new UpdateSettingsForm.WorkspaceSettings(path2, extendedItem.getType() == ItemType.Folder);
+                }
+                else if (!VersionControlPath.isUnder(path1, path2)) {
+                  workspaceSettings = new UpdateSettingsForm.WorkspaceSettings(VersionControlPath.getCommonAncestor(path1, path2), true);
+                }
+              }
+              workspacesSettings.put(workspace, workspaceSettings);
+            }
+          });
+        }
+        catch (TfsException e) {
+          error.set(e);
+        }
+      }
+    };
+
+    ProgressManager.getInstance().runProcessWithProgressSynchronously(r, "TFS: preparing for update...", false, myVcs.getProject());
+
+    if (!error.isNull()) {
+      //noinspection ThrowableResultOfMethodCallIgnored
+      //Messages.showErrorDialog(myVcs.getProject(), error.get().getMessage(), "Update Project");
       return null;
     }
-    final Ref<Boolean> mappingFound = new Ref<Boolean>(false);
-    try {
-      WorkstationHelper.processByWorkspaces(files, true, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          mappingFound.set(true);
-        }
-      });
-    }
-    catch (TfsException e) {
+    if (workspacesSettings.isEmpty()) {
       return null;
     }
 
-    return mappingFound.get() ? new UpdateConfigurable(myVcs.getProject(), files) : null;
+    return new UpdateConfigurable(myVcs.getProject(), workspacesSettings);
   }
 
   public boolean validateOptions(final Collection<FilePath> roots) {

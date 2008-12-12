@@ -19,25 +19,23 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.ui.UpdateSettingsForm;
 
 import javax.swing.*;
-import java.util.Collection;
+import java.util.Map;
 
 public class UpdateConfigurable implements Configurable {
 
   private final Project myProject;
-
-  private final Collection<FilePath> myFiles;
+  private final Map<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings> myWorkspaceSettings;
 
   private UpdateSettingsForm myUpdateSettingsForm;
 
-  public UpdateConfigurable(Project project, final Collection<FilePath> files) {
+  public UpdateConfigurable(Project project, Map<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings> workspaceSettings) {
     myProject = project;
-    myFiles = files;
+    myWorkspaceSettings = workspaceSettings;
   }
 
   public String getHelpTopic() {
@@ -62,7 +60,7 @@ public class UpdateConfigurable implements Configurable {
   }
 
   public JComponent createComponent() {
-    myUpdateSettingsForm = new UpdateSettingsForm(myProject, myFiles, getDisplayName());
+    myUpdateSettingsForm = new UpdateSettingsForm(myProject, getDisplayName(), myWorkspaceSettings);
     return myUpdateSettingsForm.getPanel();
   }
 

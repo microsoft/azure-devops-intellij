@@ -19,19 +19,12 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.ui.CollectionListModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
-import org.jetbrains.tfsIntegration.core.tfs.ItemPath;
-import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.WorkstationHelper;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -43,7 +36,7 @@ import java.util.List;
 
 public class UpdateSettingsForm {
 
-  private static class WorkspaceSettings {
+  public static class WorkspaceSettings {
     public final String serverPath;
     public final boolean isDirectory;
     public VersionSpecBase version = LatestVersionSpec.INSTANCE;
@@ -54,62 +47,19 @@ public class UpdateSettingsForm {
     }
   }
 
-  private final Map<WorkspaceInfo, WorkspaceSettings> myWorkspaceSettings = new HashMap<WorkspaceInfo, WorkspaceSettings>();
+  private final Map<WorkspaceInfo, WorkspaceSettings> myWorkspaceSettings;
 
   private JPanel myPanel;
   private JCheckBox myRecursiveBox;
   private JList myWorkspacesList;
-  private JPanel myWorkspaceSettingsPanel;
   private SelectRevisionForm mySelectRevisionForm;
+  @SuppressWarnings({"UnusedDeclaration"})
+  private JPanel myWorkspaceSettingsPanel;
   private WorkspaceInfo mySelectedWorkspace;
-  private TfsException myErrorOnInitialization;
 
-  public UpdateSettingsForm(final Project project, Collection<FilePath> roots, final String title) {
-    final List<WorkspaceInfo> workspaces = new ArrayList<WorkspaceInfo>();
-    try {
-      WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          final Map<FilePath, ExtendedItem> result = workspace.getExtendedItems2(paths);
-          Collection<ExtendedItem> items = new ArrayList<ExtendedItem>(result.values());
-          for (Iterator<ExtendedItem> i = items.iterator(); i.hasNext();) {
-            if (i.next() == null) {
-              i.remove();
-            }
-          }
-
-          if (items.isEmpty()) {
-            return;
-          }
-
-          workspaces.add(workspace);
-
-          // determine common ancestor of all the paths
-          ExtendedItem someExtendedItem = items.iterator().next();
-          WorkspaceSettings workspaceSettings =
-            new WorkspaceSettings(someExtendedItem.getSitem(), someExtendedItem.getType() == ItemType.Folder);
-          for (ExtendedItem extendedItem : items) {
-            final String path1 = workspaceSettings.serverPath;
-            final String path2 = extendedItem.getSitem();
-            if (VersionControlPath.isUnder(path2, path1)) {
-              workspaceSettings = new WorkspaceSettings(path2, extendedItem.getType() == ItemType.Folder);
-            }
-            else if (!VersionControlPath.isUnder(path1, path2)) {
-              workspaceSettings = new WorkspaceSettings(VersionControlPath.getCommonAncestor(path1, path2), true);
-            }
-          }
-          myWorkspaceSettings.put(workspace, workspaceSettings);
-        }
-      });
-      myErrorOnInitialization = null;
-    }
-    catch (TfsException e) {
-      myErrorOnInitialization = e;
-    }
-
-    if (myErrorOnInitialization != null) {
-      mySelectRevisionForm.disable(); // in case of list model will stay empty because of error is thrown while enumerating workspaces
-    }
-
+  public UpdateSettingsForm(final Project project, final String title, final Map<WorkspaceInfo, WorkspaceSettings> workspaceSettings) {
+    myWorkspaceSettings = workspaceSettings;
+    List<WorkspaceInfo> workspaces = new ArrayList<WorkspaceInfo>(myWorkspaceSettings.keySet());
     Collections.sort(workspaces, new Comparator<WorkspaceInfo>() {
       public int compare(final WorkspaceInfo o1, final WorkspaceInfo o2) {
         return o1.getName().compareTo(o2.getName());
@@ -164,10 +114,6 @@ public class UpdateSettingsForm {
   }
 
   private void applyCurrentValue() throws ConfigurationException {
-    if (myErrorOnInitialization != null) {
-      throw new ConfigurationException(myErrorOnInitialization.getMessage());
-    }
-
     if (mySelectedWorkspace != null) {
       VersionSpecBase version = mySelectRevisionForm.getVersionSpec();
       if (version != null) {
@@ -200,6 +146,5 @@ public class UpdateSettingsForm {
   public JComponent getPanel() {
     return myPanel;
   }
-
 
 }
