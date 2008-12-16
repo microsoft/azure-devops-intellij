@@ -83,7 +83,7 @@ public class StatusProvider {
         // TODO: what is faster: to search throughout pending changes or extended items?
 
         for (PendingChange candidate : pendingChanges.values()) {
-          if (localItem.equals(VersionControlPath.getFilePath(candidate.getLocal(), candidate.getType() == ItemType.Folder))) {
+          if (equals(localItem, VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()))) {
             extendedItem = extendedItems.remove(candidate.getItemid());
             TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " +
                                                     VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()));
@@ -94,7 +94,7 @@ public class StatusProvider {
 
         if (extendedItem == null) {
           for (ExtendedItem candidate : extendedItems.values()) {
-            if (localItem.equals(VersionControlPath.getFilePath(candidate.getLocal(), candidate.getType() == ItemType.Folder))) {
+            if (equals(localItem, VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()))) {
               extendedItem = extendedItems.remove(candidate.getItemid());
               break;
             }
@@ -226,6 +226,10 @@ public class StatusProvider {
                      (item.getLocal() != null ? VersionControlPath.localPathFromTfsRepresentation(item.getLocal()) : item.getTitem()));
     //noinspection ConstantConditions
     return null;
+  }
+
+  private static boolean equals(FilePath path1, String path2) {
+    return path1.getIOFile().getPath().equals(path2);
   }
 
 }
