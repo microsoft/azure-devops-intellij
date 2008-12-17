@@ -28,10 +28,10 @@ import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.auth.AuthPolicy;
-import org.apache.commons.httpclient.auth.DigestScheme;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.auth.BasicScheme;
+import org.apache.commons.httpclient.auth.DigestScheme;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
@@ -238,7 +238,8 @@ public class WebServiceHelper {
 
     while (true) {
       trace("looping: uri={0}, creds={1}", uri.get(), credentials.get());
-      if (uri.isNull() || credentials.isNull() || credentials.get().getPassword() == null) {
+      final boolean promptForTfs = uri.isNull() || credentials.isNull() || credentials.get().getPassword() == null;
+      if (promptForTfs || HTTPProxyInfo.shouldPromptForPassword()) {
         Runnable runnable = new Runnable() {
           public void run() {
             trace(callerThreadId, "got to UI thread");
@@ -246,6 +247,18 @@ public class WebServiceHelper {
             trace(callerThreadId, "waiting for UI lock [{0}]...", getLock(uri.get()));
             synchronized (getLock(uri.get())) {
               trace(callerThreadId, "got UI lock");
+
+              // while we're in UI thread let's show proxy authorization dialog
+              if (HTTPProxyInfo.shouldPromptForPassword()) {
+                trace(callerThreadId, "prompting for proxy password...");
+                HTTPProxyInfo.promptForPassword();
+              }
+
+              if (!promptForTfs) {
+                trace(callerThreadId, "no need for tfs prompt, return");
+                return;
+              }
+
               // if another thread was pending to prompt for credentials with the same server, it may already succeed and there's no need to ask again
               boolean shouldPrompt = true;
               if (initialUri != null) {
@@ -416,8 +429,6 @@ public class WebServiceHelper {
       proxyProperties = null;
     }
 
-    // TODO FIXME axis2 will ignore our proxy settings and will use System property "http.proxyHost" instead if it is set to any value.
-    // This system property may be set if any other Idea plugin (like IDE Talk) invokes HTTPConfigurable.prepareURL() or HTTPConfigurable.setAuthenticator()
     options.setProperty(HTTPConstants.PROXY, proxyProperties);
   }
 
@@ -445,13 +456,13 @@ public class WebServiceHelper {
     // you may need this for debugging
     String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
     @NonNls String message = String.valueOf(System.currentTimeMillis()) +
-                       ", thread=" +
-                       String.valueOf(threadId) +
-                       ", cur thread=" +
-                       String.valueOf(Thread.currentThread().getId()) +
-                       dispatch +
-                       ": " +
-                       msg;
+                             ", thread=" +
+                             String.valueOf(threadId) +
+                             ", cur thread=" +
+                             String.valueOf(Thread.currentThread().getId()) +
+                             dispatch +
+                             ": " +
+                             msg;
     //System.out.println(message);
   }
 

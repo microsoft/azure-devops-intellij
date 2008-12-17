@@ -34,9 +34,6 @@ public class ProjectConfigurableForm {
   public ProjectConfigurableForm(final Project project) {
     myProject = project;
 
-    // TODO FIXME remove this line when HttpConfigurable class will be fixed (will not set system properties "http.proxyHost" and others)
-    myUseIdeaHttpProxyCheckBox.setVisible(false);
-
     myManageButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core.tfs;
+package org.jetbrains.tfsIntegration.webservice;
 
 import com.intellij.util.net.HttpConfigurable;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
-public class HTTPProxyInfo {
+import java.net.Authenticator;
+
+class HTTPProxyInfo {
 
   public final @Nullable String host;
   public final int port;
@@ -34,20 +36,37 @@ public class HTTPProxyInfo {
     this.password = password;
   }
 
-  public static HTTPProxyInfo getCurrent() {
+  public static boolean shouldPromptForPassword() {
     if (TFSConfigurationManager.getInstance().useIdeaHttpProxy()) {
-      final HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
-      if (httpConfigurable.USE_HTTP_PROXY) {
-        if (httpConfigurable.PROXY_AUTHENTICATION) {
-          return new HTTPProxyInfo(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT, httpConfigurable.PROXY_LOGIN,
-                                   httpConfigurable.getPlainProxyPassword());
+      final HttpConfigurable hc = HttpConfigurable.getInstance();
+      return hc.USE_HTTP_PROXY && hc.PROXY_AUTHENTICATION && !hc.KEEP_PROXY_PASSWORD;
+    }
+    return false;
+  }
+
+  public static void promptForPassword() {
+    final HttpConfigurable hc = HttpConfigurable.getInstance();
+    hc.getPromptedAuthentication(hc.PROXY_HOST, "Proxy authentication");
+  }
+
+  public static HTTPProxyInfo getCurrent() {
+    // axis will override the higher-level settings with system properties, so explicitly clear them
+    System.clearProperty("http.proxyHost");
+    System.clearProperty("http.proxyPort");
+    Authenticator.setDefault(null);
+
+    if (TFSConfigurationManager.getInstance().useIdeaHttpProxy()) {
+      final HttpConfigurable hc = HttpConfigurable.getInstance();
+      if (hc.USE_HTTP_PROXY) {
+        if (hc.PROXY_AUTHENTICATION) {
+          // here we assume proxy auth dialog was shown if needed, see promptForPassword() caller
+          return new HTTPProxyInfo(hc.PROXY_HOST, hc.PROXY_PORT, hc.PROXY_LOGIN, hc.getPlainProxyPassword());
         }
         else {
-          return new HTTPProxyInfo(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT, null, null);
+          return new HTTPProxyInfo(hc.PROXY_HOST, hc.PROXY_PORT, null, null);
         }
       }
     }
-
     return new HTTPProxyInfo(null, -1, null, null);
   }
 }
