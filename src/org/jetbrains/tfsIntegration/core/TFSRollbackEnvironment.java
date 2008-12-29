@@ -22,7 +22,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
-import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
+import com.intellij.openapi.vcs.rollback.DefaultRollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -40,16 +40,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class TFSRollbackEnvironment implements RollbackEnvironment {
+public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
 
   private final @NotNull Project myProject;
 
   public TFSRollbackEnvironment(final Project project) {
     myProject = project;
-  }
-
-  public String getRollbackOperationName() {
-    return "Undo Pending Changes";
   }
 
   @SuppressWarnings({"ConstantConditions"})
