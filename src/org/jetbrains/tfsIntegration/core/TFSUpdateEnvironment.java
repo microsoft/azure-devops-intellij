@@ -30,6 +30,7 @@ import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -78,7 +79,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
             // execute GetOperation-s, conflicting ones will be skipped
             final Collection<VcsException> applyErrors = ApplyGetOperations
-              .execute(myVcs.getProject(), workspace, operations, progressIndicator, updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
+              .execute(myVcs.getProject(), workspace, operations, new ApplyProgress.ProgressIndicatorWrapper(progressIndicator),
+                       updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
             exceptions.addAll(applyErrors);
 
             Collection<Conflict> conflicts =

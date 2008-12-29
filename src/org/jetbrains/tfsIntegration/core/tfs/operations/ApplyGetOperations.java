@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
@@ -56,7 +57,7 @@ public class ApplyGetOperations {
   private Project myProject;
   private final WorkspaceInfo myWorkspace;
   private final Collection<GetOperation> myOperations;
-  private final @Nullable ProgressIndicator myProgressIndicator;
+  private final @NotNull ApplyProgress myProgress;
   private final @Nullable UpdatedFiles myUpdatedFiles;
   private final Collection<VcsException> myErrors = new ArrayList<VcsException>();
   private final Collection<LocalVersionUpdate> myUpdateLocalVersions = new ArrayList<LocalVersionUpdate>();
@@ -77,17 +78,15 @@ public class ApplyGetOperations {
   private ApplyGetOperations(Project project,
                              WorkspaceInfo workspace,
                              Collection<GetOperation> operations,
-                             final @Nullable ProgressIndicator progressIndicator,
+                             final @NotNull ApplyProgress progress,
                              final @Nullable UpdatedFiles updatedFiles,
                              final DownloadMode downloadMode) {
     myProject = project;
     myWorkspace = workspace;
     myOperations = operations;
-    myProgressIndicator = progressIndicator;
+    myProgress = progress;
     myUpdatedFiles = updatedFiles;
     myDownloadMode = downloadMode;
-
-    TFSProgressUtil.setIndeterminate(myProgressIndicator, true);
   }
 
   public static LocalConflictHandlingType getLocalConflictHandlingType() {
@@ -101,10 +100,10 @@ public class ApplyGetOperations {
   public static Collection<VcsException> execute(Project project,
                                                  WorkspaceInfo workspace,
                                                  Collection<GetOperation> operations,
-                                                 final @Nullable ProgressIndicator progressIndicator,
+                                                 final @NotNull ApplyProgress progress,
                                                  final @Nullable UpdatedFiles updatedFiles,
                                                  DownloadMode downloadMode) {
-    ApplyGetOperations session = new ApplyGetOperations(project, workspace, operations, progressIndicator, updatedFiles, downloadMode);
+    ApplyGetOperations session = new ApplyGetOperations(project, workspace, operations, progress, updatedFiles, downloadMode);
     session.execute();
     return session.myErrors;
   }
@@ -120,13 +119,16 @@ public class ApplyGetOperations {
 
     try {
       for (int i = 0; i < sortedOperations.size(); i++) {
-        TFSProgressUtil.checkCanceled(myProgressIndicator);
+        if (myProgress.isCancelled()) {
+          throw new ProcessCanceledException();
+        }
 
         GetOperation operationToExecute = sortedOperations.get(i);
 
         final String currentPath = VersionControlPath.localPathFromTfsRepresentation(
           operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
-        TFSProgressUtil.setProgressText(myProgressIndicator, currentPath);
+        myProgress.setFraction(i / sortedOperations.size());
+        myProgress.setText(currentPath);
 
         if (operationToExecute.getCnflct()) {
           // TODO can be confict on undo?

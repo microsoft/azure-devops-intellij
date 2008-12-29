@@ -35,10 +35,7 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 // TODO review usage of getFilePath(), getVirtualFile()
 
@@ -65,6 +62,10 @@ public class TfsFileUtil {
   }
 
   public static void setReadOnly(final VirtualFile file, final boolean status) throws IOException {
+    setReadOnly(Collections.singletonList(file), status);
+  }
+
+  public static void setReadOnly(final Collection<VirtualFile> files, final boolean status) throws IOException {
     final Ref<IOException> exception = new Ref<IOException>();
     try {
       GuiUtils.runOrInvokeAndWait(new Runnable() {
@@ -72,7 +73,9 @@ public class TfsFileUtil {
           ApplicationManager.getApplication().runWriteAction(new Runnable() {
             public void run() {
               try {
-                ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
+                for (VirtualFile file : files) {
+                  ReadOnlyAttributeUtil.setReadOnlyAttribute(file, status);
+                }
               }
               catch (IOException e) {
                 exception.set(e);

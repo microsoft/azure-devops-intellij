@@ -33,6 +33,7 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
@@ -73,7 +74,8 @@ public class MergeBranchAction extends SingleItemAction {
         public void run() {
           final Collection<VcsException> applyErrors = ApplyGetOperations
             .execute(project, workspace, Arrays.asList(mergeResponse.getMergeResult().getGetOperation()),
-                     ProgressManager.getInstance().getProgressIndicator(), null, ApplyGetOperations.DownloadMode.ALLOW);
+                     new ApplyProgress.ProgressIndicatorWrapper(ProgressManager.getInstance().getProgressIndicator()), null,
+                     ApplyGetOperations.DownloadMode.ALLOW);
           errors.addAll(applyErrors);
         }
       }, title, false, project);

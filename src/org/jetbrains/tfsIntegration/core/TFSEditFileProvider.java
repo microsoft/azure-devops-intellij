@@ -24,10 +24,10 @@ import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.io.IOException;
 
 public class TFSEditFileProvider implements EditFileProvider {
 
@@ -39,17 +39,19 @@ public class TFSEditFileProvider implements EditFileProvider {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             final ResultWithFailures<GetOperation> processResult =
               workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
+            Collection<VirtualFile> makeWritable = new ArrayList<VirtualFile>();
             for (GetOperation getOperation : processResult.getResult()) {
               TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));
               VirtualFile file = VersionControlPath.getVirtualFile(getOperation.getSlocal());
               if (file != null && file.isValid() && !file.isDirectory()) {
-                try {
-                  TfsFileUtil.setReadOnly(file, false);
-                }
-                catch (IOException e) {
-                  errors.add(new VcsException(e));
-                }
+                makeWritable.add(file);
               }
+            }
+            try {
+              TfsFileUtil.setReadOnly(makeWritable, false);
+            }
+            catch (IOException e) {
+              errors.add(new VcsException(e));
             }
             errors.addAll(TfsUtil.getVcsExceptions(processResult.getFailures()));
           }

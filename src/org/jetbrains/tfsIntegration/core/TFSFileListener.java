@@ -28,6 +28,7 @@ import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
@@ -163,8 +164,9 @@ public class TFSFileListener extends VcsVFSListener {
             }
           }
 
-          UndoPendingChanges.UndoPendingChangesResult undoResult = UndoPendingChanges.execute(myProject, workspace, revertImmediately, true)
-            ;
+          UndoPendingChanges.UndoPendingChangesResult undoResult =
+            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true, ApplyProgress.EMPTY);
+
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
             AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);

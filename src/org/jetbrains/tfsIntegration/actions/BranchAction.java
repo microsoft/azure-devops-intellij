@@ -29,6 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -68,9 +69,9 @@ public class BranchAction extends SingleItemAction {
           FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
           d.setTitle("Choose Local Folder");
           descriptor.setShowFileSystemRoots(true);
-          final String message = MessageFormat.format(
-            "Branch target folder ''{0}'' is not mapped. Select a local directory to create mapping in workspace ''{1}''", targetServerPath,
-            workspace.getName());
+          final String message = MessageFormat
+            .format("Branch target folder ''{0}'' is not mapped. Select a local directory to create mapping in workspace ''{1}''",
+                    targetServerPath, workspace.getName());
           descriptor.setDescription(message);
 
           VirtualFile[] selectedFiles = FileChooser.chooseFiles(project, descriptor);
@@ -100,7 +101,8 @@ public class BranchAction extends SingleItemAction {
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
           public void run() {
             downloadErrors.set(ApplyGetOperations.execute(project, workspace, createBranchResult.getResult(),
-                                                          ProgressManager.getInstance().getProgressIndicator(), null,
+                                                          new ApplyProgress.ProgressIndicatorWrapper(
+                                                            ProgressManager.getInstance().getProgressIndicator()), null,
                                                           ApplyGetOperations.DownloadMode.ALLOW));
           }
         }, "Creating target working copies", false, project);
@@ -110,11 +112,9 @@ public class BranchAction extends SingleItemAction {
         }
       }
 
-      final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS().queryPendingSetsByServerItems(workspace.getName(),
-                                                                                                                    workspace.getOwnerName(),
-                                                                                                                    Collections.singletonList(
-                                                                                                                      targetServerPath),
-                                                                                                                    RecursionType.Full);
+      final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
+        .queryPendingSetsByServerItems(workspace.getName(), workspace.getOwnerName(), Collections.singletonList(targetServerPath),
+                                       RecursionType.Full);
       Collection<String> checkin = new ArrayList<String>();
       for (PendingChange change : pendingChanges) {
         if (EnumMask.fromString(ChangeType.class, change.getChg()).contains(ChangeType.Branch)) {
@@ -135,8 +135,7 @@ public class BranchAction extends SingleItemAction {
         TfsFileUtil.markDirtyRecursively(project, targetLocalPath);
       }
 
-      String message =
-        MessageFormat.format("''{0}'' branched successfully to ''{1}''.", sourceServerPath, targetServerPath);
+      String message = MessageFormat.format("''{0}'' branched successfully to ''{1}''.", sourceServerPath, targetServerPath);
       Messages.showInfoMessage(project, message, "Create Branch");
     }
     catch (TfsException ex) {

@@ -31,6 +31,7 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.ContentTriplet;
@@ -63,8 +64,8 @@ public class ResolveConflictHelper {
     final WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
     @SuppressWarnings({"ConstantConditions"}) @NotNull final FilePath localPath = VersionControlPath
-      .getFilePath(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem(), conflict.getYtype() == ItemType.Folder)
-      ;
+      .getFilePath(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem(),
+                   conflict.getYtype() == ItemType.Folder);
 
     final ContentTriplet contentTriplet = new ContentTriplet();
     VcsRunnable runnable = new VcsRunnable() {
@@ -218,7 +219,8 @@ public class ResolveConflictHelper {
         resolution == Resolution.AcceptTheirs ? ApplyGetOperations.DownloadMode.FORCE : ApplyGetOperations.DownloadMode.MERGE;
 
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, workspace, Arrays.asList(response.getResolveResult().getGetOperation()), null, updatedFiles, downloadMode);
+        .execute(myProject, workspace, Arrays.asList(response.getResolveResult().getGetOperation()), ApplyProgress.EMPTY, updatedFiles,
+                 downloadMode);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);
       }
@@ -226,7 +228,7 @@ public class ResolveConflictHelper {
 
     if (response.getUndoOperations().getGetOperation() != null) {
       final Collection<VcsException> applyErrors = ApplyGetOperations
-        .execute(myProject, workspace, Arrays.asList(response.getUndoOperations().getGetOperation()), null, updatedFiles,
+        .execute(myProject, workspace, Arrays.asList(response.getUndoOperations().getGetOperation()), ApplyProgress.EMPTY, updatedFiles,
                  ApplyGetOperations.DownloadMode.FORCE);
       if (!applyErrors.isEmpty()) {
         throw TfsUtil.collectExceptions(applyErrors);

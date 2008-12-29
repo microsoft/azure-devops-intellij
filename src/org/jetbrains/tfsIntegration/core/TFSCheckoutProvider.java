@@ -34,6 +34,7 @@ import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -52,10 +53,9 @@ public class TFSCheckoutProvider implements CheckoutProvider {
 
   public void doCheckout(@NotNull final Project project, @Nullable final Listener listener) {
     final CheckoutWizardModel model = new CheckoutWizardModel();
-    List<CheckoutWizardStep> steps = Arrays.asList(new ChooseModeStep(model),
-                                                   new ChooseWorkspaceStep(project, model),
-                                                   new ChooseLocalAndServerPathsStep(model),
-                                                   new ChooseServerPathStep(model), new SummaryStep(model));
+    List<CheckoutWizardStep> steps = Arrays
+      .asList(new ChooseModeStep(model), new ChooseWorkspaceStep(project, model), new ChooseLocalAndServerPathsStep(model),
+              new ChooseServerPathStep(model), new SummaryStep(model));
     CheckoutWizard w = new CheckoutWizard(project, steps, model);
     w.show();
 
@@ -86,9 +86,9 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           final List<GetOperation> operations = workspace.getServer().getVCS()
             .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
 
-          final Collection<VcsException> applyErrors = ApplyGetOperations.execute(ProjectManager.getInstance().getDefaultProject(),
-                                                                                  workspace, operations, progressIndicator, null,
-                                                                                  ApplyGetOperations.DownloadMode.ALLOW);
+          final Collection<VcsException> applyErrors = ApplyGetOperations
+            .execute(ProjectManager.getInstance().getDefaultProject(), workspace, operations,
+                     new ApplyProgress.ProgressIndicatorWrapper(progressIndicator), null, ApplyGetOperations.DownloadMode.ALLOW);
           // TODO: DownloadMode.FORCE?
           errors.addAll(applyErrors);
         }
