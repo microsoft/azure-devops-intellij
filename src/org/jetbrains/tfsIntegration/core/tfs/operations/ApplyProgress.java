@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
@@ -47,22 +48,26 @@ public interface ApplyProgress {
 
   class ProgressIndicatorWrapper implements ApplyProgress {
 
-    private final @NotNull ProgressIndicator myProgressIndicator;
+    private final @Nullable ProgressIndicator myProgressIndicator;
 
-    public ProgressIndicatorWrapper(ProgressIndicator progressIndicator) {
+    public ProgressIndicatorWrapper(@Nullable ProgressIndicator progressIndicator) {
       myProgressIndicator = progressIndicator;
     }
 
     public void setText(String text) {
-      myProgressIndicator.setText(text);
+      if (myProgressIndicator != null) {
+        myProgressIndicator.setText(text);
+      }
     }
 
     public boolean isCancelled() {
-      return myProgressIndicator.isCanceled();
+      return myProgressIndicator != null && myProgressIndicator.isCanceled();
     }
 
     public void setFraction(double fraction) {
-      myProgressIndicator.setFraction(fraction);
+      if (myProgressIndicator != null) {
+        myProgressIndicator.setFraction(fraction);
+      }
     }
   }
 
@@ -70,7 +75,7 @@ public interface ApplyProgress {
 
     private final @NotNull RollbackProgressListener myListener;
 
-    public RollbackProgressWrapper(RollbackProgressListener listener) {
+    public RollbackProgressWrapper(@NotNull RollbackProgressListener listener) {
       myListener = listener;
     }
 

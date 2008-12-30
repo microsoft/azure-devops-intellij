@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.Messages;
@@ -31,7 +32,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.WindowManager;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.ui.awt.RelativePoint;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -213,4 +213,19 @@ public class TfsUtil {
       application.invokeAndWait(runnable, modalityState);
     }
   }
+
+  public interface Consumer<T, E extends Throwable> {
+    void consume(T t) throws E;
+  }
+
+
+  public static <T, E extends Throwable> void consumeInParts(List<T> items, int maxPartSize, Consumer<List<T>, E> consumer) throws E {
+    for (int group = 0; group <= items.size() / maxPartSize; group++) {
+      List<T> subList = items.subList(group * maxPartSize, Math.min((group + 1) * maxPartSize, items.size()));
+      if (!subList.isEmpty()) {
+        consumer.consume(subList);
+      }
+    }
+  }
+
 }

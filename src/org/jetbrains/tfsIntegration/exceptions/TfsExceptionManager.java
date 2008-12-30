@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,6 +63,9 @@ public class TfsExceptionManager {
     }
     if (throwable instanceof SOAPProcessingException) {
       return new ConnectionFailedException("Invalid server response.");
+    }
+    if (throwable instanceof SocketTimeoutException) {
+      return new ConnectionTimeoutException(throwable);
     }
     return null;
   }

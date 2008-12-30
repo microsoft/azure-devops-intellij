@@ -78,7 +78,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   private static final String USER = "tfssetup";
   private static final String DOMAIN = "SWIFTTEAMS";
   private static final String PASSWORD = "";
-  private static final String PROXY = "http://tfs-proxy-01:8081/";
+  private static final String PROXY = null; //"http://tfs-proxy-01:8081/";
 
 
   private static final String WORKSPACE_NAME_PREFIX = "__testWorkspace_";

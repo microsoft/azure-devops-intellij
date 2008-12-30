@@ -80,6 +80,51 @@ public class VersionControlServer {
   private final ClientServiceClientServiceSoap12Stub myWorkItemTrackingClientService;
   private final GroupSecurityServiceGroupSecurityServiceSoap12Stub myGroupSecurityService;
 
+  private static final int ITEMS_IN_GROUP = 200;
+
+  private interface OperationOnCollection<T, U> {
+    U execute(Collection<T> items) throws RemoteException;
+
+    U merge(Collection<U> results);
+  }
+
+  private interface OperationOnList<T, U> {
+    U execute(List<T> items) throws RemoteException;
+
+    U merge(Collection<U> results);
+  }
+
+  private <T, U> U execute(final OperationOnCollection<T, U> operation, final Collection<T> items) throws TfsException {
+    return execute(new OperationOnList<T, U>() {
+      public U execute(List<T> items) throws RemoteException {
+        return operation.execute(items);
+      }
+
+      public U merge(Collection<U> results) {
+        return operation.merge(results);
+      }
+    }, new ArrayList<T>(items));
+  }
+
+  private <T, U> U execute(final OperationOnList<T, U> operation, List<T> items) throws TfsException {
+    if (items.isEmpty()) {
+      return operation.merge(Collections.<U>emptyList());
+    }
+
+    final Collection<U> results = new ArrayList<U>();
+    TfsUtil.consumeInParts(items, ITEMS_IN_GROUP, new TfsUtil.Consumer<List<T>, TfsException>() {
+      public void consume(final List<T> ts) throws TfsException {
+        U result = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<U>() {
+          public U executeRequest() throws RemoteException {
+            return operation.execute(ts);
+          }
+        });
+        results.add(result);
+      }
+    });
+    return operation.merge(results);
+  }
+
   public VersionControlServer(URI uri) {
     //myUri = uri;
     try {
@@ -122,7 +167,7 @@ public class VersionControlServer {
     return itemSpec;
   }
 
-  public List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
+  private List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
     final ArrayOfInt arrayOfInt = new ArrayOfInt();
     arrayOfInt.set_int(itemIds);
     ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
@@ -137,7 +182,6 @@ public class VersionControlServer {
 
   @Nullable
   public Item queryItemById(final int itemId, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
-
     List<Item> items = queryItemsById(new int[]{itemId}, changeSet, generateDownloadUrl);
     if (items.isEmpty()) {
       return null;
@@ -278,45 +322,48 @@ public class VersionControlServer {
                                                            final String workspaceOwner,
                                                            Collection<T> paths,
                                                            final boolean updateLocalVersion,
-                                                           ChangeRequestProvider<T> changeRequestProvider) throws TfsException {
-    ResultWithFailures<GetOperation> result = new ResultWithFailures<GetOperation>();
-    if (paths.isEmpty()) {
-      return result;
-    }
-
-    List<ChangeRequest> changeRequests = new ArrayList<ChangeRequest>(paths.size());
-    for (T path : paths) {
-      changeRequests.add(changeRequestProvider.createChangeRequest(path));
-    }
-
-    final ArrayOfChangeRequest arrayOfChangeRequest = new ArrayOfChangeRequest();
-    arrayOfChangeRequest.setChangeRequest(changeRequests.toArray(new ChangeRequest[changeRequests.size()]));
-
-    PendChangesResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<PendChangesResponse>() {
-      public PendChangesResponse executeRequest() throws RemoteException {
-        final PendChangesResponse response = myRepository.PendChanges(workspaceName, workspaceOwner, arrayOfChangeRequest);
-        if (updateLocalVersion && response.getPendChangesResult().getGetOperation() != null) {
-          final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
-          List<LocalVersionUpdate> localVersionUpdates =
-            new ArrayList<LocalVersionUpdate>(response.getPendChangesResult().getGetOperation().length);
-          for (GetOperation getOperation : response.getPendChangesResult().getGetOperation()) {
-            localVersionUpdates.add(getLocalVersionUpdate(getOperation));
+                                                           final ChangeRequestProvider<T> changeRequestProvider) throws TfsException {
+    OperationOnCollection<T, ResultWithFailures<GetOperation>> operation =
+      new OperationOnCollection<T, ResultWithFailures<GetOperation>>() {
+        public ResultWithFailures<GetOperation> execute(Collection<T> items) throws RemoteException {
+          ResultWithFailures<GetOperation> result = new ResultWithFailures<GetOperation>();
+          List<ChangeRequest> changeRequests = new ArrayList<ChangeRequest>(items.size());
+          for (T path : items) {
+            changeRequests.add(changeRequestProvider.createChangeRequest(path));
           }
-          arrayOfLocalVersionUpdate.setLocalVersionUpdate(localVersionUpdates.toArray(new LocalVersionUpdate[localVersionUpdates.size()]));
-          myRepository.UpdateLocalVersion(workspaceName, workspaceOwner, arrayOfLocalVersionUpdate);
+
+          final ArrayOfChangeRequest arrayOfChangeRequest = new ArrayOfChangeRequest();
+          arrayOfChangeRequest.setChangeRequest(changeRequests.toArray(new ChangeRequest[changeRequests.size()]));
+
+          final PendChangesResponse response = myRepository.PendChanges(workspaceName, workspaceOwner, arrayOfChangeRequest);
+          if (updateLocalVersion && response.getPendChangesResult().getGetOperation() != null) {
+            final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
+            List<LocalVersionUpdate> localVersionUpdates =
+              new ArrayList<LocalVersionUpdate>(response.getPendChangesResult().getGetOperation().length);
+            for (GetOperation getOperation : response.getPendChangesResult().getGetOperation()) {
+              localVersionUpdates.add(getLocalVersionUpdate(getOperation));
+            }
+            arrayOfLocalVersionUpdate
+              .setLocalVersionUpdate(localVersionUpdates.toArray(new LocalVersionUpdate[localVersionUpdates.size()]));
+            myRepository.UpdateLocalVersion(workspaceName, workspaceOwner, arrayOfLocalVersionUpdate);
+          }
+
+          if (response.getPendChangesResult().getGetOperation() != null) {
+            result.getResult().addAll(Arrays.asList(response.getPendChangesResult().getGetOperation()));
+          }
+
+          if (response.getFailures().getFailure() != null) {
+            result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
+          }
+          return result;
         }
-        return response;
-      }
-    });
 
-    if (response.getPendChangesResult().getGetOperation() != null) {
-      result.getResult().addAll(Arrays.asList(response.getPendChangesResult().getGetOperation()));
-    }
+        public ResultWithFailures<GetOperation> merge(Collection<ResultWithFailures<GetOperation>> results) {
+          return ResultWithFailures.merge(results);
+        }
+      };
 
-    if (response.getFailures().getFailure() != null) {
-      result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
-    }
-    return result;
+    return execute(operation, paths);
   }
 
 
@@ -381,10 +428,10 @@ public class VersionControlServer {
   }
 
   public static class ExtendedItemsAndPendingChanges {
-    public final List<List<ExtendedItem>> extendedItems;
+    public final List<ExtendedItem> extendedItems;
     public final Collection<PendingChange> pendingChanges;
 
-    public ExtendedItemsAndPendingChanges(final Collection<PendingChange> pendingChanges, final List<List<ExtendedItem>> extendedItems) {
+    public ExtendedItemsAndPendingChanges(final Collection<PendingChange> pendingChanges, final List<ExtendedItem> extendedItems) {
       this.pendingChanges = pendingChanges;
       this.extendedItems = extendedItems;
     }
@@ -392,42 +439,53 @@ public class VersionControlServer {
 
   public ExtendedItemsAndPendingChanges getExtendedItemsAndPendingChanges(final String workspaceName,
                                                                           final String ownerName,
-                                                                          final List<ItemSpec> itemsSpecs,
+                                                                          List<ItemSpec> itemsSpecs,
                                                                           final ItemType itemType) throws TfsException {
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemsSpecs.toArray(new ItemSpec[itemsSpecs.size()]));
-    final Ref<ArrayOfExtendedItem[]> extendedItemsRef = new Ref<ArrayOfExtendedItem[]>();
-    final Ref<PendingSet[]> pendingSetsRef = new Ref<PendingSet[]>();
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
-        extendedItemsRef.set(myRepository
-          .QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, DeletedState.NonDeleted, itemType).getArrayOfExtendedItem());
-        pendingSetsRef.set(myRepository.QueryPendingSets(workspaceName, ownerName, workspaceName, ownerName, arrayOfItemSpec, false)
-          .getQueryPendingSetsResult().getPendingSet());
-      }
-    });
+    OperationOnCollection<ItemSpec, ExtendedItemsAndPendingChanges> operation =
+      new OperationOnCollection<ItemSpec, ExtendedItemsAndPendingChanges>() {
+        public ExtendedItemsAndPendingChanges execute(Collection<ItemSpec> items) throws RemoteException {
+          final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+          arrayOfItemSpec.setItemSpec(items.toArray(new ItemSpec[items.size()]));
+          ArrayOfExtendedItem[] extendedItemsArray =
+            myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, DeletedState.NonDeleted, itemType)
+              .getArrayOfExtendedItem();
+          final PendingSet[] pendingSets =
+            myRepository.QueryPendingSets(workspaceName, ownerName, workspaceName, ownerName, arrayOfItemSpec, false)
+              .getQueryPendingSetsResult().getPendingSet();
 
-    TFSVcs.assertTrue(extendedItemsRef.get() != null && extendedItemsRef.get().length == itemsSpecs.size());
+          TFSVcs.assertTrue(extendedItemsArray != null && extendedItemsArray.length == items.size());
 
-    List<List<ExtendedItem>> extendedItems = new ArrayList<List<ExtendedItem>>();
-    for (ArrayOfExtendedItem extendedItem : extendedItemsRef.get()) {
-      List<ExtendedItem> currentList = extendedItem.getExtendedItem() != null
-                                       ? new ArrayList<ExtendedItem>(Arrays.asList(extendedItem.getExtendedItem()))
-                                       : Collections.<ExtendedItem>emptyList();
-      // no need to chooseExtendedItem() since DeletedState.NonDeleted specified
-      extendedItems.add(currentList);
-    }
+          List<ExtendedItem> extendedItems = new ArrayList<ExtendedItem>();
+          for (ArrayOfExtendedItem extendedItem : extendedItemsArray) {
+            if (extendedItem.getExtendedItem() != null) {
+              // no need to chooseExtendedItem() since DeletedState.NonDeleted specified
+              extendedItems.addAll(Arrays.asList(extendedItem.getExtendedItem()));
+            }
+          }
 
-    final Collection<PendingChange> pendingChanges;
-    if (pendingSetsRef.get() != null) {
-      TFSVcs.assertTrue(pendingSetsRef.get().length == 1);
-      pendingChanges = Arrays.asList(pendingSetsRef.get()[0].getPendingChanges().getPendingChange());
-    }
-    else {
-      pendingChanges = Collections.emptyList();
-    }
+          final Collection<PendingChange> pendingChanges;
+          if (pendingSets != null) {
+            TFSVcs.assertTrue(pendingSets.length == 1);
+            pendingChanges = Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange());
+          }
+          else {
+            pendingChanges = Collections.emptyList();
+          }
+          return new ExtendedItemsAndPendingChanges(pendingChanges, extendedItems);
+        }
 
-    return new ExtendedItemsAndPendingChanges(pendingChanges, extendedItems);
+        public ExtendedItemsAndPendingChanges merge(Collection<ExtendedItemsAndPendingChanges> results) {
+          List<ExtendedItem> mergedItems = new ArrayList<ExtendedItem>();
+          List<PendingChange> mergedPendingChanges = new ArrayList<PendingChange>();
+          for (ExtendedItemsAndPendingChanges r : results) {
+            mergedItems.addAll(r.extendedItems);
+            mergedPendingChanges.addAll(r.pendingChanges);
+          }
+          return new ExtendedItemsAndPendingChanges(mergedPendingChanges, mergedItems);
+        }
+      };
+
+    return execute(operation, itemsSpecs);
   }
 
   @Nullable
@@ -487,38 +545,44 @@ public class VersionControlServer {
 
   public Map<FilePath, ExtendedItem> getExtendedItems(final String workspaceName,
                                                       final String ownerName,
-                                                      final List<FilePath> paths,
+                                                      List<FilePath> paths,
                                                       final DeletedState deletedState) throws TfsException {
-    TFSVcs.assertTrue(!paths.isEmpty());
-    final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
-    for (FilePath path : paths) {
-      itemSpecs.add(createItemSpec(path, RecursionType.None));
-    }
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
-
-    ArrayOfExtendedItem[] extendedItems =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
-        public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
-          return myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any)
-            .getArrayOfExtendedItem();
+    OperationOnList<FilePath, Map<FilePath, ExtendedItem>> operation = new OperationOnList<FilePath, Map<FilePath, ExtendedItem>>() {
+      public Map<FilePath, ExtendedItem> execute(List<FilePath> items) throws RemoteException {
+        final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
+        for (FilePath path : items) {
+          itemSpecs.add(createItemSpec(path, RecursionType.None));
         }
-      });
+        final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+        arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
+        ArrayOfExtendedItem[] extendedItems =
+          myRepository.QueryItemsExtended(workspaceName, ownerName, arrayOfItemSpec, deletedState, ItemType.Any).getArrayOfExtendedItem();
 
-    TFSVcs.assertTrue(extendedItems != null && extendedItems.length == paths.size());
-    Map<FilePath, ExtendedItem> result = new HashMap<FilePath, ExtendedItem>();
+        TFSVcs.assertTrue(extendedItems != null && extendedItems.length == items.size());
+        Map<FilePath, ExtendedItem> result = new HashMap<FilePath, ExtendedItem>();
 
-    //noinspection ConstantConditions
-    for (int i = 0; i < extendedItems.length; i++) {
-      ExtendedItem[] resultItems = extendedItems[i].getExtendedItem();
-      ExtendedItem item = null;
-      if (resultItems != null) {
-        item = chooseExtendedItem(resultItems);
+        //noinspection ConstantConditions
+        for (int i = 0; i < extendedItems.length; i++) {
+          ExtendedItem[] resultItems = extendedItems[i].getExtendedItem();
+          ExtendedItem item = null;
+          if (resultItems != null) {
+            item = chooseExtendedItem(resultItems);
+          }
+          result.put(items.get(i), item);
+        }
+        return result;
       }
-      result.put(paths.get(i), item);
-    }
 
-    return result;
+      public Map<FilePath, ExtendedItem> merge(Collection<Map<FilePath, ExtendedItem>> results) {
+        Map<FilePath, ExtendedItem> merged = new HashMap<FilePath, ExtendedItem>();
+        for (Map<FilePath, ExtendedItem> r : results) {
+          merged.putAll(r);
+        }
+        return merged;
+      }
+    };
+
+    return execute(operation, paths);
   }
 
   public static void downloadItem(Project project, final ServerInfo server, final String downloadKey, OutputStream outputStream)
@@ -647,76 +711,88 @@ public class VersionControlServer {
     return localVersionUpdate;
   }
 
-  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, final Collection<LocalVersionUpdate> updates)
+  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, Collection<LocalVersionUpdate> updates)
     throws TfsException {
-    if (updates.isEmpty()) {
-      return;
-    }
-
-    final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
-    arrayOfLocalVersionUpdate.setLocalVersionUpdate(updates.toArray(new LocalVersionUpdate[updates.size()]));
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<UpdateLocalVersionResponse>() {
-      public UpdateLocalVersionResponse executeRequest() throws RemoteException {
-        return myRepository.UpdateLocalVersion(workspaceName, workspaceOwnerName, arrayOfLocalVersionUpdate);
+    OperationOnCollection<LocalVersionUpdate, Void> operation = new OperationOnCollection<LocalVersionUpdate, Void>() {
+      public Void execute(Collection<LocalVersionUpdate> items) throws RemoteException {
+        final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
+        arrayOfLocalVersionUpdate.setLocalVersionUpdate(items.toArray(new LocalVersionUpdate[items.size()]));
+        myRepository.UpdateLocalVersion(workspaceName, workspaceOwnerName, arrayOfLocalVersionUpdate);
+        //noinspection ConstantConditions
+        return null;
       }
-    });
+
+      public Void merge(Collection<Void> results) {
+        //noinspection ConstantConditions
+        return null;
+      }
+    };
+
+    execute(operation, updates);
   }
 
   public ResultWithFailures<GetOperation> undoPendingChanges(final String workspaceName,
                                                              final String workspaceOwner,
-                                                             final Collection<String> serverPaths) throws TfsException {
-    List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(serverPaths.size());
-    for (String serverPath : serverPaths) {
-      itemSpecs.add(createItemSpec(serverPath, null));
-    }
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
-
-    UndoPendingChangesResponse response =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<UndoPendingChangesResponse>() {
-        public UndoPendingChangesResponse executeRequest() throws RemoteException {
-          return myRepository.UndoPendingChanges(workspaceName, workspaceOwner, arrayOfItemSpec);
+                                                             Collection<String> serverPaths) throws TfsException {
+    OperationOnCollection<String, ResultWithFailures<GetOperation>> operation =
+      new OperationOnCollection<String, ResultWithFailures<GetOperation>>() {
+        public ResultWithFailures<GetOperation> execute(Collection<String> items) throws RemoteException {
+          List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(items.size());
+          for (String serverPath : items) {
+            itemSpecs.add(createItemSpec(serverPath, null));
+          }
+          final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+          arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
+          UndoPendingChangesResponse response = myRepository.UndoPendingChanges(workspaceName, workspaceOwner, arrayOfItemSpec);
+          GetOperation[] getOperations =
+            response.getUndoPendingChangesResult() != null ? response.getUndoPendingChangesResult().getGetOperation() : null;
+          Failure[] failures = response.getFailures() != null ? response.getFailures().getFailure() : null;
+          return new ResultWithFailures<GetOperation>(getOperations, failures);
         }
-      });
 
-    GetOperation[] getOperations =
-      response.getUndoPendingChangesResult() != null ? response.getUndoPendingChangesResult().getGetOperation() : null;
-    Failure[] failures = response.getFailures() != null ? response.getFailures().getFailure() : null;
-    return new ResultWithFailures<GetOperation>(getOperations, failures);
+        public ResultWithFailures<GetOperation> merge(Collection<ResultWithFailures<GetOperation>> results) {
+          return ResultWithFailures.merge(results);
+        }
+      };
+
+    return execute(operation, serverPaths);
   }
 
-  public List<GetOperation> get(final String workspaceName, final String workspaceOwner, final List<GetRequestParams> requests)
+  public List<GetOperation> get(final String workspaceName, final String workspaceOwner, List<GetRequestParams> requests)
     throws TfsException {
-    if (requests.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    List<GetRequest> getRequests = new ArrayList<GetRequest>(requests.size());
-    for (GetRequestParams getRequestParams : requests) {
-      final GetRequest getRequest = new GetRequest();
-      getRequest.setItemSpec(createItemSpec(getRequestParams.serverPath, getRequestParams.recursionType));
-      getRequest.setVersionSpec(getRequestParams.version);
-      getRequests.add(getRequest);
-    }
-    final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
-    arrayOfGetRequests.setGetRequest(getRequests.toArray(new GetRequest[getRequests.size()]));
-
-    ArrayOfArrayOfGetOperation response =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfGetOperation>() {
-        public ArrayOfArrayOfGetOperation executeRequest() throws RemoteException {
-          return myRepository.Get(workspaceName, workspaceOwner, arrayOfGetRequests, true, false);
+    OperationOnList<GetRequestParams, List<GetOperation>> operation = new OperationOnList<GetRequestParams, List<GetOperation>>() {
+      public List<GetOperation> execute(List<GetRequestParams> items) throws RemoteException {
+        List<GetRequest> getRequests = new ArrayList<GetRequest>(items.size());
+        for (GetRequestParams getRequestParams : items) {
+          final GetRequest getRequest = new GetRequest();
+          getRequest.setItemSpec(createItemSpec(getRequestParams.serverPath, getRequestParams.recursionType));
+          getRequest.setVersionSpec(getRequestParams.version);
+          getRequests.add(getRequest);
         }
-      });
+        final ArrayOfGetRequest arrayOfGetRequests = new ArrayOfGetRequest();
+        arrayOfGetRequests.setGetRequest(getRequests.toArray(new GetRequest[getRequests.size()]));
+        ArrayOfArrayOfGetOperation response = myRepository.Get(workspaceName, workspaceOwner, arrayOfGetRequests, true, false);
+        TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == items.size());
 
-    TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == requests.size());
-
-    List<GetOperation> results = new ArrayList<GetOperation>();
-    for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
-      if (arrayOfGetOperation.getGetOperation() != null) {
-        results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+        List<GetOperation> results = new ArrayList<GetOperation>();
+        for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
+          if (arrayOfGetOperation.getGetOperation() != null) {
+            results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+          }
+        }
+        return results;
       }
-    }
-    return results;
+
+      public List<GetOperation> merge(Collection<List<GetOperation>> results) {
+        List<GetOperation> merged = new ArrayList<GetOperation>();
+        for (List<GetOperation> r : results) {
+          merged.addAll(r);
+        }
+        return merged;
+      }
+    };
+
+    return execute(operation, requests);
   }
 
   public void addLocalConflict(final String workspaceName,
@@ -740,26 +816,37 @@ public class VersionControlServer {
 
   public Collection<Conflict> queryConflicts(final String workspaceName,
                                              final String ownerName,
-                                             final List<ItemPath> paths,
+                                             List<ItemPath> paths,
                                              final RecursionType recursionType) throws TfsException {
-    List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
-    for (ItemPath path : paths) {
-      itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
-    }
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
-    List<Conflict> result = new LinkedList<Conflict>();
-    Conflict[] conflicts = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Conflict[]>() {
-      public Conflict[] executeRequest() throws RemoteException {
-        return myRepository.QueryConflicts(workspaceName, ownerName, arrayOfItemSpec).getConflict();
+    OperationOnCollection<ItemPath, Collection<Conflict>> operation = new OperationOnCollection<ItemPath, Collection<Conflict>>() {
+      public Collection<Conflict> execute(Collection<ItemPath> items) throws RemoteException {
+        List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
+        for (ItemPath path : items) {
+          itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
+        }
+        final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+        arrayOfItemSpec.setItemSpec(itemSpecList.toArray(new ItemSpec[itemSpecList.size()]));
+
+        Conflict[] conflicts = myRepository.QueryConflicts(workspaceName, ownerName, arrayOfItemSpec).getConflict();
+        return conflicts != null ? Arrays.asList(conflicts) : Collections.<Conflict>emptyList();
       }
-    });
-    if (conflicts != null) {
-      result.addAll(Arrays.asList(conflicts));
-    }
-    return result;
+
+      public Collection<Conflict> merge(Collection<Collection<Conflict>> results) {
+        return mergeStatic(results);
+      }
+    };
+
+    return execute(operation, paths);
   }
 
+
+  private static <T> Collection<T> mergeStatic(Collection<Collection<T>> results) {
+    Collection<T> merged = new ArrayList<T>();
+    for (Collection<T> r : results) {
+      merged.addAll(r);
+    }
+    return merged;
+  }
 
   public static class ResolveConflictParams {
     public final int conflictId;
@@ -837,30 +924,34 @@ public class VersionControlServer {
 
   private Collection<PendingChange> doQueryPendingSets(final String workspaceName,
                                                        final String workspaceOwnerName,
-                                                       final Collection<ItemSpec> itemSpecs) throws TfsException {
-    final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
-    arrayOfItemSpec.setItemSpec(itemSpecs.toArray(new ItemSpec[itemSpecs.size()]));
+                                                       Collection<ItemSpec> itemSpecs) throws TfsException {
+    OperationOnCollection<ItemSpec, Collection<PendingChange>> operation =
+      new OperationOnCollection<ItemSpec, Collection<PendingChange>>() {
+        public Collection<PendingChange> execute(Collection<ItemSpec> items) throws RemoteException {
+          final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
+          arrayOfItemSpec.setItemSpec(items.toArray(new ItemSpec[items.size()]));
 
-    PendingSet[] pendingSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<PendingSet[]>() {
-      public PendingSet[] executeRequest() throws RemoteException {
-        return myRepository.QueryPendingSets(workspaceName, workspaceOwnerName, workspaceName, workspaceOwnerName, arrayOfItemSpec, false)
-          .getQueryPendingSetsResult().getPendingSet();
-      }
-    });
+          PendingSet[] pendingSets =
+            myRepository.QueryPendingSets(workspaceName, workspaceOwnerName, workspaceName, workspaceOwnerName, arrayOfItemSpec, false)
+              .getQueryPendingSetsResult().getPendingSet();
 
-    if (pendingSets != null) {
-      TFSVcs.assertTrue(pendingSets.length == 1);
-      return Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange());
-    }
-    else {
-      return Collections.emptyList();
-    }
+          return pendingSets != null
+                 ? Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange())
+                 : Collections.<PendingChange>emptyList();
+        }
+
+        public Collection<PendingChange> merge(Collection<Collection<PendingChange>> results) {
+          return mergeStatic(results);
+        }
+      };
+
+    return execute(operation, itemSpecs);
   }
 
   // TODO support checkin notes
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
                                                    final String workspaceOwnerName,
-                                                   final Collection<String> serverItems,
+                                                   Collection<String> serverItems,
                                                    final String comment,
                                                    final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions)
     throws TfsException {
@@ -882,11 +973,6 @@ public class VersionControlServer {
 
     final PolicyOverrideInfo policyOverride = new PolicyOverrideInfo();
 
-    final ArrayOfString serverItemsArray = new ArrayOfString();
-    for (String serverItem : serverItems) {
-      serverItemsArray.addString(serverItem);
-    }
-
     final Changeset changeset = new Changeset();
     changeset.setCset(0);
     changeset.setDate(TfsUtil.getZeroCalendar());
@@ -894,26 +980,39 @@ public class VersionControlServer {
     changeset.setComment(comment);
     changeset.setCheckinNote(checkinNote);
     changeset.setPolicyOverride(policyOverride);
+
     final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
     checkinNotificationInfo.setWorkItemInfo(toArrayOfCheckinNotificationWorkItemInfo(workItemsActions));
     final String checkinOptions = CheckinOptions.ValidateCheckinOwner.name(); // TODO checkin options
 
-    CheckInResponse response = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<CheckInResponse>() {
-      public CheckInResponse executeRequest() throws RemoteException {
-        return myRepository
-          .CheckIn(workspaceName, workspaceOwnerName, serverItemsArray, changeset, checkinNotificationInfo, checkinOptions);
-      }
-    });
+    OperationOnCollection<String, ResultWithFailures<CheckinResult>> operation =
+      new OperationOnCollection<String, ResultWithFailures<CheckinResult>>() {
+        public ResultWithFailures<CheckinResult> execute(Collection<String> items) throws RemoteException {
+          final ArrayOfString serverItemsArray = new ArrayOfString();
+          for (String serverItem : items) {
+            serverItemsArray.addString(serverItem);
+          }
 
-    ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
-    if (response.getCheckInResult() != null) {
-      result.getResult().add(response.getCheckInResult());
-    }
+          CheckInResponse response =
+            myRepository.CheckIn(workspaceName, workspaceOwnerName, serverItemsArray, changeset, checkinNotificationInfo, checkinOptions);
 
-    if (response.getFailures().getFailure() != null) {
-      result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
-    }
-    return result;
+          ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
+          if (response.getCheckInResult() != null) {
+            result.getResult().add(response.getCheckInResult());
+          }
+
+          if (response.getFailures().getFailure() != null) {
+            result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
+          }
+          return result;
+        }
+
+        public ResultWithFailures<CheckinResult> merge(Collection<ResultWithFailures<CheckinResult>> results) {
+          return ResultWithFailures.merge(results);
+        }
+      };
+
+    return execute(operation, serverItems);
   }
 
   @Nullable
@@ -1002,7 +1101,7 @@ public class VersionControlServer {
     });
 
     TFSVcs.assertTrue(items != null && items.length == 1);
-//noinspection ConstantConditions
+    //noinspection ConstantConditions
     Item[] resultItems = items[0].getItems().getItem();
     if (resultItems != null) {
       TFSVcs.assertTrue(resultItems.length == 1);
@@ -1064,29 +1163,35 @@ public class VersionControlServer {
     return result;
   }
 
-  public ResultWithFailures<LabelResult> labelItem(final String labelName,
-                                                   final String labelComment,
-                                                   final List<LabelItemSpec> labelItemSpecs) throws TfsException {
+  public ResultWithFailures<LabelResult> labelItem(final String labelName, final String labelComment, List<LabelItemSpec> labelItemSpecs)
+    throws TfsException {
     final VersionControlLabel versionControlLabel = new VersionControlLabel();
     versionControlLabel.setName(labelName);
     versionControlLabel.setComment(labelComment);
 
     versionControlLabel.setDate(TfsUtil.getZeroCalendar());
 
-    final ArrayOfLabelItemSpec arrayOfLabelItemSpec = new ArrayOfLabelItemSpec();
-    arrayOfLabelItemSpec.setLabelItemSpec(labelItemSpecs.toArray(new LabelItemSpec[labelItemSpecs.size()]));
+    OperationOnCollection<LabelItemSpec, ResultWithFailures<LabelResult>> operation =
+      new OperationOnCollection<LabelItemSpec, ResultWithFailures<LabelResult>>() {
+        public ResultWithFailures<LabelResult> execute(Collection<LabelItemSpec> items) throws RemoteException {
+          final ArrayOfLabelItemSpec arrayOfLabelItemSpec = new ArrayOfLabelItemSpec();
+          arrayOfLabelItemSpec.setLabelItemSpec(items.toArray(new LabelItemSpec[items.size()]));
+          LabelItemResponse labelItemResponse =
+            myRepository.LabelItem(null, null, versionControlLabel, arrayOfLabelItemSpec, LabelChildOption.Fail);
+          ArrayOfLabelResult results = labelItemResponse.getLabelItemResult();
+          ArrayOfFailure failures = labelItemResponse.getFailures();
 
-    LabelItemResponse labelItemResponse = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<LabelItemResponse>() {
-      public LabelItemResponse executeRequest() throws RemoteException {
-        return myRepository.LabelItem(null, null, versionControlLabel, arrayOfLabelItemSpec, LabelChildOption.Fail);
-      }
-    });
+          return new ResultWithFailures<LabelResult>(results == null ? null : results.getLabelResult(),
+                                                     failures == null ? null : failures.getFailure());
+        }
 
-    ArrayOfLabelResult results = labelItemResponse.getLabelItemResult();
-    ArrayOfFailure failures = labelItemResponse.getFailures();
+        public ResultWithFailures<LabelResult> merge(Collection<ResultWithFailures<LabelResult>> results) {
+          return ResultWithFailures.merge(results);
+        }
+      };
 
-    return new ResultWithFailures<LabelResult>(results == null ? null : results.getLabelResult(),
-                                               failures == null ? null : failures.getFailure());
+
+    return execute(operation, labelItemSpecs);
   }
 
   public Collection<BranchRelative> queryBranches(final String itemServerPath, final VersionSpec versionSpec) throws TfsException {

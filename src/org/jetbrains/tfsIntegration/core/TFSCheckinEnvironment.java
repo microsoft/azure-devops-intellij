@@ -27,6 +27,8 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -163,7 +165,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public String getDefaultMessageFor(final FilePath[] filesToCheckin) {
     return null;
   }
- 
+
   @Nullable
   @NonNls
   public String getHelpId() {
@@ -180,6 +182,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   @Nullable
   public List<VcsException> commit(final List<Change> changes, final String preparedComment) {
+    final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
     final List<FilePath> files = new ArrayList<FilePath>();
     for (Change change : changes) {
       FilePath path = null;
@@ -200,6 +203,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
+            TFSProgressUtil.setProgressText(progressIndicator, "Preparing");
             // get pending changes for given items
             Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
               .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None);
@@ -210,19 +214,24 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
             Collection<String> checkIn = new ArrayList<String>();
             // upload files
+            TFSProgressUtil.setProgressText(progressIndicator, "Uploading changes");
             for (PendingChange pendingChange : pendingChanges) {
               if (pendingChange.getType() == ItemType.File) {
                 EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
                 if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add)) {
+                  TFSProgressUtil.setProgressText2(progressIndicator,
+                                                   VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
                   workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
                 }
               }
               checkIn.add(pendingChange.getItem());
             }
+            TFSProgressUtil.setProgressText2(progressIndicator, "");
 
             final WorkItemsDialogState state = myWorkItems.get(workspace.getServer());
             final Map<WorkItem, CheckinWorkItemAction> workItemActions =
               state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
+            TFSProgressUtil.setProgressText(progressIndicator, "");
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
               .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions);
             errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
@@ -236,6 +245,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             Collection<FilePath> invalidateRoots = new ArrayList<FilePath>(pendingChanges.size());
             Collection<FilePath> invalidateFiles = new ArrayList<FilePath>();
             // set readonly status for files
+            Collection<VirtualFile> makeReadOnly = new ArrayList<VirtualFile>();
             for (PendingChange pendingChange : pendingChanges) {
               TFSVcs.assertTrue(pendingChange.getItem() != null);
               if (commitFailed.contains(pendingChange.getItem())) {
@@ -247,7 +257,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Rename)) {
                   VirtualFile file = VersionControlPath.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
-                    TfsFileUtil.setReadOnly(file, true);
+                    makeReadOnly.add(file);
                   }
                 }
               }
@@ -269,6 +279,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 }
               }
             }
+
+            TfsFileUtil.setReadOnly(makeReadOnly, true);
 
             if (commitFailed.isEmpty()) {
               CheckinResult checkinResult = result.getResult().iterator().next();

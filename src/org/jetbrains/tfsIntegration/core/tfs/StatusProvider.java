@@ -59,10 +59,8 @@ public class StatusProvider {
     }
 
     Map<Integer, ExtendedItem> extendedItems = new HashMap<Integer, ExtendedItem>();
-    for (List<ExtendedItem> items : extendedItemsAndPendingChanges.extendedItems) {
-      for (ExtendedItem extendedItem : items) {
-        extendedItems.put(extendedItem.getItemid(), extendedItem);
-      }
+    for (ExtendedItem extendedItem : extendedItemsAndPendingChanges.extendedItems) {
+      extendedItems.put(extendedItem.getItemid(), extendedItem);
     }
 
     TFSProgressUtil.checkCanceled(progress);

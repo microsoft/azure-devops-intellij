@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +47,15 @@ public class ResultWithFailures<T> {
 
   public Collection<Failure> getFailures() {
     return failures;
+  }
+
+  public static <T> ResultWithFailures<T> merge(Collection<ResultWithFailures<T>> results) {
+    ResultWithFailures<T> merged = new ResultWithFailures<T>();
+    for (ResultWithFailures<T> r : results) {
+      merged.getResult().addAll(r.getResult());
+      merged.getFailures().addAll(r.getFailures());
+    }
+    return merged;
   }
 
 }

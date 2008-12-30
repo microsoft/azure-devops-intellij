@@ -38,6 +38,12 @@ public class TFSProgressUtil {
     }
   }
 
+  public static void setProgressText2(final @Nullable ProgressIndicator progressIndicator, @Nullable String text) {
+    if (progressIndicator != null && text != null) {
+      progressIndicator.setText2(text);
+    }
+  }
+
   public static void setIndeterminate(final @Nullable ProgressIndicator progressIndicator, final boolean indeterminate) {
     if (progressIndicator != null) {
       progressIndicator.setIndeterminate(indeterminate);
