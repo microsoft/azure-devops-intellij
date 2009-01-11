@@ -54,6 +54,8 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
                               final List<VcsException> vcsExceptions,
                               @NotNull final RollbackProgressListener listener) {
     List<FilePath> localPaths = new ArrayList<FilePath>();
+    
+    listener.determinate();
     for (Change change : changes) {
       ContentRevision revision = change.getType() == Change.Type.DELETED ? change.getBeforeRevision() : change.getAfterRevision();
       localPaths.add(revision.getFile());
