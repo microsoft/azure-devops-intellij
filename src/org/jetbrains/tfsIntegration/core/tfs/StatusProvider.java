@@ -83,8 +83,9 @@ public class StatusProvider {
         for (PendingChange candidate : pendingChanges.values()) {
           if (equals(localItem, VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()))) {
             extendedItem = extendedItems.remove(candidate.getItemid());
-            TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " +
-                                                    VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()));
+            //TFSVcs.assertTrue(extendedItem != null, "pending change without extended item for " +
+            //                                        VersionControlPath.localPathFromTfsRepresentation(candidate.getLocal()));
+            // don't assert: if there's no item, we will get 'unversioned' status as a result
             pendingChange = candidate;
             break;
           }
