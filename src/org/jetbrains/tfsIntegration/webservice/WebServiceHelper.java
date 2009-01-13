@@ -392,7 +392,9 @@ public class WebServiceHelper {
     if (proxy.host != null) {
       httpClient.getHostConfiguration().setProxy(proxy.host, proxy.port);
       if (proxy.user != null) {
-        httpClient.getState().setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(proxy.user, proxy.password));
+        Pair<String, String> domainAndUser = getDomainAndUser(proxy.user);
+        UsernamePasswordCredentials creds = new NTCredentials(domainAndUser.second, proxy.password, proxy.host, domainAndUser.first);
+        httpClient.getState().setProxyCredentials(AuthScope.ANY, creds);
       }
     }
     else {
@@ -420,9 +422,11 @@ public class WebServiceHelper {
     final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
     if (proxy.host != null) {
       proxyProperties = new HttpTransportProperties.ProxyProperties();
+      Pair<String, String> domainAndUser = getDomainAndUser(proxy.user);
       proxyProperties.setProxyName(proxy.host);
       proxyProperties.setProxyPort(proxy.port);
-      proxyProperties.setUserName(proxy.user);
+      proxyProperties.setDomain(domainAndUser.first);
+      proxyProperties.setUserName(domainAndUser.second);
       proxyProperties.setPassWord(proxy.password);
     }
     else {
@@ -478,5 +482,14 @@ public class WebServiceHelper {
     trace(Thread.currentThread().getId(), pattern, params);
   }
 
+  private static Pair<String, String> getDomainAndUser(@Nullable String s) {
+    if (s == null) {
+      return Pair.create(null, null);
+    }
+    int slashPos = s.indexOf('\\');
+    String domain = slashPos >= 0 ? s.substring(0, slashPos) : "";
+    String user = slashPos >= 0 ? s.substring(slashPos + 1) : s;
+    return Pair.create(domain, user);
+  }
 
 }
