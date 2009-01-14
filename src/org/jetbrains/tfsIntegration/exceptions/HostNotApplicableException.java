@@ -28,7 +28,7 @@ public class HostNotApplicableException extends TfsException {
 
   @Override
   public String getMessage() {
-    return "Specified host has no TFS installed";
+    return "Host contacted, but no TFS service found";
   }
 
 }
