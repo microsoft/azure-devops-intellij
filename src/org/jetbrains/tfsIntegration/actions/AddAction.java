@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -28,6 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,13 +39,16 @@ public class AddAction extends AnAction {
     final Project project = e.getData(PlatformDataKeys.PROJECT);
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
 
-    //noinspection ConstantConditions
-    final List<VcsException> exceptions =
-      TFSVcs.getInstance(project).getCheckinEnvironment().scheduleUnversionedFilesForAddition(Arrays.asList(files));
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+      public void run() {
+        ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+        errors.addAll(TFSVcs.getInstance(project).getCheckinEnvironment().scheduleUnversionedFilesForAddition(Arrays.asList(files)));
+      }
+    }, "Scheduling for addition...", false, project);
 
-    //noinspection ConstantConditions
-    if (!exceptions.isEmpty()) {
-      AbstractVcsHelper.getInstance(project).showErrors(exceptions, TFSVcs.TFS_NAME);
+    if (!errors.isEmpty()) {
+      AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFS_NAME);
     }
   }
 
@@ -57,7 +62,7 @@ public class AddAction extends AnAction {
     if (files.length == 0) {
       return false;
     }
-    
+
     FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
     for (VirtualFile file : files) {
       final FileStatus fileStatus = fileStatusManager.getStatus(file);
