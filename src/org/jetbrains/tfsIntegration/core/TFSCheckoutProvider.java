@@ -133,7 +133,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
 
   @NonNls
   public String getVcsName() {
-    return TFSVcs.TFS_NAME;
+    return "_TFS";
   }
 
   private static WorkspaceInfo createWorkspace(CheckoutWizardModel model) throws TfsException {
