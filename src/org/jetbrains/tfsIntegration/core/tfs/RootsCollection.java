@@ -16,9 +16,9 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VfsUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,10 +36,10 @@ public abstract class RootsCollection<T> implements Collection<T> {
       super(items);
     }
 
-    @NotNull
-    protected FilePath getFilePath(final FilePath filePath) {
-      return filePath;
+    protected boolean isAncestor(FilePath parent, FilePath child, boolean strict) {
+      return child.isUnder(parent, strict);
     }
+
   }
 
   public static class ItemPathRootsCollection extends RootsCollection<ItemPath> {
@@ -51,10 +51,29 @@ public abstract class RootsCollection<T> implements Collection<T> {
       super(items);
     }
 
-    @NotNull
-    protected FilePath getFilePath(final ItemPath itemPath) {
-      return itemPath.getLocalPath();
+    protected boolean isAncestor(ItemPath parent, ItemPath child, boolean strict) {
+      return child.getLocalPath().isUnder(parent.getLocalPath(), strict);
     }
+
+  }
+
+  public static class VirtualFileRootsCollection extends RootsCollection<VirtualFile> {
+
+    public VirtualFileRootsCollection() {
+    }
+
+    public VirtualFileRootsCollection(final Collection<VirtualFile> items) {
+      super(items);
+    }
+
+    public VirtualFileRootsCollection(final VirtualFile[] items) {
+      super(items);
+    }
+
+    protected boolean isAncestor(VirtualFile parent, VirtualFile child, boolean strict) {
+      return VfsUtil.isAncestor(parent, child, strict);
+    }
+
   }
 
   private Collection<T> myRoots = new HashSet<T>();
@@ -63,6 +82,10 @@ public abstract class RootsCollection<T> implements Collection<T> {
   }
 
   public RootsCollection(final Collection<T> items) {
+    addAll(items);
+  }
+
+  public RootsCollection(final T[] items) {
     addAll(items);
   }
 
@@ -92,15 +115,12 @@ public abstract class RootsCollection<T> implements Collection<T> {
   }
 
   public boolean add(final T newItem) {
-    FilePath path = getFilePath(newItem);
-
     Collection<T> toRemove = new ArrayList<T>();
     for (T existingItem : myRoots) {
-      FilePath existingPath = getFilePath(existingItem);
-      if (FileUtil.pathsEqual(path.getPath(), existingPath.getPath()) || path.isUnder(existingPath, false)) {
+      if (isAncestor(existingItem, newItem, false)) {
         return false;
       }
-      if (existingPath.isUnder(path, false)) {
+      if (isAncestor(newItem, existingItem, true)) {
         toRemove.add(existingItem);
       }
     }
@@ -125,6 +145,14 @@ public abstract class RootsCollection<T> implements Collection<T> {
     return modified;
   }
 
+  public boolean addAll(final T[] items) {
+    boolean modified = false;
+    for (T item : items) {
+      modified |= add(item);
+    }
+    return modified;
+  }
+
   public boolean removeAll(final Collection<?> paths) {
     return myRoots.removeAll(paths);
   }
@@ -137,8 +165,6 @@ public abstract class RootsCollection<T> implements Collection<T> {
     myRoots.clear();
   }
 
-  protected abstract
-  @NotNull
-  FilePath getFilePath(T t);
+  protected abstract boolean isAncestor(T parent, T child, boolean strict);
 
 }

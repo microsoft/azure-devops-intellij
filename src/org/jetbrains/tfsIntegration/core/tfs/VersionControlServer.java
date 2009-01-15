@@ -227,12 +227,10 @@ public class VersionControlServer {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
         changeRequest.getItem().setItem(itemPath.getServerPath());
+        if (itemPath.getLocalPath().isDirectory()) {
+          changeRequest.getItem().setRecurse(RecursionType.Full);
+        }
         changeRequest.setReq(RequestType.Edit);
-
-        File file = itemPath.getLocalPath().getIOFile();
-        TFSVcs.assertTrue(file.isFile());
-        changeRequest.setType(ItemType.File);
-
         return changeRequest;
       }
     });
