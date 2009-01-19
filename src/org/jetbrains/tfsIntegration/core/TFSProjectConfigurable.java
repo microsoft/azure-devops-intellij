@@ -46,10 +46,9 @@ public class TFSProjectConfigurable implements Configurable {
     return null;
   }
 
-  @Nullable
   @NonNls
   public String getHelpTopic() {
-    return null;
+    return "project.propVCSSupport.VCSs.TFS";
   }
 
   public JComponent createComponent() {
