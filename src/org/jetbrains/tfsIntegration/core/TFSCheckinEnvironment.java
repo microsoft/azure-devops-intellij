@@ -305,6 +305,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return errors;
   }
 
+  public List<VcsException> commit(List<Change> changes, String preparedComment, Object parameters) {
+    return commit(changes, preparedComment);
+  }
+
   @Nullable
   public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
