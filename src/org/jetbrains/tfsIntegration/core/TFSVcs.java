@@ -135,11 +135,11 @@ public class TFSVcs extends AbstractVcs {
     return ThreeStateBoolean.yes.equals(isVersionedDirectory(filePath.getVirtualFile()));
   }
 
-  public ThreeStateBoolean isVersionedDirectory(final VirtualFile dir) {
+  public boolean isVersionedDirectory(final VirtualFile dir) {
     if (dir == null) {
-      return ThreeStateBoolean.no;
+      return false;
     }
-    return ThreeStateBoolean.getInstance(!Workstation.getInstance().findWorkspacesCached(TfsFileUtil.getFilePath(dir), false).isEmpty());
+    return (!Workstation.getInstance().findWorkspacesCached(TfsFileUtil.getFilePath(dir), false).isEmpty());
   }
 
   public EditFileProvider getEditFileProvider() {
