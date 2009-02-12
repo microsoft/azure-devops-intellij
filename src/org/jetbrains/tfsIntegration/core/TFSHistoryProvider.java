@@ -37,6 +37,7 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,8 +48,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     myProject = project;
   }
 
-  public ColumnInfo[] getRevisionColumns(final VcsHistorySession session) {
-    return ColumnInfo.EMPTY_ARRAY;
+  public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, JComponent forShortcutRegistration) {
+    return VcsDependentHistoryComponents.createOnlyColumns(ColumnInfo.EMPTY_ARRAY);
   }
 
   public AnAction[] getAdditionalActions(final FileHistoryPanel panel) {
