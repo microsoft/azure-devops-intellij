@@ -24,9 +24,9 @@ import javax.xml.stream.XMLStreamException;
 
 public class WorkspaceVersionSpec extends VersionSpecBase {
 
-  private String workspaceName;
+  private final String workspaceName;
 
-  private String workspaceOwnerName;
+  private final String workspaceOwnerName;
 
   public WorkspaceVersionSpec(final String workspaceName, final String workspaceOwnerName) {
     this.workspaceName = workspaceName;

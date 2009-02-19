@@ -72,7 +72,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private TFSVcs.RevisionChangedListener myListener = new TFSVcs.RevisionChangedListener() {
+  private final TFSVcs.RevisionChangedListener myListener = new TFSVcs.RevisionChangedListener() {
     public void revisionChanged() {
       try {
         GuiUtils.runOrInvokeAndWait(new Runnable() {

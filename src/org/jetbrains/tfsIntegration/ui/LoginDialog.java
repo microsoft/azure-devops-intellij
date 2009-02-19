@@ -28,7 +28,7 @@ import java.net.URI;
 // TODO pass project
 public class LoginDialog extends DialogWrapper {
 
-  private LoginForm myLoginForm;
+  private final LoginForm myLoginForm;
 
   public LoginDialog(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
     super(false);

@@ -27,7 +27,7 @@ import javax.swing.*;
 
 public class SelectLabelDialog extends DialogWrapper {
 
-  private WorkspaceInfo myWorkspace;
+  private final WorkspaceInfo myWorkspace;
   private SelectLabelForm mySelectLabelForm;
 
   public SelectLabelDialog(final Project project, final WorkspaceInfo workspace) {

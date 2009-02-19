@@ -23,7 +23,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
 public class ChangesetVersionSpec extends VersionSpecBase {
-  private int changeSetId;
+  private final int changeSetId;
 
   public int getChangeSetId() {
     return changeSetId;

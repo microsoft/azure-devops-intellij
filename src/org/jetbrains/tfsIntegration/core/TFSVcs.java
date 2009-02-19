@@ -50,16 +50,16 @@ public class TFSVcs extends AbstractVcs {
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
 
   private VcsVFSListener myFileListener;
-  private VcsShowConfirmationOption myAddConfirmation;
-  private VcsShowConfirmationOption myDeleteConfirmation;
-  private VcsShowSettingOption myCheckoutOptions;
+  private final VcsShowConfirmationOption myAddConfirmation;
+  private final VcsShowConfirmationOption myDeleteConfirmation;
+  private final VcsShowSettingOption myCheckoutOptions;
   private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
   private VcsHistoryProvider myHistoryProvider;
   private DiffProvider myDiffProvider;
   private CheckinEnvironment myCheckinEnvironment;
   private UpdateEnvironment myUpdateEnvironment;
   private AnnotationProvider myAnnotationProvider;
-  private List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
+  private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
   public TFSVcs(Project project) {
     super(project);

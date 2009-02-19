@@ -29,10 +29,10 @@ import java.util.Map;
 public class AbstractWizard extends com.intellij.ide.wizard.AbstractWizard<AbstractWizardStep> {
 
   private final String myTitle;
-  private Map<Object, Integer> myStepId2Index = new HashMap<Object, Integer>();
-  private Map<Integer, AbstractWizardStep> myIndex2Step = new HashMap<Integer, AbstractWizardStep>();
+  private final Map<Object, Integer> myStepId2Index = new HashMap<Object, Integer>();
+  private final Map<Integer, AbstractWizardStep> myIndex2Step = new HashMap<Integer, AbstractWizardStep>();
 
-  private AbstractWizardStep.Listener myStepListener = new AbstractWizardStep.Listener() {
+  private final AbstractWizardStep.Listener myStepListener = new AbstractWizardStep.Listener() {
     public void stateChanged() {
       updateButtons();
     }

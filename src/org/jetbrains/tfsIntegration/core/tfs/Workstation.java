@@ -54,7 +54,7 @@ public class Workstation {
 
   private static final Logger LOG = Logger.getInstance(Workstation.class.getName());
 
-  private List<ServerInfo> myServerInfos;
+  private final List<ServerInfo> myServerInfos;
 
   private @Nullable Ref<FilePath> myDuplicateMappedPath;
 

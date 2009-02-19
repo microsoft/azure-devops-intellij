@@ -76,7 +76,7 @@ public abstract class RootsCollection<T> implements Collection<T> {
 
   }
 
-  private Collection<T> myRoots = new HashSet<T>();
+  private final Collection<T> myRoots = new HashSet<T>();
 
   public RootsCollection() {
   }

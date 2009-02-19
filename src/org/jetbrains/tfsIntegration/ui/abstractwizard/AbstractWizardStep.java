@@ -38,7 +38,7 @@ public abstract class AbstractWizardStep implements Step {
     void doNextAction();
   }
 
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  private final List<Listener> myListeners = new ArrayList<Listener>();
 
   public AbstractWizardStep(final String title) {
     myTitle = title;

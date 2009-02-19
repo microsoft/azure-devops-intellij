@@ -38,7 +38,7 @@ public class SelectWorkItemsForm {
   private JButton mySearchButton;
   private JTable myWorkItemsTable;
 
-  private WorkItemsTableModel myWorkItemsTableModel;
+  private final WorkItemsTableModel myWorkItemsTableModel;
 
   private final Map<ServerInfo, WorkItemsDialogState> myState;
   private final String myTitle;

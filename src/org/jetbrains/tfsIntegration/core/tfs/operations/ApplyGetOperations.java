@@ -54,7 +54,7 @@ public class ApplyGetOperations {
   private static LocalConflictHandlingType ourLocalConflictHandlingType = LocalConflictHandlingType.SHOW_MESSAGE;
 
 
-  private Project myProject;
+  private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private final Collection<GetOperation> myOperations;
   private final @NotNull ApplyProgress myProgress;

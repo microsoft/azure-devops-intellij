@@ -28,7 +28,7 @@ import javax.swing.*;
 
 public class TFSProjectConfigurable implements Configurable {
 
-  private Project myProject;
+  private final Project myProject;
   private ProjectConfigurableForm myComponent;
 
   public TFSProjectConfigurable(Project project) {

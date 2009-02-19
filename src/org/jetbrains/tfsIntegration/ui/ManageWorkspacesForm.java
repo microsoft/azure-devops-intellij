@@ -124,7 +124,7 @@ public class ManageWorkspacesForm {
   };
 
 
-  private ContentProvider<Object> myContentProvider = new ContentProvider<Object>() {
+  private final ContentProvider<Object> myContentProvider = new ContentProvider<Object>() {
 
     public Collection<?> getRoots() {
       final List<ServerInfo> servers = new ArrayList<ServerInfo>(Workstation.getInstance().getServers());

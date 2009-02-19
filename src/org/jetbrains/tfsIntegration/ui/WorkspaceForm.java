@@ -59,7 +59,7 @@ public class WorkspaceForm {
   private JButton myAddButton;
   private JButton myRemoveButton;
   private JLabel myErrorLabel;
-  private WorkingFoldersTableModel myWorkingFoldersTableModel;
+  private final WorkingFoldersTableModel myWorkingFoldersTableModel;
   private final Project myProject;
   private ServerInfo myServer;
   private final List<Listener> myListeners = new ArrayList<Listener>();

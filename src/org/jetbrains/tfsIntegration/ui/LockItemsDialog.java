@@ -33,8 +33,8 @@ public class LockItemsDialog extends DialogWrapper {
 
   private final LockItemsForm myLockItemsForm;
 
-  private Action myLockAction;
-  private Action myUnlockAction;
+  private final Action myLockAction;
+  private final Action myUnlockAction;
 
   public LockItemsDialog(final Project project, List<LockItemModel> items) {
     super(project, false);

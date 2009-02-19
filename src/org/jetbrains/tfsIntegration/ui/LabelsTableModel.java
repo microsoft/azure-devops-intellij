@@ -40,7 +40,7 @@ public class LabelsTableModel extends AbstractTableModel {
       }
     };
 
-    private String myCaption;
+    private final String myCaption;
 
     Column(String caption) {
       myCaption = caption;

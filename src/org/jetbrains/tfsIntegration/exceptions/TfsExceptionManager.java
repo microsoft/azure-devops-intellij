@@ -36,7 +36,7 @@ public class TfsExceptionManager {
 
   private static final String TRANSPORT_ERROR_MESSAGE = "Transport error: ";
 
-  private static Map<String, Class<?>> ourExceptionsBySubcodes;
+  private static final Map<String, Class<?>> ourExceptionsBySubcodes;
 
   static {
     ourExceptionsBySubcodes = new HashMap<String, Class<?>>();

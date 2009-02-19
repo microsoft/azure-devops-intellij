@@ -36,7 +36,7 @@ public class ServerInfo {
   private final String myGuid;
   private VersionControlServer myServer;
 
-  private List<WorkspaceInfo> myWorkspaceInfos = new ArrayList<WorkspaceInfo>();
+  private final List<WorkspaceInfo> myWorkspaceInfos = new ArrayList<WorkspaceInfo>();
 
   public ServerInfo(URI uri, String guid) {
     myUri = uri;

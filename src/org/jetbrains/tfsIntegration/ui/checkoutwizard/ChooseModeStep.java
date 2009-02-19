@@ -26,7 +26,7 @@ public class ChooseModeStep extends CheckoutWizardStep {
 
   public static final Object ID = new Object();
 
-  private CheckoutModeForm myCheckoutModeForm;
+  private final CheckoutModeForm myCheckoutModeForm;
 
   public ChooseModeStep(final CheckoutWizardModel model) {
     super("Checkout Mode", model);

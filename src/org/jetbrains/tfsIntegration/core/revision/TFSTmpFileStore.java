@@ -38,7 +38,7 @@ public class TFSTmpFileStore implements TFSContentStore {
     return null;
   }
 
-  private File myTmpFile;
+  private final File myTmpFile;
 
   TFSTmpFileStore(final String serverUri, final int itemId, final int revision) throws IOException {
     myTmpFile = new File(createTmpFileName(serverUri, itemId, revision));

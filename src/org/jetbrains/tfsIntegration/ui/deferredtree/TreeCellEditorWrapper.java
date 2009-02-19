@@ -27,9 +27,9 @@ import java.util.EventObject;
 
 class TreeCellEditorWrapper implements TreeCellEditor {
 
-  private TreeCellEditor myDelegate;
+  private final TreeCellEditor myDelegate;
 
-  private JTree myTree;
+  private final JTree myTree;
 
   public TreeCellEditorWrapper(JTree tree, CellRenderer cellRenderer) {
     myTree = tree;

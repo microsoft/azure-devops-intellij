@@ -42,7 +42,7 @@ public class CheckoutModeForm {
   private JTextField myWorkspaceNameField;
   private JLabel myErrorLabel;
 
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  private final List<Listener> myListeners = new ArrayList<Listener>();
 
   public CheckoutModeForm() {
     myAutoModeButton.addActionListener(new ActionListener() {

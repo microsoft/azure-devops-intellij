@@ -48,9 +48,9 @@ public class SelectLabelForm {
   private JTable myLabelsTable;
   private JPanel myContentPane;
 
-  private LabelsTableModel myLabelsTableModel;
+  private final LabelsTableModel myLabelsTableModel;
 
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  private final List<Listener> myListeners = new ArrayList<Listener>();
 
   public SelectLabelForm(final SelectLabelDialog dialog, final WorkspaceInfo workspace) {
     myLabelsTableModel = new LabelsTableModel();

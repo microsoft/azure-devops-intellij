@@ -36,7 +36,7 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
   public static final Object ID = new Object();
 
-  private ManageWorkspacesForm myManageWorkspacesForm;
+  private final ManageWorkspacesForm myManageWorkspacesForm;
 
   public ChooseWorkspaceStep(Project project, final CheckoutWizardModel model) {
     super("Source Workspace", model);

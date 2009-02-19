@@ -53,10 +53,10 @@ public class TFSChangeList implements CommittedChangeList {
   private Date myDate;
   private @NotNull String myComment;
   private List<Change> myCachedChanges;
-  private Map<FilePath, Integer/*previous revision*/> myModifiedPaths = new HashMap<FilePath, Integer>();
-  private Set<FilePath> myAddedPaths = new HashSet<FilePath>();
-  private Map<FilePath, Integer/*previous revision*/> myDeletedPaths = new HashMap<FilePath, Integer>();
-  private Map<FilePath, Pair<FilePath, Integer/*previous revision*/>> myMovedPaths = new HashMap<FilePath, Pair<FilePath, Integer>>();
+  private final Map<FilePath, Integer/*previous revision*/> myModifiedPaths = new HashMap<FilePath, Integer>();
+  private final Set<FilePath> myAddedPaths = new HashSet<FilePath>();
+  private final Map<FilePath, Integer/*previous revision*/> myDeletedPaths = new HashMap<FilePath, Integer>();
+  private final Map<FilePath, Pair<FilePath, Integer/*previous revision*/>> myMovedPaths = new HashMap<FilePath, Pair<FilePath, Integer>>();
   private URI myServerUri;
   private String myWorkspaceName;
 

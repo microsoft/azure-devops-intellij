@@ -65,7 +65,7 @@ public class MergeBranchForm {
   private TextFieldWithBrowseButton.NoPathCompletion mySourceField;
   private JComboBox myTargetCombo;
   private JComboBox myChangesTypeCombo;
-  private SelectRevisionForm mySelectRevisionForm;
+  private final SelectRevisionForm mySelectRevisionForm;
   private JPanel myContentPanel;
   private JPanel myChangesetsPanel;
   private final Project myProject;

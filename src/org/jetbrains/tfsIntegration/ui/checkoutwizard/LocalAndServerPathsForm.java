@@ -47,7 +47,7 @@ public class LocalAndServerPathsForm {
   private JLabel myErrorLabel;
   private JLabel myTitleLabel;
 
-  private List<Listener> myListeners = new ArrayList<Listener>();
+  private final List<Listener> myListeners = new ArrayList<Listener>();
 
   public LocalAndServerPathsForm() {
     myServerTree.addSelectionListener(new ServerTree.SelectionListener() {

@@ -29,9 +29,9 @@ public class DateVersionSpec extends VersionSpecBase {
   static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
   public static SimpleDateFormat otextFormat =
     new SimpleDateFormat("dd.MM.yyyy HH:mm:ss"); // TODO: use SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)?
-  private static DateFormat defaultDateFormat = new SimpleDateFormat();
+  private static final DateFormat defaultDateFormat = new SimpleDateFormat();
 
-  private Date myDate;
+  private final Date myDate;
 
   public DateVersionSpec(Date date) {
     myDate = date;

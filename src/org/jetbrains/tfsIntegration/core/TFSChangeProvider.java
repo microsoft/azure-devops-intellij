@@ -36,7 +36,7 @@ import java.util.List;
 
 public class TFSChangeProvider implements ChangeProvider {
 
-  private Project myProject;
+  private final Project myProject;
 
   public TFSChangeProvider(final Project project) {
     myProject = project;
