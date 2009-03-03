@@ -24,6 +24,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
@@ -127,6 +128,7 @@ public class TfsExceptionManager {
       result = (TfsException)e;
     }
     if (result == null) {
+      TFSVcs.LOG.error("Unknown exception", e);
       result = new UnknownException(e);
     }
     return result;
