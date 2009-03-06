@@ -128,7 +128,7 @@ public class TfsExceptionManager {
       result = (TfsException)e;
     }
     if (result == null) {
-      TFSVcs.LOG.error("Unknown exception", e);
+      TFSVcs.LOG.warn("Unknown exception", e);
       result = new UnknownException(e);
     }
     return result;
