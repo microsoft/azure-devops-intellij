@@ -140,7 +140,7 @@ public class StatusProvider {
     }
 
     EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
-    change.remove(ChangeType.Lock);
+    change.remove(ChangeType.None, ChangeType.Lock);
 
     if (item.getLocal() == null && change.isEmpty()) {
       // TODO report not downloaded items as unversioned ?

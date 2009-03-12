@@ -41,6 +41,12 @@ public class ConnectionFailedException extends TfsException {
     myMessage = message;
   }
 
+  public ConnectionFailedException(Throwable cause, String message) {
+    super(cause);
+    myHttpStatusCode = CODE_UNDEFINED;
+    myMessage = message;
+  }
+
   public int getHttpStatusCode() {
     return myHttpStatusCode;
   }

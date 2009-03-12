@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;

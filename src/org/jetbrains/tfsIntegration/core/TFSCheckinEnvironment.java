@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;

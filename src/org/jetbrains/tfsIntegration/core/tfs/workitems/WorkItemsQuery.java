@@ -39,7 +39,7 @@ public enum WorkItemsQuery {
       groupType.setGroupOperator(GroupOperatorType.And);
       groupType.setExpression(new Expression_type0[]{expression1, expression2});
 
-      Query_type01 query_type01 = new Query_type01();
+      Query_type0E query_type01 = new Query_type0E();
       query_type01.setGroup(groupType);
 
       return queryWorkItems(server, query_type01);
@@ -52,7 +52,7 @@ public enum WorkItemsQuery {
       expression1.setOperator(OperatorType.equals);
       expression1.setString(server.getVCS().readIdentity(server.getQualifiedUsername()).getDisplayName());
 
-      Query_type01 query_type01 = new Query_type01();
+      Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
       return queryWorkItems(server, query_type01);
@@ -65,7 +65,7 @@ public enum WorkItemsQuery {
       expression1.setOperator(OperatorType.equals);
       expression1.setString(WorkItem.WorkItemState.Active.name());
 
-      Query_type01 query_type01 = new Query_type01();
+      Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
       return queryWorkItems(server, query_type01);
@@ -78,7 +78,7 @@ public enum WorkItemsQuery {
       expression1.setOperator(OperatorType.equalsGreater);
       expression1.setNumber(0);
 
-      Query_type01 query_type01 = new Query_type01();
+      Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
       return queryWorkItems(server, query_type01);
@@ -96,7 +96,7 @@ public enum WorkItemsQuery {
 
   public abstract List<WorkItem> queryWorkItems(ServerInfo server) throws TfsException;
 
-  protected static List<WorkItem> queryWorkItems(ServerInfo server, Query_type01 query_type01) throws TfsException {
+  protected static List<WorkItem> queryWorkItems(ServerInfo server, Query_type0E query_type01) throws TfsException {
     return server.getVCS().queryWorkItems(query_type01);
   }
 }

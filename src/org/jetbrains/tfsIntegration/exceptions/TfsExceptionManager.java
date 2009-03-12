@@ -23,6 +23,7 @@ import org.apache.axiom.soap.SOAPProcessingException;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NoHttpResponseException;
+import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 
@@ -63,9 +64,9 @@ public class TfsExceptionManager {
       return new SSLConnectionException((SSLHandshakeException)throwable);
     }
     if (throwable instanceof SOAPProcessingException) {
-      return new ConnectionFailedException("Invalid server response.");
+      return new ConnectionFailedException(throwable, "Invalid server response: " + throwable.getMessage());
     }
-    if (throwable instanceof SocketTimeoutException) {
+    if (throwable instanceof SocketTimeoutException || throwable instanceof ConnectTimeoutException) {
       return new ConnectionTimeoutException(throwable);
     }
     return null;

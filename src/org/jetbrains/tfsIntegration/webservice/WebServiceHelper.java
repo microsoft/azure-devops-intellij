@@ -48,10 +48,9 @@ import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
 import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
 import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.stubs.services.registration.ArrayOfRegistrationEntry;
-import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
-import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
+import org.jetbrains.tfsIntegration.stubs.services.registration.*;
 import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthentication;
+import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthenticationResponse;
 import org.jetbrains.tfsIntegration.ui.LoginDialog;
 
 import java.io.InputStream;
@@ -119,7 +118,8 @@ public class WebServiceHelper {
           new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
         setupStub(serverStatusStub, credentials, serverUri);
 
-        String connectionCredentials = serverStatusStub.CheckAuthentication(new CheckAuthentication());
+        CheckAuthenticationResponse response = serverStatusStub.CheckAuthentication(new CheckAuthentication());
+        String connectionCredentials = response.getCheckAuthenticationResult();
         if (!credentials.getQualifiedUsername().equalsIgnoreCase(connectionCredentials)) {
           throw new WrongConnectionException(connectionCredentials);
         }
@@ -127,8 +127,10 @@ public class WebServiceHelper {
         RegistrationRegistrationSoapStub registrationStub =
           new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
         setupStub(registrationStub, credentials, serverUri);
-        ArrayOfRegistrationEntry registrationEntries = registrationStub.GetRegistrationEntries(TFS_TOOL_ID);
-        for (RegistrationEntry entry : registrationEntries.getRegistrationEntry()) {
+        final GetRegistrationEntries param = new GetRegistrationEntries();
+        param.setToolId(TFS_TOOL_ID);
+        GetRegistrationEntriesResponse registrationEntries = registrationStub.GetRegistrationEntries(param);
+        for (RegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
           if (TFS_TOOL_ID.equals(entry.getType())) {
             for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes().getRegistrationExtendedAttribute()) {
               if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {

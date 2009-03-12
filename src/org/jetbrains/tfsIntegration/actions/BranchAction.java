@@ -28,6 +28,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
