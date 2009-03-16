@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.webservice;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.util.io.StreamUtil;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
@@ -114,48 +115,53 @@ public class WebServiceHelper {
   public static Pair<URI, String/*guid*/> authenticate(final @Nullable URI initialServerUri) throws TfsException {
     return executeRequest(initialServerUri, new InnerDelegate<Pair<URI, String>>() {
       public Pair<URI, String> executeRequest(@NotNull final URI serverUri, @NotNull final Credentials credentials) throws Exception {
-        ServerStatusServerStatusSoapStub serverStatusStub =
-          new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
-        setupStub(serverStatusStub, credentials, serverUri);
+        return runWithPluginClassLoader(new ThrowableComputable<Pair<URI, String>, Exception>() {
+          public Pair<URI, String> compute() throws Exception {
+            ServerStatusServerStatusSoapStub serverStatusStub =
+              new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
+            setupStub(serverStatusStub, credentials, serverUri);
 
-        CheckAuthenticationResponse response = serverStatusStub.CheckAuthentication(new CheckAuthentication());
-        String connectionCredentials = response.getCheckAuthenticationResult();
-        if (!credentials.getQualifiedUsername().equalsIgnoreCase(connectionCredentials)) {
-          throw new WrongConnectionException(connectionCredentials);
-        }
+            CheckAuthenticationResponse response = serverStatusStub.CheckAuthentication(new CheckAuthentication());
+            String connectionCredentials = response.getCheckAuthenticationResult();
+            if (!credentials.getQualifiedUsername().equalsIgnoreCase(connectionCredentials)) {
+              throw new WrongConnectionException(connectionCredentials);
+            }
 
-        RegistrationRegistrationSoapStub registrationStub =
-          new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
-        setupStub(registrationStub, credentials, serverUri);
-        final GetRegistrationEntries param = new GetRegistrationEntries();
-        param.setToolId(TFS_TOOL_ID);
-        GetRegistrationEntriesResponse registrationEntries = registrationStub.GetRegistrationEntries(param);
-        for (RegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
-          if (TFS_TOOL_ID.equals(entry.getType())) {
-            for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes().getRegistrationExtendedAttribute()) {
-              if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
-                final String instanceId = attribute.getValue();
-                if (initialServerUri == null) {
-                  ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
-                  if (existingServer != null) {
-                    throw new DuplicateServerInstanceIdException(existingServer.getUri());
+            RegistrationRegistrationSoapStub registrationStub =
+              new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
+            setupStub(registrationStub, credentials, serverUri);
+            final GetRegistrationEntries param = new GetRegistrationEntries();
+            param.setToolId(TFS_TOOL_ID);
+            GetRegistrationEntriesResponse registrationEntries = registrationStub.GetRegistrationEntries(param);
+            for (RegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
+              if (TFS_TOOL_ID.equals(entry.getType())) {
+                for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes()
+                  .getRegistrationExtendedAttribute()) {
+                  if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
+                    final String instanceId = attribute.getValue();
+                    if (initialServerUri == null) {
+                      ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
+                      if (existingServer != null) {
+                        throw new DuplicateServerInstanceIdException(existingServer.getUri());
+                      }
+                    }
+                    return Pair.create(serverUri, instanceId);
                   }
                 }
-                return Pair.create(serverUri, instanceId);
               }
             }
+            throw new ConnectionFailedException("Failed to obtain server instance.");
           }
-        }
-        throw new ConnectionFailedException("Failed to obtain server instance.");
+        });
       }
     });
   }
 
   public static void executeRequest(Stub stub, final VoidDelegate delegate) throws TfsException {
-    executeRequest(stub, new Delegate<Object>() {
+    executeRequest(stub, new Delegate<Void>() {
 
       @Nullable
-      public Object executeRequest() throws RemoteException {
+      public Void executeRequest() throws RemoteException {
         delegate.executeRequest();
         return null;
       }
@@ -167,8 +173,13 @@ public class WebServiceHelper {
 
     return executeRequest(serverUri, new InnerDelegate<T>() {
       public T executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
-        setupStub(stub, credentials, serverUri);
-        return delegate.executeRequest();
+        return runWithPluginClassLoader(new ThrowableComputable<T, Exception>() {
+          @Nullable
+          public T compute() throws Exception {
+            setupStub(stub, credentials, serverUri);
+            return delegate.executeRequest();
+          }
+        });
       }
     });
   }
@@ -267,8 +278,7 @@ public class WebServiceHelper {
                 // if originally stored credentials not null, URI was specified and therefore isn't changed
                 Credentials recentlyStoredCredentials = TFSConfigurationManager.getInstance().getCredentials(uri.get());
                 trace(callerThreadId, "recently stored credentials for {0}: {1}", uri.get(), recentlyStoredCredentials);
-                if (recentlyStoredCredentials != null &&
-                    originalStoredCredentials != null &&
+                if (recentlyStoredCredentials != null && originalStoredCredentials != null &&
                     !recentlyStoredCredentials.equalsTo(originalStoredCredentials)) {
                   credentials.set(recentlyStoredCredentials);
                   shouldPrompt = false;
@@ -461,14 +471,8 @@ public class WebServiceHelper {
   private static void trace(long threadId, @NonNls String msg) {
     // you may need this for debugging
     String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
-    @NonNls String message = String.valueOf(System.currentTimeMillis()) +
-                             ", thread=" +
-                             String.valueOf(threadId) +
-                             ", cur thread=" +
-                             String.valueOf(Thread.currentThread().getId()) +
-                             dispatch +
-                             ": " +
-                             msg;
+    @NonNls String message = String.valueOf(System.currentTimeMillis()) + ", thread=" + String.valueOf(threadId) + ", cur thread=" +
+                             String.valueOf(Thread.currentThread().getId()) + dispatch + ": " + msg;
     //System.out.println(message);
   }
 
@@ -492,6 +496,19 @@ public class WebServiceHelper {
     String domain = slashPos >= 0 ? s.substring(0, slashPos) : "";
     String user = slashPos >= 0 ? s.substring(slashPos + 1) : s;
     return Pair.create(domain, user);
+  }
+
+  private static <T> T runWithPluginClassLoader(final ThrowableComputable<T, Exception> computable)
+    throws Exception {
+    final ClassLoader oldCtxLoad = Thread.currentThread().getContextClassLoader();
+    try {
+      final ClassLoader ctxLoader = TFSVcs.class.getClassLoader();
+      Thread.currentThread().setContextClassLoader(ctxLoader);
+      return computable.compute();
+    }
+    finally {
+      Thread.currentThread().setContextClassLoader(oldCtxLoad);
+    }
   }
 
 }
