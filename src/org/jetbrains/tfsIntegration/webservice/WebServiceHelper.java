@@ -394,9 +394,13 @@ public class WebServiceHelper {
 
   // TODO move to stubs
   public static ConfigurationContext getStubConfigurationContext() throws Exception {
-    ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
-    configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
-    return configContext;
+    return runWithPluginClassLoader(new ThrowableComputable<ConfigurationContext, Exception>() {
+      public ConfigurationContext compute() throws Exception {
+        ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
+        configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
+        return configContext;
+      }
+    });
   }
 
   private static void setProxy(HttpClient httpClient) {
