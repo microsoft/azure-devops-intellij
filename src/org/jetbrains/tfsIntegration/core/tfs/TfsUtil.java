@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
+import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 
 import javax.swing.*;
 import java.awt.*;
@@ -72,6 +73,18 @@ public class TfsUtil {
     }
     catch (TfsException e) {
       return VcsRevisionNumber.NULL;
+    }
+  }
+
+  @Nullable
+  public static TFSContentRevision getCurrentRevision(Project project, FilePath path) throws TfsException {
+    Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path);
+    if (workspaceAndItem != null && workspaceAndItem.second != null) {
+      return TFSContentRevision
+        .create(project, workspaceAndItem.first, workspaceAndItem.second.getLver(), workspaceAndItem.second.getItemid());
+    }
+    else {
+      return null;
     }
   }
 

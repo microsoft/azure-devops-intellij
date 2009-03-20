@@ -20,14 +20,18 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 
 import java.util.*;
 
 public class UndoPendingChanges {
+
+  @NonNls private static final String ITEM_NOT_CHECKED_OUT_FAILURE = "ItemNotCheckedOutException";
 
   public static class UndoPendingChangesResult {
     public final Collection<VcsException> errors;
@@ -44,7 +48,9 @@ public class UndoPendingChanges {
   public static UndoPendingChangesResult execute(final Project project,
                                                  final WorkspaceInfo workspace,
                                                  final Collection<String> serverPaths,
-                                                 final boolean forbidDownload, @NotNull ApplyProgress progress) {
+                                                 final boolean forbidDownload,
+                                                 @NotNull ApplyProgress progress,
+                                                 boolean tolerateNoChangesFailure) {
     if (serverPaths.isEmpty()) {
       return new UndoPendingChangesResult(Collections.<ItemPath, ItemPath>emptyMap(), Collections.<VcsException>emptyList());
     }
@@ -54,8 +60,17 @@ public class UndoPendingChanges {
       ResultWithFailures<GetOperation> result =
         workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), serverPaths);
 
+      Collection<Failure> failures = result.getFailures();
+      if (tolerateNoChangesFailure) {
+        for (Iterator<Failure> i = failures.iterator(); i.hasNext(); ) {
+          if (ITEM_NOT_CHECKED_OUT_FAILURE.equals(i.next().getCode())) {
+            i.remove();
+          }
+        }
+      }
+
       Collection<VcsException> errors = new ArrayList<VcsException>();
-      errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
+      errors.addAll(TfsUtil.getVcsExceptions(failures));
 
       // TODO fill renamed paths map in ApplyGetOperations
       Map<ItemPath, ItemPath> undonePaths = new HashMap<ItemPath, ItemPath>();

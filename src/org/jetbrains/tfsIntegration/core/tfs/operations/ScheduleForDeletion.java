@@ -57,7 +57,7 @@ public class ScheduleForDeletion {
       }
 
       final UndoPendingChanges.UndoPendingChangesResult undoResult =
-        UndoPendingChanges.execute(project, workspace, revert, true, ApplyProgress.EMPTY);
+        UndoPendingChanges.execute(project, workspace, revert, true, ApplyProgress.EMPTY, false);
       errors.addAll(undoResult.errors);
 
       List<ItemPath> undoneRoots = new ArrayList<ItemPath>(roots.size());

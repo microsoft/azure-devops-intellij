@@ -165,7 +165,7 @@ public class TFSFileListener extends VcsVFSListener {
           }
 
           UndoPendingChanges.UndoPendingChangesResult undoResult =
-            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true, ApplyProgress.EMPTY);
+            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true, ApplyProgress.EMPTY, false);
 
           if (!undoResult.errors.isEmpty()) {
             // TODO list -> collection
