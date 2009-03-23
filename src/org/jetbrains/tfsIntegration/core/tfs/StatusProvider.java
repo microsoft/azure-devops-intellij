@@ -184,13 +184,17 @@ public class StatusProvider {
     }
     else if (change.containsAny(ChangeType.Edit, ChangeType.Merge) && !change.contains(ChangeType.Rename)) {
       TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
-      TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
-      TFSVcs.assertTrue(item.getLocal() != null);
-      if (pendingChange != null) {
-        return new ServerStatus.CheckedOutForEdit(pendingChange);
+      if (item.getLver() != Integer.MIN_VALUE) {
+        TFSVcs.assertTrue(item.getLocal() != null);
+        if (pendingChange != null) {
+          return new ServerStatus.CheckedOutForEdit(pendingChange);
+        }
+        else {
+          return new ServerStatus.CheckedOutForEdit(item);
+        }
       }
       else {
-        return new ServerStatus.CheckedOutForEdit(item);
+        return new ServerStatus.ScheduledForAddition(item);
       }
     }
     else if (change.containsAny(ChangeType.Merge, ChangeType.Rename) && !change.contains(ChangeType.Edit)) {

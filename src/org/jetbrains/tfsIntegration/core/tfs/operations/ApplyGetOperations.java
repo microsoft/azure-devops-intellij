@@ -16,20 +16,19 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
@@ -125,8 +124,13 @@ public class ApplyGetOperations {
 
         GetOperation operationToExecute = sortedOperations.get(i);
 
-        final String currentPath = VersionControlPath.localPathFromTfsRepresentation(
+        String currentPath = VersionControlPath.localPathFromTfsRepresentation(
           operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
+        if (currentPath == null) {
+          FilePath unexistingPath =
+            myWorkspace.findLocalPathByServerPath(operationToExecute.getTitem(), operationToExecute.getType() == ItemType.Folder);
+          currentPath = unexistingPath.getPresentableUrl();
+        }
         myProgress.setFraction(i / sortedOperations.size());
         myProgress.setText(currentPath);
 
