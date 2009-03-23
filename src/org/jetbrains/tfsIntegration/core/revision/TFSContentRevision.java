@@ -55,14 +55,28 @@ public abstract class TFSContentRevision implements ContentRevision {
   @Nullable
   protected abstract Item getItem() throws TfsException;
 
-  public static TFSContentRevision create(final Project project, final @NotNull WorkspaceInfo workspace, final int changeset, final int itemId)
-    throws TfsException {
+  protected abstract int getItemId() throws TfsException;
+
+  protected abstract int getChangeset() throws TfsException;
+
+  public static TFSContentRevision create(final Project project,
+                                          final @NotNull WorkspaceInfo workspace,
+                                          final int changeset,
+                                          final int itemId) throws TfsException {
     final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
 
     return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
-      protected Item getItem() throws TfsException {
+      protected Item getItem() {
         return item;
+      }
+
+      protected int getItemId() {
+        return itemId;
+      }
+
+      protected int getChangeset() throws TfsException {
+        return changeset;
       }
 
       @NotNull
@@ -95,6 +109,14 @@ public abstract class TFSContentRevision implements ContentRevision {
         return workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
       }
 
+      protected int getItemId() {
+        return itemId;
+      }
+
+      protected int getChangeset() {
+        return changeset;
+      }
+
       @NotNull
       public FilePath getFile() {
         return localPath;
@@ -107,7 +129,8 @@ public abstract class TFSContentRevision implements ContentRevision {
     };
   }
 
-  public static TFSContentRevision create(final Project project, final @NotNull FilePath localPath, final int changeset) throws TfsException {
+  public static TFSContentRevision create(final Project project, final @NotNull FilePath localPath, final int changeset)
+    throws TfsException {
     final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
     if (workspaces.isEmpty()) {
       throw new OperationFailedException("Cannot find mapping for item " + localPath.getPresentableUrl());
@@ -115,11 +138,26 @@ public abstract class TFSContentRevision implements ContentRevision {
 
     final WorkspaceInfo workspace = workspaces.iterator().next();
     return new TFSContentRevision(project, workspace.getServer()) {
+      private @Nullable Item myItem;
+
       @Nullable
       protected Item getItem() throws TfsException {
-        return workspace.getServer().getVCS()
-          .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toTfsRepresentation(localPath),
-                     new ChangesetVersionSpec(changeset), DeletedState.Any, true);
+        if (myItem == null) {
+          myItem = workspace.getServer().getVCS()
+            .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toTfsRepresentation(localPath),
+                       new ChangesetVersionSpec(changeset), DeletedState.Any, true);
+        }
+        return myItem;
+      }
+
+      protected int getItemId() throws TfsException {
+        Item item = getItem();
+        return item != null ? item.getItemid() : Integer.MIN_VALUE;
+      }
+
+      protected int getChangeset() throws TfsException {
+        Item item = getItem();
+        return item != null ? item.getCs() : Integer.MIN_VALUE;
       }
 
       @NotNull
@@ -152,23 +190,24 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   @Nullable
   private String loadContent() throws TfsException, IOException {
-    Item item = getItem();
-    if (item == null) {
-      return null;
-    }
+    int itemId = getItemId();
+    int changeset = getChangeset();
 
-    if (item.getType() == ItemType.Folder) {
-      String message = MessageFormat.format("''{0}'' refers to a directory", getFile().getPresentableUrl());
-      throw new OperationFailedException(message);
-    }
-
-    final String downloadUrl = item.getDurl();
-    TFSVcs.assertTrue(item.getType() == ItemType.File, "Item: " + item.getItem() + " is not a file!");
-    TFSVcs.assertTrue(downloadUrl != null, "No download url for item: " + item.getItem());
-    VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
-    TFSContentStore store = TFSContentStoreFactory.find(myServer.getUri().toASCIIString(), item.getItemid(), revisionNumber);
+    TFSContentStore store = TFSContentStoreFactory.find(myServer.getUri().toASCIIString(), itemId, changeset);
     if (store == null) {
-      store = TFSContentStoreFactory.create(myServer.getUri().toASCIIString(), item.getItemid(), revisionNumber);
+      Item item = getItem();
+      if (item == null) {
+        return null;
+      }
+      if (item.getType() == ItemType.Folder) {
+        String message = MessageFormat.format("''{0}'' refers to a directory", getFile().getPresentableUrl());
+        throw new OperationFailedException(message);
+      }
+
+      final String downloadUrl = item.getDurl();
+      TFSVcs.assertTrue(downloadUrl != null, "No download url for item: " + item.getItem());
+
+      store = TFSContentStoreFactory.create(myServer.getUri().toASCIIString(), itemId, changeset);
       final Ref<TfsException> exception = new Ref<TfsException>();
       store.saveContent(new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) {

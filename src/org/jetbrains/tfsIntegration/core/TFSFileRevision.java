@@ -34,13 +34,13 @@ public class TFSFileRevision implements VcsFileRevision {
   private byte[] myContent;
   private final String myCommitMessage;
   private final String myAuthor;
-  private final FilePath myFilePath;
+  private final int myItemId;
   private final int myChangeset;
   private final WorkspaceInfo myWorkspace;
 
   public TFSFileRevision(final Project project,
                          final WorkspaceInfo workspace,
-                         final FilePath filePath,
+                         final int itemId,
                          final Date date,
                          final String commitMessage,
                          final String author,
@@ -51,7 +51,7 @@ public class TFSFileRevision implements VcsFileRevision {
     myCommitMessage = commitMessage;
     myAuthor = author;
     myChangeset = changeset;
-    myFilePath = filePath;
+    myItemId = itemId;
   }
 
   public VcsRevisionNumber getRevisionNumber() {
@@ -59,7 +59,6 @@ public class TFSFileRevision implements VcsFileRevision {
   }
 
   public String getBranchName() {
-    // TODO
     return null;
   }
 
@@ -79,11 +78,11 @@ public class TFSFileRevision implements VcsFileRevision {
     // TODO: encoding
     final String content;
     try {
-      content = TFSContentRevision.create(myProject, myFilePath, myChangeset).getContent();
+      content = TFSContentRevision.create(myProject, myWorkspace, myChangeset, myItemId).getContent();
       myContent = (content != null) ? content.getBytes() : null;
     }
     catch (TfsException e) {
-      throw new VcsException("Unable to get revision content for " + myFilePath, e);
+      throw new VcsException("Unable to get revision content", e);
     }
   }
 

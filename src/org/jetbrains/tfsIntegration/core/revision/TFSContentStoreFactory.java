@@ -23,13 +23,13 @@ import java.io.IOException;
 
 public class TFSContentStoreFactory {
 
-  public static TFSContentStore create(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
-    return new TFSTmpFileStore(serverUri, itemId, revision.getValue());
+  public static TFSContentStore create(final String serverUri, final int itemId, final int revision) throws IOException {
+    return new TFSTmpFileStore(serverUri, itemId, revision);
   }
 
   @Nullable
-  public static TFSContentStore find(final String serverUri, final int itemId, final VcsRevisionNumber.Int revision) throws IOException {
-    return TFSTmpFileStore.find(serverUri, itemId, revision.getValue());
+  public static TFSContentStore find(final String serverUri, final int itemId, final int revision) throws IOException {
+    return TFSTmpFileStore.find(serverUri, itemId, revision);
   }
 }
 
