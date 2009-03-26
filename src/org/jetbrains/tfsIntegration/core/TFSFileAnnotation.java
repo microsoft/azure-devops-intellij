@@ -29,6 +29,7 @@ import com.intellij.ui.GuiUtils;
 import com.intellij.util.text.SyncDateFormat;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
@@ -135,8 +136,14 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   }
 
+  @Nullable
   public VcsRevisionNumber getLineRevisionNumber(final int lineNumber) {
-    return myLineRevisions[lineNumber].getRevisionNumber();
+    if (lineNumber < myLineRevisions.length) {
+      return myLineRevisions[lineNumber].getRevisionNumber();
+    }
+    else {
+      return null;
+    }
   }
 
   public List<VcsFileRevision> getRevisions() {
