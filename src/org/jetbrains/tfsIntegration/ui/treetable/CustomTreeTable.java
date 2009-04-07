@@ -17,7 +17,7 @@
 package org.jetbrains.tfsIntegration.ui.treetable;
 
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.util.ui.treetable.*;
+import com.intellij.ui.treeStructure.treetable.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
