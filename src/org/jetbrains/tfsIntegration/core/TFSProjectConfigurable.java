@@ -22,6 +22,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.ui.ProjectConfigurableForm;
 
 import javax.swing.*;
@@ -57,13 +58,15 @@ public class TFSProjectConfigurable implements Configurable {
   }
 
   public boolean isModified() {
-    return false; 
+    return TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy();
   }
 
   public void apply() throws ConfigurationException {
+    TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myComponent.useProxy());
   }
 
   public void reset() {
+    myComponent.setUserProxy(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
   }
 
   public void disposeUIResources() {

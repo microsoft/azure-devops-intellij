@@ -42,11 +42,6 @@ public class ProjectConfigurableForm {
     });
 
     myUseIdeaHttpProxyCheckBox.setSelected(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
-    myUseIdeaHttpProxyCheckBox.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myUseIdeaHttpProxyCheckBox.isSelected());
-      }
-    });
 
     myResetPasswordsButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -61,5 +56,13 @@ public class ProjectConfigurableForm {
 
   public JComponent getContentPane() {
     return myContentPane;
+  }
+
+  public boolean useProxy() {
+    return myUseIdeaHttpProxyCheckBox.isSelected();
+  }
+
+  public void setUserProxy(boolean value) {
+    myUseIdeaHttpProxyCheckBox.setSelected(value);
   }
 }
