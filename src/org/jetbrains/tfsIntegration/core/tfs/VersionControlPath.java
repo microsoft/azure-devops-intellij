@@ -149,7 +149,7 @@ public class VersionControlPath {
     while (i < Math.min(components1.length, components2.length) && components1[i].equals(components2[i])) {
       i++;
     }
-    return StringUtil.join(Arrays.asList(components1).subList(0, i), SERVER_PATH_SEPARATOR);
+    return i == 1 ? ROOT_FOLDER : StringUtil.join(Arrays.asList(components1).subList(0, i), SERVER_PATH_SEPARATOR);
   }
 
   public static String getLastComponent(final @NotNull String serverPath) {
