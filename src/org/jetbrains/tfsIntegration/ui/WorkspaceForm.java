@@ -42,10 +42,12 @@ import java.awt.*;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.EventListener;
 import java.io.File;
 
 public class WorkspaceForm {
-  public interface Listener {
+
+  public interface Listener extends EventListener {
     void dataChanged();
   }
 
@@ -258,6 +260,10 @@ public class WorkspaceForm {
 
   public void setErrorMessage(@Nullable final String message) {
     myErrorLabel.setText(message != null ? message : " ");
+  }
+
+  public JComponent getPreferredFocusedComponent() {
+    return myNameField;
   }
 
 }

@@ -60,6 +60,16 @@ public class WorkspaceDialog extends DialogWrapper {
     setOKActionEnabled(myWorkspace != null);
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myForm.getPreferredFocusedComponent();
+  }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ManageWorkspace";
+  }
+
   protected JComponent createCenterPanel() {
     myForm = new WorkspaceForm(myProject);
     try {
