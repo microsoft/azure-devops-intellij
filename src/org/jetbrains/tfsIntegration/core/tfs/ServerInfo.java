@@ -125,5 +125,21 @@ public class ServerInfo {
     return "ServerInfo[uri=" + getUri() + ",guid=" + getGuid() + "," + getWorkspaces().size() + " workspaces]";
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
+    ServerInfo that = (ServerInfo)o;
+
+    if (!myGuid.equals(that.myGuid)) return false;
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return myGuid.hashCode();
+  }
+  
 }

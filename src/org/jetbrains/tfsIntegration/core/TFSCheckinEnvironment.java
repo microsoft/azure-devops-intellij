@@ -16,7 +16,12 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -27,21 +32,23 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.ui.MultiLineTooltipUI;
+import com.intellij.ui.components.labels.BoldLabel;
+import com.intellij.util.containers.MultiMap;
+import com.intellij.util.ui.UIUtil;
 import com.intellij.vcsUtil.VcsUtil;
+import gnu.trove.THashSet;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
-import org.jetbrains.tfsIntegration.ui.SelectWorkItemsDialog;
-import org.jetbrains.tfsIntegration.ui.WorkItemsDialogState;
+import org.jetbrains.tfsIntegration.ui.CheckinParametersDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,64 +56,67 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 
 public class TFSCheckinEnvironment implements CheckinEnvironment {
   private final @NotNull TFSVcs myVcs;
-  private Map<ServerInfo, WorkItemsDialogState> myWorkItems = new HashMap<ServerInfo, WorkItemsDialogState>();
+
+  private Map<ServerInfo, CheckinParameters> myCheckinParameters;
+  private String myValidationError;
 
   public TFSCheckinEnvironment(final @NotNull TFSVcs vcs) {
     myVcs = vcs;
   }
 
+  Map<ServerInfo, CheckinParameters> getCheckinParameters() {
+    return myCheckinParameters;
+  }
+
+  String getValidationError() {
+    return myValidationError;
+  }
+
   @Nullable
   public RefreshableOnComponent createAdditionalOptionsPanel(final CheckinProjectPanel checkinProjectPanel) {
     final JComponent panel = new JPanel();
-    panel.setLayout(new BorderLayout());
+    panel.setLayout(new BorderLayout(5, 0));
 
-    JLabel workItemsLabel = new JLabel("Work Items: ");
-    panel.add(workItemsLabel, BorderLayout.WEST);
+    final JLabel messageLabel = new BoldLabel() {
 
-    final JTextField summaryField = new JTextField(5);
-    summaryField.setEditable(false);
-    panel.add(summaryField, BorderLayout.CENTER);
+      @Override
+      public JToolTip createToolTip() {
+        JToolTip toolTip = new JToolTip() {{
+          setUI(new MultiLineTooltipUI());
+        }};
+        toolTip.setComponent(this);
+        return toolTip;
+      }
 
-    JButton selectButton = new JButton("Select...");
-    selectButton.addActionListener(new ActionListener() {
+    };
+
+    panel.add(messageLabel, BorderLayout.WEST);
+
+    final JButton configureButton = new JButton("Configure...");
+    panel.add(configureButton, BorderLayout.EAST);
+
+    configureButton.addActionListener(new ActionListener() {
 
       public void actionPerformed(final ActionEvent event) {
-        try {
-          if (myWorkItems.isEmpty()) {
-            Collection<FilePath> filePaths = new ArrayList<FilePath>(checkinProjectPanel.getFiles().size());
-            for (File file : checkinProjectPanel.getFiles()) {
-              filePaths.add(VcsUtil.getFilePath(file));
-            }
-            WorkstationHelper.processByWorkspaces(filePaths, false, new WorkstationHelper.VoidProcessDelegate() {
-              public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-                myWorkItems.put(workspace.getServer(), new WorkItemsDialogState());
-              }
-            });
-          }
-          Map<ServerInfo, WorkItemsDialogState> dialogState = new HashMap<ServerInfo, WorkItemsDialogState>(myWorkItems.size());
-          for (Map.Entry<ServerInfo, WorkItemsDialogState> e : myWorkItems.entrySet()) {
-            dialogState.put(e.getKey(), e.getValue().createCopy());
-          }
-
-          SelectWorkItemsDialog d = new SelectWorkItemsDialog(myVcs.getProject(), dialogState);
-          d.show();
-          if (d.isOK()) {
-            myWorkItems = dialogState;
-            updateSummary(summaryField);
-          }
+        LinkedHashMap<ServerInfo, CheckinParameters> paramsToEdit =
+          new LinkedHashMap<ServerInfo, CheckinParameters>(myCheckinParameters.size());
+        for (Map.Entry<ServerInfo, CheckinParameters> entry : myCheckinParameters.entrySet()) {
+          paramsToEdit.put(entry.getKey(), entry.getValue().createCopy());
         }
-        catch (TfsException e) {
-          Messages.showErrorDialog(myVcs.getProject(), e.getMessage(), "Checkin");
+
+        CheckinParametersDialog d = new CheckinParametersDialog(myVcs.getProject(), paramsToEdit);
+        d.show();
+        if (d.isOK()) {
+          myCheckinParameters = paramsToEdit;
+          updateMessage(messageLabel);
         }
       }
     });
-    panel.add(selectButton, BorderLayout.EAST);
 
     return new RefreshableOnComponent() {
       public JComponent getComponent() {
@@ -114,52 +124,113 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       }
 
       public void refresh() {
+        System.out.println("sss");
       }
 
       public void saveState() {
       }
 
       public void restoreState() {
-        myWorkItems.clear();
-        updateSummary(summaryField);
+        TfsExecutionUtil.ResultWithError<Map<ServerInfo, CheckinParameters>> result =
+          loadCheckinParameters(myVcs.getProject(), checkinProjectPanel.getFiles());
+
+        if (result.cancelled) {
+          myCheckinParameters = Collections.emptyMap();
+          messageLabel.setIcon(UIUtil.getBalloonErrorIcon());
+          messageLabel.setText("Validation cancelled");
+          myValidationError = "Cancelled by user";
+          messageLabel.setToolTipText(null);
+          configureButton.setEnabled(false);
+        }
+        else if (result.error != null) {
+          myCheckinParameters = Collections.emptyMap();
+          messageLabel.setIcon(UIUtil.getBalloonErrorIcon());
+          messageLabel.setText("Validation failed");
+          myValidationError = result.error.getMessage();
+          messageLabel.setToolTipText(result.error.getMessage());
+          configureButton.setEnabled(false);
+        }
+        else {
+          configureButton.setEnabled(true);
+          myCheckinParameters = result.result;
+          myValidationError = null;
+          updateMessage(messageLabel);
+        }
       }
     };
   }
 
-  private void updateSummary(final JTextField summaryField) {
-    summaryField.setText(getSummary());
-    summaryField.setCaretPosition(0);
+  private void updateMessage(JLabel messageLabel) {
+    String message = null;
+    message = CheckinParameters.validate(myCheckinParameters, Condition.TRUE);
+
+    if (message == null) {
+      messageLabel.setText("Ready to commit");
+      messageLabel.setIcon(null);
+      messageLabel.setToolTipText(null);
+    }
+    else {
+      messageLabel.setText("Problems found");
+      messageLabel.setIcon(UIUtil.getBalloonWarningIcon());
+      messageLabel.setToolTipText(message);
+    }
   }
 
-  private String getSummary() {
-    StringBuffer summary = new StringBuffer();
-    for (Map.Entry<ServerInfo, WorkItemsDialogState> e : myWorkItems.entrySet()) {
-      List<Map.Entry<WorkItem, CheckinWorkItemAction>> sortedActions =
-        new ArrayList<Map.Entry<WorkItem, CheckinWorkItemAction>>(e.getValue().getWorkItemsActions().entrySet());
-      Collections.sort(sortedActions, new Comparator<Map.Entry<WorkItem, CheckinWorkItemAction>>() {
-        public int compare(final Map.Entry<WorkItem, CheckinWorkItemAction> e1, final Map.Entry<WorkItem, CheckinWorkItemAction> e2) {
-          //noinspection AutoUnboxing
-          return e1.getKey().getId() - e2.getKey().getId();
+  private static TfsExecutionUtil.ResultWithError<Map<ServerInfo, CheckinParameters>> loadCheckinParameters(Project project,
+                                                                                                            final Collection<File> files) {
+    return TfsExecutionUtil
+      .executeInBackground("Validating Checkin", project, new TfsExecutionUtil.Process<Map<ServerInfo, CheckinParameters>>() {
+        public Map<ServerInfo, CheckinParameters> run() throws TfsException, VcsException {
+          Collection<FilePath> filePaths = new ArrayList<FilePath>(files.size());
+          for (File file : files) {
+            filePaths.add(VcsUtil.getFilePath(file));
+          }
+
+          final MultiMap<ServerInfo, String> serverToProjects = new MultiMap<ServerInfo, String>() {
+            @Override
+            protected Collection<String> createCollection() {
+              return new THashSet<String>();
+            }
+          };
+          WorkstationHelper.processByWorkspaces(filePaths, false, new WorkstationHelper.VoidProcessDelegate() {
+            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+              for (ItemPath path : paths) {
+                serverToProjects.putValue(workspace.getServer(), VersionControlPath.getPathToProject(path.getServerPath()));
+              }
+            }
+          });
+
+          List<ServerInfo> sortedServers = new ArrayList<ServerInfo>(serverToProjects.keySet());
+          Collections.sort(sortedServers, new Comparator<ServerInfo>() {
+            public int compare(ServerInfo o1, ServerInfo o2) {
+              return o1.getUri().compareTo(o2.getUri());
+            }
+          });
+
+
+          Map<ServerInfo, CheckinParameters> result = new LinkedHashMap<ServerInfo, CheckinParameters>();
+          // factorize different team projects definitions by name and sort them by display order field
+          for (ServerInfo server : sortedServers) {
+            final Collection<String> teamProjects = serverToProjects.get(server);
+            final List<CheckinNoteFieldDefinition> checkinNoteDefinitions = server.getVCS().queryCheckinNoteDefinition(teamProjects);
+            Map<String, CheckinNoteFieldDefinition> nameToDefinition = new HashMap<String, CheckinNoteFieldDefinition>();
+            for (CheckinNoteFieldDefinition definition : checkinNoteDefinitions) {
+              if (!nameToDefinition.containsKey(definition.getName()) || definition.getReq()) {
+                nameToDefinition.put(definition.getName(), definition);
+              }
+            }
+            List<CheckinNoteFieldDefinition> sortedDefinitions = new ArrayList<CheckinNoteFieldDefinition>(nameToDefinition.values());
+            Collections.sort(sortedDefinitions, new Comparator<CheckinNoteFieldDefinition>() {
+              public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
+                return o1.get_do() - o2.get_do();
+              }
+            });
+
+            result.put(server, new CheckinParameters(sortedDefinitions, new WorkItemsCheckinParameters()));
+          }
+          return result;
         }
       });
-      for (Map.Entry<WorkItem, CheckinWorkItemAction> itemAction : sortedActions) {
-        final String actionLabel;
-        if (CheckinWorkItemAction.Resolve == itemAction.getValue()) {
-          actionLabel = "R";
-        }
-        else if (CheckinWorkItemAction.Associate == itemAction.getValue()) {
-          actionLabel = "A";
-        }
-        else {
-          throw new IllegalStateException("Invalid action: " + itemAction.getValue());
-        }
-        if (summary.length() > 0) {
-          summary.append(",");
-        }
-        summary.append(MessageFormat.format("{0}({1})", itemAction.getKey().getId(), actionLabel));
-      }
-    }
-    return summary.length() > 0 ? summary.toString() : "(None)";
   }
 
   @Nullable
@@ -175,10 +246,6 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   public String getCheckinOperationName() {
     return "Check In";
-  }
-
-  public boolean showCheckinDialogInAnyCase() {
-    return false;
   }
 
   @Nullable
@@ -220,8 +287,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               if (pendingChange.getType() == ItemType.File) {
                 EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
                 if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add)) {
-                  TFSProgressUtil.setProgressText2(progressIndicator,
-                                                   VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
+                  TFSProgressUtil
+                    .setProgressText2(progressIndicator, VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
                   workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
                 }
               }
@@ -229,12 +296,18 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             }
             TFSProgressUtil.setProgressText2(progressIndicator, "");
 
-            final WorkItemsDialogState state = myWorkItems.get(workspace.getServer());
+            final WorkItemsCheckinParameters state = myCheckinParameters.get(workspace.getServer()).getWorkItems();
             final Map<WorkItem, CheckinWorkItemAction> workItemActions =
               state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
             TFSProgressUtil.setProgressText(progressIndicator, "");
+            List<Pair<String, String>> checkinNotes =
+              new ArrayList<Pair<String, String>>(myCheckinParameters.get(workspace.getServer()).getCheckinNotes().size());
+            for (CheckinParameters.CheckinNote checkinNote : myCheckinParameters.get(workspace.getServer()).getCheckinNotes()) {
+              checkinNotes.add(Pair.create(checkinNote.name, StringUtil.notNullize(checkinNote.value)));
+            }
+
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
-              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions);
+              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions, checkinNotes);
             errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());

@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
@@ -1049,23 +1050,18 @@ public class VersionControlServer {
     return execute(operation, itemSpecs);
   }
 
-  // TODO support checkin notes
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
                                                    final String workspaceOwnerName,
                                                    Collection<String> serverItems,
                                                    final String comment,
-                                                   final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions)
+                                                   final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions,
+                                                   final List<Pair<String, String>> checkinNotes)
     throws TfsException {
-    final String serverPathToProject = VersionControlPath.getPathToProject(serverItems.iterator().next());
-    for (String serverItem : serverItems) {
-      TFSVcs.assertTrue(serverPathToProject.equals(VersionControlPath.getPathToProject(serverItem)));
-    }
-    final List<CheckinNoteFieldDefinition> fieldDefinitions = queryCheckinNoteDefinition(serverPathToProject);
     final ArrayOfCheckinNoteFieldValue fieldValues = new ArrayOfCheckinNoteFieldValue();
-    for (CheckinNoteFieldDefinition fieldDefinition : fieldDefinitions) {
+    for (Pair<String, String> checkinNote : checkinNotes) {
       final CheckinNoteFieldValue fieldValue = new CheckinNoteFieldValue();
-      fieldValue.setName(fieldDefinition.getName());
-      fieldValue.setVal("");
+      fieldValue.setName(checkinNote.first);
+      fieldValue.setVal(checkinNote.second);
       fieldValues.addCheckinNoteFieldValue(fieldValue);
     }
 
@@ -1173,9 +1169,11 @@ public class VersionControlServer {
   /**
    * @return sorted accorging to 'do' attribute
    */
-  private List<CheckinNoteFieldDefinition> queryCheckinNoteDefinition(final String serverPath) throws TfsException {
+  public List<CheckinNoteFieldDefinition> queryCheckinNoteDefinition(final Collection<String> teamProjects) throws TfsException {
     final ArrayOfString associatedServerItem = new ArrayOfString();
-    associatedServerItem.addString(serverPath);
+    for (String teamProject : teamProjects) {
+      associatedServerItem.addString(teamProject);
+    }
 
     final ArrayOfCheckinNoteFieldDefinition result =
       WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
@@ -1191,11 +1189,11 @@ public class VersionControlServer {
       return Collections.emptyList();
     }
     final List<CheckinNoteFieldDefinition> checkinNoteFields = Arrays.asList(definitions);
-    Collections.sort(checkinNoteFields, new Comparator<CheckinNoteFieldDefinition>() {
-      public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
-        return o1.get_do() - o2.get_do();
-      }
-    });
+    //Collections.sort(checkinNoteFields, new Comparator<CheckinNoteFieldDefinition>() {
+    //  public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
+    //    return o1.get_do() - o2.get_do();
+    //  }
+    //});
 
     return checkinNoteFields;
   }

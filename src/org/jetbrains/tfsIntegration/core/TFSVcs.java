@@ -22,7 +22,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
-import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -36,8 +35,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TFSVcs extends AbstractVcs {
 
@@ -56,7 +55,7 @@ public class TFSVcs extends AbstractVcs {
   private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> myCommittedChangesProvider;
   private VcsHistoryProvider myHistoryProvider;
   private DiffProvider myDiffProvider;
-  private CheckinEnvironment myCheckinEnvironment;
+  private TFSCheckinEnvironment myCheckinEnvironment;
   private UpdateEnvironment myUpdateEnvironment;
   private AnnotationProvider myAnnotationProvider;
   private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
@@ -120,7 +119,8 @@ public class TFSVcs extends AbstractVcs {
     return new TFSChangeProvider(myProject);
   }
 
-  public CheckinEnvironment getCheckinEnvironment() {
+  @NotNull
+  public TFSCheckinEnvironment getCheckinEnvironment() {
     if (myCheckinEnvironment == null) {
       myCheckinEnvironment = new TFSCheckinEnvironment(this);
     }

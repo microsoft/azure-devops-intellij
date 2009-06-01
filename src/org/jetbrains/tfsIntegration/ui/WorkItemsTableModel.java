@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
+import org.jetbrains.tfsIntegration.core.tfs.WorkItemsCheckinParameters;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 
 import javax.swing.table.AbstractTableModel;
@@ -78,7 +79,7 @@ class WorkItemsTableModel extends AbstractTableModel {
 
   }
 
-  private WorkItemsDialogState myContent;
+  private WorkItemsCheckinParameters myContent;
 
   public WorkItem getWorkItem(int index) {
     return myContent.getWorkItems().get(index);
@@ -89,7 +90,7 @@ class WorkItemsTableModel extends AbstractTableModel {
     return myContent.getAction(workItem);
   }
 
-  public void setContent(WorkItemsDialogState content) {
+  public void setContent(WorkItemsCheckinParameters content) {
     myContent = content;
     fireTableDataChanged();
   }

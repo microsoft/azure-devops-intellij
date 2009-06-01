@@ -22,6 +22,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -113,6 +114,7 @@ public class BranchAction extends SingleItemAction {
         }
       }
 
+      // TODO checkin requires proper configuration
       final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
         .queryPendingSetsByServerItems(workspace.getName(), workspace.getOwnerName(), Collections.singletonList(targetServerPath),
                                        RecursionType.Full);
@@ -124,7 +126,8 @@ public class BranchAction extends SingleItemAction {
       }
       final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
       final ResultWithFailures<CheckinResult> checkinResult = workspace.getServer().getVCS()
-        .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap());
+        .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap(),
+                 Collections.<Pair<String, String>>emptyList());
 
       if (!checkinResult.getFailures().isEmpty()) {
         final List<VcsException> checkinErrors = TfsUtil.getVcsExceptions(checkinResult.getFailures());

@@ -31,6 +31,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,6 +66,9 @@ public class TfsExceptionManager {
     }
     if (throwable instanceof SOAPProcessingException) {
       return new ConnectionFailedException(throwable, "Invalid server response: " + throwable.getMessage());
+    }
+    if (throwable instanceof SocketException) {
+      return new ConnectionFailedException(throwable);
     }
     if (throwable instanceof SocketTimeoutException || throwable instanceof ConnectTimeoutException) {
       return new ConnectionTimeoutException(throwable);
@@ -114,7 +118,7 @@ public class TfsExceptionManager {
         }
       }
     }
-    return null;
+    return new UnknownException(axisFault);
   }
 
   public static TfsException processException(Exception e) {
