@@ -124,7 +124,6 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       }
 
       public void refresh() {
-        System.out.println("sss");
       }
 
       public void saveState() {

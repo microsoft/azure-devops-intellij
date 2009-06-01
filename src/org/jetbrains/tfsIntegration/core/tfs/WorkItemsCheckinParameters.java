@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui;
+package org.jetbrains.tfsIntegration.core.tfs;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,12 +24,12 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkI
 
 import java.util.*;
 
-public class WorkItemsDialogState {
+public class WorkItemsCheckinParameters {
   private List<WorkItem> myWorkItems;
   private Map<WorkItem, CheckinWorkItemAction> myActions;
   private WorkItemsQuery myQuery;
 
-  private WorkItemsDialogState(final List<WorkItem> workItems,
+  private WorkItemsCheckinParameters(final List<WorkItem> workItems,
                                final Map<WorkItem, CheckinWorkItemAction> actions,
                                final WorkItemsQuery query) {
     myWorkItems = workItems;
@@ -37,7 +37,7 @@ public class WorkItemsDialogState {
     myQuery = query;
   }
 
-  public WorkItemsDialogState() {
+  public WorkItemsCheckinParameters() {
     this(Collections.<WorkItem>emptyList(), new HashMap<WorkItem, CheckinWorkItemAction>(), null);
   }
 
@@ -62,8 +62,8 @@ public class WorkItemsDialogState {
     return Collections.unmodifiableList(myWorkItems);
   }
 
-  public WorkItemsDialogState createCopy() {
-    return new WorkItemsDialogState(new ArrayList<WorkItem>(myWorkItems), new HashMap<WorkItem, CheckinWorkItemAction>(myActions), myQuery);
+  public WorkItemsCheckinParameters createCopy() {
+    return new WorkItemsCheckinParameters(new ArrayList<WorkItem>(myWorkItems), new HashMap<WorkItem, CheckinWorkItemAction>(myActions), myQuery);
   }
 
   public void update(final WorkItemsQuery query, final List<WorkItem> workItems) {
