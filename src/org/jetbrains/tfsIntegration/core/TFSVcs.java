@@ -93,14 +93,12 @@ public class TFSVcs extends AbstractVcs {
 
   @Override
   public void activate() {
-    super.activate();
     myFileListener = new TFSFileListener(getProject(), this);
   }
 
   @Override
   public void deactivate() {
     myFileListener.dispose();
-    super.deactivate();
   }
 
   public VcsShowConfirmationOption getAddConfirmation() {
