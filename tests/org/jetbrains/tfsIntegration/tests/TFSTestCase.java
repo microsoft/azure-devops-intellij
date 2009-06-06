@@ -240,7 +240,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
       final ResultWithFailures<CheckinResult> checkinResult = myTestWorkspace.getServer().getVCS()
         .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment,
-                 Collections.<WorkItem, CheckinWorkItemAction>emptyMap(), Collections.<Pair<String, String>>emptyList());
+                 Collections.<WorkItem, CheckinWorkItemAction>emptyMap(), Collections.<Pair<String, String>>emptyList(), null);
       if (!checkinResult.getFailures().isEmpty()) {
         throw TfsUtil.collectExceptions(TfsUtil.getVcsExceptions(checkinResult.getFailures()));
       }
