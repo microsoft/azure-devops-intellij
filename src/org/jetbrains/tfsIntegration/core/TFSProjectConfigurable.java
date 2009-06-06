@@ -40,7 +40,7 @@ public class TFSProjectConfigurable implements Configurable {
   @Nls
   public String getDisplayName() {
     return null;
-  }                               
+  }
 
   @Nullable
   public Icon getIcon() {
@@ -58,15 +58,29 @@ public class TFSProjectConfigurable implements Configurable {
   }
 
   public boolean isModified() {
-    return TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy();
+    if (TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy()) return true;
+    if (TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() != myComponent.supportTfsCheckinPolicies()) return true;
+    if (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() != myComponent.supportStatefulCheckinPolicies()) {
+      return true;
+    }
+    if (TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies() != myComponent.reportNotInstalledCheckinPolicies()) {
+      return true;
+    }
+    return false;
   }
 
   public void apply() throws ConfigurationException {
     TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myComponent.useProxy());
+    TFSConfigurationManager.getInstance().setSupportTfsCheckinPolicies(myComponent.supportTfsCheckinPolicies());
+    TFSConfigurationManager.getInstance().setSupportStatefulCheckinPolicies(myComponent.supportStatefulCheckinPolicies());
+    TFSConfigurationManager.getInstance().setReportNotInstalledCheckinPolicies(myComponent.reportNotInstalledCheckinPolicies());
   }
 
   public void reset() {
     myComponent.setUserProxy(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
+    myComponent.setSupportTfsCheckinPolicies(TFSConfigurationManager.getInstance().supportTfsCheckinPolicies());
+    myComponent.setSupportStatefulCheckinPolicies(TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies());
+    myComponent.setReportNotInstalledCheckinPolicies(TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies());
   }
 
   public void disposeUIResources() {

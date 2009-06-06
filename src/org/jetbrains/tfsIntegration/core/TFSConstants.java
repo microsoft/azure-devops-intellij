@@ -29,4 +29,7 @@ public final class TFSConstants {
   @NonNls public static final String WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX = "WorkItemTracking/v1.0/ClientService.asmx";
   @NonNls public static final String GROUP_SECURITY_SERVICE_ASMX = "Services/v1.0/GroupSecurityService.asmx";
 
+  @NonNls public static final String TFS_CHECKIN_POLICIES_ANNOTATION = "CheckinPolicies";
+  @NonNls public static final String STATEFUL_CHECKIN_POLICIES_ANNOTATION = "TeampriseCheckinPolicies"; // let's be compatible
+
 }

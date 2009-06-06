@@ -46,7 +46,7 @@ class WorkItemsTableModel extends AbstractTableModel {
       public Object getValue(final WorkItem workItem, final CheckinWorkItemAction action) {
         return workItem.getState();
       }},
-    CheckinAction("Check-in Action", 400) {
+    CheckinAction("Check In Action", 400) {
       public Object getValue(final WorkItem workItem, final CheckinWorkItemAction action) {
         if (CheckinWorkItemAction.Resolve == action) {
           return "Resolve";

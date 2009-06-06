@@ -16,16 +16,27 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.MultiLineLabelUI;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.util.Condition;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.table.TableView;
+import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.EmptyIcon;
+import com.intellij.util.ui.ListTableModel;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.CheckinParameters;
+import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
+import org.jetbrains.tfsIntegration.checkin.CheckinPoliciesManager;
+import org.jetbrains.tfsIntegration.checkin.NotInstalledPolicyFailure;
+import org.jetbrains.tfsIntegration.checkin.PolicyFailure;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
@@ -35,21 +46,21 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkI
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.EventListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CheckinParametersForm {
 
-  public interface Listener extends EventListener {
-    void stateChanged();
-  }
-
   private static final Color REQUIRED_BACKGROUND_COLOR = new Color(252, 248, 199);
+  private static final Color NOT_INSTALLED_POLICY_COLOR = UIUtil.getInactiveTextColor();
   private static final Icon WARNING_ICON = UIUtil.getBalloonWarningIcon();
+  private static final Icon ERROR_ICON = UIUtil.getBalloonErrorIcon();
   private static final Icon EMPTY_ICON = new EmptyIcon(0, WARNING_ICON.getIconHeight());
 
   private JPanel myContentPane;
@@ -63,21 +74,43 @@ public class CheckinParametersForm {
   private JPanel myCheckinNotesTab;
   private JLabel myErrorLabel;
   private JPanel myWorkItemsTab;
+  private JPanel myPoliciesTab;
+  private TableView<PolicyFailure> myWarningsTable;
+  private JButton myEvaluateButton;
 
   private final WorkItemsTableModel myWorkItemsTableModel;
 
-  private final Map<ServerInfo, CheckinParameters> myState;
+  private final CheckinParameters myState;
   private final Project myProject;
 
-  //private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private static final MultiLineTableRenderer WARNING_TABLE_RENDERER = new MultiLineTableRenderer() {
 
-  public CheckinParametersForm(final Map<ServerInfo, CheckinParameters> state, Project project) {
-    myState = state;
+    protected void customize(JTable table, JTextArea textArea, Object value) {
+      PolicyFailure failure = (PolicyFailure)value;
+      textArea.setText(failure.getMessage());
+      final String tooltip = failure.getTooltipText();
+      textArea.setToolTipText(StringUtil.isNotEmpty(tooltip) ? tooltip : null);
+      textArea.setForeground(failure instanceof NotInstalledPolicyFailure ? NOT_INSTALLED_POLICY_COLOR : table.getForeground());
+    }
+  };
+
+  public static final ColumnInfo<PolicyFailure, PolicyFailure> WARNING_COLUMN_INFO =
+    new ColumnInfo<PolicyFailure, PolicyFailure>("message") {
+      public PolicyFailure valueOf(PolicyFailure policyFailure) {
+        return policyFailure;
+      }
+
+      @Override
+      public TableCellRenderer getRenderer(final PolicyFailure policyFailure) {
+        return WARNING_TABLE_RENDERER;
+      }
+    };
+
+
+  public CheckinParametersForm(CheckinParameters state, Project project) {
     myProject = project;
+    myState = state;
 
-    myServerChooserPanel.setVisible(myState.size() > 1);
-
-    myServersCombo.setModel(new DefaultComboBoxModel(myState.keySet().toArray()));
     myServersCombo.setRenderer(new DefaultListCellRenderer() {
       public Component getListCellRendererComponent(final JList list,
                                                     final Object value,
@@ -95,7 +128,8 @@ public class CheckinParametersForm {
         updateQueryCombo();
         updateWorkItemsTable();
         udpateCheckinNotes();
-        updateErrorMessage();
+        updatePoliciesWarnings();
+        updateErrorMessage(false);
       }
     });
 
@@ -141,28 +175,113 @@ public class CheckinParametersForm {
         }
       });
 
-    ServerInfo serverToSelect = myState.keySet().iterator().next();
-    Component tabToSelect = myWorkItemsTab;
+    myWarningsTable.setModel(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
 
-    for (Map.Entry<ServerInfo, CheckinParameters> entry : myState.entrySet()) {
-      if (entry.getValue().validateCheckinNotes() != null) {
-        serverToSelect = entry.getKey();
-        tabToSelect = myCheckinNotesTab;
-        break;
+    myWarningsTable.setTableHeader(null);
+    myWarningsTable.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          final PolicyFailure failure = myWarningsTable.getSelectedObject();
+          if (failure != null) {
+            failure.activate(myProject);
+          }
+        }
       }
-    }
+    });
 
-    myServersCombo.setSelectedItem(serverToSelect);
-    myTabbedPane.setSelectedIndex(myTabbedPane.indexOfComponent(tabToSelect));
+    myEvaluateButton.setEnabled((TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() ||
+                                 TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) &&
+                                myState.getPoliciesLoadError() == null);
+
+    myEvaluateButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        evaluatePolicies();
+      }
+    });
+
+
+    myServerChooserPanel.setVisible(myState.getServers().size() > 1);
+
+    myServersCombo.setModel(new DefaultComboBoxModel(myState.getServers().toArray()));
+
+    final Pair<ServerInfo, ? extends Component> pair = getInitialSelectedTab();
+
+    myServersCombo.setSelectedItem(pair.first);
+    myTabbedPane.setSelectedIndex(myTabbedPane.indexOfComponent(pair.second));
 
     updateQueryCombo();
     updateWorkItemsTable();
     udpateCheckinNotes();
-    updateErrorMessage();
+    updatePoliciesWarnings();
+    updateErrorMessage(false);
+  }
+
+  private void evaluatePolicies() {
+    boolean completed = ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+      public void run() {
+        ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+        pi.setIndeterminate(true);
+        myState.evaluatePolicies(pi);
+      }
+    }, "Evaluating Check In Policies", true, myProject);
+    if (completed) {
+      updatePoliciesWarnings();
+      updateErrorMessage(false);
+    }
+  }
+
+  private void updatePoliciesWarnings() {
+    List<PolicyFailure> failures = new ArrayList<PolicyFailure>();
+    if (!TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() &&
+        !TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Support for check in policies was disabled",
+                                     "Use Project Settings -> TFS configuration settings to enable check in policies support"));
+    }
+    else if (myState.getPoliciesLoadError() != null) {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Failed to load check in policies definitions",
+                                     myState.getPoliciesLoadError()));
+    }
+    else if (!myState.policiesEvaluated()) {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Check in policies have not yet been evaluated") {
+        @Override
+        public void activate(@NotNull Project project) {
+          evaluatePolicies();
+        }
+      });
+    }
+    else if (myState.getFailures(getSelectedServer()).isEmpty()){
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "All check in policies are satisfied") {
+        @Override
+        public void activate(@NotNull Project project) {
+        }
+      });
+    } else {
+      for (PolicyFailure failure : myState.getFailures(getSelectedServer())) {
+        failures.add(failure);
+      }
+    }
+    //noinspection unchecked
+    ((ListTableModel)myWarningsTable.getModel()).setItems(failures);
+  }
+
+  private Pair<ServerInfo, ? extends Component> getInitialSelectedTab() {
+    for (ServerInfo server : myState.getServers()) {
+      if (myState.hasEmptyNotes(server)) {
+        return Pair.create(server, myCheckinNotesTab);
+      }
+    }
+
+    for (ServerInfo server : myState.getServers()) {
+      if (myState.hasPolicyFailures(server)) {
+        return Pair.create(server, myPoliciesTab);
+      }
+    }
+    return Pair.create(myState.getServers().get(0), myWorkItemsTab);
   }
 
   private void updateQueryCombo() {
-    final WorkItemsQuery previousQuery = myState.get(getSelectedServer()).getWorkItems().getQuery();
+    final WorkItemsQuery previousQuery = myState.getWorkItems(getSelectedServer()).getQuery();
     myQueriesCombo.setSelectedItem(previousQuery != null ? previousQuery : WorkItemsQuery.AllMyActive);
   }
 
@@ -198,12 +317,12 @@ public class CheckinParametersForm {
       final String message = "No work items found for the selected query";
       Messages.showInfoMessage(myProject, message, title);
     }
-    myState.get(getSelectedServer()).getWorkItems().update((WorkItemsQuery)myQueriesCombo.getSelectedItem(), result.result);
+    myState.getWorkItems(getSelectedServer()).update((WorkItemsQuery)myQueriesCombo.getSelectedItem(), result.result);
     updateWorkItemsTable();
   }
 
   private void updateWorkItemsTable() {
-    myWorkItemsTableModel.setContent(myState.get(getSelectedServer()).getWorkItems());
+    myWorkItemsTableModel.setContent(myState.getWorkItems(getSelectedServer()));
   }
 
   private ServerInfo getSelectedServer() {
@@ -217,7 +336,7 @@ public class CheckinParametersForm {
   private void udpateCheckinNotes() {
     myNotesPanel.removeAll();
 
-    final List<CheckinParameters.CheckinNote> notes = myState.get(getSelectedServer()).getCheckinNotes();
+    final List<CheckinParameters.CheckinNote> notes = myState.getCheckinNotes(getSelectedServer());
     final Insets labelInsets = new Insets(0, 0, 5, 0);
     final Insets fieldInsets = new Insets(0, 20, 10, 0);
     int i = 0;
@@ -241,8 +360,7 @@ public class CheckinParametersForm {
         @Override
         protected void textChanged(DocumentEvent e) {
           note.value = field.getText();
-          updateErrorMessage();
-          //fireStateChanged();
+          updateErrorMessage(true);
         }
       });
     }
@@ -250,23 +368,18 @@ public class CheckinParametersForm {
                      new GridBagConstraints(0, i, 1, 1, 1, 10, GridBagConstraints.WEST, GridBagConstraints.VERTICAL, labelInsets, 0, 0));
   }
 
-  //private void fireStateChanged() {
-  //  Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-  //  for (Listener listener : listeners) {
-  //    listener.stateChanged();
-  //  }
-  //}
+  public void updateErrorMessage(boolean evaluateNotes) {
+    if (evaluateNotes) {
+      myState.validateNotes();
+    }
 
-  //public void addListener(Listener listener) {
-  //  myListeners.add(listener);
-  //}
-
-  public void updateErrorMessage() {
-    Icon icon = myState.get(getSelectedServer()).validateCheckinNotes() != null ? WARNING_ICON : EMPTY_ICON;
+    Icon icon = myState.hasPolicyFailures(getSelectedServer()) ? WARNING_ICON : EMPTY_ICON;
+    myTabbedPane.setIconAt(myTabbedPane.indexOfComponent(myPoliciesTab), icon);
+    icon = myState.hasEmptyNotes(getSelectedServer()) ? ERROR_ICON : EMPTY_ICON;
     myTabbedPane.setIconAt(myTabbedPane.indexOfComponent(myCheckinNotesTab), icon);
 
-    String errorMessage = CheckinParameters.validate(myState, Condition.TRUE);
-    myErrorLabel.setText(errorMessage);
-    myErrorLabel.setIcon(errorMessage != null ? WARNING_ICON : null);
+    @Nullable Pair<String, CheckinParameters.Severity> message = myState.getValidationMessage(CheckinParameters.Severity.BOTH);
+    myErrorLabel.setText(message != null ? message.first : null);
+    myErrorLabel.setIcon(message == null ? null : message.second == CheckinParameters.Severity.ERROR ? ERROR_ICON : WARNING_ICON);
   }
 }

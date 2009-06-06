@@ -37,25 +37,23 @@ import java.util.Map;
     id = "other",
     file = "$APP_CONFIG$/tfs.xml")})
 public class TFSConfigurationManager implements PersistentStateComponent<TFSConfigurationManager.State> {
-
   public static class State {
+
     @MapAnnotation(entryTagName = "server", keyAttributeName = "uri", surroundValueWithTag = false)
     public Map<String, ServerConfiguration> config = new HashMap<String, ServerConfiguration>();
 
     public boolean useIdeaHttpProxy = true;
+    public boolean supportTfsCheckinPolicies = true;
+    public boolean supportStatefulCheckinPolicies = true;
+    public boolean reportNotInstalledCheckinPolicies = true;
 
-    public State() {
-      this(new HashMap<String, ServerConfiguration>(), true);
-    }
-
-    public State(final Map<String, ServerConfiguration> config, boolean useIdeaHttpProxy) {
-      this.config = config;
-      this.useIdeaHttpProxy = useIdeaHttpProxy;
-    }
   }
 
   private Map<String, ServerConfiguration> myServersConfig = new HashMap<String, ServerConfiguration>();
   private boolean myUseIdeaHttpProxy = true;
+  private boolean mySupportTfsCheckinPolicies = true;
+  private boolean mySupportStatefulCheckinPolicies = true;
+  private boolean myReportNotInstalledCheckinPolicies = true;
 
   @NotNull
   public static synchronized TFSConfigurationManager getInstance() {
@@ -112,23 +110,19 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   public void loadState(final State state) {
     myServersConfig = state.config;
     myUseIdeaHttpProxy = state.useIdeaHttpProxy;
+    mySupportTfsCheckinPolicies = state.supportTfsCheckinPolicies;
+    mySupportStatefulCheckinPolicies = state.supportStatefulCheckinPolicies;
+    myReportNotInstalledCheckinPolicies = state.reportNotInstalledCheckinPolicies;
   }
 
   public State getState() {
-    //try {
-    //  Element element = XmlSerializer.serialize(myServersConfig.values().iterator().next());
-    //  Document d = new Document(element);
-    //  try {
-    //    JDOMUtil.writeDocument(d, "C:\\test.xml", "\n");
-    //  }
-    //  catch (IOException e) {
-    //    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    //  }
-    //}
-    //catch (Exception e) {
-    //  int tt = 0;
-    //}
-    return new State(myServersConfig, myUseIdeaHttpProxy);
+    final State state = new State();
+    state.config = myServersConfig;
+    state.supportStatefulCheckinPolicies = mySupportStatefulCheckinPolicies;
+    state.supportTfsCheckinPolicies = mySupportTfsCheckinPolicies;
+    state.useIdeaHttpProxy = myUseIdeaHttpProxy;
+    state.reportNotInstalledCheckinPolicies = myReportNotInstalledCheckinPolicies;
+    return state;
   }
 
   @NotNull
@@ -163,4 +157,27 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     return myUseIdeaHttpProxy;
   }
 
+  public boolean supportTfsCheckinPolicies() {
+    return mySupportTfsCheckinPolicies;
+  }
+
+  public void setSupportTfsCheckinPolicies(boolean supportTfsCheckinPolicies) {
+    mySupportTfsCheckinPolicies = supportTfsCheckinPolicies;
+  }
+
+  public boolean supportStatefulCheckinPolicies() {
+    return mySupportStatefulCheckinPolicies;
+  }
+
+  public void setSupportStatefulCheckinPolicies(boolean supportStatefulCheckinPolicies) {
+    mySupportStatefulCheckinPolicies = supportStatefulCheckinPolicies;
+  }
+
+  public boolean reportNotInstalledCheckinPolicies() {
+    return myReportNotInstalledCheckinPolicies;
+  }
+
+  public void setReportNotInstalledCheckinPolicies(boolean reportNotInstalledCheckinPolicies) {
+    myReportNotInstalledCheckinPolicies = reportNotInstalledCheckinPolicies;
+  }
 }

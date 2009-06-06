@@ -647,9 +647,12 @@ public class VersionControlServer {
     final String downloadUrl;
     if (tryProxy) {
       //noinspection ConstantConditions,HardCodedStringLiteral
-      downloadUrl =
-        TFSConfigurationManager.getInstance().getProxyUri(serverUri).toString() + TFSConstants.PROXY_DOWNLOAD_ASMX + "?" + downloadKey +
-        "&rid=" + server.getGuid();
+      downloadUrl = TFSConfigurationManager.getInstance().getProxyUri(serverUri).toString() +
+                    TFSConstants.PROXY_DOWNLOAD_ASMX +
+                    "?" +
+                    downloadKey +
+                    "&rid=" +
+                    server.getGuid();
     }
     else {
       downloadUrl = serverUri + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
@@ -1055,7 +1058,8 @@ public class VersionControlServer {
                                                    Collection<String> serverItems,
                                                    final String comment,
                                                    final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions,
-                                                   final List<Pair<String, String>> checkinNotes)
+                                                   final List<Pair<String, String>> checkinNotes,
+                                                   final @Nullable Pair<String/*comment*/, Map<String/*policyName*/, String/*policyMessage*/>> policyOverride)
     throws TfsException {
     final ArrayOfCheckinNoteFieldValue fieldValues = new ArrayOfCheckinNoteFieldValue();
     for (Pair<String, String> checkinNote : checkinNotes) {
@@ -1068,7 +1072,19 @@ public class VersionControlServer {
     final CheckinNote checkinNote = new CheckinNote();
     checkinNote.setValues(fieldValues);
 
-    final PolicyOverrideInfo policyOverride = new PolicyOverrideInfo();
+    final PolicyOverrideInfo policyOverrideInfo = new PolicyOverrideInfo();
+    if (policyOverride != null) {
+      policyOverrideInfo.setComment(policyOverride.first);
+
+      ArrayOfPolicyFailureInfo policyFailures = new ArrayOfPolicyFailureInfo();
+      for (Map.Entry<String, String> entry : policyOverride.second.entrySet()) {
+        PolicyFailureInfo policyFailureInfo = new PolicyFailureInfo();
+        policyFailureInfo.setPolicyName(entry.getKey());
+        policyFailureInfo.setMessage(entry.getValue());
+        policyFailures.addPolicyFailureInfo(policyFailureInfo);
+      }
+      policyOverrideInfo.setPolicyFailures(policyFailures);
+    }
 
     final Changeset changeset = new Changeset();
     changeset.setCset(0);
@@ -1076,7 +1092,7 @@ public class VersionControlServer {
     changeset.setOwner(workspaceOwnerName);
     changeset.setComment(comment);
     changeset.setCheckinNote(checkinNote);
-    changeset.setPolicyOverride(policyOverride);
+    changeset.setPolicyOverride(policyOverrideInfo);
 
     final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
     checkinNotificationInfo.setWorkItemInfo(toArrayOfCheckinNotificationWorkItemInfo(workItemsActions));
@@ -1188,14 +1204,57 @@ public class VersionControlServer {
     if (definitions == null) {
       return Collections.emptyList();
     }
-    final List<CheckinNoteFieldDefinition> checkinNoteFields = Arrays.asList(definitions);
-    //Collections.sort(checkinNoteFields, new Comparator<CheckinNoteFieldDefinition>() {
-    //  public int compare(final CheckinNoteFieldDefinition o1, final CheckinNoteFieldDefinition o2) {
-    //    return o1.get_do() - o2.get_do();
-    //  }
-    //});
+    return Arrays.asList(definitions);
+  }
 
-    return checkinNoteFields;
+  public Collection<Annotation> queryAnnotations(final String annotationName, final Collection<String> teamProjects) throws TfsException {
+    final ArrayOfAnnotation arrayOfAnnotation =
+      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfAnnotation>() {
+        public ArrayOfAnnotation executeRequest() throws RemoteException {
+          QueryAnnotation param = new QueryAnnotation();
+          param.setAnnotationName(annotationName);
+          param.setAnnotatedItem(teamProjects.size() != 1 ? null : teamProjects.iterator().next());
+          param.setVersion(0);
+          return myRepository.QueryAnnotation(param).getQueryAnnotationResult();
+        }
+      });
+    if (arrayOfAnnotation == null || arrayOfAnnotation.getAnnotation() == null) {
+      return Collections.emptyList();
+    }
+
+    Collection<Annotation> result = new ArrayList<Annotation>();
+    for (Annotation annotation : arrayOfAnnotation.getAnnotation()) {
+      if (annotationName.equals(annotation.getName())) {
+        result.add(annotation);
+      }
+    }
+    return result;
+  }
+
+  public void createAnnotation(final String serverItem, final String annotationName, final String annotationValue) throws TfsException {
+    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
+      public void executeRequest() throws RemoteException {
+        CreateAnnotation param = new CreateAnnotation();
+        param.setAnnotationName(annotationName);
+        param.setAnnotationValue(annotationValue);
+        param.setAnnotatedItem(serverItem);
+        param.setVersion(0);
+        param.setOverwrite(true);
+        myRepository.CreateAnnotation(param);
+      }
+    });
+  }
+
+  public void deleteAnnotation(final String serverItem, final String annotationName) throws TfsException {
+    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
+      public void executeRequest() throws RemoteException {
+        DeleteAnnotation param = new DeleteAnnotation();
+        param.setAnnotationName(annotationName);
+        param.setAnnotatedItem(serverItem);
+        param.setVersion(0);
+        myRepository.DeleteAnnotation(param);
+      }
+    });
   }
 
   @Nullable

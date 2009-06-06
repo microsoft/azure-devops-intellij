@@ -18,18 +18,16 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import org.jetbrains.tfsIntegration.core.tfs.CheckinParameters;
-import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
+import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 
 import javax.swing.*;
-import java.util.Map;
 
 public class CheckinParametersDialog extends DialogWrapper {
-  private final Project myProject;
-  private final Map<ServerInfo, CheckinParameters> myParameters;
+  private final CheckinParameters myParameters;
   private CheckinParametersForm myForm;
+  private final Project myProject;
 
-  public CheckinParametersDialog(final Project project, final Map<ServerInfo, CheckinParameters> parameters) {
+  public CheckinParametersDialog(final Project project, CheckinParameters parameters) {
     super(project, false);
     myProject = project;
     myParameters = parameters;

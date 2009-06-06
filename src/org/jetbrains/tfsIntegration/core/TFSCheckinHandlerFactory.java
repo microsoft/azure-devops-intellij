@@ -16,22 +16,21 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
-import com.intellij.openapi.util.Condition;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
+import org.jetbrains.tfsIntegration.checkin.CheckinPoliciesManager;
+import org.jetbrains.tfsIntegration.checkin.DuplicatePolicyIdException;
+import org.jetbrains.tfsIntegration.ui.OverridePolicyWarningsDialog;
 
-import java.io.File;
 import java.text.MessageFormat;
-import java.util.*;
 
 public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
   @NotNull
@@ -44,64 +43,58 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           return ReturnResult.COMMIT;
         }
 
-        if (tfsVcs.getCheckinEnvironment().getValidationError() != null) {
-          String message = MessageFormat.format("Validation was not performed:\n{0}", tfsVcs.getCheckinEnvironment().getValidationError());
-          Messages.showErrorDialog(panel.getProject(), message, "Check In: Validation Required");
+        final CheckinParameters parameters = tfsVcs.getCheckinEnvironment().getCheckinParameters();
+        if (parameters == null) {
+          Messages.showErrorDialog(panel.getProject(), "Validation should be performed before check in", "Check In");
           return ReturnResult.CLOSE_WINDOW;
         }
+
+        @Nullable Pair<String, CheckinParameters.Severity> msg = parameters.getValidationMessage(CheckinParameters.Severity.ERROR);
+        if (msg != null) {
+          Messages.showErrorDialog(panel.getProject(), msg.first, "Check In: Validation Failed");
+          return ReturnResult.CANCEL;
+        }
+
+        try {
+          CheckinPoliciesManager.getInstalledPolicies();
+        }
+        catch (DuplicatePolicyIdException e) {
+          String message = MessageFormat
+            .format("Several check in policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+          Messages.showErrorDialog(panel.getProject(), message, "Check In Policies Evaluation");
+          return ReturnResult.CLOSE_WINDOW;
+        }
+
+        // need to evaluate policies again since comment and checkboxes state may change since last validation
+        // remove when commit dialog state change listener is provided
+        boolean completed = ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+          public void run() {
+            final ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+            pi.setIndeterminate(true);
+            parameters.evaluatePolicies(pi);
+          }
+        }, "Evaluating Check In Policies", true, panel.getProject());
+        if (!completed) {
+          tfsVcs.getCheckinEnvironment().updateMessage();
+          return ReturnResult.CANCEL;
+        }
+
+        msg = parameters.getValidationMessage(CheckinParameters.Severity.WARNING);
+        if (msg == null) {
+          return ReturnResult.COMMIT;
+        }
+
+        OverridePolicyWarningsDialog d = new OverridePolicyWarningsDialog(panel.getProject(), parameters.getAllFailures());
+        d.show();
+        if (d.isOK()) {
+          parameters.setOverrideReason(d.getReason());
+          return CheckinHandler.ReturnResult.COMMIT;
+        }
         else {
-          final Collection<ServerInfo> affectedServers = getAffectedServers(panel.getProject(), panel.getFiles());
-          if (affectedServers.isEmpty()) {
-            return ReturnResult.CLOSE_WINDOW;
-          }
-
-          final String errors = CheckinParameters.validate(tfsVcs.getCheckinEnvironment().getCheckinParameters(), new Condition<ServerInfo>() {
-            public boolean value(ServerInfo server) {
-              return affectedServers.contains(server);
-            }
-          });
-
-          if (errors != null) {
-            Messages.showWarningDialog(panel.getProject(), errors, "Check In: Validation Failed");
-            return ReturnResult.CANCEL;
-          }
-          else {
-            return ReturnResult.COMMIT;
-          }
+          return ReturnResult.CANCEL;
         }
       }
     };
   }
 
-  // TODO until commit dialog refreshable is notified when user unchecks some items
-  private static Collection<ServerInfo> getAffectedServers(Project project, Collection<File> files) {
-    final Collection<FilePath> filePaths = new ArrayList<FilePath>(files.size());
-    for (File file : files) {
-      filePaths.add(VcsUtil.getFilePath(file));
-    }
-
-    final TfsExecutionUtil.ResultWithError<Collection<ServerInfo>> result =
-      TfsExecutionUtil.executeInBackground("Validating Check In", project, new TfsExecutionUtil.Process<Collection<ServerInfo>>() {
-        public Collection<ServerInfo> run() throws TfsException, VcsException {
-          final Set<ServerInfo> result = new HashSet<ServerInfo>();
-          WorkstationHelper.processByWorkspaces(filePaths, false, new WorkstationHelper.VoidProcessDelegate() {
-            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-              result.add(workspace.getServer());
-            }
-          });
-          return result;
-        }
-      });
-
-    if (result.cancelled) {
-      Messages.showWarningDialog(project, "Cancelled by user", "Check In: Validation Failed");
-      return Collections.emptyList();
-    }
-    else if (result.error != null) {
-      String message = MessageFormat.format("Validation was not performed:\n{0}", result.error);
-      Messages.showErrorDialog(project, message, "Check In: Validation Required");
-      return Collections.emptyList();
-    }
-    return result.result;
-  }
 }

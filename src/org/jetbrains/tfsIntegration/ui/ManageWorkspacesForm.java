@@ -19,15 +19,20 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.checkin.*;
+import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
+import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Annotation;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
 import org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable;
@@ -39,13 +44,14 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
-import java.net.URI;
 
 public class ManageWorkspacesForm {
-  public interface Listener {
+
+  public interface Listener extends EventListener {
     void selectionChanged();
   }
 
@@ -101,14 +107,15 @@ public class ManageWorkspacesForm {
   private CustomTreeTable<Object> myTable;
   private JLabel myTitleLabel;
   private JPanel myWorkspacesPanel;
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private JButton myCheckInPoliciesButton;
   private final Project myProject;
   private boolean myShowWorkspaces = true;
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   private final ListSelectionListener mySelectionListener = new ListSelectionListener() {
     public void valueChanged(final ListSelectionEvent e) {
       updateButtons();
-      fireSelectionChanged();
+      myEventDispatcher.getMulticaster().selectionChanged();
     }
   };
 
@@ -200,6 +207,17 @@ public class ManageWorkspacesForm {
       }
     });
 
+    if (!TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
+      myCheckInPoliciesButton.setEnabled(false);
+      myCheckInPoliciesButton.setToolTipText("Support for Teamprise compatible check in policies was disabled");
+    }
+    else {
+      myCheckInPoliciesButton.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          configureCheckinPolicies();
+        }
+      });
+    }
     updateButtons();
   }
 
@@ -242,6 +260,7 @@ public class ManageWorkspacesForm {
     myCreateWorkspaceButton.setEnabled(selectedServer != null || selectedWorkspace != null);
     myEditWorkspaceButton.setEnabled(selectedWorkspace != null);
     myDeleteWorkspaceButton.setEnabled(selectedWorkspace != null);
+    myCheckInPoliciesButton.setEnabled(TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() && selectedServer != null);
   }
 
   private void addServer() {
@@ -434,20 +453,13 @@ public class ManageWorkspacesForm {
   }
 
   public void addSelectionListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeSelectionListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.addListener(listener);
   }
 
-
-  private void fireSelectionChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.selectionChanged();
-    }
-  }
 
   private static class CellRendererImpl extends CellRenderer<Object> {
     protected void render(final CustomTreeTable<Object> treeTable,
@@ -464,6 +476,81 @@ public class ManageWorkspacesForm {
           cell.setIcon(UiConstants.ICON_FILE);
         }
       }
+    }
+  }
+
+  private void configureCheckinPolicies() {
+    try {
+      CheckinPoliciesManager.getInstalledPolicies();
+    }
+    catch (DuplicatePolicyIdException e) {
+      final String message = MessageFormat
+        .format("Several check in policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+      Messages.showErrorDialog(myProject, message, "Edit Check In Policies");
+      return;
+    }
+
+    @SuppressWarnings({"ConstantConditions"}) @NotNull final ServerInfo server = getSelectedServer();
+
+    final TfsExecutionUtil.Process<Map<String, List<StatefulPolicyDescriptor>>> process =
+      new TfsExecutionUtil.Process<Map<String, List<StatefulPolicyDescriptor>>>() {
+        public Map<String, List<StatefulPolicyDescriptor>> run() throws TfsException, VcsException {
+          Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors = new HashMap<String, List<StatefulPolicyDescriptor>>();
+          final Collection<Annotation> annotations =
+            server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList());
+          for (Annotation annotation : annotations) {
+            if (annotation.getValue() == null) {
+              continue;
+            }
+            try {
+              List<StatefulPolicyDescriptor> descriptors = StatefulPolicyParser.parseDescriptors(annotation.getValue());
+              projectToDescriptors.put(annotation.getItem(), new ArrayList<StatefulPolicyDescriptor>(descriptors));
+            }
+            catch (org.jetbrains.tfsIntegration.checkin.PolicyParseException ex) {
+              String message = MessageFormat.format("Failed to load check in policies definitions:\n{0}", ex.getMessage());
+              throw new OperationFailedException(message);
+            }
+          }
+
+          final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true);
+          if (projectItems.isEmpty()) {
+            throw new OperationFailedException("No team project found");
+          }
+
+          for (Item projectItem : projectItems) {
+            if (!projectToDescriptors.containsKey(projectItem.getItem())) {
+              projectToDescriptors.put(projectItem.getItem(), new ArrayList<StatefulPolicyDescriptor>());
+            }
+          }
+          return projectToDescriptors;
+        }
+      };
+
+    final TfsExecutionUtil.ResultWithError<Map<String, List<StatefulPolicyDescriptor>>> loadResult =
+      TfsExecutionUtil.executeInBackground("Loading Check In Policies", myProject, process);
+    if (loadResult.cancelled || loadResult.showDialogIfError("Configure Check In Policies")) {
+      return;
+    }
+
+    final Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors = loadResult.result;
+    CheckInPoliciesDialog d = new CheckInPoliciesDialog(myProject, getSelectedServer(), projectToDescriptors);
+    d.show();
+    if (d.isOK()) {
+      final TfsExecutionUtil.ResultWithError<Void> saveResult =
+        TfsExecutionUtil.executeInBackground("Saving Check In Policies", myProject, new TfsExecutionUtil.VoidProcess() {
+          public void run() throws TfsException, VcsException {
+            for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : projectToDescriptors.entrySet()) {
+              if (entry.getValue().isEmpty()) {
+                server.getVCS().deleteAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
+              }
+              else {
+                String annotationValue = StatefulPolicyParser.saveDescriptors(entry.getValue());
+                server.getVCS().createAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+              }
+            }
+          }
+        });
+      saveResult.showDialogIfError("Save Check In Policies");
     }
   }
 

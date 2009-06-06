@@ -19,6 +19,10 @@
     </component>
   </project-components>
 
+  <extensionPoints>
+    <extensionPoint qualifiedName="TFS.checkinPolicy" interface="org.jetbrains.tfsIntegration.checkin.PolicyBase"/>
+  </extensionPoints>
+
   <extensions defaultExtensionNs="com.intellij">
     <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"
                         serviceImplementation="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"/>

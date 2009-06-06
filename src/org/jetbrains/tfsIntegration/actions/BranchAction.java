@@ -127,7 +127,7 @@ public class BranchAction extends SingleItemAction {
       final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
       final ResultWithFailures<CheckinResult> checkinResult = workspace.getServer().getVCS()
         .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap(),
-                 Collections.<Pair<String, String>>emptyList());
+                 Collections.<Pair<String, String>>emptyList(), null);
 
       if (!checkinResult.getFailures().isEmpty()) {
         final List<VcsException> checkinErrors = TfsUtil.getVcsExceptions(checkinResult.getFailures());

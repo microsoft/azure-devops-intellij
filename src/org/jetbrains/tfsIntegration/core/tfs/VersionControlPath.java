@@ -83,6 +83,11 @@ public class VersionControlPath {
     return serverPath.substring(0, secondSlashPos);
   }
 
+  public static String getTeamProject(final String serverPath) {
+    int secondSlashPos = serverPath.indexOf("/", ROOT_FOLDER.length());
+    return serverPath.substring(ROOT_FOLDER.length(), secondSlashPos != -1 ? secondSlashPos : serverPath.length());
+  }
+
   public static boolean isUnder(String parent, String child) {
     return parent.equals(getCommonAncestor(parent, child));
   }

@@ -30,6 +30,9 @@ public class ProjectConfigurableForm {
   private final Project myProject;
   private JComponent myContentPane;
   private JCheckBox myUseIdeaHttpProxyCheckBox;
+  private JCheckBox myTFSCheckBox;
+  private JCheckBox myStatefulCheckBox;
+  private JCheckBox myReportNotInstalledPoliciesCheckBox;
 
   public ProjectConfigurableForm(final Project project) {
     myProject = project;
@@ -65,4 +68,29 @@ public class ProjectConfigurableForm {
   public void setUserProxy(boolean value) {
     myUseIdeaHttpProxyCheckBox.setSelected(value);
   }
+
+  public boolean supportTfsCheckinPolicies() {
+    return myTFSCheckBox.isSelected();
+  }
+
+  public boolean supportStatefulCheckinPolicies() {
+    return myStatefulCheckBox.isSelected();
+  }
+
+  public boolean reportNotInstalledCheckinPolicies() {
+    return myReportNotInstalledPoliciesCheckBox.isSelected();
+  }
+
+  public void setSupportTfsCheckinPolicies(boolean supportTfsCheckinPolicies) {
+    myTFSCheckBox.setSelected(supportTfsCheckinPolicies);
+  }
+
+  public void setSupportStatefulCheckinPolicies(boolean supportStatefulCheckinPolicies) {
+    myStatefulCheckBox.setSelected(supportStatefulCheckinPolicies);
+  }
+
+  public void setReportNotInstalledCheckinPolicies(boolean reportNotInstalledCheckinPolicies) {
+    myReportNotInstalledPoliciesCheckBox.setSelected(reportNotInstalledCheckinPolicies);
+  }
+
 }

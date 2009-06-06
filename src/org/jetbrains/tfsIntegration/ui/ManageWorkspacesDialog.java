@@ -46,4 +46,8 @@ public class ManageWorkspacesDialog extends DialogWrapper {
     return f.getContentPane();
   }
 
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ManageWorkspaces";
+  }
 }
