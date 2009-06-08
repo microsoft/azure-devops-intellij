@@ -1,8 +1,8 @@
 <idea-plugin version="2">
+  <id>TFS</id>
   <name>TFS Integration</name>
-  <description>
-    Integration with Team Foundation Server.
-  </description>
+  <version>1.0</version>
+  <description>Integration with Team Foundation Server.</description>
   <category>VCS Integration</category>
   <depends>com.intellij.modules.vcs</depends>
 
@@ -15,7 +15,7 @@
   <project-components>
     <component>
       <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>
-      <option name="workspace" value="true"/>                                                               
+      <option name="workspace" value="true"/>
     </component>
   </project-components>
 
