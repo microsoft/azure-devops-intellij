@@ -19,6 +19,9 @@ package org.jetbrains.tfsIntegration.checkin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Lightweight check in policy definition that is stored server-side
+ */
 public final class PolicyType {
 
   public static final String DEFAULT_INSTALLATION_INSTRUCTIONS = "(No installation instructions provided)";
@@ -29,6 +32,14 @@ public final class PolicyType {
   @Nullable private final String myDescription;
   @Nullable private final String myInstallationInstructions;
 
+  /**
+   * Constructor
+   *
+   * @param id                       unique identifier of check in policy. ID is used to search for installed policy implementation
+   * @param name                     displayable policy name that is presented to the user
+   * @param description              displayable policy descriptio. <code>null</code> if 
+   * @param installationInstructions instructions that are presented to the user in case policy implementation is missing on local machine
+   */
   public PolicyType(@NotNull String id, @NotNull String name, @Nullable String description, @Nullable String installationInstructions) {
     myId = id;
     myName = name;

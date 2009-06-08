@@ -23,13 +23,22 @@ import java.text.MessageFormat;
 public class NotInstalledPolicyFailure extends PolicyFailure {
   private final PolicyType myPolicyType;
 
-  public NotInstalledPolicyFailure(@NotNull PolicyType policyType) {
-    super(CheckinPoliciesManager.DUMMY_POLICY, getMessage(policyType), policyType.getInstallationInstructions());
+  public NotInstalledPolicyFailure(@NotNull PolicyType policyType, boolean reportId) {
+    super(CheckinPoliciesManager.DUMMY_POLICY, getMessage(policyType), getTooltip(policyType, reportId));
     myPolicyType = policyType;
   }
 
   private static String getMessage(PolicyType type) {
     return MessageFormat.format("Check in policy ''{0}'' is not installed", type.getName());
+  }
+
+  private static String getTooltip(PolicyType type, boolean reportId) {
+    if (reportId) {
+      return MessageFormat.format("Policy Id: {0}\n{1}", type.getId(), type.getInstallationInstructions());
+    }
+    else {
+      return type.getInstallationInstructions();
+    }
   }
 
   @Override

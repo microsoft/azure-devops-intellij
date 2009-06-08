@@ -20,14 +20,27 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Policy evaluation error
+ */
 public class PolicyFailure {
   private @NotNull final PolicyBase myPolicy;
   private @NotNull final String myMessage;
   private @Nullable final String myTooltipText;
 
+  /**
+   * @param policy  policy instance that produced the error
+   * @param message displayable message
+   */
   public PolicyFailure(@NotNull PolicyBase policy, @NotNull String message) {
     this(policy, message, null);
   }
+
+  /**
+   * @param policy      policy instance that produced the error
+   * @param message     displayable message
+   * @param tooltipText displayable text describing error details
+   */
 
   public PolicyFailure(@NotNull PolicyBase policy, @NotNull String message, @Nullable String tooltipText) {
     myPolicy = policy;

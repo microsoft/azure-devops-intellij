@@ -246,7 +246,7 @@ public class CheckinParameters {
 
         if (policy == null) {
           if (TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies()) {
-            allFailures.add(new NotInstalledPolicyFailure(descriptor.getType()));
+            allFailures.add(new NotInstalledPolicyFailure(descriptor.getType(), !(descriptor instanceof StatefulPolicyDescriptor)));
           }
           continue;
         }
@@ -302,8 +302,13 @@ public class CheckinParameters {
         return myPanel.getCommitMessage();
       }
 
-      public Map<WorkItem, CheckinWorkItemAction> getWorkItems() {
-        return Collections.unmodifiableMap(serverData.myWorkItems.getWorkItemsActions());
+      public Map<WorkItem, WorkItemAction> getWorkItems() {
+        Map<WorkItem, WorkItemAction> result = new HashMap<WorkItem, WorkItemAction>(serverData.myWorkItems.getWorkItemsActions().size());
+        for (Map.Entry<WorkItem, CheckinWorkItemAction> entry : serverData.myWorkItems.getWorkItemsActions().entrySet()) {
+          result
+            .put(entry.getKey(), entry.getValue() == CheckinWorkItemAction.Associate ? WorkItemAction.Associate : WorkItemAction.Resolve);
+        }
+        return result;
       }
     };
   }

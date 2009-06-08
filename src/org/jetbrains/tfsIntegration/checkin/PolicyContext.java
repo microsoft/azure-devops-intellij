@@ -19,19 +19,37 @@ package org.jetbrains.tfsIntegration.checkin;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * This interface encapsulates the state of check in
+ */
 public interface PolicyContext {
 
+  enum WorkItemAction {
+    Associate, Resolve
+  }
+
+  /**
+   * @return set of files that are changed (created, modified, deleted, moved)
+   */
   public Collection<FilePath> getFiles();
 
+  /**
+   * @return current project
+   */
   public Project getProject();
 
+  /**
+   * @return commit message
+   */
   public String getCommitMessage();
 
-  public Map<WorkItem, CheckinWorkItemAction> getWorkItems();
+  /**
+   * @return associated work items
+   */
+  public Map<WorkItem, WorkItemAction> getWorkItems();
 
 }
