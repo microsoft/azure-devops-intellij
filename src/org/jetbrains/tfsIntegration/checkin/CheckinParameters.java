@@ -251,7 +251,7 @@ public class CheckinParameters {
           continue;
         }
 
-        pi.setText(MessageFormat.format("Evaluating check in policy {0}", policy.getPolicyType().getName()));
+        pi.setText(MessageFormat.format("Evaluating check in policy: {0}", policy.getPolicyType().getName()));
         pi.setText2("");
         if (descriptor instanceof StatefulPolicyDescriptor) {
           try {
