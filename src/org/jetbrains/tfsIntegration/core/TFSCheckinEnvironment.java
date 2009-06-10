@@ -27,6 +27,8 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -107,32 +109,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       }
     });
 
-    return new RefreshableOnComponent() {
-      public JComponent getComponent() {
-        return panel;
-      }
-
-      public void refresh() {
-      }
-
-      public void saveState() {
-      }
-
-      public void restoreState() {
-        try {
-          myParameters = new CheckinParameters(checkinProjectPanel, true);
-          configureButton.setEnabled(true);
-          updateMessage();
-        }
-        catch (OperationFailedException e) {
-          myParameters = null;
-          configureButton.setEnabled(false);
-          myMessageLabel.setIcon(UIUtil.getBalloonErrorIcon());
-          myMessageLabel.setText("Validation failed");
-          myMessageLabel.setToolTipText(e.getMessage());
-        }
-      }
-    };
+    return new TFSAdditionalOptionsPanel(panel, checkinProjectPanel, configureButton);
   }
 
   public void updateMessage() {
@@ -366,4 +343,61 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return false;
   }
 
+  // TODO refactor this class
+  private class TFSAdditionalOptionsPanel implements CheckinChangeListSpecificComponent {
+    private final JComponent myPanel;
+    private final CheckinProjectPanel myCheckinProjectPanel;
+    private final JButton myConfigureButton;
+    private LocalChangeList myCurrentList;
+
+    public TFSAdditionalOptionsPanel(JComponent panel, CheckinProjectPanel checkinProjectPanel, JButton configureButton) {
+      myPanel = panel;
+      myCheckinProjectPanel = checkinProjectPanel;
+      myConfigureButton = configureButton;
+    }
+
+    public JComponent getComponent() {
+      return myPanel;
+    }
+
+    public void refresh() {
+    }
+
+    public void saveState() {
+    }
+
+    public void restoreState() {
+    }
+
+    public void onChangeListSelected(LocalChangeList list) {
+      if (myCurrentList == list) {
+        return;
+      }
+      myCurrentList = list;
+
+      if (!myCheckinProjectPanel.hasDiffs()) {
+        myPanel.setVisible(false);
+        return;
+      }
+
+      myPanel.setVisible(true);
+
+      try {
+        myParameters = new CheckinParameters(myCheckinProjectPanel, true);
+        myConfigureButton.setEnabled(true);
+        updateMessage();
+      }
+      catch (OperationFailedException e) {
+        myParameters = null;
+        myConfigureButton.setEnabled(false);
+        myMessageLabel.setIcon(UIUtil.getBalloonErrorIcon());
+        myMessageLabel.setText("Validation failed");
+        myMessageLabel.setToolTipText(e.getMessage());
+      }
+    }
+
+    public Object getDataForCommit() {
+      return null;
+    }
+  }
 }
