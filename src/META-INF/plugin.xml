@@ -9,7 +9,6 @@
   <version>8.1</version>
   <vendor url="http://www.swiftteams.com">SwiftTeams</vendor>
 
-  <idea-version since-build="8000"/>
   <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
   <project-components>
