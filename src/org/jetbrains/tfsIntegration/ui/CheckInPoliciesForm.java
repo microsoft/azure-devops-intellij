@@ -321,7 +321,14 @@ public class CheckInPoliciesForm {
       JLabel component = (JLabel)super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
       @SuppressWarnings({"unchecked"}) Pair<StatefulPolicyDescriptor, Boolean> item = (Pair<StatefulPolicyDescriptor, Boolean>)value;
       component.setText(getValue(item.first));
-      component.setForeground(item.second ? table.getForeground() : NOT_INSTALLED_POLICY_COLOR);
+      final Color foreground;
+      if (isSelected) {
+        foreground = table.getSelectionForeground();
+      }
+      else {
+        foreground = item.second.booleanValue() ? table.getForeground() : NOT_INSTALLED_POLICY_COLOR;
+      }
+      component.setForeground(foreground);
       return component;
     }
 

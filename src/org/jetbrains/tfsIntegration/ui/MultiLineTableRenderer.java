@@ -59,13 +59,13 @@ public abstract class MultiLineTableRenderer extends JTextArea implements TableC
       }
     }
 
-    customize(table, this, value);
+    customize(table, this, isSelected, value);
 
     setSize(table.getColumnModel().getColumn(column).getWidth(), 100000);
     table.setRowHeight(row, getPreferredSize().height);
     return this;
   }
 
-  protected abstract void customize(JTable table, JTextArea textArea, Object value);
+  protected abstract void customize(JTable table, JTextArea textArea, boolean isSelected, Object value);
 
 }

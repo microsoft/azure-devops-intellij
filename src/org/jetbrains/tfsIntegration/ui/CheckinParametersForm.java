@@ -85,12 +85,20 @@ public class CheckinParametersForm {
 
   private static final MultiLineTableRenderer WARNING_TABLE_RENDERER = new MultiLineTableRenderer() {
 
-    protected void customize(JTable table, JTextArea textArea, Object value) {
+    protected void customize(JTable table, JTextArea textArea, boolean isSelected, Object value) {
       PolicyFailure failure = (PolicyFailure)value;
       textArea.setText(failure.getMessage());
       final String tooltip = failure.getTooltipText();
       textArea.setToolTipText(StringUtil.isNotEmpty(tooltip) ? tooltip : null);
-      textArea.setForeground(failure instanceof NotInstalledPolicyFailure ? NOT_INSTALLED_POLICY_COLOR : table.getForeground());
+
+      final Color foreground;
+      if (isSelected) {
+        foreground = table.getSelectionForeground();
+      }
+      else {
+        foreground = failure instanceof NotInstalledPolicyFailure ? NOT_INSTALLED_POLICY_COLOR : table.getForeground();
+      }
+      textArea.setForeground(foreground);
     }
   };
 
@@ -250,13 +258,14 @@ public class CheckinParametersForm {
         }
       });
     }
-    else if (myState.getFailures(getSelectedServer()).isEmpty()){
+    else if (myState.getFailures(getSelectedServer()).isEmpty()) {
       failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "All check in policies are satisfied") {
         @Override
         public void activate(@NotNull Project project) {
         }
       });
-    } else {
+    }
+    else {
       for (PolicyFailure failure : myState.getFailures(getSelectedServer())) {
         failures.add(failure);
       }
