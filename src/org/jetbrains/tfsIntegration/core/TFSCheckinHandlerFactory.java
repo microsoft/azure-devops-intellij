@@ -21,6 +21,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
+import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,11 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
   public CheckinHandler createHandler(final CheckinProjectPanel panel) {
     return new CheckinHandler() {
       @Override
-      public ReturnResult beforeCheckin() {
+      public ReturnResult beforeCheckin(@Nullable CommitExecutor executor) {
+        if (executor != null) {
+          return ReturnResult.COMMIT;
+        }
+        
         final TFSVcs tfsVcs = TFSVcs.getInstance(panel.getProject());
         if (!panel.getAffectedVcses().contains(tfsVcs)) {
           return ReturnResult.COMMIT;
