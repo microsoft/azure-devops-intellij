@@ -173,7 +173,7 @@
                         <constraints/>
                         <properties>
                           <autoResizeMode value="3"/>
-                          <fillsViewportHeight value="true"/>
+                          <fillsViewportHeight value="false"/>
                         </properties>
                       </component>
                     </children>
