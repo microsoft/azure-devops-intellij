@@ -106,7 +106,7 @@ public class CheckinParameters {
       TfsExecutionUtil.executeInBackground("Validating Check In", panel.getProject(), new TfsExecutionUtil.VoidProcess() {
         public void run() throws TfsException, VcsException {
           ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
-          pi.setText("Loading check in notes and policies definitons");
+          pi.setText("Loading check in notes and policies definitions");
           final MultiMap<ServerInfo, String> serverToProjects = new MultiMap<ServerInfo, String>() {
             @Override
             protected Collection<String> createCollection() {
