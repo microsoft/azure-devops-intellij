@@ -104,4 +104,10 @@ public class ApplyLabelDialog extends DialogWrapper {
   public List<LabelItemSpec> getLabelItemSpecs() {
     return myApplyLabelForm.getLabelItemSpecs();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ApplyLabel";
+  }
+
 }

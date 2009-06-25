@@ -158,7 +158,7 @@ public class ManageWorkspacesForm {
     }
   };
 
-  public ManageWorkspacesForm(final Project project) {
+  public ManageWorkspacesForm(final Project project, boolean allowEditCheckinPolicies) {
     myProject = project;
 
     myAddServerButton.addActionListener(new ActionListener() {
@@ -206,6 +206,8 @@ public class ManageWorkspacesForm {
         deleteWorkspace(getSelectedWorkspace());
       }
     });
+
+    myCheckInPoliciesButton.setVisible(allowEditCheckinPolicies);
 
     if (!TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
       myCheckInPoliciesButton.setEnabled(false);

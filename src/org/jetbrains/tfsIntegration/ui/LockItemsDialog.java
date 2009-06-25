@@ -152,4 +152,10 @@ public class LockItemsDialog extends DialogWrapper {
       }
     }
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.LockItems";
+  }
+
 }

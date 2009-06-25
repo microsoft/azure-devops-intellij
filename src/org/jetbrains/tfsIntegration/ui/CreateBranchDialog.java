@@ -63,4 +63,10 @@ public class CreateBranchDialog extends DialogWrapper {
   public boolean isCreateWorkingCopies() {
     return myForm.isCreateWorkingCopies();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.CreateBranch";
+  }
+
 }

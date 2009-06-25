@@ -60,4 +60,10 @@ public class SelectLabelDialog extends DialogWrapper {
     VersionControlLabel label = mySelectLabelForm.getLabel();
     return label.getName() + "@" + label.getScope();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.SelectLabel";
+  }
+
 }

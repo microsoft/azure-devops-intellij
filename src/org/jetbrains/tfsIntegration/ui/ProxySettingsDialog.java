@@ -76,4 +76,9 @@ public class ProxySettingsDialog extends DialogWrapper {
     return myForm.getProxyUri();
   }
 
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ProxySettings";
+  }
+
 }

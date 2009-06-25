@@ -110,4 +110,9 @@ public class AddItemDialog extends DialogWrapper {
     }
     super.doOKAction();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.AddItem";
+  }
 }

@@ -33,4 +33,10 @@ public class CheckoutWizard extends AbstractWizard {
   protected boolean canFinish() {
     return myModel != null && myModel.isComplete() && getCurrentStepObject().getNextStepId() == null;
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.CheckoutWizard";
+  }
+
 }

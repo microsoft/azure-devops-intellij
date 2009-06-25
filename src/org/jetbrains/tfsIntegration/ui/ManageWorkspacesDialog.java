@@ -41,7 +41,7 @@ public class ManageWorkspacesDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    ManageWorkspacesForm f = new ManageWorkspacesForm(myProject);
+    ManageWorkspacesForm f = new ManageWorkspacesForm(myProject, true);
     f.setShowWorkspaces(true);
     return f.getContentPane();
   }

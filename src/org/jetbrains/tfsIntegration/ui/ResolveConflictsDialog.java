@@ -56,4 +56,10 @@ public class ResolveConflictsDialog extends DialogWrapper {
   protected Action[] createActions() {
     return new Action[]{getOKAction()};
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ResolveConflicts";
+  }
+
 }

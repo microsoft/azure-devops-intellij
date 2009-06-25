@@ -59,4 +59,10 @@ public class ServerBrowserDialog extends DialogWrapper {
   public ServerTree.SelectedItem getSelectedPath() {
     return myForm.getSelectedPath();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ServerBrowser";
+  }
+  
 }

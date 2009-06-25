@@ -56,4 +56,10 @@ public class ItemInfoDialog extends DialogWrapper {
     ItemInfoForm itemInfoForm = new ItemInfoForm(myWorkspace, myExtendedItem, myBranches);
     return itemInfoForm.getPanel();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.ItemInfo";
+  }
+
 }

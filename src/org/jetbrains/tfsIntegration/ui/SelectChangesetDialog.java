@@ -25,7 +25,6 @@ import javax.swing.*;
 
 
 public class SelectChangesetDialog extends DialogWrapper {
-  private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private SelectChangesetForm myForm;
   private final String myServerPath;
@@ -33,7 +32,6 @@ public class SelectChangesetDialog extends DialogWrapper {
 
   public SelectChangesetDialog(final Project project, final WorkspaceInfo workspace, final String serverPath, final boolean recursive) {
     super(project, true);
-    myProject = project;
     myWorkspace = workspace;
     myServerPath = serverPath;
     myRecursive = recursive;
@@ -67,4 +65,10 @@ public class SelectChangesetDialog extends DialogWrapper {
   public Integer getChangeset() {
     return myForm.getSelectedChangeset();
   }
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.SelectChangeset";
+  }
+
 }

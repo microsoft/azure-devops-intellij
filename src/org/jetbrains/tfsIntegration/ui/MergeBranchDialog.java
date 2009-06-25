@@ -89,4 +89,9 @@ public class MergeBranchDialog extends DialogWrapper {
     super.doCancelAction();
   }
 
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.MergeBranch";
+  }
+
 }

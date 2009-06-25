@@ -109,4 +109,9 @@ public class LoginDialog extends DialogWrapper {
     myLoginForm.setErrorMessage(message);
   }
 
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.Login";
+  }
+
 }

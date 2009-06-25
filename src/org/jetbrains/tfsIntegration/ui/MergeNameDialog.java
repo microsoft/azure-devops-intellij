@@ -81,5 +81,10 @@ public class MergeNameDialog extends DialogWrapper {
     }
     return null;
   }
-  
+
+  @Override
+  protected String getDimensionServiceKey() {
+    return "TFS.MergeName";
+  }
+
 }
