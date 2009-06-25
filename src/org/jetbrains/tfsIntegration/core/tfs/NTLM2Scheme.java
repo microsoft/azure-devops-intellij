@@ -312,7 +312,7 @@ public class NTLM2Scheme extends NTLMScheme {
      */
     public String authenticate(Credentials credentials, HttpMethod method) throws AuthenticationException {
     if (state == UNINITIATED) {
-      throw new IllegalStateException("NTLM authentication process has not been initiated");
+      throw new IllegalStateException("NTLM authentication process was not initiated");
     }
 
     NTCredentials ntcredentials = null;

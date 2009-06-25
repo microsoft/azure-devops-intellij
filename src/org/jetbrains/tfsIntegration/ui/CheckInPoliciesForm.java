@@ -153,8 +153,8 @@ public class CheckInPoliciesForm {
     myRemoveButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
-        final String message = MessageFormat.format("Are you sure to remove check in policy ''{0}''?", descriptor.getType().getName());
-        if (Messages.showOkCancelDialog(myProject, message, "Remove Check In Policy", Messages.getQuestionIcon()) == 0) {
+        final String message = MessageFormat.format("Are you sure to remove checkin policy ''{0}''?", descriptor.getType().getName());
+        if (Messages.showOkCancelDialog(myProject, message, "Remove Checkin Policy", Messages.getQuestionIcon()) == 0) {
           myProjectToDescriptors.get(getSelectedProject()).remove(descriptor);
           updateTable();
           updateButtons();
@@ -274,8 +274,8 @@ public class CheckInPoliciesForm {
       policy.loadState((Element)descriptor.getConfiguration().clone());
     }
     catch (Throwable t) {
-      String message = MessageFormat.format("Policy ''{0}'' failed to load state:\n{1}", descriptor.getType().getName(), t.getMessage());
-      Messages.showErrorDialog(myProject, message, "Edit Check In Policy");
+      String message = MessageFormat.format("Cannot load state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
+      Messages.showErrorDialog(myProject, message, "Edit Checkin Policy");
       return false;
     }
 
@@ -284,8 +284,8 @@ public class CheckInPoliciesForm {
       result = policy.edit(myProject);
     }
     catch (Throwable t) {
-      String message = MessageFormat.format("Failed to edit policy ''{0}'' for:\n{1}", descriptor.getType().getName(), t.getMessage());
-      Messages.showErrorDialog(myProject, message, "Edit Check In Policy");
+      String message = MessageFormat.format("Cannot edit checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
+      Messages.showErrorDialog(myProject, message, "Edit Checkin Policy");
       return false;
     }
 
@@ -296,8 +296,8 @@ public class CheckInPoliciesForm {
         descriptor.setConfiguration(configurationElement);
       }
       catch (Throwable t) {
-        String message = MessageFormat.format("Policy ''{0}'' failed to save state:\n{1}", descriptor.getType().getName(), t.getMessage());
-        Messages.showErrorDialog(myProject, message, "Edit Check In Policy");
+        String message = MessageFormat.format("Cannot save state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
+        Messages.showErrorDialog(myProject, message, "Edit Checkin Policy");
       }
     }
     return result;

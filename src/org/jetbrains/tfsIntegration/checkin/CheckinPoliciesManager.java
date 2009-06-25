@@ -67,7 +67,7 @@ public class CheckinPoliciesManager {
       Set<PolicyType> types = new HashSet<PolicyType>(installedPolicies.length);
       for (PolicyBase policy : installedPolicies) {
         if (!types.add(policy.getPolicyType())) {
-          TFSVcs.LOG.warn("Duplicate check in policy type: " + policy.getPolicyType().getId());
+          TFSVcs.LOG.warn("Duplicate checkin policy type: " + policy.getPolicyType().getId());
           throw new DuplicatePolicyIdException(policy.getPolicyType().getId());
         }
       }

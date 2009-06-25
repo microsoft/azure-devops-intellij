@@ -34,7 +34,7 @@
         </constraints>
         <properties>
           <labelFor value="53aaf"/>
-          <text value="&amp;Check in policies (Teamprise compatible):"/>
+          <text value="&amp;Teamprise compatible checkin policies:"/>
         </properties>
       </component>
       <grid id="83d0" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

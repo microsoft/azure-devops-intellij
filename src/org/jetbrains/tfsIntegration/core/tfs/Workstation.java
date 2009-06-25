@@ -119,16 +119,16 @@ public class Workstation {
         return reader.getServers();
       }
       catch (IOException e) {
-        LOG.info("Failed to read workspaces cache file", e);
+        LOG.info("Cannot read workspace cache", e);
       }
       catch (SAXException e) {
-        LOG.info("Failed to read workspaces cache file", e);
+        LOG.info("Cannot read workspace cache", e);
       }
       catch (RuntimeException e) {
-        LOG.info("Failed to read workspaces cache file", e);
+        LOG.info("Cannot read workspace cache", e);
       }
       catch (Exception e) {
-        LOG.info("Failed to read workspaces cache file", e);
+        LOG.info("Cannot read workspace cache", e);
       }
     }
     return new ArrayList<ServerInfo>();
@@ -199,19 +199,19 @@ public class Workstation {
               savePerformer.endElement(XmlConstants.ROOT);
             }
             catch (SAXException e) {
-              LOG.info("Failed to update workspaces cache file", e);
+              LOG.info("Cannot update workspace cache", e);
             }
             //catch (Exception e) {
-            //  LOG.warn("Failed to update workspaces cache file", e);
+            //  LOG.warn("Cannot update workspace cache", e);
             //}
           }
         });
       }
       catch (IOException e) {
-        LOG.info("Failed to update workspaces cache file", e);
+        LOG.info("Cannot update workspace cache", e);
       }
       catch (SAXException e) {
-        LOG.info("Failed to update workspaces cache file", e);
+        LOG.info("Cannot update workspace cache", e);
       }
     }
   }
@@ -235,7 +235,7 @@ public class Workstation {
     }
     catch (UnknownHostException e) {
       // must never happen
-      throw new RuntimeException("Cannot get hostname!");
+      throw new RuntimeException("Cannot retrieve host name.");
     }
   }
 

@@ -122,7 +122,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       }
     }
     else {
-      StringBuilder errorMessage = new StringBuilder("The following errors occured during checkout:\n\n");
+      StringBuilder errorMessage = new StringBuilder("The following errors occurred during checkout:\n\n");
       for (VcsException e : errors) {
         errorMessage.append(e.getMessage()).append("\n");
       }
@@ -139,7 +139,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
   private static WorkspaceInfo createWorkspace(CheckoutWizardModel model) throws TfsException {
     WorkspaceInfo workspace = new WorkspaceInfo(model.getServer(), model.getServer().getQualifiedUsername(), Workstation.getComputerName());
     workspace.setName(model.getNewWorkspaceName());
-    workspace.setComment("Autocreated by IDEA for " + model.getServerPath());
+    workspace.setComment("Automatically created by IntelliJ IDEA for " + model.getServerPath());
     FilePath localPath = VcsUtil.getFilePath(model.getDestinationFolder(), true);
     WorkingFolderInfo workingFolder = new WorkingFolderInfo(WorkingFolderInfo.Status.Active, localPath, model.getServerPath());
     workspace.addWorkingFolderInfo(workingFolder);
@@ -147,7 +147,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       workspace.saveToServer();
     }
     catch (TfsException e) {
-      String errorMessage = MessageFormat.format("Failed to create workspace ''{0}''. {1}", workspace.getName(), e.getMessage());
+      String errorMessage = MessageFormat.format("Cannot create workspace ''{0}''. {1}", workspace.getName(), e.getMessage());
       throw new OperationFailedException(errorMessage);
     }
     return workspace;

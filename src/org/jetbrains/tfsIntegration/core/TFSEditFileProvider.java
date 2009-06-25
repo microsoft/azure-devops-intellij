@@ -58,7 +58,7 @@ public class TFSEditFileProvider implements EditFileProvider {
         });
 
       if (!orphans.isEmpty()) {
-        StringBuilder s = new StringBuilder("No mapping found for the following files:\n");
+        StringBuilder s = new StringBuilder("Mappings not found for files:\n");
         for (FilePath path : orphans) {
           s.append(path.getPresentableUrl()).append("\n");
         }
@@ -74,7 +74,7 @@ public class TFSEditFileProvider implements EditFileProvider {
   }
 
   public String getRequestText() {
-    return "Would you like to invoke 'CheckOut' command?";
+    return "Perform a checkout?";
 
   }
 }

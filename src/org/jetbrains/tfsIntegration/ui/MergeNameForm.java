@@ -47,14 +47,14 @@ public class MergeNameForm {
     myYoursPath = yoursName;
     myTheirsPath = theirsName;
 
-    myYoursRadioButton.setText(myYoursRadioButton.getText() + " (" + myYoursPath + ")");
+    myYoursRadioButton.setText(myYoursRadioButton.getText() + ": " + myYoursPath);
     myYoursRadioButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
         update();
       }
     });
 
-    myTheirsRadioButton.setText(myTheirsRadioButton.getText() + " (" + myTheirsPath + ")");
+    myTheirsRadioButton.setText(myTheirsRadioButton.getText() + ": " + myTheirsPath);
     myTheirsRadioButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
         update();
@@ -110,7 +110,6 @@ public class MergeNameForm {
   }
 
   private void fireSelectedPathChanged() {
-    String customName = myCustomPathTextField.getText();
     Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
     for (Listener listener : listeners) {
       listener.selectedPathChanged();

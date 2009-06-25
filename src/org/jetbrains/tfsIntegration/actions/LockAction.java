@@ -79,12 +79,12 @@ public class LockAction extends AnAction {
       return;
     }
     if (!mappingFound.get()) {
-      Messages.showInfoMessage(project, "No Team Foundation Server mapping found.", e.getPresentation().getText());
+      Messages.showInfoMessage(project, "Team Foundation Server mappings not found.", e.getPresentation().getText());
       return;
     }
 
     if (items.isEmpty()) {
-      Messages.showInfoMessage(project, "No server items found.", e.getPresentation().getText());
+      Messages.showInfoMessage(project, "Server item not found.", e.getPresentation().getText());
       return;
     }
 

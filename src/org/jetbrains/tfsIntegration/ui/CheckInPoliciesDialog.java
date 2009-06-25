@@ -34,7 +34,7 @@ public class CheckInPoliciesDialog extends DialogWrapper {
     super(project, false);
     myProject = project;
     myProjectToDescriptors = projectToDescriptors;
-    String title = MessageFormat.format("{0}: Edit Check In Policies", server.getUri());
+    String title = MessageFormat.format("{0}: Edit Checkin Policies", server.getUri());
     setTitle(title);
     init();
     setSize(800, 500);

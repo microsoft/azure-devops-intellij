@@ -33,7 +33,7 @@ public class OverridePolicyWarningsDialog extends DialogWrapper {
     super(project, false);
     myProject = project;
     myFailures = failures;
-    setTitle("Check In: Policy Warnings");
+    setTitle("Checkin: Policy Warnings");
     init();
     getOKAction().setEnabled(false);
     setSize(500, 500);

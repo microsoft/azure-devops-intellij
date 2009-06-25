@@ -79,7 +79,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             public void unversioned(final @NotNull FilePath localPath,
                                     final boolean localItemExists,
                                     final @NotNull ServerStatus serverStatus) throws TfsException {
-              TFSVcs.error("Server status Unversioned when rolling back missing file deletion: " + localPath.getPresentableUrl());
+              TFSVcs.error("Server returned status Unversioned when rolling back missing file deletion: " + localPath.getPresentableUrl());
             }
 
             public void checkedOutForEdit(final @NotNull FilePath localPath,
@@ -97,7 +97,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             public void scheduledForDeletion(final @NotNull FilePath localPath,
                                              final boolean localItemExists,
                                              final @NotNull ServerStatus serverStatus) {
-              TFSVcs.error("Server status ScheduledForDeletion when rolling back missing file deletion: " + localPath.getPresentableUrl());
+              TFSVcs.error("Server returned status ScheduledForDeletion when rolling back missing file deletion: " + localPath.getPresentableUrl());
             }
 
             public void outOfDate(final @NotNull FilePath localPath,
@@ -110,7 +110,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             public void deleted(final @NotNull FilePath localPath,
                                 final boolean localItemExists,
                                 final @NotNull ServerStatus serverStatus) {
-              TFSVcs.error("Server status Deleted when rolling back missing file deletion: " + localPath.getPath());
+              TFSVcs.error("Server returned status Deleted when rolling back missing file deletion: " + localPath.getPath());
             }
 
             public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
@@ -186,7 +186,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
-      errors.add(new VcsException("Failed to undo pending changes", e));
+      errors.add(new VcsException("Cannot undo pending changes", e));
     }
   }
 
@@ -247,7 +247,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     }
     catch (TfsException e) {
       //noinspection ThrowableInstanceNeverThrown
-      errors.add(new VcsException("Failed to undo pending changes", e));
+      errors.add(new VcsException("Cannot undo pending changes", e));
     }
   }
 

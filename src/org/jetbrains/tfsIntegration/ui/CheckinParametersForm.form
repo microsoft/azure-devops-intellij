@@ -111,7 +111,7 @@
           <grid id="98868" binding="myCheckinNotesTab" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="Check In Notes"/>
+              <tabbedpane title="Checkin Notes"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -182,8 +182,8 @@
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="&amp;Evaluate all"/>
-                      <toolTipText value="Evaluate check in policies for all affected TFS servers"/>
+                      <text value="&amp;Evaluate All"/>
+                      <toolTipText value="Evaluate checkin policies for all affected TFS servers"/>
                     </properties>
                   </component>
                   <hspacer id="aac05">

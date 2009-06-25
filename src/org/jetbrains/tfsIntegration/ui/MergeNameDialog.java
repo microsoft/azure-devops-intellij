@@ -37,7 +37,7 @@ public class MergeNameDialog extends DialogWrapper {
     myWorkspace = workspace;
     myLocalName = yourName;
     myServerName = theirsName;
-    setTitle("Merge Changes");
+    setTitle("Resolve Conflicting Names");
     setResizable(true);
     init();
   }

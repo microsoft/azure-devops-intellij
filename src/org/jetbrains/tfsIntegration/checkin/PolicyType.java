@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Lightweight check in policy definition that is stored server-side
+ * Lightweight checkin policy definition that is stored server-side
  */
 public final class PolicyType {
 
@@ -33,7 +33,7 @@ public final class PolicyType {
   @Nullable private final String myInstallationInstructions;
 
   /**
-   * @param id                       unique identifier of check in policy. ID is used to search for installed policy implementation
+   * @param id                       unique identifier of checkin policy. ID is used to search for installed policy implementation
    * @param name                     displayable policy name that is presented to the user
    * @param description              displayable policy description
    * @param installationInstructions instructions that are presented to the user in case policy implementation is missing on local machine

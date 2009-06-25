@@ -200,12 +200,12 @@ public abstract class TFSContentRevision implements ContentRevision {
         return null;
       }
       if (item.getType() == ItemType.Folder) {
-        String message = MessageFormat.format("''{0}'' refers to a directory", getFile().getPresentableUrl());
+        String message = MessageFormat.format("''{0}'' refers to a folder", getFile().getPresentableUrl());
         throw new OperationFailedException(message);
       }
 
       final String downloadUrl = item.getDurl();
-      TFSVcs.assertTrue(downloadUrl != null, "No download url for item: " + item.getItem());
+      TFSVcs.assertTrue(downloadUrl != null, "Item without download URL: " + item.getItem());
 
       store = TFSContentStoreFactory.create(myServer.getUri().toASCIIString(), itemId, changeset);
       final Ref<TfsException> exception = new Ref<TfsException>();

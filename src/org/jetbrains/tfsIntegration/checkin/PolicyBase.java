@@ -26,7 +26,7 @@ import org.jdom.Element;
 import java.text.MessageFormat;
 
 /**
- * This is a base class for check in policy implementation
+ * This is a base class for checkin policy implementation
  */
 public abstract class PolicyBase {
 
@@ -41,16 +41,16 @@ public abstract class PolicyBase {
   public abstract PolicyType getPolicyType();
 
   /**
-   * Evaluate current check in provided as {@link PolicyContext} object
+   * Evaluate current checkin provided as {@link PolicyContext} object
    *
    * <p>This method is called in background thread, so user interaction should be made using {@link javax.swing.SwingUtilities#invokeAndWait(Runnable)}.
    * If evaluation is long running it is recommended to call {@link com.intellij.openapi.progress.ProgressIndicator#checkCanceled()}
    * to give user a chance to cancel. Prior to evaluation {@link #loadState(org.jdom.Element)} is called. Runtime exception thrown out of this method
    * will be reported as evaluation error.</p>
    *
-   * @param policycontext configuration of check in to evaluate
+   * @param policycontext configuration of checkin to evaluate
    * @param progressIndicator progress indicator
-   * @return collection is evaluation errors or empty array if check in is OK to be done
+   * @return collection is evaluation errors or empty array if checkin is OK to be done
    */
   public abstract PolicyFailure[] evaluate(@NotNull PolicyContext policycontext, @NotNull ProgressIndicator progressIndicator);
 
@@ -101,7 +101,7 @@ public abstract class PolicyBase {
     else {
       message = policyFailure.getMessage();
     }
-    Messages.showWarningDialog(project, message, "Check In Policy Warning");
+    Messages.showWarningDialog(project, message, "Checkin Policy Warning");
   }
 
 }

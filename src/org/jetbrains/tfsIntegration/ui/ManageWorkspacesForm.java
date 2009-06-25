@@ -209,7 +209,7 @@ public class ManageWorkspacesForm {
 
     if (!TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
       myCheckInPoliciesButton.setEnabled(false);
-      myCheckInPoliciesButton.setToolTipText("Support for Teamprise compatible check in policies was disabled");
+      myCheckInPoliciesButton.setToolTipText("Support for Teamprise compatible checkin policies was disabled");
     }
     else {
       myCheckInPoliciesButton.addActionListener(new ActionListener() {
@@ -485,8 +485,8 @@ public class ManageWorkspacesForm {
     }
     catch (DuplicatePolicyIdException e) {
       final String message = MessageFormat
-        .format("Several check in policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
-      Messages.showErrorDialog(myProject, message, "Edit Check In Policies");
+        .format("Several checkin policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+      Messages.showErrorDialog(myProject, message, "Edit Checkin Policies");
       return;
     }
 
@@ -507,7 +507,7 @@ public class ManageWorkspacesForm {
               projectToDescriptors.put(annotation.getItem(), new ArrayList<StatefulPolicyDescriptor>(descriptors));
             }
             catch (org.jetbrains.tfsIntegration.checkin.PolicyParseException ex) {
-              String message = MessageFormat.format("Failed to load check in policies definitions:\n{0}", ex.getMessage());
+              String message = MessageFormat.format("Cannot load checkin policies definitions:\n{0}", ex.getMessage());
               throw new OperationFailedException(message);
             }
           }
@@ -527,8 +527,8 @@ public class ManageWorkspacesForm {
       };
 
     final TfsExecutionUtil.ResultWithError<Map<String, List<StatefulPolicyDescriptor>>> loadResult =
-      TfsExecutionUtil.executeInBackground("Loading Check In Policies", myProject, process);
-    if (loadResult.cancelled || loadResult.showDialogIfError("Configure Check In Policies")) {
+      TfsExecutionUtil.executeInBackground("Loading Checkin Policies", myProject, process);
+    if (loadResult.cancelled || loadResult.showDialogIfError("Configure Checkin Policies")) {
       return;
     }
 
@@ -537,7 +537,7 @@ public class ManageWorkspacesForm {
     d.show();
     if (d.isOK()) {
       final TfsExecutionUtil.ResultWithError<Void> saveResult =
-        TfsExecutionUtil.executeInBackground("Saving Check In Policies", myProject, new TfsExecutionUtil.VoidProcess() {
+        TfsExecutionUtil.executeInBackground("Saving Checkin Policies", myProject, new TfsExecutionUtil.VoidProcess() {
           public void run() throws TfsException, VcsException {
             for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : projectToDescriptors.entrySet()) {
               if (entry.getValue().isEmpty()) {
@@ -550,7 +550,7 @@ public class ManageWorkspacesForm {
             }
           }
         });
-      saveResult.showDialogIfError("Save Check In Policies");
+      saveResult.showDialogIfError("Save Checkin Policies");
     }
   }
 

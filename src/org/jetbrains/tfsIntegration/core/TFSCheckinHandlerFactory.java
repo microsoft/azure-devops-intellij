@@ -50,13 +50,13 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
 
         final CheckinParameters parameters = tfsVcs.getCheckinEnvironment().getCheckinParameters();
         if (parameters == null) {
-          Messages.showErrorDialog(panel.getProject(), "Validation should be performed before check in", "Check In");
+          Messages.showErrorDialog(panel.getProject(), "Validation must be performed before checking in", "Checkin");
           return ReturnResult.CLOSE_WINDOW;
         }
 
         @Nullable Pair<String, CheckinParameters.Severity> msg = parameters.getValidationMessage(CheckinParameters.Severity.ERROR);
         if (msg != null) {
-          Messages.showErrorDialog(panel.getProject(), msg.first, "Check In: Validation Failed");
+          Messages.showErrorDialog(panel.getProject(), msg.first, "Checkin: Validation Failed");
           return ReturnResult.CANCEL;
         }
 
@@ -65,8 +65,8 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
         }
         catch (DuplicatePolicyIdException e) {
           String message = MessageFormat
-            .format("Several check in policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
-          Messages.showErrorDialog(panel.getProject(), message, "Check In Policies Evaluation");
+            .format("Found multiple checkin policies with the same id: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+          Messages.showErrorDialog(panel.getProject(), message, "Checkin Policies Evaluation");
           return ReturnResult.CLOSE_WINDOW;
         }
 
@@ -78,7 +78,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
             pi.setIndeterminate(true);
             parameters.evaluatePolicies(pi);
           }
-        }, "Evaluating Check In Policies", true, panel.getProject());
+        }, "Evaluating Checkin Policies", true, panel.getProject());
         if (!completed) {
           tfsVcs.getCheckinEnvironment().updateMessage();
           return ReturnResult.CANCEL;

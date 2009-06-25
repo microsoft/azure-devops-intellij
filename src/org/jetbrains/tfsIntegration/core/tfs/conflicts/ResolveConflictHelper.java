@@ -92,7 +92,7 @@ public class ResolveConflictHelper {
           }
         }
         catch (TfsException e) {
-          throw new VcsException("Unable to get content for item " + localPath.getPresentableUrl());
+          throw new VcsException("Cannot get content for item " + localPath.getPresentableUrl());
         }
       }
 
@@ -100,7 +100,7 @@ public class ResolveConflictHelper {
 
     if (isContentConflict(conflict)) {
       // we will need content only if it conflicts
-      VcsUtil.runVcsProcessWithProgress(runnable, "Prepare merge data...", false, myProject);
+      VcsUtil.runVcsProcessWithProgress(runnable, "Preparing merge data...", false, myProject);
     }
 
     // merge names

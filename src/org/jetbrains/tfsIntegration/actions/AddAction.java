@@ -45,7 +45,7 @@ public class AddAction extends AnAction {
         ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
         errors.addAll(TFSVcs.getInstance(project).getCheckinEnvironment().scheduleUnversionedFilesForAddition(Arrays.asList(files)));
       }
-    }, "Scheduling for addition...", false, project);
+    }, "Scheduling addition...", false, project);
 
     if (!errors.isEmpty()) {
       AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFS_NAME);

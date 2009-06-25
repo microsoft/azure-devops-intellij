@@ -17,7 +17,6 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -82,7 +81,7 @@ public class TFSFileRevision implements VcsFileRevision {
       myContent = (content != null) ? content.getBytes() : null;
     }
     catch (TfsException e) {
-      throw new VcsException("Unable to get revision content", e);
+      throw new VcsException("Cannot get revision content", e);
     }
   }
 

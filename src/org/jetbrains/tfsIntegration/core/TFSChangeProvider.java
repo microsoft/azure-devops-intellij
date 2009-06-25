@@ -90,11 +90,11 @@ public class TFSChangeProvider implements ChangeProvider {
       if (!mappingFound.get()) {
         final String message;
         if (roots.size() > 1) {
-          message = "No Team Foundation Server mapping found";
+          message = "Team Foundation Server mappings not found";
         }
         else {
           FilePath orphan = roots.iterator().next();
-          message = MessageFormat.format("No Team Foundation Server mapping found for ''{0}''", orphan.getPresentableUrl());
+          message = MessageFormat.format("Team Foundation Server mappings not found for ''{0}''", orphan.getPresentableUrl());
         }
         throw new VcsException(message);
       }

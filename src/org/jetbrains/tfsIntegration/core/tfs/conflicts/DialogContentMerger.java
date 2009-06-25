@@ -29,7 +29,7 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 public class DialogContentMerger implements ContentMerger {
 
   public void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath) {
-    TFSVcs.assertTrue(localFile.isWritable(), localFile.getPresentableUrl() + " should be writable");
+    TFSVcs.assertTrue(localFile.isWritable(), localFile.getPresentableUrl() + " must be writable");
 
     MergeRequest request = DiffRequestFactory.getInstance().createMergeRequest(StreamUtil.convertSeparators(contentTriplet.serverContent),
                                                                                StreamUtil.convertSeparators(contentTriplet.localContent),
@@ -38,7 +38,7 @@ public class DialogContentMerger implements ContentMerger {
                                                                                ActionButtonPresentation.createApplyButton());
 
     request.setWindowTitle("Merge " + localPath);
-    request.setVersionTitles(new String[]{"Server content (rev. " + conflict.getTver() + ")", "Merge result", "Local content"});
+    request.setVersionTitles(new String[]{"Server Version (rev. " + conflict.getTver() + ")", "Merge Result", "Local Version"});
     // TODO call canShow() first
     DiffManager.getInstance().getDiffTool().show(request);
   }

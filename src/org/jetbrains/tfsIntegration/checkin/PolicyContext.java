@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * This interface encapsulates the state of check in
+ * This interface encapsulates the state of checkin
  */
 public interface PolicyContext {
 

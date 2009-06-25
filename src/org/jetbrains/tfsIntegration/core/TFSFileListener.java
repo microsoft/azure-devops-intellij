@@ -44,7 +44,7 @@ public class TFSFileListener extends VcsVFSListener {
   }
 
   protected String getAddTitle() {
-    return "Do you want to schedule the following items for addition to TFS?";
+    return "Do you want to schedule addition of these items to TFS?";
   }
 
   protected String getSingleFileAddTitle() {
@@ -176,7 +176,7 @@ public class TFSFileListener extends VcsVFSListener {
             public void scheduledForAddition(final @NotNull FilePath localPath,
                                              final boolean localItemExists,
                                              final @NotNull ServerStatus serverStatus) {
-              TFSVcs.error("Failed to revert scheduled for addition: " + localPath.getPresentableUrl());
+              TFSVcs.error("Cannot revert an item scheduled for addition: " + localPath.getPresentableUrl());
             }
 
             public void unversioned(final @NotNull FilePath localPath,
@@ -228,7 +228,7 @@ public class TFSFileListener extends VcsVFSListener {
             public void undeleted(final @NotNull FilePath localPath,
                                   final boolean localItemExists,
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
-              TFSVcs.error("Failed to revert undeleted: " + localPath.getPresentableUrl());
+              TFSVcs.error("Cannot revert undeleted: " + localPath.getPresentableUrl());
             }
           });
         }
@@ -287,7 +287,7 @@ public class TFSFileListener extends VcsVFSListener {
           }
           s.append(orpan.getPresentableUrl());
         }
-        errors.add(new VcsException("No Team Foundation Server mapping found for the following items: " + s.toString()));
+        errors.add(new VcsException("Team Foundation Server mappings not found for: " + s.toString()));
       }
     }
     catch (TfsException e) {
@@ -299,7 +299,7 @@ public class TFSFileListener extends VcsVFSListener {
   }
 
   protected String getDeleteTitle() {
-    return "Do you want to schedule the following items for deletion from TFS?";
+    return "Do you want to schedule these items for deletion from TFS?";
   }
 
   protected String getSingleFileDeleteTitle() {
@@ -345,7 +345,7 @@ public class TFSFileListener extends VcsVFSListener {
             public void scheduledForDeletion(final @NotNull FilePath localPath,
                                              final boolean localItemExists,
                                              final @NotNull ServerStatus serverStatus) {
-              TFSVcs.error("Rename of locally unexisting file: " + localPath.getPresentableUrl());
+              TFSVcs.error("Cannot rename a file that does not exist on local machine: " + localPath.getPresentableUrl());
             }
 
             public void outOfDate(final @NotNull FilePath localPath,

@@ -60,7 +60,7 @@ public class LockItemModel {
    */
   public void setSelectionStatus(final @NotNull Boolean selectionStatus) {
     if (mySelectionStatus == null) {
-      throw new IllegalArgumentException("Items locked by another user can not be selected or unselected.");
+      throw new IllegalArgumentException("State of items locked by another user cannot be changed.");
     }
     mySelectionStatus = selectionStatus;
   }

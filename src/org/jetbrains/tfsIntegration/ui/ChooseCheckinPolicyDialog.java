@@ -27,7 +27,7 @@ public class ChooseCheckinPolicyDialog extends DialogWrapper {
 
   public ChooseCheckinPolicyDialog(Project project) {
     super(project, false);
-    setTitle("Add Check In Policy");
+    setTitle("Add Checkin Policy");
     init();
 
     setSize(450, 500);

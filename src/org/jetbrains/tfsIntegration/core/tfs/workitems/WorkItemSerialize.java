@@ -56,7 +56,7 @@ public class WorkItemSerialize {
     }
     catch (Exception e) {
       // TODO remove this
-      throw new OperationFailedException("Failed to load work item(s): unexpected properties encountered");
+      throw new OperationFailedException("Cannot load work items: unexpected properties encountered");
     }
   }
 

@@ -14,7 +14,7 @@
         </constraints>
         <properties>
           <labelFor value="4e29c"/>
-          <text value="&amp;Check in policy:"/>
+          <text value="&amp;Checkin policies:"/>
         </properties>
       </component>
       <scrollpane id="4e29c">

@@ -31,7 +31,7 @@ public class CheckinParametersDialog extends DialogWrapper {
     super(project, false);
     myProject = project;
     myParameters = parameters;
-    setTitle("Configure Check In Parameters");
+    setTitle("Configure Checkin Parameters");
     init();
 
     setSize(700, 500);

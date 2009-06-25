@@ -81,7 +81,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (workspaces.isEmpty()) {
-            exception.set(new VcsException(MessageFormat.format("No mapping found for file ''{0}''", localPath.getPresentableUrl())));
+            exception.set(new VcsException(MessageFormat.format("Mappings not found for file ''{0}''", localPath.getPresentableUrl())));
             return;
           }
 
@@ -143,7 +143,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
         final String content = TFSContentRevision.create(myVcs.getProject(), workspace, localPath, changeset, itemId).getContent();
         if (content == null) {
           final String errorMessage =
-            MessageFormat.format("Failed to load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(), changeset);
+            MessageFormat.format("Cannot load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(), changeset);
           throw new VcsException(errorMessage);
         }
         return content;

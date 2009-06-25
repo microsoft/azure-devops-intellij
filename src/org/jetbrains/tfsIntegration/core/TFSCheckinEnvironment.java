@@ -148,7 +148,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   }
 
   public String getCheckinOperationName() {
-    return "Check In";
+    return "Checkin";
   }
 
   @Nullable
@@ -329,7 +329,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
           }
           s.append(orpan.getPresentableUrl());
         }
-        exceptions.add(new VcsException("No Team Foundation Server mapping found for the following items: " + s.toString()));
+        exceptions.add(new VcsException("Team Foundation Server mapping not found for: " + s.toString()));
       }
     }
     catch (TfsException e) {

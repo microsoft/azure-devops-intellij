@@ -232,7 +232,7 @@ public class CheckinParametersForm {
         pi.setIndeterminate(true);
         myState.evaluatePolicies(pi);
       }
-    }, "Evaluating Check In Policies", true, myProject);
+    }, "Evaluating Checkin Policies", true, myProject);
     if (completed) {
       updatePoliciesWarnings();
       updateErrorMessage(false);
@@ -243,15 +243,15 @@ public class CheckinParametersForm {
     List<PolicyFailure> failures = new ArrayList<PolicyFailure>();
     if (!TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() &&
         !TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Support for check in policies was disabled",
-                                     "Use Project Settings -> TFS configuration settings to enable check in policies support"));
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Support for checkin policies was disabled",
+                                     "Use Project Settings -> TFS configuration settings to enable checkin policies support"));
     }
     else if (myState.getPoliciesLoadError() != null) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Failed to load check in policies definitions",
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Cannot load checkin policies definitions",
                                      myState.getPoliciesLoadError()));
     }
     else if (!myState.policiesEvaluated()) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Check in policies have not yet been evaluated") {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Checkin policies were not evaluated") {
         @Override
         public void activate(@NotNull Project project) {
           evaluatePolicies();
@@ -259,7 +259,7 @@ public class CheckinParametersForm {
       });
     }
     else if (myState.getFailures(getSelectedServer()).isEmpty()) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "All check in policies are satisfied") {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "All checkin policies are satisfied") {
         @Override
         public void activate(@NotNull Project project) {
         }

@@ -60,7 +60,7 @@ public class BranchAction extends SingleItemAction {
 
       VersionSpecBase version = d.getVersionSpec();
       if (version == null) {
-        Messages.showErrorDialog(project, "Invalid version specified", "Create Branch");
+        Messages.showErrorDialog(project, "Incorrect version specified", "Create Branch");
         return;
       }
 
@@ -69,10 +69,10 @@ public class BranchAction extends SingleItemAction {
         FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
         if (targetLocalPath == null) {
           FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
-          d.setTitle("Choose Local Folder");
+          d.setTitle("Select Local Folder");
           descriptor.setShowFileSystemRoots(true);
           final String message = MessageFormat
-            .format("Branch target folder ''{0}'' is not mapped. Select a local directory to create mapping in workspace ''{1}''",
+            .format("Branch target folder ''{0}'' is not mapped. Select a local folder to create a mapping in workspace ''{1}''",
                     targetServerPath, workspace.getName());
           descriptor.setDescription(message);
 

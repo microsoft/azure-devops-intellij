@@ -103,10 +103,10 @@ public class CheckinParameters {
     }
 
     final TfsExecutionUtil.ResultWithError<Void> result =
-      TfsExecutionUtil.executeInBackground("Validating Check In", panel.getProject(), new TfsExecutionUtil.VoidProcess() {
+      TfsExecutionUtil.executeInBackground("Validating Checkin", panel.getProject(), new TfsExecutionUtil.VoidProcess() {
         public void run() throws TfsException, VcsException {
           ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
-          pi.setText("Loading check in notes and policies definitions");
+          pi.setText("Loading checkin notes and policy definitions");
           final MultiMap<ServerInfo, String> serverToProjects = new MultiMap<ServerInfo, String>() {
             @Override
             protected Collection<String> createCollection() {
@@ -204,7 +204,7 @@ public class CheckinParameters {
           myData = data;
 
           if (evaluatePolicies) {
-            pi.setText("Evaluating check in policies");
+            pi.setText("Evaluating checkin policies");
             evaluatePolicies(pi);
             myPoliciesEvaluated = true;
           }
@@ -239,8 +239,8 @@ public class CheckinParameters {
         }
         catch (DuplicatePolicyIdException e) {
           final String tooltip = MessageFormat
-            .format("Several check in policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
-          allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Duplicate check in policy id", tooltip));
+            .format("Several checkin policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+          allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Duplicate checkin policy id", tooltip));
           break;
         }
 
@@ -251,7 +251,7 @@ public class CheckinParameters {
           continue;
         }
 
-        pi.setText(MessageFormat.format("Evaluating check in policy: {0}", policy.getPolicyType().getName()));
+        pi.setText(MessageFormat.format("Evaluating checkin policy: {0}", policy.getPolicyType().getName()));
         pi.setText2("");
         if (descriptor instanceof StatefulPolicyDescriptor) {
           try {
@@ -262,7 +262,7 @@ public class CheckinParameters {
           }
           catch (RuntimeException e) {
             TFSVcs.LOG.warn(e);
-            String message = MessageFormat.format("Check in policy ''{0}'' failed to load configuration", policy.getPolicyType().getName());
+            String message = MessageFormat.format("Cannot load configuration of checkin policy ''{0}''", policy.getPolicyType().getName());
             String tooltip = MessageFormat.format("The following error occured while loading: {0}", e.getMessage());
             allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, message, tooltip));
             continue;
@@ -278,7 +278,7 @@ public class CheckinParameters {
         }
         catch (RuntimeException e) {
           TFSVcs.LOG.warn(e);
-          String message = MessageFormat.format("Check in policy ''{0}'' failed to evaluate", policy.getPolicyType().getName());
+          String message = MessageFormat.format("Cannot evaluate checkin policy ''{0}''", policy.getPolicyType().getName());
           String tooltip = MessageFormat.format("The following error occured while evaluating: {0}", e.getMessage());
           allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, message, tooltip));
         }
@@ -330,7 +330,7 @@ public class CheckinParameters {
     if (!myPoliciesEvaluated && checkWarning) {
       if (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() ||
           TFSConfigurationManager.getInstance().supportTfsCheckinPolicies()) {
-        result.append("Check in policies have not been evaluated");
+        result.append("Checkin policies were not evaluated");
       }
       checkWarning = false;
     }
@@ -350,12 +350,12 @@ public class CheckinParameters {
           resultingSeverity = Severity.ERROR;
           final String message;
           if (data.myEmptyNotes.size() > 1) {
-            message = MessageFormat.format("Check in notes ''{0}'' are required to commit",
+            message = MessageFormat.format("Checkin notes ''{0}'' are required to commit",
                                            StringUtil.join(data.myEmptyNotes.toArray(new String[data.myEmptyNotes.size()]), "', '"));
 
           }
           else {
-            message = MessageFormat.format("Check in note ''{0}'' is required to commit", data.myEmptyNotes.iterator().next());
+            message = MessageFormat.format("Checkin note ''{0}'' is required to commit", data.myEmptyNotes.iterator().next());
           }
           result.append(message);
 
@@ -364,7 +364,7 @@ public class CheckinParameters {
           if (checkError && !data.myEmptyNotes.isEmpty()) {
             result.append("\n");
           }
-          result.append("Check in policy warnings found");
+          result.append("Checkin policy warnings found");
         }
       }
     }

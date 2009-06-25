@@ -179,7 +179,7 @@ public class ApplyGetOperations {
   private void processDeleteFile(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isDirectory()) {
-      String errorMessage = MessageFormat.format("Failed to delete file ''{0}''. Folder with the same name exists", source.getPath());
+      String errorMessage = MessageFormat.format("Cannot delete file ''{0}'' because there is a folder with the same name", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -201,14 +201,14 @@ public class ApplyGetOperations {
   private void processDeleteFolder(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isFile()) {
-      String errorMessage = MessageFormat.format("Failed to delete folder ''{0}''. File with the same name exists", source.getPath());
+      String errorMessage = MessageFormat.format("Cannot delete folder ''{0}'' because there is a file with the same name", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
 
     // TODO: if force, delete anyway?
     if (!canDeleteFolder(source)) {
-      String errorMessage = MessageFormat.format("Failed to delete folder ''{0}'' because it is not empty", source.getPath());
+      String errorMessage = MessageFormat.format("Cannot delete folder ''{0}'' because it is not empty", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -227,7 +227,7 @@ public class ApplyGetOperations {
   private void processCreateFile(final @NotNull GetOperation operation) throws TfsException {
     File target = VersionControlPath.getFile(operation.getTlocal());
     if (target.isDirectory()) {
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with the same name exists", target.getPath());
+      String errorMessage = MessageFormat.format("Cannot create file ''{0}'' because there is a folder with the same name", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -237,7 +237,7 @@ public class ApplyGetOperations {
         return;
       }
       if (!FileUtil.delete(target)) {
-        String errorMessage = MessageFormat.format("Failed to overwrite file ''{0}''", target.getPath());
+        String errorMessage = MessageFormat.format("Cannot overwrite file ''{0}''", target.getPath());
         myErrors.add(new VcsException(errorMessage));
         return;
       }
@@ -260,7 +260,7 @@ public class ApplyGetOperations {
     }
 
     if (target.isFile() && !FileUtil.delete(target)) {
-      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''. File with the same name exists", target.getPath());
+      String errorMessage = MessageFormat.format("Cannot create folder ''{0}'' because there is a folder with the same name", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -307,7 +307,7 @@ public class ApplyGetOperations {
 
     if (target.isDirectory()) {
       // Note: TFC does not report local conflict in this case
-      String errorMessage = MessageFormat.format("Failed to create file ''{0}''. Folder with same name exists", target.getPath());
+      String errorMessage = MessageFormat.format("Cannot create file ''{0}'' because there is a folder with same name", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -441,7 +441,7 @@ public class ApplyGetOperations {
 
   private boolean deleteFile(File target) {
     if (myDownloadMode != DownloadMode.FORBID && !FileUtil.delete(target)) {
-      String errorMessage = MessageFormat.format("Failed to delete {0} ''{1}''", target.isFile() ? "file" : "folder", target.getPath());
+      String errorMessage = MessageFormat.format("Cannot delete {0} ''{1}''", target.isFile() ? "file" : "folder", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return false;
     }
@@ -483,7 +483,7 @@ public class ApplyGetOperations {
 
   private boolean createFolder(File target) {
     if (myDownloadMode != DownloadMode.FORBID && !target.exists() && !target.mkdirs()) {
-      String errorMessage = MessageFormat.format("Failed to create folder ''{0}''", target.getPath());
+      String errorMessage = MessageFormat.format("Cannot create folder ''{0}''", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return false;
     }
@@ -495,7 +495,7 @@ public class ApplyGetOperations {
   private boolean rename(File source, File target) {
     if (myDownloadMode != DownloadMode.FORBID && !source.equals(target) && !source.renameTo(target)) {
       String errorMessage = MessageFormat
-        .format("Failed to rename {0} ''{1}'' to ''{2}''", source.isFile() ? "file" : "folder", source.getPath(), target.getPath());
+        .format("Cannot rename {0} ''{1}'' to ''{2}''", source.isFile() ? "file" : "folder", source.getPath(), target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return false;
     }
@@ -520,14 +520,14 @@ public class ApplyGetOperations {
         }
       });
       if (!target.setReadOnly()) {
-        String errorMessage = MessageFormat.format("Failed to write to file ''{0}''", target.getPath());
+        String errorMessage = MessageFormat.format("Cannot write to file ''{0}''", target.getPath());
         myErrors.add(new VcsException(errorMessage));
         return false;
       }
       return true;
     }
     catch (IOException e) {
-      String errorMessage = MessageFormat.format("Failed to write to file ''{0}'': {1}", target.getPath(), e.getMessage());
+      String errorMessage = MessageFormat.format("Cannot write to file ''{0}'': {1}", target.getPath(), e.getMessage());
       myErrors.add(new VcsException(errorMessage));
       return false;
     }
@@ -548,7 +548,7 @@ public class ApplyGetOperations {
       String path = VersionControlPath.localPathFromTfsRepresentation(sourceNotTarget ? operation.getSlocal() : operation.getTlocal());
       final String message = MessageFormat.format("Local conflict detected. Override local item?\n {0}", path);
       // TODO: more detailed message needed
-      final String title = "Modify files";
+      final String title = "Modify Files";
       final Ref<Integer> result = new Ref<Integer>();
       try {
         TfsUtil.runOrInvokeAndWait(new Runnable() {
