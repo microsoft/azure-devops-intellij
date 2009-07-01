@@ -535,24 +535,25 @@ public class ManageWorkspacesForm {
     }
 
     final Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors = loadResult.result;
-    CheckInPoliciesDialog d = new CheckInPoliciesDialog(myProject, getSelectedServer(), projectToDescriptors);
+    final CheckInPoliciesDialog d = new CheckInPoliciesDialog(myProject, getSelectedServer(), projectToDescriptors);
     d.show();
     if (d.isOK()) {
-      final TfsExecutionUtil.ResultWithError<Void> saveResult =
-        TfsExecutionUtil.executeInBackground("Saving Checkin Policies", myProject, new TfsExecutionUtil.VoidProcess() {
-          public void run() throws TfsException, VcsException {
-            for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : projectToDescriptors.entrySet()) {
-              if (entry.getValue().isEmpty()) {
+      final Map<String, List<StatefulPolicyDescriptor>> modifications = d.getModifications();
+      if (!modifications.isEmpty()) {
+        final TfsExecutionUtil.ResultWithError<Void> saveResult =
+          TfsExecutionUtil.executeInBackground("Saving Checkin Policies", myProject, new TfsExecutionUtil.VoidProcess() {
+            public void run() throws TfsException, VcsException {
+              for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : modifications.entrySet()) {
                 server.getVCS().deleteAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
-              }
-              else {
-                String annotationValue = StatefulPolicyParser.saveDescriptors(entry.getValue());
-                server.getVCS().createAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+                if (!entry.getValue().isEmpty()) {
+                  String annotationValue = StatefulPolicyParser.saveDescriptors(entry.getValue());
+                  server.getVCS().createAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+                }
               }
             }
-          }
-        });
-      saveResult.showDialogIfError("Save Checkin Policies");
+          });
+        saveResult.showDialogIfError("Save Checkin Policies");
+      }
     }
   }
 

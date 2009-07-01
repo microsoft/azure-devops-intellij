@@ -29,6 +29,7 @@ import java.util.Map;
 public class CheckInPoliciesDialog extends DialogWrapper {
   private final Project myProject;
   private final Map<String, List<StatefulPolicyDescriptor>> myProjectToDescriptors;
+  private CheckInPoliciesForm myForm;
 
   public CheckInPoliciesDialog(final Project project, ServerInfo server, Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors) {
     super(project, false);
@@ -41,8 +42,8 @@ public class CheckInPoliciesDialog extends DialogWrapper {
   }
 
   protected JComponent createCenterPanel() {
-    CheckInPoliciesForm form = new CheckInPoliciesForm(myProject, myProjectToDescriptors);
-    return form.getContentPane();
+    myForm = new CheckInPoliciesForm(myProject, myProjectToDescriptors);
+    return myForm.getContentPane();
   }
 
   @Override
@@ -50,4 +51,7 @@ public class CheckInPoliciesDialog extends DialogWrapper {
     return "TFS.ConfigureCheckInPolicies";
   }
 
+  public Map<String, List<StatefulPolicyDescriptor>> getModifications() {
+    return myForm.getModifications(); 
+  }
 }

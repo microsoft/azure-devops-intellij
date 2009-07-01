@@ -44,7 +44,7 @@ import java.util.*;
 import java.util.List;
 
 public class CheckInPoliciesForm {
-  private static final ColumnInfo[] COLUMNS = new ColumnInfo[]{
+  private final ColumnInfo[] COLUMNS = new ColumnInfo[]{
 
     new ColumnInfo<Pair<StatefulPolicyDescriptor, Boolean>, Boolean>("Enabled") {
       public Boolean valueOf(Pair<StatefulPolicyDescriptor, Boolean> item) {
@@ -69,6 +69,7 @@ public class CheckInPoliciesForm {
       @Override
       public void setValue(Pair<StatefulPolicyDescriptor, Boolean> item, Boolean value) {
         item.first.setEnabled(value);
+        myProjectToDescriptors.get(getSelectedProject()).isModified = true;
       }
     },
 
@@ -96,6 +97,14 @@ public class CheckInPoliciesForm {
       }
     }};
 
+  private static class ProjectEntry {
+    public final List<StatefulPolicyDescriptor> descriptors;
+    public boolean isModified = false;
+
+    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors) {
+      this.descriptors = descriptors;
+    }
+  }
 
   private JComboBox myProjectCombo;
   private JButton myAddButton;
@@ -105,11 +114,14 @@ public class CheckInPoliciesForm {
   private JPanel myContentPane;
 
   private final Project myProject;
-  private final Map<String, List<StatefulPolicyDescriptor>> myProjectToDescriptors;
+  private final Map<String, ProjectEntry> myProjectToDescriptors;
 
   public CheckInPoliciesForm(Project project, Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors) {
     myProject = project;
-    myProjectToDescriptors = projectToDescriptors;
+    myProjectToDescriptors = new HashMap<String, ProjectEntry>(projectToDescriptors.size());
+    for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : projectToDescriptors.entrySet()) {
+      myProjectToDescriptors.put(entry.getKey(), new ProjectEntry(new ArrayList<StatefulPolicyDescriptor>(entry.getValue())));
+    }
 
     myProjectCombo.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -155,7 +167,9 @@ public class CheckInPoliciesForm {
         final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
         final String message = MessageFormat.format("Are you sure to remove checkin policy ''{0}''?", descriptor.getType().getName());
         if (Messages.showOkCancelDialog(myProject, message, "Remove Checkin Policy", Messages.getQuestionIcon()) == 0) {
-          myProjectToDescriptors.get(getSelectedProject()).remove(descriptor);
+          final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
+          projectEntry.descriptors.remove(descriptor);
+          projectEntry.isModified = true;
           updateTable();
           updateButtons();
         }
@@ -179,9 +193,11 @@ public class CheckInPoliciesForm {
           return;
         }
 
-        myProjectToDescriptors.get(getSelectedProject()).add(newDescriptor);
+        final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
+        projectEntry.descriptors.add(newDescriptor);
+        projectEntry.isModified = true;
         updateTable();
-        int index = myProjectToDescriptors.get(getSelectedProject()).size() - 1;
+        int index = projectEntry.descriptors.size() - 1;
         myPoliciesTable.getSelectionModel().setSelectionInterval(index, index);
         updateButtons();
       }
@@ -225,9 +241,9 @@ public class CheckInPoliciesForm {
   private void updateTable() {
     //noinspection unchecked
     List<Pair<StatefulPolicyDescriptor, Boolean>> list =
-      new ArrayList<Pair<StatefulPolicyDescriptor, Boolean>>(myProjectToDescriptors.get(getSelectedProject()).size());
+      new ArrayList<Pair<StatefulPolicyDescriptor, Boolean>>(myProjectToDescriptors.get(getSelectedProject()).descriptors.size());
     try {
-      for (StatefulPolicyDescriptor descriptor : myProjectToDescriptors.get(getSelectedProject())) {
+      for (StatefulPolicyDescriptor descriptor : myProjectToDescriptors.get(getSelectedProject()).descriptors) {
         list.add(Pair.create(descriptor, CheckinPoliciesManager.find(descriptor.getType()) != null));
       }
     }
@@ -274,7 +290,8 @@ public class CheckInPoliciesForm {
       policy.loadState((Element)descriptor.getConfiguration().clone());
     }
     catch (Throwable t) {
-      String message = MessageFormat.format("Cannot load state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
+      String message =
+        MessageFormat.format("Cannot load state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
       Messages.showErrorDialog(myProject, message, "Edit Checkin Policy");
       return false;
     }
@@ -294,9 +311,11 @@ public class CheckInPoliciesForm {
       try {
         policy.saveState(configurationElement);
         descriptor.setConfiguration(configurationElement);
+        myProjectToDescriptors.get(getSelectedProject()).isModified = true;
       }
       catch (Throwable t) {
-        String message = MessageFormat.format("Cannot save state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
+        String message =
+          MessageFormat.format("Cannot save state of checkin policy ''{0}'':\n{1}", descriptor.getType().getName(), t.getMessage());
         Messages.showErrorDialog(myProject, message, "Edit Checkin Policy");
       }
     }
@@ -326,7 +345,7 @@ public class CheckInPoliciesForm {
         foreground = table.getSelectionForeground();
       }
       else {
-        foreground = item.second.booleanValue() ? table.getForeground() : NOT_INSTALLED_POLICY_COLOR;
+        foreground = item.second ? table.getForeground() : NOT_INSTALLED_POLICY_COLOR;
       }
       component.setForeground(foreground);
       return component;
@@ -356,5 +375,16 @@ public class CheckInPoliciesForm {
       return component;
     }
   };
+
+  public Map<String, List<StatefulPolicyDescriptor>> getModifications() {
+    Map<String, List<StatefulPolicyDescriptor>> result = new HashMap<String, List<StatefulPolicyDescriptor>>();
+    for (Map.Entry<String, ProjectEntry> entry : myProjectToDescriptors.entrySet()) {
+      if (entry.getValue().isModified) {
+        result.put(entry.getKey(), entry.getValue().descriptors);
+      }
+    }
+    return result;
+  }
+
 
 }
