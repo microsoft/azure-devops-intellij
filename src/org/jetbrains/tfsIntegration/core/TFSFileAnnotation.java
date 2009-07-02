@@ -19,9 +19,7 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.editor.EditorGutterAction;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.annotate.AnnotationListener;
-import com.intellij.openapi.vcs.annotate.FileAnnotation;
-import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
+import com.intellij.openapi.vcs.annotate.*;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
@@ -146,11 +144,22 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   }
 
+  /**
+   * Get revision number for the line.
+   */
+  public VcsRevisionNumber originalRevision(int lineNumber) {
+    return getLineRevisionNumber(lineNumber);
+  }
+
   public List<VcsFileRevision> getRevisions() {
     Set<VcsFileRevision> set = new HashSet<VcsFileRevision>(Arrays.asList(myLineRevisions));
     List<VcsFileRevision> result = new ArrayList<VcsFileRevision>(set);
     Collections.sort(result, REVISION_COMPARATOR);
     return result;
+  }
+
+  public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
+    return null;
   }
 
   private static final Comparator<VcsFileRevision> REVISION_COMPARATOR = new Comparator<VcsFileRevision>() {
