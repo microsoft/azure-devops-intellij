@@ -72,6 +72,7 @@ public abstract class SingleItemAction extends AnAction {
         final String itemType = localPath.isDirectory() ? "Folder" : "File";
         final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
         Messages.showErrorDialog(project, message, e.getPresentation().getText());
+        return;
       }
       //noinspection ConstantConditions
       execute(project, workspaceAndItem.first, localPath, workspaceAndItem.second);
