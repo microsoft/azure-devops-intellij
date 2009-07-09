@@ -1213,7 +1213,9 @@ public class VersionControlServer {
         public ArrayOfAnnotation executeRequest() throws RemoteException {
           QueryAnnotation param = new QueryAnnotation();
           param.setAnnotationName(annotationName);
-          param.setAnnotatedItem(teamProjects.size() != 1 ? null : teamProjects.iterator().next());
+          param.setAnnotatedItem(
+            teamProjects.size() == 1 && !VersionControlPath.ROOT_FOLDER.equals(teamProjects.iterator().next()) ? teamProjects.iterator()
+              .next() : null);
           param.setVersion(0);
           return myRepository.QueryAnnotation(param).getQueryAnnotationResult();
         }
