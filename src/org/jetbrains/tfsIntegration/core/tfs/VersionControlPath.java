@@ -80,7 +80,7 @@ public class VersionControlPath {
 
   public static String getPathToProject(final String serverPath) {
     int secondSlashPos = serverPath.indexOf("/", ROOT_FOLDER.length());
-    return serverPath.substring(0, secondSlashPos);
+    return secondSlashPos == -1 ? ROOT_FOLDER : serverPath.substring(0, secondSlashPos);
   }
 
   public static String getTeamProject(final String serverPath) {
@@ -101,7 +101,7 @@ public class VersionControlPath {
     return path1.compareTo(path2);
   }
 
-  /**                                                                      
+  /**
    * At the same level files go before subfolders regardless of the names.
    */
   public static int compareParentToChild(@NotNull String path1, boolean isDirectory1, @NotNull String path2, boolean isDrectory2) {
@@ -168,7 +168,12 @@ public class VersionControlPath {
   public static String getCombinedServerPath(final FilePath localPathBase, final String serverPathBase, final FilePath localPath) {
     String localPathBaseString = FileUtil.toSystemIndependentName(localPathBase.getPath());
     String localPathString = FileUtil.toSystemIndependentName(localPath.getPath());
-    return serverPathBase + localPathString.substring(localPathBaseString.length());
+
+    String localPathRemainder = localPathString.substring(localPathBaseString.length());
+    if (serverPathBase.endsWith(SERVER_PATH_SEPARATOR) && localPathRemainder.startsWith(SERVER_PATH_SEPARATOR)) {
+      localPathRemainder = localPathRemainder.substring(1);
+    }
+    return serverPathBase + localPathRemainder;
   }
 
   public static FilePath getCombinedLocalPath(final FilePath localPathBase,
