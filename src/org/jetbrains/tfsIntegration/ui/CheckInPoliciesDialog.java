@@ -54,4 +54,10 @@ public class CheckInPoliciesDialog extends DialogWrapper {
   public Map<String, List<StatefulPolicyDescriptor>> getModifications() {
     return myForm.getModifications(); 
   }
+
+  @Override
+  protected String getHelpId() {
+    return "project.propVCSSupport.VCSs.TFS.edit.checkin.policies";
+  }
+  
 }

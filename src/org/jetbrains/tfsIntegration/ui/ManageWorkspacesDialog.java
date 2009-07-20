@@ -35,7 +35,7 @@ public class ManageWorkspacesDialog extends DialogWrapper {
   }
 
   protected Action[] createActions() {
-    return new Action[]{getOKAction()};
+    return new Action[]{getOKAction(), getHelpAction()};
   }
 
 
@@ -49,5 +49,10 @@ public class ManageWorkspacesDialog extends DialogWrapper {
   @Override
   protected String getDimensionServiceKey() {
     return "TFS.ManageWorkspaces";
+  }
+
+  @Override
+  protected String getHelpId() {
+    return "project.propVCSSupport.VCSs.TFS.manage";
   }
 }
