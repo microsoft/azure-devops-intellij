@@ -21,12 +21,15 @@ import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.tfsIntegration.checkin.PolicyBase;
 
 import javax.swing.*;
+import java.util.List;
 
 public class ChooseCheckinPolicyDialog extends DialogWrapper {
   private ChooseCheckinPolicyForm myForm;
+  private final List<PolicyBase> myPolicies;
 
-  public ChooseCheckinPolicyDialog(Project project) {
+  public ChooseCheckinPolicyDialog(Project project, List<PolicyBase> policies) {
     super(project, false);
+    myPolicies = policies;
     setTitle("Add Checkin Policy");
     init();
 
@@ -36,7 +39,7 @@ public class ChooseCheckinPolicyDialog extends DialogWrapper {
   }
 
   protected JComponent createCenterPanel() {
-    myForm = new ChooseCheckinPolicyForm();
+    myForm = new ChooseCheckinPolicyForm(myPolicies);
     myForm.addListener(new ChooseCheckinPolicyForm.Listener() {
       public void stateChanged() {
         getOKAction().setEnabled(myForm.getSelectedPolicy() != null);

@@ -178,7 +178,31 @@ public class CheckInPoliciesForm {
 
     myAddButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        ChooseCheckinPolicyDialog d = new ChooseCheckinPolicyDialog(myProject);
+        final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
+
+        List<PolicyBase> policies = new ArrayList<PolicyBase>();
+        try {
+          // do not allow to add the same unconfigurable policy several times
+          main_loop:
+          for (PolicyBase installed : CheckinPoliciesManager.getInstalledPolicies()) {
+            if (!installed.canEdit()) {
+              for (StatefulPolicyDescriptor descriptor : projectEntry.descriptors) {
+                if (descriptor.getType().equals(installed.getPolicyType())) {
+                  continue main_loop;
+                }
+              }
+            }
+            policies.add(installed);
+          }
+        }
+        catch (DuplicatePolicyIdException ex) {
+          final String message = MessageFormat
+            .format("Several checkin policies with the same id found: ''{0}''.\nPlease review your extensions.", ex.getDuplicateId());
+          Messages.showErrorDialog(myProject, message, "Add Checkin Policy");
+          return;
+        }
+
+        ChooseCheckinPolicyDialog d = new ChooseCheckinPolicyDialog(myProject, policies);
         d.show();
         if (!d.isOK()) {
           return;
@@ -193,7 +217,6 @@ public class CheckInPoliciesForm {
           return;
         }
 
-        final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
         projectEntry.descriptors.add(newDescriptor);
         projectEntry.isModified = true;
         updateTable();
@@ -270,7 +293,7 @@ public class CheckInPoliciesForm {
   }
 
   private boolean editPolicy(StatefulPolicyDescriptor descriptor) {
-    PolicyBase policy = null;
+    PolicyBase policy;
     try {
       policy = CheckinPoliciesManager.find(descriptor.getType());
     }
