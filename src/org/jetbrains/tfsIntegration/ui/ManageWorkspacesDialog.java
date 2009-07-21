@@ -24,10 +24,12 @@ import javax.swing.*;
 
 public class ManageWorkspacesDialog extends DialogWrapper {
   private final Project myProject;
+  private final boolean myEditPoliciesButtonEnabled;
 
-  public ManageWorkspacesDialog(final Project project) {
+  public ManageWorkspacesDialog(final Project project, boolean editPoliciesButtonEnabled) {
     super(project, true);
     myProject = project;
+    myEditPoliciesButtonEnabled = editPoliciesButtonEnabled;
     setTitle("Manage TFS Servers and Workspaces");
     setOKButtonText("Close");
 
@@ -41,7 +43,7 @@ public class ManageWorkspacesDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    ManageWorkspacesForm f = new ManageWorkspacesForm(myProject, true);
+    ManageWorkspacesForm f = new ManageWorkspacesForm(myProject, true, myEditPoliciesButtonEnabled);
     f.setShowWorkspaces(true);
     return f.getContentPane();
   }

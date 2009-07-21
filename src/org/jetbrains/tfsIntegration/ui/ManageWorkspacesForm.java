@@ -109,6 +109,7 @@ public class ManageWorkspacesForm {
   private JPanel myWorkspacesPanel;
   private JButton myCheckInPoliciesButton;
   private final Project myProject;
+  private final boolean myEditPoliciesButtonEnabled;
   private boolean myShowWorkspaces = true;
   private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
@@ -158,8 +159,9 @@ public class ManageWorkspacesForm {
     }
   };
 
-  public ManageWorkspacesForm(final Project project, boolean allowEditCheckinPolicies) {
+  public ManageWorkspacesForm(final Project project, boolean editPoliciesButtonVisible, boolean editPoliciesButtonEnabled) {
     myProject = project;
+    myEditPoliciesButtonEnabled = editPoliciesButtonEnabled;
 
     myAddServerButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -207,9 +209,9 @@ public class ManageWorkspacesForm {
       }
     });
 
-    myCheckInPoliciesButton.setVisible(allowEditCheckinPolicies);
+    myCheckInPoliciesButton.setVisible(editPoliciesButtonVisible);
 
-    if (!TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
+    if (!myEditPoliciesButtonEnabled) {
       myCheckInPoliciesButton.setEnabled(false);
       myCheckInPoliciesButton.setToolTipText("Support for Teamprise compatible checkin policies was disabled");
     }
@@ -262,7 +264,7 @@ public class ManageWorkspacesForm {
     myCreateWorkspaceButton.setEnabled(selectedServer != null || selectedWorkspace != null);
     myEditWorkspaceButton.setEnabled(selectedWorkspace != null);
     myDeleteWorkspaceButton.setEnabled(selectedWorkspace != null);
-    myCheckInPoliciesButton.setEnabled(TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() && selectedServer != null);
+    myCheckInPoliciesButton.setEnabled(myEditPoliciesButtonEnabled && selectedServer != null);
   }
 
   private void addServer() {

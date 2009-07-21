@@ -39,7 +39,7 @@ public class ProjectConfigurableForm {
 
     myManageButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);
+        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject, supportStatefulCheckinPolicies());
         d.show();
       }
     });

@@ -40,7 +40,7 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
 
   public ChooseWorkspaceStep(Project project, final CheckoutWizardModel model) {
     super("Source Workspace", model);
-    myManageWorkspacesForm = new ManageWorkspacesForm(project, false);
+    myManageWorkspacesForm = new ManageWorkspacesForm(project, false, false);
     myManageWorkspacesForm.addSelectionListener(new ManageWorkspacesForm.Listener() {
       public void selectionChanged() {
         fireStateChanged();
