@@ -172,6 +172,8 @@ public class TfsUtil {
   public static void showBalloon(final Project project, final MessageType messageType, final String messageHtml) {
     Runnable r = new Runnable() {
       public void run() {
+        if (project.isDisposed()) return;
+        
         final ToolWindowManager manager = ToolWindowManager.getInstance(project);
         if (Arrays.asList(manager.getToolWindowIds()).contains(CHANGES_TOOLWINDOW_ID)) {
           manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);

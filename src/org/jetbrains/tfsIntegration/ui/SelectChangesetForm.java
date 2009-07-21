@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.Messages;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -37,18 +38,15 @@ import java.awt.event.MouseEvent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Date;
 
 public class SelectChangesetForm {
 
   private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
 
-  interface Listener {
+  interface Listener extends EventListener {
     void selectionChanged(Integer changeset);
-
     void selected(Integer changeset);
   }
 
@@ -70,7 +68,7 @@ public class SelectChangesetForm {
   private final String myServerPath;
   private final boolean myRecursive;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public SelectChangesetForm(final WorkspaceInfo workspace, String serverPath, boolean recursive) {
     myWorkspace = workspace;
@@ -103,7 +101,7 @@ public class SelectChangesetForm {
 
     myChangesetsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(final ListSelectionEvent e) {
-        fireSelectionChanged();
+        myEventDispatcher.getMulticaster().selectionChanged(getSelectedChangeset());
       }
     });
 
@@ -112,7 +110,7 @@ public class SelectChangesetForm {
         if (e.getClickCount() == 2) {
           final Integer changeset = getSelectedChangeset();
           if (changeset != null) {
-            fireSelected(changeset);
+            myEventDispatcher.getMulticaster().selected(changeset);
           }
         }
       }
@@ -207,26 +205,11 @@ public class SelectChangesetForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
-  }
-
-  private void fireSelectionChanged() {
-    Listener[] listenersArray = myListeners.toArray(new Listener[myListeners.size()]);
-    Integer changeset = getSelectedChangeset();
-    for (Listener listener : listenersArray) {
-      listener.selectionChanged(changeset);
-    }
-  }
-
-  private void fireSelected(Integer changeset) {
-    Listener[] listenersArray = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listenersArray) {
-      listener.selected(changeset);
-    }
+    myEventDispatcher.removeListener(listener);
   }
 
 }

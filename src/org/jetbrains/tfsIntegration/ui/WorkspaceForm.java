@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.EnumComboBoxModel;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.vcsUtil.VcsUtil;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -64,8 +65,8 @@ public class WorkspaceForm {
   private final WorkingFoldersTableModel myWorkingFoldersTableModel;
   private final Project myProject;
   private ServerInfo myServer;
-  private final List<Listener> myListeners = new ArrayList<Listener>();
 
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public WorkspaceForm(final Project project) {
     myProject = project;
@@ -188,19 +189,19 @@ public class WorkspaceForm {
 
     myNameField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireDataChanged();
+        myEventDispatcher.getMulticaster().dataChanged();
       }
     });
 
     myCommentField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireDataChanged();
+        myEventDispatcher.getMulticaster().dataChanged();
       }
     });
 
     myWorkingFoldersTableModel.addTableModelListener(new TableModelListener() {
       public void tableChanged(final TableModelEvent e) {
-        fireDataChanged();
+        myEventDispatcher.getMulticaster().dataChanged();
       }
     });
 
@@ -244,18 +245,11 @@ public class WorkspaceForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
-  }
-
-  private void fireDataChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.dataChanged();
-    }
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(@Nullable final String message) {

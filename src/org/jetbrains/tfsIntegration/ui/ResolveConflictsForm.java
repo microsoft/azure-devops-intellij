@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
@@ -34,7 +35,7 @@ import java.util.*;
 
 public class ResolveConflictsForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void close();
   }
 
@@ -47,7 +48,7 @@ public class ResolveConflictsForm {
   private final ConflictsTableModel myItemsTableModel;
   private final ResolveConflictHelper myResolveConflictHelper;
 
-  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   private static final Comparator<? super Conflict> CONFLICTS_COMPARATOR = new Comparator<Conflict>() {
     public int compare(final Conflict o1, final Conflict o2) {
@@ -80,7 +81,7 @@ public class ResolveConflictsForm {
     myItemsTableModel.addTableModelListener(new TableModelListener() {
       public void tableChanged(final TableModelEvent e) {
         if (myItemsTableModel.getRowCount() == 0) {
-          fireClose();
+          myEventDispatcher.getMulticaster().close();
         }
       }
     });
@@ -115,21 +116,13 @@ public class ResolveConflictsForm {
     return myContentPanel;
   }
 
-  private void fireClose() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.close();
-    }
-  }
-
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
-
 
   private void enableButtons(final int[] selectedIndices) {
     myAcceptYoursButton.setEnabled(selectedIndices.length > 0);

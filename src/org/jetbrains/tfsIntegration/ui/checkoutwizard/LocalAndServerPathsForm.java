@@ -21,6 +21,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.vcsUtil.VcsUtil;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
@@ -29,12 +30,11 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EventListener;
 
 public class LocalAndServerPathsForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void serverPathChanged();
 
     void localPathChanged();
@@ -45,20 +45,19 @@ public class LocalAndServerPathsForm {
   private JButton myBrowseButton;
   private JPanel myContentPanel;
   private JLabel myErrorLabel;
-  private JLabel myTitleLabel;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public LocalAndServerPathsForm() {
     myServerTree.addSelectionListener(new ServerTree.SelectionListener() {
       public void selectionChanged(final ServerTree.SelectedItem selection) {
-        fireServerPathChanged();
+        myEventDispatcher.getMulticaster().serverPathChanged();
       }
     });
 
     myLocalPathField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireLocalPathChanged();
+        myEventDispatcher.getMulticaster().localPathChanged();
       }
     });
 
@@ -72,6 +71,7 @@ public class LocalAndServerPathsForm {
         VirtualFile root = myLocalPathField.getText() != null ? VcsUtil.getVirtualFile(myLocalPathField.getText().trim()) : null;
         VirtualFile[] files = FileChooser.chooseFiles(myContentPanel, d, root);
         if (files.length == 1 && files[0] != null) {
+          myLocalPathField.setText(files[0].getPresentableUrl());
           myLocalPathField.setText(files[0].getPresentableUrl());
         }
       }
@@ -106,29 +106,15 @@ public class LocalAndServerPathsForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(String message) {
     myErrorLabel.setText(message);
-  }
-
-  private void fireLocalPathChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.localPathChanged();
-    }
-  }
-
-  private void fireServerPathChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.serverPathChanged();
-    }
   }
 
 }

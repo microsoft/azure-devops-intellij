@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -32,13 +33,12 @@ import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
+import java.util.EventListener;
 
 public class SelectRevisionForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void revisionChanged();
   }
 
@@ -60,7 +60,7 @@ public class SelectRevisionForm {
   private String myServerPath;
   private boolean myIsDirectory;
 
-  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public SelectRevisionForm(Project project, final WorkspaceInfo workspace, final String serverPath, final boolean isDirectory) {
     this();
@@ -70,7 +70,7 @@ public class SelectRevisionForm {
   public SelectRevisionForm() {
     final DocumentListener documentListener = new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e1) {
-        fireRevisionChanged();
+        myEventDispatcher.getMulticaster().revisionChanged();
       }
     };
 
@@ -82,7 +82,7 @@ public class SelectRevisionForm {
     final ActionListener radioButtonListener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         updateContols();
-        fireRevisionChanged();
+        myEventDispatcher.getMulticaster().revisionChanged();
       }
     };
 
@@ -266,19 +266,12 @@ public class SelectRevisionForm {
     updateContols();
   }
 
-  private void fireRevisionChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.revisionChanged();
-    }
-  }
-
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
 }

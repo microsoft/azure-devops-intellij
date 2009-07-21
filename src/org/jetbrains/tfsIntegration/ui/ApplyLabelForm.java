@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelItemSpecWithItems;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelModel;
@@ -34,12 +35,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.EventListener;
 
 public class ApplyLabelForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void dataChanged(String labelName, int visibleItemsCount);
   }
 
@@ -59,7 +60,7 @@ public class ApplyLabelForm {
   private LabelItemsTableModel myTableModel;
   private final LabelModel myLabelModel;
 
-  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public ApplyLabelForm(final Project project, final WorkspaceInfo workspace, final String sourcePath) {
     myProject = project;
@@ -69,7 +70,7 @@ public class ApplyLabelForm {
 
     myLabelNameTextField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireDataChanged();
+        myEventDispatcher.getMulticaster().dataChanged(getLabelName(), myTableModel.getRowCount());
       }
     });
 
@@ -130,7 +131,7 @@ public class ApplyLabelForm {
 
   private void reloadItems() {
     myTableModel.setContent(myLabelModel.calculateItemsToDisplay());
-    fireDataChanged();
+    myEventDispatcher.getMulticaster().dataChanged(getLabelName(), myTableModel.getRowCount());
   }
 
   public void addItems() {
@@ -164,18 +165,10 @@ public class ApplyLabelForm {
   }
 
   public void addListener(final Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(final Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.addListener(listener);
   }
-
-  private void fireDataChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.dataChanged(getLabelName(), myTableModel.getRowCount());
-    }
-  }
-
 }

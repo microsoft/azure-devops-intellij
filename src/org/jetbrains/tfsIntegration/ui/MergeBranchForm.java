@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -38,14 +39,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 
 public class MergeBranchForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void stateChanged(boolean canFinish);
   }
 
@@ -73,7 +72,7 @@ public class MergeBranchForm {
   private final JTable myChangesetsTable;
   private final ChangesetsTableModel myChangesetsTableModel;
   private final String myDialogTitle;
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
   private boolean mySourceIsDirectory;
   private final FocusListener mySourceFieldFocusListener;
 
@@ -230,19 +229,15 @@ public class MergeBranchForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   private void fireStateChanged() {
-    boolean canFinish = canFinish();
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.stateChanged(canFinish);
-    }
+    myEventDispatcher.getMulticaster().stateChanged(canFinish());
   }
 
   private boolean canFinish() {

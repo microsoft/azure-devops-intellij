@@ -16,27 +16,25 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EventListener;
 
 public class ServerPathForm {
-  public interface Listener {
 
+  public interface Listener extends EventListener {
     void serverPathChanged();
-
   }
 
   private ServerTree myServerTree;
-  private JLabel myTitleLabel;
   private JLabel myMessageLabel;
   private JPanel myContentPanel;
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
   private final @Nullable ServerTree.PathFilter myPathFilter;
 
   public ServerPathForm(final ServerTree.PathFilter pathFilter) {
@@ -48,7 +46,7 @@ public class ServerPathForm {
 
     myServerTree.addSelectionListener(new ServerTree.SelectionListener() {
       public void selectionChanged(final ServerTree.SelectedItem selection) {
-        fireServerPathChanged();
+        myEventDispatcher.getMulticaster().serverPathChanged();
       }
     });
   }
@@ -68,11 +66,11 @@ public class ServerPathForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(String message) {
@@ -83,13 +81,6 @@ public class ServerPathForm {
   public void setMessage(String message) {
     myMessageLabel.setText(message);
     myMessageLabel.setForeground(Color.BLACK); // TODO
-  }
-
-  private void fireServerPathChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.serverPathChanged();
-    }
   }
 
 }

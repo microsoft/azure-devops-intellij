@@ -17,21 +17,21 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.EventListener;
 
 public class MergeNameForm {
-  public interface Listener {
+  public interface Listener extends EventListener{
     void selectedPathChanged();
   }
 
-  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   private final String myYoursPath;
   private final String myTheirsPath;
@@ -71,7 +71,7 @@ public class MergeNameForm {
     
     myCustomPathTextField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireSelectedPathChanged();
+        myEventDispatcher.getMulticaster().selectedPathChanged();
       }
     });
 
@@ -80,7 +80,7 @@ public class MergeNameForm {
 
   private void update() {
     myCustomPathTextField.setEnabled(myUseCustomRadioButton.isSelected());
-    fireSelectedPathChanged();
+    myEventDispatcher.getMulticaster().selectedPathChanged();
   }
 
   public JComponent getPanel() {
@@ -102,18 +102,11 @@ public class MergeNameForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
-  }
-
-  private void fireSelectedPathChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.selectedPathChanged();
-    }
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorText(final String errorMessage) {

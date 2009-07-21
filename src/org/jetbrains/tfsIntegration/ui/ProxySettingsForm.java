@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
@@ -26,14 +27,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EventListener;
 
 public class ProxySettingsForm {
 
   private JPanel myContentPane;
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void stateChanged();
   }
 
@@ -44,7 +44,7 @@ public class ProxySettingsForm {
   private JLabel myInfoLabel;
   private JLabel myProxyUrlLabel;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public ProxySettingsForm(@Nullable URI initialProxyUri, @Nullable String serverQualifiedUsername) {
     if (initialProxyUri == null) {
@@ -58,7 +58,7 @@ public class ProxySettingsForm {
     final ActionListener radioButtonListener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         updateContols();
-        fireStateChanged();
+        myEventDispatcher.getMulticaster().stateChanged();
       }
     };
 
@@ -66,7 +66,7 @@ public class ProxySettingsForm {
     myProxyServerRadioButton.addActionListener(radioButtonListener);
     myProxyServerTextField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        fireStateChanged();
+        myEventDispatcher.getMulticaster().stateChanged();
       }
     });
 
@@ -91,19 +91,12 @@ public class ProxySettingsForm {
     return myContentPane;
   }
 
-  private void fireStateChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.stateChanged();
-    }
-  }
-
   public void addListener(final Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(final Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public boolean isValid() {

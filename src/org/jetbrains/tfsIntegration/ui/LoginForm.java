@@ -17,20 +17,20 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EventListener;
 
 public class LoginForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void stateChanged();
   }
 
@@ -42,7 +42,7 @@ public class LoginForm {
   private JPanel myContentPane;
   private JLabel myMessageLabel;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public LoginForm(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
     myUriField.setText(initialUri != null ? initialUri.toString() : null);
@@ -54,7 +54,7 @@ public class LoginForm {
     final DocumentListener changeListener = new DocumentAdapter() {
       @Override
       protected void textChanged(final DocumentEvent e) {
-        fireStateChanged();
+        myEventDispatcher.getMulticaster().stateChanged();
       }
     };
 
@@ -101,19 +101,12 @@ public class LoginForm {
     return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected());
   }
 
-  private void fireStateChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.stateChanged();
-    }
-  }
-
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(final @Nullable String errorMessage) {

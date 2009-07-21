@@ -19,12 +19,11 @@ package org.jetbrains.tfsIntegration.ui.abstractwizard;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.ide.wizard.Step;
 import com.intellij.ide.wizard.StepListener;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class AbstractWizardStep implements Step {
 
@@ -38,7 +37,7 @@ public abstract class AbstractWizardStep implements Step {
     void doNextAction();
   }
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public AbstractWizardStep(final String title) {
     myTitle = title;
@@ -55,7 +54,7 @@ public abstract class AbstractWizardStep implements Step {
   }
 
   public void addStepListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   protected void setTitle(final String title) {
@@ -63,17 +62,11 @@ public abstract class AbstractWizardStep implements Step {
   }
 
   protected void fireStateChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.stateChanged();
-    }
+    myEventDispatcher.getMulticaster().stateChanged();
   }
 
   protected void fireGoNext() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.doNextAction();
-    }
+    myEventDispatcher.getMulticaster().doNextAction();
   }
 
   public Icon getIcon() {

@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.text.SyncDateFormat;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +46,7 @@ public class TFSFileAnnotation implements FileAnnotation {
   private final String myAnnotatedContent;
   private final VcsFileRevision[] myLineRevisions;
 
-  private final List<AnnotationListener> myListeners = new ArrayList<AnnotationListener>();
+  private final EventDispatcher<AnnotationListener> myEventDispatcher = EventDispatcher.create(AnnotationListener.class);
 
   private final LineAnnotationAspect REVISION_ASPECT = new RevisionAnnotationAspect();
 
@@ -76,10 +77,7 @@ public class TFSFileAnnotation implements FileAnnotation {
       try {
         GuiUtils.runOrInvokeAndWait(new Runnable() {
           public void run() {
-            final AnnotationListener[] listeners = myListeners.toArray(new AnnotationListener[myListeners.size()]);
-            for (AnnotationListener listener : listeners) {
-              listener.onAnnotationChanged();
-            }
+            myEventDispatcher.getMulticaster().onAnnotationChanged();
           }
         });
       }
@@ -104,11 +102,11 @@ public class TFSFileAnnotation implements FileAnnotation {
   }
 
   public void addListener(AnnotationListener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(AnnotationListener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public void dispose() {

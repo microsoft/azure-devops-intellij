@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -31,14 +32,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.EventListener;
 
 
 public class SelectLabelForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void selectionChanged();
   }
 
@@ -50,7 +51,7 @@ public class SelectLabelForm {
 
   private final LabelsTableModel myLabelsTableModel;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public SelectLabelForm(final SelectLabelDialog dialog, final WorkspaceInfo workspace) {
     myLabelsTableModel = new LabelsTableModel();
@@ -59,7 +60,7 @@ public class SelectLabelForm {
 
     myLabelsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
       public void valueChanged(final ListSelectionEvent e) {
-        fireSelectionChanged();
+        myEventDispatcher.getMulticaster().selectionChanged();
       }
     });
 
@@ -94,7 +95,7 @@ public class SelectLabelForm {
           Messages.showErrorDialog(myContentPane, ex.getMessage(), "Find Label");
         }
         finally {
-          fireSelectionChanged();
+          myEventDispatcher.getMulticaster().selectionChanged();
         }
       }
     });
@@ -104,19 +105,12 @@ public class SelectLabelForm {
     return myContentPane;
   }
 
-  private void fireSelectionChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.selectionChanged();
-    }
-  }
-
   public void addListener(final Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(final Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public boolean isLabelSelected() {

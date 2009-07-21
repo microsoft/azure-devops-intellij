@@ -17,19 +17,18 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EventListener;
 
 public class CheckoutModeForm {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void modeChanged(boolean autoModeSelected);
-
     void newWorkspaceNameChanged(String workspaceName);
   }
 
@@ -42,23 +41,23 @@ public class CheckoutModeForm {
   private JTextField myWorkspaceNameField;
   private JLabel myErrorLabel;
 
-  private final List<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public CheckoutModeForm() {
     myAutoModeButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        fireModeChanged();
+        myEventDispatcher.getMulticaster().modeChanged(isAutoModeSelected());
       }
     });
     myManualModeButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        fireModeChanged();
+        myEventDispatcher.getMulticaster().modeChanged(isAutoModeSelected());
       }
     });
     myWorkspaceNameField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
         myAutoModeButton.setSelected(true);
-        fireWorkspaceNameChanged();
+        myEventDispatcher.getMulticaster().newWorkspaceNameChanged(getNewWorkspaceName());
       }
     });
   }
@@ -89,29 +88,15 @@ public class CheckoutModeForm {
   }
 
   public void addListener(Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(Listener listener) {
-    myListeners.remove(listener);
+    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(String message) {
     myErrorLabel.setText(message);
-  }
-
-  private void fireModeChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.modeChanged(isAutoModeSelected());
-    }
-  }
-
-  private void fireWorkspaceNameChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.newWorkspaceNameChanged(getNewWorkspaceName());
-    }
   }
 
 }

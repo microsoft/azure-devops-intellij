@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.locks.LockItemModel;
@@ -24,13 +25,13 @@ import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LockLevel;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.EventListener;
 import java.util.List;
 
 public class LockItemsTableModel extends AbstractTableModel {
 
-  public interface Listener {
+  public interface Listener extends EventListener {
     void selectionChanged();
   }
 
@@ -79,7 +80,7 @@ public class LockItemsTableModel extends AbstractTableModel {
 
   private final @NotNull List<LockItemModel> myContent;
 
-  private final Collection<Listener> myListeners = new ArrayList<Listener>();
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public LockItemsTableModel(final @NotNull List<LockItemModel> content) {
     myContent = content;
@@ -111,7 +112,7 @@ public class LockItemsTableModel extends AbstractTableModel {
   public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
     if (Column.values()[columnIndex] == Column.Selection) {
       myContent.get(rowIndex).setSelectionStatus((Boolean)aValue);
-      fireSelectionChanged();
+      myEventDispatcher.getMulticaster().selectionChanged();
     }
   }
 
@@ -126,18 +127,11 @@ public class LockItemsTableModel extends AbstractTableModel {
   }
 
   public void addListener(final Listener listener) {
-    myListeners.add(listener);
+    myEventDispatcher.addListener(listener);
   }
 
   public void removeListener(final Listener listener) {
-    myListeners.remove(listener);
-  }
-
-  private void fireSelectionChanged() {
-    Listener[] listeners = myListeners.toArray(new Listener[myListeners.size()]);
-    for (Listener listener : listeners) {
-      listener.selectionChanged();
-    }
+    myEventDispatcher.removeListener(listener);
   }
 
   @Override
