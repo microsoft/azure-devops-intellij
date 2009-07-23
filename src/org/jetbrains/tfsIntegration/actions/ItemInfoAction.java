@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
@@ -32,7 +33,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class ItemInfoAction extends SingleItemAction {
+public class ItemInfoAction extends SingleItemAction implements DumbAware {
 
   private static final Collection<FileStatus> ALLOWED_STATUSES =
     Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE, FileStatus.ADDED);

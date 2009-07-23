@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.Messages;
@@ -44,7 +45,7 @@ import org.jetbrains.tfsIntegration.ui.MergeBranchDialog;
 import java.text.MessageFormat;
 import java.util.*;
 
-public class MergeBranchAction extends SingleItemAction {
+public class MergeBranchAction extends SingleItemAction implements DumbAware {
 
   protected void execute(final @NotNull Project project,
                          final @NotNull WorkspaceInfo workspace,

@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
@@ -34,7 +35,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LabelAction extends SingleItemAction {
+public class LabelAction extends SingleItemAction implements DumbAware {
 
   protected void execute(final @NotNull Project project,
                          final @NotNull WorkspaceInfo workspace,

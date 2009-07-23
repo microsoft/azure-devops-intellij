@@ -20,6 +20,7 @@ import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.Pair;
@@ -44,7 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class BranchAction extends SingleItemAction {
+public class BranchAction extends SingleItemAction implements DumbAware {
 
   protected void execute(final @NotNull Project project,
                          final @NotNull WorkspaceInfo workspace,
