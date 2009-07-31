@@ -50,7 +50,7 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   private final LineAnnotationAspect REVISION_ASPECT = new RevisionAnnotationAspect();
 
-  private final LineAnnotationAspect DATE_ASPECT = new LineAnnotationAspect() {
+  private final LineAnnotationAspect DATE_ASPECT = new LineAnnotationAspectAdapter() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return DATE_FORMAT.format(myLineRevisions[lineNumber].getRevisionDate());
@@ -61,7 +61,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspect() {
+  private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspectAdapter() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return TfsUtil.getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
@@ -166,7 +166,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private class RevisionAnnotationAspect implements LineAnnotationAspect, EditorGutterAction {
+  private class RevisionAnnotationAspect extends LineAnnotationAspectAdapter implements EditorGutterAction {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return myLineRevisions[lineNumber].getRevisionNumber().asString();
