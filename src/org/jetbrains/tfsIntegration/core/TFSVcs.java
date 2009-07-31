@@ -87,9 +87,6 @@ public class TFSVcs extends AbstractVcs {
     return new TFSProjectConfigurable(myProject);
   }
 
-  public Project getProject() {
-    return myProject;
-  }
 
   @Override
   public void activate() {
