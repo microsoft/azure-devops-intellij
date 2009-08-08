@@ -54,7 +54,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     if (localItemExists) {
       TFSContentRevision baseRevision =
         TFSContentRevision.create(myProject, myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
-      myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)));
+      myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)), TFSVcs.getKey());
     }
     else {
       myChangelistBuilder.processLocallyDeletedFile(localPath);
@@ -65,7 +65,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                    final boolean localItemExists,
                                    final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      myChangelistBuilder.processChange(new Change(null, new CurrentContentRevision(localPath)));
+      myChangelistBuilder.processChange(new Change(null, new CurrentContentRevision(localPath)), TFSVcs.getKey());
     }
     else {
       myChangelistBuilder.processLocallyDeletedFile(localPath);
@@ -77,7 +77,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                    final @NotNull ServerStatus serverStatus) {
     TFSContentRevision baseRevision =
       TFSContentRevision.create(myProject, myWorkspace, localPath, serverStatus.localVer, serverStatus.itemId);
-    myChangelistBuilder.processChange(new Change(baseRevision, null));
+    myChangelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
   }
 
   public void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatusm) {
@@ -118,7 +118,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
       //noinspection ConstantConditions
       TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
       ContentRevision after = CurrentContentRevision.create(localPath);
-      myChangelistBuilder.processChange(new Change(before, after));
+      myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
     }
     else {
       myChangelistBuilder.processLocallyDeletedFile(localPath);
@@ -135,7 +135,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
       //noinspection ConstantConditions
       TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
       ContentRevision after = CurrentContentRevision.create(localPath);
-      myChangelistBuilder.processChange(new Change(before, after));
+      myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
     }
     else {
       myChangelistBuilder.processLocallyDeletedFile(localPath);

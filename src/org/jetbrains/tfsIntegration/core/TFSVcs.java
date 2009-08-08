@@ -47,6 +47,7 @@ public class TFSVcs extends AbstractVcs {
   // TODO make private
   @NonNls public static final String TFS_NAME = "TFS";
   public static final Logger LOG = Logger.getInstance("org.jetbrains.tfsIntegration.core.TFSVcs");
+  private static final VcsKey ourKey = createKey(TFS_NAME);
 
   private VcsVFSListener myFileListener;
   private final VcsShowConfirmationOption myAddConfirmation;
@@ -61,7 +62,7 @@ public class TFSVcs extends AbstractVcs {
   private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
   public TFSVcs(Project project) {
-    super(project);
+    super(project, TFS_NAME);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
@@ -71,11 +72,6 @@ public class TFSVcs extends AbstractVcs {
 
   public static TFSVcs getInstance(Project project) {
     return (TFSVcs)ProjectLevelVcsManager.getInstance(project).findVcsByName(TFS_NAME);
-  }
-
-  @NonNls
-  public String getName() {
-    return TFS_NAME;
   }
 
   @NonNls
@@ -225,5 +221,9 @@ public class TFSVcs extends AbstractVcs {
 
   public void removeRevisionChangedListener(RevisionChangedListener listener) {
     myRevisionChangedListeners.remove(listener);
+  }
+
+  public static VcsKey getKey() {
+    return ourKey;
   }
 }
