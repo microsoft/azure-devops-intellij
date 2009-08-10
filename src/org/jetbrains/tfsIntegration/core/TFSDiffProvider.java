@@ -52,34 +52,7 @@ public class TFSDiffProvider implements DiffProvider {
   @Nullable
   public ItemLatestState getLastRevision(final VirtualFile virtualFile) {
     final FilePath localPath = TfsFileUtil.getFilePath(virtualFile);
-    try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
-      if (workspaces.isEmpty()) {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
-      }
-      final WorkspaceInfo workspace = workspaces.iterator().next();
-      final ExtendedItem extendedItem = workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
-      if (extendedItem == null) {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
-      }
-      // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
-      // so we need to query item by name
-      final Item item = workspace.getServer().getVCS()
-        .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
-                   false);
-      if (item != null) {
-        VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
-        return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE);
-      }
-      else {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
-      }
-    }
-    catch (TfsException e) {
-      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      return new ItemLatestState(VcsRevisionNumber.NULL, false);
-    }
+    return getLastRevision(localPath);
   }
 
   @Nullable
@@ -111,4 +84,39 @@ public class TFSDiffProvider implements DiffProvider {
     return TfsUtil.getCurrentRevisionNumber(TfsFileUtil.getFilePath(virtualFile));
   }
 
+  public ItemLatestState getLastRevision(final FilePath localPath) {
+    try {
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+      if (workspaces.isEmpty()) {
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+      }
+      final WorkspaceInfo workspace = workspaces.iterator().next();
+      final ExtendedItem extendedItem = workspace.getServer().getVCS()
+        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
+      if (extendedItem == null) {
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+      }
+      // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
+      // so we need to query item by name
+      final Item item = workspace.getServer().getVCS()
+        .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
+                   false);
+      if (item != null) {
+        VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
+        return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE);
+      }
+      else {
+        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+      }
+    }
+    catch (TfsException e) {
+      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+      return new ItemLatestState(VcsRevisionNumber.NULL, false);
+    }
+  }
+
+  public VcsRevisionNumber getLatestCommittedRevision(VirtualFile vcsRoot) {
+    // todo.
+    return null;
+  }
 }
