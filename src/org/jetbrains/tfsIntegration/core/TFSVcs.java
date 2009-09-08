@@ -29,6 +29,7 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +92,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Override
   public void deactivate() {
-    myFileListener.dispose();
+    Disposer.dispose(myFileListener);
   }
 
   public VcsShowConfirmationOption getAddConfirmation() {
