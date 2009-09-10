@@ -99,7 +99,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       }
 
       for (FilePath orphanPath : orphanPaths) {
-        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(orphanPath.getPresentableUrl());
+        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(orphanPath.getPresentableUrl(), TFSVcs.getKey(), null);
       }
     }
     catch (TfsException e) {

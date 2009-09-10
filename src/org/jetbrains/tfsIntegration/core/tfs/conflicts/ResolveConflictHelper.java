@@ -148,7 +148,7 @@ public class ResolveConflictHelper {
     if (myUpdatedFiles != null) {
       String localPath =
         VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
-      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath, TFSVcs.getKey(), null);
     }
   }
 
@@ -160,7 +160,7 @@ public class ResolveConflictHelper {
     if (myUpdatedFiles != null) {
       String localPath =
         VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
-      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath);
+      myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath, TFSVcs.getKey(), null);
     }
   }
 
@@ -238,7 +238,7 @@ public class ResolveConflictHelper {
 
     if (resolution == Resolution.AcceptMerge) {
       if (myUpdatedFiles != null) {
-        myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(newLocalPath);
+        myUpdatedFiles.getGroupById(FileGroup.MERGED_ID).add(newLocalPath, TFSVcs.getKey(), null);
       }
     }
     myConflict2Workspace.remove(conflict);
