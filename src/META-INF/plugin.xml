@@ -5,6 +5,7 @@
   <description>Integration with Team Foundation Server.</description>
   <category>VCS Integration</category>
   <depends>com.intellij.modules.vcs</depends>
+  <depends>com.intellij.modules.ultimate</depends>
 
   <version>8.1</version>
   <vendor url="http://www.swiftteams.com">SwiftTeams</vendor>

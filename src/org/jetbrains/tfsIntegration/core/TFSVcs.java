@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -29,7 +30,8 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.util.Disposer;
+import com.intellij.ultimate.PluginVerifier;
+import com.intellij.ultimate.UltimateVerifier;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,8 +64,9 @@ public class TFSVcs extends AbstractVcs {
   private AnnotationProvider myAnnotationProvider;
   private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
 
-  public TFSVcs(Project project) {
+  public TFSVcs(Project project, UltimateVerifier verifier) {
     super(project, TFS_NAME);
+    PluginVerifier.verifyUltimatePlugin(verifier);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
