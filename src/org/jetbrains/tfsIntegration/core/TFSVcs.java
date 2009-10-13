@@ -127,7 +127,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public boolean fileIsUnderVcs(final FilePath filePath) {
-    return ThreeStateBoolean.yes.equals(isVersionedDirectory(filePath.getVirtualFile()));
+    return isVersionedDirectory(filePath.getVirtualFile());
   }
 
   public boolean isVersionedDirectory(final VirtualFile dir) {
