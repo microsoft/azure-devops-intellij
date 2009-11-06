@@ -33,7 +33,7 @@ import java.awt.*;
 public class ServerTreeLabelProvider implements LabelProvider<Item> {
 
   @NonNls private static final Icon ICON_VIRTUAL_FOLDER = IconLoader.getIcon("/actions/newFolder.png");
-  private static final Icon ICON_ERROR = IconLoader.getIcon("/resources/icons/error.gif");
+  private static final Icon ICON_ERROR = IconLoader.getIcon("/icons/error.gif");
 
   private static final Color COLOR_DISABLED = Color.GRAY;
   private static final Color COLOR_VIRTUAL_ITEM = FileStatus.COLOR_ADDED;
