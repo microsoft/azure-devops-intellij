@@ -88,13 +88,13 @@ public class TFSDiffProvider implements DiffProvider {
     try {
       Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
       if (workspaces.isEmpty()) {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+        return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }
       final WorkspaceInfo workspace = workspaces.iterator().next();
       final ExtendedItem extendedItem = workspace.getServer().getVCS()
         .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
       if (extendedItem == null) {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+        return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }
       // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
       // so we need to query item by name
@@ -103,15 +103,15 @@ public class TFSDiffProvider implements DiffProvider {
                    false);
       if (item != null) {
         VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
-        return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE);
+        return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE, false);
       }
       else {
-        return new ItemLatestState(VcsRevisionNumber.NULL, false);
+        return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }
     }
     catch (TfsException e) {
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
-      return new ItemLatestState(VcsRevisionNumber.NULL, false);
+      return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
     }
   }
 
