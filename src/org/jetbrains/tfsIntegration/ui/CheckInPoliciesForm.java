@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.ui.table.TableView;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.ListTableModel;
 import com.intellij.util.ui.UIUtil;
@@ -142,7 +143,7 @@ public class CheckInPoliciesForm {
       }
     });
 
-    myProjectCombo.setModel(new DefaultComboBoxModel(projects.toArray(new String[projects.size()])));
+    myProjectCombo.setModel(new DefaultComboBoxModel(ArrayUtil.toStringArray(projects)));
     myProjectCombo.setRenderer(new DefaultListCellRenderer() {
       @Override
       public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

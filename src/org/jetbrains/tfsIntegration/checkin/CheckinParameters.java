@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.vcsUtil.VcsUtil;
 import gnu.trove.THashSet;
@@ -351,7 +352,7 @@ public class CheckinParameters {
           final String message;
           if (data.myEmptyNotes.size() > 1) {
             message = MessageFormat.format("Checkin notes ''{0}'' are required to commit",
-                                           StringUtil.join(data.myEmptyNotes.toArray(new String[data.myEmptyNotes.size()]), "', '"));
+                                           StringUtil.join(ArrayUtil.toStringArray(data.myEmptyNotes), "', '"));
 
           }
           else {

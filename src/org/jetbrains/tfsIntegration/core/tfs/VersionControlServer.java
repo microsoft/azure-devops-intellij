@@ -21,6 +21,7 @@ import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.util.ArrayUtil;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
@@ -1548,7 +1549,7 @@ public class VersionControlServer {
     for (WorkItemField field : WorkItemSerialize.FIELDS) {
       serializedFields.add(field.getSerialized());
     }
-    workItemFields.setString(serializedFields.toArray(new String[serializedFields.size()]));
+    workItemFields.setString(ArrayUtil.toStringArray(serializedFields));
 
     PageWorkitemsByIdsResponse pageWorkitemsByIdsResponse =
       WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
