@@ -78,9 +78,9 @@ public class LoginDialog extends DialogWrapper {
       return "Please enter user name.";
     }
 
-    if (StringUtil.isEmptyOrSpaces(myLoginForm.getDomain())) {
-      return "Please enter domain.";
-    }
+    //if (StringUtil.isEmptyOrSpaces(myLoginForm.getDomain())) {
+    //  return "Please enter domain.";
+    //}
 
     return null;
   }
