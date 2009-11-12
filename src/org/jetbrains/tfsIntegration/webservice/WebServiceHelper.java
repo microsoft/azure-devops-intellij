@@ -123,7 +123,9 @@ public class WebServiceHelper {
 
             CheckAuthenticationResponse response = serverStatusStub.CheckAuthentication(new CheckAuthentication());
             String connectionCredentials = response.getCheckAuthenticationResult();
-            if (!credentials.getQualifiedUsername().equalsIgnoreCase(connectionCredentials)) {
+            int i = connectionCredentials.indexOf('\\');
+            String username = i != -1 ? connectionCredentials.substring(i + 1) : connectionCredentials;
+            if (!credentials.getUserName().equalsIgnoreCase(username)) {
               throw new WrongConnectionException(connectionCredentials);
             }
 
@@ -278,7 +280,8 @@ public class WebServiceHelper {
                 // if originally stored credentials not null, URI was specified and therefore isn't changed
                 Credentials recentlyStoredCredentials = TFSConfigurationManager.getInstance().getCredentials(uri.get());
                 trace(callerThreadId, "recently stored credentials for {0}: {1}", uri.get(), recentlyStoredCredentials);
-                if (recentlyStoredCredentials != null && originalStoredCredentials != null &&
+                if (recentlyStoredCredentials != null &&
+                    originalStoredCredentials != null &&
                     !recentlyStoredCredentials.equalsTo(originalStoredCredentials)) {
                   credentials.set(recentlyStoredCredentials);
                   shouldPrompt = false;
@@ -475,8 +478,14 @@ public class WebServiceHelper {
   private static void trace(long threadId, @NonNls String msg) {
     // you may need this for debugging
     String dispatch = ApplicationManager.getApplication().isDispatchThread() ? " [d]" : "";
-    @NonNls String message = String.valueOf(System.currentTimeMillis()) + ", thread=" + String.valueOf(threadId) + ", cur thread=" +
-                             String.valueOf(Thread.currentThread().getId()) + dispatch + ": " + msg;
+    @NonNls String message = String.valueOf(System.currentTimeMillis()) +
+                             ", thread=" +
+                             String.valueOf(threadId) +
+                             ", cur thread=" +
+                             String.valueOf(Thread.currentThread().getId()) +
+                             dispatch +
+                             ": " +
+                             msg;
     //System.out.println(message);
   }
 
@@ -502,8 +511,7 @@ public class WebServiceHelper {
     return Pair.create(domain, user);
   }
 
-  private static <T> T runWithPluginClassLoader(final ThrowableComputable<T, Exception> computable)
-    throws Exception {
+  private static <T> T runWithPluginClassLoader(final ThrowableComputable<T, Exception> computable) throws Exception {
     final ClassLoader oldCtxLoad = Thread.currentThread().getContextClassLoader();
     try {
       final ClassLoader ctxLoader = TFSVcs.class.getClassLoader();
