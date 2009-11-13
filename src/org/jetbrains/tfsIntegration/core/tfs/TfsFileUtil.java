@@ -22,6 +22,7 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.newvfs.RefreshQueue;
@@ -177,7 +178,7 @@ public class TfsFileUtil {
   }
 
   public static void refreshAndMarkDirty(final Project project, final Collection<VirtualFile> roots, boolean async) {
-    refreshAndMarkDirty(project, roots.toArray(new VirtualFile[roots.size()]), async);
+    refreshAndMarkDirty(project, VfsUtil.toVirtualFileArray(roots), async);
   }
 
   public static void refreshAndInvalidate(final Project project, final FilePath[] roots, boolean async) {

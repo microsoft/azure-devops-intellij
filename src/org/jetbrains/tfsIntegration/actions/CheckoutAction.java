@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -46,7 +47,7 @@ public class CheckoutAction extends AnAction implements DumbAware {
       public void run() {
         try {
           ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-          TFSVcs.getInstance(project).getEditFileProvider().editFiles(rootsCollection.toArray(new VirtualFile[rootsCollection.size()]));
+          TFSVcs.getInstance(project).getEditFileProvider().editFiles(VfsUtil.toVirtualFileArray(rootsCollection));
         }
         catch (VcsException ex) {
           error.set(ex);
