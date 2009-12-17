@@ -129,6 +129,9 @@ public class CheckinParameters {
             }
           });
 
+          if (serverToProjects.isEmpty()) {
+            throw new OperationFailedException("Team Foundation Server mappings not found.");
+          }
           pi.checkCanceled();
 
           List<ServerInfo> sortedServers = new ArrayList<ServerInfo>(serverToProjects.keySet());
