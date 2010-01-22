@@ -31,5 +31,6 @@ public final class TFSConstants {
 
   @NonNls public static final String TFS_CHECKIN_POLICIES_ANNOTATION = "CheckinPolicies";
   @NonNls public static final String STATEFUL_CHECKIN_POLICIES_ANNOTATION = "TeampriseCheckinPolicies"; // let's be compatible
+  @NonNls public static final String OVERRRIDES_ANNOTATION = "IntellijOverrides";
 
 }

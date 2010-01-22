@@ -157,24 +157,17 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     return myUseIdeaHttpProxy;
   }
 
-  public boolean supportTfsCheckinPolicies() {
-    return mySupportTfsCheckinPolicies;
+  public TfsCheckinPoliciesCompatibility getCheckinPoliciesCompatibility() {
+    return new TfsCheckinPoliciesCompatibility(mySupportStatefulCheckinPolicies, mySupportTfsCheckinPolicies,
+                                               myReportNotInstalledCheckinPolicies);
   }
 
   public void setSupportTfsCheckinPolicies(boolean supportTfsCheckinPolicies) {
     mySupportTfsCheckinPolicies = supportTfsCheckinPolicies;
   }
 
-  public boolean supportStatefulCheckinPolicies() {
-    return mySupportStatefulCheckinPolicies;
-  }
-
   public void setSupportStatefulCheckinPolicies(boolean supportStatefulCheckinPolicies) {
     mySupportStatefulCheckinPolicies = supportStatefulCheckinPolicies;
-  }
-
-  public boolean reportNotInstalledCheckinPolicies() {
-    return myReportNotInstalledCheckinPolicies;
   }
 
   public void setReportNotInstalledCheckinPolicies(boolean reportNotInstalledCheckinPolicies) {

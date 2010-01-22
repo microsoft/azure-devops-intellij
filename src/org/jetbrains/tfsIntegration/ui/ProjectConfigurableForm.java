@@ -39,7 +39,7 @@ public class ProjectConfigurableForm {
 
     myManageButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject, supportStatefulCheckinPolicies());
+        ManageWorkspacesDialog d = new ManageWorkspacesDialog(myProject);
         d.show();
       }
     });
@@ -55,6 +55,24 @@ public class ProjectConfigurableForm {
         }
       }
     });
+
+    ActionListener l = new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        updateNonInstalledCheckbox();
+      }
+    };
+    myStatefulCheckBox.addActionListener(l);
+    myTFSCheckBox.addActionListener(l);
+  }
+
+  private void updateNonInstalledCheckbox() {
+    if (!myStatefulCheckBox.isSelected() && !myTFSCheckBox.isSelected()) {
+      myReportNotInstalledPoliciesCheckBox.setSelected(false);
+      myReportNotInstalledPoliciesCheckBox.setEnabled(false);
+    }
+    else {
+      myReportNotInstalledPoliciesCheckBox.setEnabled(true);
+    }
   }
 
   public JComponent getContentPane() {
@@ -83,10 +101,12 @@ public class ProjectConfigurableForm {
 
   public void setSupportTfsCheckinPolicies(boolean supportTfsCheckinPolicies) {
     myTFSCheckBox.setSelected(supportTfsCheckinPolicies);
+    updateNonInstalledCheckbox();
   }
 
   public void setSupportStatefulCheckinPolicies(boolean supportStatefulCheckinPolicies) {
     myStatefulCheckBox.setSelected(supportStatefulCheckinPolicies);
+    updateNonInstalledCheckbox();
   }
 
   public void setReportNotInstalledCheckinPolicies(boolean reportNotInstalledCheckinPolicies) {

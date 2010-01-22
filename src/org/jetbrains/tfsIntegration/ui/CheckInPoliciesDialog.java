@@ -18,20 +18,20 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import org.jetbrains.tfsIntegration.checkin.StatefulPolicyDescriptor;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 
 import javax.swing.*;
 import java.text.MessageFormat;
-import java.util.List;
 import java.util.Map;
 
 public class CheckInPoliciesDialog extends DialogWrapper {
   private final Project myProject;
-  private final Map<String, List<StatefulPolicyDescriptor>> myProjectToDescriptors;
+  private final Map<String, ManageWorkspacesForm.ProjectEntry> myProjectToDescriptors;
   private CheckInPoliciesForm myForm;
 
-  public CheckInPoliciesDialog(final Project project, ServerInfo server, Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors) {
+  public CheckInPoliciesDialog(final Project project,
+                               ServerInfo server,
+                               Map<String, ManageWorkspacesForm.ProjectEntry> projectToDescriptors) {
     super(project, false);
     myProject = project;
     myProjectToDescriptors = projectToDescriptors;
@@ -51,13 +51,13 @@ public class CheckInPoliciesDialog extends DialogWrapper {
     return "TFS.ConfigureCheckInPolicies";
   }
 
-  public Map<String, List<StatefulPolicyDescriptor>> getModifications() {
-    return myForm.getModifications(); 
+  public Map<String, ManageWorkspacesForm.ProjectEntry> getModifications() {
+    return myForm.getModifications();
   }
 
   @Override
   protected String getHelpId() {
     return "project.propVCSSupport.VCSs.TFS.edit.checkin.policies";
   }
-  
+
 }

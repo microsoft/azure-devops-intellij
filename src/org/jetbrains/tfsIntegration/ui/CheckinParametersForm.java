@@ -198,9 +198,7 @@ public class CheckinParametersForm {
       }
     });
 
-    myEvaluateButton.setEnabled((TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() ||
-                                 TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) &&
-                                myState.getPoliciesLoadError() == null);
+    myEvaluateButton.setEnabled(myState.evaluationEnabled() && myState.getPoliciesLoadError() == null);
 
     myEvaluateButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
@@ -241,14 +239,13 @@ public class CheckinParametersForm {
 
   private void updatePoliciesWarnings() {
     List<PolicyFailure> failures = new ArrayList<PolicyFailure>();
-    if (!TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() &&
-        !TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Support for checkin policies was disabled",
-                                     "Use Project Settings -> TFS configuration settings to enable checkin policies support"));
+    if (!myState.evaluationEnabled()) {
+      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Evaluation of checkin policies was disabled",
+                                     "Use Project Settings | TFS configuration settings to enable checkin policies evaluation"));
     }
     else if (myState.getPoliciesLoadError() != null) {
-      failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Cannot load checkin policies definitions",
-                                     myState.getPoliciesLoadError()));
+      failures.add(
+        new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Cannot load checkin policies definitions", myState.getPoliciesLoadError()));
     }
     else if (!myState.policiesEvaluated()) {
       failures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Checkin policies were not evaluated") {

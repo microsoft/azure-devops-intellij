@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
 import org.jetbrains.tfsIntegration.ui.ProjectConfigurableForm;
 
 import javax.swing.*;
@@ -59,13 +60,10 @@ public class TFSProjectConfigurable implements Configurable {
 
   public boolean isModified() {
     if (TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy()) return true;
-    if (TFSConfigurationManager.getInstance().supportTfsCheckinPolicies() != myComponent.supportTfsCheckinPolicies()) return true;
-    if (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() != myComponent.supportStatefulCheckinPolicies()) {
-      return true;
-    }
-    if (TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies() != myComponent.reportNotInstalledCheckinPolicies()) {
-      return true;
-    }
+    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+    if (c.teamExplorer != myComponent.supportTfsCheckinPolicies()) return true;
+    if (c.teamprise != myComponent.supportStatefulCheckinPolicies()) return true;
+    if (c.nonInstalled != myComponent.reportNotInstalledCheckinPolicies()) return true;
     return false;
   }
 
@@ -78,9 +76,10 @@ public class TFSProjectConfigurable implements Configurable {
 
   public void reset() {
     myComponent.setUserProxy(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
-    myComponent.setSupportTfsCheckinPolicies(TFSConfigurationManager.getInstance().supportTfsCheckinPolicies());
-    myComponent.setSupportStatefulCheckinPolicies(TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies());
-    myComponent.setReportNotInstalledCheckinPolicies(TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies());
+    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+    myComponent.setSupportTfsCheckinPolicies(c.teamExplorer);
+    myComponent.setSupportStatefulCheckinPolicies(c.teamprise);
+    myComponent.setReportNotInstalledCheckinPolicies(c.nonInstalled);
   }
 
   public void disposeUIResources() {

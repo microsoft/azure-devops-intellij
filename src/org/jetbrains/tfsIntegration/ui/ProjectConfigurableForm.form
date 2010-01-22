@@ -64,7 +64,7 @@
           </component>
         </children>
       </grid>
-      <grid id="53306" layout-manager="GridLayoutManager" row-count="3" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="53306" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -72,52 +72,36 @@
         <properties/>
         <border type="none" title="Checkin policies"/>
         <children>
-          <component id="cdc6e" class="javax.swing.JLabel">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Compatibility defaults:"/>
-            </properties>
-          </component>
-          <hspacer id="7f342">
-            <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-          </hspacer>
-          <component id="b7161" class="javax.swing.JCheckBox" binding="myTFSCheckBox" default-binding="true">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <margin top="0" left="3" bottom="0" right="3"/>
-              <text value="&amp;Team Explorer"/>
-            </properties>
-          </component>
-          <component id="3ed04" class="javax.swing.JCheckBox" binding="myStatefulCheckBox" default-binding="true">
-            <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <margin top="0" left="3" bottom="0" right="3"/>
-              <text value="T&amp;eamprise"/>
-            </properties>
-          </component>
           <component id="73d66" class="javax.swing.JCheckBox" binding="myReportNotInstalledPoliciesCheckBox" default-binding="true">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <margin top="0" left="0" bottom="0" right="3"/>
-              <text value="&amp;Warn about policies that are not installed"/>
+              <text value="&amp;Warn about not installed policies"/>
             </properties>
           </component>
           <component id="c79ad" class="javax.swing.JLabel">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="(Note: these settings may be overridden for individual TFS project)"/>
+            </properties>
+          </component>
+          <component id="b7161" class="javax.swing.JCheckBox" binding="myTFSCheckBox" default-binding="true">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Evaluate &amp;Team Explorer policies"/>
+            </properties>
+          </component>
+          <component id="3ed04" class="javax.swing.JCheckBox" binding="myStatefulCheckBox" default-binding="true">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Evaluate T&amp;eamprise policies"/>
             </properties>
           </component>
         </children>

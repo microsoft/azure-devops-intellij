@@ -119,7 +119,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
     final Pair<String, CheckinParameters.Severity> message = myParameters.getValidationMessage(CheckinParameters.Severity.BOTH);
     if (message == null) {
-      myMessageLabel.setText("Ready to commit");
+      myMessageLabel.setText("<html>Ready to commit</html>"); // prevent bold
       myMessageLabel.setIcon(null);
       myMessageLabel.setToolTipText(null);
     }

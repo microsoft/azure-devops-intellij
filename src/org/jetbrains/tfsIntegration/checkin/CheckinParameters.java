@@ -19,31 +19,34 @@ package org.jetbrains.tfsIntegration.checkin;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.CheckinProjectPanel;
-import com.intellij.openapi.project.Project;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.vcsUtil.VcsUtil;
 import gnu.trove.THashSet;
+import org.jdom.Element;
+import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Annotation;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinNoteFieldDefinition;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Annotation;
-import org.jdom.Element;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -67,15 +70,18 @@ public class CheckinParameters {
     public List<PolicyFailure> myPolicyFailures;
     public List<String> myEmptyNotes;
     public final Collection<FilePath> myFiles;
+    public final TfsCheckinPoliciesCompatibility myPoliciesCompatibility;
 
     private ServerData(List<CheckinNote> checkinNotes,
                        WorkItemsCheckinParameters workItems,
                        List<PolicyDescriptor> policies,
-                       Collection<FilePath> files) {
+                       Collection<FilePath> files,
+                       TfsCheckinPoliciesCompatibility policiesCompatibility) {
       myCheckinNotes = checkinNotes;
       myWorkItems = workItems;
       myPolicies = policies;
       myFiles = files;
+      myPoliciesCompatibility = policiesCompatibility;
     }
   }
 
@@ -167,11 +173,24 @@ public class CheckinParameters {
             }
 
             List<PolicyDescriptor> descriptors = new ArrayList<PolicyDescriptor>();
+            // type will be checked if it is overridden for any of the affected projects
+            TfsCheckinPoliciesCompatibility compatibility = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+
             try {
-              if (TFSConfigurationManager.getInstance().supportTfsCheckinPolicies()) {
-                Collection<Annotation> annotations =
+              Collection<Annotation> overridesAnnotations =
+                server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects);
+
+              for (Annotation annotation : overridesAnnotations) {
+                if (annotation.getValue() == null) continue;
+                TfsCheckinPoliciesCompatibility override =
+                  TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
+                compatibility = compatibility.overrideWith(override);
+              }
+
+              if (compatibility.teamExplorer) {
+                Collection<Annotation> policiesAnnotations =
                   server.getVCS().queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects);
-                for (Annotation annotation : annotations) {
+                for (Annotation annotation : policiesAnnotations) {
                   if (annotation.getValue() != null) {
                     for (PolicyDescriptor descriptor : StatelessPolicyParser.parseDescriptors(annotation.getValue())) {
                       if (descriptor.isEnabled()) {
@@ -182,7 +201,7 @@ public class CheckinParameters {
                 }
               }
 
-              if (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies()) {
+              if (compatibility.teamprise) {
                 Collection<Annotation> annotations =
                   server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects);
                 for (Annotation annotation : annotations) {
@@ -199,9 +218,16 @@ public class CheckinParameters {
             catch (PolicyParseException e) {
               policiesLoadError.append(e.getMessage());
             }
+            catch (JDOMException e) {
+              policiesLoadError.append(e.getMessage());
+            }
+            catch (IOException e) {
+              policiesLoadError.append(e.getMessage());
+            }
             pi.checkCanceled();
 
-            data.put(server, new ServerData(checkinNotes, new WorkItemsCheckinParameters(), descriptors, serverToFiles.get(server)));
+            data.put(server,
+                     new ServerData(checkinNotes, new WorkItemsCheckinParameters(), descriptors, serverToFiles.get(server), compatibility));
           }
 
           myPoliciesLoadError = policiesLoadError.length() > 0 ? policiesLoadError.toString() : null;
@@ -237,7 +263,7 @@ public class CheckinParameters {
 
       List<PolicyFailure> allFailures = new ArrayList<PolicyFailure>();
       for (PolicyDescriptor descriptor : entry.getValue().myPolicies) {
-        PolicyBase policy = null;
+        PolicyBase policy;
         try {
           policy = CheckinPoliciesManager.find(descriptor.getType());
         }
@@ -249,7 +275,7 @@ public class CheckinParameters {
         }
 
         if (policy == null) {
-          if (TFSConfigurationManager.getInstance().reportNotInstalledCheckinPolicies()) {
+          if (entry.getValue().myPoliciesCompatibility.nonInstalled) {
             allFailures.add(new NotInstalledPolicyFailure(descriptor.getType(), !(descriptor instanceof StatefulPolicyDescriptor)));
           }
           continue;
@@ -323,6 +349,13 @@ public class CheckinParameters {
     ERROR, WARNING, BOTH
   }
 
+  public boolean evaluationEnabled() {
+    for (ServerData data : myData.values()) {
+      if (data.myPoliciesCompatibility.teamExplorer || data.myPoliciesCompatibility.teamprise) return true;
+    }
+    return false;
+  }
+
   @Nullable
   public Pair<String/*message*/, Severity> getValidationMessage(final Severity severity) {
     StringBuilder result = new StringBuilder();
@@ -332,8 +365,7 @@ public class CheckinParameters {
     boolean checkWarning = severity == Severity.WARNING || severity == Severity.BOTH;
 
     if (!myPoliciesEvaluated && checkWarning) {
-      if (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() ||
-          TFSConfigurationManager.getInstance().supportTfsCheckinPolicies()) {
+      if (evaluationEnabled()) {
         result.append("Checkin policies were not evaluated");
       }
       checkWarning = false;
@@ -354,8 +386,8 @@ public class CheckinParameters {
           resultingSeverity = Severity.ERROR;
           final String message;
           if (data.myEmptyNotes.size() > 1) {
-            message = MessageFormat.format("Checkin notes ''{0}'' are required to commit",
-                                           StringUtil.join(ArrayUtil.toStringArray(data.myEmptyNotes), "', '"));
+            message = MessageFormat
+              .format("Checkin notes ''{0}'' are required to commit", StringUtil.join(ArrayUtil.toStringArray(data.myEmptyNotes), "', '"));
 
           }
           else {
@@ -451,10 +483,9 @@ public class CheckinParameters {
   }
 
   public boolean hasPolicyFailures(ServerInfo server) {
+    TfsCheckinPoliciesCompatibility c = myData.get(server).myPoliciesCompatibility;
     //noinspection ConstantConditions
-    return (TFSConfigurationManager.getInstance().supportStatefulCheckinPolicies() ||
-            TFSConfigurationManager.getInstance().supportTfsCheckinPolicies()) &&
-           (!myPoliciesEvaluated || !myData.get(server).myPolicyFailures.isEmpty());
+    return (c.teamprise || c.teamExplorer) && (!myPoliciesEvaluated || !myData.get(server).myPolicyFailures.isEmpty());
   }
 
   public List<PolicyFailure> getFailures(ServerInfo server) {
@@ -539,7 +570,8 @@ public class CheckinParameters {
         checkinNotesCopy.add(copy);
       }
       ServerData serverDataCopy =
-        new ServerData(checkinNotesCopy, serverData.myWorkItems.createCopy(), serverData.myPolicies, serverData.myFiles);
+        new ServerData(checkinNotesCopy, serverData.myWorkItems.createCopy(), serverData.myPolicies, serverData.myFiles,
+                       serverData.myPoliciesCompatibility);
       serverDataCopy.myEmptyNotes = new ArrayList<String>(serverData.myEmptyNotes);
       serverDataCopy.myPolicyFailures = serverData.myPolicyFailures;
       result.put(entry.getKey(), serverDataCopy);
@@ -550,11 +582,6 @@ public class CheckinParameters {
   public void setOverrideReason(String value) {
     myOverrideReason = value;
   }
-
-  public String getOverrideReason() {
-    return myOverrideReason;
-  }
-
 
   @Nullable
   public Pair<String, Map<String, String>> getPolicyOverride(ServerInfo server) {

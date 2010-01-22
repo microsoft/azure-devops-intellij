@@ -18,14 +18,19 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.EventDispatcher;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.*;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -44,6 +49,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
@@ -53,6 +59,24 @@ public class ManageWorkspacesForm {
 
   public interface Listener extends EventListener {
     void selectionChanged();
+  }
+
+  public static class ProjectEntry {
+    public final List<StatefulPolicyDescriptor> descriptors;
+    public TfsCheckinPoliciesCompatibility policiesCompatibility;
+
+    public ProjectEntry() {
+      this(new ArrayList<StatefulPolicyDescriptor>());
+    }
+
+    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors) {
+      this(descriptors, TfsCheckinPoliciesCompatibility.NO_OVERRIDES);
+    }
+
+    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors, TfsCheckinPoliciesCompatibility policiesCompatibility) {
+      this.descriptors = descriptors;
+      this.policiesCompatibility = policiesCompatibility;
+    }
   }
 
   private static final TreeTableColumn<Object> COLUMN_SERVER_WORKSPACE = new TreeTableColumn<Object>("Server / workspace", 200) {
@@ -109,7 +133,6 @@ public class ManageWorkspacesForm {
   private JPanel myWorkspacesPanel;
   private JButton myCheckInPoliciesButton;
   private final Project myProject;
-  private final boolean myEditPoliciesButtonEnabled;
   private boolean myShowWorkspaces = true;
   private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
@@ -159,9 +182,8 @@ public class ManageWorkspacesForm {
     }
   };
 
-  public ManageWorkspacesForm(final Project project, boolean editPoliciesButtonVisible, boolean editPoliciesButtonEnabled) {
+  public ManageWorkspacesForm(final Project project, boolean editPoliciesButtonVisible) {
     myProject = project;
-    myEditPoliciesButtonEnabled = editPoliciesButtonEnabled;
 
     myAddServerButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
@@ -211,17 +233,11 @@ public class ManageWorkspacesForm {
 
     myCheckInPoliciesButton.setVisible(editPoliciesButtonVisible);
 
-    if (!myEditPoliciesButtonEnabled) {
-      myCheckInPoliciesButton.setEnabled(false);
-      myCheckInPoliciesButton.setToolTipText("Support for Teamprise compatible checkin policies was disabled");
-    }
-    else {
-      myCheckInPoliciesButton.addActionListener(new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          configureCheckinPolicies();
-        }
-      });
-    }
+    myCheckInPoliciesButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        configureCheckinPolicies();
+      }
+    });
     updateButtons();
   }
 
@@ -264,7 +280,7 @@ public class ManageWorkspacesForm {
     myCreateWorkspaceButton.setEnabled(selectedServer != null || selectedWorkspace != null);
     myEditWorkspaceButton.setEnabled(selectedWorkspace != null);
     myDeleteWorkspaceButton.setEnabled(selectedWorkspace != null);
-    myCheckInPoliciesButton.setEnabled(myEditPoliciesButtonEnabled && selectedServer != null);
+    myCheckInPoliciesButton.setEnabled(selectedServer != null);
   }
 
   private void addServer() {
@@ -460,11 +476,6 @@ public class ManageWorkspacesForm {
     myEventDispatcher.addListener(listener);
   }
 
-  public void removeSelectionListener(Listener listener) {
-    myEventDispatcher.addListener(listener);
-  }
-
-
   private static class CellRendererImpl extends CellRenderer<Object> {
     protected void render(final CustomTreeTable<Object> treeTable,
                           final TreeTableColumn<Object> column,
@@ -496,60 +507,99 @@ public class ManageWorkspacesForm {
 
     @SuppressWarnings({"ConstantConditions"}) @NotNull final ServerInfo server = getSelectedServer();
 
-    final TfsExecutionUtil.Process<Map<String, List<StatefulPolicyDescriptor>>> process =
-      new TfsExecutionUtil.Process<Map<String, List<StatefulPolicyDescriptor>>>() {
-        public Map<String, List<StatefulPolicyDescriptor>> run() throws TfsException, VcsException {
-          Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors = new HashMap<String, List<StatefulPolicyDescriptor>>();
-          final Collection<Annotation> annotations =
-            server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList());
-          for (Annotation annotation : annotations) {
-            if (annotation.getValue() == null) {
-              continue;
-            }
-            try {
-              List<StatefulPolicyDescriptor> descriptors = StatefulPolicyParser.parseDescriptors(annotation.getValue());
-              projectToDescriptors.put(annotation.getItem(), new ArrayList<StatefulPolicyDescriptor>(descriptors));
-            }
-            catch (org.jetbrains.tfsIntegration.checkin.PolicyParseException ex) {
-              String message = MessageFormat.format("Cannot load checkin policies definitions:\n{0}", ex.getMessage());
-              throw new OperationFailedException(message);
-            }
-          }
+    final TfsExecutionUtil.Process<Map<String, ProjectEntry>> process = new TfsExecutionUtil.Process<Map<String, ProjectEntry>>() {
+      public Map<String, ProjectEntry> run() throws TfsException, VcsException {
+        Map<String, ProjectEntry> entries = new HashMap<String, ProjectEntry>();
 
-          final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true);
-          if (projectItems.isEmpty()) {
-            throw new OperationFailedException("No team project found");
+        // load policies
+        final Collection<Annotation> policiesAnnotations =
+          server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList());
+        for (Annotation annotation : policiesAnnotations) {
+          if (annotation.getValue() == null) {
+            continue;
           }
-
-          for (Item projectItem : projectItems) {
-            if (!projectToDescriptors.containsKey(projectItem.getItem())) {
-              projectToDescriptors.put(projectItem.getItem(), new ArrayList<StatefulPolicyDescriptor>());
-            }
+          try {
+            List<StatefulPolicyDescriptor> descriptors = StatefulPolicyParser.parseDescriptors(annotation.getValue());
+            entries.put(annotation.getItem(), new ProjectEntry(descriptors));
           }
-          return projectToDescriptors;
+          catch (PolicyParseException ex) {
+            String message = MessageFormat.format("Cannot load checkin policies definitions:\n{0}", ex.getMessage());
+            throw new OperationFailedException(message);
+          }
         }
-      };
 
-    final TfsExecutionUtil.ResultWithError<Map<String, List<StatefulPolicyDescriptor>>> loadResult =
+        // load overrides
+        final Collection<Annotation> overridesAnnotations =
+          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList());
+        for (Annotation annotation : overridesAnnotations) {
+          if (annotation.getValue() == null) {
+            continue;
+          }
+
+          try {
+            ProjectEntry entry = entries.get(annotation.getItem());
+            if (entry == null) {
+              entry = new ProjectEntry();
+              entries.put(annotation.getItem(), entry);
+            }
+            entry.policiesCompatibility = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
+          }
+          catch (IOException ex) {
+            String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
+            throw new OperationFailedException(message);
+          }
+          catch (JDOMException ex) {
+            String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
+            throw new OperationFailedException(message);
+          }
+        }
+
+        // load projects
+        final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true);
+        if (projectItems.isEmpty()) {
+          throw new OperationFailedException("No team project found");
+        }
+
+        for (Item projectItem : projectItems) {
+          if (!entries.containsKey(projectItem.getItem())) {
+            entries.put(projectItem.getItem(), new ProjectEntry());
+          }
+        }
+        return entries;
+      }
+    };
+
+    final TfsExecutionUtil.ResultWithError<Map<String, ProjectEntry>> loadResult =
       TfsExecutionUtil.executeInBackground("Loading Checkin Policies", myProject, process);
     if (loadResult.cancelled || loadResult.showDialogIfError("Configure Checkin Policies")) {
       return;
     }
 
-    final Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors = loadResult.result;
+    final Map<String, ProjectEntry> projectToDescriptors = loadResult.result;
     final CheckInPoliciesDialog d = new CheckInPoliciesDialog(myProject, getSelectedServer(), projectToDescriptors);
     d.show();
     if (d.isOK()) {
-      final Map<String, List<StatefulPolicyDescriptor>> modifications = d.getModifications();
+      final Map<String, ProjectEntry> modifications = d.getModifications();
       if (!modifications.isEmpty()) {
         final TfsExecutionUtil.ResultWithError<Void> saveResult =
           TfsExecutionUtil.executeInBackground("Saving Checkin Policies", myProject, new TfsExecutionUtil.VoidProcess() {
             public void run() throws TfsException, VcsException {
-              for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : modifications.entrySet()) {
-                server.getVCS().deleteAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
-                if (!entry.getValue().isEmpty()) {
-                  String annotationValue = StatefulPolicyParser.saveDescriptors(entry.getValue());
-                  server.getVCS().createAnnotation(entry.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+              for (Map.Entry<String, ProjectEntry> i : modifications.entrySet()) {
+                // remove annotations
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION);
+
+                // write checkin policies annotation
+                ProjectEntry entry = i.getValue();
+                if (!entry.descriptors.isEmpty()) {
+                  String annotationValue = StatefulPolicyParser.saveDescriptors(entry.descriptors);
+                  server.getVCS().createAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+                }
+
+                // write overrides annotation
+                if (entry.policiesCompatibility.hasOverrides()) {
+                  server.getVCS().createAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION,
+                                                   entry.policiesCompatibility.toOverridesAnnotationValue());
                 }
               }
             }

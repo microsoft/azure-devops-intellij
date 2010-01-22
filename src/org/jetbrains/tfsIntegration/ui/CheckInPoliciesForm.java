@@ -98,12 +98,11 @@ public class CheckInPoliciesForm {
       }
     }};
 
-  private static class ProjectEntry {
-    public final List<StatefulPolicyDescriptor> descriptors;
+  private static class ModifyableProjectEntry extends ManageWorkspacesForm.ProjectEntry {
     public boolean isModified = false;
 
-    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors) {
-      this.descriptors = descriptors;
+    public ModifyableProjectEntry(ManageWorkspacesForm.ProjectEntry entry) {
+      super(new ArrayList<StatefulPolicyDescriptor>(entry.descriptors), entry.policiesCompatibility);
     }
   }
 
@@ -113,20 +112,24 @@ public class CheckInPoliciesForm {
   private TableView<Pair<StatefulPolicyDescriptor, Boolean>> myPoliciesTable;
   private JButton myRemoveButton;
   private JPanel myContentPane;
+  private JCheckBox myTeampriseCheckBox;
+  private JCheckBox myNonInstalledPoliciesCheckBox;
+  private JCheckBox myTeamExplorerCheckBox;
 
   private final Project myProject;
-  private final Map<String, ProjectEntry> myProjectToDescriptors;
+  private final Map<String, ModifyableProjectEntry> myProjectToDescriptors;
 
-  public CheckInPoliciesForm(Project project, Map<String, List<StatefulPolicyDescriptor>> projectToDescriptors) {
+  public CheckInPoliciesForm(Project project, Map<String, ManageWorkspacesForm.ProjectEntry> projectToDescriptors) {
     myProject = project;
-    myProjectToDescriptors = new HashMap<String, ProjectEntry>(projectToDescriptors.size());
-    for (Map.Entry<String, List<StatefulPolicyDescriptor>> entry : projectToDescriptors.entrySet()) {
-      myProjectToDescriptors.put(entry.getKey(), new ProjectEntry(new ArrayList<StatefulPolicyDescriptor>(entry.getValue())));
+    myProjectToDescriptors = new HashMap<String, ModifyableProjectEntry>(projectToDescriptors.size());
+    for (Map.Entry<String, ManageWorkspacesForm.ProjectEntry> e : projectToDescriptors.entrySet()) {
+      myProjectToDescriptors.put(e.getKey(), new ModifyableProjectEntry(new ModifyableProjectEntry(e.getValue())));
     }
 
     myProjectCombo.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         updateTable();
+        updateCheckboxes();
       }
     });
 
@@ -168,7 +171,7 @@ public class CheckInPoliciesForm {
         final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
         final String message = MessageFormat.format("Are you sure to remove checkin policy ''{0}''?", descriptor.getType().getName());
         if (Messages.showOkCancelDialog(myProject, message, "Remove Checkin Policy", Messages.getQuestionIcon()) == 0) {
-          final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
+          final ModifyableProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
           projectEntry.descriptors.remove(descriptor);
           projectEntry.isModified = true;
           updateTable();
@@ -179,7 +182,7 @@ public class CheckInPoliciesForm {
 
     myAddButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        final ProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
+        final ModifyableProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
 
         List<PolicyBase> policies = new ArrayList<PolicyBase>();
         try {
@@ -239,8 +242,61 @@ public class CheckInPoliciesForm {
       }
     });
 
+    myTeampriseCheckBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+        entry.policiesCompatibility.teamprise = myTeampriseCheckBox.isSelected();
+        entry.isModified = true;
+      }
+    });
+
+    myTeamExplorerCheckBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+        entry.policiesCompatibility.teamExplorer = myTeamExplorerCheckBox.isSelected();
+        entry.isModified = true;
+      }
+    });
+
+    myNonInstalledPoliciesCheckBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+        entry.policiesCompatibility.nonInstalled = myNonInstalledPoliciesCheckBox.isSelected();
+        entry.isModified = true;
+      }
+    });
+
+    ActionListener l = new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        updateNonInstalledCheckbox();
+      }
+    };
+    myTeamExplorerCheckBox.addActionListener(l);
+    myTeampriseCheckBox.addActionListener(l);
+
     updateTable();
+    updateCheckboxes();
     updateButtons();
+  }
+
+  private void updateNonInstalledCheckbox() {
+    if (!myTeamExplorerCheckBox.isSelected() && !myTeampriseCheckBox.isSelected()) {
+      myNonInstalledPoliciesCheckBox.setSelected(false);
+      myNonInstalledPoliciesCheckBox.setEnabled(false);
+      ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+      entry.policiesCompatibility.nonInstalled = myNonInstalledPoliciesCheckBox.isSelected();
+    }
+    else {
+      myNonInstalledPoliciesCheckBox.setEnabled(true);
+    }
+  }
+
+  private void updateCheckboxes() {
+    ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+    myTeampriseCheckBox.setSelected(entry.policiesCompatibility.teamprise);
+    myTeamExplorerCheckBox.setSelected(entry.policiesCompatibility.teamExplorer);
+    updateNonInstalledCheckbox();
+    myNonInstalledPoliciesCheckBox.setSelected(entry.policiesCompatibility.nonInstalled);
   }
 
   private void updateButtons() {
@@ -346,7 +402,7 @@ public class CheckInPoliciesForm {
     return result;
   }
 
-  private boolean canEditSafe(PolicyBase policy) {
+  private static boolean canEditSafe(PolicyBase policy) {
     try {
       return policy.canEdit();
     }
@@ -400,11 +456,11 @@ public class CheckInPoliciesForm {
     }
   };
 
-  public Map<String, List<StatefulPolicyDescriptor>> getModifications() {
-    Map<String, List<StatefulPolicyDescriptor>> result = new HashMap<String, List<StatefulPolicyDescriptor>>();
-    for (Map.Entry<String, ProjectEntry> entry : myProjectToDescriptors.entrySet()) {
+  public Map<String, ManageWorkspacesForm.ProjectEntry> getModifications() {
+    Map<String, ManageWorkspacesForm.ProjectEntry> result = new HashMap<String, ManageWorkspacesForm.ProjectEntry>();
+    for (Map.Entry<String, ModifyableProjectEntry> entry : myProjectToDescriptors.entrySet()) {
       if (entry.getValue().isModified) {
-        result.put(entry.getKey(), entry.getValue().descriptors);
+        result.put(entry.getKey(), entry.getValue());
       }
     }
     return result;
