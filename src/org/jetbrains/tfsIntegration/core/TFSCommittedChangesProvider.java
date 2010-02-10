@@ -18,12 +18,14 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedListsZipper;
+import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
+import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import com.intellij.util.AsynchConsumer;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -87,9 +89,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     return null;
   }
 
-  public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
-                                                 final RepositoryLocation location,
-                                                 final int maxCount) throws VcsException {
+  public void loadCommittedChanges(ChangeBrowserSettings settings,
+                                   RepositoryLocation location,
+                                   int maxCount,
+                                   AsynchConsumer<CommittedChangeList> consumer)
+    throws VcsException {
     // TODO: deletion id
     // TODO: if revision and date filters are both set, which one should have priority?
     VersionSpec versionFrom = new ChangesetVersionSpec(1);
@@ -111,7 +115,6 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     TFSRepositoryLocation tfsRepositoryLocation = (TFSRepositoryLocation)location;
 
     try {
-      List<TFSChangeList> result = new ArrayList<TFSChangeList>();
       for (Map.Entry<WorkspaceInfo, List<FilePath>> entry : tfsRepositoryLocation.getPathsByWorkspaces().entrySet()) {
         WorkspaceInfo workspace = entry.getKey();
         final Map<FilePath, ExtendedItem> extendedItems = workspace.getExtendedItems(entry.getValue());
@@ -144,18 +147,34 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
             .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, settings.getUserFilter(), itemVersion, versionFrom,
                           versionTo, maxCount);
           for (Changeset changeset : changeSets) {
-            result.add(
-              new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(), changeset.getDate().getTime(), changeset.getComment(),
-                                myVcs));
+            final TFSChangeList newList = new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(),
+                                                            changeset.getDate().getTime(), changeset.getComment(), myVcs);
+            consumer.consume(newList);
           }
 
         }
       }
-      return result;
     }
     catch (TfsException e) {
       throw new VcsException(e);
+    } finally {
+      consumer.finished();
     }
+  }
+
+  public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
+                                                 final RepositoryLocation location,
+                                                 final int maxCount) throws VcsException {
+    final List<TFSChangeList> result = new ArrayList<TFSChangeList>();
+    loadCommittedChanges(settings, location, maxCount, new AsynchConsumer<CommittedChangeList>() {
+      public void finished() {
+      }
+
+      public void consume(CommittedChangeList committedChangeList) {
+        result.add((TFSChangeList) committedChangeList);
+      }
+    });
+    return result;
   }
 
   private static int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
