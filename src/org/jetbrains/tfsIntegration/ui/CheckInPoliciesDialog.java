@@ -18,10 +18,10 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 
 import javax.swing.*;
-import java.text.MessageFormat;
 import java.util.Map;
 
 public class CheckInPoliciesDialog extends DialogWrapper {
@@ -35,8 +35,7 @@ public class CheckInPoliciesDialog extends DialogWrapper {
     super(project, false);
     myProject = project;
     myProjectToDescriptors = projectToDescriptors;
-    String title = MessageFormat.format("{0}: Edit Checkin Policies", server.getUri());
-    setTitle(title);
+    setTitle(TFSBundle.message("checkin.policies.dialog.title", server.getUri()));
     init();
     setSize(800, 500);
   }

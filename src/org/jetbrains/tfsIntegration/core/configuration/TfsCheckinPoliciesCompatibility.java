@@ -20,8 +20,6 @@ public class TfsCheckinPoliciesCompatibility {
   public boolean teamExplorer;
   public boolean nonInstalled;
 
-  public static final TfsCheckinPoliciesCompatibility NO_OVERRIDES = new TfsCheckinPoliciesCompatibility(false, false, false);
-
   public TfsCheckinPoliciesCompatibility(boolean teamprise, boolean teamExplorer, boolean nonInstalled) {
     this.teamprise = teamprise;
     this.teamExplorer = teamExplorer;
@@ -46,12 +44,4 @@ public class TfsCheckinPoliciesCompatibility {
     return JDOMUtil.writeDocument(doc, "");
   }
 
-  public TfsCheckinPoliciesCompatibility overrideWith(TfsCheckinPoliciesCompatibility override) {
-    return new TfsCheckinPoliciesCompatibility(teamprise | override.teamprise, teamExplorer | override.teamExplorer,
-                                               nonInstalled | override.nonInstalled);
-  }
-
-  public boolean hasOverrides() {
-    return teamprise || teamExplorer;
-  }
 }

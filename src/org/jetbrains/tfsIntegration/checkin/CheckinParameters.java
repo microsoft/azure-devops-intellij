@@ -182,9 +182,7 @@ public class CheckinParameters {
 
               for (Annotation annotation : overridesAnnotations) {
                 if (annotation.getValue() == null) continue;
-                TfsCheckinPoliciesCompatibility override =
-                  TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
-                compatibility = compatibility.overrideWith(override);
+                compatibility = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
               }
 
               if (compatibility.teamExplorer) {
