@@ -67,10 +67,6 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
     return isAcceptable(myPathForm.getServerPath());
   }
 
-  public boolean showWaitCursorOnCommit() {
-    return false;
-  }
-
   public JComponent getComponent() {
     return myPathForm.getContentPanel();
   }
