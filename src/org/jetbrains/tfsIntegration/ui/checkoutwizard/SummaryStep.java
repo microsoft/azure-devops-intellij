@@ -89,4 +89,8 @@ public class SummaryStep extends CheckoutWizardStep {
     }
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return null;
+  }
 }

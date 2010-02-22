@@ -117,4 +117,9 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
     }
     myPathsForm.setErrorMessage(errorMessage);
   }
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myPathsForm.getPreferredFocusedComponent();
+  }
 }

@@ -150,4 +150,7 @@ public class ServerTree {
     }
   }
 
+  public JComponent getTreeComponent() {
+    return myTree;
+  }
 }

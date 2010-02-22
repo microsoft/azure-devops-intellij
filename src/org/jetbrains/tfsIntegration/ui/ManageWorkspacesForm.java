@@ -607,4 +607,8 @@ public class ManageWorkspacesForm {
     }
   }
 
+  public JComponent getPreferredFocusedComponent() {
+    return myTable;
+  }
+
 }

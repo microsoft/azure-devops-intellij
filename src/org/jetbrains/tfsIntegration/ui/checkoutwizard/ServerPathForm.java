@@ -83,4 +83,8 @@ public class ServerPathForm {
     myMessageLabel.setForeground(Color.BLACK); // TODO
   }
 
+  public JComponent getPreferredFocusedComponent() {
+    return myServerTree.getTreeComponent();
+  }
+
 }

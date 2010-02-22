@@ -112,4 +112,8 @@ public class ChooseModeStep extends CheckoutWizardStep {
     return null;
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myCheckoutModeForm.getPreferredFocusedComponent();
+  }
 }

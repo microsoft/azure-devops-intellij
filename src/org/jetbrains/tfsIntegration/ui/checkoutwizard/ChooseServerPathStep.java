@@ -119,4 +119,9 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
       }
     }
   }
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myPathForm.getPreferredFocusedComponent();
+  }
 }

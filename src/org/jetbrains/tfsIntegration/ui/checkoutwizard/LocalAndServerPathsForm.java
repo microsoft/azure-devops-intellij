@@ -117,4 +117,8 @@ public class LocalAndServerPathsForm {
     myErrorLabel.setText(message);
   }
 
+  public JComponent getPreferredFocusedComponent() {
+    return myServerTree.getTreeComponent();
+  }
+
 }

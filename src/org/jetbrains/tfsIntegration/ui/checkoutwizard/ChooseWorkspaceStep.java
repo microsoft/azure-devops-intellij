@@ -152,4 +152,8 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
     return myManageWorkspacesForm.getContentPane();
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myManageWorkspacesForm.getPreferredFocusedComponent();
+  }
 }
