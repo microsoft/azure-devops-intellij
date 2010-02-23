@@ -35,7 +35,6 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     return VcsDependentHistoryComponents.createOnlyColumns(ColumnInfo.EMPTY_ARRAY);
   }
 
-  public AnAction[] getAdditionalActions(final FileHistoryPanel panel) {
+  public AnAction[] getAdditionalActions(final Runnable refresher) {
     return new AnAction[0];
   }
 
@@ -81,15 +80,25 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
         return null;
       }
 
-      return new VcsHistorySession(revisions) {
+      return new VcsAbstractHistorySession(revisions) {
         public VcsRevisionNumber calcCurrentRevisionNumber() {
           return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
+        }
+
+        public HistoryAsTreeProvider getHistoryAsTreeProvider() {
+          return null;
         }
       };
     }
     catch (TfsException e) {
       throw new VcsException(e);
     }
+  }
+
+  public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
+    //??
+    final VcsHistorySession session = createSessionFor(path);
+    partner.reportCreatedEmptySession((VcsAbstractHistorySession) session);
   }
 
   public static List<VcsFileRevision> getRevisions(final Project project,
@@ -108,11 +117,6 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
                             changeset.getCset()));
     }
     return revisions;
-  }
-
-  @Nullable
-  public HistoryAsTreeProvider getTreeHistoryProvider() {
-    return null;
   }
 
   public boolean supportsHistoryForDirectories() {
