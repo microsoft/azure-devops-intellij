@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
@@ -52,6 +53,7 @@ public class ChooseModeStep extends CheckoutWizardStep {
     });
   }
 
+  @NotNull
   public Object getStepId() {
     return ID;
   }
@@ -99,10 +101,6 @@ public class ChooseModeStep extends CheckoutWizardStep {
     return myCheckoutModeForm.getContentPanel();
   }
 
-  public boolean showWaitCursorOnCommit() {
-    return false;
-  }
-
   @Nullable
   public String validateWorkspaceName(String name) {
     if (name.length() == 0) {
@@ -114,4 +112,8 @@ public class ChooseModeStep extends CheckoutWizardStep {
     return null;
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myCheckoutModeForm.getPreferredFocusedComponent();
+  }
 }

@@ -99,4 +99,8 @@ public class CheckoutModeForm {
     myErrorLabel.setText(message);
   }
 
+  public JComponent getPreferredFocusedComponent() {
+    return myAutoModeButton;
+  }
+
 }

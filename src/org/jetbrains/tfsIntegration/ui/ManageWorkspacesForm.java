@@ -18,12 +18,9 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.EventDispatcher;
-import org.jdom.Document;
-import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,19 +60,20 @@ public class ManageWorkspacesForm {
 
   public static class ProjectEntry {
     public final List<StatefulPolicyDescriptor> descriptors;
-    public TfsCheckinPoliciesCompatibility policiesCompatibility;
+    public @Nullable TfsCheckinPoliciesCompatibility policiesCompatibilityOverride;
 
     public ProjectEntry() {
       this(new ArrayList<StatefulPolicyDescriptor>());
     }
 
     public ProjectEntry(List<StatefulPolicyDescriptor> descriptors) {
-      this(descriptors, TfsCheckinPoliciesCompatibility.NO_OVERRIDES);
+      this(descriptors, null);
     }
 
-    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors, TfsCheckinPoliciesCompatibility policiesCompatibility) {
+    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors,
+                        @Nullable TfsCheckinPoliciesCompatibility policiesCompatibilityOverride) {
       this.descriptors = descriptors;
-      this.policiesCompatibility = policiesCompatibility;
+      this.policiesCompatibilityOverride = policiesCompatibilityOverride;
     }
   }
 
@@ -542,7 +540,7 @@ public class ManageWorkspacesForm {
               entry = new ProjectEntry();
               entries.put(annotation.getItem(), entry);
             }
-            entry.policiesCompatibility = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
+            entry.policiesCompatibilityOverride = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
           }
           catch (IOException ex) {
             String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
@@ -597,9 +595,9 @@ public class ManageWorkspacesForm {
                 }
 
                 // write overrides annotation
-                if (entry.policiesCompatibility.hasOverrides()) {
+                if (entry.policiesCompatibilityOverride != null) {
                   server.getVCS().createAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION,
-                                                   entry.policiesCompatibility.toOverridesAnnotationValue());
+                                                   entry.policiesCompatibilityOverride.toOverridesAnnotationValue());
                 }
               }
             }
@@ -607,6 +605,10 @@ public class ManageWorkspacesForm {
         saveResult.showDialogIfError("Save Checkin Policies");
       }
     }
+  }
+
+  public JComponent getPreferredFocusedComponent() {
+    return myTable;
   }
 
 }

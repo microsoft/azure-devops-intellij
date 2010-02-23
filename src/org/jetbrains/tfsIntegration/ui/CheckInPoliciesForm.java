@@ -27,7 +27,9 @@ import com.intellij.util.ui.UIUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.*;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 
 import javax.swing.*;
@@ -102,7 +104,7 @@ public class CheckInPoliciesForm {
     public boolean isModified = false;
 
     public ModifyableProjectEntry(ManageWorkspacesForm.ProjectEntry entry) {
-      super(new ArrayList<StatefulPolicyDescriptor>(entry.descriptors), entry.policiesCompatibility);
+      super(new ArrayList<StatefulPolicyDescriptor>(entry.descriptors), entry.policiesCompatibilityOverride);
     }
   }
 
@@ -115,6 +117,7 @@ public class CheckInPoliciesForm {
   private JCheckBox myTeampriseCheckBox;
   private JCheckBox myNonInstalledPoliciesCheckBox;
   private JCheckBox myTeamExplorerCheckBox;
+  private JCheckBox myOverrideCheckBox;
 
   private final Project myProject;
   private final Map<String, ModifyableProjectEntry> myProjectToDescriptors;
@@ -245,7 +248,7 @@ public class CheckInPoliciesForm {
     myTeampriseCheckBox.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
-        entry.policiesCompatibility.teamprise = myTeampriseCheckBox.isSelected();
+        entry.policiesCompatibilityOverride.teamprise = myTeampriseCheckBox.isSelected();
         entry.isModified = true;
       }
     });
@@ -253,7 +256,7 @@ public class CheckInPoliciesForm {
     myTeamExplorerCheckBox.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
-        entry.policiesCompatibility.teamExplorer = myTeamExplorerCheckBox.isSelected();
+        entry.policiesCompatibilityOverride.teamExplorer = myTeamExplorerCheckBox.isSelected();
         entry.isModified = true;
       }
     });
@@ -261,14 +264,33 @@ public class CheckInPoliciesForm {
     myNonInstalledPoliciesCheckBox.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
-        entry.policiesCompatibility.nonInstalled = myNonInstalledPoliciesCheckBox.isSelected();
+        entry.policiesCompatibilityOverride.nonInstalled = myNonInstalledPoliciesCheckBox.isSelected();
+        entry.isModified = true;
+      }
+    });
+
+    myOverrideCheckBox.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
+        if (myOverrideCheckBox.isSelected()) {
+          entry.policiesCompatibilityOverride = new TfsCheckinPoliciesCompatibility(false, false, false);
+        }
+        else {
+          entry.policiesCompatibilityOverride = null;
+        }
+        updateCheckboxes();
         entry.isModified = true;
       }
     });
 
     ActionListener l = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        updateNonInstalledCheckbox();
+        boolean b = myTeamExplorerCheckBox.isSelected() || myTeampriseCheckBox.isSelected();
+        myNonInstalledPoliciesCheckBox.setEnabled(b);
+        if (!b) {
+          myNonInstalledPoliciesCheckBox.setSelected(false);
+          myProjectToDescriptors.get(getSelectedProject()).policiesCompatibilityOverride.nonInstalled = false;
+        }
       }
     };
     myTeamExplorerCheckBox.addActionListener(l);
@@ -279,24 +301,32 @@ public class CheckInPoliciesForm {
     updateButtons();
   }
 
-  private void updateNonInstalledCheckbox() {
-    if (!myTeamExplorerCheckBox.isSelected() && !myTeampriseCheckBox.isSelected()) {
-      myNonInstalledPoliciesCheckBox.setSelected(false);
-      myNonInstalledPoliciesCheckBox.setEnabled(false);
-      ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
-      entry.policiesCompatibility.nonInstalled = myNonInstalledPoliciesCheckBox.isSelected();
-    }
-    else {
-      myNonInstalledPoliciesCheckBox.setEnabled(true);
-    }
-  }
-
   private void updateCheckboxes() {
     ModifyableProjectEntry entry = myProjectToDescriptors.get(getSelectedProject());
-    myTeampriseCheckBox.setSelected(entry.policiesCompatibility.teamprise);
-    myTeamExplorerCheckBox.setSelected(entry.policiesCompatibility.teamExplorer);
-    updateNonInstalledCheckbox();
-    myNonInstalledPoliciesCheckBox.setSelected(entry.policiesCompatibility.nonInstalled);
+    myOverrideCheckBox
+      .setText(TFSBundle.message("override.policies.compatibility.checkbox", VersionControlPath.getTeamProject(getSelectedProject())));
+    myOverrideCheckBox.setSelected(entry.policiesCompatibilityOverride != null);
+    updateSlaveCheckboxes(entry.policiesCompatibilityOverride);
+  }
+
+  private void updateSlaveCheckboxes(@Nullable TfsCheckinPoliciesCompatibility override) {
+    if (override != null) {
+      myTeampriseCheckBox.setEnabled(true);
+      myTeampriseCheckBox.setSelected(override.teamprise);
+      myTeamExplorerCheckBox.setEnabled(true);
+      myTeamExplorerCheckBox.setSelected(override.teamExplorer);
+      myNonInstalledPoliciesCheckBox.setSelected(override.nonInstalled);
+      myNonInstalledPoliciesCheckBox.setEnabled(myTeamExplorerCheckBox.isSelected() || myTeampriseCheckBox.isSelected());
+    }
+    else {
+      myOverrideCheckBox.setSelected(false);
+      myTeampriseCheckBox.setSelected(false);
+      myTeampriseCheckBox.setEnabled(false);
+      myTeamExplorerCheckBox.setSelected(false);
+      myTeamExplorerCheckBox.setEnabled(false);
+      myNonInstalledPoliciesCheckBox.setSelected(false);
+      myNonInstalledPoliciesCheckBox.setEnabled(false);
+    }
   }
 
   private void updateButtons() {

@@ -60,10 +60,6 @@ public class SummaryStep extends CheckoutWizardStep {
     return true;
   }
 
-  public boolean showWaitCursorOnCommit() {
-    return false;
-  }
-
   protected void commit(final CommitType commitType) throws CommitStepException {
     // nothing here
   }
@@ -93,4 +89,8 @@ public class SummaryStep extends CheckoutWizardStep {
     }
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return null;
+  }
 }

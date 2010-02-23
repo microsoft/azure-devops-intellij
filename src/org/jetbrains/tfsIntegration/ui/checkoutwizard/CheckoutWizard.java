@@ -16,13 +16,13 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.ide.wizard.AbstractWizardEx;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.ui.abstractwizard.AbstractWizard;
 
 import java.util.List;
 
-public class CheckoutWizard extends AbstractWizard {
+public class CheckoutWizard extends AbstractWizardEx {
   private final CheckoutWizardModel myModel;
 
   public CheckoutWizard(@Nullable Project project, List<CheckoutWizardStep> steps, CheckoutWizardModel model) {

@@ -67,10 +67,6 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
     return isAcceptable(myPathForm.getServerPath());
   }
 
-  public boolean showWaitCursorOnCommit() {
-    return false;
-  }
-
   public JComponent getComponent() {
     return myPathForm.getContentPanel();
   }
@@ -122,5 +118,10 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
         myPathForm.setErrorMessage(MessageFormat.format("Failed to connect to server. {0}", e.getMessage()));
       }
     }
+  }
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myPathForm.getPreferredFocusedComponent();
   }
 }

@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.ide.wizard.AbstractWizardStepEx;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.ui.abstractwizard.AbstractWizardStep;
 
-public abstract class CheckoutWizardStep extends AbstractWizardStep {
+public abstract class CheckoutWizardStep extends AbstractWizardStepEx {
 
   protected final @NotNull CheckoutWizardModel myModel;
 

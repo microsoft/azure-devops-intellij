@@ -71,10 +71,6 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
     return true;
   }
 
-  public boolean showWaitCursorOnCommit() {
-    return false;
-  }
-
   public JComponent getComponent() {
     return myPathsForm.getContentPanel();
   }
@@ -95,7 +91,7 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
   }
 
   @Nullable
-  private String validateLocalPath(String path) {
+  private static String validateLocalPath(String path) {
     if (path == null || path.length() == 0) {
       return "Local path not specified";
     }
@@ -107,7 +103,7 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
   }
 
   @Nullable
-  private String validateServerPath(String path) {
+  private static String validateServerPath(String path) {
     if (path == null || path.length() == 0) {
       return "Server path is empty";
     }
@@ -120,5 +116,10 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
       errorMessage = validateLocalPath(myPathsForm.getLocalPath());
     }
     myPathsForm.setErrorMessage(errorMessage);
+  }
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myPathsForm.getPreferredFocusedComponent();
   }
 }
