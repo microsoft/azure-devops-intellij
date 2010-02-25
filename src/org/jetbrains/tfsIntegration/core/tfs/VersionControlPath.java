@@ -80,7 +80,7 @@ public class VersionControlPath {
 
   public static String getPathToProject(final String serverPath) {
     int secondSlashPos = serverPath.indexOf("/", ROOT_FOLDER.length());
-    return secondSlashPos == -1 ? ROOT_FOLDER : serverPath.substring(0, secondSlashPos);
+    return secondSlashPos == -1 ? serverPath : serverPath.substring(0, secondSlashPos);
   }
 
   public static String getTeamProject(final String serverPath) {

@@ -63,25 +63,27 @@ public class CheckinParameters {
     }
   }
 
+  private static class TeamProjectData {
+    public TfsCheckinPoliciesCompatibility myCompatibility = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+    public final List<PolicyDescriptor> myPolicies = new ArrayList<PolicyDescriptor>();
+  }
+
   private static class ServerData {
     public final List<CheckinNote> myCheckinNotes;
     public final WorkItemsCheckinParameters myWorkItems;
-    public final List<PolicyDescriptor> myPolicies;
     public List<PolicyFailure> myPolicyFailures;
     public List<String> myEmptyNotes;
     public final Collection<FilePath> myFiles;
-    public final TfsCheckinPoliciesCompatibility myPoliciesCompatibility;
+    public final Map<String, TeamProjectData> myPolicies;
 
     private ServerData(List<CheckinNote> checkinNotes,
                        WorkItemsCheckinParameters workItems,
-                       List<PolicyDescriptor> policies,
                        Collection<FilePath> files,
-                       TfsCheckinPoliciesCompatibility policiesCompatibility) {
+                       Map<String, TeamProjectData> policies) {
       myCheckinNotes = checkinNotes;
       myWorkItems = workItems;
       myPolicies = policies;
       myFiles = files;
-      myPoliciesCompatibility = policiesCompatibility;
     }
   }
 
@@ -172,41 +174,61 @@ public class CheckinParameters {
               checkinNotes.add(new CheckinNote(checkinNote.getName(), checkinNote.getReq()));
             }
 
-            List<PolicyDescriptor> descriptors = new ArrayList<PolicyDescriptor>();
-            // type will be checked if it is overridden for any of the affected projects
-            TfsCheckinPoliciesCompatibility compatibility = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+            Map<String, TeamProjectData> project2policies = new HashMap<String, TeamProjectData>();
+            for (String teamProject : teamProjects) {
+              project2policies.put(teamProject, new TeamProjectData());
+            }
 
             try {
               Collection<Annotation> overridesAnnotations =
                 server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects);
 
+              boolean teamExplorerFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamExplorer;
+              boolean teampriseFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamprise;
               for (Annotation annotation : overridesAnnotations) {
                 if (annotation.getValue() == null) continue;
-                compatibility = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
+                String teamProject = VersionControlPath.getPathToProject(annotation.getItem());
+                if (!teamProjects.contains(teamProject)) continue;
+
+                TfsCheckinPoliciesCompatibility override =
+                  TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
+                project2policies.get(teamProject).myCompatibility = override;
+                teamExplorerFound |= override.teamExplorer;
+                teampriseFound |= override.teamprise;
               }
 
-              if (compatibility.teamExplorer) {
-                Collection<Annotation> policiesAnnotations =
+              if (teamExplorerFound) {
+                Collection<Annotation> annotations =
                   server.getVCS().queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects);
-                for (Annotation annotation : policiesAnnotations) {
-                  if (annotation.getValue() != null) {
+                for (Annotation annotation : annotations) {
+                  if (annotation.getValue() == null) continue;
+                  String teamProject = VersionControlPath.getPathToProject(annotation.getItem());
+                  if (!teamProjects.contains(teamProject)) continue;
+
+                  TeamProjectData teamProjectData = project2policies.get(teamProject);
+                  if (teamProjectData.myCompatibility.teamExplorer) {
                     for (PolicyDescriptor descriptor : StatelessPolicyParser.parseDescriptors(annotation.getValue())) {
                       if (descriptor.isEnabled()) {
-                        descriptors.add(descriptor);
+                        teamProjectData.myPolicies.add(descriptor);
                       }
                     }
                   }
                 }
               }
 
-              if (compatibility.teamprise) {
+              if (teampriseFound) {
                 Collection<Annotation> annotations =
                   server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects);
                 for (Annotation annotation : annotations) {
-                  if (annotation.getValue() != null) {
+                  if (annotation.getValue() == null) continue;
+                  String teamProject = VersionControlPath.getPathToProject(annotation.getItem());
+                  if (!teamProjects.contains(teamProject)) continue;
+
+                  TeamProjectData teamProjectData = project2policies.get(teamProject);
+                  if (teamProjectData.myCompatibility.teamprise) {
                     for (PolicyDescriptor descriptor : StatefulPolicyParser.parseDescriptors(annotation.getValue())) {
                       if (descriptor.isEnabled()) {
-                        descriptors.add(descriptor);
+                        teamProjectData.myPolicies.add(descriptor);
                       }
                     }
                   }
@@ -224,8 +246,7 @@ public class CheckinParameters {
             }
             pi.checkCanceled();
 
-            data.put(server,
-                     new ServerData(checkinNotes, new WorkItemsCheckinParameters(), descriptors, serverToFiles.get(server), compatibility));
+            data.put(server, new ServerData(checkinNotes, new WorkItemsCheckinParameters(), serverToFiles.get(server), project2policies));
           }
 
           myPoliciesLoadError = policiesLoadError.length() > 0 ? policiesLoadError.toString() : null;
@@ -260,57 +281,60 @@ public class CheckinParameters {
       PolicyContext context = createPolicyContext(entry.getKey());
 
       List<PolicyFailure> allFailures = new ArrayList<PolicyFailure>();
-      for (PolicyDescriptor descriptor : entry.getValue().myPolicies) {
-        PolicyBase policy;
-        try {
-          policy = CheckinPoliciesManager.find(descriptor.getType());
-        }
-        catch (DuplicatePolicyIdException e) {
-          final String tooltip = MessageFormat
-            .format("Several checkin policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
-          allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Duplicate checkin policy id", tooltip));
-          break;
-        }
-
-        if (policy == null) {
-          if (entry.getValue().myPoliciesCompatibility.nonInstalled) {
-            allFailures.add(new NotInstalledPolicyFailure(descriptor.getType(), !(descriptor instanceof StatefulPolicyDescriptor)));
-          }
-          continue;
-        }
-
-        pi.setText(MessageFormat.format("Evaluating checkin policy: {0}", policy.getPolicyType().getName()));
-        pi.setText2("");
-        if (descriptor instanceof StatefulPolicyDescriptor) {
+      for (Map.Entry<String, TeamProjectData> teamProjectDataEntry : entry.getValue().myPolicies.entrySet()) {
+        for (PolicyDescriptor descriptor : teamProjectDataEntry.getValue().myPolicies) {
+          PolicyBase policy;
           try {
-            policy.loadState((Element)((StatefulPolicyDescriptor)descriptor).getConfiguration().clone());
+            policy = CheckinPoliciesManager.find(descriptor.getType());
+          }
+          catch (DuplicatePolicyIdException e) {
+            final String tooltip = MessageFormat
+              .format("Several checkin policies with the same id found: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
+            allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, "Duplicate checkin policy id", tooltip));
+            break;
+          }
+
+          if (policy == null) {
+            if (teamProjectDataEntry.getValue().myCompatibility.nonInstalled) {
+              allFailures.add(new NotInstalledPolicyFailure(descriptor.getType(), !(descriptor instanceof StatefulPolicyDescriptor)));
+            }
+            continue;
+          }
+
+          pi.setText(MessageFormat.format("Evaluating checkin policy: {0}", policy.getPolicyType().getName()));
+          pi.setText2("");
+          if (descriptor instanceof StatefulPolicyDescriptor) {
+            try {
+              policy.loadState((Element)((StatefulPolicyDescriptor)descriptor).getConfiguration().clone());
+            }
+            catch (ProcessCanceledException e) {
+              throw e;
+            }
+            catch (RuntimeException e) {
+              TFSVcs.LOG.warn(e);
+              String message =
+                MessageFormat.format("Cannot load configuration of checkin policy ''{0}''", policy.getPolicyType().getName());
+              String tooltip = MessageFormat.format("The following error occured while loading: {0}", e.getMessage());
+              allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, message, tooltip));
+              continue;
+            }
+          }
+
+          try {
+            final PolicyFailure[] failures = policy.evaluate(context, pi);
+            allFailures.addAll(Arrays.asList(failures));
           }
           catch (ProcessCanceledException e) {
             throw e;
           }
           catch (RuntimeException e) {
             TFSVcs.LOG.warn(e);
-            String message = MessageFormat.format("Cannot load configuration of checkin policy ''{0}''", policy.getPolicyType().getName());
-            String tooltip = MessageFormat.format("The following error occured while loading: {0}", e.getMessage());
+            String message = MessageFormat.format("Cannot evaluate checkin policy ''{0}''", policy.getPolicyType().getName());
+            String tooltip = MessageFormat.format("The following error occured while evaluating: {0}", e.getMessage());
             allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, message, tooltip));
-            continue;
           }
+          pi.checkCanceled();
         }
-
-        try {
-          final PolicyFailure[] failures = policy.evaluate(context, pi);
-          allFailures.addAll(Arrays.asList(failures));
-        }
-        catch (ProcessCanceledException e) {
-          throw e;
-        }
-        catch (RuntimeException e) {
-          TFSVcs.LOG.warn(e);
-          String message = MessageFormat.format("Cannot evaluate checkin policy ''{0}''", policy.getPolicyType().getName());
-          String tooltip = MessageFormat.format("The following error occured while evaluating: {0}", e.getMessage());
-          allFailures.add(new PolicyFailure(CheckinPoliciesManager.DUMMY_POLICY, message, tooltip));
-        }
-        pi.checkCanceled();
       }
       entry.getValue().myPolicyFailures = allFailures;
     }
@@ -349,7 +373,9 @@ public class CheckinParameters {
 
   public boolean evaluationEnabled() {
     for (ServerData data : myData.values()) {
-      if (data.myPoliciesCompatibility.teamExplorer || data.myPoliciesCompatibility.teamprise) return true;
+      for (TeamProjectData teamProjectData : data.myPolicies.values()) {
+        if (teamProjectData.myCompatibility.teamExplorer || teamProjectData.myCompatibility.teamprise) return true;
+      }
     }
     return false;
   }
@@ -481,9 +507,16 @@ public class CheckinParameters {
   }
 
   public boolean hasPolicyFailures(ServerInfo server) {
-    TfsCheckinPoliciesCompatibility c = myData.get(server).myPoliciesCompatibility;
+    ServerData serverData = myData.get(server);
+    boolean evaluationEnabled = false;
+    for (TeamProjectData teamProjectData : serverData.myPolicies.values()) {
+      if (teamProjectData.myCompatibility.teamExplorer || teamProjectData.myCompatibility.teamprise) {
+        evaluationEnabled = true;
+        break;
+      }
+    }
     //noinspection ConstantConditions
-    return (c.teamprise || c.teamExplorer) && (!myPoliciesEvaluated || !myData.get(server).myPolicyFailures.isEmpty());
+    return evaluationEnabled && (!myPoliciesEvaluated || !serverData.myPolicyFailures.isEmpty());
   }
 
   public List<PolicyFailure> getFailures(ServerInfo server) {
@@ -568,8 +601,7 @@ public class CheckinParameters {
         checkinNotesCopy.add(copy);
       }
       ServerData serverDataCopy =
-        new ServerData(checkinNotesCopy, serverData.myWorkItems.createCopy(), serverData.myPolicies, serverData.myFiles,
-                       serverData.myPoliciesCompatibility);
+        new ServerData(checkinNotesCopy, serverData.myWorkItems.createCopy(), serverData.myFiles, serverData.myPolicies);
       serverDataCopy.myEmptyNotes = new ArrayList<String>(serverData.myEmptyNotes);
       serverDataCopy.myPolicyFailures = serverData.myPolicyFailures;
       result.put(entry.getKey(), serverDataCopy);
