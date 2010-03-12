@@ -50,8 +50,6 @@ public class Workstation {
 
   @NonNls private static final String CACHE_FILE_LINUX = "tfs-servers.xml";
 
-  private static Workstation ourInstance;
-
   private static final Logger LOG = Logger.getInstance(Workstation.class.getName());
 
   private final List<ServerInfo> myServerInfos;
@@ -62,11 +60,12 @@ public class Workstation {
     myServerInfos = loadCache();
   }
 
+  private static class WorkstationHolder {
+    private static final Workstation ourInstance = new Workstation();
+  }
+
   public static Workstation getInstance() {
-    if (ourInstance == null) {
-      ourInstance = new Workstation();
-    }
-    return ourInstance;
+    return WorkstationHolder.ourInstance;
   }
 
   public List<ServerInfo> getServers() {
