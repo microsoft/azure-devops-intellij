@@ -32,7 +32,7 @@ public class ConsumeInPartsTest extends TestCase {
     private final List<String[]> myResults = new ArrayList<String[]>();
 
     public void consume(List<String> strings) {
-      myResults.add(strings.toArray(new String[strings.size()]));
+      myResults.add(ArrayUtil.toStringArray(strings));
     }
 
     public void assertEquals(String[][] expected) {
