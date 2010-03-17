@@ -24,11 +24,11 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.ui.GuiUtils;
-import com.intellij.util.text.SyncDateFormat;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.text.SyncDateFormat;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
@@ -154,6 +154,10 @@ public class TFSFileAnnotation implements FileAnnotation {
     List<VcsFileRevision> result = new ArrayList<VcsFileRevision>(set);
     Collections.sort(result, REVISION_COMPARATOR);
     return result;
+  }
+
+  public boolean revisionsNotEmpty() {
+    return myLineRevisions.length > 0;
   }
 
   public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
