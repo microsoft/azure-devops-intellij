@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.checkin;
 
+import com.intellij.mock.MockProgressIndicator;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -115,6 +116,9 @@ public class CheckinParameters {
       TfsExecutionUtil.executeInBackground("Validating Checkin", panel.getProject(), new TfsExecutionUtil.VoidProcess() {
         public void run() throws TfsException, VcsException {
           ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+          if (pi == null) {
+            pi = new MockProgressIndicator();
+          }
           pi.setText("Loading checkin notes and policy definitions");
           final MultiMap<ServerInfo, String> serverToProjects = new MultiMap<ServerInfo, String>() {
             @Override

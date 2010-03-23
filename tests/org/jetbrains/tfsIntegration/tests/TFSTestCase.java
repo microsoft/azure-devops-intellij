@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
@@ -25,7 +26,10 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
+import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
@@ -36,8 +40,10 @@ import com.intellij.testFramework.AbstractVcsTestCase;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
 import com.intellij.vcsUtil.VcsUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSChangeList;
+import org.jetbrains.tfsIntegration.core.TFSCheckinEnvironment;
 import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
@@ -54,6 +60,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -71,9 +78,9 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFS_2008
   }
 
-  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2005_SP1;
+  protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
 
-  private static final String SERVER = "http://tfs-2005-01:8080/";
+  private static final String SERVER = "http://tfs-2008-01:8080/";
   private static final String SERVER_ROOT = "$/Test";
   private static final String USER = "tfssetup";
   private static final String DOMAIN = "SWIFTTEAMS";
@@ -251,7 +258,120 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void commit(final Collection<Change> changes, final String comment) {
-    final List<VcsException> errors = getVcs().getCheckinEnvironment().commit(new ArrayList<Change>(changes), comment);
+    TFSCheckinEnvironment env = getVcs().getCheckinEnvironment();
+    RefreshableOnComponent panel = env.createAdditionalOptionsPanel(new CheckinProjectPanel() {
+      public JComponent getComponent() {
+        return null;
+      }
+
+      public JComponent getPreferredFocusedComponent() {
+        return null;
+      }
+
+      public boolean hasDiffs() {
+        return true;
+      }
+
+      public Collection<VirtualFile> getVirtualFiles() {
+        return null;
+      }
+
+      public Collection<Change> getSelectedChanges() {
+        return changes;
+      }
+
+      public Collection<File> getFiles() {
+        Collection<File> result = new ArrayList<File>();
+        for (Change change : changes) {
+          if (change.getAfterRevision() != null) {
+            result.add(change.getAfterRevision().getFile().getIOFile());
+          } else {
+            result.add(change.getBeforeRevision().getFile().getIOFile());
+          }
+        }
+        return result;
+      }
+
+      public Project getProject() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+      }
+
+      public List<AbstractVcs> getAffectedVcses() {
+        return Collections.emptyList();
+      }
+
+      public Collection<VirtualFile> getRoots() {
+        return Collections.emptyList();
+      }
+
+      public void setCommitMessage(String currentDescription) {
+      }
+
+      public void setWarning(String s) {
+      }
+
+      public String getCommitMessage() {
+        return "test";
+      }
+
+      public String getCommitActionName() {
+        return "test";
+      }
+
+      public void refresh() {
+      }
+
+      public void saveState() {
+      }
+
+      public void restoreState() {
+      }
+    });
+    ((CheckinChangeListSpecificComponent)panel).onChangeListSelected(new LocalChangeList() {
+      @Override
+      public Collection<Change> getChanges() {
+        return changes;
+      }
+
+      @NotNull
+      @Override
+      public String getName() {
+        return "test";
+      }
+
+      @Override
+      public void setName(@NotNull String name) {
+      }
+
+      @Override
+      public String getComment() {
+        return "test";
+      }
+
+      @Override
+      public void setComment(String comment) {
+      }
+
+      @Override
+      public boolean isDefault() {
+        return true;
+      }
+
+      @Override
+      public boolean isReadOnly() {
+        return false;
+      }
+
+      @Override
+      public void setReadOnly(boolean isReadOnly) {
+      }
+
+      @Override
+      public LocalChangeList copy() {
+        return null;
+      }
+    });
+    final List<VcsException> errors = env.commit(new ArrayList<Change>(changes), comment);
     Assert.assertTrue(getMessage(errors), errors.isEmpty());
     refreshAll();
   }
