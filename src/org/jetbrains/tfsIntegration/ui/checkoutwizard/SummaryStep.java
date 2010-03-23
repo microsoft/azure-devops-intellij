@@ -60,7 +60,7 @@ public class SummaryStep extends CheckoutWizardStep {
     return true;
   }
 
-  protected void commit(final CommitType commitType) throws CommitStepException {
+  public void commit(final CommitType commitType) throws CommitStepException {
     // nothing here
   }
 
