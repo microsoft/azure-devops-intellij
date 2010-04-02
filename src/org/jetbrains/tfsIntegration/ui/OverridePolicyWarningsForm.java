@@ -47,7 +47,7 @@ public class OverridePolicyWarningsForm {
   private JTextArea myReasonTextArea;
   private JPanel myContentPane;
 
-  private EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public OverridePolicyWarningsForm(final Project project, List<PolicyFailure> failures) {
     myIconLabel.setIcon(Messages.getWarningIcon());
