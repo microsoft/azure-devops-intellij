@@ -658,15 +658,17 @@ public class VersionControlServer {
     else {
       downloadUrl = serverUri + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
     }
+    TFSVcs.LOG.debug((tryProxy ? "Downloading via proxy: " : "Downloading: ") + downloadUrl);
     try {
       WebServiceHelper.httpGet(serverUri, downloadUrl, outputStream);
     }
     catch (TfsException e) {
+      TFSVcs.LOG.warn("Download failed", e);
       if (tryProxy) {
+        TFSVcs.LOG.warn("Disabling proxy");
         String messageHtml = MessageFormat
           .format("Cannot connect to ''{0}'' via TFS proxy ''{1}'':\n{2}\nDirect connection is used until you restart IntelliJ IDEA.",
                   serverUri, TFSConfigurationManager.getInstance().getProxyUri(serverUri), e.getMessage());
-        TFSVcs.LOG.info(messageHtml);
         TfsUtil.showBalloon(project, MessageType.WARNING, messageHtml);
         TFSConfigurationManager.getInstance().setProxyInaccessible(server.getUri());
         downloadItem(project, server, downloadKey, outputStream);
