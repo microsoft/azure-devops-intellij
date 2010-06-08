@@ -155,7 +155,9 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   }
 
   @Nullable
-  public List<VcsException> commit(final List<Change> changes, final String preparedComment) {
+  public List<VcsException> commit(final List<Change> changes,
+                                   final String preparedComment,
+                                   @NotNull NullableFunction<Object, Object> parametersHolder) {
     myMessageLabel = null;
 
     final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
@@ -290,8 +292,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return errors;
   }
 
-  public List<VcsException> commit(List<Change> changes, String preparedComment, @NotNull NullableFunction<Object, Object> parametersHolder) {
-    return commit(changes, preparedComment);
+  public List<VcsException> commit(List<Change> changes, String preparedComment) {
+    return commit(changes, preparedComment, NullableFunction.NULL);
   }
 
   @Nullable
