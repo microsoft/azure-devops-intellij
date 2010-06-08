@@ -16,14 +16,15 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
+import com.intellij.util.PairConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
@@ -38,7 +39,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
   public CheckinHandler createHandler(final CheckinProjectPanel panel) {
     return new CheckinHandler() {
       @Override
-      public ReturnResult beforeCheckin(@Nullable CommitExecutor executor) {
+      public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
         if (executor != null) {
           return ReturnResult.COMMIT;
         }

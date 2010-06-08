@@ -24,9 +24,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
@@ -326,7 +324,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
       public void restoreState() {
       }
-    });
+    }, new PseudoMap<Object, Object>());
     ((CheckinChangeListSpecificComponent)panel).onChangeListSelected(new LocalChangeList() {
       @Override
       public Collection<Change> getChanges() {
