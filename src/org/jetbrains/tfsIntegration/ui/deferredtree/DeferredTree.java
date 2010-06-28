@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui.deferredtree;
 
+import com.intellij.ui.treeStructure.Tree;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -27,7 +28,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.*;
 
-public class DeferredTree<T> extends JTree {
+public class DeferredTree<T> extends Tree {
 
   static final String NEW_CHILD_DEFAULT_TEXT = "New Folder";
 
