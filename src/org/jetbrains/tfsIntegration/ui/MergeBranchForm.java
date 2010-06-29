@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.table.JBTable;
 import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -86,7 +87,7 @@ public class MergeBranchForm {
     myDialogTitle = dialogTitle;
 
     myChangesetsTableModel = new ChangesetsTableModel();
-    myChangesetsTable = new JTable(myChangesetsTableModel);
+    myChangesetsTable = new JBTable(myChangesetsTableModel);
     myChangesetsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
     for (int i = 0; i < ChangesetsTableModel.Column.values().length; i++) {
       myChangesetsTable.getColumnModel().getColumn(i).setPreferredWidth(ChangesetsTableModel.Column.values()[i].getWidth());
