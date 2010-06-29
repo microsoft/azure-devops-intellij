@@ -135,7 +135,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="867fe" class="javax.swing.JTable" binding="myFoldersTable">
+              <component id="867fe" class="com.intellij.ui.table.JBTable" binding="myFoldersTable">
                 <constraints/>
                 <properties/>
                 <clientProperties>

@@ -24,7 +24,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="daec2" class="javax.swing.JList" binding="myPoliciesList">
+          <component id="daec2" class="com.intellij.ui.components.JBList" binding="myPoliciesList">
             <constraints/>
             <properties/>
           </component>

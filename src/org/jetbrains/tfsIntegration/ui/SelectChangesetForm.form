@@ -215,7 +215,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="3b9c6" class="javax.swing.JTable" binding="myChangesetsTable">
+          <component id="3b9c6" class="com.intellij.ui.table.JBTable" binding="myChangesetsTable">
             <constraints/>
             <properties>
               <autoResizeMode value="3"/>
