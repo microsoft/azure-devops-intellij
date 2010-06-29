@@ -24,7 +24,7 @@
           <text value=""/>
         </properties>
       </component>
-      <scrollpane id="93170">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="93170">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="3" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -55,7 +55,7 @@
           <color color="-16777216"/>
         </border>
         <children>
-          <scrollpane id="3d212">
+          <scrollpane class="com.intellij.ui.components.JBScrollPane" id="3d212">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>

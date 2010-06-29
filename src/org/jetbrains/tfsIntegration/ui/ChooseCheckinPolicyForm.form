@@ -17,7 +17,7 @@
           <text value="&amp;Checkin policies:"/>
         </properties>
       </component>
-      <scrollpane id="4e29c">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="4e29c">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -30,7 +30,7 @@
           </component>
         </children>
       </scrollpane>
-      <scrollpane id="9a83b">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="9a83b">
         <constraints>
           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>

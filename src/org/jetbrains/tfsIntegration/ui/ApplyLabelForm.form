@@ -73,7 +73,7 @@
           </component>
         </children>
       </grid>
-      <scrollpane id="1b16c">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="1b16c">
         <constraints>
           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="-1" height="250"/>
@@ -88,7 +88,7 @@
           </component>
         </children>
       </scrollpane>
-      <scrollpane id="8717e">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="8717e">
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>

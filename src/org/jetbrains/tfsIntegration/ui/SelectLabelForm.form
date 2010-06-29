@@ -69,7 +69,7 @@
           <text value="&amp;Results:"/>
         </properties>
       </component>
-      <scrollpane id="b6e28">
+      <scrollpane class="com.intellij.ui.components.JBScrollPane" id="b6e28">
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>

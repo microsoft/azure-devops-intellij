@@ -16,9 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
@@ -46,7 +47,7 @@ public class ItemInfoForm {
   private JPanel myPanel;
   private JLabel myDeletionIdLabel;
   private JLabel myLockLabel;
-  private JScrollPane myTreePane;
+  private JBScrollPane myTreePane;
   private JLabel myWorkspaceLabel;
   private final Collection<BranchRelative> myBranches;
 

@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
@@ -96,7 +97,7 @@ public class MergeBranchForm {
     mySelectRevisionForm = new SelectRevisionForm();
 
     myChangesetsPanel.add(mySelectRevisionForm.getPanel(), ChangesType.ALL.toString());
-    myChangesetsPanel.add(new JScrollPane(myChangesetsTable), ChangesType.SELECTED.toString());
+    myChangesetsPanel.add(new JBScrollPane(myChangesetsTable), ChangesType.SELECTED.toString());
 
     mySourceField.setText(initialSourcePath);
     mySourceIsDirectory = initialSourcePathIsDirectory;
