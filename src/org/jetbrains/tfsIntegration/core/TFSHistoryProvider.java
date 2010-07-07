@@ -80,19 +80,29 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
         return null;
       }
 
-      return new VcsAbstractHistorySession(revisions) {
-        public VcsRevisionNumber calcCurrentRevisionNumber() {
-          return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
-        }
-
-        public HistoryAsTreeProvider getHistoryAsTreeProvider() {
-          return null;
-        }
-      };
+      return createSession(workspaceAndItem, revisions);
     }
     catch (TfsException e) {
       throw new VcsException(e);
     }
+  }
+
+  private VcsAbstractHistorySession createSession(final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem,
+                                                  final List<VcsFileRevision> revisions) {
+    return new VcsAbstractHistorySession(revisions) {
+      public VcsRevisionNumber calcCurrentRevisionNumber() {
+        return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
+      }
+
+      public HistoryAsTreeProvider getHistoryAsTreeProvider() {
+        return null;
+      }
+
+      @Override
+      public VcsHistorySession copy() {
+        return createSession(workspaceAndItem, getRevisionList());
+      }
+    };
   }
 
   public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
