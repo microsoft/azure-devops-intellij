@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.vcsUtil.VcsUtil;
 import gnu.trove.THashSet;
@@ -326,7 +327,7 @@ public class CheckinParameters {
 
           try {
             final PolicyFailure[] failures = policy.evaluate(context, pi);
-            allFailures.addAll(Arrays.asList(failures));
+            ContainerUtil.addAll(allFailures, failures);
           }
           catch (ProcessCanceledException e) {
             throw e;

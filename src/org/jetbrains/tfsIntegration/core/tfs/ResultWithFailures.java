@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
 import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
@@ -31,10 +32,10 @@ public class ResultWithFailures<T> {
 
   public ResultWithFailures(@Nullable final T[] result, @Nullable final Failure[] failures) {
     if (result != null) {
-      this.result.addAll(Arrays.asList(result));
+      ContainerUtil.addAll(this.result, result);
     }
     if (failures != null) {
-      this.failures.addAll(Arrays.asList(failures));
+      ContainerUtil.addAll(this.failures, failures);
     }
   }
 
