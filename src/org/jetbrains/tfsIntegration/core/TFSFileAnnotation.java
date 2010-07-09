@@ -48,9 +48,18 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   private final EventDispatcher<AnnotationListener> myEventDispatcher = EventDispatcher.create(AnnotationListener.class);
 
-  private final LineAnnotationAspect REVISION_ASPECT = new RevisionAnnotationAspect();
+  private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect() {
+    public String getValue(int lineNumber) {
+      if (lineNumber < myLineRevisions.length) {
+        return myLineRevisions[lineNumber].getRevisionNumber().asString();
+      }
+      else {
+        return "";
+      }
+    }
+  };
 
-  private final LineAnnotationAspect DATE_ASPECT = new LineAnnotationAspectAdapter() {
+  private final LineAnnotationAspect DATE_ASPECT = new TFSAnnotationAspect() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return DATE_FORMAT.format(myLineRevisions[lineNumber].getRevisionDate());
@@ -61,7 +70,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspectAdapter() {
+  private final LineAnnotationAspect AUTHOR_ASPECT = new TFSAnnotationAspect() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return TfsUtil.getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
@@ -170,25 +179,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private class RevisionAnnotationAspect extends LineAnnotationAspectAdapter implements EditorGutterAction {
-    public String getValue(int lineNumber) {
-      if (lineNumber < myLineRevisions.length) {
-        return myLineRevisions[lineNumber].getRevisionNumber().asString();
-      }
-      else {
-        return "";
-      }
-    }
-
-    public Cursor getCursor(final int lineNumber) {
-      if (lineNumber < myLineRevisions.length) {
-        return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-      }
-      else {
-        return Cursor.getDefaultCursor();
-      }
-    }
-
+  private abstract class TFSAnnotationAspect extends LineAnnotationAspectAdapter {
     public void doAction(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         final VcsFileRevision revision = myLineRevisions[lineNumber];
