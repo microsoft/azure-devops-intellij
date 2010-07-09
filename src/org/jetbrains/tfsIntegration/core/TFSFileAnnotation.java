@@ -180,9 +180,10 @@ public class TFSFileAnnotation implements FileAnnotation {
   };
 
   private abstract class TFSAnnotationAspect extends LineAnnotationAspectAdapter {
-    public void doAction(int lineNumber) {
-      if (lineNumber < myLineRevisions.length) {
-        final VcsFileRevision revision = myLineRevisions[lineNumber];
+    @Override
+    protected void showAffectedPaths(int lineNum) {
+      if (lineNum < myLineRevisions.length) {
+        final VcsFileRevision revision = myLineRevisions[lineNum];
         final int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
         final CommittedChangeList changeList =
           new TFSChangeList(myWorkspace, changeset, revision.getAuthor(), revision.getRevisionDate(), revision.getCommitMessage(), myVcs);
