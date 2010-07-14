@@ -44,10 +44,10 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           return ReturnResult.COMMIT;
         }
         
-        final TFSVcs tfsVcs = TFSVcs.getInstance(panel.getProject());
-        if (!panel.getAffectedVcses().contains(tfsVcs)) {
+        if (!panel.vcsIsAffected("TFS")) {
           return ReturnResult.COMMIT;
         }
+        final TFSVcs tfsVcs = TFSVcs.getInstance(panel.getProject());
 
         final CheckinParameters parameters = tfsVcs.getCheckinEnvironment().getCheckinParameters();
         if (parameters == null) {

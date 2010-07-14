@@ -294,6 +294,11 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
       }
 
+      @Override
+      public boolean vcsIsAffected(String name) {
+        return false;
+      }
+
       public List<AbstractVcs> getAffectedVcses() {
         return Collections.emptyList();
       }

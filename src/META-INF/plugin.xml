@@ -29,7 +29,7 @@
 
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
-    <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs"/>
+    <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs" displayName="TFS"/>
     <checkinHandlerFactory implementation="org.jetbrains.tfsIntegration.core.TFSCheckinHandlerFactory"/>
   </extensions>
 
