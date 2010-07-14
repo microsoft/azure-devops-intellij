@@ -22,6 +22,7 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.containers.ContainerUtil;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
@@ -183,7 +184,7 @@ public class VersionControlServer {
       }
     });
     ArrayList<Item> result = new ArrayList<Item>();
-    result.addAll(Arrays.asList(arrayOfItems.getItem()));
+    ContainerUtil.addAll(result, arrayOfItems.getItem());
     return result;
   }
 
@@ -363,11 +364,11 @@ public class VersionControlServer {
           }
 
           if (response.getPendChangesResult().getGetOperation() != null) {
-            result.getResult().addAll(Arrays.asList(response.getPendChangesResult().getGetOperation()));
+            ContainerUtil.addAll(result.getResult(), response.getPendChangesResult().getGetOperation());
           }
 
           if (response.getFailures().getFailure() != null) {
-            result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
+            ContainerUtil.addAll(result.getFailures(), response.getFailures().getFailure());
           }
           return result;
         }
@@ -496,7 +497,7 @@ public class VersionControlServer {
           for (ArrayOfExtendedItem extendedItem : extendedItemsArray) {
             if (extendedItem.getExtendedItem() != null) {
               // no need to chooseExtendedItem() since DeletedState.NonDeleted specified
-              extendedItems.addAll(Arrays.asList(extendedItem.getExtendedItem()));
+              ContainerUtil.addAll(extendedItems, extendedItem.getExtendedItem());
             }
           }
 
@@ -728,7 +729,7 @@ public class VersionControlServer {
       });
 
       if (currentChangeSets != null) {
-        allChangeSets.addAll(Arrays.asList(currentChangeSets));
+        ContainerUtil.addAll(allChangeSets, currentChangeSets);
       }
 
 
@@ -862,7 +863,7 @@ public class VersionControlServer {
         List<GetOperation> results = new ArrayList<GetOperation>();
         for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
           if (arrayOfGetOperation.getGetOperation() != null) {
-            results.addAll(Arrays.asList(arrayOfGetOperation.getGetOperation()));
+            ContainerUtil.addAll(results, arrayOfGetOperation.getGetOperation());
           }
         }
         return results;
@@ -1124,7 +1125,7 @@ public class VersionControlServer {
           }
 
           if (response.getFailures().getFailure() != null) {
-            result.getFailures().addAll(Arrays.asList(response.getFailures().getFailure()));
+            ContainerUtil.addAll(result.getFailures(), response.getFailures().getFailure());
           }
           return result;
         }
@@ -1319,7 +1320,7 @@ public class VersionControlServer {
     final ItemSet itemSet = arrayOfItemSet.getItemSet()[0];
     if (itemSet.getItems() != null && itemSet.getItems().getItem() != null) {
       List<Item> result = new ArrayList<Item>(itemSet.getItems().getItem().length);
-      result.addAll(Arrays.asList(itemSet.getItems().getItem()));
+      ContainerUtil.addAll(result, itemSet.getItems().getItem());
       return result;
     }
     else {
@@ -1364,7 +1365,7 @@ public class VersionControlServer {
     });
     ArrayList<VersionControlLabel> result = new ArrayList<VersionControlLabel>();
     if (labels != null) {
-      result.addAll(Arrays.asList(labels));
+      ContainerUtil.addAll(result, labels);
     }
     return result;
   }
