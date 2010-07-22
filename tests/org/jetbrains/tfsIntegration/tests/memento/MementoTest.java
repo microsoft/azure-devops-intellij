@@ -1,5 +1,6 @@
 package org.jetbrains.tfsIntegration.tests.memento;
 
+import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.util.JDOMCompare;
@@ -226,8 +227,7 @@ public class MementoTest extends TestCase {
   }
 
   private static <T> T runWithPatchedClassloader(ThrowableComputable<T, Exception> computable) throws Exception {
-    final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    Thread.currentThread().setContextClassLoader(new URLClassLoader(new URL[0], classLoader) {
+    return ClassLoaderUtil.runWithClassLoader(new URLClassLoader(new URL[0], Thread.currentThread().getContextClassLoader()) {
       @Override
       public InputStream getResourceAsStream(String name) {
         if (XML_ENTITIES_URL.equals(name)) {
@@ -241,12 +241,6 @@ public class MementoTest extends TestCase {
         }
         return super.getResourceAsStream(name);
       }
-    });
-    try {
-      return computable.compute();
-    }
-    finally {
-      Thread.currentThread().setContextClassLoader(classLoader);
-    }
+    }, computable);
   }
 }
