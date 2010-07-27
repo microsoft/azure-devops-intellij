@@ -15,6 +15,8 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/test-lib/com.teamprise.core.jar!/" />
         </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
@@ -22,6 +24,8 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/test-lib/com.cdesg.util.jar!/" />
         </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>
