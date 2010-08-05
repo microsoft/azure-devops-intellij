@@ -17,12 +17,10 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.util.containers.ContainerUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Failure;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Failure;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 
 public class ResultWithFailures<T> {

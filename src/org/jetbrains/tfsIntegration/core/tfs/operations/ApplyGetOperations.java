@@ -27,15 +27,16 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ChangeType_type0;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.GetOperation;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LocalVersionUpdate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LocalVersionUpdate;
 
 import java.io.File;
 import java.io.IOException;
@@ -179,7 +180,8 @@ public class ApplyGetOperations {
   private void processDeleteFile(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isDirectory()) {
-      String errorMessage = MessageFormat.format("Cannot delete file ''{0}'' because there is a folder with the same name", source.getPath());
+      String errorMessage =
+        MessageFormat.format("Cannot delete file ''{0}'' because there is a folder with the same name", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -201,7 +203,8 @@ public class ApplyGetOperations {
   private void processDeleteFolder(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     if (source.isFile()) {
-      String errorMessage = MessageFormat.format("Cannot delete folder ''{0}'' because there is a file with the same name", source.getPath());
+      String errorMessage =
+        MessageFormat.format("Cannot delete folder ''{0}'' because there is a file with the same name", source.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -227,7 +230,8 @@ public class ApplyGetOperations {
   private void processCreateFile(final @NotNull GetOperation operation) throws TfsException {
     File target = VersionControlPath.getFile(operation.getTlocal());
     if (target.isDirectory()) {
-      String errorMessage = MessageFormat.format("Cannot create file ''{0}'' because there is a folder with the same name", target.getPath());
+      String errorMessage =
+        MessageFormat.format("Cannot create file ''{0}'' because there is a folder with the same name", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -260,7 +264,8 @@ public class ApplyGetOperations {
     }
 
     if (target.isFile() && !FileUtil.delete(target)) {
-      String errorMessage = MessageFormat.format("Cannot create folder ''{0}'' because there is a folder with the same name", target.getPath());
+      String errorMessage =
+        MessageFormat.format("Cannot create folder ''{0}'' because there is a folder with the same name", target.getPath());
       myErrors.add(new VcsException(errorMessage));
       return;
     }
@@ -279,11 +284,12 @@ public class ApplyGetOperations {
   private void processFileChange(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     File target = VersionControlPath.getFile(operation.getTlocal());
-    final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
+    final ChangeTypeMask change = new ChangeTypeMask(operation.getChg());
 
     if (source.equals(target) &&
         operation.getLver() == operation.getSver() &&
-        (change.containsOnly(ChangeType.Rename) || (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
+        (change.containsOnly(ChangeType_type0.Rename) ||
+         (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
       // rename + source=target means rename of parent folder 
       // not an explicit change, nothing to do
       updateLocalVersion(operation);
@@ -324,7 +330,7 @@ public class ApplyGetOperations {
     if (myDownloadMode == DownloadMode.FORCE || (myDownloadMode != DownloadMode.MERGE && operation.getLver() != operation.getSver())) {
       // remove source, create target
       // don't download file if undoing Add
-      if ((source.equals(target) || deleteFile(source)) && (change.contains(ChangeType.Add) || downloadFile(operation))) {
+      if ((source.equals(target) || deleteFile(source)) && (change.contains(ChangeType_type0.Add) || downloadFile(operation))) {
         updateLocalVersion(operation);
         if (source.equals(target)) {
           addToGroup(FileGroup.UPDATED_ID, target, operation);
@@ -348,7 +354,7 @@ public class ApplyGetOperations {
       else {
         // source & target not exist
         // don't create file if undoing locally missing scheduled for addition file
-        if (!change.contains(ChangeType.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
+        if (!change.contains(ChangeType_type0.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
           if (downloadFile(operation)) {
             addToGroup(FileGroup.CREATED_ID, target, operation);
             updateLocalVersion(operation);
@@ -371,11 +377,11 @@ public class ApplyGetOperations {
   private void processFolderChange(final GetOperation operation) throws TfsException {
     File source = VersionControlPath.getFile(operation.getSlocal());
     File target = VersionControlPath.getFile(operation.getTlocal());
-    final EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, operation.getChg());
+    final ChangeTypeMask change = new ChangeTypeMask(operation.getChg());
 
     if (source.equals(target) &&
         operation.getLver() == operation.getSver() &&
-        (change.containsOnly(ChangeType.Rename) || (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
+        (change.containsOnly(ChangeType_type0.Rename) || (myDownloadMode != DownloadMode.FORCE && myDownloadMode != DownloadMode.MERGE))) {
       // rename + source=target means rename of parent folder
       // not an explicit change, nothing to do
       updateLocalVersion(operation);
@@ -410,7 +416,7 @@ public class ApplyGetOperations {
       else {
         // source & target not exist
         // don't create folder if undoing locally missing scheduled for addition folder
-        if (!change.contains(ChangeType.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
+        if (!change.contains(ChangeType_type0.Add) || !source.equals(target) || operation.getLver() != operation.getSver()) {
           if (createFolder(target)) {
             addToGroup(FileGroup.CREATED_ID, target, operation);
             updateLocalVersion(operation);

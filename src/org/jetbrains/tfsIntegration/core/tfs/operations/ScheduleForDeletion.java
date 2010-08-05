@@ -19,14 +19,11 @@ package org.jetbrains.tfsIntegration.core.tfs.operations;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,8 +46,8 @@ public class ScheduleForDeletion {
 
       Collection<String> revert = new ArrayList<String>();
       for (PendingChange pendingChange : pendingChanges) {
-        EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
-        if (!change.contains(ChangeType.Delete)) {
+        ChangeTypeMask change = new ChangeTypeMask( pendingChange.getChg());
+        if (!change.contains(ChangeType_type0.Delete)) {
           // TODO assert for possible change types here
           revert.add(pendingChange.getItem());
         }

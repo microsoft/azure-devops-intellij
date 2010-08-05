@@ -16,8 +16,8 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
 
 import javax.swing.table.AbstractTableModel;
 import java.text.DateFormat;

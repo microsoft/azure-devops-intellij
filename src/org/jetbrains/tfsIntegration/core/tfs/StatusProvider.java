@@ -20,12 +20,12 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.util.*;
 
@@ -139,8 +139,8 @@ public class StatusProvider {
       return ServerStatus.Unversioned.INSTANCE;
     }
 
-    EnumMask<ChangeType> change = EnumMask.fromString(ChangeType.class, item.getChg());
-    change.remove(ChangeType.None, ChangeType.Lock);
+    ChangeTypeMask change = new ChangeTypeMask( item.getChg());
+    change.remove(ChangeType_type0.None, ChangeType_type0.Lock);
 
     if (item.getLocal() == null && change.isEmpty()) {
       // TODO report not downloaded items as unversioned ?
@@ -157,10 +157,10 @@ public class StatusProvider {
       }
     }
 
-    if (change.contains(ChangeType.Add) ||
-        (change.containsAny(ChangeType.Merge, ChangeType.Branch) && item.getLatest() == Integer.MIN_VALUE)) {
+    if (change.containsAny(ChangeType_type0.Add) ||
+        (change.containsAny(ChangeType_type0.Merge, ChangeType_type0.Branch) && item.getLatest() == Integer.MIN_VALUE)) {
       //TFSVcs.assertTrue(change.contains(ChangeType.Edit) || item.getType() == ItemType.Folder);
-      TFSVcs.assertTrue(change.contains(ChangeType.Encoding));
+      TFSVcs.assertTrue(change.containsAny(ChangeType_type0.Encoding));
       TFSVcs.assertTrue(item.getLatest() == Integer.MIN_VALUE);
       TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
       if (pendingChange != null) {
@@ -170,7 +170,7 @@ public class StatusProvider {
         return new ServerStatus.ScheduledForAddition(item);
       }
     }
-    else if (change.contains(ChangeType.Delete)) {
+    else if (change.contains(ChangeType_type0.Delete)) {
 //          TFSVcs.assertTrue(change.containsOnly(ChangeType.Value.Delete)); // NOTE: may come with "Lock" change 
       //TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
       //TFSVcs.assertTrue(item.getLver() == Integer.MIN_VALUE);
@@ -182,7 +182,7 @@ public class StatusProvider {
         return new ServerStatus.ScheduledForDeletion(item);
       }
     }
-    else if (change.containsAny(ChangeType.Edit, ChangeType.Merge) && !change.contains(ChangeType.Rename)) {
+    else if (change.containsAny(ChangeType_type0.Edit, ChangeType_type0.Merge) && !change.contains(ChangeType_type0.Rename)) {
       TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
       if (item.getLver() != Integer.MIN_VALUE) {
         TFSVcs.assertTrue(item.getLocal() != null);
@@ -197,7 +197,7 @@ public class StatusProvider {
         return new ServerStatus.ScheduledForAddition(item);
       }
     }
-    else if (change.containsAny(ChangeType.Merge, ChangeType.Rename) && !change.contains(ChangeType.Edit)) {
+    else if (change.containsAny(ChangeType_type0.Merge, ChangeType_type0.Rename) && !change.contains(ChangeType_type0.Edit)) {
       if (pendingChange != null) {
         return new ServerStatus.Renamed(pendingChange);
       }
@@ -205,7 +205,7 @@ public class StatusProvider {
         return new ServerStatus.Renamed(item);
       }
     }
-    else if (change.contains(ChangeType.Rename, ChangeType.Edit)) {
+    else if (change.containsAll(ChangeType_type0.Rename, ChangeType_type0.Edit)) {
       TFSVcs.assertTrue(item.getLatest() != Integer.MIN_VALUE);
       TFSVcs.assertTrue(item.getLver() != Integer.MIN_VALUE);
       TFSVcs.assertTrue(item.getLocal() != null);
@@ -216,7 +216,7 @@ public class StatusProvider {
         return new ServerStatus.RenamedCheckedOut(item);
       }
     }
-    else if (change.contains(ChangeType.Undelete)) {
+    else if (change.contains(ChangeType_type0.Undelete)) {
       if (pendingChange != null) {
         return new ServerStatus.Undeleted(pendingChange);
       }

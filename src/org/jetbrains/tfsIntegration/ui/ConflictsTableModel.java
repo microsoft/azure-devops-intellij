@@ -16,8 +16,8 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ConflictType;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ConflictType;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 
 import javax.swing.table.AbstractTableModel;

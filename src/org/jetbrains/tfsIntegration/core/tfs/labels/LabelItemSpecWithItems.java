@@ -16,13 +16,13 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.labels;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 public class LabelItemSpecWithItems {
 

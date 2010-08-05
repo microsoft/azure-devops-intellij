@@ -22,6 +22,11 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.util.io.StreamUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.services.registration._03.*;
+import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthentication;
+import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthenticationResponse;
+import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.ServerStatusStub;
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.Stub;
@@ -50,16 +55,9 @@ import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.*;
-import org.jetbrains.tfsIntegration.stubs.RegistrationRegistrationSoapStub;
-import org.jetbrains.tfsIntegration.stubs.ServerStatusServerStatusSoapStub;
-import org.jetbrains.tfsIntegration.stubs.compatibility.CustomSOAPBuilder;
-import org.jetbrains.tfsIntegration.stubs.services.registration.GetRegistrationEntries;
-import org.jetbrains.tfsIntegration.stubs.services.registration.GetRegistrationEntriesResponse;
-import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationEntry;
-import org.jetbrains.tfsIntegration.stubs.services.registration.RegistrationExtendedAttribute;
-import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthentication;
-import org.jetbrains.tfsIntegration.stubs.services.serverstatus.CheckAuthenticationResponse;
 import org.jetbrains.tfsIntegration.ui.LoginDialog;
+import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAP12Factory;
+import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAPBuilder;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -91,6 +89,8 @@ public class WebServiceHelper {
     AuthPolicy.registerAuthScheme(AuthPolicy.NTLM, NTLM2Scheme.class);
     AuthPolicy.registerAuthScheme(AuthPolicy.DIGEST, DigestScheme.class);
     AuthPolicy.registerAuthScheme(AuthPolicy.BASIC, BasicScheme.class);
+
+    System.setProperty(OMAbstractFactory.SOAP12_FACTORY_NAME_PROPERTY, CustomSOAP12Factory.class.getName());
   }
 
   public interface VoidDelegate {
@@ -124,11 +124,11 @@ public class WebServiceHelper {
       public Pair<URI, String> executeRequest(@NotNull final URI serverUri, @NotNull final Credentials credentials) throws Exception {
         return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new ThrowableComputable<Pair<URI, String>, Exception>() {
           public Pair<URI, String> compute() throws Exception {
-            ServerStatusServerStatusSoapStub serverStatusStub =
-              new ServerStatusServerStatusSoapStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
+            ServerStatusStub serverStatusStub =
+              new ServerStatusStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
             setupStub(serverStatusStub, credentials, serverUri);
 
-            CheckAuthenticationResponse response = serverStatusStub.CheckAuthentication(new CheckAuthentication());
+            CheckAuthenticationResponse response = serverStatusStub.checkAuthentication(new CheckAuthentication());
             String connectionCredentials = response.getCheckAuthenticationResult();
             int i = connectionCredentials.indexOf('\\');
             String username = i != -1 ? connectionCredentials.substring(i + 1) : connectionCredentials;
@@ -136,15 +136,14 @@ public class WebServiceHelper {
               throw new WrongConnectionException(connectionCredentials);
             }
 
-            RegistrationRegistrationSoapStub registrationStub =
-              new RegistrationRegistrationSoapStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
+            RegistrationStub registrationStub = new RegistrationStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
             setupStub(registrationStub, credentials, serverUri);
             final GetRegistrationEntries param = new GetRegistrationEntries();
             param.setToolId(TFS_TOOL_ID);
-            GetRegistrationEntriesResponse registrationEntries = registrationStub.GetRegistrationEntries(param);
-            for (RegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
+            GetRegistrationEntriesResponse registrationEntries = registrationStub.getRegistrationEntries(param);
+            for (FrameworkRegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
               if (TFS_TOOL_ID.equals(entry.getType())) {
-                for (RegistrationExtendedAttribute attribute : entry.getRegistrationExtendedAttributes()
+                for (RegistrationExtendedAttribute2 attribute : entry.getRegistrationExtendedAttributes()
                   .getRegistrationExtendedAttribute()) {
                   if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
                     final String instanceId = attribute.getValue();

@@ -24,15 +24,14 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -168,7 +167,8 @@ public class TFSChangeList implements CommittedChangeList {
     try {
       Changeset changeset = myWorkspace.getServer().getVCS().queryChangeset(myRevisionNumber);
 
-      for (org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change : changeset.getChanges().getChange()) {
+      for (com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Change change : changeset.getChanges()
+        .getChange()) {
         processChange(changeset.getCset(), change);
       }
     }
@@ -177,9 +177,10 @@ public class TFSChangeList implements CommittedChangeList {
     }
   }
 
-  private void processChange(int changeset, final org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Change change)
+  private void processChange(int changeset,
+                             final com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Change change)
     throws TfsException {
-    final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, change.getType());
+    final ChangeTypeMask changeType = new ChangeTypeMask(change.getType());
 
     final FilePath localPath =
       myWorkspace.findLocalPathByServerPath(change.getItem().getItem(), change.getItem().getType() == ItemType.Folder);
@@ -189,22 +190,22 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.containsAny(ChangeType.Add, ChangeType.Undelete, ChangeType.Branch)) {
-      if (changeType.contains(ChangeType.Add)) {
-        TFSVcs.assertTrue(changeType.contains(ChangeType.Encoding));
+    if (changeType.containsAny(ChangeType_type0.Add, ChangeType_type0.Undelete, ChangeType_type0.Branch)) {
+      if (changeType.contains(ChangeType_type0.Add)) {
+        TFSVcs.assertTrue(changeType.contains(ChangeType_type0.Encoding));
         if (change.getItem().getType() == ItemType.File) {
-          TFSVcs.assertTrue(changeType.contains(ChangeType.Edit));
+          TFSVcs.assertTrue(changeType.contains(ChangeType_type0.Edit));
         }
         else {
-          TFSVcs.assertTrue(!changeType.contains(ChangeType.Edit));
+          TFSVcs.assertTrue(!changeType.contains(ChangeType_type0.Edit));
         }
       }
-      TFSVcs.assertTrue(!changeType.contains(ChangeType.Delete));
+      TFSVcs.assertTrue(!changeType.contains(ChangeType_type0.Delete));
       myAddedPaths.add(localPath);
       return;
     }
 
-    if (changeType.contains(ChangeType.Delete)) {
+    if (changeType.contains(ChangeType_type0.Delete)) {
       TFSVcs.assertTrue(changeType.size() <= 3, "Unexpected change type: " + changeType); // can be merge
       //TFSVcs.assertTrue(changeType.containsOnly(ChangeType.Delete) || changeType.contains(ChangeType.Rename),
       //                  "Unexpected change type: " + changeType);
@@ -216,7 +217,7 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.contains(ChangeType.Rename)) {
+    if (changeType.contains(ChangeType_type0.Rename)) {
       if (change.getItem().getDid() != Integer.MIN_VALUE) {
         // the item was deleted in some previous checkin
         return;
@@ -234,7 +235,7 @@ public class TFSChangeList implements CommittedChangeList {
       return;
     }
 
-    if (changeType.containsAny(ChangeType.Edit, ChangeType.Merge)) {
+    if (changeType.containsAny(ChangeType_type0.Edit, ChangeType_type0.Merge)) {
       int previousCs = change.getItem().getCs() - 1; // same as getPreviousVersion(change.getItem(), changeset).getCs())   
       //Item item = getPreviousVersion(change.getItem(), changeset);
       //TFSVcs.assertTrue(changeType.contains(ChangeType.Value.Encoding));

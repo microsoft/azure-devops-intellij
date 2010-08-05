@@ -16,15 +16,15 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LockLevel;
 import org.jetbrains.tfsIntegration.core.tfs.locks.LockItemModel;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LockLevel;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import java.util.List;
 import java.awt.*;
+import java.util.List;
 
 public class LockItemsForm {
 

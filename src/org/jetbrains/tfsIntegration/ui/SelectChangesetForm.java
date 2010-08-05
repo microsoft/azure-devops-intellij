@@ -18,14 +18,14 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.EventDispatcher;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionSpec;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Changeset;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -35,10 +35,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.text.DateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EventListener;
 import java.util.List;
 
 public class SelectChangesetForm {

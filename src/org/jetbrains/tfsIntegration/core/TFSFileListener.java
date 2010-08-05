@@ -23,17 +23,14 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
+import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.operations.UndoPendingChanges;
-import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.PendingChange;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.RecursionType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 
 import java.util.*;
 
@@ -152,8 +149,8 @@ public class TFSFileListener extends VcsVFSListener {
           final List<ItemPath> pathsToProcess = new ArrayList<ItemPath>(paths);
 
           for (PendingChange pendingChange : pendingChanges) {
-            final EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
-            if (changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Undelete)) {
+            final ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
+            if (changeType.containsAny(ChangeType_type0.Add, ChangeType_type0.Undelete)) {
               // TODO: assert that only Edit, Encoding can be here
               revertImmediately.add(pendingChange.getItem());
               final FilePath localPath =

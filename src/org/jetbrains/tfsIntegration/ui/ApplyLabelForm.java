@@ -19,12 +19,12 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.EventDispatcher;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LabelItemSpec;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelItemSpecWithItems;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelModel;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelItemSpec;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -35,8 +35,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.EventListener;
+import java.util.List;
 
 public class ApplyLabelForm {
 

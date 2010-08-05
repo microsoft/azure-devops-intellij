@@ -16,9 +16,9 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
+import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
-import org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 
 import java.text.MessageFormat;

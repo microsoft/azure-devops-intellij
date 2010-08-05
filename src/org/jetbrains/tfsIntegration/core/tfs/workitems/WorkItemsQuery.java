@@ -16,9 +16,9 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.*;
 
 import java.util.List;
 

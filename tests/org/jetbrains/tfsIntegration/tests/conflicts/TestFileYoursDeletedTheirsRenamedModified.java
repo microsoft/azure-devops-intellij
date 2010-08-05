@@ -18,12 +18,12 @@ package org.jetbrains.tfsIntegration.tests.conflicts;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ChangeType_type0;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,8 +85,8 @@ public class TestFileYoursDeletedTheirsRenamedModified extends TestFileConflict 
   }
 
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Delete));
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.Edit, ChangeType.Rename));
+    Assert.assertTrue(new ChangeTypeMask(conflict.getYchg()).containsOnly(ChangeType_type0.Delete));
+    Assert.assertTrue(new ChangeTypeMask(conflict.getBchg()).containsOnly(ChangeType_type0.Edit, ChangeType_type0.Rename));
     Assert.assertNull(conflict.getSrclitem());
     Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myTheirsFile), conflict.getYsitem());

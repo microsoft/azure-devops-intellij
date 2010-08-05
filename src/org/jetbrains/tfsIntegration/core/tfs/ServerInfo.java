@@ -16,13 +16,13 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Workspace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Workspace;
 
 import java.net.URI;
 import java.util.ArrayList;

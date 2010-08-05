@@ -16,7 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionControlLabel;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionControlLabel;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;

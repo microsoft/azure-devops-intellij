@@ -16,11 +16,11 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemsQuery;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
 
 import java.util.*;
 

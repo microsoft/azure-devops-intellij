@@ -18,12 +18,12 @@ package org.jetbrains.tfsIntegration.tests.conflicts;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ChangeType_type0;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
-import org.jetbrains.tfsIntegration.core.tfs.EnumMask;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,8 +83,8 @@ public class TestFileYoursAddedTheirsAdded extends TestFileConflict {
 
   protected void checkConflictProperties(final Conflict conflict) throws TfsException {
     Assert.assertTrue(
-      EnumMask.fromString(ChangeType.class, conflict.getYchg()).containsOnly(ChangeType.Add, ChangeType.Edit, ChangeType.Encoding));
-    Assert.assertTrue(EnumMask.fromString(ChangeType.class, conflict.getBchg()).containsOnly(ChangeType.None));
+      new ChangeTypeMask(conflict.getYchg()).containsOnly(ChangeType_type0.Add, ChangeType_type0.Edit, ChangeType_type0.Encoding));
+    Assert.assertTrue(new ChangeTypeMask(conflict.getBchg()).containsOnly(ChangeType_type0.None));
     Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getSrclitem(), false));
     Assert.assertEquals(myBaseFile, VersionControlPath.getFilePath(conflict.getTgtlitem(), false));
     Assert.assertEquals(findServerPath(myBaseFile), conflict.getYsitem());

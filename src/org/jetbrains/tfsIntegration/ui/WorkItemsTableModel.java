@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.WorkItemsCheckinParameters;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.CheckinWorkItemAction;
+import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 
 import javax.swing.table.AbstractTableModel;
 

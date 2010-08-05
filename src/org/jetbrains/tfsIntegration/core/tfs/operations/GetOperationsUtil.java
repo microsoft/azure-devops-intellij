@@ -17,9 +17,9 @@
 package org.jetbrains.tfsIntegration.core.tfs.operations;
 
 import com.intellij.openapi.util.io.FileUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.GetOperation;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.GetOperation;
 
 import java.io.File;
 import java.io.IOException;

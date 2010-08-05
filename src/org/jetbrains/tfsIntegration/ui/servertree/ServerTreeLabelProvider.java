@@ -18,14 +18,14 @@ package org.jetbrains.tfsIntegration.ui.servertree;
 
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vcs.FileStatus;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
-import org.jetbrains.tfsIntegration.ui.deferredtree.LabelProvider;
 import org.jetbrains.tfsIntegration.ui.UiConstants;
+import org.jetbrains.tfsIntegration.ui.deferredtree.LabelProvider;
 
 import javax.swing.*;
 import java.awt.*;

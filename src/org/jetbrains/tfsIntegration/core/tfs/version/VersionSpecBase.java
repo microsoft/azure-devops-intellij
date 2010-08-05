@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.version;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionSpec;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axis2.databinding.utils.BeanUtil;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.VersionSpec;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;

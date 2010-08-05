@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.labels;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LabelItemSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.LabelItemSpec;
 
 import java.util.*;
 

@@ -33,12 +33,12 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -173,7 +173,7 @@ public class TfsUtil {
     Runnable r = new Runnable() {
       public void run() {
         if (project.isDisposed()) return;
-        
+
         final ToolWindowManager manager = ToolWindowManager.getInstance(project);
         if (Arrays.asList(manager.getToolWindowIds()).contains(CHANGES_TOOLWINDOW_ID)) {
           manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);

@@ -16,10 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.labels.ItemAndVersion;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Item;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Collections;

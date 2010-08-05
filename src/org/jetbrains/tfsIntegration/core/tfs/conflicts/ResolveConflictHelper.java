@@ -25,16 +25,15 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 import java.io.IOException;
@@ -173,22 +172,22 @@ public class ResolveConflictHelper {
       return false;
     }
 
-    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
-    final EnumMask<ChangeType> yourLocalChange = EnumMask.fromString(ChangeType.class, conflict.getYlchg());
-    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
+    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
+    final ChangeTypeMask yourLocalChange = new ChangeTypeMask( conflict.getYlchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
 
     boolean isNamespaceConflict =
       ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
     if (!isNamespaceConflict) {
-      boolean yourRenamedOrModified = yourChange.containsAny(ChangeType.Rename, ChangeType.Edit);
-      boolean baseRenamedOrModified = baseChange.containsAny(ChangeType.Rename, ChangeType.Edit);
+      boolean yourRenamedOrModified = yourChange.containsAny(ChangeType_type0.Rename, ChangeType_type0.Edit);
+      boolean baseRenamedOrModified = baseChange.containsAny(ChangeType_type0.Rename, ChangeType_type0.Edit);
       if (yourRenamedOrModified && baseRenamedOrModified) {
         return true;
       }
     }
     if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
-      if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType.Edit)) {
-        if (yourLocalChange.contains(ChangeType.Edit)) {
+      if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType_type0.Edit)) {
+        if (yourLocalChange.contains(ChangeType_type0.Edit)) {
           return true;
         }
         if (conflict.getIsforced()) {
@@ -245,15 +244,15 @@ public class ResolveConflictHelper {
   }
 
   private static boolean isNameConflict(final @NotNull Conflict conflict) {
-    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
-    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
-    return yourChange.contains(ChangeType.Rename) || baseChange.contains(ChangeType.Rename);
+    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
+    return yourChange.contains(ChangeType_type0.Rename) || baseChange.contains(ChangeType_type0.Rename);
   }
 
   private static boolean isContentConflict(final @NotNull Conflict conflict) {
-    final EnumMask<ChangeType> yourChange = EnumMask.fromString(ChangeType.class, conflict.getYchg());
-    final EnumMask<ChangeType> baseChange = EnumMask.fromString(ChangeType.class, conflict.getBchg());
-    return yourChange.contains(ChangeType.Edit) || baseChange.contains(ChangeType.Edit);
+    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
+    return yourChange.contains(ChangeType_type0.Edit) || baseChange.contains(ChangeType_type0.Edit);
   }
 
   public static Collection<Conflict> getUnresolvedConflicts(Collection<Conflict> conflicts) {

@@ -17,12 +17,13 @@
 package org.jetbrains.tfsIntegration.ui;
 
 
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.BranchRelative;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.BranchRelative;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ExtendedItem;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ItemType;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
 import org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable;
@@ -74,7 +75,7 @@ public class ItemInfoForm {
     myLatestVersionLabel.setText(String.valueOf(item.getLatest()));
     myWorkspaceVersionLabel.setText(String.valueOf(item.getLver()));
     myEncodingLabel.setText(item.getEnc() != Integer.MIN_VALUE ? String.valueOf(item.getEnc()) : "(not applicable)");
-    myPendingChangesLabel.setText(item.getChg() != null ? item.getChg() : "(none)");
+    myPendingChangesLabel.setText(new ChangeTypeMask(item.getChg()).toString());
     myDeletionIdLabel.setText(item.getDid() != Integer.MIN_VALUE ? String.valueOf(item.getDid()) : "(not deleted)");
     myLockLabel.setText(
       item.getLock() != null ? MessageFormat.format("Locked for {0} by {1}", item.getLock().getValue(), item.getLowner()) : "(none)");

@@ -18,11 +18,22 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
-import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.Identity;
+import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.QueryMembership;
+import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.SearchFactor;
+import com.microsoft.schemas.teamfoundation._2005._06.services.groupsecurity._03.GroupSecurityServiceStub;
+import com.microsoft.schemas.teamfoundation._2005._06.services.groupsecurity._03.ReadIdentity;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ArrayOfInt;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ArrayOfString;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinOptions;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.MergeOptions;
+import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
@@ -41,17 +52,6 @@ import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemField;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemSerialize;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.ClientServiceClientServiceSoap12Stub;
-import org.jetbrains.tfsIntegration.stubs.GroupSecurityServiceGroupSecurityServiceSoap12Stub;
-import org.jetbrains.tfsIntegration.stubs.RepositoryRepositorySoap12Stub;
-import org.jetbrains.tfsIntegration.stubs.services.authorization.Identity;
-import org.jetbrains.tfsIntegration.stubs.services.authorization.QueryMembership;
-import org.jetbrains.tfsIntegration.stubs.services.authorization.SearchFactor;
-import org.jetbrains.tfsIntegration.stubs.services.groupsecurityservice.ReadIdentity;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfInt;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.ArrayOfString;
-import org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.*;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import java.io.File;
@@ -80,9 +80,9 @@ public class VersionControlServer {
   public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
   public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
 
-  private final RepositoryRepositorySoap12Stub myRepository;
-  private final ClientServiceClientServiceSoap12Stub myWorkItemTrackingClientService;
-  private final GroupSecurityServiceGroupSecurityServiceSoap12Stub myGroupSecurityService;
+  private final RepositoryStub myRepository;
+  private final ClientService2Stub myWorkItemTrackingClientService;
+  private final GroupSecurityServiceStub myGroupSecurityService;
 
   private static final int ITEMS_IN_GROUP = 200;
 
@@ -133,11 +133,11 @@ public class VersionControlServer {
     //myUri = uri;
     try {
       final ConfigurationContext configContext = WebServiceHelper.getStubConfigurationContext();
-      myRepository = new RepositoryRepositorySoap12Stub(configContext, uri.toString() + TFSConstants.VERSION_CONTROL_ASMX);
+      myRepository = new RepositoryStub(configContext, uri.toString() + TFSConstants.VERSION_CONTROL_ASMX);
       myWorkItemTrackingClientService =
-        new ClientServiceClientServiceSoap12Stub(configContext, uri.toString() + TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX);
+        new ClientService2Stub(configContext, uri.toString() + TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX);
       myGroupSecurityService =
-        new GroupSecurityServiceGroupSecurityServiceSoap12Stub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_SERVICE_ASMX);
+        new GroupSecurityServiceStub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_SERVICE_ASMX);
     }
     catch (Exception e) {
       TFSVcs.LOG.error("Failed to initialize web service stub", e);
@@ -180,7 +180,7 @@ public class VersionControlServer {
         param.setChangeSet(changeSet);
         param.setItemIds(arrayOfInt);
         param.setGenerateDownloadUrls(generateDownloadUrl);
-        return myRepository.QueryItemsById(param).getQueryItemsByIdResult();
+        return myRepository.queryItemsById(param).getQueryItemsByIdResult();
       }
     });
     ArrayList<Item> result = new ArrayList<Item>();
@@ -345,7 +345,7 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwner);
           param.setWorkspaceName(workspaceName);
           param.setChanges(arrayOfChangeRequest);
-          final PendChangesResponse response = myRepository.PendChanges(param);
+          final PendChangesResponse response = myRepository.pendChanges(param);
           if (updateLocalVersion && response.getPendChangesResult().getGetOperation() != null) {
             final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
             List<LocalVersionUpdate> localVersionUpdates =
@@ -360,7 +360,7 @@ public class VersionControlServer {
             param2.setOwnerName(workspaceOwner);
             param2.setWorkspaceName(workspaceName);
             param2.setUpdates(arrayOfLocalVersionUpdate);
-            myRepository.UpdateLocalVersion(param2);
+            myRepository.updateLocalVersion(param2);
           }
 
           if (response.getPendChangesResult().getGetOperation() != null) {
@@ -388,7 +388,7 @@ public class VersionControlServer {
         final QueryWorkspace param = new QueryWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
-        return myRepository.QueryWorkspace(param).getQueryWorkspaceResult();
+        return myRepository.queryWorkspace(param).getQueryWorkspaceResult();
       }
     });
   }
@@ -401,7 +401,7 @@ public class VersionControlServer {
         param.setNewWorkspace(newWorkspaceDataBean);
         param.setOldWorkspaceName(oldWorkspaceName);
         param.setOwnerName(workspaceOwner);
-        return myRepository.UpdateWorkspace(param).getUpdateWorkspaceResult();
+        return myRepository.updateWorkspace(param).getUpdateWorkspaceResult();
       }
     });
   }
@@ -412,7 +412,7 @@ public class VersionControlServer {
 
         final CreateWorkspace param = new CreateWorkspace();
         param.setWorkspace(workspaceBean);
-        return myRepository.CreateWorkspace(param).getCreateWorkspaceResult();
+        return myRepository.createWorkspace(param).getCreateWorkspaceResult();
       }
     });
   }
@@ -423,7 +423,7 @@ public class VersionControlServer {
         final DeleteWorkspace param = new DeleteWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
-        myRepository.DeleteWorkspace(param);
+        myRepository.deleteWorkspace(param);
       }
     });
   }
@@ -442,7 +442,7 @@ public class VersionControlServer {
         param.setDeletedState(DeletedState.NonDeleted);
         param.setItemType(foldersOnly ? ItemType.Folder : ItemType.Any);
         param.setGenerateDownloadUrls(false);
-        return myRepository.QueryItems(param).getQueryItemsResult();
+        return myRepository.queryItems(param).getQueryItemsResult();
       }
     });
 
@@ -488,7 +488,7 @@ public class VersionControlServer {
           param.setDeletedState(DeletedState.NonDeleted);
           param.setItemType(itemType);
           ArrayOfExtendedItem[] extendedItemsArray =
-            myRepository.QueryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
+            myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
 
           TFSVcs.assertTrue(extendedItemsArray != null && extendedItemsArray.length == items.size());
 
@@ -508,7 +508,7 @@ public class VersionControlServer {
           param2.setOwnerName(ownerName);
           param2.setItemSpecs(arrayOfItemSpec);
           param2.setGenerateDownloadUrls(false);
-          final PendingSet[] pendingSets = myRepository.QueryPendingSets(param2).getQueryPendingSetsResult().getPendingSet();
+          final PendingSet[] pendingSets = myRepository.queryPendingSets(param2).getQueryPendingSetsResult().getPendingSet();
 
           final Collection<PendingChange> pendingChanges;
           if (pendingSets != null) {
@@ -553,7 +553,7 @@ public class VersionControlServer {
           param.setItemType(ItemType.Any);
           param.setWorkspaceName(workspaceName);
           param.setWorkspaceOwner(ownerName);
-          return myRepository.QueryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
+          return myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
         }
       });
 
@@ -613,7 +613,7 @@ public class VersionControlServer {
         param.setItems(arrayOfItemSpec);
         param.setDeletedState(deletedState);
         param.setItemType(ItemType.Any);
-        ArrayOfExtendedItem[] extendedItems = myRepository.QueryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
+        ArrayOfExtendedItem[] extendedItems = myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
 
         TFSVcs.assertTrue(extendedItems != null && extendedItems.length == items.size());
         Map<FilePath, ExtendedItem> result = new HashMap<FilePath, ExtendedItem>();
@@ -724,7 +724,7 @@ public class VersionControlServer {
           param.setIncludeFiles(true);
           param.setGenerateDownloadUrls(false);
           param.setSlotMode(false);
-          return myRepository.QueryHistory(param).getQueryHistoryResult().getChangeset();
+          return myRepository.queryHistory(param).getQueryHistoryResult().getChangeset();
         }
       });
 
@@ -750,7 +750,7 @@ public class VersionControlServer {
         QueryWorkspaces param = new QueryWorkspaces();
         param.setComputer(computer);
         param.setOwnerName(ownerName);
-        return myRepository.QueryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
+        return myRepository.queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
       }
     });
 
@@ -793,7 +793,7 @@ public class VersionControlServer {
         param.setOwnerName(workspaceOwnerName);
         param.setWorkspaceName(workspaceName);
         param.setUpdates(arrayOfLocalVersionUpdate);
-        myRepository.UpdateLocalVersion(param);
+        myRepository.updateLocalVersion(param);
         //noinspection ConstantConditions
         return null;
       }
@@ -823,7 +823,7 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwner);
           param.setWorkspaceName(workspaceName);
           param.setItems(arrayOfItemSpec);
-          UndoPendingChangesResponse response = myRepository.UndoPendingChanges(param);
+          UndoPendingChangesResponse response = myRepository.undoPendingChanges(param);
           GetOperation[] getOperations =
             response.getUndoPendingChangesResult() != null ? response.getUndoPendingChangesResult().getGetOperation() : null;
           Failure[] failures = response.getFailures() != null ? response.getFailures().getFailure() : null;
@@ -857,7 +857,7 @@ public class VersionControlServer {
         param.setRequests(arrayOfGetRequests);
         param.setForce(true);
         param.setNoGet(false);
-        ArrayOfArrayOfGetOperation response = myRepository.Get(param).getGetResult();
+        ArrayOfArrayOfGetOperation response = myRepository.get(param).getGetResult();
         TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == items.size());
 
         List<GetOperation> results = new ArrayList<GetOperation>();
@@ -902,7 +902,7 @@ public class VersionControlServer {
         param.setSourceLocalItem(sourceLocal);
         param.setTargetLocalItem(targetLocal);
         param.setReason(reason);
-        return myRepository.AddConflict(param);
+        return myRepository.addConflict(param);
       }
     });
   }
@@ -925,7 +925,7 @@ public class VersionControlServer {
         param.setWorkspaceName(workspaceName);
         param.setOwnerName(ownerName);
         param.setItems(arrayOfItemSpec);
-        Conflict[] conflicts = myRepository.QueryConflicts(param).getQueryConflictsResult().getConflict();
+        Conflict[] conflicts = myRepository.queryConflicts(param).getQueryConflictsResult().getConflict();
         return conflicts != null ? Arrays.asList(conflicts) : Collections.<Conflict>emptyList();
       }
 
@@ -978,7 +978,7 @@ public class VersionControlServer {
         param.setNewPath(params.newPath);
         param.setEncoding(params.encoding);
         param.setLockLevel(params.lockLevel);
-        return myRepository.Resolve(param);
+        return myRepository.resolve(param);
       }
     });
   }
@@ -1042,7 +1042,7 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwnerName);
           param.setItemSpecs(arrayOfItemSpec);
           param.setGenerateDownloadUrls(false);
-          PendingSet[] pendingSets = myRepository.QueryPendingSets(param).getQueryPendingSetsResult().getPendingSet();
+          PendingSet[] pendingSets = myRepository.queryPendingSets(param).getQueryPendingSetsResult().getPendingSet();
 
           return pendingSets != null
                  ? Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange())
@@ -1100,7 +1100,8 @@ public class VersionControlServer {
 
     final CheckinNotificationInfo checkinNotificationInfo = new CheckinNotificationInfo();
     checkinNotificationInfo.setWorkItemInfo(toArrayOfCheckinNotificationWorkItemInfo(workItemsActions));
-    final String checkinOptions = CheckinOptions.ValidateCheckinOwner.name(); // TODO checkin options
+    final CheckinOptions checkinOptions = new CheckinOptions();
+    checkinOptions.setCheckinOptions_type0(new CheckinOptions_type0[]{CheckinOptions_type0.ValidateCheckinOwner}); // TODO checkin options
 
     OperationOnCollection<String, ResultWithFailures<CheckinResult>> operation =
       new OperationOnCollection<String, ResultWithFailures<CheckinResult>>() {
@@ -1117,7 +1118,7 @@ public class VersionControlServer {
           param.setInfo(changeset);
           param.setCheckinNotificationInfo(checkinNotificationInfo);
           param.setCheckinOptions(checkinOptions);
-          CheckInResponse response = myRepository.CheckIn(param);
+          CheckInResponse response = myRepository.checkIn(param);
 
           ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
           if (response.getCheckInResult() != null) {
@@ -1179,9 +1180,11 @@ public class VersionControlServer {
         param.setTarget(target);
         param.setFrom(fromVersion);
         param.setTo(toVersion);
-        param.setOptions(MergeOptions.None.name());
+        MergeOptions mergeOptions = new MergeOptions();
+        mergeOptions.setMergeOptions_type0(new MergeOptions_type0[]{MergeOptions_type0.None});
+        param.setOptions(mergeOptions);
         param.setLockLevel(LockLevel.Unchanged);
-        return myRepository.Merge(param);
+        return myRepository.merge(param);
       }
     });
   }
@@ -1200,7 +1203,7 @@ public class VersionControlServer {
         public ArrayOfCheckinNoteFieldDefinition executeRequest() throws RemoteException {
           QueryCheckinNoteDefinition param = new QueryCheckinNoteDefinition();
           param.setAssociatedServerItem(associatedServerItem);
-          return myRepository.QueryCheckinNoteDefinition(param).getQueryCheckinNoteDefinitionResult();
+          return myRepository.queryCheckinNoteDefinition(param).getQueryCheckinNoteDefinitionResult();
         }
       });
 
@@ -1221,7 +1224,7 @@ public class VersionControlServer {
             teamProjects.size() == 1 && !VersionControlPath.ROOT_FOLDER.equals(teamProjects.iterator().next()) ? teamProjects.iterator()
               .next() : null);
           param.setVersion(0);
-          return myRepository.QueryAnnotation(param).getQueryAnnotationResult();
+          return myRepository.queryAnnotation(param).getQueryAnnotationResult();
         }
       });
     if (arrayOfAnnotation == null || arrayOfAnnotation.getAnnotation() == null) {
@@ -1246,7 +1249,7 @@ public class VersionControlServer {
         param.setAnnotatedItem(serverItem);
         param.setVersion(0);
         param.setOverwrite(true);
-        myRepository.CreateAnnotation(param);
+        myRepository.createAnnotation(param);
       }
     });
   }
@@ -1258,7 +1261,7 @@ public class VersionControlServer {
         param.setAnnotationName(annotationName);
         param.setAnnotatedItem(serverItem);
         param.setVersion(0);
-        myRepository.DeleteAnnotation(param);
+        myRepository.deleteAnnotation(param);
       }
     });
   }
@@ -1283,7 +1286,7 @@ public class VersionControlServer {
         param.setItemType(ItemType.Any);
         param.setDeletedState(deletedState);
         param.setGenerateDownloadUrls(generateDownloadUrl);
-        return myRepository.QueryItems(param).getQueryItemsResult().getItemSet();
+        return myRepository.queryItems(param).getQueryItemsResult().getItemSet();
       }
     });
 
@@ -1311,7 +1314,7 @@ public class VersionControlServer {
         param.setDeletedState(DeletedState.NonDeleted);
         param.setItemType(ItemType.Any);
         param.setGenerateDownloadUrls(false);
-        return myRepository.QueryItems(param).getQueryItemsResult();
+        return myRepository.queryItems(param).getQueryItemsResult();
       }
     });
 
@@ -1336,7 +1339,7 @@ public class VersionControlServer {
         param.setChangesetId(changesetId);
         param.setIncludeChanges(true);
         param.setGenerateDownloadUrls(false);
-        return myRepository.QueryChangeset(param).getQueryChangesetResult();
+        return myRepository.queryChangeset(param).getQueryChangesetResult();
       }
     });
   }
@@ -1360,7 +1363,7 @@ public class VersionControlServer {
         param.setVersionFilterItem(versionFilterItem);
         param.setIncludeItems(includeItems);
         param.setGenerateDownloadUrls(generateDownloadUrls);
-        return myRepository.QueryLabels(param).getQueryLabelsResult().getVersionControlLabel();
+        return myRepository.queryLabels(param).getQueryLabelsResult().getVersionControlLabel();
       }
     });
     ArrayList<VersionControlLabel> result = new ArrayList<VersionControlLabel>();
@@ -1389,7 +1392,7 @@ public class VersionControlServer {
           param.setLabel(versionControlLabel);
           param.setLabelSpecs(arrayOfLabelItemSpec);
           param.setChildren(LabelChildOption.Fail);
-          LabelItemResponse labelItemResponse = myRepository.LabelItem(param);
+          LabelItemResponse labelItemResponse = myRepository.labelItem(param);
           ArrayOfLabelResult results = labelItemResponse.getLabelItemResult();
           ArrayOfFailure failures = labelItemResponse.getFailures();
 
@@ -1418,7 +1421,7 @@ public class VersionControlServer {
           param.setWorkspaceOwner(null);
           param.setItems(arrayOfItemSpec);
           param.setVersion(versionSpec);
-          return myRepository.QueryBranches(param).getQueryBranchesResult();
+          return myRepository.queryBranches(param).getQueryBranchesResult();
         }
       });
 
@@ -1442,7 +1445,7 @@ public class VersionControlServer {
           param.setWorkspaceOwner(ownerName);
           param.setSource(source);
           param.setTarget(target);
-          return myRepository.QueryMergeCandidates(param).getQueryMergeCandidatesResult();
+          return myRepository.queryMergeCandidates(param).getQueryMergeCandidatesResult();
         }
       });
     return result.getMergeCandidate() != null ? Arrays.asList(result.getMergeCandidate()) : Collections.<MergeCandidate>emptyList();
@@ -1469,7 +1472,7 @@ public class VersionControlServer {
         param.setFactor(searchFactor);
         param.setFactorValue(factorValue);
         param.setQueryMembership(queryMembership);
-        return myGroupSecurityService.ReadIdentity(param).getReadIdentityResult();
+        return myGroupSecurityService.readIdentity(param).getReadIdentityResult();
       }
     });
   }
@@ -1485,9 +1488,6 @@ public class VersionControlServer {
   }
 
   public List<WorkItem> queryWorkItems(Query_type0E query) throws TfsException {
-    // TODO namespace problem
-    query.setXmlns("");
-
     final PsQuery_type1 psQuery_type1 = new PsQuery_type1();
     psQuery_type1.setQuery(query);
 
@@ -1496,7 +1496,7 @@ public class VersionControlServer {
         public QueryWorkitemsResponse executeRequest() throws RemoteException {
           QueryWorkitems param = new QueryWorkitems();
           param.setPsQuery(psQuery_type1);
-          return myWorkItemTrackingClientService.QueryWorkitems(param, generateRequestHeader());
+          return myWorkItemTrackingClientService.queryWorkitems(param, generateRequestHeader());
         }
       });
 
@@ -1541,12 +1541,12 @@ public class VersionControlServer {
       idsAsArray[i++] = id;
     }
 
-    final org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfInt workitemIds =
-      new org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfInt();
+    final com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.ArrayOfInt workitemIds =
+      new com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.ArrayOfInt();
     workitemIds.set_int(idsAsArray);
 
-    final org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfString workItemFields =
-      new org.jetbrains.tfsIntegration.stubs.workitemtracking.clientservices.ArrayOfString();
+    final com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.ArrayOfString workItemFields =
+      new com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.ArrayOfString();
 
     List<String> serializedFields = new ArrayList<String>();
     for (WorkItemField field : WorkItemSerialize.FIELDS) {
@@ -1564,7 +1564,7 @@ public class VersionControlServer {
           param.setAsOfDate(new GregorianCalendar());
           param.setUseMaster(false);
           param.setMetadataHave(null);
-          return myWorkItemTrackingClientService.PageWorkitemsByIds(param, generateRequestHeader());
+          return myWorkItemTrackingClientService.pageWorkitemsByIds(param, generateRequestHeader());
         }
       });
 
@@ -1602,20 +1602,18 @@ public class VersionControlServer {
     updateWorkItem_type0.setInsertText(WorkItemSerialize.generateInsertTextForUpdateRequest(action, changeSet));
     updateWorkItem_type0.setInsertResourceLink(WorkItemSerialize.generateInsertResourceLinkforUpdateRequest(changeSet));
 
-    Package_type0E package_type00 = new Package_type0E();
-    // TODO namespace problem
-    package_type00.setXmlns("");
+    Package_type0 package_type00 = new Package_type0();
     package_type00.setUpdateWorkItem(updateWorkItem_type0);
 
-    final Package_type1 package_type_1 = new Package_type1();
-    package_type_1.setPackage(package_type00);
+    final Package_type0E package_type_0 = new Package_type0E();
+    package_type_0.setPackage(package_type00);
 
     WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
         Update param = new Update();
-        param.set_package(package_type_1);
+        param.set_package(package_type_0);
         param.setMetadataHave(null);
-        myWorkItemTrackingClientService.Update(param, generateRequestHeader());
+        myWorkItemTrackingClientService.update(param, generateRequestHeader());
       }
     });
   }

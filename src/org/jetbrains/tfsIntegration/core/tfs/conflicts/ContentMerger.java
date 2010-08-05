@@ -18,7 +18,7 @@ package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.Conflict;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 import java.io.IOException;

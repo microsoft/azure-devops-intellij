@@ -37,18 +37,17 @@ import com.intellij.ui.components.labels.BoldLabel;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
-import org.jetbrains.tfsIntegration.core.tfs.ChangeType;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForAddition;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ScheduleForDeletion;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.stubs.versioncontrol.repository.*;
 import org.jetbrains.tfsIntegration.ui.CheckinParametersDialog;
 
 import javax.swing.*;
@@ -195,8 +194,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             TFSProgressUtil.setProgressText(progressIndicator, "Uploading files");
             for (PendingChange pendingChange : pendingChanges) {
               if (pendingChange.getType() == ItemType.File) {
-                EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
-                if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add)) {
+                ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
+                if (changeType.contains(ChangeType_type0.Edit) || changeType.contains(ChangeType_type0.Add)) {
                   TFSProgressUtil
                     .setProgressText2(progressIndicator, VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
                   workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
@@ -238,9 +237,11 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 continue;
               }
 
-              EnumMask<ChangeType> changeType = EnumMask.fromString(ChangeType.class, pendingChange.getChg());
+              ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
               if (pendingChange.getType() == ItemType.File) {
-                if (changeType.contains(ChangeType.Edit) || changeType.contains(ChangeType.Add) || changeType.contains(ChangeType.Rename)) {
+                if (changeType.contains(ChangeType_type0.Edit) ||
+                    changeType.contains(ChangeType_type0.Add) ||
+                    changeType.contains(ChangeType_type0.Rename)) {
                   VirtualFile file = VersionControlPath.getVirtualFile(pendingChange.getLocal());
                   if (file != null && file.isValid()) {
                     makeReadOnly.add(file);
@@ -252,7 +253,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               // TODO if Rename, invalidate old and new items?
               final FilePath path = VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
               invalidateRoots.add(path);
-              if (changeType.contains(ChangeType.Add)) {
+              if (changeType.contains(ChangeType_type0.Add)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
                 final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myVcs.getProject()).getVcsRootFor(path);
                 if (vcsRoot != null) {
