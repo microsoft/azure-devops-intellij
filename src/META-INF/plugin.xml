@@ -72,6 +72,10 @@
       <action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/>
       <add-to-group group-id="TfsGlobalGroup" anchor="last"/>
       <add-to-group group-id="TfsFilePopupGroup" anchor="last"/>
+      <separator/>
+      <action id="TFS.ManageWorkspaces" text="Edit _Configuration..."
+              description="Change Team Foundation Servers and workspaces configuration"
+              class="org.jetbrains.tfsIntegration.actions.TfsEditConfigurationAction"/>
     </group>
   </actions>
 
