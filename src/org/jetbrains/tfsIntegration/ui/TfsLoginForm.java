@@ -16,25 +16,23 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.net.URI;
-import java.util.EventListener;
 
-public class LoginForm {
+public class TfsLoginForm {
 
-  public interface Listener extends EventListener {
-    void stateChanged();
-  }
-
-  private JTextField myUriField;
+  private JTextField myAddressField;
   private JTextField myUsernameField;
   private JTextField myDomainField;
   private JPasswordField myPasswordField;
@@ -42,11 +40,11 @@ public class LoginForm {
   private JPanel myContentPane;
   private JLabel myMessageLabel;
 
-  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
-  public LoginForm(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
-    myUriField.setText(initialUri != null ? initialUri.toString() : null);
-    myUriField.setEditable(allowUrlChange);
+  public TfsLoginForm(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
+    myAddressField.setText(initialUri != null ? initialUri.toString() : null);
+    myAddressField.setEditable(allowUrlChange);
     myUsernameField.setText(initialCredentials != null ? initialCredentials.getUserName() : null);
     myDomainField.setText(initialCredentials != null ? initialCredentials.getDomain() : null);
     myPasswordField.setText(initialCredentials != null ? initialCredentials.getPassword() : null);
@@ -54,21 +52,23 @@ public class LoginForm {
     final DocumentListener changeListener = new DocumentAdapter() {
       @Override
       protected void textChanged(final DocumentEvent e) {
-        myEventDispatcher.getMulticaster().stateChanged();
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     };
 
-    myUriField.getDocument().addDocumentListener(changeListener);
+    myAddressField.getDocument().addDocumentListener(changeListener);
     myUsernameField.getDocument().addDocumentListener(changeListener);
     myDomainField.getDocument().addDocumentListener(changeListener);
     myPasswordField.getDocument().addDocumentListener(changeListener);
+
+    myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
   }
 
   public JComponent getPreferredFocusedComponent() {
-    if (myUriField.isEditable()) {
-      return myUriField;
+    if (myAddressField.isEditable()) {
+      return myAddressField;
     }
-    else if (myUsernameField.getText() == null || myUsernameField.getText().length() == 0) {
+    else if (StringUtil.isEmpty(myUsernameField.getText())) {
       return myUsernameField;
     }
     else {
@@ -80,9 +80,8 @@ public class LoginForm {
     return myContentPane;
   }
 
-  @Nullable
-  public URI getUri() {
-    return TfsUtil.getHostUri(myUriField.getText(), true);
+  public String getUrl() {
+    return myAddressField.getText();
   }
 
   public String getUsername() {
@@ -101,15 +100,16 @@ public class LoginForm {
     return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected());
   }
 
-  public void addListener(Listener listener) {
+  public void addListener(ChangeListener listener) {
     myEventDispatcher.addListener(listener);
   }
 
-  public void removeListener(Listener listener) {
+  public void removeListener(ChangeListener listener) {
     myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(final @Nullable String errorMessage) {
-    myMessageLabel.setText(errorMessage != null ? errorMessage : " "); // keep the space for label
+    myMessageLabel.setText(errorMessage);
+    myMessageLabel.setVisible(errorMessage != null);
   }
 }

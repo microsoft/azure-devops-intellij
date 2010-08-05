@@ -152,7 +152,10 @@ public class TfsUtil {
   }
 
   @Nullable
-  public static URI getHostUri(String uriText, boolean complainOnPath) {
+  public static URI getUrl(String uriText, boolean complainOnPath) {
+    if (!uriText.contains("://")) {
+      uriText = "http://" + uriText;
+    }
     try {
       final URI uri = new URI(uriText).normalize();
       if (StringUtil.isEmpty(uri.getHost())) {

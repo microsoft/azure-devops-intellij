@@ -16,27 +16,43 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
+import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.net.URI;
 
 // TODO pass project
-public class LoginDialog extends DialogWrapper {
+public class TfsLoginDialog extends DialogWrapper {
 
-  private final LoginForm myLoginForm;
+  private static final Logger LOG = Logger.getInstance(TfsLoginDialog.class.getName());
 
-  public LoginDialog(URI initialUri, Credentials initialCredentials, boolean allowUrlChange) {
+  private final TfsLoginForm myLoginForm;
+  private final boolean myAllowAddressChange;
+
+  public TfsLoginDialog(URI initialUri, Credentials initialCredentials, boolean allowAddressChange) {
     super(false);
-    setTitle(TFSBundle.message("logindialog.title"));
+    myAllowAddressChange = allowAddressChange;
+    setTitle(TFSBundle.message(allowAddressChange ? "logindialog.title.connect" : "logindialog.title.login"));
 
-    myLoginForm = new LoginForm(initialUri, initialCredentials, allowUrlChange);
+    myLoginForm = new TfsLoginForm(initialUri, initialCredentials, allowAddressChange);
+    myLoginForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        revalidate();
+      }
+    });
 
     init();
+    revalidate();
   }
 
   protected JComponent createCenterPanel() {
@@ -47,58 +63,34 @@ public class LoginDialog extends DialogWrapper {
     return myLoginForm.getPreferredFocusedComponent();
   }
 
-  private void updateButtons() {
+  private void revalidate() {
     final String errorMessage = getErrorMessage();
     myLoginForm.setErrorMessage(errorMessage);
     setOKActionEnabled(errorMessage == null);
   }
 
-  @Override
-  protected void doOKAction() {
-    if (getErrorMessage() == null) {
-      super.doOKAction();
-    }
-    else {
-      updateButtons();
-      myLoginForm.addListener(new LoginForm.Listener() {
-        public void stateChanged() {
-          updateButtons();
-        }
-      });
-    }
-  }
-
   @Nullable
   private String getErrorMessage() {
-    if (myLoginForm.getUri() == null) {
-      return "Please enter valid server address.";
+    if (StringUtil.isEmptyOrSpaces(myLoginForm.getUrl())) {
+      return TFSBundle.message("login.dialog.address.empty");
+    }
+    if (TfsUtil.getUrl(myLoginForm.getUrl(), true) == null) {
+      return TFSBundle.message("login.dialog.address.invalid");
+    }
+    if (myAllowAddressChange && TFSConfigurationManager.getInstance().serverKnown(getUri())) {
+      return TFSBundle.message("login.dialog.duplicate.address");
     }
 
     if (StringUtil.isEmptyOrSpaces(myLoginForm.getUsername())) {
-      return "Please enter user name.";
+      return TFSBundle.message("login.dialog.username.empty");
     }
-
-    //if (StringUtil.isEmptyOrSpaces(myLoginForm.getDomain())) {
-    //  return "Please enter domain.";
-    //}
-
     return null;
   }
 
   public URI getUri() {
-    return myLoginForm.getUri();
-  }
-
-  public String getUsername() {
-    return myLoginForm.getUsername();
-  }
-
-  public String getDomain() {
-    return myLoginForm.getDomain();
-  }
-
-  public String getPassword() {
-    return myLoginForm.getPassword();
+    URI uri = TfsUtil.getUrl(myLoginForm.getUrl(), false);
+    LOG.assertTrue(uri != null);
+    return uri;
   }
 
   public Credentials getCredentials() {

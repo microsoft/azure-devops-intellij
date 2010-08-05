@@ -55,7 +55,7 @@ import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.*;
-import org.jetbrains.tfsIntegration.ui.LoginDialog;
+import org.jetbrains.tfsIntegration.ui.TfsLoginDialog;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAP12Factory;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAPBuilder;
 
@@ -177,7 +177,7 @@ public class WebServiceHelper {
   }
 
   public static <T> T executeRequest(final Stub stub, final Delegate<T> delegate) throws TfsException {
-    URI serverUri = TfsUtil.getHostUri(stub._getServiceClient().getOptions().getTo().getAddress(), false);
+    URI serverUri = TfsUtil.getUrl(stub._getServiceClient().getOptions().getTo().getAddress(), false);
 
     return executeRequest(serverUri, new InnerDelegate<T>() {
       public T executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
@@ -219,7 +219,7 @@ public class WebServiceHelper {
 
   public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)
     throws TfsException {
-    final URI serverUri = TfsUtil.getHostUri(uploadUrl, false);
+    final URI serverUri = TfsUtil.getUrl(uploadUrl, false);
 
     executeRequest(serverUri, new InnerDelegate<Object>() {
       public Object executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
@@ -297,7 +297,7 @@ public class WebServiceHelper {
               if (shouldPrompt) {
                 trace(callerThreadId, "showing dialog uri={0}, creds={1}, msg={2}", uri.get(), credentials.get(),
                       uri.isNull() ? "null" : "\"" + ourErrorMessages.get(uri.get()) + "\"");
-                final LoginDialog d = new LoginDialog(uri.get(), credentials.get(), initialUri == null);
+                final TfsLoginDialog d = new TfsLoginDialog(uri.get(), credentials.get(), initialUri == null);
                 if (!uri.isNull()) {
                   d.setMessage(ourErrorMessages.get(uri.get()));
                 }
