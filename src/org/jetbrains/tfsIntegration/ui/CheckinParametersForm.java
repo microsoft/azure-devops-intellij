@@ -124,9 +124,12 @@ public class CheckinParametersForm {
                                                     final int index,
                                                     final boolean isSelected,
                                                     final boolean cellHasFocus) {
-        setText(((ServerInfo)value).getUri().toString());
-        setIcon(UiConstants.ICON_TEAM_SERVER);
-        return this;
+        JLabel label = (JLabel)super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        if (value instanceof ServerInfo) {
+          label.setText(((ServerInfo)value).getUri().toString());
+        }
+        label.setIcon(UiConstants.ICON_TEAM_SERVER);
+        return label;
       }
     });
 
