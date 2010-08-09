@@ -89,6 +89,20 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     return null;
   }
 
+  @Override
+  public TFSChangeList getOneList(RepositoryLocation location, VcsRevisionNumber number) throws VcsException {
+    final ChangeBrowserSettings settings = createDefaultSettings();
+    settings.USE_CHANGE_AFTER_FILTER = true;
+    settings.USE_CHANGE_BEFORE_FILTER = true;
+    settings.CHANGE_AFTER = number.asString();
+    settings.CHANGE_BEFORE = number.asString();
+    final List<TFSChangeList> list = getCommittedChanges(settings, location, 1);
+    if (list.size() == 1) {
+      return list.get(0);
+    }
+    return null;
+  }
+
   public void loadCommittedChanges(ChangeBrowserSettings settings,
                                    RepositoryLocation location,
                                    int maxCount,
