@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedListsZipper;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
@@ -25,6 +26,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.Nullable;
@@ -90,13 +92,13 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   }
 
   @Override
-  public TFSChangeList getOneList(RepositoryLocation location, VcsRevisionNumber number) throws VcsException {
+  public TFSChangeList getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
     final ChangeBrowserSettings settings = createDefaultSettings();
     settings.USE_CHANGE_AFTER_FILTER = true;
     settings.USE_CHANGE_BEFORE_FILTER = true;
     settings.CHANGE_AFTER = number.asString();
     settings.CHANGE_BEFORE = number.asString();
-    final List<TFSChangeList> list = getCommittedChanges(settings, location, 1);
+    final List<TFSChangeList> list = getCommittedChanges(settings, getLocationFor(VcsContextFactory.SERVICE.getInstance().createFilePathOn(file)), 1);
     if (list.size() == 1) {
       return list.get(0);
     }
