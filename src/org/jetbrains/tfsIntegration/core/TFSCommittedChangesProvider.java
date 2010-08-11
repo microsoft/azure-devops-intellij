@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
@@ -92,15 +93,17 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   }
 
   @Override
-  public TFSChangeList getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
+  public Pair<TFSChangeList, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
     final ChangeBrowserSettings settings = createDefaultSettings();
     settings.USE_CHANGE_AFTER_FILTER = true;
     settings.USE_CHANGE_BEFORE_FILTER = true;
     settings.CHANGE_AFTER = number.asString();
     settings.CHANGE_BEFORE = number.asString();
-    final List<TFSChangeList> list = getCommittedChanges(settings, getLocationFor(VcsContextFactory.SERVICE.getInstance().createFilePathOn(file)), 1);
+    final FilePath filePath = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
+    final List<TFSChangeList> list = getCommittedChanges(settings, getLocationFor(filePath), 1);
     if (list.size() == 1) {
-      return list.get(0);
+      // todo - implement in proper way!
+      return new Pair<TFSChangeList, FilePath>(list.get(0), filePath);
     }
     return null;
   }
