@@ -26,6 +26,7 @@
           <root url="jar://$MODULE_DIR$/lib/axis2-transport-http-1.5.1.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/axis2-transport-local-1.5.1.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/httpcore-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/mail-1.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
