@@ -21,8 +21,10 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 
 import java.util.*;
 
@@ -65,6 +67,7 @@ public class WorkspaceInfo {
   }
 
   // TODO: make private
+
   @NotNull
   public ServerInfo getServer() {
     return myServerInfo;
@@ -106,24 +109,26 @@ public class WorkspaceInfo {
   }
 
   public List<WorkingFolderInfo> getWorkingFolders() throws TfsException {
-    loadFromServer();
+    loadFromServer(null); // TODO
     return getWorkingFoldersCached();
   }
 
-  List<WorkingFolderInfo> getWorkingFoldersCached() {
+  public List<WorkingFolderInfo> getWorkingFoldersCached() {
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
-  public void loadFromServer() throws TfsException {
-    if (hasCurrentOwnerAndComputer()) {
-      if (myOriginalName != null && !myLoaded) {
-        Workspace workspaceBean = getServer().getVCS().getWorkspace(getName(), getOwnerName());
-        if (hasCurrentOwnerAndComputer()) { // owner can already be different if server credentials have been changed while executing this server call
-          fromBean(workspaceBean, this);
-          myLoaded = true;
-        }
-      }
+  public void loadFromServer(Object projectOrComponent) throws TfsException {
+    if (myOriginalName == null || myLoaded || !hasCurrentOwnerAndComputer()) {
+      return;
     }
+
+    Workspace workspaceBean = getServer().getVCS().loadWorkspace(getName(), getOwnerName(), projectOrComponent);
+    if (!hasCurrentOwnerAndComputer()) {
+      // owner can now be different if server credentials have been changed while executing this server call
+      throw new WorkspaceNotFoundException(TFSBundle.message("workspace.wrong.owner", getName(), getOwnerName()));
+    }
+    fromBean(workspaceBean, this);
+    myLoaded = true;
   }
 
   boolean hasMappingCached(FilePath localPath, boolean considerChildMappings) {
@@ -192,6 +197,7 @@ public class WorkspaceInfo {
   }
 
   // TODO inline?
+
   @Nullable
   private WorkingFolderInfo findNearestParentMapping(final @NotNull FilePath localPath) throws TfsException {
     WorkingFolderInfo mapping = null;
@@ -232,14 +238,14 @@ public class WorkspaceInfo {
     myWorkingFoldersInfos.addAll(workingFolders);
   }
 
-  public void saveToServer() throws TfsException {
+  public void saveToServer(Object projectOrComponent) throws TfsException {
     checkCurrentOwnerAndComputer();
     if (myOriginalName != null) {
-      getServer().getVCS().updateWorkspace(myOriginalName, getOwnerName(), toBean(this));
+      getServer().getVCS().updateWorkspace(myOriginalName, toBean(this), projectOrComponent);
     }
     else {
       // TODO: refactor
-      getServer().getVCS().createWorkspace(toBean(this));
+      getServer().getVCS().createWorkspace(toBean(this), projectOrComponent);
       getServer().addWorkspaceInfo(this);
     }
     myOriginalName = getName();

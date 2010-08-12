@@ -100,7 +100,7 @@ public class ProxySettingsForm {
   }
 
   public boolean isValid() {
-    return myNoProxyRadioButton.isSelected() || TfsUtil.getUrl(myProxyServerTextField.getText(), true) != null;
+    return myNoProxyRadioButton.isSelected() || TfsUtil.getUrl(myProxyServerTextField.getText(), true, true) != null;
   }
 
   @Nullable
@@ -109,7 +109,7 @@ public class ProxySettingsForm {
       return null;
     }
     else {
-      return TfsUtil.getUrl(myProxyServerTextField.getText(), true);
+      return TfsUtil.getUrl(myProxyServerTextField.getText(), true, true);
     }
   }
 

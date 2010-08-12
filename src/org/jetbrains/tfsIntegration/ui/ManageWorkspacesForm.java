@@ -16,9 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Annotation;
@@ -27,30 +28,29 @@ import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.*;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
 import org.jetbrains.tfsIntegration.ui.treetable.CustomTreeTable;
 import org.jetbrains.tfsIntegration.ui.treetable.TreeTableColumn;
-import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
+import org.jetbrains.tfsIntegration.webservice.TfsRequestManager;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import java.awt.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.event.*;
 import java.io.IOException;
-import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.List;
 
 public class ManageWorkspacesForm {
 
@@ -82,10 +82,10 @@ public class ManageWorkspacesForm {
       if (value instanceof ServerInfo) {
         final ServerInfo server = (ServerInfo)value;
         if (server.getQualifiedUsername() != null) {
-          return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+          return MessageFormat.format("{0} [{1}]", server.getPresentableUri(), server.getQualifiedUsername());
         }
         else {
-          return server.getUri().toString();
+          return server.getPresentableUri();
         }
       }
       else if (value instanceof WorkspaceInfo) {
@@ -100,10 +100,10 @@ public class ManageWorkspacesForm {
       if (value instanceof ServerInfo) {
         final ServerInfo server = (ServerInfo)value;
         if (server.getQualifiedUsername() != null) {
-          return MessageFormat.format("{0} [{1}]", server.getUri().toString(), server.getQualifiedUsername());
+          return MessageFormat.format("{0} [{1}]", server.getPresentableUri(), server.getQualifiedUsername());
         }
         else {
-          return server.getUri().toString();
+          return server.getPresentableUri();
         }
       }
       return "";
@@ -130,6 +130,7 @@ public class ManageWorkspacesForm {
   private JLabel myTitleLabel;
   private JPanel myWorkspacesPanel;
   private JButton myCheckInPoliciesButton;
+  private JButton myReloadWorkspacesButton;
   private final Project myProject;
   private boolean myShowWorkspaces = true;
   private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
@@ -159,7 +160,7 @@ public class ManageWorkspacesForm {
       final List<ServerInfo> servers = new ArrayList<ServerInfo>(Workstation.getInstance().getServers());
       Collections.sort(servers, new Comparator<ServerInfo>() {
         public int compare(final ServerInfo s1, final ServerInfo s2) {
-          return s1.getUri().toString().compareTo(s2.getUri().toString());
+          return s1.getPresentableUri().compareTo(s2.getPresentableUri());
         }
       });
       return servers;
@@ -236,7 +237,28 @@ public class ManageWorkspacesForm {
         configureCheckinPolicies();
       }
     });
+
+    myReloadWorkspacesButton.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        reloadWorkspaces(getSelectedServer());
+      }
+    });
     updateButtons();
+  }
+
+  private void reloadWorkspaces(ServerInfo server) {
+    try {
+      Object selection = getSelectedObject();
+      server.refreshWorkspacesForCurrentOwner(myContentPane);
+      updateControls(selection);
+    }
+    catch (TfsException e) {
+      Messages.showErrorDialog(myContentPane, e.getMessage(), TFSBundle.message("reload.workspaces.title"));
+    }
+    catch (ProcessCanceledException e) {
+      // ignore
+    }
   }
 
   private void createUIComponents() {
@@ -247,6 +269,7 @@ public class ManageWorkspacesForm {
   public void setShowWorkspaces(final boolean showWorkspaces) {
     myShowWorkspaces = showWorkspaces;
     myWorkspacesPanel.setVisible(myShowWorkspaces);
+    myReloadWorkspacesButton.setVisible(myShowWorkspaces);
     myTitleLabel.setText(myShowWorkspaces ? "Team servers and workspaces:" : "Team servers:");
     final List<TreeTableColumn<Object>> columns =
       myShowWorkspaces ? Arrays.asList(COLUMN_SERVER_WORKSPACE, COLUMN_COMMENT) : Collections.singletonList(COLUMN_SERVER);
@@ -257,8 +280,30 @@ public class ManageWorkspacesForm {
   private void updateControls(Object selectedServerOrWorkspace) {
     myTable.updateContent();
     configureTable();
-    myTable.select(selectedServerOrWorkspace);
-    //updateButtons();
+    Object newSelection = null;
+    for (int i = 0; i < myTable.getModel().getRowCount(); i++) {
+      Object o = ((DefaultMutableTreeNode)myTable.getModel().getValueAt(i, 0)).getUserObject();
+      if (Comparing.equal(o, selectedServerOrWorkspace)) {
+        newSelection = o;
+        break;
+      }
+      if (selectedServerOrWorkspace instanceof WorkspaceInfo) {
+        WorkspaceInfo selectedWorkspace = (WorkspaceInfo)selectedServerOrWorkspace;
+        if (selectedWorkspace.getServer().equals(o)) {
+          newSelection = o;
+        }
+        if (o instanceof WorkspaceInfo) {
+          WorkspaceInfo workspace = (WorkspaceInfo)o;
+          if (selectedWorkspace.getName().equals(workspace.getName()) &&
+              selectedWorkspace.getOwnerName().equals(workspace.getOwnerName()) &&
+              selectedWorkspace.getServer().equals(workspace.getServer())) {
+            newSelection = o;
+            break;
+          }
+        }
+      }
+    }
+    myTable.select(newSelection);
   }
 
   private void configureTable() {
@@ -279,37 +324,32 @@ public class ManageWorkspacesForm {
     myEditWorkspaceButton.setEnabled(selectedWorkspace != null);
     myDeleteWorkspaceButton.setEnabled(selectedWorkspace != null);
     myCheckInPoliciesButton.setEnabled(selectedServer != null);
+    myReloadWorkspacesButton.setEnabled(selectedServer != null);
   }
 
   private void addServer() {
-    final Pair<URI, String> uriAndGuid;
-    try {
-      uriAndGuid = WebServiceHelper.authenticate(null);
-    }
-    catch (TfsException e) {
-      // user cancelled
+    final TfsServerConnectionHelper.AddServerResult result = TfsServerConnectionHelper.addServer(getContentPane());
+    if (result == null) {
+      // user canceled
       return;
     }
-    ServerInfo newServer = new ServerInfo(uriAndGuid.first, uriAndGuid.second);
+
+    if (result.workspacesLoadError != null) {
+      Messages.showErrorDialog(myContentPane, TFSBundle.message("failed.to.load.workspaces", result.workspacesLoadError),
+                               TFSBundle.message("add.server.title"));
+    }
+
+    TFSConfigurationManager.getInstance().storeCredentials(result.uri, result.authorizedCredentials);
+    final ServerInfo newServer =
+      new ServerInfo(result.uri, result.instanceId, result.workspaces, result.authorizedCredentials.getQualifiedUsername());
     Workstation.getInstance().addServer(newServer);
-    try {
-      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      newServer.refreshWorkspacesForCurrentOwner();
-      updateControls(null);
-    }
-    catch (TfsException e) {
-      String message = MessageFormat.format("Failed to reload workspaces.\n{0}", e.getMessage());
-      Messages.showErrorDialog(myProject, message, "Add server");
-    }
-    finally {
-      getContentPane().setCursor(Cursor.getDefaultCursor());
-    }
-    updateControls(newServer);
+    List<WorkspaceInfo> workspaces = newServer.getWorkspacesForCurrentOwnerAndComputer();
+    updateControls(workspaces.isEmpty() ? newServer : workspaces.iterator().next());
   }
 
   private void removeServer(final @NotNull ServerInfo server) {
-    String warning = MessageFormat.format("Are you sure you want to remove server ''{0}''?", server.getUri());
-    if (Messages.showYesNoDialog(myContentPane, warning, "Remove Team Server", Messages.getWarningIcon()) == 0) {
+    String warning = TFSBundle.message("remove.server.prompt", server.getPresentableUri());
+    if (Messages.showYesNoDialog(myContentPane, warning, TFSBundle.message("remove.server.title"), Messages.getWarningIcon()) == 0) {
       Workstation.getInstance().removeServer(server);
       updateControls(null);
     }
@@ -320,20 +360,21 @@ public class ManageWorkspacesForm {
     d.show();
     if (d.isOK()) {
       TFSConfigurationManager.getInstance().setProxyUri(server.getUri(), d.getProxyUri());
-      //updateControls(server);
     }
   }
 
   private void createWorkspace(final @NotNull ServerInfo server) {
-    if (server.getQualifiedUsername() == null) {
+    boolean update = false;
+    if (TfsRequestManager.shouldShowLoginDialog(server.getUri())) {
+      update = true;
       try {
-        WebServiceHelper.authenticate(server.getUri());
+        TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri());
       }
-      catch (UserCancelledException e) {
+      catch (ProcessCanceledException e) {
         return;
       }
       catch (TfsException e) {
-        Messages.showErrorDialog(getContentPane(), e.getMessage(), "Create workspace");
+        Messages.showErrorDialog(getContentPane(), e.getMessage(), TFSBundle.message("create.workspace"));
         return;
       }
     }
@@ -342,49 +383,51 @@ public class ManageWorkspacesForm {
     d.show();
     if (d.isOK()) {
       try {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         //noinspection ConstantConditions
         WorkspaceInfo newWorkspace = new WorkspaceInfo(server, server.getQualifiedUsername(), Workstation.getComputerName());
         newWorkspace.setName(d.getWorkspaceName());
         newWorkspace.setComment(d.getWorkspaceComment());
         newWorkspace.setWorkingFolders(d.getWorkingFolders());
-        newWorkspace.saveToServer();
+        newWorkspace.saveToServer(myContentPane);
         updateControls(newWorkspace);
+        return;
       }
       catch (TfsException e) {
-        String message = MessageFormat.format("Failed to create workspace ''{0}''.\n{1}", d.getWorkspaceName(), e.getMessage());
-        Messages.showErrorDialog(myProject, message, "Create Workspace");
+        Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("create.workspace.title"));
       }
-      finally {
-        getContentPane().setCursor(Cursor.getDefaultCursor());
+      catch (ProcessCanceledException e) {
+        // ignore to execute updateControls()
       }
+    }
+    if (update) {
+      updateControls(null);
     }
   }
 
   private void editWorkspace(@NotNull WorkspaceInfo workspace) {
     try {
-      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      workspace.loadFromServer();
+      workspace.loadFromServer(myContentPane);
     }
     catch (WorkspaceNotFoundException e) {
-      String message = MessageFormat.format("Failed to open workspace ''{0}'' for editing.\n{1}", workspace.getName(), e.getMessage());
-      Messages.showErrorDialog(myProject, message, "Edit Workspace");
+      Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
       try {
-        workspace.getServer().refreshWorkspacesForCurrentOwner();
+        workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane);
         updateControls(null);
       }
-      catch (TfsException ex) {
-        // skip
+      catch (TfsException e2) {
+        Messages.showErrorDialog(myContentPane, e2.getMessage(), TFSBundle.message("reload.workspaces.title"));
+      }
+      catch (ProcessCanceledException e2) {
+        // ignore
       }
       return;
     }
     catch (TfsException e) {
-      String message = MessageFormat.format("Failed to open workspace ''{0}'' for editing.\n{1}", workspace.getName(), e.getMessage());
-      Messages.showErrorDialog(myProject, message, "Edit Workspace");
+      Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
       return;
     }
-    finally {
-      getContentPane().setCursor(Cursor.getDefaultCursor());
+    catch (ProcessCanceledException e) {
+      return;
     }
 
     WorkspaceInfo modifiedWorkspace = workspace.getCopy();
@@ -395,37 +438,34 @@ public class ManageWorkspacesForm {
       modifiedWorkspace.setComment(d.getWorkspaceComment());
       modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        modifiedWorkspace.saveToServer();
+        modifiedWorkspace.saveToServer(myContentPane);
         workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
         updateControls(modifiedWorkspace);
       }
       catch (TfsException e) {
-        String message = MessageFormat.format("Failed to save workspace ''{0}''.\n{1}", workspace.getName(), e.getMessage());
-        Messages.showErrorDialog(myProject, message, "Edit Workspace");
+        Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("save.workspace.title"));
       }
-      finally {
-        getContentPane().setCursor(Cursor.getDefaultCursor());
+      catch (ProcessCanceledException e) {
+        // ignore
       }
     }
   }
 
   private void deleteWorkspace(@NotNull WorkspaceInfo workspace) {
-    String warning = MessageFormat.format("Are you sure you want to delete workspace ''{0}''?", workspace.getName());
-    if (Messages.showYesNoDialog(myContentPane, warning, "Delete Workspace", Messages.getWarningIcon()) == 0) {
-      //noinspection ConstantConditions
-      try {
-        getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        workspace.getServer().deleteWorkspace(workspace);
-        updateControls(null);
-      }
-      catch (TfsException e) {
-        String message = MessageFormat.format("Failed to delete workspace ''{0}''.\n{1}", workspace.getName(), e.getMessage());
-        Messages.showErrorDialog(myProject, message, "Delete Workspace");
-      }
-      finally {
-        getContentPane().setCursor(Cursor.getDefaultCursor());
-      }
+    if (Messages.showYesNoDialog(myContentPane, TFSBundle.message("delete.workspace.prompt", workspace.getName()),
+                                 TFSBundle.message("delete.workspace.title"), Messages.getWarningIcon()) != 0) {
+      return;
+    }
+
+    try {
+      workspace.getServer().deleteWorkspace(workspace, myContentPane);
+      updateControls(workspace);
+    }
+    catch (TfsException e) {
+      Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("delete.workspace.title"));
+    }
+    catch (ProcessCanceledException e) {
+      // ignore
     }
   }
 
@@ -454,6 +494,9 @@ public class ManageWorkspacesForm {
     Object selectedObject = getSelectedObject();
     if (selectedObject instanceof ServerInfo) {
       return (ServerInfo)selectedObject;
+    }
+    if (selectedObject instanceof WorkspaceInfo) {
+      return ((WorkspaceInfo)selectedObject).getServer();
     }
     return null;
   }

@@ -31,7 +31,7 @@ public class SummaryForm {
   private JLabel myWorkspaceTypeLabel;
 
   public void setServer(ServerInfo server) {
-    myServerLabel.setText(server.getUri().toString());
+    myServerLabel.setText(server.getPresentableUri());
   }
 
   public void setWorkspace(WorkspaceInfo workspace) {

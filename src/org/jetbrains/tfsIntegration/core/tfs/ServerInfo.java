@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Workspace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,8 @@ import java.util.List;
 
 public class ServerInfo {
 
+  private static final Logger LOG = Logger.getInstance(ServerInfo.class.getName());
+
   private final URI myUri;
   private final String myGuid;
   private VersionControlServer myServer;
@@ -43,16 +46,31 @@ public class ServerInfo {
     myGuid = guid;
   }
 
+  public ServerInfo(URI uri, String guid, @Nullable Workspace[] workspaces, String authorizedUsername) {
+    this(uri, guid);
+
+    if (workspaces != null) {
+      for (Workspace workspace : workspaces) {
+        WorkspaceInfo workspaceInfo = new WorkspaceInfo(this, authorizedUsername, Workstation.getComputerName());
+        WorkspaceInfo.fromBean(workspace, workspaceInfo);
+        addWorkspaceInfo(workspaceInfo);
+      }
+    }
+  }
+
   public void addWorkspaceInfo(final @NotNull WorkspaceInfo workspaceInfo) {
     myWorkspaceInfos.add(workspaceInfo);
   }
 
-  // TODO replace with getPresentableUri() where needed
   public URI getUri() {
     return myUri;
   }
 
-  String getGuid() {
+  public String getPresentableUri() {
+    return TfsUtil.getPresentableUri(myUri);
+  }
+
+  public String getGuid() {
     return myGuid;
   }
 
@@ -77,9 +95,9 @@ public class ServerInfo {
     return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
-  public void deleteWorkspace(WorkspaceInfo workspaceInfo) throws TfsException {
+  public void deleteWorkspace(WorkspaceInfo workspaceInfo, Object projectOrComponent) throws TfsException {
     try {
-      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName());
+      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName(), projectOrComponent);
     }
     catch (WorkspaceNotFoundException e) {
       // already deleted
@@ -96,24 +114,24 @@ public class ServerInfo {
     return myServer;
   }
 
-  public void refreshWorkspacesForCurrentOwner() throws TfsException {
+  public void refreshWorkspacesForCurrentOwner(Object projectOrComponent) throws TfsException {
+    Workspace[] newWorkspaces = getVCS().queryWorkspaces(Workstation.getComputerName(), projectOrComponent);
     String owner = getQualifiedUsername();
-    if (owner != null) {
-      Workspace[] workspaces = getVCS().queryWorkspaces(owner, Workstation.getComputerName());
-      for (Iterator<WorkspaceInfo> i = myWorkspaceInfos.iterator(); i.hasNext();) {
-        WorkspaceInfo workspaceInfo = i.next();
-        if (workspaceInfo.getOwnerName().equalsIgnoreCase(owner)) {
-          i.remove();
-        }
-      }
+    LOG.assertTrue(owner != null);
 
-      for (Workspace workspace : workspaces) {
-        WorkspaceInfo workspaceInfo = new WorkspaceInfo(this, owner, Workstation.getComputerName());
-        WorkspaceInfo.fromBean(workspace, workspaceInfo);
-        addWorkspaceInfo(workspaceInfo);
+    for (Iterator<WorkspaceInfo> i = myWorkspaceInfos.iterator(); i.hasNext();) {
+      WorkspaceInfo workspaceInfo = i.next();
+      if (workspaceInfo.getOwnerName().equalsIgnoreCase(owner)) {
+        i.remove();
       }
-      Workstation.getInstance().update();
     }
+
+    for (Workspace workspace : newWorkspaces) {
+      WorkspaceInfo workspaceInfo = new WorkspaceInfo(this, owner, Workstation.getComputerName());
+      WorkspaceInfo.fromBean(workspace, workspaceInfo);
+      addWorkspaceInfo(workspaceInfo);
+    }
+    Workstation.getInstance().update();
   }
 
   public void replaceWorkspace(final @NotNull WorkspaceInfo existingWorkspace, final @NotNull WorkspaceInfo newWorkspace) {
@@ -141,5 +159,5 @@ public class ServerInfo {
   public int hashCode() {
     return myGuid.hashCode();
   }
-  
+
 }

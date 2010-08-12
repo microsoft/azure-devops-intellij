@@ -21,6 +21,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -74,12 +75,15 @@ public class ItemInfoForm {
     myLocalNameLabel.setText(VersionControlPath.localPathFromTfsRepresentation(item.getLocal()));
     myLatestVersionLabel.setText(String.valueOf(item.getLatest()));
     myWorkspaceVersionLabel.setText(String.valueOf(item.getLver()));
-    myEncodingLabel.setText(item.getEnc() != Integer.MIN_VALUE ? String.valueOf(item.getEnc()) : "(not applicable)");
+    myEncodingLabel
+      .setText(item.getEnc() != Integer.MIN_VALUE ? String.valueOf(item.getEnc()) : TFSBundle.message("encoding.not.applicable"));
     myPendingChangesLabel.setText(new ChangeTypeMask(item.getChg()).toString());
-    myDeletionIdLabel.setText(item.getDid() != Integer.MIN_VALUE ? String.valueOf(item.getDid()) : "(not deleted)");
+    myDeletionIdLabel.setText(item.getDid() != Integer.MIN_VALUE ? String.valueOf(item.getDid()) : TFSBundle.message("not.deleted"));
     myLockLabel.setText(
-      item.getLock() != null ? MessageFormat.format("Locked for {0} by {1}", item.getLock().getValue(), item.getLowner()) : "(none)");
-    myWorkspaceLabel.setText(MessageFormat.format("{0} on server {1}", workspace.getName(), workspace.getServer().getUri()));
+      item.getLock() != null
+      ? TFSBundle.message("locked.for.by", item.getLock().getValue(), item.getLowner())
+      : TFSBundle.message("locked.none"));
+    myWorkspaceLabel.setText(MessageFormat.format("{0} on server {1}", workspace.getName(), workspace.getServer().getPresentableUri()));
 
     if (myBranches.size() < 2) {
       myTreePane.setVisible(false);

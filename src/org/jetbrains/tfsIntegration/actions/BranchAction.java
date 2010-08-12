@@ -83,7 +83,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 
           workspace.addWorkingFolderInfo(
             new WorkingFolderInfo(WorkingFolderInfo.Status.Active, TfsFileUtil.getFilePath(selectedFiles[0]), targetServerPath));
-          workspace.saveToServer();
+          workspace.saveToServer(project);
         }
       }
 

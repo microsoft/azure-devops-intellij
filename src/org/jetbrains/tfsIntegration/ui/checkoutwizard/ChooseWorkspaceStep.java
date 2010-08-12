@@ -18,18 +18,16 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
-import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Ref;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.TFSBundle;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.ui.ManageWorkspacesForm;
-import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import javax.swing.*;
 import java.text.MessageFormat;
@@ -124,25 +122,14 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
       final ServerInfo server = myManageWorkspacesForm.getSelectedServer();
       myModel.setServer(server);
       if (commitType == CommitType.Next || commitType == CommitType.Finish) {
-        //noinspection ConstantConditions
-        final Ref<Exception> error = new Ref<Exception>();
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-          public void run() {
-            try {
-              WebServiceHelper.authenticate(server.getUri());
-            }
-            catch (TfsException e) {
-              error.set(e);
-            }
-          }
-        }, TFSBundle.message("connecting.to", server.getUri()), false, null);
-
-        final Exception e = error.get();
-        if (e instanceof UserCancelledException) {
-          throw new CommitStepCancelledException();
+        try {
+          TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri());
         }
-        else if (e instanceof TfsException) {
+        catch (TfsException e) {
           throw new CommitStepException(e.getMessage());
+        }
+        catch (ProcessCanceledException e) {
+          throw new CommitStepCancelledException();
         }
       }
     }

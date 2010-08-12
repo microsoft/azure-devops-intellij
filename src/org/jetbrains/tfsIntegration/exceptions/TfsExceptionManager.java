@@ -21,17 +21,18 @@ import org.apache.axiom.soap.SOAPFaultSubCode;
 import org.apache.axiom.soap.SOAPFaultValue;
 import org.apache.axiom.soap.SOAPProcessingException;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NoHttpResponseException;
-import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
-import java.net.UnknownHostException;
-import java.net.SocketTimeoutException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class TfsExceptionManager {
       return new SSLConnectionException((SSLHandshakeException)throwable);
     }
     if (throwable instanceof SOAPProcessingException) {
-      return new ConnectionFailedException(throwable, "Invalid server response: " + throwable.getMessage());
+      return new ConnectionFailedException(throwable, TFSBundle.message("invalid.soap.response"));
     }
     if (throwable instanceof SocketException) {
       return new ConnectionFailedException(throwable);
@@ -149,6 +150,8 @@ public class TfsExceptionManager {
         return new HostNotApplicableException(axisFault);
       case HttpStatus.SC_FORBIDDEN:
         return new ForbiddenException(axisFault);
+      case HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED:
+        return new TfsException(TFSBundle.message("proxy.auth.failed"));
       default:
         return new ConnectionFailedException(axisFault, errorCode);
     }

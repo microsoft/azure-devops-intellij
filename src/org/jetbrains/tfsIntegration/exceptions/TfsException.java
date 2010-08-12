@@ -16,7 +16,7 @@
 
 package org.jetbrains.tfsIntegration.exceptions;
 
-public abstract class TfsException extends Exception {
+public class TfsException extends Exception {
 
   private static final long serialVersionUID = 1L;
 

@@ -65,13 +65,13 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
    */
   @Nullable
   public synchronized Credentials getCredentials(@NotNull URI serverUri) {
-    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
+    final ServerConfiguration serverConfiguration = getConfiguration(serverUri);
     return serverConfiguration != null ? serverConfiguration.getCredentials() : null;
   }
 
   @Nullable
   public URI getProxyUri(@NotNull URI serverUri) {
-    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
+    final ServerConfiguration serverConfiguration = getConfiguration(serverUri);
     try {
       return serverConfiguration != null && serverConfiguration.getProxyUri() != null ? new URI(serverConfiguration.getProxyUri()) : null;
     }
@@ -81,12 +81,12 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   public boolean shouldTryProxy(@NotNull URI serverUri) {
-    final ServerConfiguration serverConfiguration = myServersConfig.get(serverUri.toString());
+    final ServerConfiguration serverConfiguration = getConfiguration(serverUri);
     return serverConfiguration != null && serverConfiguration.getProxyUri() != null && !serverConfiguration.isProxyInaccessible();
   }
 
   public void setProxyInaccessible(@NotNull URI serverUri) {
-    myServersConfig.get(serverUri.toString()).setProxyInaccessible();
+    getConfiguration(serverUri).setProxyInaccessible();
   }
 
   public void setProxyUri(@NotNull URI serverUri, @Nullable URI proxyUri) {
@@ -125,20 +125,33 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     return state;
   }
 
+  private static String getConfigKey(URI serverUri) {
+    String uriString = serverUri.toString();
+    if (!uriString.endsWith("/")) {
+      // backward compatibility
+      uriString += "/";
+    }
+    return uriString;
+  }
+
+  @Nullable
+  private ServerConfiguration getConfiguration(URI serverUri) {
+    return myServersConfig.get(getConfigKey(serverUri));
+  }
+
   @NotNull
   private ServerConfiguration getOrCreateServerConfiguration(@NotNull URI serverUri) {
-    ServerConfiguration config = myServersConfig.get(serverUri.toString());
+    ServerConfiguration config = myServersConfig.get(getConfigKey(serverUri));
     if (config == null) {
       config = new ServerConfiguration();
-      myServersConfig.put(serverUri.toString(), config);
+      myServersConfig.put(getConfigKey(serverUri), config);
     }
     return config;
   }
 
-  // TODO this class should take Workstation responsibilities!!!
-  public boolean serverKnown(final @NotNull URI uri) {
+  public boolean serverKnown(final @NotNull String instanceId) {
     for (ServerInfo server : Workstation.getInstance().getServers()) {
-      if (server.getUri().getHost().equalsIgnoreCase(uri.getHost())) {
+      if (server.getGuid().equalsIgnoreCase(instanceId)) {
         return true;
       }
     }
@@ -146,7 +159,7 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   public void remove(final @NotNull URI serverUri) {
-    myServersConfig.remove(serverUri.toString());
+    myServersConfig.remove(getConfigKey(serverUri));
   }
 
   public void setUseIdeaHttpProxy(boolean useIdeaHttpProxy) {

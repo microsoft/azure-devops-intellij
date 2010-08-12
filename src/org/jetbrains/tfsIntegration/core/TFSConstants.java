@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.microsoft.wsdl.types.Guid;
 import org.jetbrains.annotations.NonNls;
 
 public final class TFSConstants {
@@ -33,4 +34,19 @@ public final class TFSConstants {
   @NonNls public static final String STATEFUL_CHECKIN_POLICIES_ANNOTATION = "TeampriseCheckinPolicies"; // let's be compatible
   @NonNls public static final String OVERRRIDES_ANNOTATION = "IntellijOverrides";
 
+  @NonNls public static final String LOCATION_SERVICE_ASMX = "TeamFoundation/Administration/v3.0/LocationService.asmx";
+  @NonNls public static final String CATALOG_SERVICE_ASMX = "TeamFoundation/Administration/v3.0/CatalogService.asmx";
+
+  @NonNls public static final String TOOL_ID_TFS = "vstfs";
+  @NonNls public static final String TOOL_ID_FRAMEWORK = "Framework";
+  @NonNls public static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
+  @NonNls public static final String SINGLE_RECURSE_STAR = "*";
+
+  public static final Guid PROJECT_COLLECTION_GUID =
+    Guid.Factory.fromString("26338d9e-d437-44aa-91f2-55880a328b54", Guid.MY_QNAME.getNamespaceURI());
+  public static final Guid FRAMEWORK_SERVER_DATA_PROVIDER_FILTER_GUID =
+    Guid.Factory.fromString("567713db-d56d-4bb0-8f35-604e0e116174", Guid.MY_QNAME.getNamespaceURI());
+  public static final int INCLUDE_SERVICES_CONNECTION_OPTION = 1;
+  public static final String ACCOUNT = "Account";
+  public static final String DOMAIN = "Domain";
 }

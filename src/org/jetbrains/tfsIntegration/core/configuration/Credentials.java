@@ -22,8 +22,7 @@ import com.intellij.util.xmlb.annotations.Tag;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.text.MessageFormat;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 @Tag(value = "credentials")
 public class Credentials {
@@ -46,6 +45,16 @@ public class Credentials {
                      final boolean storePassword) {
     myUserName = userName;
     myDomain = domain;
+    myPassword = password;
+    myStorePassword = storePassword;
+  }
+
+  public Credentials(final @NotNull String credentials,
+                     final @Nullable String password,
+                     final boolean storePassword) {
+    int i = credentials.indexOf('\\');
+    myDomain = i != -1 ? credentials.substring(0, i) : "";
+    myUserName = i != -1 ? credentials.substring(i + 1) : credentials;
     myPassword = password;
     myStorePassword = storePassword;
   }
@@ -74,6 +83,10 @@ public class Credentials {
     myStorePassword = true;
   }
 
+  public boolean isStorePassword() {
+    return myStorePassword;
+  }
+
   @NotNull
   @Tag(value = "domain")
   public String getDomain() {
@@ -97,7 +110,7 @@ public class Credentials {
   @NotNull
   public String getQualifiedUsername() {
     if (getDomain().length() > 0) {
-      return MessageFormat.format("{0}\\{1}", getDomain(), getUserName());
+      return TfsUtil.getQualifiedUsername(getDomain(), getUserName());
     }
     else {
       return getUserName();

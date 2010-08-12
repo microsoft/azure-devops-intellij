@@ -16,10 +16,13 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.openapi.application.ApplicationNamesInfo;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
@@ -42,8 +45,10 @@ import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
@@ -52,6 +57,7 @@ import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemField;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemSerialize;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.webservice.TfsRequestManager;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 
 import java.io.File;
@@ -59,7 +65,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
-import java.text.MessageFormat;
 import java.util.*;
 
 public class VersionControlServer {
@@ -80,6 +85,7 @@ public class VersionControlServer {
   public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
   public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
 
+  private final URI myServerUri;
   private final RepositoryStub myRepository;
   private final ClientService2Stub myWorkItemTrackingClientService;
   private final GroupSecurityServiceStub myGroupSecurityService;
@@ -118,7 +124,7 @@ public class VersionControlServer {
     final Collection<U> results = new ArrayList<U>();
     TfsUtil.consumeInParts(items, ITEMS_IN_GROUP, new TfsUtil.Consumer<List<T>, TfsException>() {
       public void consume(final List<T> ts) throws TfsException {
-        U result = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<U>() {
+        U result = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<U>() {
           public U executeRequest() throws RemoteException {
             return operation.execute(ts);
           }
@@ -130,14 +136,14 @@ public class VersionControlServer {
   }
 
   public VersionControlServer(URI uri) {
-    //myUri = uri;
+    myServerUri = uri;
     try {
       final ConfigurationContext configContext = WebServiceHelper.getStubConfigurationContext();
-      myRepository = new RepositoryStub(configContext, uri.toString() + TFSConstants.VERSION_CONTROL_ASMX);
+      myRepository = new RepositoryStub(configContext, TfsUtil.appendPath(uri, TFSConstants.VERSION_CONTROL_ASMX));
       myWorkItemTrackingClientService =
-        new ClientService2Stub(configContext, uri.toString() + TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX);
+        new ClientService2Stub(configContext, TfsUtil.appendPath(uri, TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX));
       myGroupSecurityService =
-        new GroupSecurityServiceStub(configContext, uri.toString() + TFSConstants.GROUP_SECURITY_SERVICE_ASMX);
+        new GroupSecurityServiceStub(configContext, TfsUtil.appendPath(uri, TFSConstants.GROUP_SECURITY_SERVICE_ASMX));
     }
     catch (Exception e) {
       TFSVcs.LOG.error("Failed to initialize web service stub", e);
@@ -174,7 +180,7 @@ public class VersionControlServer {
   private List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
     final ArrayOfInt arrayOfInt = new ArrayOfInt();
     arrayOfInt.set_int(itemIds);
-    ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
+    ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
       public ArrayOfItem executeRequest() throws RemoteException {
         final QueryItemsById param = new QueryItemsById();
         param.setChangeSet(changeSet);
@@ -382,9 +388,12 @@ public class VersionControlServer {
   }
 
 
-  public Workspace getWorkspace(final String workspaceName, final String workspaceOwner) throws TfsException {
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
-      public Workspace executeRequest() throws RemoteException {
+  public Workspace loadWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent)
+    throws TfsException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace>(
+      TFSBundle.message("load.workspace.0", workspaceName)) {
+      @Override
+      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final QueryWorkspace param = new QueryWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
@@ -393,23 +402,30 @@ public class VersionControlServer {
     });
   }
 
-  public Workspace updateWorkspace(final String oldWorkspaceName, final String workspaceOwner, final Workspace newWorkspaceDataBean)
+  public void updateWorkspace(final String oldWorkspaceName,
+                              final Workspace newWorkspaceDataBean,
+                              Object projectOrComponent)
     throws TfsException {
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
-      public Workspace executeRequest() throws RemoteException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Object>(
+      TFSBundle.message("save.workspace.0", newWorkspaceDataBean.getName())) {
+      @Override
+      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final UpdateWorkspace param = new UpdateWorkspace();
         param.setNewWorkspace(newWorkspaceDataBean);
         param.setOldWorkspaceName(oldWorkspaceName);
-        param.setOwnerName(workspaceOwner);
-        return myRepository.updateWorkspace(param).getUpdateWorkspaceResult();
+        param.setOwnerName(credentials.getQualifiedUsername());
+        myRepository.updateWorkspace(param).getUpdateWorkspaceResult();
+        //noinspection ConstantConditions
+        return null;
       }
     });
   }
 
-  public Workspace createWorkspace(final Workspace workspaceBean) throws TfsException {
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace>() {
-      public Workspace executeRequest() throws RemoteException {
-
+  public Workspace createWorkspace(final Workspace workspaceBean, Object projectOrComponent) throws TfsException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace>(
+      TFSBundle.message("create.workspace.0", workspaceBean.getName())) {
+      @Override
+      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final CreateWorkspace param = new CreateWorkspace();
         param.setWorkspace(workspaceBean);
         return myRepository.createWorkspace(param).getCreateWorkspaceResult();
@@ -417,13 +433,17 @@ public class VersionControlServer {
     });
   }
 
-  public void deleteWorkspace(final String workspaceName, final String workspaceOwner) throws TfsException {
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
+  public void deleteWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent) throws TfsException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Object>(
+      TFSBundle.message("delete.workspace.0", workspaceName)) {
+      @Override
+      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final DeleteWorkspace param = new DeleteWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
         myRepository.deleteWorkspace(param);
+        //noinspection ConstantConditions
+        return null;
       }
     });
   }
@@ -432,19 +452,20 @@ public class VersionControlServer {
     final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
     itemSpecs.setItemSpec(new ItemSpec[]{createItemSpec(parentServerItem, RecursionType.OneLevel)});
 
-    final ArrayOfItemSet arrayOfItemSet = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
-      public ArrayOfItemSet executeRequest() throws RemoteException {
-        QueryItems param = new QueryItems();
-        param.setWorkspaceName(null);
-        param.setWorkspaceOwner(null);
-        param.setItems(itemSpecs);
-        param.setVersion(LatestVersionSpec.INSTANCE);
-        param.setDeletedState(DeletedState.NonDeleted);
-        param.setItemType(foldersOnly ? ItemType.Folder : ItemType.Any);
-        param.setGenerateDownloadUrls(false);
-        return myRepository.queryItems(param).getQueryItemsResult();
-      }
-    });
+    final ArrayOfItemSet arrayOfItemSet =
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
+        public ArrayOfItemSet executeRequest() throws RemoteException {
+          QueryItems param = new QueryItems();
+          param.setWorkspaceName(null);
+          param.setWorkspaceOwner(null);
+          param.setItems(itemSpecs);
+          param.setVersion(LatestVersionSpec.INSTANCE);
+          param.setDeletedState(DeletedState.NonDeleted);
+          param.setItemType(foldersOnly ? ItemType.Folder : ItemType.Any);
+          param.setGenerateDownloadUrls(false);
+          return myRepository.queryItems(param).getQueryItemsResult();
+        }
+      });
 
     TFSVcs.assertTrue(arrayOfItemSet.getItemSet() != null && arrayOfItemSet.getItemSet().length == 1);
     final ItemSet itemSet = arrayOfItemSet.getItemSet()[0];
@@ -545,7 +566,7 @@ public class VersionControlServer {
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(localPath, recursionType)});
 
     ArrayOfExtendedItem[] extendedItems =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
         public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
           final QueryItemsExtended param = new QueryItemsExtended();
           param.setDeletedState(deletedState);
@@ -649,15 +670,15 @@ public class VersionControlServer {
     final String downloadUrl;
     if (tryProxy) {
       //noinspection ConstantConditions,HardCodedStringLiteral
-      downloadUrl = TFSConfigurationManager.getInstance().getProxyUri(serverUri).toString() +
-                    TFSConstants.PROXY_DOWNLOAD_ASMX +
-                    "?" +
-                    downloadKey +
-                    "&rid=" +
-                    server.getGuid();
+      downloadUrl = TfsUtil.appendPath(TFSConfigurationManager.getInstance().getProxyUri(serverUri),
+                                       TFSConstants.PROXY_DOWNLOAD_ASMX +
+                                       "?" +
+                                       downloadKey +
+                                       "&rid=" +
+                                       server.getGuid());
     }
     else {
-      downloadUrl = serverUri + TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey;
+      downloadUrl = TfsUtil.appendPath(serverUri, TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey);
     }
     TFSVcs.LOG.debug((tryProxy ? "Downloading via proxy: " : "Downloading: ") + downloadUrl);
     try {
@@ -667,9 +688,10 @@ public class VersionControlServer {
       TFSVcs.LOG.warn("Download failed", e);
       if (tryProxy) {
         TFSVcs.LOG.warn("Disabling proxy");
-        String messageHtml = MessageFormat
-          .format("Cannot connect to ''{0}'' via TFS proxy ''{1}'':\n{2}\nDirect connection is used until you restart IntelliJ IDEA.",
-                  serverUri, TFSConfigurationManager.getInstance().getProxyUri(serverUri), e.getMessage());
+        String messageHtml = TFSBundle
+          .message("proxy.failed", server.getPresentableUri(), TFSConfigurationManager.getInstance().getProxyUri(serverUri),
+                   StringUtil.trimEnd(e.getMessage(), "."),
+                   ApplicationNamesInfo.getInstance().getFullProductName());
         TfsUtil.showBalloon(project, MessageType.WARNING, messageHtml);
         TFSConfigurationManager.getInstance().setProxyInaccessible(server.getUri());
         downloadItem(project, server, downloadKey, outputStream);
@@ -710,23 +732,24 @@ public class VersionControlServer {
     while (total > 0) {
       final int batchMax = Math.min(256, total);
 
-      Changeset[] currentChangeSets = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
-        public Changeset[] executeRequest() throws RemoteException {
-          QueryHistory param = new QueryHistory();
-          param.setWorkspaceName(workspaceName);
-          param.setWorkspaceOwner(workspaceOwner);
-          param.setItemSpec(itemSpec);
-          param.setVersionItem(itemVersion);
-          param.setUser(user);
-          param.setVersionFrom(versionFrom);
-          param.setVersionTo(versionToCurrent.get());
-          param.setMaxCount(batchMax);
-          param.setIncludeFiles(true);
-          param.setGenerateDownloadUrls(false);
-          param.setSlotMode(false);
-          return myRepository.queryHistory(param).getQueryHistoryResult().getChangeset();
-        }
-      });
+      Changeset[] currentChangeSets =
+        WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
+          public Changeset[] executeRequest() throws RemoteException {
+            QueryHistory param = new QueryHistory();
+            param.setWorkspaceName(workspaceName);
+            param.setWorkspaceOwner(workspaceOwner);
+            param.setItemSpec(itemSpec);
+            param.setVersionItem(itemVersion);
+            param.setUser(user);
+            param.setVersionFrom(versionFrom);
+            param.setVersionTo(versionToCurrent.get());
+            param.setMaxCount(batchMax);
+            param.setIncludeFiles(true);
+            param.setGenerateDownloadUrls(false);
+            param.setSlotMode(false);
+            return myRepository.queryHistory(param).getQueryHistoryResult().getChangeset();
+          }
+        });
 
       if (currentChangeSets != null) {
         ContainerUtil.addAll(allChangeSets, currentChangeSets);
@@ -744,15 +767,18 @@ public class VersionControlServer {
     return allChangeSets;
   }
 
-  public Workspace[] queryWorkspaces(final String ownerName, final String computer) throws TfsException {
-    Workspace[] workspaces = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Workspace[]>() {
-      public Workspace[] executeRequest() throws RemoteException {
-        QueryWorkspaces param = new QueryWorkspaces();
-        param.setComputer(computer);
-        param.setOwnerName(ownerName);
-        return myRepository.queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
-      }
-    });
+  public Workspace[] queryWorkspaces(final String computer, Object projectOrComponent) throws TfsException {
+    Workspace[] workspaces =
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace[]>(
+        TFSBundle.message("reload.workspaces")) {
+        @Override
+        public Workspace[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+          QueryWorkspaces param = new QueryWorkspaces();
+          param.setComputer(computer);
+          param.setOwnerName(credentials.getQualifiedUsername());
+          return myRepository.queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
+        }
+      });
 
     return workspaces != null ? workspaces : new Workspace[0];
   }
@@ -890,7 +916,7 @@ public class VersionControlServer {
                                final String targetLocal,
                                final int reason) throws TfsException {
 
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
+    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
       public AddConflictResponse executeRequest() throws RemoteException {
         AddConflict param = new AddConflict();
         param.setWorkspaceName(workspaceName);
@@ -968,7 +994,7 @@ public class VersionControlServer {
 
   public ResolveResponse resolveConflict(final String workspaceName, final String workspasceOwnerName, final ResolveConflictParams params)
     throws TfsException {
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ResolveResponse>() {
+    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ResolveResponse>() {
       public ResolveResponse executeRequest() throws RemoteException {
         Resolve param = new Resolve();
         param.setWorkspaceName(workspaceName);
@@ -985,7 +1011,7 @@ public class VersionControlServer {
 
 
   public void uploadItem(final WorkspaceInfo workspaceInfo, PendingChange change) throws TfsException, IOException {
-    final String uploadUrl = workspaceInfo.getServer().getUri().toASCIIString() + TFSConstants.UPLOAD_ASMX;
+    final String uploadUrl = TfsUtil.appendPath(workspaceInfo.getServer().getUri(), TFSConstants.UPLOAD_ASMX);
     File file = VersionControlPath.getFile(change.getLocal());
     long fileLength = file.length();
 
@@ -1171,7 +1197,7 @@ public class VersionControlServer {
     final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
     final ItemSpec target = createItemSpec(targetServerPath, null);
 
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<MergeResponse>() {
+    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<MergeResponse>() {
       public MergeResponse executeRequest() throws RemoteException {
         Merge param = new Merge();
         param.setWorkspaceName(workspaceName);
@@ -1199,7 +1225,7 @@ public class VersionControlServer {
     }
 
     final ArrayOfCheckinNoteFieldDefinition result =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
         public ArrayOfCheckinNoteFieldDefinition executeRequest() throws RemoteException {
           QueryCheckinNoteDefinition param = new QueryCheckinNoteDefinition();
           param.setAssociatedServerItem(associatedServerItem);
@@ -1216,7 +1242,7 @@ public class VersionControlServer {
 
   public Collection<Annotation> queryAnnotations(final String annotationName, final Collection<String> teamProjects) throws TfsException {
     final ArrayOfAnnotation arrayOfAnnotation =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfAnnotation>() {
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfAnnotation>() {
         public ArrayOfAnnotation executeRequest() throws RemoteException {
           QueryAnnotation param = new QueryAnnotation();
           param.setAnnotationName(annotationName);
@@ -1241,7 +1267,7 @@ public class VersionControlServer {
   }
 
   public void createAnnotation(final String serverItem, final String annotationName, final String annotationValue) throws TfsException {
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
+    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
         CreateAnnotation param = new CreateAnnotation();
         param.setAnnotationName(annotationName);
@@ -1255,7 +1281,7 @@ public class VersionControlServer {
   }
 
   public void deleteAnnotation(final String serverItem, final String annotationName) throws TfsException {
-    WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.VoidDelegate() {
+    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
         DeleteAnnotation param = new DeleteAnnotation();
         param.setAnnotationName(annotationName);
@@ -1276,7 +1302,7 @@ public class VersionControlServer {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, RecursionType.None)});
 
-    ItemSet[] items = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
+    ItemSet[] items = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
       public ItemSet[] executeRequest() throws RemoteException {
         QueryItems param = new QueryItems();
         param.setWorkspaceName(workspaceName);
@@ -1304,19 +1330,20 @@ public class VersionControlServer {
     final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
     itemSpecs.setItemSpec(new ItemSpec[]{itemSpec});
 
-    final ArrayOfItemSet arrayOfItemSet = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
-      public ArrayOfItemSet executeRequest() throws RemoteException {
-        QueryItems param = new QueryItems();
-        param.setWorkspaceName(null);
-        param.setWorkspaceOwner(null);
-        param.setItems(itemSpecs);
-        param.setVersion(version);
-        param.setDeletedState(DeletedState.NonDeleted);
-        param.setItemType(ItemType.Any);
-        param.setGenerateDownloadUrls(false);
-        return myRepository.queryItems(param).getQueryItemsResult();
-      }
-    });
+    final ArrayOfItemSet arrayOfItemSet =
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
+        public ArrayOfItemSet executeRequest() throws RemoteException {
+          QueryItems param = new QueryItems();
+          param.setWorkspaceName(null);
+          param.setWorkspaceOwner(null);
+          param.setItems(itemSpecs);
+          param.setVersion(version);
+          param.setDeletedState(DeletedState.NonDeleted);
+          param.setItemType(ItemType.Any);
+          param.setGenerateDownloadUrls(false);
+          return myRepository.queryItems(param).getQueryItemsResult();
+        }
+      });
 
     TFSVcs.assertTrue(arrayOfItemSet.getItemSet() != null && arrayOfItemSet.getItemSet().length == 1);
 
@@ -1333,7 +1360,7 @@ public class VersionControlServer {
 
 
   public Changeset queryChangeset(final int changesetId) throws TfsException {
-    return WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<Changeset>() {
+    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<Changeset>() {
       public Changeset executeRequest() throws RemoteException {
         QueryChangeset param = new QueryChangeset();
         param.setChangesetId(changesetId);
@@ -1351,21 +1378,22 @@ public class VersionControlServer {
                                                final String filterItem,
                                                final VersionSpec versionFilterItem,
                                                final boolean generateDownloadUrls) throws TfsException {
-    VersionControlLabel[] labels = WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<VersionControlLabel[]>() {
-      public VersionControlLabel[] executeRequest() throws RemoteException {
-        QueryLabels param = new QueryLabels();
-        param.setWorkspaceName(null);
-        param.setWorkspaceOwner(null);
-        param.setLabelName(labelName);
-        param.setLabelScope(labelScope);
-        param.setOwner(owner);
-        param.setFilterItem(filterItem);
-        param.setVersionFilterItem(versionFilterItem);
-        param.setIncludeItems(includeItems);
-        param.setGenerateDownloadUrls(generateDownloadUrls);
-        return myRepository.queryLabels(param).getQueryLabelsResult().getVersionControlLabel();
-      }
-    });
+    VersionControlLabel[] labels =
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<VersionControlLabel[]>() {
+        public VersionControlLabel[] executeRequest() throws RemoteException {
+          QueryLabels param = new QueryLabels();
+          param.setWorkspaceName(null);
+          param.setWorkspaceOwner(null);
+          param.setLabelName(labelName);
+          param.setLabelScope(labelScope);
+          param.setOwner(owner);
+          param.setFilterItem(filterItem);
+          param.setVersionFilterItem(versionFilterItem);
+          param.setIncludeItems(includeItems);
+          param.setGenerateDownloadUrls(generateDownloadUrls);
+          return myRepository.queryLabels(param).getQueryLabelsResult().getVersionControlLabel();
+        }
+      });
     ArrayList<VersionControlLabel> result = new ArrayList<VersionControlLabel>();
     if (labels != null) {
       ContainerUtil.addAll(result, labels);
@@ -1414,7 +1442,7 @@ public class VersionControlServer {
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
 
     ArrayOfArrayOfBranchRelative result =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfBranchRelative>() {
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfBranchRelative>() {
         public ArrayOfArrayOfBranchRelative executeRequest() throws RemoteException {
           QueryBranches param = new QueryBranches();
           param.setWorkspaceName(null);
@@ -1438,7 +1466,7 @@ public class VersionControlServer {
     final ItemSpec target = createItemSpec(targetServerPath, RecursionType.Full);
 
     final ArrayOfMergeCandidate result =
-      WebServiceHelper.executeRequest(myRepository, new WebServiceHelper.Delegate<ArrayOfMergeCandidate>() {
+      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfMergeCandidate>() {
         public ArrayOfMergeCandidate executeRequest() throws RemoteException {
           QueryMergeCandidates param = new QueryMergeCandidates();
           param.setWorkspaceName(workspaceName);
@@ -1466,7 +1494,7 @@ public class VersionControlServer {
     final String factorValue = qualifiedUsername;
     final QueryMembership queryMembership = QueryMembership.None;
 
-    return WebServiceHelper.executeRequest(myGroupSecurityService, new WebServiceHelper.Delegate<Identity>() {
+    return WebServiceHelper.executeRequest(myServerUri, myGroupSecurityService, new WebServiceHelper.Delegate<Identity>() {
       public Identity executeRequest() throws RemoteException {
         ReadIdentity param = new ReadIdentity();
         param.setFactor(searchFactor);
@@ -1478,6 +1506,7 @@ public class VersionControlServer {
   }
 
   // WorkItemTracking
+
   private static RequestHeaderE generateRequestHeader() {
     RequestHeader requestHeader = new RequestHeader();
     requestHeader.setId("uuid:" + UUID.randomUUID().toString());
@@ -1492,13 +1521,14 @@ public class VersionControlServer {
     psQuery_type1.setQuery(query);
 
     QueryWorkitemsResponse queryWorkitemsResponse =
-      WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<QueryWorkitemsResponse>() {
-        public QueryWorkitemsResponse executeRequest() throws RemoteException {
-          QueryWorkitems param = new QueryWorkitems();
-          param.setPsQuery(psQuery_type1);
-          return myWorkItemTrackingClientService.queryWorkitems(param, generateRequestHeader());
-        }
-      });
+      WebServiceHelper
+        .executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.Delegate<QueryWorkitemsResponse>() {
+          public QueryWorkitemsResponse executeRequest() throws RemoteException {
+            QueryWorkitems param = new QueryWorkitems();
+            param.setPsQuery(psQuery_type1);
+            return myWorkItemTrackingClientService.queryWorkitems(param, generateRequestHeader());
+          }
+        });
 
     final List<Integer> ids = parseWorkItemsIds(queryWorkitemsResponse);
     Collections.sort(ids);
@@ -1555,18 +1585,19 @@ public class VersionControlServer {
     workItemFields.setString(ArrayUtil.toStringArray(serializedFields));
 
     PageWorkitemsByIdsResponse pageWorkitemsByIdsResponse =
-      WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
-        public PageWorkitemsByIdsResponse executeRequest() throws RemoteException {
-          PageWorkitemsByIds param = new PageWorkitemsByIds();
-          param.setIds(workitemIds);
-          param.setColumns(workItemFields);
-          param.setLongTextColumns(null);
-          param.setAsOfDate(new GregorianCalendar());
-          param.setUseMaster(false);
-          param.setMetadataHave(null);
-          return myWorkItemTrackingClientService.pageWorkitemsByIds(param, generateRequestHeader());
-        }
-      });
+      WebServiceHelper
+        .executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
+          public PageWorkitemsByIdsResponse executeRequest() throws RemoteException {
+            PageWorkitemsByIds param = new PageWorkitemsByIds();
+            param.setIds(workitemIds);
+            param.setColumns(workItemFields);
+            param.setLongTextColumns(null);
+            param.setAsOfDate(new GregorianCalendar());
+            param.setUseMaster(false);
+            param.setMetadataHave(null);
+            return myWorkItemTrackingClientService.pageWorkitemsByIds(param, generateRequestHeader());
+          }
+        });
 
     List<WorkItem> workItems = new ArrayList<WorkItem>();
     for (R_type0 row : pageWorkitemsByIdsResponse.getItems().getTable().getRows().getR()) {
@@ -1608,7 +1639,7 @@ public class VersionControlServer {
     final Package_type0E package_type_0 = new Package_type0E();
     package_type_0.setPackage(package_type00);
 
-    WebServiceHelper.executeRequest(myWorkItemTrackingClientService, new WebServiceHelper.VoidDelegate() {
+    WebServiceHelper.executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.VoidDelegate() {
       public void executeRequest() throws RemoteException {
         Update param = new Update();
         param.set_package(package_type_0);

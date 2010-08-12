@@ -77,7 +77,7 @@ public class UpdateSettingsForm {
                                                     final boolean cellHasFocus) {
         final Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         final WorkspaceInfo workspace = ((WorkspaceInfo)value);
-        String label = MessageFormat.format("{0} [{1}]", workspace.getName(), workspace.getServer().getUri());
+        String label = MessageFormat.format("{0} [{1}]", workspace.getName(), workspace.getServer().getPresentableUri());
         setText(label);
         return c;
       }

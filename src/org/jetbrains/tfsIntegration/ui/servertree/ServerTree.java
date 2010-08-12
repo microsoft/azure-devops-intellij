@@ -101,7 +101,7 @@ public class ServerTree {
     }
 
     myTree.setContentProvider(new ServerTreeContentProvider(server, myFoldersOnly), itemsToSelect);
-    myTree.setLabelProvider(new ServerTreeLabelProvider(server.getUri().toString(), pathFilter));
+    myTree.setLabelProvider(new ServerTreeLabelProvider(server.getPresentableUri(), pathFilter));
   }
 
   public JPanel getContentPanel() {

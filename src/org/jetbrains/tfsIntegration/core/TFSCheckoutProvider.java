@@ -144,7 +144,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
     WorkingFolderInfo workingFolder = new WorkingFolderInfo(WorkingFolderInfo.Status.Active, localPath, model.getServerPath());
     workspace.addWorkingFolderInfo(workingFolder);
     try {
-      workspace.saveToServer();
+      workspace.saveToServer(null);
     }
     catch (TfsException e) {
       String errorMessage = MessageFormat.format("Cannot create workspace ''{0}''. {1}", workspace.getName(), e.getMessage());

@@ -35,7 +35,7 @@ public class CheckInPoliciesDialog extends DialogWrapper {
     super(project, false);
     myProject = project;
     myProjectToDescriptors = projectToDescriptors;
-    setTitle(TFSBundle.message("checkin.policies.dialog.title", server.getUri()));
+    setTitle(TFSBundle.message("checkin.policies.dialog.title", server.getPresentableUri()));
     init();
     setSize(800, 500);
   }

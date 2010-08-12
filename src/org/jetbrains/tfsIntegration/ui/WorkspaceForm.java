@@ -16,35 +16,35 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.EnumComboBoxModel;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.vcsUtil.VcsUtil;
+import com.intellij.ui.EnumComboBoxModel;
 import com.intellij.util.EventDispatcher;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
+import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.EventListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.List;
 
 public class WorkspaceForm {
 
@@ -214,7 +214,7 @@ public class WorkspaceForm {
 
   public void init(final @NotNull ServerInfo server) {
     myServer = server;
-    myServerField.setText(myServer.getUri().toString());
+    myServerField.setText(myServer.getPresentableUri());
     myOwnerField.setText(myServer.getQualifiedUsername());
     myComputerField.setText(Workstation.getComputerName());
     myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>());
@@ -224,7 +224,7 @@ public class WorkspaceForm {
     init(workspace.getServer());
     myNameField.setText(workspace.getName());
     myCommentField.setText(workspace.getComment());
-    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>(workspace.getWorkingFolders()));
+    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>(workspace.getWorkingFoldersCached()));
   }
 
   private void updateControls() {

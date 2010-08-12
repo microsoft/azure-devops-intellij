@@ -20,12 +20,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 import javax.swing.*;
 import java.net.URI;
-import java.text.MessageFormat;
 
 public class ProxySettingsDialog extends DialogWrapper {
 
@@ -35,7 +36,7 @@ public class ProxySettingsDialog extends DialogWrapper {
   public ProxySettingsDialog(final Project project, final @NotNull URI serverUri) {
     super(project, true);
     myServerUri = serverUri;
-    String title = MessageFormat.format("Set TFS proxy for server {0}", serverUri);
+    String title = TFSBundle.message("proxy.dialog.title", TfsUtil.getPresentableUri(serverUri));
     setTitle(title);
 
     init();

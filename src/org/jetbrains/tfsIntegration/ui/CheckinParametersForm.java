@@ -126,7 +126,7 @@ public class CheckinParametersForm {
                                                     final boolean cellHasFocus) {
         JLabel label = (JLabel)super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         if (value instanceof ServerInfo) {
-          label.setText(((ServerInfo)value).getUri().toString());
+          label.setText(((ServerInfo)value).getPresentableUri());
         }
         label.setIcon(UiConstants.ICON_TEAM_SERVER);
         return label;

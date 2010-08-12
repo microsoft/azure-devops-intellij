@@ -22,7 +22,7 @@ import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
 import java.net.Authenticator;
 
-class HTTPProxyInfo {
+public class HTTPProxyInfo {
 
   public final @Nullable String host;
   public final int port;

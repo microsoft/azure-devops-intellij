@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
@@ -42,15 +43,19 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.List;
 
 public class TfsUtil {
 
+  private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
   @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
+  @NonNls private static final String DELIM = "://";
 
   @Nullable
   public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath) throws TfsException {
@@ -152,19 +157,29 @@ public class TfsUtil {
   }
 
   @Nullable
-  public static URI getUrl(String uriText, boolean complainOnPath) {
-    if (!uriText.contains("://")) {
-      uriText = "http://" + uriText;
-    }
+  public static URI getUrl(String uriText, boolean complainOnPath, boolean trimPath) {
+    int i = uriText.indexOf(DELIM);
+
     try {
-      final URI uri = new URI(uriText).normalize();
+      final URI uri;
+      if (i == -1) {
+        uri = new URI("http", "//" + uriText, null).normalize();
+      }
+      else {
+        uri = new URI(uriText.substring(0, i), "//" + uriText.substring(i + DELIM.length()), null).normalize();
+      }
       if (StringUtil.isEmpty(uri.getHost())) {
         return null;
       }
       if (complainOnPath && !"".equals(uri.getPath()) && !"/".equals(uri.getPath())) {
         return null;
       }
-      return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), "/", null, null);
+      if (trimPath) {
+        return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), "/", null, null);
+      }
+      else {
+        return uri;
+      }
     }
     catch (URISyntaxException e) {
       return null;
@@ -232,6 +247,20 @@ public class TfsUtil {
     }
   }
 
+  public static String getPresentableUri(URI uri) {
+    try {
+      return URLDecoder.decode(uri.toString(), "UTF-8");
+    }
+    catch (UnsupportedEncodingException e) {
+      LOG.error(e);
+      return null;
+    }
+  }
+
+  public static String getQualifiedUsername(String domain, String userName) {
+    return domain + "\\" + userName;
+  }
+
   public interface Consumer<T, E extends Throwable> {
     void consume(T t) throws E;
   }
@@ -244,6 +273,14 @@ public class TfsUtil {
         consumer.consume(subList);
       }
     }
+  }
+
+  public static String appendPath(URI serverUri, String path) {
+    String uri = serverUri.toString();
+    if (!uri.endsWith("/")) {
+      uri += "/";
+    }
+    return uri + path;
   }
 
 }

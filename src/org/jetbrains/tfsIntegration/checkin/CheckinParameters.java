@@ -150,7 +150,7 @@ public class CheckinParameters {
           List<ServerInfo> sortedServers = new ArrayList<ServerInfo>(serverToProjects.keySet());
           Collections.sort(sortedServers, new Comparator<ServerInfo>() {
             public int compare(ServerInfo o1, ServerInfo o2) {
-              return o1.getUri().compareTo(o2.getUri());
+              return o1.getPresentableUri().compareTo(o2.getPresentableUri());
             }
           });
 
@@ -409,7 +409,7 @@ public class CheckinParameters {
         }
         //noinspection ConstantConditions
         if (myData.size() > 1) {
-          result.append(entry.getKey().getUri()).append("\n");
+          result.append(entry.getKey().getPresentableUri()).append("\n");
         }
         if (checkError && !data.myEmptyNotes.isEmpty()) {
           resultingSeverity = Severity.ERROR;

@@ -17,8 +17,11 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.util.net.HttpConfigurable;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
@@ -35,12 +38,32 @@ public class TfsLoginDialog extends DialogWrapper {
 
   private static final Logger LOG = Logger.getInstance(TfsLoginDialog.class.getName());
 
-  private final TfsLoginForm myLoginForm;
-  private final boolean myAllowAddressChange;
+  private TfsLoginForm myLoginForm;
+  @Nullable private Condition<TfsLoginDialog> myOkActionCallback;
 
-  public TfsLoginDialog(URI initialUri, Credentials initialCredentials, boolean allowAddressChange) {
-    super(false);
-    myAllowAddressChange = allowAddressChange;
+  public TfsLoginDialog(Project project,
+                        URI initialUri,
+                        Credentials initialCredentials,
+                        boolean allowAddressChange,
+                        @Nullable Condition<TfsLoginDialog> okActionCallback) {
+    super(project, true);
+    doInit(initialUri, initialCredentials, allowAddressChange, okActionCallback);
+  }
+
+  public TfsLoginDialog(JComponent parentComponent,
+                        URI initialUri,
+                        Credentials initialCredentials,
+                        boolean allowAddressChange,
+                        @Nullable Condition<TfsLoginDialog> okActionCallback) {
+    super(parentComponent, true);
+    doInit(initialUri, initialCredentials, allowAddressChange, okActionCallback);
+  }
+
+  private void doInit(URI initialUri,
+                      Credentials initialCredentials,
+                      boolean allowAddressChange,
+                      Condition<TfsLoginDialog> okActionCallback) {
+    myOkActionCallback = okActionCallback;
     setTitle(TFSBundle.message(allowAddressChange ? "logindialog.title.connect" : "logindialog.title.login"));
 
     myLoginForm = new TfsLoginForm(initialUri, initialCredentials, allowAddressChange);
@@ -64,9 +87,7 @@ public class TfsLoginDialog extends DialogWrapper {
   }
 
   private void revalidate() {
-    final String errorMessage = getErrorMessage();
-    myLoginForm.setErrorMessage(errorMessage);
-    setOKActionEnabled(errorMessage == null);
+    setMessage(getErrorMessage(), true);
   }
 
   @Nullable
@@ -74,11 +95,8 @@ public class TfsLoginDialog extends DialogWrapper {
     if (StringUtil.isEmptyOrSpaces(myLoginForm.getUrl())) {
       return TFSBundle.message("login.dialog.address.empty");
     }
-    if (TfsUtil.getUrl(myLoginForm.getUrl(), true) == null) {
+    if (TfsUtil.getUrl(myLoginForm.getUrl(), false, false) == null) {
       return TFSBundle.message("login.dialog.address.invalid");
-    }
-    if (myAllowAddressChange && TFSConfigurationManager.getInstance().serverKnown(getUri())) {
-      return TFSBundle.message("login.dialog.duplicate.address");
     }
 
     if (StringUtil.isEmptyOrSpaces(myLoginForm.getUsername())) {
@@ -88,7 +106,7 @@ public class TfsLoginDialog extends DialogWrapper {
   }
 
   public URI getUri() {
-    URI uri = TfsUtil.getUrl(myLoginForm.getUrl(), false);
+    URI uri = TfsUtil.getUrl(myLoginForm.getUrl(), false, false);
     LOG.assertTrue(uri != null);
     return uri;
   }
@@ -97,8 +115,9 @@ public class TfsLoginDialog extends DialogWrapper {
     return myLoginForm.getCredentials();
   }
 
-  public void setMessage(String message) {
+  public void setMessage(@Nullable String message, boolean disableOkAction) {
     myLoginForm.setErrorMessage(message);
+    setOKActionEnabled(!disableOkAction || message == null);
   }
 
   @Override
@@ -106,4 +125,23 @@ public class TfsLoginDialog extends DialogWrapper {
     return "TFS.Login";
   }
 
+  @Override
+  protected void doOKAction() {
+    if (shouldPromptForProxyPassword(false)) {
+      HttpConfigurable hc = HttpConfigurable.getInstance();
+      hc.setPlainProxyPassword(myLoginForm.getProxyPassword());
+    }
+
+    if (myOkActionCallback == null || myOkActionCallback.value(this)) {
+      super.doOKAction();
+    }
+  }
+
+  public static boolean shouldPromptForProxyPassword(boolean strictOnly) {
+    HttpConfigurable hc = HttpConfigurable.getInstance();
+    return TFSConfigurationManager.getInstance().useIdeaHttpProxy() &&
+           hc.USE_HTTP_PROXY &&
+           hc.PROXY_AUTHENTICATION &&
+           !hc.KEEP_PROXY_PASSWORD && (!strictOnly || StringUtil.isEmpty(hc.getPlainProxyPassword()));
+  }
 }

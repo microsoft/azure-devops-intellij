@@ -17,10 +17,9 @@
 package org.jetbrains.tfsIntegration.webservice;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.util.ClassLoaderUtil;
-import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.Ref;
-import com.intellij.openapi.util.ThrowableComputable;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.services.registration._03.*;
 import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthentication;
@@ -72,6 +71,8 @@ import java.util.zip.GZIPInputStream;
 
 public class WebServiceHelper {
 
+  private static final Logger LOG = Logger.getInstance(WebServiceHelper.class.getName());
+
   @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
   @NonNls private static final String CONTENT_TYPE_GZIP = "application/gzip";
 
@@ -115,9 +116,6 @@ public class WebServiceHelper {
     //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
   }
 
-  @NonNls private static final String TFS_TOOL_ID = "vstfs";
-  @NonNls private static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
-
   @NotNull
   public static Pair<URI, String/*guid*/> authenticate(final @Nullable URI initialServerUri) throws TfsException {
     return executeRequest(initialServerUri, new InnerDelegate<Pair<URI, String>>() {
@@ -125,7 +123,7 @@ public class WebServiceHelper {
         return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new ThrowableComputable<Pair<URI, String>, Exception>() {
           public Pair<URI, String> compute() throws Exception {
             ServerStatusStub serverStatusStub =
-              new ServerStatusStub(serverUri.toString() + TFSConstants.SERVER_STATUS_ASMX);
+              new ServerStatusStub(TfsUtil.appendPath(serverUri, TFSConstants.SERVER_STATUS_ASMX));
             setupStub(serverStatusStub, credentials, serverUri);
 
             CheckAuthenticationResponse response = serverStatusStub.checkAuthentication(new CheckAuthentication());
@@ -136,16 +134,16 @@ public class WebServiceHelper {
               throw new WrongConnectionException(connectionCredentials);
             }
 
-            RegistrationStub registrationStub = new RegistrationStub(serverUri.toString() + TFSConstants.REGISTRATION_ASMX);
+            RegistrationStub registrationStub = new RegistrationStub(TfsUtil.appendPath(serverUri, TFSConstants.REGISTRATION_ASMX));
             setupStub(registrationStub, credentials, serverUri);
             final GetRegistrationEntries param = new GetRegistrationEntries();
-            param.setToolId(TFS_TOOL_ID);
+            param.setToolId(TFSConstants.TOOL_ID_TFS);
             GetRegistrationEntriesResponse registrationEntries = registrationStub.getRegistrationEntries(param);
             for (FrameworkRegistrationEntry entry : registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry()) {
-              if (TFS_TOOL_ID.equals(entry.getType())) {
+              if (TFSConstants.TOOL_ID_TFS.equals(entry.getType())) {
                 for (RegistrationExtendedAttribute2 attribute : entry.getRegistrationExtendedAttributes()
                   .getRegistrationExtendedAttribute()) {
-                  if (INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
+                  if (TFSConstants.INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
                     final String instanceId = attribute.getValue();
                     if (initialServerUri == null) {
                       ServerInfo existingServer = Workstation.getInstance().getServerByInstanceId(instanceId);
@@ -165,8 +163,8 @@ public class WebServiceHelper {
     });
   }
 
-  public static void executeRequest(Stub stub, final VoidDelegate delegate) throws TfsException {
-    executeRequest(stub, new Delegate<Void>() {
+  public static void executeRequest(URI serverUri, Stub stub, final VoidDelegate delegate) throws TfsException {
+    executeRequest(serverUri, stub, new Delegate<Void>() {
 
       @Nullable
       public Void executeRequest() throws RemoteException {
@@ -176,9 +174,7 @@ public class WebServiceHelper {
     });
   }
 
-  public static <T> T executeRequest(final Stub stub, final Delegate<T> delegate) throws TfsException {
-    URI serverUri = TfsUtil.getUrl(stub._getServiceClient().getOptions().getTo().getAddress(), false);
-
+  public static <T> T executeRequest(URI serverUri, final Stub stub, final Delegate<T> delegate) throws TfsException {
     return executeRequest(serverUri, new InnerDelegate<T>() {
       public T executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
         return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
@@ -219,7 +215,7 @@ public class WebServiceHelper {
 
   public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)
     throws TfsException {
-    final URI serverUri = TfsUtil.getUrl(uploadUrl, false);
+    final URI serverUri = TfsUtil.getUrl(uploadUrl, false, true);
 
     executeRequest(serverUri, new InnerDelegate<Object>() {
       public Object executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
@@ -297,9 +293,9 @@ public class WebServiceHelper {
               if (shouldPrompt) {
                 trace(callerThreadId, "showing dialog uri={0}, creds={1}, msg={2}", uri.get(), credentials.get(),
                       uri.isNull() ? "null" : "\"" + ourErrorMessages.get(uri.get()) + "\"");
-                final TfsLoginDialog d = new TfsLoginDialog(uri.get(), credentials.get(), initialUri == null);
+                final TfsLoginDialog d = new TfsLoginDialog((Project)null, uri.get(), credentials.get(), initialUri == null, null);
                 if (!uri.isNull()) {
-                  d.setMessage(ourErrorMessages.get(uri.get()));
+                  d.setMessage(ourErrorMessages.get(uri.get()), true);
                 }
                 d.show();
                 trace(callerThreadId, "login dialog finished");
@@ -344,7 +340,7 @@ public class WebServiceHelper {
         }
 
         TFSVcs.assertTrue(uri.get() != null);
-        if (initialUri == null && TFSConfigurationManager.getInstance().serverKnown(uri.get())) {
+        if (initialUri == null /*&& TFSConfigurationManager.getInstance().serverKnown(uri.get())*/) {
           trace("msg=\"duplicate server uri {0}\"", uri.get());
           ourErrorMessages.put(uri.get(), "Duplicate server address");
           credentials.get().resetPassword(); // continue with prompt
@@ -401,13 +397,18 @@ public class WebServiceHelper {
     }
   }
 
-  // TODO move to stubs
-  public static ConfigurationContext getStubConfigurationContext() throws Exception {
-    return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new ThrowableComputable<ConfigurationContext, Exception>() {
-      public ConfigurationContext compute() throws Exception {
-        ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
-        configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
-        return configContext;
+  public static ConfigurationContext getStubConfigurationContext() {
+    return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new Computable<ConfigurationContext>() {
+      public ConfigurationContext compute() {
+        try {
+          ConfigurationContext configContext = ConfigurationContextFactory.createDefaultConfigurationContext();
+          configContext.getAxisConfiguration().addMessageBuilder(SOAP_BUILDER_KEY, new CustomSOAPBuilder());
+          return configContext;
+        }
+        catch (Exception e) {
+          LOG.error("Axis2 configuration error", e);
+          return null;
+        }
       }
     });
   }
@@ -427,7 +428,7 @@ public class WebServiceHelper {
     }
   }
 
-  private static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
+  public static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
     Options options = stub._getServiceClient().getOptions();
 
     // http params

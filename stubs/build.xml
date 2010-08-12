@@ -93,6 +93,10 @@ Endpoints URIs and overrides assume TFS 2010
       <param name="wsdl.filename" value="LocationService.wsdl"/>
       <param name="wsdl.endpoint" value="TeamFoundation/Administration/v3.0/LocationService.asmx?WSDL"/>
     </antcall>
+    <antcall target="generate-stub">
+      <param name="wsdl.filename" value="CatalogService.wsdl"/>
+      <param name="wsdl.endpoint" value="TeamFoundation/Administration/v3.0/CatalogService.asmx?WSDL"/>
+    </antcall>
     <antcall target="package-all"/>
     <antcall target="clean"/>
   </target>
