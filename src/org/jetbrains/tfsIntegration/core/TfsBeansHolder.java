@@ -94,6 +94,8 @@ public class TfsBeansHolder {
     throws RemoteException, HostNotApplicableException {
     LOG.assertTrue(!ApplicationManager.getApplication().isDispatchThread());
 
+    String piText = pi != null ? pi.getText() : null;
+
     if (pi != null) {
       pi.setText(TFSBundle.message("loading.services"));
     }
@@ -132,6 +134,10 @@ public class TfsBeansHolder {
       throw new HostNotApplicableException(null);
     }
     doCreateStubs(configContext, isccProvider, download, upload, workItemService, groupSecurityService);
+
+    if (pi != null) {
+      pi.setText(piText);
+    }
   }
 
   private void doCreateStubs(@Nullable ConfigurationContext configContext,
