@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.*;
@@ -88,6 +89,9 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
     catch (TfsException e) {
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+    }
+    catch (ProcessCanceledException e) {
+      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(TFSBundle.message("operation.canceled")), TFSVcs.TFS_NAME);
     }
     return null;
   }

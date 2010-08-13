@@ -16,10 +16,12 @@
 
 package org.jetbrains.tfsIntegration.exceptions;
 
+import org.jetbrains.tfsIntegration.core.TFSBundle;
+
 public class UserCancelledException extends TfsException {
 
   public String getMessage() {
-    return "Operation cancelled by user";
+    return TFSBundle.message("operation.canceled");
   }
 
 }
