@@ -136,7 +136,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     try {
       for (Map.Entry<WorkspaceInfo, List<FilePath>> entry : tfsRepositoryLocation.getPathsByWorkspaces().entrySet()) {
         WorkspaceInfo workspace = entry.getKey();
-        final Map<FilePath, ExtendedItem> extendedItems = workspace.getExtendedItems(entry.getValue());
+        final Map<FilePath, ExtendedItem> extendedItems =
+          workspace.getExtendedItems(entry.getValue(), myProject, TFSBundle.message("loading.items"));
         for (Map.Entry<FilePath, ExtendedItem> localPath2ExtendedItem : extendedItems.entrySet()) {
           ExtendedItem extendedItem = localPath2ExtendedItem.getValue();
           if (extendedItem == null) {
@@ -164,7 +165,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
           List<Changeset> changeSets = workspace.getServer().getVCS()
             .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, settings.getUserFilter(), itemVersion, versionFrom,
-                          versionTo, maxCount);
+                          versionTo, maxCount, myProject, TFSBundle.message("loading.history"));
           for (Changeset changeset : changeSets) {
             final TFSChangeList newList = new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(),
                                                             changeset.getDate().getTime(), changeset.getComment(), myVcs);
@@ -176,7 +177,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
     catch (TfsException e) {
       throw new VcsException(e);
-    } finally {
+    }
+    finally {
       consumer.finished();
     }
   }
@@ -190,13 +192,13 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       }
 
       public void consume(CommittedChangeList committedChangeList) {
-        result.add((TFSChangeList) committedChangeList);
+        result.add((TFSChangeList)committedChangeList);
       }
     });
     return result;
   }
 
-  private static int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
+  private int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
     if (extendedItem.getType() == ItemType.File) {
       return extendedItem.getLatest();
     }
@@ -206,7 +208,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     final int maxCount = 1;
     ItemSpec itemSpec = VersionControlServer.createItemSpec(extendedItem.getSitem(), RecursionType.Full);
     List<Changeset> changeSets = workspace.getServer().getVCS()
-      .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo, maxCount);
+      .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo, maxCount, myProject,
+                    TFSBundle.message("loading.history"));
     return changeSets.get(0).getCset();
   }
 

@@ -116,7 +116,7 @@ public class TFSFileListener extends VcsVFSListener {
               // TODO: add local conflict
             }
 
-          });
+          }, myProject);
         }
       });
     }
@@ -142,7 +142,8 @@ public class TFSFileListener extends VcsVFSListener {
           RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
           final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full, myProject,
+                                          TFSBundle.message("loading.changes"));
 
           final List<String> revertImmediately = new ArrayList<String>();
 
@@ -227,7 +228,7 @@ public class TFSFileListener extends VcsVFSListener {
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
               TFSVcs.error("Cannot revert undeleted: " + localPath.getPresentableUrl());
             }
-          });
+          }, myProject);
         }
       });
     }
@@ -378,10 +379,12 @@ public class TFSFileListener extends VcsVFSListener {
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
               scheduleMove.put(localPath, movedPaths.get(localPath));
             }
-          });
+          }, myProject);
 
           final ResultWithFailures<GetOperation> renameResult =
-            workspace.getServer().getVCS().renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove);
+            workspace.getServer().getVCS()
+              .renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove, myProject,
+                                           TFSBundle.message("renaming"));
           errors.addAll(TfsUtil.getVcsExceptions(renameResult.getFailures()));
 
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());

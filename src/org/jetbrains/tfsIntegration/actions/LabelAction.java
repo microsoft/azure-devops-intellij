@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LabelResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ResultWithFailures;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -51,7 +52,8 @@ public class LabelAction extends SingleItemAction implements DumbAware {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       ResultWithFailures<LabelResult> resultWithFailures =
-        workspace.getServer().getVCS().labelItem(d.getLabelName(), d.getLabelComment(), d.getLabelItemSpecs());
+        workspace.getServer().getVCS()
+          .labelItem(d.getLabelName(), d.getLabelComment(), d.getLabelItemSpecs(), project, TFSBundle.message("creating.label"));
 
       errors.addAll(TfsUtil.getVcsExceptions(resultWithFailures.getFailures()));
 

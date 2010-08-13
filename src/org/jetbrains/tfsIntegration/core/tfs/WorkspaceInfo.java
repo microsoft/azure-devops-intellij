@@ -328,12 +328,15 @@ public class WorkspaceInfo {
     return copy;
   }
 
-  public Map<FilePath, ExtendedItem> getExtendedItems2(final List<ItemPath> paths) throws TfsException {
-    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), TfsUtil.getLocalPaths(paths), DeletedState.Any);
+  public Map<FilePath, ExtendedItem> getExtendedItems2(final List<ItemPath> paths, Object projectOrComponent, String progressTitle)
+    throws TfsException {
+    return getServer().getVCS()
+      .getExtendedItems(getName(), getOwnerName(), TfsUtil.getLocalPaths(paths), DeletedState.Any, projectOrComponent, progressTitle);
   }
 
-  public Map<FilePath, ExtendedItem> getExtendedItems(final List<FilePath> paths) throws TfsException {
-    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any);
+  public Map<FilePath, ExtendedItem> getExtendedItems(final List<FilePath> paths, Object projectOrComponent, String progressTitle)
+    throws TfsException {
+    return getServer().getVCS().getExtendedItems(getName(), getOwnerName(), paths, DeletedState.Any, projectOrComponent, progressTitle);
   }
 
   public static boolean isValidName(String name) {

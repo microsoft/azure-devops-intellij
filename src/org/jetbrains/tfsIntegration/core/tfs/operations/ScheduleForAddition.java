@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.GetOperation;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -32,7 +33,8 @@ public class ScheduleForAddition {
   public static Collection<VcsException> execute(Project project, WorkspaceInfo workspace, List<ItemPath> paths) {
     try {
       ResultWithFailures<GetOperation> serverResults =
-        workspace.getServer().getVCS().scheduleForAddition(workspace.getName(), workspace.getOwnerName(), paths);
+        workspace.getServer().getVCS()
+          .scheduleForAddition(workspace.getName(), workspace.getOwnerName(), paths, project, TFSBundle.message("scheduling.for.addition"));
       for (GetOperation getOp : serverResults.getResult()) {
         VirtualFile file = VersionControlPath.getVirtualFile(getOp.getTlocal());
         if (file != null && file.isValid()) {

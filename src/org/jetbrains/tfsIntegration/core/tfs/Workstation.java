@@ -25,11 +25,11 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
-import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
 import org.xml.sax.SAXException;
 
@@ -97,7 +97,7 @@ public class Workstation {
     for (final ServerInfo server : getServers()) {
       if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
         try {
-          WebServiceHelper.authenticate(server.getUri());
+          TfsServerConnectionHelper.ensureAuthenticated(null, server.getUri());
         }
         catch (TfsException e) {
           continue;

@@ -138,7 +138,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public EditFileProvider getEditFileProvider() {
-    return new TFSEditFileProvider();
+    return new TFSEditFileProvider(myProject);
   }
 
   public UpdateEnvironment getUpdateEnvironment() {

@@ -68,7 +68,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   @Nullable
   public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
     try {
-      final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(filePath);
+      final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem =
+        TfsUtil.getWorkspaceAndExtendedItem(filePath, myProject, TFSBundle.message("loading.item"));
       if (workspaceAndItem == null || workspaceAndItem.second == null) {
         return null;
       }
@@ -87,8 +88,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     }
   }
 
-  private VcsAbstractHistorySession createSession(final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem,
-                                                  final List<VcsFileRevision> revisions) {
+  private static VcsAbstractHistorySession createSession(final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem,
+                                                         final List<VcsFileRevision> revisions) {
     return new VcsAbstractHistorySession(revisions) {
       public VcsRevisionNumber calcCurrentRevisionNumber() {
         return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
@@ -108,7 +109,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
     //??
     final VcsHistorySession session = createSessionFor(path);
-    partner.reportCreatedEmptySession((VcsAbstractHistorySession) session);
+    partner.reportCreatedEmptySession((VcsAbstractHistorySession)session);
   }
 
   public static List<VcsFileRevision> getRevisions(final Project project,
@@ -117,13 +118,15 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
                                                    WorkspaceInfo workspace,
                                                    VersionSpecBase versionTo) throws TfsException {
     List<Changeset> changesets =
-      workspace.getServer().getVCS().queryHistory(workspace, serverPath, isDirectory, null, new ChangesetVersionSpec(1), versionTo);
+      workspace.getServer().getVCS().queryHistory(workspace, serverPath, isDirectory, null, new ChangesetVersionSpec(1), versionTo, project,
+                                                  TFSBundle.message("loading.item"));
 
     List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {
       final Item item = changeset.getChanges().getChange()[0].getItem();
       revisions.add(
-        new TFSFileRevision(project, workspace, item.getItemid(), changeset.getDate().getTime(), changeset.getComment(), changeset.getOwner(),
+        new TFSFileRevision(project, workspace, item.getItemid(), changeset.getDate().getTime(), changeset.getComment(),
+                            changeset.getOwner(),
                             changeset.getCset()));
     }
     return revisions;

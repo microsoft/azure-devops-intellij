@@ -31,6 +31,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.GetOperation;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LockLevel;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.locks.LockItemModel;
@@ -60,7 +61,7 @@ public class LockAction extends AnAction implements DumbAware {
           WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
               mappingFound.set(true);
-              final Map<FilePath, ExtendedItem> itemsMap = workspace.getExtendedItems2(paths);
+              final Map<FilePath, ExtendedItem> itemsMap = workspace.getExtendedItems2(paths, project, TFSBundle.message("loading.items"));
               for (ExtendedItem item : itemsMap.values()) {
                 if (item != null) {
                   items.add(new LockItemModel(item, workspace));
@@ -103,7 +104,7 @@ public class LockAction extends AnAction implements DumbAware {
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       public void run() {
         ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-        exceptions.addAll(lockOrUnlockItems(selectedItems, d.getLockLevel()));
+        exceptions.addAll(lockOrUnlockItems(selectedItems, d.getLockLevel(), project));
       }
     }, title, false, project);
 
@@ -140,7 +141,7 @@ public class LockAction extends AnAction implements DumbAware {
     }
   }
 
-  private static List<VcsException> lockOrUnlockItems(final List<LockItemModel> items, LockLevel lockLevel) {
+  private static List<VcsException> lockOrUnlockItems(final List<LockItemModel> items, LockLevel lockLevel, Project project) {
     Map<WorkspaceInfo, List<ExtendedItem>> itemsByWorkspace = new HashMap<WorkspaceInfo, List<ExtendedItem>>();
     for (LockItemModel item : items) {
       List<ExtendedItem> itemsForWorkspace = itemsByWorkspace.get(item.getWorkspace());
@@ -156,7 +157,9 @@ public class LockAction extends AnAction implements DumbAware {
       try {
         WorkspaceInfo workspace = entry.getKey();
         ResultWithFailures<GetOperation> resultWithFailures =
-          workspace.getServer().getVCS().lockOrUnlockItems(workspace.getName(), workspace.getOwnerName(), lockLevel, entry.getValue());
+          workspace.getServer().getVCS()
+            .lockOrUnlockItems(workspace.getName(), workspace.getOwnerName(), lockLevel, entry.getValue(), project,
+                               TFSBundle.message("applying.locks"));
         exceptions.addAll(TfsUtil.getVcsExceptions(resultWithFailures.getFailures()));
       }
       catch (TfsException e) {

@@ -97,7 +97,8 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             public void scheduledForDeletion(final @NotNull FilePath localPath,
                                              final boolean localItemExists,
                                              final @NotNull ServerStatus serverStatus) {
-              TFSVcs.error("Server returned status ScheduledForDeletion when rolling back missing file deletion: " + localPath.getPresentableUrl());
+              TFSVcs.error(
+                "Server returned status ScheduledForDeletion when rolling back missing file deletion: " + localPath.getPresentableUrl());
             }
 
             public void outOfDate(final @NotNull FilePath localPath,
@@ -142,9 +143,10 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             }
 
 
-          });
+          }, myProject);
 
-          List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), download);
+          List<GetOperation> operations = workspace.getServer().getVCS()
+            .get(workspace.getName(), workspace.getOwnerName(), download, myProject, TFSBundle.message("preparing.for.download"));
           final Collection<VcsException> downloadErrors =
             ApplyGetOperations.execute(myProject, workspace, operations, ApplyProgress.EMPTY, null, ApplyGetOperations.DownloadMode.FORCE);
           errors.addAll(downloadErrors);
@@ -176,7 +178,8 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
           for (ItemPath e : paths) {
             requests.add(new VersionControlServer.GetRequestParams(e.getServerPath(), RecursionType.None, versionSpec));
           }
-          List<GetOperation> operations = workspace.getServer().getVCS().get(workspace.getName(), workspace.getOwnerName(), requests);
+          List<GetOperation> operations = workspace.getServer().getVCS()
+            .get(workspace.getName(), workspace.getOwnerName(), requests, myProject, TFSBundle.message("preparing.for.download"));
           final Collection<VcsException> applyingErrors = ApplyGetOperations
             .execute(myProject, workspace, operations, new ApplyProgress.RollbackProgressWrapper(listener), null,
                      ApplyGetOperations.DownloadMode.FORCE);
@@ -196,7 +199,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     try {
       FilePath path = TfsFileUtil.getFilePath(file);
       String localContent = CurrentContentRevision.create(path).getContent();
-      TFSContentRevision currentRevision = TfsUtil.getCurrentRevision(myProject, path);
+      TFSContentRevision currentRevision = TfsUtil.getCurrentRevision(myProject, path, TFSBundle.message("loading.item"));
       unchanged = currentRevision != null && Comparing.equal(localContent, currentRevision.getContent());
     }
     catch (VcsException e) {

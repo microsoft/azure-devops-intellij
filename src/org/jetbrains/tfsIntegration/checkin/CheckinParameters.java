@@ -158,7 +158,8 @@ public class CheckinParameters {
           StringBuilder policiesLoadError = new StringBuilder();
           for (ServerInfo server : sortedServers) {
             final Collection<String> teamProjects = serverToProjects.get(server);
-            final List<CheckinNoteFieldDefinition> checkinNoteDefinitions = server.getVCS().queryCheckinNoteDefinition(teamProjects);
+            final List<CheckinNoteFieldDefinition> checkinNoteDefinitions =
+              server.getVCS().queryCheckinNoteDefinition(teamProjects, myPanel.getProject(), null);
             pi.checkCanceled();
             Map<String, CheckinNoteFieldDefinition> nameToDefinition = new HashMap<String, CheckinNoteFieldDefinition>();
             // factorize different team projects definitions by name and sort them by display order field
@@ -186,7 +187,7 @@ public class CheckinParameters {
 
             try {
               Collection<Annotation> overridesAnnotations =
-                server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects);
+                server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects, myPanel.getProject(), null);
 
               boolean teamExplorerFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamExplorer;
               boolean teampriseFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamprise;
@@ -204,7 +205,7 @@ public class CheckinParameters {
 
               if (teamExplorerFound) {
                 Collection<Annotation> annotations =
-                  server.getVCS().queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects);
+                  server.getVCS().queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null);
                 for (Annotation annotation : annotations) {
                   if (annotation.getValue() == null) continue;
                   String teamProject = VersionControlPath.getPathToProject(annotation.getItem());
@@ -223,7 +224,8 @@ public class CheckinParameters {
 
               if (teampriseFound) {
                 Collection<Annotation> annotations =
-                  server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects);
+                  server.getVCS()
+                    .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null);
                 for (Annotation annotation : annotations) {
                   if (annotation.getValue() == null) continue;
                   String teamProject = VersionControlPath.getPathToProject(annotation.getItem());

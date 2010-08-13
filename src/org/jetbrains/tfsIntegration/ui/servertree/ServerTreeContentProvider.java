@@ -20,12 +20,14 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.ui.deferredtree.ContentProvider;
 import org.jetbrains.tfsIntegration.ui.deferredtree.ContentProviderException;
 
+import javax.swing.*;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -36,6 +38,7 @@ public class ServerTreeContentProvider implements ContentProvider<Item> {
   private final ServerInfo myServer;
 
   private final boolean myFoldersOnly;
+  private final JComponent myParentComponent;
 
   static {
     ROOT = new Item();
@@ -43,9 +46,10 @@ public class ServerTreeContentProvider implements ContentProvider<Item> {
     ROOT.setType(ItemType.Folder);
   }
 
-  public ServerTreeContentProvider(final ServerInfo server, final boolean foldersOnly) {
+  public ServerTreeContentProvider(final ServerInfo server, final boolean foldersOnly, JComponent parentComponent) {
     myServer = server;
     myFoldersOnly = foldersOnly;
+    myParentComponent = parentComponent;
   }
 
   public boolean canHaveChildren(final @Nullable Item parent) {
@@ -58,7 +62,7 @@ public class ServerTreeContentProvider implements ContentProvider<Item> {
     }
     else {
       try {
-        return myServer.getVCS().getChildItems(parent.getItem(), myFoldersOnly);
+        return myServer.getVCS().getChildItems(parent.getItem(), myFoldersOnly, myParentComponent, TFSBundle.message("loading.items"));
       }
       catch (TfsException e) {
         throw new ContentProviderException(e);

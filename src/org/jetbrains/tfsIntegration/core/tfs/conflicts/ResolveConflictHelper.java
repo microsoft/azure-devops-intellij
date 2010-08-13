@@ -28,6 +28,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -172,9 +173,9 @@ public class ResolveConflictHelper {
       return false;
     }
 
-    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
-    final ChangeTypeMask yourLocalChange = new ChangeTypeMask( conflict.getYlchg());
-    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
+    final ChangeTypeMask yourChange = new ChangeTypeMask(conflict.getYchg());
+    final ChangeTypeMask yourLocalChange = new ChangeTypeMask(conflict.getYlchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask(conflict.getBchg());
 
     boolean isNamespaceConflict =
       ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
@@ -210,7 +211,8 @@ public class ResolveConflictHelper {
                                                      VersionControlPath.toTfsRepresentation(newLocalPath));
 
     ResolveResponse response =
-      workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams);
+      workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams, myProject,
+                                                     TFSBundle.message("reporting.conflict.resolved"));
 
     final UpdatedFiles updatedFiles = resolution != Resolution.AcceptMerge ? myUpdatedFiles : null;
 
@@ -244,14 +246,14 @@ public class ResolveConflictHelper {
   }
 
   private static boolean isNameConflict(final @NotNull Conflict conflict) {
-    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
-    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
+    final ChangeTypeMask yourChange = new ChangeTypeMask(conflict.getYchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask(conflict.getBchg());
     return yourChange.contains(ChangeType_type0.Rename) || baseChange.contains(ChangeType_type0.Rename);
   }
 
   private static boolean isContentConflict(final @NotNull Conflict conflict) {
-    final ChangeTypeMask yourChange = new ChangeTypeMask( conflict.getYchg());
-    final ChangeTypeMask baseChange = new ChangeTypeMask( conflict.getBchg());
+    final ChangeTypeMask yourChange = new ChangeTypeMask(conflict.getYchg());
+    final ChangeTypeMask baseChange = new ChangeTypeMask(conflict.getBchg());
     return yourChange.contains(ChangeType_type0.Edit) || baseChange.contains(ChangeType_type0.Edit);
   }
 

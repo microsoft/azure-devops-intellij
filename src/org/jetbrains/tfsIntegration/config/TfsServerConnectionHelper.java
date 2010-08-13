@@ -10,14 +10,15 @@ import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.
 import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthenticationResponse;
 import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.ServerStatusStub;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.QueryWorkspaces;
-import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.RepositoryStub;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Workspace;
 import com.microsoft.webservices.*;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.context.ConfigurationContext;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
+import org.jetbrains.tfsIntegration.core.TfsBeansHolder;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -42,9 +43,12 @@ public class TfsServerConnectionHelper {
 
   public static class ServerDescriptor {
     public final Credentials authorizedCredentials;
+    @Nullable public final TfsBeansHolder beans;
+    //public final String icc
 
-    protected ServerDescriptor(Credentials authorizedCredentials) {
+    protected ServerDescriptor(Credentials authorizedCredentials, TfsBeansHolder beans) {
       this.authorizedCredentials = authorizedCredentials;
+      this.beans = beans;
     }
 
     public String getUserName() {
@@ -56,8 +60,11 @@ public class TfsServerConnectionHelper {
     public final String instanceId;
     public final Workspace[] workspaces;
 
-    public Tfs200xServerDescriptor(String instanceId, Credentials authorizedCredentials, Workspace[] workspaces) {
-      super(authorizedCredentials);
+    public Tfs200xServerDescriptor(String instanceId,
+                                   Credentials authorizedCredentials,
+                                   Workspace[] workspaces,
+                                   TfsBeansHolder servicesPaths) {
+      super(authorizedCredentials, servicesPaths);
       this.instanceId = instanceId;
       this.workspaces = workspaces;
     }
@@ -67,8 +74,8 @@ public class TfsServerConnectionHelper {
     public final Collection<TeamProjectCollectionDescriptor> teamProjectCollections;
 
     public Tfs2010ServerDescriptor(Collection<TeamProjectCollectionDescriptor> teamProjectCollections,
-                                   Credentials authorizedCredentials) {
-      super(authorizedCredentials);
+                                   Credentials authorizedCredentials, TfsBeansHolder servicesPaths) {
+      super(authorizedCredentials, servicesPaths);
       this.teamProjectCollections = teamProjectCollections;
     }
   }
@@ -86,13 +93,14 @@ public class TfsServerConnectionHelper {
 
   public static void ensureAuthenticated(Object projectOrComponent, URI serverUri) throws TfsException {
     TfsRequestManager.getInstance(serverUri)
-      .executeRequestInForeground(projectOrComponent, true, null, new TfsRequestManager.Request<Object>() {
+      .executeRequestInForeground(projectOrComponent, true, null, new TfsRequestManager.Request<Void>(null) {
         @Override
-        public Object execute(Credentials credentials, URI serverUri, ProgressIndicator pi) throws Exception {
+        public Void execute(Credentials credentials, URI serverUri, ProgressIndicator pi) throws Exception {
           connect(serverUri, credentials, true, pi);
           return null;
         }
 
+        @NotNull
         @Override
         public String getProgressTitle(Credentials credentials, URI serverUri) {
           return TFSBundle.message("connect.to", TfsUtil.getPresentableUri(serverUri));
@@ -106,24 +114,26 @@ public class TfsServerConnectionHelper {
     public final Credentials authorizedCredentials;
     public final Workspace[] workspaces;
     public final String workspacesLoadError;
+    @Nullable public final TfsBeansHolder beans;
 
     public AddServerResult(URI uri,
                            String instanceId,
                            Credentials authorizedCredentials,
                            Workspace[] workspaces,
-                           String workspacesLoadError) {
+                           String workspacesLoadError, TfsBeansHolder beans) {
       this.uri = uri;
       this.instanceId = instanceId;
       this.authorizedCredentials = authorizedCredentials;
       this.workspaces = workspaces;
       this.workspacesLoadError = workspacesLoadError;
+      this.beans = beans;
     }
   }
 
   @Nullable
   public static AddServerResult addServer(final JComponent parentComponent) {
     TfsRequestManager.Request<Trinity<URI, ServerDescriptor, Credentials>> connectRequest =
-      new TfsRequestManager.Request<Trinity<URI, ServerDescriptor, Credentials>>() {
+      new TfsRequestManager.Request<Trinity<URI, ServerDescriptor, Credentials>>(null) {
         @Override
         public Trinity<URI, ServerDescriptor, Credentials> execute(Credentials credentials,
                                                                    URI serverUri,
@@ -164,6 +174,7 @@ public class TfsServerConnectionHelper {
           return Trinity.create(serverUri, serverDescriptor, credentials);
         }
 
+        @NotNull
         @Override
         public String getProgressTitle(Credentials credentials, URI serverUri) {
           return TFSBundle.message("connect.to", TfsUtil.getPresentableUri(serverUri));
@@ -193,7 +204,7 @@ public class TfsServerConnectionHelper {
     if (serverDescriptor instanceof Tfs200xServerDescriptor) {
       Tfs200xServerDescriptor tfs200xServerDescriptor = (Tfs200xServerDescriptor)serverDescriptor;
       return new AddServerResult(result.first, tfs200xServerDescriptor.instanceId, serverDescriptor.authorizedCredentials,
-                                 tfs200xServerDescriptor.workspaces, null);
+                                 tfs200xServerDescriptor.workspaces, null, serverDescriptor.beans);
     }
     else {
       Collection<TeamProjectCollectionDescriptor> teamProjectCollections =
@@ -214,12 +225,14 @@ public class TfsServerConnectionHelper {
       }
 
       URI collectionUri = getCollectionUri(result.first, collection);
-      TfsRequestManager.Request<Workspace[]> loadWorkspacesRequest = new TfsRequestManager.Request<Workspace[]>() {
+      final TfsBeansHolder beans = new TfsBeansHolder(collectionUri);
+      TfsRequestManager.Request<Workspace[]> loadWorkspacesRequest = new TfsRequestManager.Request<Workspace[]>(null) {
         @Override
         public Workspace[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
-          return queryWorkspaces(WebServiceHelper.getStubConfigurationContext(), serverUri, serverDescriptor.authorizedCredentials, pi);
+          return queryWorkspaces(serverDescriptor.authorizedCredentials, pi, beans);
         }
 
+        @NotNull
         @Override
         public String getProgressTitle(Credentials credentials, URI serverUri) {
           return TFSBundle.message("connect.to", TfsUtil.getPresentableUri(serverUri));
@@ -244,7 +257,7 @@ public class TfsServerConnectionHelper {
         workspacesLoadError = e.getMessage();
       }
       return new AddServerResult(collectionUri, collection.instanceId, serverDescriptor.authorizedCredentials, workspaces,
-                                 workspacesLoadError);
+                                 workspacesLoadError, serverDescriptor.beans);
     }
   }
 
@@ -269,16 +282,8 @@ public class TfsServerConnectionHelper {
       pi.setText(TFSBundle.message("connecting.to.server"));
     }
 
-    String path = uri.getPath();
-    if (justAuthenticate && StringUtil.isNotEmpty(path) && !path.equals("/")) {
-      // path with teamprojectcollection
-      path = path.substring(0, path.lastIndexOf("/"));
-      try {
-        uri = new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), path, null, null);
-      }
-      catch (URISyntaxException e) {
-        LOG.error(e);
-      }
+    if (justAuthenticate) {
+      uri = getBareUri(uri);
     }
     ConfigurationContext context = WebServiceHelper.getStubConfigurationContext();
 
@@ -309,14 +314,34 @@ public class TfsServerConnectionHelper {
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
       if (justAuthenticate) {
-        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()));
+        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()),
+                                    null);
       }
 
       if (pi != null) {
         pi.setText(TFSBundle.message("loading.team.project.collections"));
       }
+
+      ServiceDefinition[] serviceDefinitions =
+        connectResponse.getConnectResult().getLocationServiceData().getServiceDefinitions().getServiceDefinition();
+      if (serviceDefinitions == null) {
+        LOG.warn("service definitions node is null");
+        throw new HostNotApplicableException(null);
+      }
+
+      String catalogServicePath = null;
+      for (ServiceDefinition serviceDefinition : serviceDefinitions) {
+        if (TFSConstants.CATALOG_SERVICE_CONFIG_GUID.equalsIgnoreCase(serviceDefinition.getIdentifier().getGuid())) {
+          catalogServicePath = serviceDefinition.getRelativePath();
+        }
+      }
+      if (catalogServicePath == null) {
+        LOG.warn("catalog service not found by giud");
+        throw new HostNotApplicableException(null);
+      }
+
       Guid catalogResourceId = connectResponse.getConnectResult().getCatalogResourceId();
-      CatalogWebServiceStub catalogService = new CatalogWebServiceStub(context, TfsUtil.appendPath(uri, TFSConstants.CATALOG_SERVICE_ASMX));
+      CatalogWebServiceStub catalogService = new CatalogWebServiceStub(context, TfsUtil.appendPath(uri, catalogServicePath));
       WebServiceHelper.setupStub(catalogService, credentials, uri);
       QueryResources queryResourcesParam = new QueryResources();
       ArrayOfGuid resourceIdentitiers = new ArrayOfGuid();
@@ -352,13 +377,17 @@ public class TfsServerConnectionHelper {
         }
         descriptors.add(new TeamProjectCollectionDescriptor(collectionNode.getDisplayName(), instanceId));
       }
+
+      TfsBeansHolder beans = new TfsBeansHolder(uri);
       return new Tfs2010ServerDescriptor(descriptors,
-                                         new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()));
+                                         new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()),
+                                         beans);
     }
     else {
       if (justAuthenticate) {
-        String authorizedCredentials = getAuthorizedCredentials(context, uri, credentials);
-        return new ServerDescriptor(new Credentials(authorizedCredentials, credentials.getPassword(), credentials.isStorePassword()));
+        String authorizedCredentials = getAuthorizedCredentialsFor200x(context, uri, credentials);
+        return new ServerDescriptor(new Credentials(authorizedCredentials, credentials.getPassword(), credentials.isStorePassword()),
+                                    null);
       }
 
       getRegistrationEntriesParam.setToolId(TFSConstants.TOOL_ID_TFS);
@@ -383,33 +412,44 @@ public class TfsServerConnectionHelper {
         throw new HostNotApplicableException(null);
       }
 
-      String qName = getAuthorizedCredentials(context, uri, credentials);
+      String qName = getAuthorizedCredentialsFor200x(context, uri, credentials);
       Credentials authorizedCredentials = new Credentials(qName, credentials.getPassword(), credentials.isStorePassword());
 
-      Workspace[] workspaces = queryWorkspaces(context, uri, authorizedCredentials, pi);
-      return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, workspaces);
+      TfsBeansHolder beans = new TfsBeansHolder(uri);
+      Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);
+      return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, workspaces, beans);
     }
   }
 
-  public static Workspace[] queryWorkspaces(ConfigurationContext context,
-                                            URI uri,
-                                            Credentials authorizedCredentials,
-                                            @Nullable ProgressIndicator pi)
-    throws RemoteException {
+  public static URI getBareUri(URI uri) {
+    String path = uri.getPath();
+    if (StringUtil.isNotEmpty(path) && !path.equals("/")) {
+      // path with teamprojectcollection, leave just /tfs
+      path = path.substring(0, path.lastIndexOf("/"));
+      try {
+        uri = new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), path, null, null);
+      }
+      catch (URISyntaxException e) {
+        LOG.error(e);
+      }
+    }
+    return uri;
+  }
+
+  public static Workspace[] queryWorkspaces(Credentials authorizedCredentials,
+                                            @Nullable ProgressIndicator pi, TfsBeansHolder beans)
+    throws RemoteException, HostNotApplicableException {
     if (pi != null) {
       pi.setText(TFSBundle.message("loading.workspaces"));
     }
 
-    RepositoryStub repositoryStub = new RepositoryStub(context, TfsUtil.appendPath(uri, TFSConstants.VERSION_CONTROL_ASMX));
-    WebServiceHelper.setupStub(repositoryStub, authorizedCredentials, uri);
-
     QueryWorkspaces param = new QueryWorkspaces();
     param.setOwnerName(authorizedCredentials.getQualifiedUsername());
     param.setComputer(Workstation.getComputerName());
-    return repositoryStub.queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
+    return beans.getRepositoryStub(authorizedCredentials, pi).queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
   }
 
-  private static String getAuthorizedCredentials(ConfigurationContext context, URI uri, Credentials credentials)
+  private static String getAuthorizedCredentialsFor200x(ConfigurationContext context, URI uri, Credentials credentials)
     throws RemoteException {
     ServerStatusStub serverStatusStub = new ServerStatusStub(context, TfsUtil.appendPath(uri, TFSConstants.SERVER_STATUS_ASMX));
     WebServiceHelper.setupStub(serverStatusStub, credentials, uri);

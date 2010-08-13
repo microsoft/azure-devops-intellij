@@ -24,6 +24,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.BranchRelative;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -56,7 +57,7 @@ public class ItemInfoAction extends SingleItemAction implements DumbAware {
 
     final String serverPath = extendedItem.getTitem() != null ? extendedItem.getTitem() : extendedItem.getSitem();
     final Collection<BranchRelative> branches = workspace.getServer().getVCS()
-      .queryBranches(serverPath, new ChangesetVersionSpec(extendedItem.getLver()));
+      .queryBranches(serverPath, new ChangesetVersionSpec(extendedItem.getLver()), project, TFSBundle.message("loading.branches"));
 
     ItemInfoDialog d = new ItemInfoDialog(project, workspace, extendedItem, branches, getActionTitle(localPath.isDirectory()));
     d.show();

@@ -165,7 +165,7 @@ public class TFSChangeList implements CommittedChangeList {
 
   private void loadChanges() {
     try {
-      Changeset changeset = myWorkspace.getServer().getVCS().queryChangeset(myRevisionNumber);
+      Changeset changeset = myWorkspace.getServer().getVCS().queryChangeset(myRevisionNumber, myVcs.getProject(), TFSBundle.message("loading.changes"));
 
       for (com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Change change : changeset.getChanges()
         .getChange()) {
@@ -328,7 +328,7 @@ public class TFSChangeList implements CommittedChangeList {
     List<Changeset> shortHistory = myWorkspace.getServer().getVCS().queryHistory(myWorkspace.getName(), myWorkspace.getOwnerName(),
                                                                                  itemSpec, null, new ChangesetVersionSpec(changeset),
                                                                                  new ChangesetVersionSpec(1),
-                                                                                 new ChangesetVersionSpec(item.getCs()), 2);
+                                                                                 new ChangesetVersionSpec(item.getCs()), 2, myVcs.getProject(), TFSBundle.message("loading.history"));
     TFSVcs.assertTrue(shortHistory.size() == 2);
     return shortHistory.get(1).getChanges().getChange()[0].getItem(); // use penultimate item
   }

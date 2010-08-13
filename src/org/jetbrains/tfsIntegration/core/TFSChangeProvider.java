@@ -83,7 +83,8 @@ public class TFSChangeProvider implements ChangeProvider {
       // ingore orphan roots here
       WorkstationHelper.processByWorkspaces(roots, true, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          StatusProvider.visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(myProject, builder, workspace));
+          StatusProvider
+            .visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(myProject, builder, workspace), myProject);
           mappingFound.set(true);
         }
       });

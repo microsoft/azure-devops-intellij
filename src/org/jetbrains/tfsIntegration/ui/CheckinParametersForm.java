@@ -312,7 +312,7 @@ public class CheckinParametersForm {
       TfsExecutionUtil.executeInBackground("Performing Query", myProject, new TfsExecutionUtil.Process<List<WorkItem>>() {
         public List<WorkItem> run() throws TfsException, VcsException {
           final WorkItemsQuery selectedQuery = (WorkItemsQuery)myQueriesCombo.getSelectedItem();
-          return selectedQuery.queryWorkItems(getSelectedServer());
+          return selectedQuery.queryWorkItems(getSelectedServer(), CheckinParametersForm.this, null);
         }
       });
 

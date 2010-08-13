@@ -14,7 +14,7 @@ import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ThrowableRunnable;
 import com.intellij.util.concurrency.Semaphore;
-import org.apache.axis2.client.Stub;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
@@ -36,16 +36,13 @@ public class TfsRequestManager {
   public static abstract class Request<T> {
     private final String myProgressTitle;
 
-    public Request() {
-      this(null);
-    }
-
     public Request(String progressTitle) {
       myProgressTitle = progressTitle;
     }
 
     public abstract T execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception;
 
+    @NotNull
     public String getProgressTitle(Credentials credentials, URI serverUri) {
       return myProgressTitle;
     }
@@ -144,12 +141,14 @@ public class TfsRequestManager {
       try {
         myRequestLock.lock();
         ProgressManager.checkCanceled();
-        return ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
+        T result = ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
           @Override
           public T compute() throws Exception {
             return request.execute(credentials.get(), myServerUri, ProgressManager.getInstance().getProgressIndicator());
           }
         });
+        TFSConfigurationManager.getInstance().storeCredentials(myServerUri, credentials.get());
+        return result;
       }
       catch (Exception e) {
         final TfsException tfsException = TfsExceptionManager.processException(e);
@@ -240,7 +239,6 @@ public class TfsRequestManager {
     }
 
     /**
-     * @param title
      * @return true if succeeded, false if cancelled
      */
     public boolean execute() {
@@ -252,12 +250,11 @@ public class TfsRequestManager {
 
   }
 
-  public static <T> T executeRequest(URI serverUri, Object projectOrCompoent, final Stub stub, final Request<T> request)
+  public static <T> T executeRequest(URI serverUri, Object projectOrCompoent, final Request<T> request)
     throws TfsException {
-    Request<T> wrapper = new Request<T>() {
+    Request<T> wrapper = new Request<T>(null) {
       @Override
       public T execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
-        WebServiceHelper.setupStub(stub, credentials, serverUri);
         return request.execute(credentials, serverUri, pi);
       }
 

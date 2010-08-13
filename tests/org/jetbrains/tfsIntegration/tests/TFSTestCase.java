@@ -41,10 +41,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.TFSChangeList;
-import org.jetbrains.tfsIntegration.core.TFSCheckinEnvironment;
-import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
-import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.*;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -154,7 +151,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
     if (!serverFound) {
       Pair<URI, String> uriAndGuid = WebServiceHelper.authenticate(serverUri);
-      ServerInfo newServer = new ServerInfo(serverUri, uriAndGuid.second);
+      ServerInfo newServer = new ServerInfo(serverUri, uriAndGuid.second, new TfsBeansHolder(serverUri));
       Workstation.getInstance().addServer(newServer);
     }
 
@@ -238,14 +235,16 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     try {
       ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathsByLocalPath(path, false).iterator().next());
       final ResultWithFailures<GetOperation> addResult = myTestWorkspace.getServer().getVCS()
-        .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath));
+        .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath), myProject,
+                             null);
       if (!addResult.getFailures().isEmpty()) {
         throw TfsUtil.collectExceptions(TfsUtil.getVcsExceptions(addResult.getFailures()));
       }
 
       final ResultWithFailures<CheckinResult> checkinResult = myTestWorkspace.getServer().getVCS()
         .checkIn(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath.getServerPath()), comment,
-                 Collections.<WorkItem, CheckinWorkItemAction>emptyMap(), Collections.<Pair<String, String>>emptyList(), null);
+                 Collections.<WorkItem, CheckinWorkItemAction>emptyMap(), Collections.<Pair<String, String>>emptyList(), null, myProject,
+                 null);
       if (!checkinResult.getFailures().isEmpty()) {
         throw TfsUtil.collectExceptions(TfsUtil.getVcsExceptions(checkinResult.getFailures()));
       }
@@ -283,7 +282,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
         for (Change change : changes) {
           if (change.getAfterRevision() != null) {
             result.add(change.getAfterRevision().getFile().getIOFile());
-          } else {
+          }
+          else {
             result.add(change.getBeforeRevision().getFile().getIOFile());
           }
         }
@@ -708,7 +708,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   protected int getItemId(final FilePath path) throws TfsException {
     final ExtendedItem extendedItem = myTestWorkspace.getServer().getVCS()
-      .getExtendedItem(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), path, RecursionType.None, DeletedState.NonDeleted);
+      .getExtendedItem(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), path, RecursionType.None, DeletedState.NonDeleted,
+                       myProject, null);
     return extendedItem.getItemid();
   }
 

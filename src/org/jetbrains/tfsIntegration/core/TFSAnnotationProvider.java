@@ -86,7 +86,8 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           }
 
           final WorkspaceInfo workspace = workspaces.iterator().next();
-          final Map<FilePath, ExtendedItem> path2item = workspace.getExtendedItems(Collections.singletonList(localPath));
+          final Map<FilePath, ExtendedItem> path2item =
+            workspace.getExtendedItems(Collections.singletonList(localPath), myVcs.getProject(), TFSBundle.message("loading.item"));
           if (path2item.isEmpty()) {
             exception.set(new VcsException(MessageFormat.format("''{0}'' is unversioned", localPath.getPresentableUrl())));
             return;

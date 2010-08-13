@@ -29,6 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -61,7 +62,8 @@ public abstract class SingleItemAction extends AnAction {
     final FilePath localPath = TfsFileUtil.getFilePath(file);
 
     try {
-      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(localPath);
+      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem =
+        TfsUtil.getWorkspaceAndExtendedItem(localPath, project, TFSBundle.message("loading.item"));
       if (workspaceAndItem == null) {
         final String itemType = localPath.isDirectory() ? "folder" : "file";
         final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, localPath.getPresentableUrl());

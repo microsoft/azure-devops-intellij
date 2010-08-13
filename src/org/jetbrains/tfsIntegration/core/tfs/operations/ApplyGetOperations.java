@@ -33,6 +33,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LocalVersionUpdate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
@@ -170,7 +171,9 @@ public class ApplyGetOperations {
         }
       }
 
-      myWorkspace.getServer().getVCS().updateLocalVersions(myWorkspace.getName(), myWorkspace.getOwnerName(), myUpdateLocalVersions);
+      myWorkspace.getServer().getVCS()
+        .updateLocalVersions(myWorkspace.getName(), myWorkspace.getOwnerName(), myUpdateLocalVersions, myProject,
+                             TFSBundle.message("updating.local.version"));
     }
     catch (TfsException e) {
       myErrors.add(new VcsException(e));
@@ -522,7 +525,8 @@ public class ApplyGetOperations {
     try {
       TfsFileUtil.setFileContent(target, new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) throws TfsException {
-          VersionControlServer.downloadItem(myProject, myWorkspace.getServer(), operation.getDurl(), outputStream);
+          myWorkspace.getServer().getVCS()
+            .downloadItem(myProject, operation.getDurl(), outputStream, TFSBundle.message("downloading.0", target.getName()));
         }
       });
       if (!target.setReadOnly()) {
@@ -587,7 +591,7 @@ public class ApplyGetOperations {
     myWorkspace.getServer().getVCS()
       .addLocalConflict(myWorkspace.getName(), myWorkspace.getOwnerName(), operation.getItemid(), operation.getSver(),
                         operation.getPcid() != Integer.MIN_VALUE ? operation.getPcid() : 0, operation.getSlocal(), operation.getTlocal(),
-                        reason);
+                        reason, myProject, TFSBundle.message("reporting.conflict"));
   }
 
   private void updateLocalVersion(GetOperation operation) {

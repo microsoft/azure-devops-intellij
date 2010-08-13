@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -42,11 +43,12 @@ public class ScheduleForDeletion {
       RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
       final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-        .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+        .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full, project,
+                                      TFSBundle.message("loading.changes"));
 
       Collection<String> revert = new ArrayList<String>();
       for (PendingChange pendingChange : pendingChanges) {
-        ChangeTypeMask change = new ChangeTypeMask( pendingChange.getChg());
+        ChangeTypeMask change = new ChangeTypeMask(pendingChange.getChg());
         if (!change.contains(ChangeType_type0.Delete)) {
           // TODO assert for possible change types here
           revert.add(pendingChange.getItem());
@@ -118,10 +120,11 @@ public class ScheduleForDeletion {
           throws TfsException {
           TFSVcs.error("Unexpected status " + serverStatus.getClass().getName() + " for " + localPath.getPresentableUrl());
         }
-      });
+      }, project);
 
       ResultWithFailures<GetOperation> schedulingForDeletionResults = workspace.getServer().getVCS()
-        .scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion);
+        .scheduleForDeletionAndUpateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleForDeletion, project,
+                                                 TFSBundle.message("scheduling.for.deletion"));
       errors.addAll(TfsUtil.getVcsExceptions(schedulingForDeletionResults.getFailures()));
 
       for (GetOperation getOperation : schedulingForDeletionResults.getResult()) {

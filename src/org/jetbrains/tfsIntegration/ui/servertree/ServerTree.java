@@ -100,7 +100,7 @@ public class ServerTree {
       itemsToSelect = new Item[0];
     }
 
-    myTree.setContentProvider(new ServerTreeContentProvider(server, myFoldersOnly), itemsToSelect);
+    myTree.setContentProvider(new ServerTreeContentProvider(server, myFoldersOnly, myContentPanel), itemsToSelect);
     myTree.setLabelProvider(new ServerTreeLabelProvider(server.getPresentableUri(), pathFilter));
   }
 

@@ -341,7 +341,8 @@ public class ManageWorkspacesForm {
 
     TFSConfigurationManager.getInstance().storeCredentials(result.uri, result.authorizedCredentials);
     final ServerInfo newServer =
-      new ServerInfo(result.uri, result.instanceId, result.workspaces, result.authorizedCredentials.getQualifiedUsername());
+      new ServerInfo(result.uri, result.instanceId, result.workspaces, result.authorizedCredentials.getQualifiedUsername(),
+                     result.beans);
     Workstation.getInstance().addServer(newServer);
     List<WorkspaceInfo> workspaces = newServer.getWorkspacesForCurrentOwnerAndComputer();
     updateControls(workspaces.isEmpty() ? newServer : workspaces.iterator().next());
@@ -554,7 +555,8 @@ public class ManageWorkspacesForm {
 
         // load policies
         final Collection<Annotation> policiesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList());
+          server.getVCS()
+            .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null);
         for (Annotation annotation : policiesAnnotations) {
           if (annotation.getValue() == null) {
             continue;
@@ -571,7 +573,7 @@ public class ManageWorkspacesForm {
 
         // load overrides
         final Collection<Annotation> overridesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList());
+          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null);
         for (Annotation annotation : overridesAnnotations) {
           if (annotation.getValue() == null) {
             continue;
@@ -596,7 +598,7 @@ public class ManageWorkspacesForm {
         }
 
         // load projects
-        final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true);
+        final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true, myContentPane, null);
         if (projectItems.isEmpty()) {
           throw new OperationFailedException("No team project found");
         }
@@ -627,20 +629,21 @@ public class ManageWorkspacesForm {
             public void run() throws TfsException, VcsException {
               for (Map.Entry<String, ProjectEntry> i : modifications.entrySet()) {
                 // remove annotations
-                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
-                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION);
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, myContentPane, null);
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION, myContentPane, null);
 
                 // write checkin policies annotation
                 ProjectEntry entry = i.getValue();
                 if (!entry.descriptors.isEmpty()) {
                   String annotationValue = StatefulPolicyParser.saveDescriptors(entry.descriptors);
-                  server.getVCS().createAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+                  server.getVCS()
+                    .createAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue, myContentPane, null);
                 }
 
                 // write overrides annotation
                 if (entry.policiesCompatibilityOverride != null) {
                   server.getVCS().createAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION,
-                                                   entry.policiesCompatibilityOverride.toOverridesAnnotationValue());
+                                                   entry.policiesCompatibilityOverride.toOverridesAnnotationValue(), myContentPane, null);
                 }
               }
             }

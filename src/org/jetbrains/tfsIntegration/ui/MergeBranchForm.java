@@ -27,6 +27,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.MergeCandidate;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
@@ -180,7 +181,8 @@ public class MergeBranchForm {
       try {
         getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
-          .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath());
+          .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath(), myContentPanel,
+                                TFSBundle.message("loading.branches"));
         for (MergeCandidate candidate : mergeCandidates) {
           changesets.add(candidate.getChangeset());
         }
@@ -263,7 +265,8 @@ public class MergeBranchForm {
       getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
       final Collection<BranchRelative> allBranches =
-        myWorkspace.getServer().getVCS().queryBranches(mySourceField.getText(), LatestVersionSpec.INSTANCE);
+        myWorkspace.getServer().getVCS()
+          .queryBranches(mySourceField.getText(), LatestVersionSpec.INSTANCE, myContentPanel, TFSBundle.message("loading.branches"));
 
       BranchRelative subject = null;
       for (BranchRelative branch : allBranches) {

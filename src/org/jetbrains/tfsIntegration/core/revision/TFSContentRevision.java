@@ -28,6 +28,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -63,7 +64,7 @@ public abstract class TFSContentRevision implements ContentRevision {
                                           final @NotNull WorkspaceInfo workspace,
                                           final int changeset,
                                           final int itemId) throws TfsException {
-    final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
+    final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true, project, TFSBundle.message("loading.item"));
 
     return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
@@ -106,7 +107,7 @@ public abstract class TFSContentRevision implements ContentRevision {
     return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
       protected Item getItem() throws TfsException {
-        return workspace.getServer().getVCS().queryItemById(itemId, changeset, true);
+        return workspace.getServer().getVCS().queryItemById(itemId, changeset, true, project, TFSBundle.message("loading.item"));
       }
 
       protected int getItemId() {
@@ -145,7 +146,7 @@ public abstract class TFSContentRevision implements ContentRevision {
         if (myItem == null) {
           myItem = workspace.getServer().getVCS()
             .queryItem(workspace.getName(), workspace.getOwnerName(), VersionControlPath.toTfsRepresentation(localPath),
-                       new ChangesetVersionSpec(changeset), DeletedState.Any, true);
+                       new ChangesetVersionSpec(changeset), DeletedState.Any, true, project, TFSBundle.message("loading.item"));
         }
         return myItem;
       }
@@ -212,7 +213,7 @@ public abstract class TFSContentRevision implements ContentRevision {
       store.saveContent(new TfsFileUtil.ContentWriter() {
         public void write(final OutputStream outputStream) {
           try {
-            VersionControlServer.downloadItem(myProject, myServer, downloadUrl, outputStream);
+            myServer.getVCS().downloadItem(myProject, downloadUrl, outputStream, TFSBundle.message("downloading.0", getFile().getName()));
           }
           catch (TfsException e) {
             exception.set(e);

@@ -24,11 +24,11 @@ import java.util.List;
 
 public enum WorkItemsQuery {
   AllMyActive("All My Active Work Items") {
-    public List<WorkItem> queryWorkItems(final ServerInfo server) throws TfsException {
+    public List<WorkItem> queryWorkItems(final ServerInfo server, Object projectOrComponent, String progressMessage) throws TfsException {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.ASSIGNED_TO.getSerialized());
       expression1.setOperator(OperatorType.equals);
-      expression1.setString(server.getVCS().readIdentity(server.getQualifiedUsername()).getDisplayName());
+      expression1.setString(server.getQualifiedUsername());
 
       Expression_type0 expression2 = new Expression_type0();
       expression2.setColumn(WorkItemField.STATE.getSerialized());
@@ -42,24 +42,24 @@ public enum WorkItemsQuery {
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setGroup(groupType);
 
-      return queryWorkItems(server, query_type01);
+      return queryWorkItems(server, query_type01, projectOrComponent, progressMessage);
     }},
 
   AllMy("All My Work Items") {
-    public List<WorkItem> queryWorkItems(final ServerInfo server) throws TfsException {
+    public List<WorkItem> queryWorkItems(final ServerInfo server, Object projectOrComponent, String progressMessage) throws TfsException {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.ASSIGNED_TO.getSerialized());
       expression1.setOperator(OperatorType.equals);
-      expression1.setString(server.getVCS().readIdentity(server.getQualifiedUsername()).getDisplayName());
+      expression1.setString(server.getQualifiedUsername());
 
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
-      return queryWorkItems(server, query_type01);
+      return queryWorkItems(server, query_type01, projectOrComponent, progressMessage);
     }},
 
   AllActive("All Active Work Items") {
-    public List<WorkItem> queryWorkItems(final ServerInfo server) throws TfsException {
+    public List<WorkItem> queryWorkItems(final ServerInfo server, Object projectOrComponent, String progressMessage) throws TfsException {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.STATE.getSerialized());
       expression1.setOperator(OperatorType.equals);
@@ -68,11 +68,11 @@ public enum WorkItemsQuery {
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
-      return queryWorkItems(server, query_type01);
+      return queryWorkItems(server, query_type01, projectOrComponent, progressMessage);
     }},
 
   All("All Work Items") {
-    public List<WorkItem> queryWorkItems(ServerInfo server) throws TfsException {
+    public List<WorkItem> queryWorkItems(ServerInfo server, Object projectOrComponent, String progressMessage) throws TfsException {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.ID.getSerialized());
       expression1.setOperator(OperatorType.equalsGreater);
@@ -81,7 +81,7 @@ public enum WorkItemsQuery {
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
 
-      return queryWorkItems(server, query_type01);
+      return queryWorkItems(server, query_type01, projectOrComponent, progressMessage);
     }};
 
   private final String myName;
@@ -94,9 +94,12 @@ public enum WorkItemsQuery {
     return myName;
   }
 
-  public abstract List<WorkItem> queryWorkItems(ServerInfo server) throws TfsException;
+  public abstract List<WorkItem> queryWorkItems(ServerInfo server, Object projectOrComponent, String progressMessage) throws TfsException;
 
-  protected static List<WorkItem> queryWorkItems(ServerInfo server, Query_type0E query_type01) throws TfsException {
-    return server.getVCS().queryWorkItems(query_type01);
+  protected static List<WorkItem> queryWorkItems(ServerInfo server,
+                                                 Query_type0E query_type01,
+                                                 Object projectOrComponent,
+                                                 String progressMessage) throws TfsException {
+    return server.getVCS().queryWorkItems(query_type01, projectOrComponent, progressMessage);
   }
 }

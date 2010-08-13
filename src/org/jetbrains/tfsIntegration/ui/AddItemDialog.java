@@ -23,6 +23,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemSpec;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.RecursionType;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelItemSpecWithItems;
@@ -30,7 +31,6 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
-import java.awt.*;
 import java.text.MessageFormat;
 import java.util.List;
 
@@ -85,11 +85,11 @@ public class AddItemDialog extends DialogWrapper {
 
   protected void doOKAction() {
     try {
-      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
       final ServerTree.SelectedItem serverItem = myAddItemForm.getServerItem();
       //noinspection ConstantConditions
       ItemSpec itemSpec = VersionControlServer.createItemSpec(serverItem.path, serverItem.isDirectory ? RecursionType.Full : null);
-      List<Item> items = myWorkspace.getServer().getVCS().queryItems(itemSpec, myAddItemForm.getVersion());
+      List<Item> items = myWorkspace.getServer().getVCS()
+        .queryItems(itemSpec, myAddItemForm.getVersion(), getContentPane(), TFSBundle.message("loading.item"));
       if (!items.isEmpty()) {
         myLabelSpec = LabelItemSpecWithItems.createForAdd(itemSpec, myAddItemForm.getVersion(), items);
       }
@@ -104,9 +104,6 @@ public class AddItemDialog extends DialogWrapper {
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), "Apply label");
       return;
-    }
-    finally {
-      getContentPane().setCursor(Cursor.getDefaultCursor());
     }
     super.doOKAction();
   }

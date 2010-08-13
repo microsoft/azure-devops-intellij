@@ -21,6 +21,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionControlLabel;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -87,7 +88,9 @@ public class SelectLabelForm {
           }
 
           List<VersionControlLabel> labels =
-            workspace.getServer().getVCS().queryLabels(name, VersionControlPath.ROOT_FOLDER, owner, false, null, null, false);
+            workspace.getServer().getVCS()
+              .queryLabels(name, VersionControlPath.ROOT_FOLDER, owner, false, null, null, false, getContentPane(),
+                           TFSBundle.message("searching.for.label"));
           myLabelsTableModel.setLabels(labels);
         }
         catch (TfsException ex) {
