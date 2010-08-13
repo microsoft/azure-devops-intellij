@@ -108,6 +108,7 @@ public class TfsRequestManager {
               @Override
               public void run() {
                 if (!shouldShowDialog()) {
+                  ok.set(true);
                   return; // check one more time since UI thread call could already enter right credentials
                 }
                 TfsLoginDialog d;
