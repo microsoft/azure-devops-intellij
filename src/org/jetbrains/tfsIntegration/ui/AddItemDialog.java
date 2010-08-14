@@ -28,9 +28,11 @@ import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.labels.LabelItemSpecWithItems;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
+import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.text.MessageFormat;
 import java.util.List;
 
@@ -38,44 +40,36 @@ public class AddItemDialog extends DialogWrapper {
 
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
-  private final String mySourcePath;
 
-  private AddItemForm myAddItemForm;
+  private final AddItemForm myForm;
   private LabelItemSpecWithItems myLabelSpec;
 
   public AddItemDialog(final Project project, final WorkspaceInfo workspace, final String sourcePath) {
     super(project, true);
+    myForm = new AddItemForm(project, workspace, sourcePath);
     myProject = project;
     myWorkspace = workspace;
-    mySourcePath = sourcePath;
 
     setTitle("Add Item");
 
     init();
 
-    myAddItemForm.addServerTreeSelectionListener(new ServerTree.SelectionListener() {
-      public void selectionChanged(final ServerTree.SelectedItem selection) {
+    myForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
         updateButtons();
       }
     });
-
-    myAddItemForm.addSelectRevisionListener(new SelectRevisionForm.Listener() {
-      public void revisionChanged() {
-        updateButtons();
-      }
-    });
-
     updateButtons();
   }
 
   private void updateButtons() {
-    setOKActionEnabled(myAddItemForm.getServerItem() != null && myAddItemForm.getVersion() != null);
+    setOKActionEnabled(myForm.getServerItem() != null && myForm.getVersion() != null);
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myAddItemForm = new AddItemForm(myProject, myWorkspace, mySourcePath);
-    return myAddItemForm.getContentPane();
+    return myForm.getContentPane();
   }
 
   @Nullable
@@ -83,19 +77,24 @@ public class AddItemDialog extends DialogWrapper {
     return myLabelSpec;
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myForm.getPreferredFocusedComponent();
+  }
+
   protected void doOKAction() {
     try {
-      final ServerTree.SelectedItem serverItem = myAddItemForm.getServerItem();
+      final TfsTreeForm.SelectedItem serverItem = myForm.getServerItem();
       //noinspection ConstantConditions
       ItemSpec itemSpec = VersionControlServer.createItemSpec(serverItem.path, serverItem.isDirectory ? RecursionType.Full : null);
       List<Item> items = myWorkspace.getServer().getVCS()
-        .queryItems(itemSpec, myAddItemForm.getVersion(), getContentPane(), TFSBundle.message("loading.item"));
+        .queryItems(itemSpec, myForm.getVersion(), getContentPane(), TFSBundle.message("loading.item"));
       if (!items.isEmpty()) {
-        myLabelSpec = LabelItemSpecWithItems.createForAdd(itemSpec, myAddItemForm.getVersion(), items);
+        myLabelSpec = LabelItemSpecWithItems.createForAdd(itemSpec, myForm.getVersion(), items);
       }
       else {
         String message = MessageFormat.format("Item ''{0}'' was not found in source control at version ''{1}''.", serverItem.path,
-                                              myAddItemForm.getVersion().getPresentableString());
+                                              myForm.getVersion().getPresentableString());
 
         Messages.showErrorDialog(myProject, message, "Apply label");
         return;

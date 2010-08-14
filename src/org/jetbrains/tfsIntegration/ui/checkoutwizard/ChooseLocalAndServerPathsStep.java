@@ -17,30 +17,32 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
 
   public static final Object ID = new Object();
 
-  private final LocalAndServerPathsForm myPathsForm;
+  private final LocalAndServerPathsForm myPathsForm = new LocalAndServerPathsForm();
 
   public ChooseLocalAndServerPathsStep(final CheckoutWizardModel model) {
     super("Choose Source and Destination Paths", model);
-    myPathsForm = new LocalAndServerPathsForm();
-    myPathsForm.addListener(new LocalAndServerPathsForm.Listener() {
-      public void serverPathChanged() {
-        validate();
-        fireStateChanged();
-      }
+    Disposer.register(this, myPathsForm);
 
-      public void localPathChanged() {
-        validate();
+    myPathsForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        updateMessage();
         fireStateChanged();
       }
     });
@@ -76,8 +78,8 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
   }
 
   public void _init() {
-    myPathsForm.configure(myModel.getServer(), myModel.getServerPath());
-    validate();
+    myPathsForm.initialize(myModel.getServer(), myModel.getServerPath());
+    updateMessage();
   }
 
   public void commit(CommitType commitType) throws CommitStepException {
@@ -92,30 +94,35 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
 
   @Nullable
   private static String validateLocalPath(String path) {
-    if (path == null || path.length() == 0) {
-      return "Local path not specified";
+    if (StringUtil.isEmpty(path)) {
+      return TFSBundle.message("destination.path.not.specified");
     }
     VirtualFile file = VcsUtil.getVirtualFile(path);
     if (file != null && file.exists() && !file.isDirectory()) {
-      return "Destination path represents a file, not a folder";
+      return TFSBundle.message("destination.path.is.not.a.file");
     }
     return null;
   }
 
   @Nullable
   private static String validateServerPath(String path) {
-    if (path == null || path.length() == 0) {
-      return "Server path is empty";
+    if (StringUtil.isEmpty(path)) {
+      return TFSBundle.message("source.path.is.empty");
     }
     return null;
   }
 
-  private void validate() {
+  private void updateMessage() {
     String errorMessage = validateServerPath(myPathsForm.getServerPath());
     if (errorMessage == null) {
       errorMessage = validateLocalPath(myPathsForm.getLocalPath());
     }
-    myPathsForm.setErrorMessage(errorMessage);
+    if (errorMessage != null) {
+      myPathsForm.setMessage(errorMessage, true);
+    }
+    else {
+      myPathsForm.setMessage(TFSBundle.message("mapping.will.be.created", myModel.getNewWorkspaceName()), false);
+    }
   }
 
   @Override

@@ -16,6 +16,9 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -33,16 +36,17 @@ import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
+import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EventListener;
 import java.util.List;
 
 public class MergeBranchForm {
@@ -105,13 +109,14 @@ public class MergeBranchForm {
 
     mySourceField.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ServerBrowserDialog d = new ServerBrowserDialog("Choose source item", project, workspace.getServer(), mySourceField.getText(),
-                                                        false, Collections.<ServerBrowserAction>emptyList());
+        ServerBrowserDialog d =
+          new ServerBrowserDialog(TFSBundle.message("choose.source.item.dialog.title"), project, workspace.getServer(),
+                                  mySourceField.getText(), false, false);
         d.show();
         if (d.isOK()) {
-          final ServerTree.SelectedItem selectedPath = d.getSelectedPath();
-          mySourceField.setText(selectedPath != null ? selectedPath.path : null);
-          mySourceIsDirectory = selectedPath == null || selectedPath.isDirectory;
+          final TfsTreeForm.SelectedItem selectedItem = d.getSelectedItem();
+          mySourceField.setText(selectedItem != null ? selectedItem.path : null);
+          mySourceIsDirectory = selectedItem == null || selectedItem.isDirectory;
         }
         updateOnSourceChange();
       }
@@ -120,7 +125,14 @@ public class MergeBranchForm {
     mySourceFieldFocusListener = new FocusAdapter() {
       public void focusLost(final FocusEvent e) {
         mySourceIsDirectory = true;
-        updateOnSourceChange();
+
+        // TODO don't do it on focus out, rather provide a 'Refresh' button
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            updateOnSourceChange();
+          }
+        }, ModalityState.current());
       }
     };
     mySourceField.getTextField().addFocusListener(mySourceFieldFocusListener);
@@ -181,7 +193,7 @@ public class MergeBranchForm {
       try {
         getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
-          .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath(), myContentPanel,
+          .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath(), myProject,
                                 TFSBundle.message("loading.branches"));
         for (MergeCandidate candidate : mergeCandidates) {
           changesets.add(candidate.getChangeset());
@@ -262,11 +274,9 @@ public class MergeBranchForm {
   private void updateOnSourceChange() {
     final Collection<Item> targetBranches = new ArrayList<Item>();
     try {
-      getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
       final Collection<BranchRelative> allBranches =
         myWorkspace.getServer().getVCS()
-          .queryBranches(mySourceField.getText(), LatestVersionSpec.INSTANCE, myContentPanel, TFSBundle.message("loading.branches"));
+          .queryBranches(mySourceField.getText(), LatestVersionSpec.INSTANCE, myProject, TFSBundle.message("loading.branches"));
 
       BranchRelative subject = null;
       for (BranchRelative branch : allBranches) {
@@ -286,8 +296,8 @@ public class MergeBranchForm {
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), myDialogTitle);
     }
-    finally {
-      getContentPanel().setCursor(Cursor.getDefaultCursor());
+    catch (ProcessCanceledException e) {
+      return;
     }
 
     ((DefaultComboBoxModel)myTargetCombo.getModel()).removeAllElements();

@@ -18,31 +18,34 @@ package org.jetbrains.tfsIntegration.ui.servertree;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 
 import javax.swing.*;
-import java.awt.*;
-import java.util.Collection;
 
 public class ServerBrowserDialog extends DialogWrapper {
-  private final ServerInfo myServer;
-  private final String myInitialPath;
-  private final boolean myFoldersOnly;
-  private ServerBrowserForm myForm;
-  private final Collection<? extends ServerBrowserAction> myActions;
-
+  private final TfsTreeForm myForm;
 
   public ServerBrowserDialog(String title,
                              final Project project,
                              ServerInfo server,
                              @Nullable String initialPath,
-                             final boolean foldersOnly, final Collection<? extends ServerBrowserAction> actions) {
+                             final boolean foldersOnly,
+                             boolean canCreateVirtualFolders) {
     super(project, false);
-    myServer = server;
-    myInitialPath = initialPath;
-    myFoldersOnly = foldersOnly;
-    myActions = actions;
+
+    myForm = new TfsTreeForm();
+    myForm.initialize(server, initialPath, foldersOnly, canCreateVirtualFolders, null);
+    myForm.addListener(new TfsTreeForm.SelectionListener() {
+      @Override
+      public void selectionChanged() {
+        setOKActionEnabled(myForm.getSelectedItem() != null);
+      }
+    });
+    Disposer.register(getDisposable(), myForm);
+
+    setSize(500, 600);
 
     setTitle(title);
     init();
@@ -50,19 +53,26 @@ public class ServerBrowserDialog extends DialogWrapper {
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new ServerBrowserForm(myFoldersOnly, myServer, myInitialPath, null, myActions);
-    myForm.getContentPanel().setPreferredSize(new Dimension(400, 500));
-    return myForm.getContentPanel();
+    return myForm.getContentPane();
   }
 
   @Nullable
-  public ServerTree.SelectedItem getSelectedPath() {
+  public String getSelectedPath() {
     return myForm.getSelectedPath();
+  }
+
+  @Nullable
+  public TfsTreeForm.SelectedItem getSelectedItem() {
+    return myForm.getSelectedItem();
   }
 
   @Override
   protected String getDimensionServiceKey() {
     return "TFS.ServerBrowser";
   }
-  
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myForm.getPreferredFocusedComponent();
+  }
 }

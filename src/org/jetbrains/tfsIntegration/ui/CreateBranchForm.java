@@ -16,23 +16,18 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
-import java.util.Collection;
 
 public class CreateBranchForm {
   private JTextField mySourceField;
@@ -50,20 +45,20 @@ public class CreateBranchForm {
 
     myTargetField.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        Collection<? extends ServerBrowserAction> actions = Arrays.asList(new CreateVirtualFolderAction());
         ServerBrowserDialog d;
         try {
           dialogPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-          String serverPath = myTargetField.getText() != null && myTargetField.getText().length() > 0 ? myTargetField.getText() : mySourceField.getText();
-          d = new ServerBrowserDialog("Choose Target Folder to Create Branch", project, workspace.getServer(), serverPath, true, actions);
+          String serverPath =
+            myTargetField.getText() != null && myTargetField.getText().length() > 0 ? myTargetField.getText() : mySourceField.getText();
+          d = new ServerBrowserDialog(TFSBundle.message("choose.branch.target.folder.dialog.title"), project, workspace.getServer(),
+                                      serverPath, true, true);
         }
         finally {
           dialogPane.setCursor(Cursor.getDefaultCursor());
         }
         d.show();
         if (d.isOK()) {
-          final ServerTree.SelectedItem selectedPath = d.getSelectedPath();
-          myTargetField.setText(selectedPath != null ? selectedPath.path : null);
+          myTargetField.setText(d.getSelectedPath());
         }
       }
     });
@@ -88,17 +83,4 @@ public class CreateBranchForm {
     return myCreateLocalWorkingCopiesCheckBox.isSelected();
   }
 
-  private static class CreateVirtualFolderAction extends ServerBrowserAction {
-    private CreateVirtualFolderAction() {
-      super("Create folder", IconLoader.getIcon("/actions/newFolder.png"));
-    }
-
-    public void actionPerformed(final AnActionEvent e) {
-      getServerTree().createVirtualFolder();
-    }
-
-    public void update(final AnActionEvent e) {
-      e.getPresentation().setEnabled(getServerTree().getSelectedItem() != null);
-    }
-  }
 }

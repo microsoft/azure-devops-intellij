@@ -16,81 +16,75 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserAction;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserForm;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
+import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
 import javax.swing.*;
-import java.awt.*;
-import java.util.Collections;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
-public class AddItemForm {
-
-  private final WorkspaceInfo myWorkspace;
-  private final String mySourcePath;
+public class AddItemForm implements Disposable {
 
   private JPanel myContentPane;
-
-  private ServerBrowserForm myServerBrowserForm;
   private SelectRevisionForm mySelectRevisionForm;
+  private TfsTreeForm myTreeForm;
+  private JLabel myServerItemLabel;
 
-  public AddItemForm(final Project project, final WorkspaceInfo workspace, final String sourcePath) {
-    myWorkspace = workspace;
-    mySourcePath = sourcePath;
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
-    myServerBrowserForm.addSelectionListener(new ServerTree.SelectionListener() {
-      public void selectionChanged(final ServerTree.SelectedItem selection) {
-        if (selection != null) {
-          mySelectRevisionForm.init(project, workspace, selection.path, selection.isDirectory);
+  public AddItemForm(final Project project, final WorkspaceInfo workspace, final String serverPath) {
+    myServerItemLabel.setLabelFor(myTreeForm.getPreferredFocusedComponent());
+    Disposer.register(this, myTreeForm);
+    myTreeForm.addListener(new TfsTreeForm.SelectionListener() {
+      @Override
+      public void selectionChanged() {
+        TfsTreeForm.SelectedItem selectedItem = myTreeForm.getSelectedItem();
+        if (selectedItem != null) {
+          mySelectRevisionForm.init(project, workspace, selectedItem.path, selectedItem.isDirectory);
         }
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     });
 
-    if (myServerBrowserForm.isItemSelected()) {
-      //noinspection ConstantConditions
-      mySelectRevisionForm
-        .init(project, workspace, myServerBrowserForm.getSelectedPath().path, myServerBrowserForm.getSelectedPath().isDirectory);
-    }
-  }
+    mySelectRevisionForm.addListener(new SelectRevisionForm.Listener() {
+      @Override
+      public void revisionChanged() {
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
+      }
+    });
 
-  private void createUIComponents() {
-    myServerBrowserForm =
-      new ServerBrowserForm(false, myWorkspace.getServer(), mySourcePath, null, Collections.<ServerBrowserAction>emptyList());
-    myServerBrowserForm.getContentPanel().setPreferredSize(new Dimension(400, 350));
+    myTreeForm.initialize(workspace.getServer(), serverPath, false, false, null);
   }
 
   public JPanel getContentPane() {
     return myContentPane;
   }
 
-  public void addServerTreeSelectionListener(final ServerTree.SelectionListener listener) {
-    myServerBrowserForm.addSelectionListener(listener);
-  }
-
-  public void removeServerTreeSelectionListener(final ServerTree.SelectionListener listener) {
-    myServerBrowserForm.removeSelectionListener(listener);
-  }
-
-  public void addSelectRevisionListener(final SelectRevisionForm.Listener listener) {
-    mySelectRevisionForm.addListener(listener);
-  }
-
-  public void removeSelectRevisionListener(final SelectRevisionForm.Listener listener) {
-    mySelectRevisionForm.removeListener(listener);
+  public void addListener(ChangeListener listener) {
+    myEventDispatcher.addListener(listener);
   }
 
   @Nullable
-  public ServerTree.SelectedItem getServerItem() {
-    return myServerBrowserForm.getSelectedPath();
+  public TfsTreeForm.SelectedItem getServerItem() {
+    return myTreeForm.getSelectedItem();
   }
 
   @Nullable
   public VersionSpecBase getVersion() {
     return mySelectRevisionForm.getVersionSpec();
   }
-  
+
+  public JComponent getPreferredFocusedComponent() {
+    return myTreeForm.getPreferredFocusedComponent();
+  }
+
+  @Override
+  public void dispose() {
+  }
 }

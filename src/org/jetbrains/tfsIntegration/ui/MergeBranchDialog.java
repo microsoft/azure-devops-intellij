@@ -36,7 +36,7 @@ public class MergeBranchDialog extends DialogWrapper {
                            final String sourcePath,
                            final boolean sourceIsDirectory,
                            String title) {
-    super(project, false);
+    super(project, true);
     myProject = project;
     myWorkspace = workspace;
     mySourcePath = sourcePath;
