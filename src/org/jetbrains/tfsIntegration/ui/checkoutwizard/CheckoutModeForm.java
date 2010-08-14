@@ -16,48 +16,46 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
+import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.ui.UIUtil;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.EventListener;
 
 public class CheckoutModeForm {
 
-  public interface Listener extends EventListener {
-    void modeChanged(boolean autoModeSelected);
-    void newWorkspaceNameChanged(String workspaceName);
-  }
-
   private JPanel myContentPanel;
-
   private JRadioButton myAutoModeButton;
-
   private JRadioButton myManualModeButton;
-
   private JTextField myWorkspaceNameField;
   private JLabel myErrorLabel;
 
-  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
   public CheckoutModeForm() {
+    myErrorLabel.setIcon(UIUtil.getBalloonWarningIcon());
+
     myAutoModeButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        myEventDispatcher.getMulticaster().modeChanged(isAutoModeSelected());
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
+        IdeFocusManager.findInstanceByComponent(myContentPanel).requestFocus(myWorkspaceNameField, true);
       }
     });
     myManualModeButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        myEventDispatcher.getMulticaster().modeChanged(isAutoModeSelected());
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     });
     myWorkspaceNameField.getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
         myAutoModeButton.setSelected(true);
-        myEventDispatcher.getMulticaster().newWorkspaceNameChanged(getNewWorkspaceName());
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     });
   }
@@ -87,20 +85,21 @@ public class CheckoutModeForm {
     myWorkspaceNameField.setText(name);
   }
 
-  public void addListener(Listener listener) {
+  public void addListener(ChangeListener listener) {
     myEventDispatcher.addListener(listener);
-  }
-
-  public void removeListener(Listener listener) {
-    myEventDispatcher.removeListener(listener);
   }
 
   public void setErrorMessage(String message) {
     myErrorLabel.setText(message);
+    myErrorLabel.setVisible(message != null);
   }
 
   public JComponent getPreferredFocusedComponent() {
-    return myAutoModeButton;
+    if (myAutoModeButton.isSelected()) {
+      return myWorkspaceNameField;
+    } else {
+      return myManualModeButton;
+    }
   }
 
 }
