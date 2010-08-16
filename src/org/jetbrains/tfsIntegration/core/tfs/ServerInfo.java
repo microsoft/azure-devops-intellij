@@ -98,9 +98,9 @@ public class ServerInfo {
     return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
-  public void deleteWorkspace(WorkspaceInfo workspaceInfo, Object projectOrComponent) throws TfsException {
+  public void deleteWorkspace(WorkspaceInfo workspaceInfo, Object projectOrComponent, boolean force) throws TfsException {
     try {
-      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName(), projectOrComponent);
+      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName(), projectOrComponent, force);
     }
     catch (WorkspaceNotFoundException e) {
       // already deleted
@@ -117,8 +117,8 @@ public class ServerInfo {
     return myServer;
   }
 
-  public void refreshWorkspacesForCurrentOwner(Object projectOrComponent) throws TfsException {
-    Workspace[] newWorkspaces = getVCS().queryWorkspaces(Workstation.getComputerName(), projectOrComponent);
+  public void refreshWorkspacesForCurrentOwner(Object projectOrComponent, boolean force) throws TfsException {
+    Workspace[] newWorkspaces = getVCS().queryWorkspaces(Workstation.getComputerName(), projectOrComponent, force);
     String owner = getQualifiedUsername();
     LOG.assertTrue(owner != null);
 

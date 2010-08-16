@@ -187,7 +187,7 @@ public class CheckinParameters {
 
             try {
               Collection<Annotation> overridesAnnotations =
-                server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects, myPanel.getProject(), null);
+                server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, teamProjects, myPanel.getProject(), null, false);
 
               boolean teamExplorerFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamExplorer;
               boolean teampriseFound = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility().teamprise;
@@ -205,7 +205,8 @@ public class CheckinParameters {
 
               if (teamExplorerFound) {
                 Collection<Annotation> annotations =
-                  server.getVCS().queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null);
+                  server.getVCS()
+                    .queryAnnotations(TFSConstants.TFS_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null, false);
                 for (Annotation annotation : annotations) {
                   if (annotation.getValue() == null) continue;
                   String teamProject = VersionControlPath.getPathToProject(annotation.getItem());
@@ -225,7 +226,7 @@ public class CheckinParameters {
               if (teampriseFound) {
                 Collection<Annotation> annotations =
                   server.getVCS()
-                    .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null);
+                    .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, teamProjects, myPanel.getProject(), null, false);
                 for (Annotation annotation : annotations) {
                   if (annotation.getValue() == null) continue;
                   String teamProject = VersionControlPath.getPathToProject(annotation.getItem());

@@ -93,7 +93,7 @@ public class TfsServerConnectionHelper {
 
   public static void ensureAuthenticated(Object projectOrComponent, URI serverUri) throws TfsException {
     TfsRequestManager.getInstance(serverUri)
-      .executeRequestInForeground(projectOrComponent, true, null, new TfsRequestManager.Request<Void>(null) {
+      .executeRequestInForeground(projectOrComponent, true, null, true, new TfsRequestManager.Request<Void>(null) {
         @Override
         public Void execute(Credentials credentials, URI serverUri, ProgressIndicator pi) throws Exception {
           connect(serverUri, credentials, true, pi);
@@ -188,7 +188,7 @@ public class TfsServerConnectionHelper {
 
     Trinity<URI, ServerDescriptor, Credentials> result;
     try {
-      result = TfsRequestManager.getInstance(null).executeRequestInForeground(parentComponent, true, null, connectRequest);
+      result = TfsRequestManager.getInstance(null).executeRequestInForeground(parentComponent, true, null, true, connectRequest);
     }
     catch (UserCancelledException e) {
       return null;
@@ -248,7 +248,7 @@ public class TfsServerConnectionHelper {
       String workspacesLoadError = null;
       try {
         workspaces = TfsRequestManager.getInstance(collectionUri)
-          .executeRequestInForeground(parentComponent, false, result.third, loadWorkspacesRequest);
+          .executeRequestInForeground(parentComponent, false, result.third, true, loadWorkspacesRequest);
       }
       catch (UserCancelledException e) {
         return null;

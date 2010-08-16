@@ -250,7 +250,7 @@ public class ManageWorkspacesForm {
   private void reloadWorkspaces(ServerInfo server) {
     try {
       Object selection = getSelectedObject();
-      server.refreshWorkspacesForCurrentOwner(myContentPane);
+      server.refreshWorkspacesForCurrentOwner(myContentPane, true);
       updateControls(selection);
     }
     catch (UserCancelledException e) {
@@ -407,12 +407,12 @@ public class ManageWorkspacesForm {
 
   private void editWorkspace(@NotNull WorkspaceInfo workspace) {
     try {
-      workspace.loadFromServer(myContentPane);
+      workspace.loadFromServer(myContentPane, true);
     }
     catch (WorkspaceNotFoundException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
       try {
-        workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane);
+        workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane, true);
         updateControls(null);
       }
       catch (UserCancelledException e2) {
@@ -460,7 +460,7 @@ public class ManageWorkspacesForm {
     }
 
     try {
-      workspace.getServer().deleteWorkspace(workspace, myContentPane);
+      workspace.getServer().deleteWorkspace(workspace, myContentPane, true);
       updateControls(workspace);
     }
     catch (UserCancelledException e) {
@@ -555,9 +555,9 @@ public class ManageWorkspacesForm {
         Map<String, ProjectEntry> entries = new HashMap<String, ProjectEntry>();
 
         // load policies
-        final Collection<Annotation> policiesAnnotations =
-          server.getVCS()
-            .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null);
+        final Collection<Annotation> policiesAnnotations = server.getVCS()
+          .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null,
+                            true);
         for (Annotation annotation : policiesAnnotations) {
           if (annotation.getValue() == null) {
             continue;
@@ -574,7 +574,7 @@ public class ManageWorkspacesForm {
 
         // load overrides
         final Collection<Annotation> overridesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null);
+          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null, true);
         for (Annotation annotation : overridesAnnotations) {
           if (annotation.getValue() == null) {
             continue;

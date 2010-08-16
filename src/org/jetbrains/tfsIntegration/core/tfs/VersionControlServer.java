@@ -403,9 +403,9 @@ public class VersionControlServer {
   }
 
 
-  public Workspace loadWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent)
+  public Workspace loadWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent, boolean force)
     throws TfsException {
-    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Workspace>(
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Workspace>(
       TFSBundle.message("load.workspace.0", workspaceName)) {
       @Override
       public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
@@ -448,8 +448,9 @@ public class VersionControlServer {
     });
   }
 
-  public void deleteWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent) throws TfsException {
-    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(
+  public void deleteWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent, boolean force)
+    throws TfsException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Void>(
       TFSBundle.message("delete.workspace.0", workspaceName)) {
       @Override
       public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
@@ -806,9 +807,9 @@ public class VersionControlServer {
     return allChangeSets;
   }
 
-  public Workspace[] queryWorkspaces(final String computer, Object projectOrComponent) throws TfsException {
+  public Workspace[] queryWorkspaces(final String computer, Object projectOrComponent, boolean force) throws TfsException {
     Workspace[] workspaces =
-      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Workspace[]>(
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Workspace[]>(
         TFSBundle.message("reload.workspaces")) {
         @Override
         public Workspace[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
@@ -1327,9 +1328,10 @@ public class VersionControlServer {
   public Collection<Annotation> queryAnnotations(final String annotationName,
                                                  final Collection<String> teamProjects,
                                                  Object projectOrComponent,
-                                                 String progressTitle) throws TfsException {
+                                                 String progressTitle,
+                                                 boolean force) throws TfsException {
     final ArrayOfAnnotation arrayOfAnnotation =
-      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfAnnotation>(progressTitle) {
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<ArrayOfAnnotation>(progressTitle) {
         @Override
         public ArrayOfAnnotation execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryAnnotation param = new QueryAnnotation();

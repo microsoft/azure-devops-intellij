@@ -109,7 +109,7 @@ public class WorkspaceInfo {
   }
 
   public List<WorkingFolderInfo> getWorkingFolders(Object projectOrComponent) throws TfsException {
-    loadFromServer(projectOrComponent);
+    loadFromServer(projectOrComponent, false);
     return getWorkingFoldersCached();
   }
 
@@ -117,12 +117,12 @@ public class WorkspaceInfo {
     return Collections.unmodifiableList(myWorkingFoldersInfos);
   }
 
-  public void loadFromServer(Object projectOrComponent) throws TfsException {
+  public void loadFromServer(Object projectOrComponent, boolean force) throws TfsException {
     if (myOriginalName == null || myLoaded || !hasCurrentOwnerAndComputer()) {
       return;
     }
 
-    Workspace workspaceBean = getServer().getVCS().loadWorkspace(getName(), getOwnerName(), projectOrComponent);
+    Workspace workspaceBean = getServer().getVCS().loadWorkspace(getName(), getOwnerName(), projectOrComponent, force);
     if (!hasCurrentOwnerAndComputer()) {
       // owner can now be different if server credentials have been changed while executing this server call
       throw new WorkspaceNotFoundException(TFSBundle.message("workspace.wrong.owner", getName(), getOwnerName()));
