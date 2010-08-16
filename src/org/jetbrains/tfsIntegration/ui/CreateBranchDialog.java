@@ -18,37 +18,43 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class CreateBranchDialog extends DialogWrapper {
-  private CreateBranchForm myForm;
-  private final Project myProject;
-  private final WorkspaceInfo myWorkspace;
-  private final String myServerPath;
-  private final boolean myIsDirectory;
+  private final CreateBranchForm myForm;
 
   public CreateBranchDialog(final Project project, final WorkspaceInfo workspace, final String serverPath, final boolean isDirectory) {
     super(project, true);
-    myProject = project;
-    myWorkspace = workspace;
-    myServerPath = serverPath;
-    myIsDirectory = isDirectory;
+    myForm = new CreateBranchForm(project, workspace, serverPath, isDirectory);
+    myForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        revalidate();
+      }
+    });
 
-    setTitle("Create Branch");
-    setResizable(true);
+    setTitle(TFSBundle.message("create.branch.dialog.title"));
+    setSize(380, 450);
+
     init();
-
-    setOKActionEnabled(true);
+    revalidate();
   }
 
   @Nullable
   protected JComponent createCenterPanel() {
-    myForm = new CreateBranchForm(myProject, myWorkspace, myServerPath, myIsDirectory, getContentPane());
-    return myForm.getPanel();
+    return myForm.getContentPane();
+  }
+
+  private void revalidate() {
+    setOKActionEnabled(StringUtil.isNotEmpty(myForm.getTargetPath()));
   }
 
   @Nullable
@@ -62,6 +68,11 @@ public class CreateBranchDialog extends DialogWrapper {
 
   public boolean isCreateWorkingCopies() {
     return myForm.isCreateWorkingCopies();
+  }
+
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myForm.getPreferredFocusedComponent();
   }
 
   @Override

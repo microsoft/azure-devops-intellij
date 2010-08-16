@@ -18,6 +18,8 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.ui.DocumentAdapter;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -25,7 +27,9 @@ import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
-import java.awt.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -34,28 +38,25 @@ public class CreateBranchForm {
   private SelectRevisionForm myRevisionForm;
   private JCheckBox myCreateLocalWorkingCopiesCheckBox;
   private TextFieldWithBrowseButton.NoPathCompletion myTargetField;
-  private JPanel myPanel;
+  private JPanel myContentPane;
+  private JLabel myTargetLabel;
+
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
   public CreateBranchForm(final Project project,
                           final WorkspaceInfo workspace,
                           String serverPath,
-                          boolean isDirectory,
-                          final Component dialogPane) {
+                          boolean isDirectory) {
     mySourceField.setText(serverPath);
 
+    myTargetLabel.setLabelFor(myTargetField.getChildComponent());
     myTargetField.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        ServerBrowserDialog d;
-        try {
-          dialogPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-          String serverPath =
-            myTargetField.getText() != null && myTargetField.getText().length() > 0 ? myTargetField.getText() : mySourceField.getText();
-          d = new ServerBrowserDialog(TFSBundle.message("choose.branch.target.folder.dialog.title"), project, workspace.getServer(),
-                                      serverPath, true, true);
-        }
-        finally {
-          dialogPane.setCursor(Cursor.getDefaultCursor());
-        }
+        String serverPath =
+          myTargetField.getText() != null && myTargetField.getText().length() > 0 ? myTargetField.getText() : mySourceField.getText();
+        ServerBrowserDialog d =
+          new ServerBrowserDialog(TFSBundle.message("choose.branch.target.folder.dialog.title"), project, workspace.getServer(),
+                                  serverPath, true, true);
         d.show();
         if (d.isOK()) {
           myTargetField.setText(d.getSelectedPath());
@@ -63,7 +64,18 @@ public class CreateBranchForm {
       }
     });
 
+    myTargetField.getChildComponent().getDocument().addDocumentListener(new DocumentAdapter() {
+      @Override
+      protected void textChanged(DocumentEvent e) {
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(e));
+      }
+    });
+
     myRevisionForm.init(project, workspace, serverPath, isDirectory);
+  }
+
+  public void addListener(ChangeListener listener) {
+    myEventDispatcher.addListener(listener);
   }
 
   @Nullable
@@ -71,8 +83,8 @@ public class CreateBranchForm {
     return myRevisionForm.getVersionSpec();
   }
 
-  public JComponent getPanel() {
-    return myPanel;
+  public JComponent getContentPane() {
+    return myContentPane;
   }
 
   public String getTargetPath() {
@@ -83,4 +95,7 @@ public class CreateBranchForm {
     return myCreateLocalWorkingCopiesCheckBox.isSelected();
   }
 
+  public JComponent getPreferredFocusedComponent() {
+    return myTargetField.getChildComponent();
+  }
 }
