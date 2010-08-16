@@ -64,6 +64,7 @@ public class ChooseTeamProjectCollectionForm {
 
     myTable.setModel(
       new ListTableModel<TfsServerConnectionHelper.TeamProjectCollectionDescriptor>(new ColumnInfo[]{displayNameColumn}, sorted, 0));
+    myTable.setSelection(Collections.singletonList(sorted.get(0)));
   }
 
   public JPanel getContentPane() {

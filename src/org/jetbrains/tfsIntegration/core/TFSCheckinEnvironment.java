@@ -177,13 +177,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
-            TFSProgressUtil.setProgressText(progressIndicator, "Loading pending changes");
+            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("loading.pending.changes"));
             // get pending changes for given items
             Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-              .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None);
+              .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None, myVcs.getProject(),
+                                            TFSBundle.message("loading.pending.changes"));
 
             if (pendingChanges.isEmpty()) {
               return;
@@ -191,14 +192,15 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
             Collection<String> checkIn = new ArrayList<String>();
             // upload files
-            TFSProgressUtil.setProgressText(progressIndicator, "Uploading files");
+            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("uploading.files"));
             for (PendingChange pendingChange : pendingChanges) {
               if (pendingChange.getType() == ItemType.File) {
                 ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
                 if (changeType.contains(ChangeType_type0.Edit) || changeType.contains(ChangeType_type0.Add)) {
                   TFSProgressUtil
                     .setProgressText2(progressIndicator, VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
-                  workspace.getServer().getVCS().uploadItem(workspace, pendingChange);
+                  workspace.getServer().getVCS()
+                    .uploadItem(workspace, pendingChange, myVcs.getProject(), null);
                 }
               }
               checkIn.add(pendingChange.getItem());
@@ -215,10 +217,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               checkinNotes.add(Pair.create(checkinNote.name, StringUtil.notNullize(checkinNote.value)));
             }
 
-            TFSProgressUtil.setProgressText(progressIndicator, "Checking in");
+            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("checking.in"));
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
               .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions, checkinNotes,
-                       myParameters.getPolicyOverride(workspace.getServer()));
+                       myParameters.getPolicyOverride(workspace.getServer()), myVcs.getProject(), null);
             errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
@@ -269,11 +271,12 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
             TfsFileUtil.setReadOnly(makeReadOnly, true);
 
-            TFSProgressUtil.setProgressText(progressIndicator, "Updating work items");
+            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("updating.work.items"));
             if (commitFailed.isEmpty()) {
               CheckinResult checkinResult = result.getResult().iterator().next();
               workspace.getServer().getVCS()
-                .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset());
+                .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset(), myVcs.getProject(),
+                                             null);
             }
 
             TfsFileUtil.markDirty(myVcs.getProject(), invalidateRoots, invalidateFiles);
@@ -301,7 +304,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myVcs.getProject(), workspace, paths);
           errors.addAll(schedulingErrors);
@@ -321,12 +324,13 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       final List<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
-          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myVcs.getProject(), workspace, paths);
-            exceptions.addAll(schedulingErrors);
-          }
-        });
+        WorkstationHelper
+          .processByWorkspaces(TfsFileUtil.getFilePaths(files), false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
+            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+              Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myVcs.getProject(), workspace, paths);
+              exceptions.addAll(schedulingErrors);
+            }
+          });
       if (!orphans.isEmpty()) {
         StringBuilder s = new StringBuilder();
         for (FilePath orpan : orphans) {

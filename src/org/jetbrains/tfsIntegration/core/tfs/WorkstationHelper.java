@@ -39,12 +39,13 @@ public class WorkstationHelper {
    */
   // TODO process orphan paths in every caller
   public static List<FilePath> processByWorkspaces(Collection<FilePath> localPaths,
-                                                    boolean considerChildMappings,
-                                                    VoidProcessDelegate processor) throws TfsException {
+                                                   boolean considerChildMappings,
+                                                   Object projectOrComponent,
+                                                   VoidProcessDelegate processor) throws TfsException {
     List<FilePath> orphanPaths = new ArrayList<FilePath>();
     Map<WorkspaceInfo, List<FilePath>> workspace2localPaths = new HashMap<WorkspaceInfo, List<FilePath>>();
     for (FilePath localPath : localPaths) {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, considerChildMappings);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, considerChildMappings, projectOrComponent);
       if (!workspaces.isEmpty()) {
         for (WorkspaceInfo workspace : workspaces) {
           List<FilePath> workspaceLocalPaths = workspace2localPaths.get(workspace);
@@ -64,7 +65,7 @@ public class WorkstationHelper {
       List<FilePath> currentLocalPaths = workspace2localPaths.get(workspace);
       List<ItemPath> currentItemPaths = new ArrayList<ItemPath>(currentLocalPaths.size());
       for (FilePath localPath : currentLocalPaths) {
-        Collection<String> serverPaths = workspace.findServerPathsByLocalPath(localPath, considerChildMappings);
+        Collection<String> serverPaths = workspace.findServerPathsByLocalPath(localPath, considerChildMappings, projectOrComponent);
         if (!considerChildMappings) {
           // optimization + actual isDirectory flag
           currentItemPaths.add(new ItemPath(localPath, serverPaths.iterator().next()));
@@ -73,7 +74,7 @@ public class WorkstationHelper {
           for (String serverPath : serverPaths) {
             // isDirectory = true since (child) mappings can be set for folders, not for files
             //noinspection ConstantConditions
-            currentItemPaths.add(new ItemPath(workspace.findLocalPathByServerPath(serverPath, true), serverPath));
+            currentItemPaths.add(new ItemPath(workspace.findLocalPathByServerPath(serverPath, true, projectOrComponent), serverPath));
           }
         }
       }

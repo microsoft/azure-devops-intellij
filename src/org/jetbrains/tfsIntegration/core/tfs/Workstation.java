@@ -25,11 +25,11 @@ import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
-import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
 import org.xml.sax.SAXException;
 
@@ -97,7 +97,7 @@ public class Workstation {
     for (final ServerInfo server : getServers()) {
       if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
         try {
-          WebServiceHelper.authenticate(server.getUri());
+          TfsServerConnectionHelper.ensureAuthenticated(null, server.getUri(), false);
         }
         catch (TfsException e) {
           continue;
@@ -253,13 +253,15 @@ public class Workstation {
     return result;
   }
 
-  public Collection<WorkspaceInfo> findWorkspaces(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+  public Collection<WorkspaceInfo> findWorkspaces(final @NotNull FilePath localPath,
+                                                  boolean considerChildMappings,
+                                                  Object projectOrComponent) throws TfsException {
     checkDuplicateMappings();
     final Collection<WorkspaceInfo> resultCached = findWorkspacesCached(localPath, considerChildMappings);
     if (!resultCached.isEmpty()) {
       // given path is mapped according to cached mapping info -> reload and check with server info
       for (WorkspaceInfo workspace : resultCached) {
-        if (!workspace.hasMapping(localPath, considerChildMappings)) {
+        if (!workspace.hasMapping(localPath, considerChildMappings, projectOrComponent)) {
           throw new WorkspaceHasNoMappingException(workspace);
         }
       }
@@ -276,7 +278,7 @@ public class Workstation {
           continue;
         }
         try {
-          if (workspace.hasMapping(localPath, considerChildMappings)) {
+          if (workspace.hasMapping(localPath, considerChildMappings, projectOrComponent)) {
             result.add(workspace);
             if (!considerChildMappings) {
               // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces

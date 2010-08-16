@@ -175,7 +175,7 @@ abstract class TestSingleConflict extends TFSTestCase {
 
   private class NameMergerImpl implements NameMerger {
     @Nullable
-    public String mergeName(final WorkspaceInfo workspace, final Conflict conflict) {
+    public String mergeName(final WorkspaceInfo workspace, final Conflict conflict, Project project) {
       try {
         return TestSingleConflict.this.mergeName();
       }

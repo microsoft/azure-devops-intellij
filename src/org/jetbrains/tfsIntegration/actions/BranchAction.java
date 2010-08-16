@@ -30,6 +30,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
@@ -66,7 +67,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 
       final String targetServerPath = d.getTargetPath();
       if (d.isCreateWorkingCopies()) {
-        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
+        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
         if (targetLocalPath == null) {
           FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
           d.setTitle("Select Local Folder");
@@ -88,7 +89,8 @@ public class BranchAction extends SingleItemAction implements DumbAware {
       }
 
       final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
-        .createBranch(workspace.getName(), workspace.getOwnerName(), sourceServerPath, version, targetServerPath);
+        .createBranch(workspace.getName(), workspace.getOwnerName(), sourceServerPath, version, targetServerPath, project,
+                      TFSBundle.message("creating.branch"));
       if (!createBranchResult.getFailures().isEmpty()) {
         StringBuilder s = new StringBuilder("Failed to create branch:\n");
         for (Failure failure : createBranchResult.getFailures()) {
@@ -117,7 +119,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
       // TODO checkin requires proper configuration
       final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
         .queryPendingSetsByServerItems(workspace.getName(), workspace.getOwnerName(), Collections.singletonList(targetServerPath),
-                                       RecursionType.Full);
+                                       RecursionType.Full, project, TFSBundle.message("loading.changes"));
       Collection<String> checkin = new ArrayList<String>();
       for (PendingChange change : pendingChanges) {
         if (new ChangeTypeMask(change.getChg()).contains(ChangeType_type0.Branch)) {
@@ -127,14 +129,14 @@ public class BranchAction extends SingleItemAction implements DumbAware {
       final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
       final ResultWithFailures<CheckinResult> checkinResult = workspace.getServer().getVCS()
         .checkIn(workspace.getName(), workspace.getOwnerName(), checkin, comment, Collections.<WorkItem, CheckinWorkItemAction>emptyMap(),
-                 Collections.<Pair<String, String>>emptyList(), null);
+                 Collections.<Pair<String, String>>emptyList(), null, project, TFSBundle.message("checking.in"));
 
       if (!checkinResult.getFailures().isEmpty()) {
         final List<VcsException> checkinErrors = TfsUtil.getVcsExceptions(checkinResult.getFailures());
         AbstractVcsHelper.getInstance(project).showErrors(checkinErrors, "Create Branch");
       }
 
-      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
+      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
       if (targetLocalPath != null) {
         TfsFileUtil.markDirtyRecursively(project, targetLocalPath);
       }

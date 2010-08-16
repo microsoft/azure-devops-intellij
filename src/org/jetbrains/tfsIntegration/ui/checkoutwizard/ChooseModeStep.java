@@ -17,40 +17,51 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class ChooseModeStep extends CheckoutWizardStep {
 
   public static final Object ID = new Object();
 
-  private final CheckoutModeForm myCheckoutModeForm;
+  private final CheckoutModeForm myForm;
 
   public ChooseModeStep(final CheckoutWizardModel model) {
     super("Checkout Mode", model);
-    myCheckoutModeForm = new CheckoutModeForm();
-    myCheckoutModeForm.addListener(new CheckoutModeForm.Listener() {
-
-      public void modeChanged(final boolean autoModeSelected) {
-        if (myCheckoutModeForm.isAutoModeSelected()) {
-          myCheckoutModeForm.setErrorMessage(validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()));
-        }
-        else {
-          myCheckoutModeForm.setErrorMessage(null);
-        }
-        fireStateChanged();
-      }
-
-      public void newWorkspaceNameChanged(final String workspaceName) {
-        if (myCheckoutModeForm.isAutoModeSelected()) {
-          myCheckoutModeForm.setErrorMessage(validateWorkspaceName(workspaceName));
-        }
+    myForm = new CheckoutModeForm();
+    myForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        revalidate();
         fireStateChanged();
       }
     });
+    revalidate();
+  }
+
+  private void revalidate() {
+    myForm.setErrorMessage(validate());
+  }
+
+  @Nullable
+  private String validate() {
+    if (myForm.isAutoModeSelected()) {
+      String name = myForm.getNewWorkspaceName();
+      if (StringUtil.isEmpty(name)) {
+        return TFSBundle.message("workspace.name.empty");
+      }
+      if (!WorkspaceInfo.isValidName(name)) {
+        return TFSBundle.message("workspace.name.invalid");
+      }
+    }
+    return null;
   }
 
   @NotNull
@@ -69,51 +80,26 @@ public class ChooseModeStep extends CheckoutWizardStep {
   }
 
   public boolean isComplete() {
-    if (myCheckoutModeForm.isAutoModeSelected()) {
-      return validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()) == null;
-
-    }
-    else {
-      return true;
-    }
+    return validate() == null;
   }
 
   public void _init() {
-    myCheckoutModeForm.setNewWorkspaceName(myModel.getNewWorkspaceName());
-    myCheckoutModeForm.setAutoModeSelected(myModel.getMode() == CheckoutWizardModel.Mode.Auto);
-
-    if (myCheckoutModeForm.isAutoModeSelected()) {
-      myCheckoutModeForm.setErrorMessage(validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()));
-    }
-    else {
-      myCheckoutModeForm.setErrorMessage(null);
-    }
+    myForm.setNewWorkspaceName(myModel.getNewWorkspaceName());
+    myForm.setAutoModeSelected(myModel.getMode() == CheckoutWizardModel.Mode.Auto);
+    revalidate();
   }
 
   public void commit(CommitType commitType) throws CommitStepException {
-    myModel.setMode(myCheckoutModeForm.isAutoModeSelected() ? CheckoutWizardModel.Mode.Auto : CheckoutWizardModel.Mode.Manual);
-    if (validateWorkspaceName(myCheckoutModeForm.getNewWorkspaceName()) == null) {
-      myModel.setNewWorkspaceName(myCheckoutModeForm.getNewWorkspaceName());
-    }
+    myModel.setMode(myForm.isAutoModeSelected() ? CheckoutWizardModel.Mode.Auto : CheckoutWizardModel.Mode.Manual);
+    myModel.setNewWorkspaceName(myForm.getNewWorkspaceName());
   }
 
   public JComponent getComponent() {
-    return myCheckoutModeForm.getContentPanel();
-  }
-
-  @Nullable
-  public String validateWorkspaceName(String name) {
-    if (name.length() == 0) {
-      return "Workspace name is empty";
-    }
-    if (!WorkspaceInfo.isValidName(name)) {
-      return "Workspace name contains invalid symbols";
-    }
-    return null;
+    return myForm.getContentPanel();
   }
 
   @Override
   public JComponent getPreferredFocusedComponent() {
-    return myCheckoutModeForm.getPreferredFocusedComponent();
+    return myForm.getPreferredFocusedComponent();
   }
 }

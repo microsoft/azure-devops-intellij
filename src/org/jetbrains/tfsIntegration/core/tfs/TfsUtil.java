@@ -58,20 +58,23 @@ public class TfsUtil {
   @NonNls private static final String DELIM = "://";
 
   @Nullable
-  public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath) throws TfsException {
-    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+  public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath,
+                                                                              Object projectOrComponent,
+                                                                              String progressTitle) throws TfsException {
+    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, projectOrComponent);
     if (workspaces.isEmpty()) {
       return null;
     }
     final WorkspaceInfo workspace = workspaces.iterator().next();
     final ExtendedItem item = workspace.getServer().getVCS()
-      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
+      .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any, projectOrComponent,
+                       progressTitle);
     return Pair.create(workspace, item);
   }
 
-  public static VcsRevisionNumber getCurrentRevisionNumber(FilePath path) {
+  public static VcsRevisionNumber getCurrentRevisionNumber(FilePath path, Object projectOrComponent, String progressTitle) {
     try {
-      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path);
+      Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path, projectOrComponent, progressTitle);
       return workspaceAndItem != null && workspaceAndItem.second != null
              ? getCurrentRevisionNumber(workspaceAndItem.second)
              : VcsRevisionNumber.NULL;
@@ -82,8 +85,8 @@ public class TfsUtil {
   }
 
   @Nullable
-  public static TFSContentRevision getCurrentRevision(Project project, FilePath path) throws TfsException {
-    Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path);
+  public static TFSContentRevision getCurrentRevision(Project project, FilePath path, String progressTitle) throws TfsException {
+    Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = getWorkspaceAndExtendedItem(path, project, progressTitle);
     if (workspaceAndItem != null && workspaceAndItem.second != null) {
       return TFSContentRevision
         .create(project, workspaceAndItem.first, workspaceAndItem.second.getLver(), workspaceAndItem.second.getItemid());
@@ -276,11 +279,9 @@ public class TfsUtil {
   }
 
   public static String appendPath(URI serverUri, String path) {
-    String uri = serverUri.toString();
-    if (!uri.endsWith("/")) {
-      uri += "/";
-    }
-    return uri + path;
+    String uri = StringUtil.trimEnd(serverUri.toString(), "/");
+    path = StringUtil.trimStart(path, "/");
+    return uri + "/" + path.replace(" ", "%20");
   }
 
 }

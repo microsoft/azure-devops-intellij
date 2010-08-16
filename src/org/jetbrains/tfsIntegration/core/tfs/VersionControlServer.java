@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.application.ApplicationNamesInfo;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
@@ -29,7 +30,6 @@ import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.Identity;
 import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.QueryMembership;
 import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.SearchFactor;
-import com.microsoft.schemas.teamfoundation._2005._06.services.groupsecurity._03.GroupSecurityServiceStub;
 import com.microsoft.schemas.teamfoundation._2005._06.services.groupsecurity._03.ReadIdentity;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ArrayOfInt;
@@ -37,7 +37,6 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinOptions;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.MergeOptions;
 import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
-import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
@@ -48,6 +47,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSConstants;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.TfsBeansHolder;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -56,6 +56,7 @@ import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemField;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemSerialize;
+import org.jetbrains.tfsIntegration.exceptions.HostNotApplicableException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.webservice.TfsRequestManager;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
@@ -68,12 +69,6 @@ import java.rmi.RemoteException;
 import java.util.*;
 
 public class VersionControlServer {
-  //private URI myUri;
-  //private Guid myGuid = new Guid();
-
-  //public static final String Upload = "Upload";
-  //public static final String Download = "Download";
-  //public static final int EncodingBinary = -1;
   @NonNls public static final String WORKSPACE_NAME_FIELD = "wsname";
   @NonNls public static final String WORKSPACE_OWNER_FIELD = "wsowner";
   @NonNls public static final String RANGE_FIELD = "range";
@@ -85,38 +80,47 @@ public class VersionControlServer {
   public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
   public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
 
-  private final URI myServerUri;
-  private final RepositoryStub myRepository;
-  private final ClientService2Stub myWorkItemTrackingClientService;
-  private final GroupSecurityServiceStub myGroupSecurityService;
-
   private static final int ITEMS_IN_GROUP = 200;
 
+  private final URI myServerUri;
+  private final String myInstanceId;
+
+  @NotNull private TfsBeansHolder myBeans;
+  private static final Logger LOG = Logger.getInstance(VersionControlServer.class.getName());
+
   private interface OperationOnCollection<T, U> {
-    U execute(Collection<T> items) throws RemoteException;
+    U execute(Collection<T> items, Credentials credentials, ProgressIndicator pi) throws RemoteException, HostNotApplicableException;
 
     U merge(Collection<U> results);
   }
 
   private interface OperationOnList<T, U> {
-    U execute(List<T> items) throws RemoteException;
+    U execute(List<T> items, Credentials credentials, ProgressIndicator pi) throws RemoteException, HostNotApplicableException;
 
     U merge(Collection<U> results);
   }
 
-  private <T, U> U execute(final OperationOnCollection<T, U> operation, final Collection<T> items) throws TfsException {
+  private <T, U> U execute(final OperationOnCollection<T, U> operation,
+                           Object projectOrComponent,
+                           final Collection<T> items, String progressTitle)
+    throws TfsException {
     return execute(new OperationOnList<T, U>() {
-      public U execute(List<T> items) throws RemoteException {
-        return operation.execute(items);
+      @Override
+      public U execute(List<T> items, Credentials credentials, ProgressIndicator pi) throws RemoteException, HostNotApplicableException {
+        return operation.execute(items, credentials, pi);
       }
 
       public U merge(Collection<U> results) {
         return operation.merge(results);
       }
-    }, new ArrayList<T>(items));
+    }, projectOrComponent, new ArrayList<T>(items), progressTitle);
   }
 
-  private <T, U> U execute(final OperationOnList<T, U> operation, List<T> items) throws TfsException {
+  private <T, U> U execute(final OperationOnList<T, U> operation,
+                           final Object projectOrComponent,
+                           final List<T> items,
+                           final String progressTitle)
+    throws TfsException {
     if (items.isEmpty()) {
       return operation.merge(Collections.<U>emptyList());
     }
@@ -124,9 +128,10 @@ public class VersionControlServer {
     final Collection<U> results = new ArrayList<U>();
     TfsUtil.consumeInParts(items, ITEMS_IN_GROUP, new TfsUtil.Consumer<List<T>, TfsException>() {
       public void consume(final List<T> ts) throws TfsException {
-        U result = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<U>() {
-          public U executeRequest() throws RemoteException {
-            return operation.execute(ts);
+        U result = TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<U>(progressTitle) {
+          @Override
+          public U execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+            return operation.execute(ts, credentials, pi);
           }
         });
         results.add(result);
@@ -135,25 +140,11 @@ public class VersionControlServer {
     return operation.merge(results);
   }
 
-  public VersionControlServer(URI uri) {
+  public VersionControlServer(URI uri, @NotNull TfsBeansHolder beans, String instanceId) {
     myServerUri = uri;
-    try {
-      final ConfigurationContext configContext = WebServiceHelper.getStubConfigurationContext();
-      myRepository = new RepositoryStub(configContext, TfsUtil.appendPath(uri, TFSConstants.VERSION_CONTROL_ASMX));
-      myWorkItemTrackingClientService =
-        new ClientService2Stub(configContext, TfsUtil.appendPath(uri, TFSConstants.WORK_ITEM_TRACKING_CLIENT_SERVICE_ASMX));
-      myGroupSecurityService =
-        new GroupSecurityServiceStub(configContext, TfsUtil.appendPath(uri, TFSConstants.GROUP_SECURITY_SERVICE_ASMX));
-    }
-    catch (Exception e) {
-      TFSVcs.LOG.error("Failed to initialize web service stub", e);
-      throw new RuntimeException(e);
-    }
-
+    myBeans = beans;
+    myInstanceId = instanceId;
   }
-
-// ***************************************************
-// used by now
 
   /**
    * @param string local or server item
@@ -177,26 +168,37 @@ public class VersionControlServer {
     return itemSpec;
   }
 
-  private List<Item> queryItemsById(final int[] itemIds, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
+  private List<Item> queryItemsById(final int[] itemIds,
+                                    final int changeSet,
+                                    final boolean generateDownloadUrl,
+                                    Object projectOrComponent,
+                                    String progressTitle)
+    throws TfsException {
     final ArrayOfInt arrayOfInt = new ArrayOfInt();
     arrayOfInt.set_int(itemIds);
-    ArrayOfItem arrayOfItems = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItem>() {
-      public ArrayOfItem executeRequest() throws RemoteException {
-        final QueryItemsById param = new QueryItemsById();
-        param.setChangeSet(changeSet);
-        param.setItemIds(arrayOfInt);
-        param.setGenerateDownloadUrls(generateDownloadUrl);
-        return myRepository.queryItemsById(param).getQueryItemsByIdResult();
-      }
-    });
+    ArrayOfItem arrayOfItems =
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfItem>(progressTitle) {
+        @Override
+        public ArrayOfItem execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+          final QueryItemsById param = new QueryItemsById();
+          param.setChangeSet(changeSet);
+          param.setItemIds(arrayOfInt);
+          param.setGenerateDownloadUrls(generateDownloadUrl);
+          return myBeans.getRepositoryStub(credentials, pi).queryItemsById(param).getQueryItemsByIdResult();
+        }
+      });
     ArrayList<Item> result = new ArrayList<Item>();
     ContainerUtil.addAll(result, arrayOfItems.getItem());
     return result;
   }
 
   @Nullable
-  public Item queryItemById(final int itemId, final int changeSet, final boolean generateDownloadUrl) throws TfsException {
-    List<Item> items = queryItemsById(new int[]{itemId}, changeSet, generateDownloadUrl);
+  public Item queryItemById(final int itemId,
+                            final int changeSet,
+                            final boolean generateDownloadUrl,
+                            Object projectOrComponent,
+                            String progressTitle) throws TfsException {
+    List<Item> items = queryItemsById(new int[]{itemId}, changeSet, generateDownloadUrl, projectOrComponent, progressTitle);
     if (items.isEmpty()) {
       return null;
     }
@@ -235,7 +237,8 @@ public class VersionControlServer {
     return changeRequest;
   }
 
-  public ResultWithFailures<GetOperation> checkoutForEdit(final String workspaceName, final String workspaceOwner, List<ItemPath> paths)
+  public ResultWithFailures<GetOperation> checkoutForEdit(final String workspaceName, final String workspaceOwner, List<ItemPath> paths,
+                                                          Object projectOrComponent, String progressTitle)
     throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, false, new ChangeRequestProvider<ItemPath>() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
@@ -247,14 +250,15 @@ public class VersionControlServer {
         changeRequest.setReq(RequestType.Edit);
         return changeRequest;
       }
-    });
+    }, projectOrComponent, progressTitle);
   }
 
   public ResultWithFailures<GetOperation> createBranch(final String workspaceName,
                                                        final String workspaceOwner,
                                                        final String sourceServerPath,
                                                        final VersionSpecBase versionSpec,
-                                                       final String targetServerPath) throws TfsException {
+                                                       final String targetServerPath,
+                                                       Object projectOrComponent, String progressTitle) throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, Collections.singletonList(sourceServerPath), false,
                        new ChangeRequestProvider<String>() {
                          public ChangeRequest createChangeRequest(final String serverPath) {
@@ -266,10 +270,14 @@ public class VersionControlServer {
                            changeRequest.setVspec(versionSpec);
                            return changeRequest;
                          }
-                       });
+                       }, projectOrComponent, progressTitle);
   }
 
-  public ResultWithFailures<GetOperation> scheduleForAddition(final String workspaceName, final String workspaceOwner, List<ItemPath> paths)
+  public ResultWithFailures<GetOperation> scheduleForAddition(final String workspaceName,
+                                                              final String workspaceOwner,
+                                                              List<ItemPath> paths,
+                                                              Object projectOrComponent,
+                                                              String progressTitle)
     throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, paths, false, new ChangeRequestProvider<ItemPath>() {
       public ChangeRequest createChangeRequest(final ItemPath itemPath) {
@@ -284,12 +292,13 @@ public class VersionControlServer {
         changeRequest.setEnc(1251);
         return changeRequest;
       }
-    });
+    }, projectOrComponent, progressTitle);
   }
 
   public ResultWithFailures<GetOperation> scheduleForDeletionAndUpateLocalVersion(final String workspaceName,
                                                                                   final String workspaceOwner,
-                                                                                  final Collection<FilePath> localPaths)
+                                                                                  final Collection<FilePath> localPaths,
+                                                                                  Object projectOrComponent, String progressTitle)
     throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, localPaths, true, new ChangeRequestProvider<FilePath>() {
       public ChangeRequest createChangeRequest(final FilePath localPath) {
@@ -298,12 +307,13 @@ public class VersionControlServer {
         changeRequest.setReq(RequestType.Delete);
         return changeRequest;
       }
-    });
+    }, projectOrComponent, progressTitle);
   }
 
   public ResultWithFailures<GetOperation> renameAndUpdateLocalVersion(final String workspaceName,
                                                                       final String workspaceOwner,
-                                                                      final Map<FilePath, FilePath> movedPaths) throws TfsException {
+                                                                      final Map<FilePath, FilePath> movedPaths,
+                                                                      Object projectOrComponent, String progressTitle) throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, movedPaths.keySet(), true, new ChangeRequestProvider<FilePath>() {
       public ChangeRequest createChangeRequest(final FilePath localPath) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
@@ -312,13 +322,14 @@ public class VersionControlServer {
         changeRequest.setTarget(VersionControlPath.toTfsRepresentation(movedPaths.get(localPath)));
         return changeRequest;
       }
-    });
+    }, projectOrComponent, progressTitle);
   }
 
   public ResultWithFailures<GetOperation> lockOrUnlockItems(final String workspaceName,
                                                             final String workspaceOwner,
                                                             final LockLevel lockLevel,
-                                                            final Collection<ExtendedItem> items) throws TfsException {
+                                                            final Collection<ExtendedItem> items,
+                                                            Object projectOrComponent, String progressTitle) throws TfsException {
     return pendChanges(workspaceName, workspaceOwner, items, false, new ChangeRequestProvider<ExtendedItem>() {
       public ChangeRequest createChangeRequest(final ExtendedItem item) {
         ChangeRequest changeRequest = createChangeRequestTemplate();
@@ -327,17 +338,21 @@ public class VersionControlServer {
         changeRequest.setLock(lockLevel);
         return changeRequest;
       }
-    });
+    }, projectOrComponent, progressTitle);
   }
 
   private <T> ResultWithFailures<GetOperation> pendChanges(final String workspaceName,
                                                            final String workspaceOwner,
                                                            Collection<T> paths,
                                                            final boolean updateLocalVersion,
-                                                           final ChangeRequestProvider<T> changeRequestProvider) throws TfsException {
+                                                           final ChangeRequestProvider<T> changeRequestProvider,
+                                                           Object projectOrComponent,
+                                                           String progressTitle) throws TfsException {
     OperationOnCollection<T, ResultWithFailures<GetOperation>> operation =
       new OperationOnCollection<T, ResultWithFailures<GetOperation>>() {
-        public ResultWithFailures<GetOperation> execute(Collection<T> items) throws RemoteException {
+        @Override
+        public ResultWithFailures<GetOperation> execute(Collection<T> items, Credentials credentials, ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           ResultWithFailures<GetOperation> result = new ResultWithFailures<GetOperation>();
           List<ChangeRequest> changeRequests = new ArrayList<ChangeRequest>(items.size());
           for (T path : items) {
@@ -351,7 +366,7 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwner);
           param.setWorkspaceName(workspaceName);
           param.setChanges(arrayOfChangeRequest);
-          final PendChangesResponse response = myRepository.pendChanges(param);
+          final PendChangesResponse response = myBeans.getRepositoryStub(credentials, pi).pendChanges(param);
           if (updateLocalVersion && response.getPendChangesResult().getGetOperation() != null) {
             final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
             List<LocalVersionUpdate> localVersionUpdates =
@@ -366,7 +381,7 @@ public class VersionControlServer {
             param2.setOwnerName(workspaceOwner);
             param2.setWorkspaceName(workspaceName);
             param2.setUpdates(arrayOfLocalVersionUpdate);
-            myRepository.updateLocalVersion(param2);
+            myBeans.getRepositoryStub(credentials, pi).updateLocalVersion(param2);
           }
 
           if (response.getPendChangesResult().getGetOperation() != null) {
@@ -384,20 +399,20 @@ public class VersionControlServer {
         }
       };
 
-    return execute(operation, paths);
+    return execute(operation, projectOrComponent, paths, progressTitle);
   }
 
 
-  public Workspace loadWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent)
+  public Workspace loadWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent, boolean force)
     throws TfsException {
-    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace>(
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Workspace>(
       TFSBundle.message("load.workspace.0", workspaceName)) {
       @Override
       public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final QueryWorkspace param = new QueryWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
-        return myRepository.queryWorkspace(param).getQueryWorkspaceResult();
+        return myBeans.getRepositoryStub(credentials, pi).queryWorkspace(param).getQueryWorkspaceResult();
       }
     });
   }
@@ -406,15 +421,15 @@ public class VersionControlServer {
                               final Workspace newWorkspaceDataBean,
                               Object projectOrComponent)
     throws TfsException {
-    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Object>(
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(
       TFSBundle.message("save.workspace.0", newWorkspaceDataBean.getName())) {
       @Override
-      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final UpdateWorkspace param = new UpdateWorkspace();
         param.setNewWorkspace(newWorkspaceDataBean);
         param.setOldWorkspaceName(oldWorkspaceName);
         param.setOwnerName(credentials.getQualifiedUsername());
-        myRepository.updateWorkspace(param).getUpdateWorkspaceResult();
+        myBeans.getRepositoryStub(credentials, pi).updateWorkspace(param).getUpdateWorkspaceResult();
         //noinspection ConstantConditions
         return null;
       }
@@ -422,39 +437,42 @@ public class VersionControlServer {
   }
 
   public Workspace createWorkspace(final Workspace workspaceBean, Object projectOrComponent) throws TfsException {
-    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace>(
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Workspace>(
       TFSBundle.message("create.workspace.0", workspaceBean.getName())) {
       @Override
       public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final CreateWorkspace param = new CreateWorkspace();
         param.setWorkspace(workspaceBean);
-        return myRepository.createWorkspace(param).getCreateWorkspaceResult();
+        return myBeans.getRepositoryStub(credentials, pi).createWorkspace(param).getCreateWorkspaceResult();
       }
     });
   }
 
-  public void deleteWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent) throws TfsException {
-    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Object>(
+  public void deleteWorkspace(final String workspaceName, final String workspaceOwner, Object projectOrComponent, boolean force)
+    throws TfsException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Void>(
       TFSBundle.message("delete.workspace.0", workspaceName)) {
       @Override
-      public Workspace execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         final DeleteWorkspace param = new DeleteWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
-        myRepository.deleteWorkspace(param);
+        myBeans.getRepositoryStub(credentials, pi).deleteWorkspace(param);
         //noinspection ConstantConditions
         return null;
       }
     });
   }
 
-  public List<Item> getChildItems(final String parentServerItem, final boolean foldersOnly) throws TfsException {
+  public List<Item> getChildItems(final String parentServerItem, final boolean foldersOnly, Object projectOrComponent, String progressTitle)
+    throws TfsException {
     final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
     itemSpecs.setItemSpec(new ItemSpec[]{createItemSpec(parentServerItem, RecursionType.OneLevel)});
 
     final ArrayOfItemSet arrayOfItemSet =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
-        public ArrayOfItemSet executeRequest() throws RemoteException {
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfItemSet>(progressTitle) {
+        @Override
+        public ArrayOfItemSet execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryItems param = new QueryItems();
           param.setWorkspaceName(null);
           param.setWorkspaceOwner(null);
@@ -463,7 +481,7 @@ public class VersionControlServer {
           param.setDeletedState(DeletedState.NonDeleted);
           param.setItemType(foldersOnly ? ItemType.Folder : ItemType.Any);
           param.setGenerateDownloadUrls(false);
-          return myRepository.queryItems(param).getQueryItemsResult();
+          return myBeans.getRepositoryStub(credentials, pi).queryItems(param).getQueryItemsResult();
         }
       });
 
@@ -496,10 +514,16 @@ public class VersionControlServer {
   public ExtendedItemsAndPendingChanges getExtendedItemsAndPendingChanges(final String workspaceName,
                                                                           final String ownerName,
                                                                           List<ItemSpec> itemsSpecs,
-                                                                          final ItemType itemType) throws TfsException {
+                                                                          final ItemType itemType,
+                                                                          Object projectOrComponent, String progressTitle)
+    throws TfsException {
     OperationOnCollection<ItemSpec, ExtendedItemsAndPendingChanges> operation =
       new OperationOnCollection<ItemSpec, ExtendedItemsAndPendingChanges>() {
-        public ExtendedItemsAndPendingChanges execute(Collection<ItemSpec> items) throws RemoteException {
+        @Override
+        public ExtendedItemsAndPendingChanges execute(Collection<ItemSpec> items,
+                                                      Credentials credentials,
+                                                      ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
           arrayOfItemSpec.setItemSpec(items.toArray(new ItemSpec[items.size()]));
           QueryItemsExtended param = new QueryItemsExtended();
@@ -509,7 +533,7 @@ public class VersionControlServer {
           param.setDeletedState(DeletedState.NonDeleted);
           param.setItemType(itemType);
           ArrayOfExtendedItem[] extendedItemsArray =
-            myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
+            myBeans.getRepositoryStub(credentials, pi).queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
 
           TFSVcs.assertTrue(extendedItemsArray != null && extendedItemsArray.length == items.size());
 
@@ -529,7 +553,8 @@ public class VersionControlServer {
           param2.setOwnerName(ownerName);
           param2.setItemSpecs(arrayOfItemSpec);
           param2.setGenerateDownloadUrls(false);
-          final PendingSet[] pendingSets = myRepository.queryPendingSets(param2).getQueryPendingSetsResult().getPendingSet();
+          final PendingSet[] pendingSets =
+            myBeans.getRepositoryStub(credentials, pi).queryPendingSets(param2).getQueryPendingSetsResult().getPendingSet();
 
           final Collection<PendingChange> pendingChanges;
           if (pendingSets != null) {
@@ -553,7 +578,7 @@ public class VersionControlServer {
         }
       };
 
-    return execute(operation, itemsSpecs);
+    return execute(operation, projectOrComponent, itemsSpecs, progressTitle);
   }
 
   @Nullable
@@ -561,22 +586,26 @@ public class VersionControlServer {
                                       final String ownerName,
                                       final FilePath localPath,
                                       final RecursionType recursionType,
-                                      final DeletedState deletedState) throws TfsException {
+                                      final DeletedState deletedState,
+                                      Object projectOrComponent, String progressTitle) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(localPath, recursionType)});
 
     ArrayOfExtendedItem[] extendedItems =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfExtendedItem[]>() {
-        public ArrayOfExtendedItem[] executeRequest() throws RemoteException {
-          final QueryItemsExtended param = new QueryItemsExtended();
-          param.setDeletedState(deletedState);
-          param.setItems(arrayOfItemSpec);
-          param.setItemType(ItemType.Any);
-          param.setWorkspaceName(workspaceName);
-          param.setWorkspaceOwner(ownerName);
-          return myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
-        }
-      });
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfExtendedItem[]>(progressTitle) {
+          @Override
+          public ArrayOfExtendedItem[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+            final QueryItemsExtended param = new QueryItemsExtended();
+            param.setDeletedState(deletedState);
+            param.setItems(arrayOfItemSpec);
+            param.setItemType(ItemType.Any);
+            param.setWorkspaceName(workspaceName);
+            param.setWorkspaceOwner(ownerName);
+            return myBeans.getRepositoryStub(credentials, pi).queryItemsExtended(param).getQueryItemsExtendedResult()
+              .getArrayOfExtendedItem();
+          }
+        });
 
     TFSVcs.assertTrue(extendedItems != null && extendedItems.length == 1);
     //noinspection ConstantConditions
@@ -619,9 +648,12 @@ public class VersionControlServer {
   public Map<FilePath, ExtendedItem> getExtendedItems(final String workspaceName,
                                                       final String ownerName,
                                                       List<FilePath> paths,
-                                                      final DeletedState deletedState) throws TfsException {
+                                                      final DeletedState deletedState,
+                                                      Object projectOrComponent, String progressTitle) throws TfsException {
     OperationOnList<FilePath, Map<FilePath, ExtendedItem>> operation = new OperationOnList<FilePath, Map<FilePath, ExtendedItem>>() {
-      public Map<FilePath, ExtendedItem> execute(List<FilePath> items) throws RemoteException {
+      @Override
+      public Map<FilePath, ExtendedItem> execute(List<FilePath> items, Credentials credentials, ProgressIndicator pi)
+        throws RemoteException, HostNotApplicableException {
         final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>();
         for (FilePath path : items) {
           itemSpecs.add(createItemSpec(path, RecursionType.None));
@@ -634,7 +666,8 @@ public class VersionControlServer {
         param.setItems(arrayOfItemSpec);
         param.setDeletedState(deletedState);
         param.setItemType(ItemType.Any);
-        ArrayOfExtendedItem[] extendedItems = myRepository.queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
+        ArrayOfExtendedItem[] extendedItems =
+          myBeans.getRepositoryStub(credentials, pi).queryItemsExtended(param).getQueryItemsExtendedResult().getArrayOfExtendedItem();
 
         TFSVcs.assertTrue(extendedItems != null && extendedItems.length == items.size());
         Map<FilePath, ExtendedItem> result = new HashMap<FilePath, ExtendedItem>();
@@ -660,41 +693,45 @@ public class VersionControlServer {
       }
     };
 
-    return execute(operation, paths);
+    return execute(operation, projectOrComponent, paths, progressTitle);
   }
 
-  public static void downloadItem(Project project, final ServerInfo server, final String downloadKey, OutputStream outputStream)
+  public void downloadItem(Project project, final String downloadKey, final OutputStream outputStream, String progressTitle)
     throws TfsException {
-    final URI serverUri = server.getUri();
-    boolean tryProxy = TFSConfigurationManager.getInstance().shouldTryProxy(serverUri);
-    final String downloadUrl;
-    if (tryProxy) {
-      //noinspection ConstantConditions,HardCodedStringLiteral
-      downloadUrl = TfsUtil.appendPath(TFSConfigurationManager.getInstance().getProxyUri(serverUri),
-                                       TFSConstants.PROXY_DOWNLOAD_ASMX +
-                                       "?" +
-                                       downloadKey +
-                                       "&rid=" +
-                                       server.getGuid());
-    }
-    else {
-      downloadUrl = TfsUtil.appendPath(serverUri, TFSConstants.DOWNLOAD_ASMX + "?" + downloadKey);
-    }
-    TFSVcs.LOG.debug((tryProxy ? "Downloading via proxy: " : "Downloading: ") + downloadUrl);
+    final boolean tryProxy = TFSConfigurationManager.getInstance().shouldTryProxy(myServerUri);
     try {
-      WebServiceHelper.httpGet(serverUri, downloadUrl, outputStream);
+      TfsRequestManager.executeRequest(myServerUri, project, new TfsRequestManager.Request<Void>(progressTitle) {
+        @Override
+        public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+          String downloadUrl;
+          if (tryProxy) {
+            downloadUrl = TfsUtil.appendPath(TFSConfigurationManager.getInstance().getProxyUri(myServerUri),
+                                             TFSConstants.PROXY_DOWNLOAD_ASMX +
+                                             "?" +
+                                             downloadKey +
+                                             "&rid=" +
+                                             myInstanceId);
+          }
+          else {
+            downloadUrl = TfsUtil.appendPath(serverUri, myBeans.getDownloadUrl(credentials, pi) + "?" + downloadKey);
+          }
+          LOG.debug((tryProxy ? "Downloading via proxy: " : "Downloading: ") + downloadUrl);
+          WebServiceHelper.httpGet(myServerUri, downloadUrl, outputStream, credentials);
+          return null;
+        }
+      });
     }
     catch (TfsException e) {
-      TFSVcs.LOG.warn("Download failed", e);
+      LOG.warn("Download failed", e);
       if (tryProxy) {
         TFSVcs.LOG.warn("Disabling proxy");
         String messageHtml = TFSBundle
-          .message("proxy.failed", server.getPresentableUri(), TFSConfigurationManager.getInstance().getProxyUri(serverUri),
+          .message("proxy.failed", TfsUtil.getPresentableUri(myServerUri), TFSConfigurationManager.getInstance().getProxyUri(myServerUri),
                    StringUtil.trimEnd(e.getMessage(), "."),
                    ApplicationNamesInfo.getInstance().getFullProductName());
         TfsUtil.showBalloon(project, MessageType.WARNING, messageHtml);
-        TFSConfigurationManager.getInstance().setProxyInaccessible(server.getUri());
-        downloadItem(project, server, downloadKey, outputStream);
+        TFSConfigurationManager.getInstance().setProxyInaccessible(myServerUri);
+        downloadItem(project, downloadKey, outputStream, progressTitle);
       }
       else {
         throw e;
@@ -707,11 +744,12 @@ public class VersionControlServer {
                                       final boolean recursive,
                                       final String user,
                                       final VersionSpec versionFrom,
-                                      final VersionSpec versionTo) throws TfsException {
+                                      final VersionSpec versionTo,
+                                      Object projectOrComponent, String progressTitle) throws TfsException {
     final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
     ItemSpec itemSpec = createItemSpec(serverPath, recursive ? RecursionType.Full : null);
     return queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo,
-                        Integer.MAX_VALUE);
+                        Integer.MAX_VALUE, projectOrComponent, progressTitle);
   }
 
   public List<Changeset> queryHistory(final String workspaceName,
@@ -721,7 +759,8 @@ public class VersionControlServer {
                                       final VersionSpec itemVersion,
                                       final VersionSpec versionFrom,
                                       final VersionSpec versionTo,
-                                      int maxCount) throws TfsException {
+                                      int maxCount,
+                                      Object projectOrComponent, String progressTitle) throws TfsException {
     // TODO: slot mode
     // TODO: include allChangeSets
 
@@ -733,8 +772,9 @@ public class VersionControlServer {
       final int batchMax = Math.min(256, total);
 
       Changeset[] currentChangeSets =
-        WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<Changeset[]>() {
-          public Changeset[] executeRequest() throws RemoteException {
+        TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Changeset[]>(progressTitle) {
+          @Override
+          public Changeset[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
             QueryHistory param = new QueryHistory();
             param.setWorkspaceName(workspaceName);
             param.setWorkspaceOwner(workspaceOwner);
@@ -747,7 +787,7 @@ public class VersionControlServer {
             param.setIncludeFiles(true);
             param.setGenerateDownloadUrls(false);
             param.setSlotMode(false);
-            return myRepository.queryHistory(param).getQueryHistoryResult().getChangeset();
+            return myBeans.getRepositoryStub(credentials, pi).queryHistory(param).getQueryHistoryResult().getChangeset();
           }
         });
 
@@ -767,16 +807,16 @@ public class VersionControlServer {
     return allChangeSets;
   }
 
-  public Workspace[] queryWorkspaces(final String computer, Object projectOrComponent) throws TfsException {
+  public Workspace[] queryWorkspaces(final String computer, Object projectOrComponent, boolean force) throws TfsException {
     Workspace[] workspaces =
-      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, myRepository, new TfsRequestManager.Request<Workspace[]>(
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Workspace[]>(
         TFSBundle.message("reload.workspaces")) {
         @Override
         public Workspace[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryWorkspaces param = new QueryWorkspaces();
           param.setComputer(computer);
           param.setOwnerName(credentials.getQualifiedUsername());
-          return myRepository.queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
+          return myBeans.getRepositoryStub(credentials, pi).queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
         }
       });
 
@@ -784,9 +824,10 @@ public class VersionControlServer {
   }
 
   @Nullable
-  public GetOperation get(final String workspaceName, final String ownerName, final String path, final VersionSpec versionSpec)
+  public GetOperation get(final String workspaceName, final String ownerName, final String path, final VersionSpec versionSpec,
+                          Object projectOrComponent, String progressTitle)
     throws TfsException {
-    List<GetOperation> operations = get(workspaceName, ownerName, path, versionSpec, RecursionType.None);
+    List<GetOperation> operations = get(workspaceName, ownerName, path, versionSpec, RecursionType.None, projectOrComponent, progressTitle);
     TFSVcs.assertTrue(operations.size() == 1);
     return operations.get(0);
   }
@@ -795,9 +836,10 @@ public class VersionControlServer {
                                 final String ownerName,
                                 final String path,
                                 final VersionSpec versionSpec,
-                                final RecursionType recursionType) throws TfsException {
+                                final RecursionType recursionType,
+                                Object projectOrComponent, String progressTitle) throws TfsException {
     final GetRequestParams getRequest = new GetRequestParams(path, recursionType, versionSpec);
-    return get(workspaceName, ownerName, Collections.singletonList(getRequest));
+    return get(workspaceName, ownerName, Collections.singletonList(getRequest), projectOrComponent, progressTitle);
   }
 
 
@@ -809,17 +851,20 @@ public class VersionControlServer {
     return localVersionUpdate;
   }
 
-  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, Collection<LocalVersionUpdate> updates)
+  public void updateLocalVersions(final String workspaceName, final String workspaceOwnerName, Collection<LocalVersionUpdate> updates,
+                                  Object projectOrComponent, String progressTitle)
     throws TfsException {
     OperationOnCollection<LocalVersionUpdate, Void> operation = new OperationOnCollection<LocalVersionUpdate, Void>() {
-      public Void execute(Collection<LocalVersionUpdate> items) throws RemoteException {
+      @Override
+      public Void execute(Collection<LocalVersionUpdate> items, Credentials credentials, ProgressIndicator pi)
+        throws RemoteException, HostNotApplicableException {
         final ArrayOfLocalVersionUpdate arrayOfLocalVersionUpdate = new ArrayOfLocalVersionUpdate();
         arrayOfLocalVersionUpdate.setLocalVersionUpdate(items.toArray(new LocalVersionUpdate[items.size()]));
         final UpdateLocalVersion param = new UpdateLocalVersion();
         param.setOwnerName(workspaceOwnerName);
         param.setWorkspaceName(workspaceName);
         param.setUpdates(arrayOfLocalVersionUpdate);
-        myRepository.updateLocalVersion(param);
+        myBeans.getRepositoryStub(credentials, pi).updateLocalVersion(param);
         //noinspection ConstantConditions
         return null;
       }
@@ -830,15 +875,18 @@ public class VersionControlServer {
       }
     };
 
-    execute(operation, updates);
+    execute(operation, projectOrComponent, updates, progressTitle);
   }
 
   public ResultWithFailures<GetOperation> undoPendingChanges(final String workspaceName,
                                                              final String workspaceOwner,
-                                                             Collection<String> serverPaths) throws TfsException {
+                                                             Collection<String> serverPaths,
+                                                             Object projectOrComponent, String progressTitle) throws TfsException {
     OperationOnCollection<String, ResultWithFailures<GetOperation>> operation =
       new OperationOnCollection<String, ResultWithFailures<GetOperation>>() {
-        public ResultWithFailures<GetOperation> execute(Collection<String> items) throws RemoteException {
+        @Override
+        public ResultWithFailures<GetOperation> execute(Collection<String> items, Credentials credentials, ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(items.size());
           for (String serverPath : items) {
             itemSpecs.add(createItemSpec(serverPath, null));
@@ -849,7 +897,7 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwner);
           param.setWorkspaceName(workspaceName);
           param.setItems(arrayOfItemSpec);
-          UndoPendingChangesResponse response = myRepository.undoPendingChanges(param);
+          UndoPendingChangesResponse response = myBeans.getRepositoryStub(credentials, pi).undoPendingChanges(param);
           GetOperation[] getOperations =
             response.getUndoPendingChangesResult() != null ? response.getUndoPendingChangesResult().getGetOperation() : null;
           Failure[] failures = response.getFailures() != null ? response.getFailures().getFailure() : null;
@@ -861,13 +909,19 @@ public class VersionControlServer {
         }
       };
 
-    return execute(operation, serverPaths);
+    return execute(operation, projectOrComponent, serverPaths, progressTitle);
   }
 
-  public List<GetOperation> get(final String workspaceName, final String workspaceOwner, List<GetRequestParams> requests)
+  public List<GetOperation> get(final String workspaceName,
+                                final String workspaceOwner,
+                                List<GetRequestParams> requests,
+                                Object projectOrComponent,
+                                String progressTitle)
     throws TfsException {
     OperationOnList<GetRequestParams, List<GetOperation>> operation = new OperationOnList<GetRequestParams, List<GetOperation>>() {
-      public List<GetOperation> execute(List<GetRequestParams> items) throws RemoteException {
+      @Override
+      public List<GetOperation> execute(List<GetRequestParams> items, Credentials credentials, ProgressIndicator pi)
+        throws RemoteException, HostNotApplicableException {
         List<GetRequest> getRequests = new ArrayList<GetRequest>(items.size());
         for (GetRequestParams getRequestParams : items) {
           final GetRequest getRequest = new GetRequest();
@@ -883,7 +937,7 @@ public class VersionControlServer {
         param.setRequests(arrayOfGetRequests);
         param.setForce(true);
         param.setNoGet(false);
-        ArrayOfArrayOfGetOperation response = myRepository.get(param).getGetResult();
+        ArrayOfArrayOfGetOperation response = myBeans.getRepositoryStub(credentials, pi).get(param).getGetResult();
         TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == items.size());
 
         List<GetOperation> results = new ArrayList<GetOperation>();
@@ -904,7 +958,7 @@ public class VersionControlServer {
       }
     };
 
-    return execute(operation, requests);
+    return execute(operation, projectOrComponent, requests, progressTitle);
   }
 
   public void addLocalConflict(final String workspaceName,
@@ -914,10 +968,12 @@ public class VersionControlServer {
                                final int pendingChangeId,
                                final String sourceLocal,
                                final String targetLocal,
-                               final int reason) throws TfsException {
+                               final int reason,
+                               Object projectOrComponent, String progressTitle) throws TfsException {
 
-    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<AddConflictResponse>() {
-      public AddConflictResponse executeRequest() throws RemoteException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<AddConflictResponse>(progressTitle) {
+      @Override
+      public AddConflictResponse execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         AddConflict param = new AddConflict();
         param.setWorkspaceName(workspaceName);
         param.setOwnerName(workspaceOwner);
@@ -928,7 +984,7 @@ public class VersionControlServer {
         param.setSourceLocalItem(sourceLocal);
         param.setTargetLocalItem(targetLocal);
         param.setReason(reason);
-        return myRepository.addConflict(param);
+        return myBeans.getRepositoryStub(credentials, pi).addConflict(param);
       }
     });
   }
@@ -937,9 +993,12 @@ public class VersionControlServer {
   public Collection<Conflict> queryConflicts(final String workspaceName,
                                              final String ownerName,
                                              List<ItemPath> paths,
-                                             final RecursionType recursionType) throws TfsException {
+                                             final RecursionType recursionType,
+                                             Object projectOrComponent, String progressTitle) throws TfsException {
     OperationOnCollection<ItemPath, Collection<Conflict>> operation = new OperationOnCollection<ItemPath, Collection<Conflict>>() {
-      public Collection<Conflict> execute(Collection<ItemPath> items) throws RemoteException {
+      @Override
+      public Collection<Conflict> execute(Collection<ItemPath> items, Credentials credentials, ProgressIndicator pi)
+        throws RemoteException, HostNotApplicableException {
         List<ItemSpec> itemSpecList = new ArrayList<ItemSpec>();
         for (ItemPath path : items) {
           itemSpecList.add(createItemSpec(path.getServerPath(), recursionType));
@@ -951,7 +1010,7 @@ public class VersionControlServer {
         param.setWorkspaceName(workspaceName);
         param.setOwnerName(ownerName);
         param.setItems(arrayOfItemSpec);
-        Conflict[] conflicts = myRepository.queryConflicts(param).getQueryConflictsResult().getConflict();
+        Conflict[] conflicts = myBeans.getRepositoryStub(credentials, pi).queryConflicts(param).getQueryConflictsResult().getConflict();
         return conflicts != null ? Arrays.asList(conflicts) : Collections.<Conflict>emptyList();
       }
 
@@ -960,7 +1019,7 @@ public class VersionControlServer {
       }
     };
 
-    return execute(operation, paths);
+    return execute(operation, projectOrComponent, paths, progressTitle);
   }
 
 
@@ -992,10 +1051,12 @@ public class VersionControlServer {
     }
   }
 
-  public ResolveResponse resolveConflict(final String workspaceName, final String workspasceOwnerName, final ResolveConflictParams params)
+  public ResolveResponse resolveConflict(final String workspaceName, final String workspasceOwnerName, final ResolveConflictParams params,
+                                         Object projectOrComponent, String progressTitle)
     throws TfsException {
-    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ResolveResponse>() {
-      public ResolveResponse executeRequest() throws RemoteException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ResolveResponse>(progressTitle) {
+      @Override
+      public ResolveResponse execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         Resolve param = new Resolve();
         param.setWorkspaceName(workspaceName);
         param.setOwnerName(workspasceOwnerName);
@@ -1004,60 +1065,73 @@ public class VersionControlServer {
         param.setNewPath(params.newPath);
         param.setEncoding(params.encoding);
         param.setLockLevel(params.lockLevel);
-        return myRepository.resolve(param);
+        return myBeans.getRepositoryStub(credentials, pi).resolve(param);
       }
     });
   }
 
 
-  public void uploadItem(final WorkspaceInfo workspaceInfo, PendingChange change) throws TfsException, IOException {
-    final String uploadUrl = TfsUtil.appendPath(workspaceInfo.getServer().getUri(), TFSConstants.UPLOAD_ASMX);
-    File file = VersionControlPath.getFile(change.getLocal());
-    long fileLength = file.length();
+  public void uploadItem(final WorkspaceInfo workspaceInfo, final PendingChange change, Object projectOrComponent, String progressTitle)
+    throws TfsException, IOException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(progressTitle) {
+      @Override
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+        String uploadUrl = TfsUtil.appendPath(myServerUri, myBeans.getUploadUrl(credentials, pi));
+        File file = VersionControlPath.getFile(change.getLocal());
+        long fileLength = file.length();
 
-    ArrayList<Part> parts = new ArrayList<Part>();
-    parts.add(new StringPart(SERVER_ITEM_FIELD, change.getItem(), "UTF-8"));
-    parts.add(new StringPart(WORKSPACE_NAME_FIELD, workspaceInfo.getName()));
-    parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
-    parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
-    final byte[] hash = TfsFileUtil.calculateMD5(file);
-    parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(hash), "UTF-8"))); // TODO: check encoding!
-// TODO: handle files too large to fit in a single POST
-    parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
-    FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
-    parts.add(filePart);
-    filePart.setCharSet(null);
-    WebServiceHelper.httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null);
+        ArrayList<Part> parts = new ArrayList<Part>();
+        parts.add(new StringPart(SERVER_ITEM_FIELD, change.getItem(), "UTF-8"));
+        parts.add(new StringPart(WORKSPACE_NAME_FIELD, workspaceInfo.getName()));
+        parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
+        parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
+        final byte[] hash = TfsFileUtil.calculateMD5(file);
+        parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(hash), "UTF-8"))); // TODO: check encoding!
+        // TODO: handle files too large to fit in a single POST
+        parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
+        FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
+        parts.add(filePart);
+        filePart.setCharSet(null);
+        WebServiceHelper.httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null, credentials, serverUri);
+        return null;
+      }
+    });
+
   }
 
   public Collection<PendingChange> queryPendingSetsByLocalPaths(final String workspaceName,
                                                                 final String workspaceOwnerName,
                                                                 final Collection<ItemPath> paths,
-                                                                final RecursionType recursionType) throws TfsException {
+                                                                final RecursionType recursionType,
+                                                                Object projectOrComponent, String progressTitle) throws TfsException {
     final Collection<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(paths.size());
     for (ItemPath path : paths) {
       itemSpecs.add(createItemSpec(VersionControlPath.toTfsRepresentation(path.getLocalPath()), recursionType));
     }
-    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, projectOrComponent, progressTitle);
   }
 
   public Collection<PendingChange> queryPendingSetsByServerItems(final String workspaceName,
                                                                  final String workspaceOwnerName,
                                                                  final Collection<String> serverItems,
-                                                                 final RecursionType recursionType) throws TfsException {
+                                                                 final RecursionType recursionType,
+                                                                 Object projectOrComponent, String progressTitle) throws TfsException {
     final List<ItemSpec> itemSpecs = new ArrayList<ItemSpec>(serverItems.size());
     for (String serverItem : serverItems) {
       itemSpecs.add(createItemSpec(serverItem, recursionType));
     }
-    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs);
+    return doQueryPendingSets(workspaceName, workspaceOwnerName, itemSpecs, projectOrComponent, progressTitle);
   }
 
   private Collection<PendingChange> doQueryPendingSets(final String workspaceName,
                                                        final String workspaceOwnerName,
-                                                       Collection<ItemSpec> itemSpecs) throws TfsException {
+                                                       Collection<ItemSpec> itemSpecs,
+                                                       Object projectOrComponent, String progressTitle) throws TfsException {
     OperationOnCollection<ItemSpec, Collection<PendingChange>> operation =
       new OperationOnCollection<ItemSpec, Collection<PendingChange>>() {
-        public Collection<PendingChange> execute(Collection<ItemSpec> items) throws RemoteException {
+        @Override
+        public Collection<PendingChange> execute(Collection<ItemSpec> items, Credentials credentials, ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
           arrayOfItemSpec.setItemSpec(items.toArray(new ItemSpec[items.size()]));
 
@@ -1068,7 +1142,8 @@ public class VersionControlServer {
           param.setOwnerName(workspaceOwnerName);
           param.setItemSpecs(arrayOfItemSpec);
           param.setGenerateDownloadUrls(false);
-          PendingSet[] pendingSets = myRepository.queryPendingSets(param).getQueryPendingSetsResult().getPendingSet();
+          PendingSet[] pendingSets =
+            myBeans.getRepositoryStub(credentials, pi).queryPendingSets(param).getQueryPendingSetsResult().getPendingSet();
 
           return pendingSets != null
                  ? Arrays.asList(pendingSets[0].getPendingChanges().getPendingChange())
@@ -1080,7 +1155,7 @@ public class VersionControlServer {
         }
       };
 
-    return execute(operation, itemSpecs);
+    return execute(operation, projectOrComponent, itemSpecs, progressTitle);
   }
 
   public ResultWithFailures<CheckinResult> checkIn(final String workspaceName,
@@ -1089,7 +1164,8 @@ public class VersionControlServer {
                                                    final String comment,
                                                    final @NotNull Map<WorkItem, CheckinWorkItemAction> workItemsActions,
                                                    final List<Pair<String, String>> checkinNotes,
-                                                   final @Nullable Pair<String/*comment*/, Map<String/*policyName*/, String/*policyMessage*/>> policyOverride)
+                                                   final @Nullable Pair<String/*comment*/, Map<String/*policyName*/, String/*policyMessage*/>> policyOverride,
+                                                   Object projectOrComponent, String progressTitle)
     throws TfsException {
     final ArrayOfCheckinNoteFieldValue fieldValues = new ArrayOfCheckinNoteFieldValue();
     for (Pair<String, String> checkinNote : checkinNotes) {
@@ -1131,7 +1207,9 @@ public class VersionControlServer {
 
     OperationOnCollection<String, ResultWithFailures<CheckinResult>> operation =
       new OperationOnCollection<String, ResultWithFailures<CheckinResult>>() {
-        public ResultWithFailures<CheckinResult> execute(Collection<String> items) throws RemoteException {
+        @Override
+        public ResultWithFailures<CheckinResult> execute(Collection<String> items, Credentials credentials, ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           final ArrayOfString serverItemsArray = new ArrayOfString();
           for (String serverItem : items) {
             serverItemsArray.addString(serverItem);
@@ -1144,7 +1222,7 @@ public class VersionControlServer {
           param.setInfo(changeset);
           param.setCheckinNotificationInfo(checkinNotificationInfo);
           param.setCheckinOptions(checkinOptions);
-          CheckInResponse response = myRepository.checkIn(param);
+          CheckInResponse response = myBeans.getRepositoryStub(credentials, pi).checkIn(param);
 
           ResultWithFailures<CheckinResult> result = new ResultWithFailures<CheckinResult>();
           if (response.getCheckInResult() != null) {
@@ -1162,7 +1240,7 @@ public class VersionControlServer {
         }
       };
 
-    return execute(operation, serverItems);
+    return execute(operation, projectOrComponent, serverItems, progressTitle);
   }
 
   @Nullable
@@ -1192,13 +1270,15 @@ public class VersionControlServer {
                              String sourceServerPath,
                              String targetServerPath,
                              final VersionSpecBase fromVersion,
-                             final VersionSpecBase toVersion) throws TfsException {
+                             final VersionSpecBase toVersion,
+                             Object projectOrComponent, String progressTitle) throws TfsException {
 
     final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
     final ItemSpec target = createItemSpec(targetServerPath, null);
 
-    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<MergeResponse>() {
-      public MergeResponse executeRequest() throws RemoteException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<MergeResponse>(progressTitle) {
+      @Override
+      public MergeResponse execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         Merge param = new Merge();
         param.setWorkspaceName(workspaceName);
         param.setWorkspaceOwner(ownerName);
@@ -1210,7 +1290,7 @@ public class VersionControlServer {
         mergeOptions.setMergeOptions_type0(new MergeOptions_type0[]{MergeOptions_type0.None});
         param.setOptions(mergeOptions);
         param.setLockLevel(LockLevel.Unchanged);
-        return myRepository.merge(param);
+        return myBeans.getRepositoryStub(credentials, pi).merge(param);
       }
     });
   }
@@ -1218,20 +1298,25 @@ public class VersionControlServer {
   /**
    * @return sorted accorging to 'do' attribute
    */
-  public List<CheckinNoteFieldDefinition> queryCheckinNoteDefinition(final Collection<String> teamProjects) throws TfsException {
+  public List<CheckinNoteFieldDefinition> queryCheckinNoteDefinition(final Collection<String> teamProjects,
+                                                                     Object projectOrComponent,
+                                                                     String progressTitle) throws TfsException {
     final ArrayOfString associatedServerItem = new ArrayOfString();
     for (String teamProject : teamProjects) {
       associatedServerItem.addString(teamProject);
     }
 
     final ArrayOfCheckinNoteFieldDefinition result =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfCheckinNoteFieldDefinition>() {
-        public ArrayOfCheckinNoteFieldDefinition executeRequest() throws RemoteException {
-          QueryCheckinNoteDefinition param = new QueryCheckinNoteDefinition();
-          param.setAssociatedServerItem(associatedServerItem);
-          return myRepository.queryCheckinNoteDefinition(param).getQueryCheckinNoteDefinitionResult();
-        }
-      });
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfCheckinNoteFieldDefinition>(progressTitle) {
+          @Override
+          public ArrayOfCheckinNoteFieldDefinition execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi)
+            throws Exception {
+            QueryCheckinNoteDefinition param = new QueryCheckinNoteDefinition();
+            param.setAssociatedServerItem(associatedServerItem);
+            return myBeans.getRepositoryStub(credentials, pi).queryCheckinNoteDefinition(param).getQueryCheckinNoteDefinitionResult();
+          }
+        });
 
     final CheckinNoteFieldDefinition[] definitions = result.getCheckinNoteFieldDefinition();
     if (definitions == null) {
@@ -1240,17 +1325,22 @@ public class VersionControlServer {
     return Arrays.asList(definitions);
   }
 
-  public Collection<Annotation> queryAnnotations(final String annotationName, final Collection<String> teamProjects) throws TfsException {
+  public Collection<Annotation> queryAnnotations(final String annotationName,
+                                                 final Collection<String> teamProjects,
+                                                 Object projectOrComponent,
+                                                 String progressTitle,
+                                                 boolean force) throws TfsException {
     final ArrayOfAnnotation arrayOfAnnotation =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfAnnotation>() {
-        public ArrayOfAnnotation executeRequest() throws RemoteException {
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<ArrayOfAnnotation>(progressTitle) {
+        @Override
+        public ArrayOfAnnotation execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryAnnotation param = new QueryAnnotation();
           param.setAnnotationName(annotationName);
           param.setAnnotatedItem(
             teamProjects.size() == 1 && !VersionControlPath.ROOT_FOLDER.equals(teamProjects.iterator().next()) ? teamProjects.iterator()
               .next() : null);
           param.setVersion(0);
-          return myRepository.queryAnnotation(param).getQueryAnnotationResult();
+          return myBeans.getRepositoryStub(credentials, pi).queryAnnotation(param).getQueryAnnotationResult();
         }
       });
     if (arrayOfAnnotation == null || arrayOfAnnotation.getAnnotation() == null) {
@@ -1266,28 +1356,37 @@ public class VersionControlServer {
     return result;
   }
 
-  public void createAnnotation(final String serverItem, final String annotationName, final String annotationValue) throws TfsException {
-    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
+  public void createAnnotation(final String serverItem,
+                               final String annotationName,
+                               final String annotationValue,
+                               Object projectOrComponent,
+                               String progressTitle) throws TfsException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(progressTitle) {
+      @Override
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         CreateAnnotation param = new CreateAnnotation();
         param.setAnnotationName(annotationName);
         param.setAnnotationValue(annotationValue);
         param.setAnnotatedItem(serverItem);
         param.setVersion(0);
         param.setOverwrite(true);
-        myRepository.createAnnotation(param);
+        myBeans.getRepositoryStub(credentials, pi).createAnnotation(param);
+        return null;
       }
     });
   }
 
-  public void deleteAnnotation(final String serverItem, final String annotationName) throws TfsException {
-    WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
+  public void deleteAnnotation(final String serverItem, final String annotationName, Object projectOrComponent, String progressTitle)
+    throws TfsException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(progressTitle) {
+      @Override
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         DeleteAnnotation param = new DeleteAnnotation();
         param.setAnnotationName(annotationName);
         param.setAnnotatedItem(serverItem);
         param.setVersion(0);
-        myRepository.deleteAnnotation(param);
+        myBeans.getRepositoryStub(credentials, pi).deleteAnnotation(param);
+        return null;
       }
     });
   }
@@ -1298,23 +1397,26 @@ public class VersionControlServer {
                         final String itemServerPath,
                         final VersionSpec versionSpec,
                         final DeletedState deletedState,
-                        final boolean generateDownloadUrl) throws TfsException {
+                        final boolean generateDownloadUrl,
+                        Object projectOrComponent, String progressTitle) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, RecursionType.None)});
 
-    ItemSet[] items = WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ItemSet[]>() {
-      public ItemSet[] executeRequest() throws RemoteException {
-        QueryItems param = new QueryItems();
-        param.setWorkspaceName(workspaceName);
-        param.setWorkspaceOwner(ownerName);
-        param.setItems(arrayOfItemSpec);
-        param.setVersion(versionSpec);
-        param.setItemType(ItemType.Any);
-        param.setDeletedState(deletedState);
-        param.setGenerateDownloadUrls(generateDownloadUrl);
-        return myRepository.queryItems(param).getQueryItemsResult().getItemSet();
-      }
-    });
+    ItemSet[] items =
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ItemSet[]>(progressTitle) {
+        @Override
+        public ItemSet[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+          QueryItems param = new QueryItems();
+          param.setWorkspaceName(workspaceName);
+          param.setWorkspaceOwner(ownerName);
+          param.setItems(arrayOfItemSpec);
+          param.setVersion(versionSpec);
+          param.setItemType(ItemType.Any);
+          param.setDeletedState(deletedState);
+          param.setGenerateDownloadUrls(generateDownloadUrl);
+          return myBeans.getRepositoryStub(credentials, pi).queryItems(param).getQueryItemsResult().getItemSet();
+        }
+      });
 
     TFSVcs.assertTrue(items != null && items.length == 1);
     //noinspection ConstantConditions
@@ -1326,13 +1428,15 @@ public class VersionControlServer {
     return null;
   }
 
-  public List<Item> queryItems(final ItemSpec itemSpec, final VersionSpec version) throws TfsException {
+  public List<Item> queryItems(final ItemSpec itemSpec, final VersionSpec version, Object projectOrComponent, String progressTitle)
+    throws TfsException {
     final ArrayOfItemSpec itemSpecs = new ArrayOfItemSpec();
     itemSpecs.setItemSpec(new ItemSpec[]{itemSpec});
 
     final ArrayOfItemSet arrayOfItemSet =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfItemSet>() {
-        public ArrayOfItemSet executeRequest() throws RemoteException {
+      TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfItemSet>(progressTitle) {
+        @Override
+        public ArrayOfItemSet execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryItems param = new QueryItems();
           param.setWorkspaceName(null);
           param.setWorkspaceOwner(null);
@@ -1341,7 +1445,7 @@ public class VersionControlServer {
           param.setDeletedState(DeletedState.NonDeleted);
           param.setItemType(ItemType.Any);
           param.setGenerateDownloadUrls(false);
-          return myRepository.queryItems(param).getQueryItemsResult();
+          return myBeans.getRepositoryStub(credentials, pi).queryItems(param).getQueryItemsResult();
         }
       });
 
@@ -1359,14 +1463,15 @@ public class VersionControlServer {
   }
 
 
-  public Changeset queryChangeset(final int changesetId) throws TfsException {
-    return WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<Changeset>() {
-      public Changeset executeRequest() throws RemoteException {
+  public Changeset queryChangeset(final int changesetId, Object projectOrComponent, String progressTitle) throws TfsException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Changeset>(progressTitle) {
+      @Override
+      public Changeset execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         QueryChangeset param = new QueryChangeset();
         param.setChangesetId(changesetId);
         param.setIncludeChanges(true);
         param.setGenerateDownloadUrls(false);
-        return myRepository.queryChangeset(param).getQueryChangesetResult();
+        return myBeans.getRepositoryStub(credentials, pi).queryChangeset(param).getQueryChangesetResult();
       }
     });
   }
@@ -1377,23 +1482,26 @@ public class VersionControlServer {
                                                final boolean includeItems,
                                                final String filterItem,
                                                final VersionSpec versionFilterItem,
-                                               final boolean generateDownloadUrls) throws TfsException {
+                                               final boolean generateDownloadUrls,
+                                               Object projectOrComponent, String progressTitle) throws TfsException {
     VersionControlLabel[] labels =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<VersionControlLabel[]>() {
-        public VersionControlLabel[] executeRequest() throws RemoteException {
-          QueryLabels param = new QueryLabels();
-          param.setWorkspaceName(null);
-          param.setWorkspaceOwner(null);
-          param.setLabelName(labelName);
-          param.setLabelScope(labelScope);
-          param.setOwner(owner);
-          param.setFilterItem(filterItem);
-          param.setVersionFilterItem(versionFilterItem);
-          param.setIncludeItems(includeItems);
-          param.setGenerateDownloadUrls(generateDownloadUrls);
-          return myRepository.queryLabels(param).getQueryLabelsResult().getVersionControlLabel();
-        }
-      });
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<VersionControlLabel[]>(progressTitle) {
+          @Override
+          public VersionControlLabel[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+            QueryLabels param = new QueryLabels();
+            param.setWorkspaceName(null);
+            param.setWorkspaceOwner(null);
+            param.setLabelName(labelName);
+            param.setLabelScope(labelScope);
+            param.setOwner(owner);
+            param.setFilterItem(filterItem);
+            param.setVersionFilterItem(versionFilterItem);
+            param.setIncludeItems(includeItems);
+            param.setGenerateDownloadUrls(generateDownloadUrls);
+            return myBeans.getRepositoryStub(credentials, pi).queryLabels(param).getQueryLabelsResult().getVersionControlLabel();
+          }
+        });
     ArrayList<VersionControlLabel> result = new ArrayList<VersionControlLabel>();
     if (labels != null) {
       ContainerUtil.addAll(result, labels);
@@ -1401,7 +1509,11 @@ public class VersionControlServer {
     return result;
   }
 
-  public ResultWithFailures<LabelResult> labelItem(final String labelName, final String labelComment, List<LabelItemSpec> labelItemSpecs)
+  public ResultWithFailures<LabelResult> labelItem(final String labelName,
+                                                   final String labelComment,
+                                                   List<LabelItemSpec> labelItemSpecs,
+                                                   Object projectOrComponent,
+                                                   String progressTitle)
     throws TfsException {
     final VersionControlLabel versionControlLabel = new VersionControlLabel();
     versionControlLabel.setName(labelName);
@@ -1411,7 +1523,9 @@ public class VersionControlServer {
 
     OperationOnCollection<LabelItemSpec, ResultWithFailures<LabelResult>> operation =
       new OperationOnCollection<LabelItemSpec, ResultWithFailures<LabelResult>>() {
-        public ResultWithFailures<LabelResult> execute(Collection<LabelItemSpec> items) throws RemoteException {
+        @Override
+        public ResultWithFailures<LabelResult> execute(Collection<LabelItemSpec> items, Credentials credentials, ProgressIndicator pi)
+          throws RemoteException, HostNotApplicableException {
           final ArrayOfLabelItemSpec arrayOfLabelItemSpec = new ArrayOfLabelItemSpec();
           arrayOfLabelItemSpec.setLabelItemSpec(items.toArray(new LabelItemSpec[items.size()]));
           LabelItem param = new LabelItem();
@@ -1420,7 +1534,7 @@ public class VersionControlServer {
           param.setLabel(versionControlLabel);
           param.setLabelSpecs(arrayOfLabelItemSpec);
           param.setChildren(LabelChildOption.Fail);
-          LabelItemResponse labelItemResponse = myRepository.labelItem(param);
+          LabelItemResponse labelItemResponse = myBeans.getRepositoryStub(credentials, pi).labelItem(param);
           ArrayOfLabelResult results = labelItemResponse.getLabelItemResult();
           ArrayOfFailure failures = labelItemResponse.getFailures();
 
@@ -1434,24 +1548,30 @@ public class VersionControlServer {
       };
 
 
-    return execute(operation, labelItemSpecs);
+    return execute(operation, projectOrComponent, labelItemSpecs, progressTitle);
   }
 
-  public Collection<BranchRelative> queryBranches(final String itemServerPath, final VersionSpec versionSpec) throws TfsException {
+  public Collection<BranchRelative> queryBranches(final String itemServerPath,
+                                                  final VersionSpec versionSpec,
+                                                  Object projectOrComponent,
+                                                  String progressTitle) throws TfsException {
     final ArrayOfItemSpec arrayOfItemSpec = new ArrayOfItemSpec();
     arrayOfItemSpec.setItemSpec(new ItemSpec[]{createItemSpec(itemServerPath, null)});
 
     ArrayOfArrayOfBranchRelative result =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfArrayOfBranchRelative>() {
-        public ArrayOfArrayOfBranchRelative executeRequest() throws RemoteException {
-          QueryBranches param = new QueryBranches();
-          param.setWorkspaceName(null);
-          param.setWorkspaceOwner(null);
-          param.setItems(arrayOfItemSpec);
-          param.setVersion(versionSpec);
-          return myRepository.queryBranches(param).getQueryBranchesResult();
-        }
-      });
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfArrayOfBranchRelative>(progressTitle) {
+          @Override
+          public ArrayOfArrayOfBranchRelative execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi)
+            throws Exception {
+            QueryBranches param = new QueryBranches();
+            param.setWorkspaceName(null);
+            param.setWorkspaceOwner(null);
+            param.setItems(arrayOfItemSpec);
+            param.setVersion(versionSpec);
+            return myBeans.getRepositoryStub(credentials, pi).queryBranches(param).getQueryBranchesResult();
+          }
+        });
 
     TFSVcs.assertTrue(result.getArrayOfBranchRelative().length == 1);
     final BranchRelative[] branches = result.getArrayOfBranchRelative()[0].getBranchRelative();
@@ -1461,21 +1581,24 @@ public class VersionControlServer {
   public Collection<MergeCandidate> queryMergeCandidates(final String workspaceName,
                                                          final String ownerName,
                                                          String sourceServerPath,
-                                                         String targetServerPath) throws TfsException {
+                                                         String targetServerPath,
+                                                         Object projectOrComponent, String progressTitle) throws TfsException {
     final ItemSpec source = createItemSpec(sourceServerPath, RecursionType.Full);
     final ItemSpec target = createItemSpec(targetServerPath, RecursionType.Full);
 
     final ArrayOfMergeCandidate result =
-      WebServiceHelper.executeRequest(myServerUri, myRepository, new WebServiceHelper.Delegate<ArrayOfMergeCandidate>() {
-        public ArrayOfMergeCandidate executeRequest() throws RemoteException {
-          QueryMergeCandidates param = new QueryMergeCandidates();
-          param.setWorkspaceName(workspaceName);
-          param.setWorkspaceOwner(ownerName);
-          param.setSource(source);
-          param.setTarget(target);
-          return myRepository.queryMergeCandidates(param).getQueryMergeCandidatesResult();
-        }
-      });
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<ArrayOfMergeCandidate>(progressTitle) {
+          @Override
+          public ArrayOfMergeCandidate execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
+            QueryMergeCandidates param = new QueryMergeCandidates();
+            param.setWorkspaceName(workspaceName);
+            param.setWorkspaceOwner(ownerName);
+            param.setSource(source);
+            param.setTarget(target);
+            return myBeans.getRepositoryStub(credentials, pi).queryMergeCandidates(param).getQueryMergeCandidatesResult();
+          }
+        });
     return result.getMergeCandidate() != null ? Arrays.asList(result.getMergeCandidate()) : Collections.<MergeCandidate>emptyList();
   }
 
@@ -1489,18 +1612,19 @@ public class VersionControlServer {
    * @return
    * @throws TfsException
    */
-  public Identity readIdentity(String qualifiedUsername) throws TfsException {
+  public Identity readIdentity(String qualifiedUsername, Object projectOrComponent, String progressTitle) throws TfsException {
     final SearchFactor searchFactor = SearchFactor.AccountName;
     final String factorValue = qualifiedUsername;
     final QueryMembership queryMembership = QueryMembership.None;
 
-    return WebServiceHelper.executeRequest(myServerUri, myGroupSecurityService, new WebServiceHelper.Delegate<Identity>() {
-      public Identity executeRequest() throws RemoteException {
+    return TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Identity>(progressTitle) {
+      @Override
+      public Identity execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         ReadIdentity param = new ReadIdentity();
         param.setFactor(searchFactor);
         param.setFactorValue(factorValue);
         param.setQueryMembership(queryMembership);
-        return myGroupSecurityService.readIdentity(param).getReadIdentityResult();
+        return myBeans.getGroupSecurityServiceStub(credentials, pi).readIdentity(param).getReadIdentityResult();
       }
     });
   }
@@ -1516,23 +1640,24 @@ public class VersionControlServer {
     return requestHeader3;
   }
 
-  public List<WorkItem> queryWorkItems(Query_type0E query) throws TfsException {
+  public List<WorkItem> queryWorkItems(Query_type0E query, Object projectOrComponent, String progressTitle) throws TfsException {
     final PsQuery_type1 psQuery_type1 = new PsQuery_type1();
     psQuery_type1.setQuery(query);
 
     QueryWorkitemsResponse queryWorkitemsResponse =
-      WebServiceHelper
-        .executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.Delegate<QueryWorkitemsResponse>() {
-          public QueryWorkitemsResponse executeRequest() throws RemoteException {
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<QueryWorkitemsResponse>(progressTitle) {
+          @Override
+          public QueryWorkitemsResponse execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
             QueryWorkitems param = new QueryWorkitems();
             param.setPsQuery(psQuery_type1);
-            return myWorkItemTrackingClientService.queryWorkitems(param, generateRequestHeader());
+            return myBeans.getWorkItemServiceStub(credentials, pi).queryWorkitems(param, generateRequestHeader());
           }
         });
 
     final List<Integer> ids = parseWorkItemsIds(queryWorkitemsResponse);
     Collections.sort(ids);
-    return pageWorkitemsByIds(ids);
+    return pageWorkitemsByIds(ids, projectOrComponent, progressTitle);
   }
 
   private static List<Integer> parseWorkItemsIds(final QueryWorkitemsResponse queryWorkitemsResponse) {
@@ -1559,7 +1684,8 @@ public class VersionControlServer {
     return workItemsIdSet;
   }
 
-  private List<WorkItem> pageWorkitemsByIds(Collection<Integer> workItemsIds) throws TfsException {
+  private List<WorkItem> pageWorkitemsByIds(Collection<Integer> workItemsIds, Object projectOrComponent, String progressTitle)
+    throws TfsException {
     if (workItemsIds.isEmpty()) {
       return Collections.emptyList();
     }
@@ -1585,9 +1711,11 @@ public class VersionControlServer {
     workItemFields.setString(ArrayUtil.toStringArray(serializedFields));
 
     PageWorkitemsByIdsResponse pageWorkitemsByIdsResponse =
-      WebServiceHelper
-        .executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.Delegate<PageWorkitemsByIdsResponse>() {
-          public PageWorkitemsByIdsResponse executeRequest() throws RemoteException {
+      TfsRequestManager
+        .executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<PageWorkitemsByIdsResponse>(progressTitle) {
+          @Override
+          public PageWorkitemsByIdsResponse execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi)
+            throws Exception {
             PageWorkitemsByIds param = new PageWorkitemsByIds();
             param.setIds(workitemIds);
             param.setColumns(workItemFields);
@@ -1595,7 +1723,7 @@ public class VersionControlServer {
             param.setAsOfDate(new GregorianCalendar());
             param.setUseMaster(false);
             param.setMetadataHave(null);
-            return myWorkItemTrackingClientService.pageWorkitemsByIds(param, generateRequestHeader());
+            return myBeans.getWorkItemServiceStub(credentials, pi).pageWorkitemsByIds(param, generateRequestHeader());
           }
         });
 
@@ -1608,21 +1736,27 @@ public class VersionControlServer {
 
   public void updateWorkItemsAfterCheckin(final String workspaceOwnerName,
                                           final Map<WorkItem, CheckinWorkItemAction> workItems,
-                                          final int changeSet) throws TfsException {
+                                          final int changeSet,
+                                          Object projectOrComponent, String progressTitle) throws TfsException {
     if (workItems.isEmpty()) {
       return;
     }
 
-    String identity = readIdentity(workspaceOwnerName).getDisplayName();
+    String identity = readIdentity(workspaceOwnerName, projectOrComponent, progressTitle).getDisplayName();
     for (WorkItem workItem : workItems.keySet()) {
       CheckinWorkItemAction checkinWorkItemAction = workItems.get(workItem);
       if (checkinWorkItemAction != CheckinWorkItemAction.None) {
-        updateWorkItem(workItem, checkinWorkItemAction, changeSet, identity);
+        updateWorkItem(workItem, checkinWorkItemAction, changeSet, identity, projectOrComponent, progressTitle);
       }
     }
   }
 
-  private void updateWorkItem(WorkItem workItem, CheckinWorkItemAction action, int changeSet, String identity) throws TfsException {
+  private void updateWorkItem(WorkItem workItem,
+                              CheckinWorkItemAction action,
+                              int changeSet,
+                              String identity,
+                              Object projectOrComponent,
+                              String progressTitle) throws TfsException {
     UpdateWorkItem_type0 updateWorkItem_type0 = new UpdateWorkItem_type0();
     updateWorkItem_type0.setWorkItemID(workItem.getId());
     updateWorkItem_type0.setRevision(workItem.getRevision());
@@ -1639,12 +1773,14 @@ public class VersionControlServer {
     final Package_type0E package_type_0 = new Package_type0E();
     package_type_0.setPackage(package_type00);
 
-    WebServiceHelper.executeRequest(myServerUri, myWorkItemTrackingClientService, new WebServiceHelper.VoidDelegate() {
-      public void executeRequest() throws RemoteException {
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(progressTitle) {
+      @Override
+      public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
         Update param = new Update();
         param.set_package(package_type_0);
         param.setMetadataHave(null);
-        myWorkItemTrackingClientService.update(param, generateRequestHeader());
+        myBeans.getWorkItemServiceStub(credentials, pi).update(param, generateRequestHeader());
+        return null;
       }
     });
   }

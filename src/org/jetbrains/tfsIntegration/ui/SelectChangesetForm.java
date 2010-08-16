@@ -21,6 +21,7 @@ import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionSpec;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.DateVersionSpec;
@@ -30,7 +31,6 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -49,6 +49,7 @@ public class SelectChangesetForm {
 
   interface Listener extends EventListener {
     void selectionChanged(Integer changeset);
+
     void selected(Integer changeset);
   }
 
@@ -144,10 +145,9 @@ public class SelectChangesetForm {
         }
       }
 
-      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      List<Changeset> changesets =
-        myWorkspace.getServer().getVCS().queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo)
-        ;
+      List<Changeset> changesets = myWorkspace.getServer().getVCS()
+        .queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo, getContentPane(),
+                      TFSBundle.message("loading.history"));
 
       if (changesets.isEmpty()) {
         Messages.showInfoMessage(panel, "No matching changesets found", "Find Changeset");
@@ -165,9 +165,6 @@ public class SelectChangesetForm {
     catch (ParseException e1) {
       myChangesetsTableModel.setChangesets(Collections.<Changeset>emptyList());
       Messages.showErrorDialog(panel, "Invalid date specified", "Find Changeset");
-    }
-    finally {
-      getContentPane().setCursor(Cursor.getDefaultCursor());
     }
   }
 

@@ -77,6 +77,14 @@
               description="Change Team Foundation Servers and workspaces configuration"
               class="org.jetbrains.tfsIntegration.actions.TfsEditConfigurationAction"/>
     </group>
+
+    <group id="TfsTreePopupMenu">
+    </group>
+
+    <action id="TFS.CreateVirtualFolder" text="Create _Folder..." description="Create folder on server"
+            class="org.jetbrains.tfsIntegration.ui.servertree.CreateVirtualFolderAction" icon="/actions/newFolder.png">
+      <add-to-group group-id="TfsTreePopupMenu" anchor="first"/>
+      </action>
   </actions>
 
 </idea-plugin>

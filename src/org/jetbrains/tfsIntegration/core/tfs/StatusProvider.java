@@ -23,6 +23,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -37,7 +38,8 @@ public class StatusProvider {
                                    final List<ItemPath> roots,
                                    boolean recursive,
                                    final @Nullable ProgressIndicator progress,
-                                   final @NotNull StatusVisitor statusVisitor) throws TfsException {
+                                   final @NotNull StatusVisitor statusVisitor,
+                                   Object projectOrComponent) throws TfsException {
     if (roots.isEmpty()) {
       return;
     }
@@ -51,7 +53,8 @@ public class StatusProvider {
     }
 
     VersionControlServer.ExtendedItemsAndPendingChanges extendedItemsAndPendingChanges = workspace.getServer().getVCS()
-      .getExtendedItemsAndPendingChanges(workspace.getName(), workspace.getOwnerName(), itemSpecs, ItemType.Any);
+      .getExtendedItemsAndPendingChanges(workspace.getName(), workspace.getOwnerName(), itemSpecs, ItemType.Any, projectOrComponent,
+                                         TFSBundle.message("loading.changes"));
 
     Map<Integer, PendingChange> pendingChanges = new HashMap<Integer, PendingChange>(extendedItemsAndPendingChanges.pendingChanges.size());
     for (PendingChange pendingChange : extendedItemsAndPendingChanges.pendingChanges) {
@@ -139,7 +142,7 @@ public class StatusProvider {
       return ServerStatus.Unversioned.INSTANCE;
     }
 
-    ChangeTypeMask change = new ChangeTypeMask( item.getChg());
+    ChangeTypeMask change = new ChangeTypeMask(item.getChg());
     change.remove(ChangeType_type0.None, ChangeType_type0.Lock);
 
     if (item.getLocal() == null && change.isEmpty()) {

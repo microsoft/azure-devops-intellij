@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.configuration;
 
+import com.intellij.notification.Notification;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
@@ -30,6 +31,8 @@ public class ServerConfiguration {
   private @Nullable String myProxyUri;
 
   private boolean myProxyInaccessible;
+
+  private Notification myAuthCanceledNotification;
 
   public ServerConfiguration() {
   }
@@ -68,5 +71,14 @@ public class ServerConfiguration {
 
   public void setProxyInaccessible() {
     myProxyInaccessible = true;
+  }
+
+  @Transient
+  public Notification getAuthCanceledNotification() {
+    return myAuthCanceledNotification;
+  }
+
+  public void setAuthCanceledNotification(Notification authCanceledNotification) {
+    myAuthCanceledNotification = authCanceledNotification;
   }
 }

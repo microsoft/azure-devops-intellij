@@ -63,7 +63,8 @@ public class TFSDiffProvider implements DiffProvider {
     else {
       FilePath path = TfsFileUtil.getFilePath(virtualFile);
       try {
-        Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem = TfsUtil.getWorkspaceAndExtendedItem(path);
+        Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem =
+          TfsUtil.getWorkspaceAndExtendedItem(path, myProject, TFSBundle.message("loading.item"));
         if (workspaceAndItem == null || workspaceAndItem.second == null) {
           return null;
         }
@@ -81,18 +82,19 @@ public class TFSDiffProvider implements DiffProvider {
 
   @Nullable
   public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
-    return TfsUtil.getCurrentRevisionNumber(TfsFileUtil.getFilePath(virtualFile));
+    return TfsUtil.getCurrentRevisionNumber(TfsFileUtil.getFilePath(virtualFile), myProject, TFSBundle.message("loading.item"));
   }
 
   public ItemLatestState getLastRevision(final FilePath localPath) {
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, myProject);
       if (workspaces.isEmpty()) {
         return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }
       final WorkspaceInfo workspace = workspaces.iterator().next();
       final ExtendedItem extendedItem = workspace.getServer().getVCS()
-        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any);
+        .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any, myProject,
+                         TFSBundle.message("loading.item"));
       if (extendedItem == null) {
         return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }
@@ -100,7 +102,7 @@ public class TFSDiffProvider implements DiffProvider {
       // so we need to query item by name
       final Item item = workspace.getServer().getVCS()
         .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
-                   false);
+                   false, myProject, TFSBundle.message("loading.item"));
       if (item != null) {
         VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
         return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE, false);

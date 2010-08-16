@@ -58,6 +58,7 @@ import org.jetbrains.tfsIntegration.ui.TfsLoginDialog;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAP12Factory;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAPBuilder;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -163,86 +164,52 @@ public class WebServiceHelper {
     });
   }
 
-  public static void executeRequest(URI serverUri, Stub stub, final VoidDelegate delegate) throws TfsException {
-    executeRequest(serverUri, stub, new Delegate<Void>() {
-
-      @Nullable
-      public Void executeRequest() throws RemoteException {
-        delegate.executeRequest();
-        return null;
-      }
-    });
-  }
-
-  public static <T> T executeRequest(URI serverUri, final Stub stub, final Delegate<T> delegate) throws TfsException {
-    return executeRequest(serverUri, new InnerDelegate<T>() {
-      public T executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
-        return ClassLoaderUtil.runWithClassLoader(TFSVcs.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
-          @Nullable
-          public T compute() throws Exception {
-            setupStub(stub, credentials, serverUri);
-            return delegate.executeRequest();
-          }
-        });
-      }
-    });
-  }
-
-  public static void httpGet(final URI serverUri, final String downloadUrl, final OutputStream outputStream) throws TfsException {
+  public static void httpGet(final URI serverUri, final String downloadUrl, final OutputStream outputStream, Credentials credentials)
+    throws TfsException, IOException {
     TFSVcs.assertTrue(downloadUrl != null);
+    HttpClient httpClient = new HttpClient();
+    setCredentials(httpClient, credentials, serverUri);
+    setProxy(httpClient);
 
-    executeRequest(serverUri, new InnerDelegate<Object>() {
-      public Object executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
-        HttpClient httpClient = new HttpClient();
-        setCredentials(httpClient, credentials, serverUri);
-        setProxy(httpClient);
-
-        HttpMethod method = new GetMethod(downloadUrl);
-        int statusCode = httpClient.executeMethod(method);
-        if (statusCode == HttpStatus.SC_OK) {
-          StreamUtil.copyStreamContent(getInputStream(method), outputStream);
-        }
-        else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-          throw new OperationFailedException(method.getResponseBodyAsString());
-        }
-        else {
-          throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
-        }
-        return null;
-      }
-    });
+    HttpMethod method = new GetMethod(downloadUrl);
+    int statusCode = httpClient.executeMethod(method);
+    if (statusCode == HttpStatus.SC_OK) {
+      StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+    }
+    else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+      throw new OperationFailedException(method.getResponseBodyAsString());
+    }
+    else {
+      throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+    }
   }
 
-  public static void httpPost(final @NotNull String uploadUrl, final @NotNull Part[] parts, final @Nullable OutputStream outputStream)
-    throws TfsException {
-    final URI serverUri = TfsUtil.getUrl(uploadUrl, false, true);
+  public static void httpPost(final @NotNull String uploadUrl,
+                              final @NotNull Part[] parts,
+                              final @Nullable OutputStream outputStream,
+                              Credentials credentials, URI serverUri)
+    throws IOException, TfsException {
+    HttpClient httpClient = new HttpClient();
+    setCredentials(httpClient, credentials, serverUri);
+    setProxy(httpClient);
 
-    executeRequest(serverUri, new InnerDelegate<Object>() {
-      public Object executeRequest(final @NotNull URI serverUri, final @NotNull Credentials credentials) throws Exception {
-        HttpClient httpClient = new HttpClient();
-        setCredentials(httpClient, credentials, serverUri);
-        setProxy(httpClient);
+    PostMethod method = new PostMethod(uploadUrl);
+    method.setRequestHeader("X-TFS-Version", "1.0.0.0");
+    method.setRequestHeader("accept-language", "en-US");
+    method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
 
-        PostMethod method = new PostMethod(uploadUrl);
-        method.setRequestHeader("X-TFS-Version", "1.0.0.0");
-        method.setRequestHeader("accept-language", "en-US");
-        method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
-
-        int statusCode = httpClient.executeMethod(method);
-        if (statusCode == HttpStatus.SC_OK) {
-          if (outputStream != null) {
-            StreamUtil.copyStreamContent(getInputStream(method), outputStream);
-          }
-        }
-        else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-          throw new OperationFailedException(method.getResponseBodyAsString());
-        }
-        else {
-          throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
-        }
-        return null;
+    int statusCode = httpClient.executeMethod(method);
+    if (statusCode == HttpStatus.SC_OK) {
+      if (outputStream != null) {
+        StreamUtil.copyStreamContent(getInputStream(method), outputStream);
       }
-    });
+    }
+    else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+      throw new OperationFailedException(method.getResponseBodyAsString());
+    }
+    else {
+      throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+    }
   }
 
   private static <T> T executeRequest(@Nullable final URI initialUri, InnerDelegate<T> delegate) throws TfsException {
@@ -470,7 +437,7 @@ public class WebServiceHelper {
     httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
   }
 
-  private static InputStream getInputStream(HttpMethod method) throws Exception {
+  private static InputStream getInputStream(HttpMethod method) throws IOException {
     // TODO: find proper way to determine gzip compression
     Header contentType = method.getResponseHeader(HTTPConstants.HEADER_CONTENT_TYPE);
     if (contentType != null && CONTENT_TYPE_GZIP.equalsIgnoreCase(contentType.getValue())) {

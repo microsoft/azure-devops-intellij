@@ -17,31 +17,31 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
+import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
 import javax.swing.*;
-import java.text.MessageFormat;
 
 public class ChooseServerPathStep extends CheckoutWizardStep {
 
   public static final Object ID = new Object();
 
-  private final ServerPathForm myPathForm;
+  private final TfsTreeForm myForm = new TfsTreeForm();
 
   public ChooseServerPathStep(final CheckoutWizardModel model) {
     super("Choose Source Path", model);
-    myPathForm = new ServerPathForm(new ServerTree.PathFilter() {
-      public boolean isAcceptablePath(final @NotNull String path) {
-        return isAcceptable(path);
-      }
-    });
 
-    myPathForm.addListener(new ServerPathForm.Listener() {
-      public void serverPathChanged() {
+    Disposer.register(this, myForm);
+    myForm.addListener(new TfsTreeForm.SelectionListener() {
+      @Override
+      public void selectionChanged() {
         validate();
         fireStateChanged();
       }
@@ -64,30 +64,35 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
   }
 
   public boolean isComplete() {
-    return isAcceptable(myPathForm.getServerPath());
+    return isAcceptable(myForm.getSelectedPath());
   }
 
   public JComponent getComponent() {
-    return myPathForm.getContentPanel();
+    return myForm.getContentPane();
   }
 
   public void _init() {
-    myPathForm.configure(myModel.getServer(), myModel.getServerPath());
+    myForm.initialize(myModel.getServer(), myModel.getServerPath(), true, false, new Condition<String>() {
+      @Override
+      public boolean value(String path) {
+        return isAcceptable(path);
+      }
+    });
     validate();
   }
 
   public void commit(CommitType commitType) throws CommitStepException {
-    if (isAcceptable(myPathForm.getServerPath())) {
-      myModel.setServerPath(myPathForm.getServerPath());
+    if (isAcceptable(myForm.getSelectedPath())) {
+      myModel.setServerPath(myForm.getSelectedPath());
     }
   }
 
   private boolean isAcceptable(String serverPath) {
-    if (serverPath == null || serverPath.length() == 0) {
+    if (StringUtil.isEmpty(serverPath)) {
       return false;
     }
     try {
-      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath, true) == null) {
+      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath, true, null) == null) {
         return false;
       }
     }
@@ -98,30 +103,28 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
   }
 
   private void validate() {
-    String serverPath = myPathForm.getServerPath();
-    if (serverPath == null || serverPath.length() == 0) {
-      myPathForm.setErrorMessage("Server path is empty");
+    String serverPath = myForm.getSelectedPath();
+    if (StringUtil.isEmpty(serverPath)) {
+      myForm.setMessage(TFSBundle.message("server.path.is.empty"), true);
     }
     else {
       try {
-        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true);
+        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true, null);
         if (localPath != null) {
-          String message = MessageFormat.format("Server path ''{0}'' is mapped to ''{1}''", serverPath, localPath.getPresentableUrl());
-          myPathForm.setMessage(message);
+          myForm.setMessage(TFSBundle.message("server.path.0.is.mapped.to.1", serverPath, localPath.getPresentableUrl()), false);
         }
         else {
-          String message = MessageFormat.format("No mapping found for ''{0}''", serverPath);
-          myPathForm.setErrorMessage(message);
+          myForm.setMessage(TFSBundle.message("no.mapping.for.0", serverPath), true);
         }
       }
       catch (TfsException e) {
-        myPathForm.setErrorMessage(MessageFormat.format("Failed to connect to server. {0}", e.getMessage()));
+        myForm.setMessage(TFSBundle.message("failed.to.connect", e.getMessage()), true);
       }
     }
   }
 
   @Override
   public JComponent getPreferredFocusedComponent() {
-    return myPathForm.getPreferredFocusedComponent();
+    return myForm.getPreferredFocusedComponent();
   }
 }

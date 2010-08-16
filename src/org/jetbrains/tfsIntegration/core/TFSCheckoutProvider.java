@@ -79,12 +79,13 @@ public class TFSCheckoutProvider implements CheckoutProvider {
           else {
             workspace = model.getWorkspace();
           }
-          localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath(), true));
+          localRoot.set(workspace.findLocalPathByServerPath(model.getServerPath(), true, null));
 
           // TODO when checking out after working folder mappings were changed, GetOps may contain inappropriate 'move' operations
 
           final List<GetOperation> operations = workspace.getServer().getVCS()
-            .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full);
+            .get(workspace.getName(), workspace.getOwnerName(), model.getServerPath(), LatestVersionSpec.INSTANCE, RecursionType.Full, null,
+                 null);
 
           final Collection<VcsException> applyErrors = ApplyGetOperations
             .execute(ProjectManager.getInstance().getDefaultProject(), workspace, operations,

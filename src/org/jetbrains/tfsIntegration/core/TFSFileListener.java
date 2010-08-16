@@ -54,7 +54,8 @@ public class TFSFileListener extends VcsVFSListener {
 
   protected void executeAdd() {
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(myAddedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(myAddedFiles), false, myProject,
+                                            new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           StatusProvider.visitByStatus(workspace, paths, false, null, new StatusVisitor() {
             public void unversioned(final @NotNull FilePath localPath,
@@ -116,7 +117,7 @@ public class TFSFileListener extends VcsVFSListener {
               // TODO: add local conflict
             }
 
-          });
+          }, myProject);
         }
       });
     }
@@ -137,12 +138,13 @@ public class TFSFileListener extends VcsVFSListener {
     deletedFiles.addAll(myDeletedWithoutConfirmFiles);
 
     try {
-      WorkstationHelper.processByWorkspaces(deletedFiles, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(deletedFiles, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
           final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full);
+            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full, myProject,
+                                          TFSBundle.message("loading.changes"));
 
           final List<String> revertImmediately = new ArrayList<String>();
 
@@ -227,7 +229,7 @@ public class TFSFileListener extends VcsVFSListener {
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
               TFSVcs.error("Cannot revert undeleted: " + localPath.getPresentableUrl());
             }
-          });
+          }, myProject);
         }
       });
     }
@@ -243,7 +245,7 @@ public class TFSFileListener extends VcsVFSListener {
   protected void performDeletion(final List<FilePath> filesToDelete) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(filesToDelete, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(filesToDelete, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> scheduleErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
           errors.addAll(scheduleErrors);
@@ -269,7 +271,8 @@ public class TFSFileListener extends VcsVFSListener {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       final List<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, myProject,
+                                              new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
             Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
             errors.addAll(schedulingErrors);
@@ -315,7 +318,7 @@ public class TFSFileListener extends VcsVFSListener {
     final List<VcsException> errors = new ArrayList<VcsException>();
     final Map<FilePath, FilePath> scheduleMove = new HashMap<FilePath, FilePath>();
     try {
-      WorkstationHelper.processByWorkspaces(movedPaths.keySet(), false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(movedPaths.keySet(), false, myProject, new WorkstationHelper.VoidProcessDelegate() {
 
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           // TODO simplify this
@@ -378,10 +381,12 @@ public class TFSFileListener extends VcsVFSListener {
                                   final @NotNull ServerStatus serverStatus) throws TfsException {
               scheduleMove.put(localPath, movedPaths.get(localPath));
             }
-          });
+          }, myProject);
 
           final ResultWithFailures<GetOperation> renameResult =
-            workspace.getServer().getVCS().renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove);
+            workspace.getServer().getVCS()
+              .renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove, myProject,
+                                           TFSBundle.message("renaming"));
           errors.addAll(TfsUtil.getVcsExceptions(renameResult.getFailures()));
 
           Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());

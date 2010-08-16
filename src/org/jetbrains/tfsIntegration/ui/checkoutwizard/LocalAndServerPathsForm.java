@@ -16,84 +16,72 @@
 
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
-import com.intellij.openapi.fileChooser.FileChooser;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.ui.ComponentWithBrowseButton;
+import com.intellij.openapi.ui.TextComponentAccessor;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.vcsUtil.VcsUtil;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerTree;
+import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.EventListener;
 
-public class LocalAndServerPathsForm {
+public class LocalAndServerPathsForm implements Disposable {
 
-  public interface Listener extends EventListener {
-    void serverPathChanged();
-
-    void localPathChanged();
-  }
-
-  private ServerTree myServerTree;
-  private JTextField myLocalPathField;
-  private JButton myBrowseButton;
+  private TextFieldWithBrowseButton myLocalPathField;
   private JPanel myContentPanel;
-  private JLabel myErrorLabel;
+  private JLabel myMessageLabel;
+  private TfsTreeForm myServerPathForm;
+  private JLabel myServerPathLabel;
+  private JLabel myLocalPathLabel;
 
-  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
   public LocalAndServerPathsForm() {
-    myServerTree.addSelectionListener(new ServerTree.SelectionListener() {
-      public void selectionChanged(final ServerTree.SelectedItem selection) {
-        myEventDispatcher.getMulticaster().serverPathChanged();
+    Disposer.register(this, myServerPathForm);
+
+    myServerPathForm.addListener(new TfsTreeForm.SelectionListener() {
+      @Override
+      public void selectionChanged() {
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     });
 
-    myLocalPathField.getDocument().addDocumentListener(new DocumentAdapter() {
+    myLocalPathLabel.setLabelFor(myLocalPathField.getChildComponent());
+    myLocalPathField.getChildComponent().getDocument().addDocumentListener(new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        myEventDispatcher.getMulticaster().localPathChanged();
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
       }
     });
 
-    myBrowseButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        FileChooserDescriptor d = new FileChooserDescriptor(false, true, false, false, false, false);
-        d.setTitle("Choose Local Folder");
-        d.setShowFileSystemRoots(true);
-        d.setDescription("Choose local folder to check out to");
+    FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+    ComponentWithBrowseButton.BrowseFolderActionListener<JTextField> listener =
+      new ComponentWithBrowseButton.BrowseFolderActionListener<JTextField>(TFSBundle.message("choose.local.path.title"),
+                                                                           TFSBundle.message("choose.local.path.description"),
+                                                                           myLocalPathField, null, descriptor,
+                                                                           TextComponentAccessor.TEXT_FIELD_WHOLE_TEXT);
 
-        VirtualFile root = myLocalPathField.getText() != null ? VcsUtil.getVirtualFile(myLocalPathField.getText().trim()) : null;
-        VirtualFile[] files = FileChooser.chooseFiles(myContentPanel, d, root);
-        if (files.length == 1 && files[0] != null) {
-          myLocalPathField.setText(files[0].getPresentableUrl());
-          myLocalPathField.setText(files[0].getPresentableUrl());
-        }
-      }
-    });
+    myServerPathLabel.setLabelFor(myServerPathForm.getPreferredFocusedComponent());
+    myLocalPathField.addActionListener(listener);
+    myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
   }
 
-  private void createUIComponents() {
-    myServerTree = new ServerTree(true);
-  }
-
-  public void configure(ServerInfo server, String initialPath) {
-    myServerTree.configure(server, initialPath, null);
+  public void initialize(ServerInfo server, String initialPath) {
+    myServerPathForm.initialize(server, initialPath, true, false, null);
   }
 
   public String getLocalPath() {
     return myLocalPathField.getText();
   }
-
-  public void setLocalPath(String path) {
-    myLocalPathField.setText(path);
-  }
-
 
   public JPanel getContentPanel() {
     return myContentPanel;
@@ -101,24 +89,29 @@ public class LocalAndServerPathsForm {
 
   @Nullable
   public String getServerPath() {
-    final ServerTree.SelectedItem selectedItem = myServerTree.getSelectedItem();
-    return selectedItem != null ? selectedItem.path : null;
+    return myServerPathForm.getSelectedPath();
   }
 
-  public void addListener(Listener listener) {
+  public void addListener(ChangeListener listener) {
     myEventDispatcher.addListener(listener);
   }
 
-  public void removeListener(Listener listener) {
-    myEventDispatcher.removeListener(listener);
-  }
-
-  public void setErrorMessage(String message) {
-    myErrorLabel.setText(message);
+  public void setMessage(String text, boolean error) {
+    if (text != null) {
+      myMessageLabel.setVisible(true);
+      myMessageLabel.setText(text);
+      myMessageLabel.setIcon(error ? UIUtil.getBalloonWarningIcon() : TfsTreeForm.EMPTY_ICON);
+    }
+    else {
+      myMessageLabel.setVisible(false);
+    }
   }
 
   public JComponent getPreferredFocusedComponent() {
-    return myServerTree.getTreeComponent();
+    return myServerPathForm.getPreferredFocusedComponent();
   }
 
+  @Override
+  public void dispose() {
+  }
 }

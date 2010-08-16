@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Workspace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TfsBeansHolder;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -40,14 +41,16 @@ public class ServerInfo {
   private VersionControlServer myServer;
 
   private final List<WorkspaceInfo> myWorkspaceInfos = new ArrayList<WorkspaceInfo>();
+  private final TfsBeansHolder myBeans;
 
-  public ServerInfo(URI uri, String guid) {
+  public ServerInfo(URI uri, String guid, TfsBeansHolder beans) {
     myUri = uri;
     myGuid = guid;
+    myBeans = beans;
   }
 
-  public ServerInfo(URI uri, String guid, @Nullable Workspace[] workspaces, String authorizedUsername) {
-    this(uri, guid);
+  public ServerInfo(URI uri, String guid, @Nullable Workspace[] workspaces, String authorizedUsername, TfsBeansHolder beans) {
+    this(uri, guid, beans);
 
     if (workspaces != null) {
       for (Workspace workspace : workspaces) {
@@ -95,9 +98,9 @@ public class ServerInfo {
     return Collections.unmodifiableList(myWorkspaceInfos);
   }
 
-  public void deleteWorkspace(WorkspaceInfo workspaceInfo, Object projectOrComponent) throws TfsException {
+  public void deleteWorkspace(WorkspaceInfo workspaceInfo, Object projectOrComponent, boolean force) throws TfsException {
     try {
-      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName(), projectOrComponent);
+      getVCS().deleteWorkspace(workspaceInfo.getName(), workspaceInfo.getOwnerName(), projectOrComponent, force);
     }
     catch (WorkspaceNotFoundException e) {
       // already deleted
@@ -109,13 +112,13 @@ public class ServerInfo {
   @NotNull
   public VersionControlServer getVCS() {
     if (myServer == null) {
-      myServer = new VersionControlServer(myUri);
+      myServer = new VersionControlServer(myUri, myBeans, myGuid);
     }
     return myServer;
   }
 
-  public void refreshWorkspacesForCurrentOwner(Object projectOrComponent) throws TfsException {
-    Workspace[] newWorkspaces = getVCS().queryWorkspaces(Workstation.getComputerName(), projectOrComponent);
+  public void refreshWorkspacesForCurrentOwner(Object projectOrComponent, boolean force) throws TfsException {
+    Workspace[] newWorkspaces = getVCS().queryWorkspaces(Workstation.getComputerName(), projectOrComponent, force);
     String owner = getQualifiedUsername();
     LOG.assertTrue(owner != null);
 

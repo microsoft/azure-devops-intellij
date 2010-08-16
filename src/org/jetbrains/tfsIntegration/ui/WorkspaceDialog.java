@@ -22,8 +22,8 @@ import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
@@ -117,5 +117,10 @@ public class WorkspaceDialog extends DialogWrapper {
 
   public List<WorkingFolderInfo> getWorkingFolders() {
     return myForm.getWorkingFolders();
+  }
+
+  @Override
+  protected String getHelpId() {
+    return "project.propVCSSupport.VCSs.TFS.manage.connect.createWorkspace";
   }
 }

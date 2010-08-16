@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -30,15 +31,22 @@ import java.util.Collection;
 import java.util.List;
 
 public class TFSEditFileProvider implements EditFileProvider {
+  private final Project myProject;
+
+  public TFSEditFileProvider(Project project) {
+    myProject = project;
+  }
 
   public void editFiles(final VirtualFile[] files) throws VcsException {
     final Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       Collection<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, myProject,
+                                              new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             final ResultWithFailures<GetOperation> processResult =
-              workspace.getServer().getVCS().checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths);
+              workspace.getServer().getVCS()
+                .checkoutForEdit(workspace.getName(), workspace.getOwnerName(), paths, myProject, TFSBundle.message("checking.out"));
             Collection<VirtualFile> makeWritable = new ArrayList<VirtualFile>();
             for (GetOperation getOperation : processResult.getResult()) {
               TFSVcs.assertTrue(getOperation.getSlocal().equals(getOperation.getTlocal()));

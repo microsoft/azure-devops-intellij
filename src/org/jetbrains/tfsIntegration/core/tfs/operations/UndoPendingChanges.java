@@ -24,6 +24,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -58,11 +59,12 @@ public class UndoPendingChanges {
     // undo changes
     try {
       ResultWithFailures<GetOperation> result =
-        workspace.getServer().getVCS().undoPendingChanges(workspace.getName(), workspace.getOwnerName(), serverPaths);
+        workspace.getServer().getVCS()
+          .undoPendingChanges(workspace.getName(), workspace.getOwnerName(), serverPaths, project, TFSBundle.message("reverting"));
 
       Collection<Failure> failures = result.getFailures();
       if (tolerateNoChangesFailure) {
-        for (Iterator<Failure> i = failures.iterator(); i.hasNext(); ) {
+        for (Iterator<Failure> i = failures.iterator(); i.hasNext();) {
           if (ITEM_NOT_CHECKED_OUT_FAILURE.equals(i.next().getCode())) {
             i.remove();
           }
@@ -77,11 +79,13 @@ public class UndoPendingChanges {
       for (GetOperation getOperation : result.getResult()) {
         if (getOperation.getSlocal() != null && getOperation.getTlocal() != null) {
           @SuppressWarnings({"ConstantConditions"})
-          @NotNull FilePath sourcePath = VersionControlPath.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder);
+          @NotNull FilePath sourcePath =
+            VersionControlPath.getFilePath(getOperation.getSlocal(), getOperation.getType() == ItemType.Folder);
           @SuppressWarnings({"ConstantConditions"})
-          @NotNull FilePath targetPath = VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
-          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false).iterator().next()),
-                          new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false).iterator().next()));
+          @NotNull FilePath targetPath =
+            VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
+          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false, project).iterator().next()),
+                          new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false, project).iterator().next()));
         }
       }
 

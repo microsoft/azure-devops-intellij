@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
@@ -36,6 +35,7 @@ import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompati
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
@@ -250,14 +250,14 @@ public class ManageWorkspacesForm {
   private void reloadWorkspaces(ServerInfo server) {
     try {
       Object selection = getSelectedObject();
-      server.refreshWorkspacesForCurrentOwner(myContentPane);
+      server.refreshWorkspacesForCurrentOwner(myContentPane, true);
       updateControls(selection);
+    }
+    catch (UserCancelledException e) {
+      // ignore
     }
     catch (TfsException e) {
       Messages.showErrorDialog(myContentPane, e.getMessage(), TFSBundle.message("reload.workspaces.title"));
-    }
-    catch (ProcessCanceledException e) {
-      // ignore
     }
   }
 
@@ -341,7 +341,8 @@ public class ManageWorkspacesForm {
 
     TFSConfigurationManager.getInstance().storeCredentials(result.uri, result.authorizedCredentials);
     final ServerInfo newServer =
-      new ServerInfo(result.uri, result.instanceId, result.workspaces, result.authorizedCredentials.getQualifiedUsername());
+      new ServerInfo(result.uri, result.instanceId, result.workspaces, result.authorizedCredentials.getQualifiedUsername(),
+                     result.beans);
     Workstation.getInstance().addServer(newServer);
     List<WorkspaceInfo> workspaces = newServer.getWorkspacesForCurrentOwnerAndComputer();
     updateControls(workspaces.isEmpty() ? newServer : workspaces.iterator().next());
@@ -368,9 +369,9 @@ public class ManageWorkspacesForm {
     if (TfsRequestManager.shouldShowLoginDialog(server.getUri())) {
       update = true;
       try {
-        TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri());
+        TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri(), true);
       }
-      catch (ProcessCanceledException e) {
+      catch (UserCancelledException e) {
         return;
       }
       catch (TfsException e) {
@@ -392,11 +393,11 @@ public class ManageWorkspacesForm {
         updateControls(newWorkspace);
         return;
       }
+      catch (UserCancelledException e) {
+        // ignore to execute updateControls()
+      }
       catch (TfsException e) {
         Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("create.workspace.title"));
-      }
-      catch (ProcessCanceledException e) {
-        // ignore to execute updateControls()
       }
     }
     if (update) {
@@ -406,27 +407,27 @@ public class ManageWorkspacesForm {
 
   private void editWorkspace(@NotNull WorkspaceInfo workspace) {
     try {
-      workspace.loadFromServer(myContentPane);
+      workspace.loadFromServer(myContentPane, true);
     }
     catch (WorkspaceNotFoundException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
       try {
-        workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane);
+        workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane, true);
         updateControls(null);
+      }
+      catch (UserCancelledException e2) {
+        // ignore
       }
       catch (TfsException e2) {
         Messages.showErrorDialog(myContentPane, e2.getMessage(), TFSBundle.message("reload.workspaces.title"));
       }
-      catch (ProcessCanceledException e2) {
-        // ignore
-      }
+      return;
+    }
+    catch (UserCancelledException e) {
       return;
     }
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
-      return;
-    }
-    catch (ProcessCanceledException e) {
       return;
     }
 
@@ -438,15 +439,16 @@ public class ManageWorkspacesForm {
       modifiedWorkspace.setComment(d.getWorkspaceComment());
       modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {
-        modifiedWorkspace.saveToServer(myContentPane);
+        // replace old workspace with a new one first, otherwise server will hold and old one while writing to cache
         workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
+        modifiedWorkspace.saveToServer(myContentPane);
         updateControls(modifiedWorkspace);
+      }
+      catch (UserCancelledException e) {
+        // ignore
       }
       catch (TfsException e) {
         Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("save.workspace.title"));
-      }
-      catch (ProcessCanceledException e) {
-        // ignore
       }
     }
   }
@@ -458,14 +460,14 @@ public class ManageWorkspacesForm {
     }
 
     try {
-      workspace.getServer().deleteWorkspace(workspace, myContentPane);
+      workspace.getServer().deleteWorkspace(workspace, myContentPane, true);
       updateControls(workspace);
+    }
+    catch (UserCancelledException e) {
+      // ignore
     }
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("delete.workspace.title"));
-    }
-    catch (ProcessCanceledException e) {
-      // ignore
     }
   }
 
@@ -553,8 +555,9 @@ public class ManageWorkspacesForm {
         Map<String, ProjectEntry> entries = new HashMap<String, ProjectEntry>();
 
         // load policies
-        final Collection<Annotation> policiesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList());
+        final Collection<Annotation> policiesAnnotations = server.getVCS()
+          .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null,
+                            true);
         for (Annotation annotation : policiesAnnotations) {
           if (annotation.getValue() == null) {
             continue;
@@ -571,7 +574,7 @@ public class ManageWorkspacesForm {
 
         // load overrides
         final Collection<Annotation> overridesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList());
+          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null, true);
         for (Annotation annotation : overridesAnnotations) {
           if (annotation.getValue() == null) {
             continue;
@@ -596,7 +599,7 @@ public class ManageWorkspacesForm {
         }
 
         // load projects
-        final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true);
+        final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true, myContentPane, null);
         if (projectItems.isEmpty()) {
           throw new OperationFailedException("No team project found");
         }
@@ -627,20 +630,21 @@ public class ManageWorkspacesForm {
             public void run() throws TfsException, VcsException {
               for (Map.Entry<String, ProjectEntry> i : modifications.entrySet()) {
                 // remove annotations
-                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION);
-                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION);
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, myContentPane, null);
+                server.getVCS().deleteAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION, myContentPane, null);
 
                 // write checkin policies annotation
                 ProjectEntry entry = i.getValue();
                 if (!entry.descriptors.isEmpty()) {
                   String annotationValue = StatefulPolicyParser.saveDescriptors(entry.descriptors);
-                  server.getVCS().createAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue);
+                  server.getVCS()
+                    .createAnnotation(i.getKey(), TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, annotationValue, myContentPane, null);
                 }
 
                 // write overrides annotation
                 if (entry.policiesCompatibilityOverride != null) {
                   server.getVCS().createAnnotation(i.getKey(), TFSConstants.OVERRRIDES_ANNOTATION,
-                                                   entry.policiesCompatibilityOverride.toOverridesAnnotationValue());
+                                                   entry.policiesCompatibilityOverride.toOverridesAnnotationValue(), myContentPane, null);
                 }
               }
             }

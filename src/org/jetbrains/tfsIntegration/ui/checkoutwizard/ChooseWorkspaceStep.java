@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
@@ -101,7 +100,8 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
         try {
           // workspace can't be null here
           //noinspection ConstantConditions
-          final List<WorkingFolderInfo> workingFolders = workspace.getWorkingFolders();
+          workspace.loadFromServer(null, true);
+          final List<WorkingFolderInfo> workingFolders = workspace.getWorkingFolders(null);
           if (!workingFolders.isEmpty()) {
             myModel.setServerPath(workingFolders.get(0).getServerPath());
           }
@@ -123,13 +123,13 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
       myModel.setServer(server);
       if (commitType == CommitType.Next || commitType == CommitType.Finish) {
         try {
-          TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri());
+          TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri(), true);
+        }
+        catch (UserCancelledException e) {
+          throw new CommitStepCancelledException();
         }
         catch (TfsException e) {
           throw new CommitStepException(e.getMessage());
-        }
-        catch (ProcessCanceledException e) {
-          throw new CommitStepCancelledException();
         }
       }
     }

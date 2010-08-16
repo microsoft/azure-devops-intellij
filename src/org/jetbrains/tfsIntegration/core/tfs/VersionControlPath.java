@@ -185,4 +185,8 @@ public class VersionControlPath {
     File localFile = new File(localPathBase.getIOFile(), serverPathString.substring(serverPathBaseString.length()));
     return VcsUtil.getFilePath(localFile, isDirectory);
   }
+
+  public static String getCombinedServerPath(String path, String name) {
+    return path + (path.endsWith("/") ? "" : "/") + name;
+  }
 }

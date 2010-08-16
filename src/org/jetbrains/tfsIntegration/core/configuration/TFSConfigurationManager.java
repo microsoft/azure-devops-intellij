@@ -16,16 +16,24 @@
 
 package org.jetbrains.tfsIntegration.core.configuration;
 
+import com.intellij.notification.*;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.annotations.MapAnnotation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
+import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
+import javax.swing.event.HyperlinkEvent;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -37,6 +45,8 @@ import java.util.Map;
     id = "other",
     file = "$APP_CONFIG$/tfs.xml")})
 public class TFSConfigurationManager implements PersistentStateComponent<TFSConfigurationManager.State> {
+  private static final String TFS_NOTIFICATION_GROUP = "TFS";
+
   public static class State {
 
     @MapAnnotation(entryTagName = "server", keyAttributeName = "uri", surroundValueWithTag = false)
@@ -69,6 +79,44 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     return serverConfiguration != null ? serverConfiguration.getCredentials() : null;
   }
 
+  public synchronized boolean isAuthCanceled(URI serverUri) {
+    final ServerConfiguration serverConfiguration = getConfiguration(serverUri);
+    return serverConfiguration != null && serverConfiguration.getAuthCanceledNotification() != null;
+  }
+
+  public synchronized void setAuthCanceled(final URI serverUri, @Nullable final Object projectOrComponent) {
+    final ServerConfiguration serverConfiguration = getOrCreateServerConfiguration(serverUri);
+    if (serverConfiguration.getAuthCanceledNotification() != null) {
+      return;
+    }
+
+    final Project project = projectOrComponent instanceof Project ? (Project)projectOrComponent : null;
+    final Notification notification = new Notification(TFS_NOTIFICATION_GROUP,
+                                                       TFSBundle.message("notification.auth.canceled.title",
+                                                                         TfsUtil.getPresentableUri(serverUri)),
+                                                       TFSBundle.message("notification.auth.canceled.text"),
+                                                       NotificationType.ERROR, new NotificationListener() {
+        @Override
+        public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+          try {
+            TfsServerConnectionHelper.ensureAuthenticated(project, serverUri, true);
+            notification.expire();
+          }
+          catch (TfsException e) {
+            // ignore
+          }
+        }
+      });
+    serverConfiguration.setAuthCanceledNotification(notification);
+
+    ApplicationManager.getApplication().invokeLater(new Runnable() {
+      public void run() {
+        // notification should be application-wide not to be hidden on project close
+        Notifications.Bus.notify(notification, NotificationDisplayType.STICKY_BALLOON, null);
+      }
+    });
+  }
+
   @Nullable
   public URI getProxyUri(@NotNull URI serverUri) {
     final ServerConfiguration serverConfiguration = getConfiguration(serverUri);
@@ -95,7 +143,18 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   public synchronized void storeCredentials(@NotNull URI serverUri, final @NotNull Credentials credentials) {
-    getOrCreateServerConfiguration(serverUri).setCredentials(credentials);
+    ServerConfiguration serverConfiguration = getOrCreateServerConfiguration(serverUri);
+    serverConfiguration.setCredentials(credentials);
+    final Notification notification = serverConfiguration.getAuthCanceledNotification();
+    if (notification != null) {
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          notification.expire();
+        }
+      });
+    }
+    serverConfiguration.setAuthCanceledNotification(null);
   }
 
   public synchronized void resetStoredPasswords() {

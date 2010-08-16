@@ -22,11 +22,11 @@ import com.intellij.openapi.ui.Messages;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LabelItemSpec;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionControlLabel;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.text.MessageFormat;
@@ -73,8 +73,9 @@ public class ApplyLabelDialog extends DialogWrapper {
 
   protected void doOKAction() {
     try {
-      getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-      List<VersionControlLabel> labels = myWorkspace.getServer().getVCS().queryLabels(getLabelName(), null, null, false, null, null, false);
+      List<VersionControlLabel> labels = myWorkspace.getServer().getVCS()
+        .queryLabels(getLabelName(), null, null, false, null, null, false, myApplyLabelForm.getContentPane(),
+                     TFSBundle.message("checking.existing.labels"));
       if (!labels.isEmpty()) {
         String message = MessageFormat.format("Label ''{0}'' already exists.\nDo you want to update it?", getLabelName());
         if (Messages.showDialog(myProject, message, getTitle(), new String[]{"Update Label", "Cancel"}, 0, Messages.getQuestionIcon()) !=
@@ -86,9 +87,6 @@ public class ApplyLabelDialog extends DialogWrapper {
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), getTitle());
       return;
-    }
-    finally {
-      getContentPane().setCursor(Cursor.getDefaultCursor());
     }
     super.doOKAction();
   }

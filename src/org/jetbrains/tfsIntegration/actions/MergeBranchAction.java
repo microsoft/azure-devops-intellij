@@ -31,6 +31,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.MergeResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -60,14 +61,15 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
       return;
     }
 
-    if (!workspace.hasLocalPathForServerPath(d.getTargetPath())) {
+    if (!workspace.hasLocalPathForServerPath(d.getTargetPath(), project)) {
       String message = MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''.", d.getTargetPath(), workspace.getName());
       Messages.showErrorDialog(project, message, title);
       return;
     }
 
     final MergeResponse mergeResponse = workspace.getServer().getVCS()
-      .merge(workspace.getName(), workspace.getOwnerName(), d.getSourcePath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion());
+      .merge(workspace.getName(), workspace.getOwnerName(), d.getSourcePath(), d.getTargetPath(), d.getFromVersion(), d.getToVersion(),
+             project, TFSBundle.message("merging"));
 
     final List<VcsException> errors = new ArrayList<VcsException>();
     if (mergeResponse.getMergeResult().getGetOperation() != null) {
@@ -98,7 +100,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
     }
 
     if (errors.isEmpty()) {
-      FilePath targetLocalPath = workspace.findLocalPathByServerPath(d.getTargetPath(), true);
+      FilePath targetLocalPath = workspace.findLocalPathByServerPath(d.getTargetPath(), true, project);
 
       for (VirtualFile root : ProjectRootManager.getInstance(project).getContentRoots()) {
         //noinspection ConstantConditions

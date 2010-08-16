@@ -3,7 +3,6 @@ package org.jetbrains.tfsIntegration.webservice;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -14,15 +13,12 @@ import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ThrowableRunnable;
 import com.intellij.util.concurrency.Semaphore;
-import org.apache.axis2.client.Stub;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-import org.jetbrains.tfsIntegration.exceptions.ConnectionFailedException;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.exceptions.UnauthorizedException;
+import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.ui.TfsLoginDialog;
 
 import javax.swing.*;
@@ -36,16 +32,13 @@ public class TfsRequestManager {
   public static abstract class Request<T> {
     private final String myProgressTitle;
 
-    public Request() {
-      this(null);
-    }
-
     public Request(String progressTitle) {
       myProgressTitle = progressTitle;
     }
 
     public abstract T execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception;
 
+    @NotNull
     public String getProgressTitle(Credentials credentials, URI serverUri) {
       return myProgressTitle;
     }
@@ -88,13 +81,14 @@ public class TfsRequestManager {
    * @param request
    * @param <T>
    * @return
-   * @throws TfsException on error or ProcessCanceledException if user canceled
+   * @throws TfsException on error
    */
-  public <T> T executeRequestInBackground(final Object projectOrComponent, final Request<T> request) throws TfsException {
+  public <T> T executeRequestInBackground(final Object projectOrComponent, final boolean force, final Request<T> request)
+    throws TfsException {
     LOG.assertTrue(!ApplicationManager.getApplication().isDispatchThread());
     LOG.assertTrue(myServerUri != null);
 
-    boolean showDialog = shouldShowDialog();
+    boolean showDialog = shouldShowDialog(force);
     final Ref<String> message = new Ref<String>();
     final Ref<Credentials> credentials = new Ref<Credentials>(TFSConfigurationManager.getInstance().getCredentials(myServerUri));
 
@@ -103,15 +97,24 @@ public class TfsRequestManager {
         try {
           ourShowDialogLock.lock();
           ProgressManager.checkCanceled();
-          showDialog = shouldShowDialog(); // check again since another thread could already enter right credentials
+          showDialog = shouldShowDialog(force); // check again since another thread could already enter right credentials
           // TODO we probably have to compare original password and current one
-          if (showDialog) {
+          if (!message.isNull() || showDialog) {
             final Ref<Boolean> ok = new Ref<Boolean>();
             Runnable showDialogRunnable = new Runnable() {
               @Override
               public void run() {
-                if (!shouldShowDialog()) {
-                  return; // check one more time since UI thread call could already enter right credentials
+                if (message.isNull()) {
+                  try {
+                    if (!shouldShowDialog(force)) {
+                      ok.set(true);
+                      return; // check one more time since UI thread call could already enter right credentials
+                    }
+                  }
+                  catch (UserCancelledException e) {
+                    ok.set(false);
+                    return;
+                  }
                 }
                 TfsLoginDialog d;
                 if (projectOrComponent instanceof JComponent) {
@@ -133,7 +136,10 @@ public class TfsRequestManager {
             };
             ApplicationManager.getApplication().invokeAndWait(showDialogRunnable, ModalityState.defaultModalityState());
             if (!ok.get()) {
-              throw new ProcessCanceledException();
+              if (!force) {
+                TFSConfigurationManager.getInstance().setAuthCanceled(myServerUri, projectOrComponent);
+              }
+              throw new UserCancelledException();
             }
           }
         }
@@ -144,12 +150,14 @@ public class TfsRequestManager {
       try {
         myRequestLock.lock();
         ProgressManager.checkCanceled();
-        return ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
+        T result = ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
           @Override
           public T compute() throws Exception {
             return request.execute(credentials.get(), myServerUri, ProgressManager.getInstance().getProgressIndicator());
           }
         });
+        TFSConfigurationManager.getInstance().storeCredentials(myServerUri, credentials.get());
+        return result;
       }
       catch (Exception e) {
         final TfsException tfsException = TfsExceptionManager.processException(e);
@@ -240,7 +248,6 @@ public class TfsRequestManager {
     }
 
     /**
-     * @param title
      * @return true if succeeded, false if cancelled
      */
     public boolean execute() {
@@ -252,12 +259,15 @@ public class TfsRequestManager {
 
   }
 
-  public static <T> T executeRequest(URI serverUri, Object projectOrCompoent, final Stub stub, final Request<T> request)
+  public static <T> T executeRequest(URI serverUri, Object projectOrComponent, final Request<T> request) throws TfsException {
+    return executeRequest(serverUri, projectOrComponent, false, request);
+  }
+
+  public static <T> T executeRequest(URI serverUri, Object projectOrComponent, boolean force, final Request<T> request)
     throws TfsException {
-    Request<T> wrapper = new Request<T>() {
+    Request<T> wrapper = new Request<T>(null) {
       @Override
       public T execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
-        WebServiceHelper.setupStub(stub, credentials, serverUri);
         return request.execute(credentials, serverUri, pi);
       }
 
@@ -273,32 +283,34 @@ public class TfsRequestManager {
     };
 
     if (ApplicationManager.getApplication().isDispatchThread()) {
-      return getInstance(serverUri).executeRequestInForeground(projectOrCompoent, false, null, wrapper);
+      return getInstance(serverUri).executeRequestInForeground(projectOrComponent, false, null, force, wrapper);
     }
     else {
-      return getInstance(serverUri).executeRequestInBackground(projectOrCompoent, wrapper);
+      return getInstance(serverUri).executeRequestInBackground(projectOrComponent, force, wrapper);
     }
   }
 
   public <T> T executeRequestInForeground(Object projectOrComponent,
                                           boolean reportErrorsInDialog,
                                           @Nullable Credentials overrideCredentials,
+                                          boolean force,
                                           final Request<T> request)
     throws TfsException {
-    return executeRequestInForeground(projectOrComponent, request, null, reportErrorsInDialog, overrideCredentials);
+    return executeRequestInForeground(projectOrComponent, request, null, reportErrorsInDialog, overrideCredentials, force);
   }
 
   private <T> T executeRequestInForeground(Object projectOrComponent,
                                            final Request<T> request,
                                            @Nullable String errorMessage,
                                            final boolean reportErrorsInDialog,
-                                           @Nullable Credentials overrideCredentials)
+                                           @Nullable Credentials overrideCredentials,
+                                           boolean force)
     throws TfsException {
     LOG.assertTrue(ApplicationManager.getApplication().isDispatchThread());
 
     final Ref<T> result = new Ref<T>();
     final Ref<TfsException> fatalError = new Ref<TfsException>();
-    if (errorMessage != null || overrideCredentials == null && shouldShowDialog()) {
+    if (errorMessage != null || overrideCredentials == null && shouldShowDialog(force)) {
       final Ref<Credentials> credentials =
         new Ref<Credentials>(overrideCredentials != null
                              ? overrideCredentials
@@ -358,7 +370,10 @@ public class TfsRequestManager {
         }
       }
       else {
-        throw new ProcessCanceledException();
+        if (!force && myServerUri != null) {
+          TFSConfigurationManager.getInstance().setAuthCanceled(myServerUri, projectOrComponent);
+        }
+        throw new UserCancelledException();
       }
     }
 
@@ -369,12 +384,12 @@ public class TfsRequestManager {
       overrideCredentials != null ? overrideCredentials : TFSConfigurationManager.getInstance().getCredentials(myServerUri);
     ExecuteSession<T> session = new ExecuteSession<T>(credentials, projectOrComponent, request, myServerUri);
     if (!session.execute()) {
-      throw new ProcessCanceledException();
+      throw new UserCancelledException();
     }
 
     TfsException error = session.getError();
     if (error instanceof UnauthorizedException) {
-      return executeRequestInForeground(projectOrComponent, request, error.getMessage(), reportErrorsInDialog, overrideCredentials);
+      return executeRequestInForeground(projectOrComponent, request, error.getMessage(), reportErrorsInDialog, overrideCredentials, force);
     }
 
     TFSConfigurationManager.getInstance().storeCredentials(myServerUri, session.getCredentials());
@@ -387,9 +402,13 @@ public class TfsRequestManager {
     }
   }
 
-  private boolean shouldShowDialog() {
+  private boolean shouldShowDialog(boolean force) throws UserCancelledException {
     if (myServerUri == null) {
       return true;
+    }
+
+    if (!force && TFSConfigurationManager.getInstance().isAuthCanceled(myServerUri)) {
+      throw new UserCancelledException();
     }
     // TODO current credentials may be different if another thread changed them in background
     return shouldShowLoginDialog(myServerUri);

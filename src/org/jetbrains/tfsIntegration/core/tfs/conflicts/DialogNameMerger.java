@@ -15,6 +15,7 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
+import com.intellij.openapi.project.Project;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ConflictType;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +25,7 @@ import org.jetbrains.tfsIntegration.ui.MergeNameDialog;
 public class DialogNameMerger implements NameMerger {
 
   @Nullable
-  public String mergeName(final WorkspaceInfo workspace, Conflict conflict) {
+  public String mergeName(final WorkspaceInfo workspace, Conflict conflict, Project project) {
     final String yoursName;
     final String theirsName;
     if (conflict.getCtype() == ConflictType.Merge) {
@@ -34,7 +35,7 @@ public class DialogNameMerger implements NameMerger {
       yoursName = conflict.getYsitemsrc();
       theirsName = conflict.getTsitem();
     }
-    MergeNameDialog d = new MergeNameDialog(workspace, yoursName, theirsName);
+    MergeNameDialog d = new MergeNameDialog(workspace, yoursName, theirsName, project);
     d.show();
     if (d.isOK()) {
       return d.getSelectedPath();

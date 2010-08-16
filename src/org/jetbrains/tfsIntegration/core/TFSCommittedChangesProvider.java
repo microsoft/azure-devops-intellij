@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.*;
@@ -77,7 +78,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   public RepositoryLocation getLocationFor(final FilePath root) {
     final Map<WorkspaceInfo, List<FilePath>> pathsByWorkspaces = new HashMap<WorkspaceInfo, List<FilePath>>();
     try {
-      WorkstationHelper.processByWorkspaces(Collections.singletonList(root), true, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(Collections.singletonList(root), true, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           pathsByWorkspaces.put(workspace, TfsUtil.getLocalPaths(paths));
         }
@@ -88,6 +89,9 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
     catch (TfsException e) {
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFS_NAME);
+    }
+    catch (ProcessCanceledException e) {
+      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(TFSBundle.message("operation.canceled")), TFSVcs.TFS_NAME);
     }
     return null;
   }
@@ -136,7 +140,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     try {
       for (Map.Entry<WorkspaceInfo, List<FilePath>> entry : tfsRepositoryLocation.getPathsByWorkspaces().entrySet()) {
         WorkspaceInfo workspace = entry.getKey();
-        final Map<FilePath, ExtendedItem> extendedItems = workspace.getExtendedItems(entry.getValue());
+        final Map<FilePath, ExtendedItem> extendedItems =
+          workspace.getExtendedItems(entry.getValue(), myProject, TFSBundle.message("loading.items"));
         for (Map.Entry<FilePath, ExtendedItem> localPath2ExtendedItem : extendedItems.entrySet()) {
           ExtendedItem extendedItem = localPath2ExtendedItem.getValue();
           if (extendedItem == null) {
@@ -164,7 +169,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
 
           List<Changeset> changeSets = workspace.getServer().getVCS()
             .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, settings.getUserFilter(), itemVersion, versionFrom,
-                          versionTo, maxCount);
+                          versionTo, maxCount, myProject, TFSBundle.message("loading.history"));
           for (Changeset changeset : changeSets) {
             final TFSChangeList newList = new TFSChangeList(workspace, changeset.getCset(), changeset.getOwner(),
                                                             changeset.getDate().getTime(), changeset.getComment(), myVcs);
@@ -176,7 +181,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
     catch (TfsException e) {
       throw new VcsException(e);
-    } finally {
+    }
+    finally {
       consumer.finished();
     }
   }
@@ -190,13 +196,13 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
       }
 
       public void consume(CommittedChangeList committedChangeList) {
-        result.add((TFSChangeList) committedChangeList);
+        result.add((TFSChangeList)committedChangeList);
       }
     });
     return result;
   }
 
-  private static int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
+  private int getLatestChangesetId(final WorkspaceInfo workspace, String user, final ExtendedItem extendedItem) throws TfsException {
     if (extendedItem.getType() == ItemType.File) {
       return extendedItem.getLatest();
     }
@@ -206,7 +212,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     final int maxCount = 1;
     ItemSpec itemSpec = VersionControlServer.createItemSpec(extendedItem.getSitem(), RecursionType.Full);
     List<Changeset> changeSets = workspace.getServer().getVCS()
-      .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo, maxCount);
+      .queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo, maxCount, myProject,
+                    TFSBundle.message("loading.history"));
     return changeSets.get(0).getCset();
   }
 

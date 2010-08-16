@@ -15,6 +15,7 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
+import com.intellij.openapi.project.Project;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -24,8 +25,9 @@ public interface NameMerger {
   /**
    * @param workspace
    * @param conflict
+   * @param project
    * @return null if user cancelled
    */
     @Nullable
-    String mergeName(final WorkspaceInfo workspace, Conflict conflict);
+    String mergeName(final WorkspaceInfo workspace, Conflict conflict, Project project);
 }

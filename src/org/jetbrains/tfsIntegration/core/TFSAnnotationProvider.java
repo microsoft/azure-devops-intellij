@@ -78,7 +78,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           TFSProgressUtil.setIndeterminate(progressIndicator, true);
           final FilePath localPath = TfsFileUtil.getFilePath(file);
 
-          final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+          final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, myVcs.getProject());
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (workspaces.isEmpty()) {
             exception.set(new VcsException(MessageFormat.format("Mappings not found for file ''{0}''", localPath.getPresentableUrl())));
@@ -86,7 +86,8 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           }
 
           final WorkspaceInfo workspace = workspaces.iterator().next();
-          final Map<FilePath, ExtendedItem> path2item = workspace.getExtendedItems(Collections.singletonList(localPath));
+          final Map<FilePath, ExtendedItem> path2item =
+            workspace.getExtendedItems(Collections.singletonList(localPath), myVcs.getProject(), TFSBundle.message("loading.item"));
           if (path2item.isEmpty()) {
             exception.set(new VcsException(MessageFormat.format("''{0}'' is unversioned", localPath.getPresentableUrl())));
             return;
