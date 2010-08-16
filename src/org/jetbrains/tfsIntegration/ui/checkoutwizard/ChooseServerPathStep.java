@@ -92,7 +92,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
       return false;
     }
     try {
-      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath, true) == null) {
+      if (myModel.getWorkspace().findLocalPathByServerPath(serverPath, true, null) == null) {
         return false;
       }
     }
@@ -109,7 +109,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
     }
     else {
       try {
-        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true);
+        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(serverPath, true, null);
         if (localPath != null) {
           myForm.setMessage(TFSBundle.message("server.path.0.is.mapped.to.1", serverPath, localPath.getPresentableUrl()), false);
         }

@@ -100,7 +100,7 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
         try {
           // workspace can't be null here
           //noinspection ConstantConditions
-          final List<WorkingFolderInfo> workingFolders = workspace.getWorkingFolders();
+          final List<WorkingFolderInfo> workingFolders = workspace.getWorkingFolders(null);
           if (!workingFolders.isEmpty()) {
             myModel.setServerPath(workingFolders.get(0).getServerPath());
           }

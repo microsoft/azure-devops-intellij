@@ -78,7 +78,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
   public RepositoryLocation getLocationFor(final FilePath root) {
     final Map<WorkspaceInfo, List<FilePath>> pathsByWorkspaces = new HashMap<WorkspaceInfo, List<FilePath>>();
     try {
-      WorkstationHelper.processByWorkspaces(Collections.singletonList(root), true, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(Collections.singletonList(root), true, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           pathsByWorkspaces.put(workspace, TfsUtil.getLocalPaths(paths));
         }

@@ -159,7 +159,7 @@ abstract class TestMultipleConflicts extends TFSTestCase {
     }
 
     @Nullable
-    public String mergeName(final WorkspaceInfo workspace, final Conflict conflict) {
+    public String mergeName(final WorkspaceInfo workspace, final Conflict conflict, Project project) {
       try {
         return TestMultipleConflicts.this.mergeName(myId2item.get(conflict.getBitemid()));
       }

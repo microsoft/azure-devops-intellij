@@ -108,8 +108,8 @@ public class WorkspaceInfo {
     myTimestamp = timestamp;
   }
 
-  public List<WorkingFolderInfo> getWorkingFolders() throws TfsException {
-    loadFromServer(null); // TODO
+  public List<WorkingFolderInfo> getWorkingFolders(Object projectOrComponent) throws TfsException {
+    loadFromServer(projectOrComponent);
     return getWorkingFoldersCached();
   }
 
@@ -135,9 +135,9 @@ public class WorkspaceInfo {
     return hasMapping(getWorkingFoldersCached(), localPath, considerChildMappings);
   }
 
-  boolean hasMapping(FilePath localPath, boolean considerChildMappings) throws TfsException {
+  boolean hasMapping(FilePath localPath, boolean considerChildMappings, Object projectOrComponent) throws TfsException {
     // post-check current owner since it might have just been changed dirung getWorkingFolders() call
-    return hasMapping(getWorkingFolders(), localPath, considerChildMappings) && hasCurrentOwnerAndComputer();
+    return hasMapping(getWorkingFolders(projectOrComponent), localPath, considerChildMappings) && hasCurrentOwnerAndComputer();
   }
 
   boolean hasCurrentOwnerAndComputer() {
@@ -164,17 +164,18 @@ public class WorkspaceInfo {
    * @throws TfsException in case of error during request to TFS
    */
   // TODO review usage: item can be updated to revision where corresponding server item does not exist
-  public Collection<String> findServerPathsByLocalPath(final @NotNull FilePath localPath, boolean considerChildMappings)
+  public Collection<String> findServerPathsByLocalPath(final @NotNull FilePath localPath, boolean considerChildMappings,
+                                                       Object projectOrComponent)
     throws TfsException {
     final FilePath localPathOnLocalFileSystem = VcsUtil.getFilePath(localPath.getPath(), localPath.isDirectory());
-    final WorkingFolderInfo parentMapping = findNearestParentMapping(localPathOnLocalFileSystem);
+    final WorkingFolderInfo parentMapping = findNearestParentMapping(localPathOnLocalFileSystem, projectOrComponent);
     if (parentMapping != null) {
       return Collections.singletonList(parentMapping.getServerPathByLocalPath(localPathOnLocalFileSystem));
     }
 
     if (considerChildMappings) {
       Collection<String> childMappings = new ArrayList<String>();
-      for (WorkingFolderInfo workingFolder : getWorkingFolders()) {
+      for (WorkingFolderInfo workingFolder : getWorkingFolders(projectOrComponent)) {
         if (workingFolder.getLocalPath().isUnder(localPathOnLocalFileSystem, false)) {
           childMappings.add(workingFolder.getServerPath());
         }
@@ -187,21 +188,22 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  public FilePath findLocalPathByServerPath(final @NotNull String serverPath, final boolean isDirectory) throws TfsException {
-    final WorkingFolderInfo parentMapping = findNearestParentMapping(serverPath, isDirectory);
+  public FilePath findLocalPathByServerPath(final @NotNull String serverPath, final boolean isDirectory,
+                                            Object projectOrComponent) throws TfsException {
+    final WorkingFolderInfo parentMapping = findNearestParentMapping(serverPath, isDirectory, projectOrComponent);
     return parentMapping != null ? parentMapping.getLocalPathByServerPath(serverPath, isDirectory) : null;
   }
 
-  public boolean hasLocalPathForServerPath(final @NotNull String serverPath) throws TfsException {
-    return findLocalPathByServerPath(serverPath, false) != null;
+  public boolean hasLocalPathForServerPath(final @NotNull String serverPath, Object projectOrComponent) throws TfsException {
+    return findLocalPathByServerPath(serverPath, false, projectOrComponent) != null;
   }
 
   // TODO inline?
 
   @Nullable
-  private WorkingFolderInfo findNearestParentMapping(final @NotNull FilePath localPath) throws TfsException {
+  private WorkingFolderInfo findNearestParentMapping(final @NotNull FilePath localPath, Object projectOrComponent) throws TfsException {
     WorkingFolderInfo mapping = null;
-    for (WorkingFolderInfo folderInfo : getWorkingFolders()) {
+    for (WorkingFolderInfo folderInfo : getWorkingFolders(projectOrComponent)) {
       if (folderInfo.getServerPathByLocalPath(localPath) != null &&
           (mapping == null || folderInfo.getLocalPath().isUnder(mapping.getLocalPath(), false))) {
         mapping = folderInfo;
@@ -211,9 +213,10 @@ public class WorkspaceInfo {
   }
 
   @Nullable
-  private WorkingFolderInfo findNearestParentMapping(final @NotNull String serverPath, boolean isDirectory) throws TfsException {
+  private WorkingFolderInfo findNearestParentMapping(final @NotNull String serverPath, boolean isDirectory, Object projectOrComponent)
+    throws TfsException {
     WorkingFolderInfo mapping = null;
-    for (WorkingFolderInfo folderInfo : getWorkingFolders()) {
+    for (WorkingFolderInfo folderInfo : getWorkingFolders(projectOrComponent)) {
       if (folderInfo.getLocalPathByServerPath(serverPath, isDirectory) != null &&
           (mapping == null || VersionControlPath.isUnder(mapping.getServerPath(), folderInfo.getServerPath()))) {
         mapping = folderInfo;
@@ -252,10 +255,11 @@ public class WorkspaceInfo {
     Workstation.getInstance().update();
   }
 
-  private static Workspace toBean(WorkspaceInfo info) throws TfsException {
+  private static Workspace toBean(WorkspaceInfo info) {
     final ArrayOfWorkingFolder folders = new ArrayOfWorkingFolder();
-    List<WorkingFolder> foldersList = new ArrayList<WorkingFolder>(info.getWorkingFolders().size());
-    for (WorkingFolderInfo folderInfo : info.getWorkingFolders()) {
+    List<WorkingFolderInfo> workingFolders = info.getWorkingFoldersCached();
+    List<WorkingFolder> foldersList = new ArrayList<WorkingFolder>(workingFolders.size());
+    for (WorkingFolderInfo folderInfo : workingFolders) {
       foldersList.add(toBean(folderInfo));
     }
     folders.setWorkingFolder(foldersList.toArray(new WorkingFolder[foldersList.size()]));

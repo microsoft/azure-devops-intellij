@@ -233,7 +233,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
   private void createServerFolder(FilePath path, String comment) throws VcsException {
     try {
-      ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathsByLocalPath(path, false).iterator().next());
+      ItemPath itemPath = new ItemPath(path, myTestWorkspace.findServerPathsByLocalPath(path, false, myProject).iterator().next());
       final ResultWithFailures<GetOperation> addResult = myTestWorkspace.getServer().getVCS()
         .scheduleForAddition(myTestWorkspace.getName(), myTestWorkspace.getOwnerName(), Collections.singletonList(itemPath), myProject,
                              null);
@@ -703,7 +703,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected String findServerPath(final FilePath localPath) throws TfsException {
-    return myTestWorkspace.findServerPathsByLocalPath(localPath, false).iterator().next();
+    return myTestWorkspace.findServerPathsByLocalPath(localPath, false, myProject).iterator().next();
   }
 
   protected int getItemId(final FilePath path) throws TfsException {

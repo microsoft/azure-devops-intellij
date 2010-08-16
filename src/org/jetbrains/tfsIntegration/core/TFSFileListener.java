@@ -54,7 +54,8 @@ public class TFSFileListener extends VcsVFSListener {
 
   protected void executeAdd() {
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(myAddedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(myAddedFiles), false, myProject,
+                                            new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           StatusProvider.visitByStatus(workspace, paths, false, null, new StatusVisitor() {
             public void unversioned(final @NotNull FilePath localPath,
@@ -137,7 +138,7 @@ public class TFSFileListener extends VcsVFSListener {
     deletedFiles.addAll(myDeletedWithoutConfirmFiles);
 
     try {
-      WorkstationHelper.processByWorkspaces(deletedFiles, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(deletedFiles, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
 
@@ -244,7 +245,7 @@ public class TFSFileListener extends VcsVFSListener {
   protected void performDeletion(final List<FilePath> filesToDelete) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(filesToDelete, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(filesToDelete, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> scheduleErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
           errors.addAll(scheduleErrors);
@@ -270,7 +271,8 @@ public class TFSFileListener extends VcsVFSListener {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
       final List<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(addedFiles), false, myProject,
+                                              new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
             Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myProject, workspace, paths);
             errors.addAll(schedulingErrors);
@@ -316,7 +318,7 @@ public class TFSFileListener extends VcsVFSListener {
     final List<VcsException> errors = new ArrayList<VcsException>();
     final Map<FilePath, FilePath> scheduleMove = new HashMap<FilePath, FilePath>();
     try {
-      WorkstationHelper.processByWorkspaces(movedPaths.keySet(), false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(movedPaths.keySet(), false, myProject, new WorkstationHelper.VoidProcessDelegate() {
 
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           // TODO simplify this

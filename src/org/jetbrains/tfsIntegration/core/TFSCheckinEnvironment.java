@@ -177,7 +177,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           try {
             TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("loading.pending.changes"));
@@ -304,7 +304,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
     final List<VcsException> errors = new ArrayList<VcsException>();
     try {
-      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
           Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myVcs.getProject(), workspace, paths);
           errors.addAll(schedulingErrors);
@@ -324,12 +324,13 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     final List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
       final List<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
-          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-            Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myVcs.getProject(), workspace, paths);
-            exceptions.addAll(schedulingErrors);
-          }
-        });
+        WorkstationHelper
+          .processByWorkspaces(TfsFileUtil.getFilePaths(files), false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
+            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
+              Collection<VcsException> schedulingErrors = ScheduleForAddition.execute(myVcs.getProject(), workspace, paths);
+              exceptions.addAll(schedulingErrors);
+            }
+          });
       if (!orphans.isEmpty()) {
         StringBuilder s = new StringBuilder();
         for (FilePath orpan : orphans) {

@@ -59,7 +59,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     try {
       final Map<WorkspaceInfo, Collection<Conflict>> workspace2Conflicts = new HashMap<WorkspaceInfo, Collection<Conflict>>();
       List<FilePath> orphanPaths =
-        WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, myVcs.getProject(),
+                                              new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
@@ -138,7 +139,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     Runnable r = new Runnable() {
       public void run() {
         try {
-          WorkstationHelper.processByWorkspaces(files, true, new WorkstationHelper.VoidProcessDelegate() {
+          WorkstationHelper.processByWorkspaces(files, true, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
               final Map<FilePath, ExtendedItem> result =
                 workspace.getExtendedItems2(paths, myVcs.getProject(), TFSBundle.message("loading.items"));

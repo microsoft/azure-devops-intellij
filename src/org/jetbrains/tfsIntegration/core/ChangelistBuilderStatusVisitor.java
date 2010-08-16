@@ -113,7 +113,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     if (localItemExists) {
       // sourceItem can't be null for renamed
       //noinspection ConstantConditions
-      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
+      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory, myProject);
 
       //noinspection ConstantConditions
       TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
@@ -130,7 +130,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     if (localItemExists) {
       // sourceItem can't be null for renamed and checked out for edit
       //noinspection ConstantConditions
-      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory);
+      FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory, myProject);
 
       //noinspection ConstantConditions
       TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);

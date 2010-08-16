@@ -58,17 +58,19 @@ public class LockAction extends AnAction implements DumbAware {
       public void run() {
         try {
           ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-          WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
-            public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-              mappingFound.set(true);
-              final Map<FilePath, ExtendedItem> itemsMap = workspace.getExtendedItems2(paths, project, TFSBundle.message("loading.items"));
-              for (ExtendedItem item : itemsMap.values()) {
-                if (item != null) {
-                  items.add(new LockItemModel(item, workspace));
+          WorkstationHelper
+            .processByWorkspaces(TfsFileUtil.getFilePaths(files), false, project, new WorkstationHelper.VoidProcessDelegate() {
+              public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
+                mappingFound.set(true);
+                final Map<FilePath, ExtendedItem> itemsMap =
+                  workspace.getExtendedItems2(paths, project, TFSBundle.message("loading.items"));
+                for (ExtendedItem item : itemsMap.values()) {
+                  if (item != null) {
+                    items.add(new LockItemModel(item, workspace));
+                  }
                 }
               }
-            }
-          });
+            });
         }
         catch (TfsException e) {
           exceptions.add(new VcsException(e));

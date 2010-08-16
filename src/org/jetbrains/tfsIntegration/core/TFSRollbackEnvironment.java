@@ -70,7 +70,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
                                           final List<VcsException> errors,
                                           final RollbackProgressListener listener) {
     try {
-      WorkstationHelper.processByWorkspaces(files, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(files, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           final List<VersionControlServer.GetRequestParams> download = new ArrayList<VersionControlServer.GetRequestParams>();
           final Collection<String> undo = new ArrayList<String>();
@@ -167,7 +167,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
                                               final List<VcsException> errors,
                                               final RollbackProgressListener listener) {
     try {
-      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           // query extended items to determine base (local) version
           //Map<ItemPath, ExtendedItem> extendedItems = workspace.getExtendedItems(paths);
@@ -223,7 +223,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
                                   @NotNull final RollbackProgressListener listener,
                                   final boolean tolerateNoChangesFailure) {
     try {
-      WorkstationHelper.processByWorkspaces(localPaths, false, new WorkstationHelper.VoidProcessDelegate() {
+      WorkstationHelper.processByWorkspaces(localPaths, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
         public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
           Collection<String> serverPaths = new ArrayList<String>(paths.size());
           for (ItemPath itemPath : paths) {

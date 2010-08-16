@@ -79,7 +79,7 @@ public class SummaryStep extends CheckoutWizardStep {
     else {
       mySummaryForm.setWorkspace(myModel.getWorkspace());
       try {
-        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(myModel.getServerPath(), true);
+        final FilePath localPath = myModel.getWorkspace().findLocalPathByServerPath(myModel.getServerPath(), true, null);
         mySummaryForm.setLocalPath(localPath.getPresentableUrl());
       }
       catch (TfsException e) {

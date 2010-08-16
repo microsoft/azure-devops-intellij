@@ -61,7 +61,7 @@ public class TfsUtil {
   public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath,
                                                                               Object projectOrComponent,
                                                                               String progressTitle) throws TfsException {
-    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+    Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, projectOrComponent);
     if (workspaces.isEmpty()) {
       return null;
     }

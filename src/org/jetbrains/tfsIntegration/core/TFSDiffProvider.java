@@ -87,7 +87,7 @@ public class TFSDiffProvider implements DiffProvider {
 
   public ItemLatestState getLastRevision(final FilePath localPath) {
     try {
-      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+      Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, myProject);
       if (workspaces.isEmpty()) {
         return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
       }

@@ -67,7 +67,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 
       final String targetServerPath = d.getTargetPath();
       if (d.isCreateWorkingCopies()) {
-        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
+        FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
         if (targetLocalPath == null) {
           FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
           d.setTitle("Select Local Folder");
@@ -136,7 +136,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
         AbstractVcsHelper.getInstance(project).showErrors(checkinErrors, "Create Branch");
       }
 
-      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true);
+      final FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
       if (targetLocalPath != null) {
         TfsFileUtil.markDirtyRecursively(project, targetLocalPath);
       }

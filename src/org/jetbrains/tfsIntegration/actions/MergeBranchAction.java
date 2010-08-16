@@ -61,7 +61,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
       return;
     }
 
-    if (!workspace.hasLocalPathForServerPath(d.getTargetPath())) {
+    if (!workspace.hasLocalPathForServerPath(d.getTargetPath(), project)) {
       String message = MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''.", d.getTargetPath(), workspace.getName());
       Messages.showErrorDialog(project, message, title);
       return;
@@ -100,7 +100,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
     }
 
     if (errors.isEmpty()) {
-      FilePath targetLocalPath = workspace.findLocalPathByServerPath(d.getTargetPath(), true);
+      FilePath targetLocalPath = workspace.findLocalPathByServerPath(d.getTargetPath(), true, project);
 
       for (VirtualFile root : ProjectRootManager.getInstance(project).getContentRoots()) {
         //noinspection ConstantConditions

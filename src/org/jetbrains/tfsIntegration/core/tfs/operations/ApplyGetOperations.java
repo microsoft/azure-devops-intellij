@@ -129,8 +129,8 @@ public class ApplyGetOperations {
         String currentPath = VersionControlPath.localPathFromTfsRepresentation(
           operationToExecute.getTlocal() != null ? operationToExecute.getTlocal() : operationToExecute.getSlocal());
         if (currentPath == null) {
-          FilePath unexistingPath =
-            myWorkspace.findLocalPathByServerPath(operationToExecute.getTitem(), operationToExecute.getType() == ItemType.Folder);
+          FilePath unexistingPath = myWorkspace
+            .findLocalPathByServerPath(operationToExecute.getTitem(), operationToExecute.getType() == ItemType.Folder, myProject);
           currentPath = unexistingPath.getPresentableUrl();
         }
         myProgress.setFraction(i / sortedOperations.size());

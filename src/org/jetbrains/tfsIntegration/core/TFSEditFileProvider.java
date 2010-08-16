@@ -41,7 +41,8 @@ public class TFSEditFileProvider implements EditFileProvider {
     final Collection<VcsException> errors = new ArrayList<VcsException>();
     try {
       Collection<FilePath> orphans =
-        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, new WorkstationHelper.VoidProcessDelegate() {
+        WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, myProject,
+                                              new WorkstationHelper.VoidProcessDelegate() {
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             final ResultWithFailures<GetOperation> processResult =
               workspace.getServer().getVCS()

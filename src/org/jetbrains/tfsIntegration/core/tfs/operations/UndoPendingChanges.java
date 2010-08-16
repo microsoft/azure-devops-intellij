@@ -84,8 +84,8 @@ public class UndoPendingChanges {
           @SuppressWarnings({"ConstantConditions"})
           @NotNull FilePath targetPath =
             VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder);
-          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false).iterator().next()),
-                          new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false).iterator().next()));
+          undonePaths.put(new ItemPath(sourcePath, workspace.findServerPathsByLocalPath(sourcePath, false, project).iterator().next()),
+                          new ItemPath(targetPath, workspace.findServerPathsByLocalPath(targetPath, false, project).iterator().next()));
         }
       }
 

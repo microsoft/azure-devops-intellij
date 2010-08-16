@@ -78,7 +78,7 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           TFSProgressUtil.setIndeterminate(progressIndicator, true);
           final FilePath localPath = TfsFileUtil.getFilePath(file);
 
-          final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+          final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, myVcs.getProject());
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (workspaces.isEmpty()) {
             exception.set(new VcsException(MessageFormat.format("Mappings not found for file ''{0}''", localPath.getPresentableUrl())));

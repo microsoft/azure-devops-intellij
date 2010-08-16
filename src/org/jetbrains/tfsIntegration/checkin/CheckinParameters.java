@@ -128,7 +128,7 @@ public class CheckinParameters {
             }
           };
           final Map<ServerInfo, Collection<FilePath>> serverToFiles = new HashMap<ServerInfo, Collection<FilePath>>();
-          WorkstationHelper.processByWorkspaces(filePaths, false, new WorkstationHelper.VoidProcessDelegate() {
+          WorkstationHelper.processByWorkspaces(filePaths, false, panel.getProject(), new WorkstationHelper.VoidProcessDelegate() {
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
               Collection<FilePath> files = serverToFiles.get(workspace.getServer());
               if (files == null) {

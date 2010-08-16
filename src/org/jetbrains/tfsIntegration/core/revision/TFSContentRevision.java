@@ -84,7 +84,7 @@ public abstract class TFSContentRevision implements ContentRevision {
       public FilePath getFile() {
         try {
           //noinspection ConstantConditions
-          return workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder);
+          return workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder, project);
         }
         catch (TfsException e) {
           //noinspection ConstantConditions
@@ -132,7 +132,7 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   public static TFSContentRevision create(final Project project, final @NotNull FilePath localPath, final int changeset)
     throws TfsException {
-    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false);
+    final Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, project);
     if (workspaces.isEmpty()) {
       throw new OperationFailedException("Cannot find mapping for item " + localPath.getPresentableUrl());
     }

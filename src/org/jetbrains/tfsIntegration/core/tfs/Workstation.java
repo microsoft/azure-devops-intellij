@@ -253,13 +253,15 @@ public class Workstation {
     return result;
   }
 
-  public Collection<WorkspaceInfo> findWorkspaces(final @NotNull FilePath localPath, boolean considerChildMappings) throws TfsException {
+  public Collection<WorkspaceInfo> findWorkspaces(final @NotNull FilePath localPath,
+                                                  boolean considerChildMappings,
+                                                  Object projectOrComponent) throws TfsException {
     checkDuplicateMappings();
     final Collection<WorkspaceInfo> resultCached = findWorkspacesCached(localPath, considerChildMappings);
     if (!resultCached.isEmpty()) {
       // given path is mapped according to cached mapping info -> reload and check with server info
       for (WorkspaceInfo workspace : resultCached) {
-        if (!workspace.hasMapping(localPath, considerChildMappings)) {
+        if (!workspace.hasMapping(localPath, considerChildMappings, projectOrComponent)) {
           throw new WorkspaceHasNoMappingException(workspace);
         }
       }
@@ -276,7 +278,7 @@ public class Workstation {
           continue;
         }
         try {
-          if (workspace.hasMapping(localPath, considerChildMappings)) {
+          if (workspace.hasMapping(localPath, considerChildMappings, projectOrComponent)) {
             result.add(workspace);
             if (!considerChildMappings) {
               // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces

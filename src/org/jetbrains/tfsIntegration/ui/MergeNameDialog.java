@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
@@ -31,12 +32,14 @@ public class MergeNameDialog extends DialogWrapper {
   private final WorkspaceInfo myWorkspace;
   private final String myLocalName;
   private final String myServerName;
+  private final Project myProject;
 
-  public MergeNameDialog(final WorkspaceInfo workspace, String yourName, String theirsName) {
-    super(false);
+  public MergeNameDialog(final WorkspaceInfo workspace, String yourName, String theirsName, Project project) {
+    super(project, false);
     myWorkspace = workspace;
     myLocalName = yourName;
     myServerName = theirsName;
+    myProject = project;
     setTitle("Resolve Conflicting Names");
     setResizable(true);
     init();
@@ -71,7 +74,7 @@ public class MergeNameDialog extends DialogWrapper {
     // TODO valid filesystem name?
 
     try {
-      if (!myWorkspace.hasLocalPathForServerPath(path)) {
+      if (!myWorkspace.hasLocalPathForServerPath(path, myProject)) {
         return MessageFormat.format("No mapping found for ''{0}'' in workspace ''{1}''", path, myWorkspace.getName());
       }
     }

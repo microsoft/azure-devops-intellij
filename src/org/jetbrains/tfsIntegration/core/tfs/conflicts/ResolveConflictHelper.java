@@ -107,13 +107,14 @@ public class ResolveConflictHelper {
     final String localName;
     if (isNameConflict(conflict)) {
       // TODO proper type?
-      final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(workspace, conflict);
+      final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(workspace, conflict, myProject);
       if (mergedServerPath == null) {
         // user cancelled
         return;
       }
       //noinspection ConstantConditions
-      @NotNull FilePath mergedLocalPath = workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder);
+      @NotNull FilePath mergedLocalPath =
+        workspace.findLocalPathByServerPath(mergedServerPath, conflict.getYtype() == ItemType.Folder, myProject);
       localName = mergedLocalPath.getPath();
     }
     else {
