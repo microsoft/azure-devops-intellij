@@ -103,7 +103,7 @@ public class TfsRequestManager {
             Runnable showDialogRunnable = new Runnable() {
               @Override
               public void run() {
-                if (!shouldShowDialog()) {
+                if (message.isNull() && !shouldShowDialog()) {
                   ok.set(true);
                   return; // check one more time since UI thread call could already enter right credentials
                 }
