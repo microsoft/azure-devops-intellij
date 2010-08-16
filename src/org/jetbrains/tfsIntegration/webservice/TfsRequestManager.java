@@ -98,7 +98,7 @@ public class TfsRequestManager {
           ProgressManager.checkCanceled();
           showDialog = shouldShowDialog(); // check again since another thread could already enter right credentials
           // TODO we probably have to compare original password and current one
-          if (showDialog) {
+          if (!message.isNull() || showDialog) {
             final Ref<Boolean> ok = new Ref<Boolean>();
             Runnable showDialogRunnable = new Runnable() {
               @Override
