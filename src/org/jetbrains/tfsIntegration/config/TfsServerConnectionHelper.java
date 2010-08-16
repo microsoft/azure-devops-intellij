@@ -224,11 +224,11 @@ public class TfsServerConnectionHelper {
       }
 
       URI collectionUri = getCollectionUri(result.first, collection);
-      final TfsBeansHolder beans = new TfsBeansHolder(collectionUri);
+      final TfsBeansHolder collectionBeans = new TfsBeansHolder(collectionUri);
       TfsRequestManager.Request<Workspace[]> loadWorkspacesRequest = new TfsRequestManager.Request<Workspace[]>(null) {
         @Override
         public Workspace[] execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
-          return queryWorkspaces(serverDescriptor.authorizedCredentials, pi, beans);
+          return queryWorkspaces(serverDescriptor.authorizedCredentials, pi, collectionBeans);
         }
 
         @NotNull
@@ -256,7 +256,7 @@ public class TfsServerConnectionHelper {
         workspacesLoadError = e.getMessage();
       }
       return new AddServerResult(collectionUri, collection.instanceId, serverDescriptor.authorizedCredentials, workspaces,
-                                 workspacesLoadError, serverDescriptor.beans);
+                                 workspacesLoadError, collectionBeans);
     }
   }
 
