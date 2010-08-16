@@ -389,7 +389,7 @@ public class ManageWorkspacesForm {
         newWorkspace.setName(d.getWorkspaceName());
         newWorkspace.setComment(d.getWorkspaceComment());
         newWorkspace.setWorkingFolders(d.getWorkingFolders());
-        newWorkspace.saveToServer(myContentPane);
+        newWorkspace.saveToServer(myContentPane, null);
         updateControls(newWorkspace);
         return;
       }
@@ -439,9 +439,7 @@ public class ManageWorkspacesForm {
       modifiedWorkspace.setComment(d.getWorkspaceComment());
       modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {
-        // replace old workspace with a new one first, otherwise server will hold and old one while writing to cache
-        workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
-        modifiedWorkspace.saveToServer(myContentPane);
+        modifiedWorkspace.saveToServer(myContentPane, workspace);
         updateControls(modifiedWorkspace);
       }
       catch (UserCancelledException e) {

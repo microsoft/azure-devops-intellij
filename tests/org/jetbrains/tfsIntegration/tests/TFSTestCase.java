@@ -209,7 +209,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     myTestWorkspace = new WorkspaceInfo(server, DOMAIN + "\\" + USER, Workstation.getComputerName());
     myTestWorkspace.setName(workspaceName);
     myTestWorkspace.addWorkingFolderInfo(new WorkingFolderInfo(WorkingFolderInfo.Status.Active, VcsUtil.getFilePath(root), SERVER_ROOT));
-    myTestWorkspace.saveToServer(myProject);
+    myTestWorkspace.saveToServer(myProject, null);
   }
 
   private void removeWorkspace(WorkspaceInfo workspace) throws URISyntaxException, TfsException {

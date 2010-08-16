@@ -241,10 +241,11 @@ public class WorkspaceInfo {
     myWorkingFoldersInfos.addAll(workingFolders);
   }
 
-  public void saveToServer(Object projectOrComponent) throws TfsException {
+  public void saveToServer(Object projectOrComponent, WorkspaceInfo originalWorkspace) throws TfsException {
     checkCurrentOwnerAndComputer();
     if (myOriginalName != null) {
       getServer().getVCS().updateWorkspace(myOriginalName, toBean(this), projectOrComponent);
+      getServer().replaceWorkspace(originalWorkspace, this);
     }
     else {
       // TODO: refactor
