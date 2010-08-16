@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
+import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
 import java.util.Collection;
@@ -38,6 +39,14 @@ public class TFSRepositoryLocation implements RepositoryLocation {
 
   public String getKey() {
     return toString();
+  }
+
+  @Override
+  public void onBeforeBatch() throws VcsException {
+  }
+
+  @Override
+  public void onAfterBatch() {
   }
 
   public String toPresentableString() {
