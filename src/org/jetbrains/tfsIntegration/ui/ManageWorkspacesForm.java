@@ -439,8 +439,9 @@ public class ManageWorkspacesForm {
       modifiedWorkspace.setComment(d.getWorkspaceComment());
       modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {
-        modifiedWorkspace.saveToServer(myContentPane);
+        // replace old workspace with a new one first, otherwise server will hold and old one while writing to cache
         workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
+        modifiedWorkspace.saveToServer(myContentPane);
         updateControls(modifiedWorkspace);
       }
       catch (UserCancelledException e) {
