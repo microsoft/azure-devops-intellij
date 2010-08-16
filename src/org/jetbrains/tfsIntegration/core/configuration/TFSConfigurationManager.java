@@ -145,9 +145,14 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   public synchronized void storeCredentials(@NotNull URI serverUri, final @NotNull Credentials credentials) {
     ServerConfiguration serverConfiguration = getOrCreateServerConfiguration(serverUri);
     serverConfiguration.setCredentials(credentials);
-    Notification notification = serverConfiguration.getAuthCanceledNotification();
+    final Notification notification = serverConfiguration.getAuthCanceledNotification();
     if (notification != null) {
-      notification.expire();
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          notification.expire();
+        }
+      });
     }
     serverConfiguration.setAuthCanceledNotification(null);
   }
