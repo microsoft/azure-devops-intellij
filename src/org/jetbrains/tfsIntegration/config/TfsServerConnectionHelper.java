@@ -91,21 +91,20 @@ public class TfsServerConnectionHelper {
     }
   }
 
-  public static void ensureAuthenticated(Object projectOrComponent, URI serverUri) throws TfsException {
-    TfsRequestManager.getInstance(serverUri)
-      .executeRequestInForeground(projectOrComponent, true, null, true, new TfsRequestManager.Request<Void>(null) {
-        @Override
-        public Void execute(Credentials credentials, URI serverUri, ProgressIndicator pi) throws Exception {
-          connect(serverUri, credentials, true, pi);
-          return null;
-        }
+  public static void ensureAuthenticated(Object projectOrComponent, URI serverUri, boolean force) throws TfsException {
+    TfsRequestManager.executeRequest(serverUri, projectOrComponent, force, new TfsRequestManager.Request<Void>(null) {
+      @Override
+      public Void execute(Credentials credentials, URI serverUri, ProgressIndicator pi) throws Exception {
+        connect(serverUri, credentials, true, pi);
+        return null;
+      }
 
-        @NotNull
-        @Override
-        public String getProgressTitle(Credentials credentials, URI serverUri) {
-          return TFSBundle.message("connect.to", TfsUtil.getPresentableUri(serverUri));
-        }
-      });
+      @NotNull
+      @Override
+      public String getProgressTitle(Credentials credentials, URI serverUri) {
+        return TFSBundle.message("connect.to", TfsUtil.getPresentableUri(serverUri));
+      }
+    });
   }
 
   public static class AddServerResult {

@@ -97,7 +97,7 @@ public class Workstation {
     for (final ServerInfo server : getServers()) {
       if (showLoginIfNoCredentials && server.getQualifiedUsername() == null) {
         try {
-          TfsServerConnectionHelper.ensureAuthenticated(null, server.getUri());
+          TfsServerConnectionHelper.ensureAuthenticated(null, server.getUri(), false);
         }
         catch (TfsException e) {
           continue;

@@ -99,7 +99,7 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
         @Override
         public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
           try {
-            TfsServerConnectionHelper.ensureAuthenticated(project, serverUri);
+            TfsServerConnectionHelper.ensureAuthenticated(project, serverUri, true);
             notification.expire();
           }
           catch (TfsException e) {

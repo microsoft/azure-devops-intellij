@@ -123,7 +123,7 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
       myModel.setServer(server);
       if (commitType == CommitType.Next || commitType == CommitType.Finish) {
         try {
-          TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri());
+          TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri(), true);
         }
         catch (UserCancelledException e) {
           throw new CommitStepCancelledException();

@@ -369,7 +369,7 @@ public class ManageWorkspacesForm {
     if (TfsRequestManager.shouldShowLoginDialog(server.getUri())) {
       update = true;
       try {
-        TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri());
+        TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri(), true);
       }
       catch (UserCancelledException e) {
         return;
