@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
@@ -36,6 +35,7 @@ import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompati
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceNotFoundException;
 import org.jetbrains.tfsIntegration.ui.treetable.CellRenderer;
 import org.jetbrains.tfsIntegration.ui.treetable.ContentProvider;
@@ -253,11 +253,11 @@ public class ManageWorkspacesForm {
       server.refreshWorkspacesForCurrentOwner(myContentPane);
       updateControls(selection);
     }
+    catch (UserCancelledException e) {
+      // ignore
+    }
     catch (TfsException e) {
       Messages.showErrorDialog(myContentPane, e.getMessage(), TFSBundle.message("reload.workspaces.title"));
-    }
-    catch (ProcessCanceledException e) {
-      // ignore
     }
   }
 
@@ -371,7 +371,7 @@ public class ManageWorkspacesForm {
       try {
         TfsServerConnectionHelper.ensureAuthenticated(myContentPane, server.getUri());
       }
-      catch (ProcessCanceledException e) {
+      catch (UserCancelledException e) {
         return;
       }
       catch (TfsException e) {
@@ -393,11 +393,11 @@ public class ManageWorkspacesForm {
         updateControls(newWorkspace);
         return;
       }
+      catch (UserCancelledException e) {
+        // ignore to execute updateControls()
+      }
       catch (TfsException e) {
         Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("create.workspace.title"));
-      }
-      catch (ProcessCanceledException e) {
-        // ignore to execute updateControls()
       }
     }
     if (update) {
@@ -415,19 +415,19 @@ public class ManageWorkspacesForm {
         workspace.getServer().refreshWorkspacesForCurrentOwner(myContentPane);
         updateControls(null);
       }
+      catch (UserCancelledException e2) {
+        // ignore
+      }
       catch (TfsException e2) {
         Messages.showErrorDialog(myContentPane, e2.getMessage(), TFSBundle.message("reload.workspaces.title"));
       }
-      catch (ProcessCanceledException e2) {
-        // ignore
-      }
+      return;
+    }
+    catch (UserCancelledException e) {
       return;
     }
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("edit.workspace.title"));
-      return;
-    }
-    catch (ProcessCanceledException e) {
       return;
     }
 
@@ -443,11 +443,11 @@ public class ManageWorkspacesForm {
         workspace.getServer().replaceWorkspace(workspace, modifiedWorkspace);
         updateControls(modifiedWorkspace);
       }
+      catch (UserCancelledException e) {
+        // ignore
+      }
       catch (TfsException e) {
         Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("save.workspace.title"));
-      }
-      catch (ProcessCanceledException e) {
-        // ignore
       }
     }
   }
@@ -462,11 +462,11 @@ public class ManageWorkspacesForm {
       workspace.getServer().deleteWorkspace(workspace, myContentPane);
       updateControls(workspace);
     }
+    catch (UserCancelledException e) {
+      // ignore
+    }
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), TFSBundle.message("delete.workspace.title"));
-    }
-    catch (ProcessCanceledException e) {
-      // ignore
     }
   }
 

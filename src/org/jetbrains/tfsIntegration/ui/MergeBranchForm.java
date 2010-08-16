@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -36,6 +35,7 @@ import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 import org.jetbrains.tfsIntegration.ui.servertree.TfsTreeForm;
 
@@ -293,11 +293,11 @@ public class MergeBranchForm {
         }
       }
     }
+    catch (UserCancelledException e) {
+      return;
+    }
     catch (TfsException e) {
       Messages.showErrorDialog(myProject, e.getMessage(), myDialogTitle);
-    }
-    catch (ProcessCanceledException e) {
-      return;
     }
 
     ((DefaultComboBoxModel)myTargetCombo.getModel()).removeAllElements();

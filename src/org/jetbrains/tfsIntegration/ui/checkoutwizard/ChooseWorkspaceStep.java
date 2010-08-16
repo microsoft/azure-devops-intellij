@@ -18,7 +18,6 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
@@ -125,11 +124,11 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
         try {
           TfsServerConnectionHelper.ensureAuthenticated(myManageWorkspacesForm.getContentPane(), server.getUri());
         }
+        catch (UserCancelledException e) {
+          throw new CommitStepCancelledException();
+        }
         catch (TfsException e) {
           throw new CommitStepException(e.getMessage());
-        }
-        catch (ProcessCanceledException e) {
-          throw new CommitStepCancelledException();
         }
       }
     }

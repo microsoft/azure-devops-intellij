@@ -1,7 +1,6 @@
 package org.jetbrains.tfsIntegration.config;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Trinity;
 import com.intellij.openapi.util.text.StringUtil;
@@ -25,6 +24,7 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.HostNotApplicableException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.ui.ChooseTeamProjectCollectionDialog;
 import org.jetbrains.tfsIntegration.webservice.TfsRequestManager;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
@@ -190,12 +190,12 @@ public class TfsServerConnectionHelper {
     try {
       result = TfsRequestManager.getInstance(null).executeRequestInForeground(parentComponent, true, null, connectRequest);
     }
+    catch (UserCancelledException e) {
+      return null;
+    }
     catch (TfsException e) {
       // should not float up through the dialog
       LOG.error(e);
-      return null;
-    }
-    catch (ProcessCanceledException e) {
       return null;
     }
 
@@ -250,7 +250,7 @@ public class TfsServerConnectionHelper {
         workspaces = TfsRequestManager.getInstance(collectionUri)
           .executeRequestInForeground(parentComponent, false, result.third, loadWorkspacesRequest);
       }
-      catch (ProcessCanceledException e) {
+      catch (UserCancelledException e) {
         return null;
       }
       catch (TfsException e) {

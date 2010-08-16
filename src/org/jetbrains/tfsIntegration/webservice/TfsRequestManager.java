@@ -3,7 +3,6 @@ package org.jetbrains.tfsIntegration.webservice;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -19,10 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-import org.jetbrains.tfsIntegration.exceptions.ConnectionFailedException;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
-import org.jetbrains.tfsIntegration.exceptions.UnauthorizedException;
+import org.jetbrains.tfsIntegration.exceptions.*;
 import org.jetbrains.tfsIntegration.ui.TfsLoginDialog;
 
 import javax.swing.*;
@@ -85,7 +81,7 @@ public class TfsRequestManager {
    * @param request
    * @param <T>
    * @return
-   * @throws TfsException on error or ProcessCanceledException if user canceled
+   * @throws TfsException on error
    */
   public <T> T executeRequestInBackground(final Object projectOrComponent, final Request<T> request) throws TfsException {
     LOG.assertTrue(!ApplicationManager.getApplication().isDispatchThread());
@@ -131,7 +127,7 @@ public class TfsRequestManager {
             };
             ApplicationManager.getApplication().invokeAndWait(showDialogRunnable, ModalityState.defaultModalityState());
             if (!ok.get()) {
-              throw new ProcessCanceledException();
+              throw new UserCancelledException();
             }
           }
         }
@@ -356,7 +352,7 @@ public class TfsRequestManager {
         }
       }
       else {
-        throw new ProcessCanceledException();
+        throw new UserCancelledException();
       }
     }
 
@@ -367,7 +363,7 @@ public class TfsRequestManager {
       overrideCredentials != null ? overrideCredentials : TFSConfigurationManager.getInstance().getCredentials(myServerUri);
     ExecuteSession<T> session = new ExecuteSession<T>(credentials, projectOrComponent, request, myServerUri);
     if (!session.execute()) {
-      throw new ProcessCanceledException();
+      throw new UserCancelledException();
     }
 
     TfsException error = session.getError();
