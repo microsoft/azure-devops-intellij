@@ -26,6 +26,7 @@ import com.intellij.util.ui.ColumnInfo;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
+import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -102,6 +103,11 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       @Override
       public VcsHistorySession copy() {
         return createSession(workspaceAndItem, getRevisionList());
+      }
+
+      @Override
+      public boolean isContentAvailable(VcsFileRevision revision) {
+        return workspaceAndItem.second.getType() == ItemType.File;
       }
     };
   }
