@@ -16,219 +16,209 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.fileChooser.FileChooser;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.EnumComboBoxModel;
 import com.intellij.util.EventDispatcher;
+import com.intellij.util.ui.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.ui.servertree.ServerBrowserDialog;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.table.TableCellEditor;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.EventListener;
 import java.util.List;
 
 public class WorkspaceForm {
-
-  public interface Listener extends EventListener {
-    void dataChanged();
-  }
 
   private JTextField myNameField;
   private JLabel myServerField;
   private JLabel myOwnerField;
   private JLabel myComputerField;
   private JTextArea myCommentField;
-  private JTable myFoldersTable;
   private JPanel myContentPane;
-  private JButton myAddButton;
-  private JButton myRemoveButton;
-  private JLabel myErrorLabel;
-  private final WorkingFoldersTableModel myWorkingFoldersTableModel;
-  private final Project myProject;
+  private ValidatingTableEditor<WorkingFolderInfo> myTable;
+  private JLabel myMessageLabel;
+  private JLabel myWorkingFoldrersLabel;
   private ServerInfo myServer;
+  private final Project myProject;
+  @Nullable private String myWorkingFolderValidationMessage;
 
-  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
+  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
-  public WorkspaceForm(final Project project) {
-    myProject = project;
-
-    myAddButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        //noinspection ConstantConditions
-        FilePath projectRootPath =
-          myProject.getBaseDir() != null ? TfsFileUtil.getFilePath(myProject.getBaseDir()) : VcsUtil.getFilePath("");
-        myWorkingFoldersTableModel.addWorkingFolder(new WorkingFolderInfo(projectRootPath));
-        updateControls();
+  private static ColumnInfo<WorkingFolderInfo, String> STATUS_COLUMN =
+    new ColumnInfo<WorkingFolderInfo, String>(TFSBundle.message("working.folder.status.column")) {
+      @Override
+      public String valueOf(WorkingFolderInfo item) {
+        return item.getStatus().name();
       }
-    });
 
-    myRemoveButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent e) {
-        myWorkingFoldersTableModel.removeWorkingFolders(myFoldersTable.getSelectedRows());
-        updateControls();
+      @Override
+      public boolean isCellEditable(WorkingFolderInfo workingFolderInfo) {
+        return true;
       }
-    });
 
-    myWorkingFoldersTableModel = new WorkingFoldersTableModel();
-    //noinspection HardCodedStringLiteral
-    myFoldersTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-    myFoldersTable.setModel(myWorkingFoldersTableModel);
-    myFoldersTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+      @Override
+      public int getWidth(JTable table) {
+        return 80;
+      }
 
-    for (int i = 0; i < WorkingFoldersTableModel.Column.values().length; i++) {
-      myFoldersTable.getColumnModel().getColumn(i).setPreferredWidth(WorkingFoldersTableModel.Column.values()[i].getWidth());
+      @Override
+      public TableCellEditor getEditor(WorkingFolderInfo o) {
+        return new AbstractTableCellEditor() {
+          private ComboBox myCombo;
+
+          public Object getCellEditorValue() {
+            return myCombo.getSelectedItem();
+          }
+
+          public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            ComboBoxModel model = new EnumComboBoxModel<WorkingFolderInfo.Status>(WorkingFolderInfo.Status.class);
+            myCombo = new ComboBox(model, getWidth(table));
+            return myCombo;
+          }
+        };
+      }
+    };
+
+  private static class LocalPathColumn extends ColumnInfo<WorkingFolderInfo, String> implements ValidatingTableEditor.RowHeightProvider {
+
+    public LocalPathColumn() {
+      super(TFSBundle.message("working.folder.local.path.column"));
     }
 
-    myFoldersTable.setDefaultRenderer(WorkingFolderInfo.Status.class, new DefaultTableCellRenderer() {
-      public Component getTableCellRendererComponent(final JTable table,
-                                                     final Object value,
-                                                     final boolean isSelected,
-                                                     final boolean hasFocus,
-                                                     final int row,
-                                                     final int column) {
-        String text = ((WorkingFolderInfo.Status)value).name();
-        return super.getTableCellRendererComponent(table, text, isSelected, hasFocus, row, column);
+    @Override
+    public String valueOf(WorkingFolderInfo item) {
+      return item.getLocalPath().getPresentableUrl();
+    }
+
+    @Override
+    public boolean isCellEditable(WorkingFolderInfo workingFolderInfo) {
+      return true;
+    }
+
+    @Override
+    public void setValue(WorkingFolderInfo item, String value) {
+      item.setLocalPath(VcsUtil.getFilePath(value));
+    }
+
+    @Override
+    public TableCellEditor getEditor(final WorkingFolderInfo item) {
+      return new LocalPathCellEditor(TFSBundle.message("select.local.path.title"));
+    }
+
+    public int getRowHeight() {
+      return new JTextField().getPreferredSize().height + 1;
+    }
+
+  }
+
+  private ColumnInfo<WorkingFolderInfo, String> SERVER_PATH_COLUMN =
+    new ColumnInfo<WorkingFolderInfo, String>(TFSBundle.message("working.folder.server.path.column")) {
+      @Override
+      public String valueOf(WorkingFolderInfo item) {
+        return item.getServerPath();
       }
-    });
 
-    final JComboBox statusCombo = new JComboBox(new EnumComboBoxModel<WorkingFolderInfo.Status>(WorkingFolderInfo.Status.class));
-    statusCombo.setBorder(BorderFactory.createEmptyBorder());
-    myFoldersTable.setDefaultEditor(WorkingFolderInfo.Status.class, new DefaultCellEditor(statusCombo));
-
-    myFoldersTable.setDefaultRenderer(FilePath.class, new DefaultTableCellRenderer() {
-      public Component getTableCellRendererComponent(final JTable table,
-                                                     final Object value,
-                                                     final boolean isSelected,
-                                                     final boolean hasFocus,
-                                                     final int row,
-                                                     final int column) {
-        String text = ((FilePath)value).getPresentableUrl();
-        return super.getTableCellRendererComponent(table, text, isSelected, hasFocus, row, column);
+      @Override
+      public void setValue(WorkingFolderInfo item, String value) {
+        item.setServerPath(value);
       }
-    });
 
-    myFoldersTable
-      .setDefaultEditor(FilePath.class, new FieldWithButtonCellEditor<FilePath>(false, new FieldWithButtonCellEditor.Helper<FilePath>() {
-        public String toStringRepresentation(@Nullable final FilePath value) {
-          return value != null ? value.getPresentableUrl() : "";
-        }
-
-        public FilePath fromStringRepresentation(@Nullable final String stringRepresentation) {
-          return StringUtil.isEmptyOrSpaces(stringRepresentation) ? null : VcsUtil.getFilePath(stringRepresentation);
-        }
-
-        public String processButtonClick(final String initialText) {
-          FileChooserDescriptor d = new FileChooserDescriptor(false, true, false, false, false, false);
-          d.setTitle("Choose Local Path");
-          d.setShowFileSystemRoots(true);
-          d.setDescription("Choose local folder to be mapped to server path");
-
-          VirtualFile[] files = FileChooser.chooseFiles(getContentPane(), d, VcsUtil.getVirtualFile(initialText));
-          if (files.length != 1 || files[0] == null) {
-            return initialText;
-          }
-          return files[0].getPath().replace('/', File.separatorChar);
-        }
-      }));
-
-    myFoldersTable
-      .setDefaultEditor(String.class, new FieldWithButtonCellEditor<String>(false, new FieldWithButtonCellEditor.Helper<String>() {
-        public String toStringRepresentation(@Nullable final String value) {
-          return value != null ? value : "";
-        }
-
-        public String fromStringRepresentation(@Nullable final String stringRepresentation) {
-          return StringUtil.isEmptyOrSpaces(stringRepresentation) ? null : stringRepresentation;
-        }
-
-        public String processButtonClick(final String initialText) {
-          ServerBrowserDialog d;
-          try {
-            getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            d =
-              new ServerBrowserDialog(TFSBundle.message("choose.server.path.dialog.title"), myProject, myServer, initialText, true, false);
-          }
-          finally {
-            getContentPane().setCursor(Cursor.getDefaultCursor());
-          }
-          d.show();
-          if (d.isOK()) {
-            final String selectedPath = d.getSelectedPath();
-            if (selectedPath != null) {
-              return selectedPath;
-            }
-          }
-          return initialText;
-        }
-      }));
-
-    myFoldersTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-      public void valueChanged(final ListSelectionEvent e) {
-        updateControls();
+      @Override
+      public boolean isCellEditable(WorkingFolderInfo item) {
+        return true;
       }
-    });
 
-    myNameField.getDocument().addDocumentListener(new DocumentAdapter() {
+      @Override
+      public TableCellEditor getEditor(final WorkingFolderInfo item) {
+        return new ServerPathCellEditor(TFSBundle.message("select.local.path.title"), myProject, myServer);
+      }
+    };
+
+  private void createUIComponents() {
+    myTable = new ValidatingTableEditor<WorkingFolderInfo>() {
+      @Override
+      protected WorkingFolderInfo cloneOf(WorkingFolderInfo item) {
+        return item.getCopy();
+      }
+
+      @Override
+      protected WorkingFolderInfo createItem() {
+        String path = myProject.isDefault() ? "" : myProject.getBaseDir().getPath();
+        return new WorkingFolderInfo(VcsUtil.getFilePath(path));
+      }
+
+      @Nullable
+      protected String validate(WorkingFolderInfo item) {
+        if (StringUtil.isEmpty(item.getLocalPath().getPath())) {
+          return TFSBundle.message("local.path.is.empty");
+        }
+        if (StringUtil.isEmpty(item.getServerPath())) {
+          return TFSBundle.message("server.path.is.empty");
+        }
+        if (!item.getServerPath().startsWith(VersionControlPath.ROOT_FOLDER)) {
+          return TFSBundle.message("server.path.is.invalid");
+        }
+        return null;
+      }
+
+      @Override
+      protected void displayMessageAndFix(@Nullable Pair<String, Fix> messageAndFix) {
+        myWorkingFolderValidationMessage = messageAndFix != null ? messageAndFix.first : null;
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
+      }
+    };
+    myTable.hideMessageLabel();
+    myTable.setColumnReorderingAllowed(false);
+  }
+
+  private WorkspaceForm(final Project project) {
+    myProject = project;
+
+    myWorkingFoldrersLabel.setLabelFor(myTable.getPreferredFocusedComponent());
+    DocumentAdapter listener = new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {
-        myEventDispatcher.getMulticaster().dataChanged();
+        myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(e));
       }
-    });
+    };
+    myNameField.getDocument().addDocumentListener(listener);
+    myCommentField.getDocument().addDocumentListener(listener);
 
-    myCommentField.getDocument().addDocumentListener(new DocumentAdapter() {
-      protected void textChanged(final DocumentEvent e) {
-        myEventDispatcher.getMulticaster().dataChanged();
-      }
-    });
+    myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
+  }
 
-    myWorkingFoldersTableModel.addTableModelListener(new TableModelListener() {
-      public void tableChanged(final TableModelEvent e) {
-        myEventDispatcher.getMulticaster().dataChanged();
-      }
-    });
+  public WorkspaceForm(Project project, @NotNull ServerInfo server) {
+    this(project);
+    myServer = server;
+    myServerField.setText(myServer.getPresentableUri());
+    myOwnerField.setText(myServer.getQualifiedUsername());
+    myComputerField.setText(Workstation.getComputerName());
 
-    updateControls();
+    myTable.setModel(new ColumnInfo[]{STATUS_COLUMN, new LocalPathColumn(), SERVER_PATH_COLUMN}, new ArrayList<WorkingFolderInfo>());
+  }
+
+  public WorkspaceForm(Project project, @NotNull WorkspaceInfo workspace) {
+    this(project, workspace.getServer());
+    myNameField.setText(workspace.getName());
+    myCommentField.setText(workspace.getComment());
+    myTable.setModel(new ColumnInfo[]{STATUS_COLUMN, new LocalPathColumn(), SERVER_PATH_COLUMN},
+                     new ArrayList<WorkingFolderInfo>(workspace.getWorkingFoldersCached()));
   }
 
   public JPanel getContentPane() {
     return myContentPane;
   }
-
-  public void init(final @NotNull ServerInfo server) {
-    myServer = server;
-    myServerField.setText(myServer.getPresentableUri());
-    myOwnerField.setText(myServer.getQualifiedUsername());
-    myComputerField.setText(Workstation.getComputerName());
-    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>());
-  }
-
-  public void init(final @NotNull WorkspaceInfo workspace) throws TfsException {
-    init(workspace.getServer());
-    myNameField.setText(workspace.getName());
-    myCommentField.setText(workspace.getComment());
-    myWorkingFoldersTableModel.setWorkingFolders(new ArrayList<WorkingFolderInfo>(workspace.getWorkingFoldersCached()));
-  }
-
-  private void updateControls() {
-    myRemoveButton.setEnabled(myFoldersTable.getSelectedRowCount() > 0);
-  }
-
 
   public String getWorkspaceName() {
     return myNameField.getText();
@@ -239,23 +229,26 @@ public class WorkspaceForm {
   }
 
   public List<WorkingFolderInfo> getWorkingFolders() {
-    return myWorkingFoldersTableModel.getWorkingFolders();
+    return myTable.getItems();
   }
 
-  public void addListener(Listener listener) {
+  public void addListener(ChangeListener listener) {
     myEventDispatcher.addListener(listener);
   }
 
-  public void removeListener(Listener listener) {
-    myEventDispatcher.removeListener(listener);
-  }
-
   public void setErrorMessage(@Nullable final String message) {
-    myErrorLabel.setText(message != null ? message : " ");
+    myMessageLabel.setText(message);
+    myMessageLabel.setVisible(message != null);
   }
 
   public JComponent getPreferredFocusedComponent() {
     return myNameField;
   }
+
+  @Nullable
+  public String validateWorkingFolders() {
+    return myWorkingFolderValidationMessage;
+  }
+
 
 }

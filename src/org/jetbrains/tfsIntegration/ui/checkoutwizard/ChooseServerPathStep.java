@@ -105,7 +105,7 @@ public class ChooseServerPathStep extends CheckoutWizardStep {
   private void validate() {
     String serverPath = myForm.getSelectedPath();
     if (StringUtil.isEmpty(serverPath)) {
-      myForm.setMessage(TFSBundle.message("server.path.is.empty"), true);
+      myForm.setMessage(TFSBundle.message("server.path.is.not.selected"), true);
     }
     else {
       try {

@@ -21,43 +21,68 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkingFolderInfo;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.util.List;
 
 public class WorkspaceDialog extends DialogWrapper {
 
-  private final Project myProject;
-  private final @Nullable WorkspaceInfo myWorkspace;
-  private final @NotNull ServerInfo myServer;
-  private WorkspaceForm myForm;
+  private final WorkspaceForm myForm;
 
   public WorkspaceDialog(Project project, @NotNull ServerInfo server) {
     super(project, true);
-    myProject = project;
-    myServer = server;
-    myWorkspace = null;
+    myForm = new WorkspaceForm(project, server);
+    myForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        revalidate();
+      }
+    });
+
     init();
+
+    setTitle(TFSBundle.message("create.workspace.dialog.title"));
+    setOKButtonText(TFSBundle.message("create.workspace.dialog.ok.button.text"));
+    revalidate();
   }
 
   public WorkspaceDialog(Project project, @NotNull WorkspaceInfo workspace) {
     super(project, true);
-    myProject = project;
-    myServer = workspace.getServer();
-    myWorkspace = workspace;
+
+    myForm = new WorkspaceForm(project, workspace);
+    myForm.addListener(new ChangeListener() {
+      @Override
+      public void stateChanged(ChangeEvent e) {
+        revalidate();
+      }
+    });
+
     init();
+
+    setTitle(TFSBundle.message("edit.workspace.dialog.title"));
+    setOKButtonText(TFSBundle.message("create.workspace.dialog.ok.button.text"));
+
+    revalidate();
   }
 
-  protected void init() {
-    super.init();
-    setResizable(true);
-    setTitle(myWorkspace != null ? "Edit Workspace" : "Create Workspace");
-    setOKButtonText("Save");
-    setOKActionEnabled(myWorkspace != null);
+  private void revalidate() {
+    String errorMessage = getErrorMessage();
+    setOKActionEnabled(errorMessage == null);
+    myForm.setErrorMessage(errorMessage);
+  }
+
+  private String getErrorMessage() {
+    String message = validate(myForm.getWorkspaceName());
+    if (message == null) {
+      message = myForm.validateWorkingFolders();
+    }
+    return message;
   }
 
   @Override
@@ -71,37 +96,17 @@ public class WorkspaceDialog extends DialogWrapper {
   }
 
   protected JComponent createCenterPanel() {
-    myForm = new WorkspaceForm(myProject);
-    try {
-      if (myWorkspace != null) {
-        myForm.init(myWorkspace);
-      }
-      else {
-        myForm.init(myServer);
-      }
-    }
-    catch (TfsException e) {
-      return null;
-    }
-
-    myForm.addListener(new WorkspaceForm.Listener() {
-      public void dataChanged() {
-        String errorMessage = validate(myForm.getWorkspaceName());
-        setOKActionEnabled(errorMessage == null);
-        myForm.setErrorMessage(errorMessage);
-      }
-    });
     return myForm.getContentPane();
   }
 
   @Nullable
   private static String validate(String workspaceName) {
     if (StringUtil.isEmptyOrSpaces(workspaceName)) {
-      return "Workspace name is empty";
+      return TFSBundle.message("workspace.name.empty");
     }
 
     if (!WorkspaceInfo.isValidName(workspaceName)) {
-      return "Workspace name contains invalid symbols";
+      return TFSBundle.message("workspace.name.invalid");
     }
 
     return null;
