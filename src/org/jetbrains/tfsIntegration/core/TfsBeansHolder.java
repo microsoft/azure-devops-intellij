@@ -35,15 +35,6 @@ public class TfsBeansHolder {
     myServerUri = serverUri;
   }
 
-  public TfsBeansHolder(URI serverUri, @NotNull String isccProvider,
-                        @NotNull String download,
-                        @NotNull String upload,
-                        @NotNull String workItemService,
-                        @NotNull String groupSecurity) {
-    this(serverUri);
-    doCreateStubs(null, isccProvider, download, upload, workItemService, groupSecurity);
-  }
-
   @NotNull
   public RepositoryStub getRepositoryStub(Credentials credentials, ProgressIndicator pi)
     throws HostNotApplicableException, RemoteException {
@@ -60,7 +51,7 @@ public class TfsBeansHolder {
     if (myWorkItemTrackingClientService == null) {
       createStubs(credentials, pi);
     }
-    WebServiceHelper.setupStub(myRepository, credentials, myServerUri);
+    WebServiceHelper.setupStub(myWorkItemTrackingClientService, credentials, myServerUri);
     return myWorkItemTrackingClientService;
   }
 
@@ -70,7 +61,7 @@ public class TfsBeansHolder {
     if (myGroupSecurityService == null) {
       createStubs(credentials, pi);
     }
-    WebServiceHelper.setupStub(myRepository, credentials, myServerUri);
+    WebServiceHelper.setupStub(myGroupSecurityService, credentials, myServerUri);
     return myGroupSecurityService;
   }
 
