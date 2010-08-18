@@ -65,6 +65,15 @@ public abstract class TFSContentRevision implements ContentRevision {
                                           final int changeset,
                                           final int itemId) throws TfsException {
     final Item item = workspace.getServer().getVCS().queryItemById(itemId, changeset, true, project, TFSBundle.message("loading.item"));
+    final FilePath localPath;
+    if (item != null) {
+      localPath = workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder, project);
+      if (localPath == null) {
+        throw new TfsException(TFSBundle.message("no.mapping.for.0", item.getItem()));
+      }
+    } else {
+      localPath = null;
+    }
 
     return new TFSContentRevision(project, workspace.getServer()) {
       @Nullable
@@ -82,14 +91,8 @@ public abstract class TFSContentRevision implements ContentRevision {
 
       @NotNull
       public FilePath getFile() {
-        try {
-          //noinspection ConstantConditions
-          return workspace.findLocalPathByServerPath(item.getItem(), item.getType() == ItemType.Folder, project);
-        }
-        catch (TfsException e) {
-          //noinspection ConstantConditions
-          return null;
-        }
+        //noinspection ConstantConditions
+        return localPath;
       }
 
       @NotNull

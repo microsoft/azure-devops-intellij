@@ -92,7 +92,7 @@ public class ResolveConflictHelper {
           }
         }
         catch (TfsException e) {
-          throw new VcsException("Cannot get content for item " + localPath.getPresentableUrl());
+          throw new VcsException(TFSBundle.message("cannot.load.revisions", localPath.getPresentableUrl(), e.getMessage()));
         }
       }
 
