@@ -56,11 +56,16 @@ public class WorkspaceForm {
 
   private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
-  private static ColumnInfo<WorkingFolderInfo, String> STATUS_COLUMN =
-    new ColumnInfo<WorkingFolderInfo, String>(TFSBundle.message("working.folder.status.column")) {
+  private static ColumnInfo<WorkingFolderInfo, Object> STATUS_COLUMN =
+    new ColumnInfo<WorkingFolderInfo, Object>(TFSBundle.message("working.folder.status.column")) {
       @Override
-      public String valueOf(WorkingFolderInfo item) {
-        return item.getStatus().name();
+      public Object valueOf(WorkingFolderInfo item) {
+        return item.getStatus();
+      }
+
+      @Override
+      public void setValue(WorkingFolderInfo item, Object value) {
+        item.setStatus((WorkingFolderInfo.Status)value);
       }
 
       @Override
@@ -84,6 +89,7 @@ public class WorkspaceForm {
 
           public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             ComboBoxModel model = new EnumComboBoxModel<WorkingFolderInfo.Status>(WorkingFolderInfo.Status.class);
+            model.setSelectedItem(value);
             myCombo = new ComboBox(model, getWidth(table));
             return myCombo;
           }
