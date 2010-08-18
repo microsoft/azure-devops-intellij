@@ -94,4 +94,8 @@ public class MergeBranchDialog extends DialogWrapper {
     return "TFS.MergeBranch";
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return myMergeBranchForm.getPreferredFocusedComponent();
+  }
 }

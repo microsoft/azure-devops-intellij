@@ -74,6 +74,7 @@ public class MergeBranchForm {
   private final SelectRevisionForm mySelectRevisionForm;
   private JPanel myContentPanel;
   private JPanel myChangesetsPanel;
+  private JLabel mySourceBranchLabel;
   private final Project myProject;
   private final WorkspaceInfo myWorkspace;
   private final JTable myChangesetsTable;
@@ -91,6 +92,8 @@ public class MergeBranchForm {
     myProject = project;
     myWorkspace = workspace;
     myDialogTitle = dialogTitle;
+
+    mySourceBranchLabel.setLabelFor(mySourceField.getChildComponent());
 
     myChangesetsTableModel = new ChangesetsTableModel();
     myChangesetsTable = new JBTable(myChangesetsTableModel);
@@ -191,7 +194,6 @@ public class MergeBranchForm {
     List<Changeset> changesets = new ArrayList<Changeset>();
     if (myTargetCombo.getSelectedIndex() != -1) {
       try {
-        getContentPanel().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         final Collection<MergeCandidate> mergeCandidates = myWorkspace.getServer().getVCS()
           .queryMergeCandidates(myWorkspace.getName(), myWorkspace.getOwnerName(), mySourceField.getText(), getTargetPath(), myProject,
                                 TFSBundle.message("loading.branches"));
@@ -201,9 +203,6 @@ public class MergeBranchForm {
       }
       catch (TfsException e) {
         Messages.showErrorDialog(myProject, e.getMessage(), myDialogTitle);
-      }
-      finally {
-        getContentPanel().setCursor(Cursor.getDefaultCursor());
       }
     }
     myChangesetsTableModel.setChangesets(changesets);
@@ -310,6 +309,10 @@ public class MergeBranchForm {
 
   public void close() {
     mySourceField.getTextField().removeFocusListener(mySourceFieldFocusListener);
+  }
+
+  public JComponent getPreferredFocusedComponent() {
+    return mySourceField.getChildComponent();
   }
 
 }
