@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -54,5 +55,11 @@ public class ManageWorkspacesDialog extends DialogWrapper {
   @Override
   protected String getHelpId() {
     return "project.propVCSSupport.VCSs.TFS.manage";
+  }
+
+  @Override
+  protected void doOKAction() {
+    super.doOKAction();
+    VcsDirtyScopeManager.getInstance(myProject).markEverythingDirty();
   }
 }
