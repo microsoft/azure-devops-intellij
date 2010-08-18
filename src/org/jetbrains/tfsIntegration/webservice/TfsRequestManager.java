@@ -139,7 +139,7 @@ public class TfsRequestManager {
               if (!force) {
                 TFSConfigurationManager.getInstance().setAuthCanceled(myServerUri, projectOrComponent);
               }
-              throw new UserCancelledException();
+              throw new AuthCancelledException(myServerUri);
             }
           }
         }
@@ -373,7 +373,7 @@ public class TfsRequestManager {
         if (!force && myServerUri != null) {
           TFSConfigurationManager.getInstance().setAuthCanceled(myServerUri, projectOrComponent);
         }
-        throw new UserCancelledException();
+        throw new AuthCancelledException(myServerUri);
       }
     }
 
@@ -408,7 +408,7 @@ public class TfsRequestManager {
     }
 
     if (!force && TFSConfigurationManager.getInstance().isAuthCanceled(myServerUri)) {
-      throw new UserCancelledException();
+      throw new AuthCancelledException(myServerUri);
     }
     // TODO current credentials may be different if another thread changed them in background
     return shouldShowLoginDialog(myServerUri);
