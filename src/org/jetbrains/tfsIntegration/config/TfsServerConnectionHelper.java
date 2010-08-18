@@ -2,6 +2,7 @@ package org.jetbrains.tfsIntegration.config;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Trinity;
 import com.intellij.openapi.util.text.StringUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.services.registration._03.*;
@@ -286,14 +287,41 @@ public class TfsServerConnectionHelper {
     }
     ConfigurationContext context = WebServiceHelper.getStubConfigurationContext();
 
-    RegistrationStub registrationStub = new RegistrationStub(context, TfsUtil.appendPath(uri, TFSConstants.REGISTRATION_ASMX));
-    WebServiceHelper.setupStub(registrationStub, credentials, uri);
-    final GetRegistrationEntries getRegistrationEntriesParam = new GetRegistrationEntries();
-    getRegistrationEntriesParam.setToolId(TFSConstants.TOOL_ID_FRAMEWORK);
-    GetRegistrationEntriesResponse registrationEntries = registrationStub.getRegistrationEntries(getRegistrationEntriesParam);
+    Pair<RegistrationStub, FrameworkRegistrationEntry[]> stubAndEntries;
+    try {
+      stubAndEntries = getRegistrationEntries(context, uri, credentials, TFSConstants.TOOL_ID_FRAMEWORK);
+    }
+    catch (RemoteException e) {
+      LOG.debug("connect to URI '" + uri + "' failed", e);
+      if (justAuthenticate) {
+        throw e;
+      }
 
-    FrameworkRegistrationEntry[] arrayOfEntries = registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry();
-    if (arrayOfEntries != null && arrayOfEntries.length > 0) {
+      String path = uri.getPath();
+      if (StringUtil.isEmpty(path) || "/".equals(path)) {
+        path = TFSConstants.TFS_PATH;
+      }
+      else {
+        path = "/";
+      }
+      try {
+        uri = new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), path, null, null);
+      }
+      catch (URISyntaxException e1) {
+        LOG.error(e);
+        return null;
+      }
+      LOG.debug("Trying to connect to '" + uri + "'");
+      try {
+        stubAndEntries = getRegistrationEntries(context, uri, credentials, TFSConstants.TOOL_ID_FRAMEWORK);
+      }
+      catch (RemoteException e1) {
+        // show error for original URI
+        throw e;
+      }
+    }
+
+    if (stubAndEntries.second != null && stubAndEntries.second.length > 0) {
       // TFS 2010 -> get team project collections
       LocationWebServiceStub locationService =
         new LocationWebServiceStub(context, TfsUtil.appendPath(uri, TFSConstants.LOCATION_SERVICE_ASMX));
@@ -313,8 +341,7 @@ public class TfsServerConnectionHelper {
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
       if (justAuthenticate) {
-        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()),
-                                    null);
+        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()), null);
       }
 
       if (pi != null) {
@@ -389,10 +416,7 @@ public class TfsServerConnectionHelper {
                                     null);
       }
 
-      getRegistrationEntriesParam.setToolId(TFSConstants.TOOL_ID_TFS);
-      registrationEntries = registrationStub.getRegistrationEntries(getRegistrationEntriesParam);
-      arrayOfEntries = registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry();
-
+      FrameworkRegistrationEntry[] arrayOfEntries = getRegistrationEntries(stubAndEntries.first, TFSConstants.TOOL_ID_TFS);
       String instanceId = null;
       if (arrayOfEntries != null) {
         outer_loop:
@@ -418,6 +442,24 @@ public class TfsServerConnectionHelper {
       Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);
       return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, workspaces, beans);
     }
+  }
+
+  private static Pair<RegistrationStub, FrameworkRegistrationEntry[]> getRegistrationEntries(ConfigurationContext context,
+                                                                                             URI uri,
+                                                                                             Credentials credentials,
+                                                                                             String toolId)
+    throws RemoteException {
+    RegistrationStub registrationStub = new RegistrationStub(context, TfsUtil.appendPath(uri, TFSConstants.REGISTRATION_ASMX));
+    WebServiceHelper.setupStub(registrationStub, credentials, uri);
+    return Pair.create(registrationStub, getRegistrationEntries(registrationStub, toolId));
+  }
+
+  private static FrameworkRegistrationEntry[] getRegistrationEntries(RegistrationStub registrationStub, String toolId)
+    throws RemoteException {
+    GetRegistrationEntries getRegistrationEntriesParam = new GetRegistrationEntries();
+    getRegistrationEntriesParam.setToolId(toolId);
+    GetRegistrationEntriesResponse registrationEntries = registrationStub.getRegistrationEntries(getRegistrationEntriesParam);
+    return registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry();
   }
 
   public static URI getBareUri(URI uri) {

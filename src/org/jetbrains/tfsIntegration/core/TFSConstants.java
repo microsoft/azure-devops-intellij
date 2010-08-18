@@ -55,4 +55,5 @@ public final class TFSConstants {
   public static final String UPLOAD_SERVICE_NAME = "Upload";
   public static final String WORKITEM_SERVICE_NAME = "WorkitemService";
   public static final String GROUP_SECURITY_SERVICE_NAME = "GroupSecurity";
+  public static final String TFS_PATH = "/tfs";
 }
