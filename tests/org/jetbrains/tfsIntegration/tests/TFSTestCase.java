@@ -41,6 +41,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.*;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
@@ -50,7 +51,6 @@ import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -150,8 +150,8 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false);
     TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
     if (!serverFound) {
-      Pair<URI, String> uriAndGuid = WebServiceHelper.authenticate(serverUri);
-      ServerInfo newServer = new ServerInfo(serverUri, uriAndGuid.second, new TfsBeansHolder(serverUri));
+      TfsServerConnectionHelper.ensureAuthenticated(myProject, serverUri, true);
+      ServerInfo newServer = new ServerInfo(serverUri, "test", new TfsBeansHolder(serverUri));
       Workstation.getInstance().addServer(newServer);
     }
 
