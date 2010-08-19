@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core.tfs;
+package org.jetbrains.tfsIntegration.webservice.auth;
 
 // class copied from org.apache.commons.httpclient.auth.NTLMScheme
 // only last method is overridden
@@ -28,6 +28,7 @@ import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.auth.*;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 
 import java.io.IOException;
 
@@ -325,24 +326,33 @@ public class NTLM2Scheme extends NTLMScheme {
 
     String response;
     if (state == INITIATED || state == FAILED) {
-      Type1Message t1m = new Type1Message(Type1Message.getDefaultFlags(), ntcredentials.getDomain(), ntcredentials.getHost());
-      response = Base64.encode(t1m.toByteArray());
+      response = getType1MessageResponse(ntcredentials, method.getParams());
       state = TYPE1_MSG_GENERATED;
     }
     else {
-      Type2Message t2m;
-      try {
-        t2m = new Type2Message(Base64.decode(ntlmchallenge));
-      }
-      catch (IOException ex) {
-        throw new AuthenticationException("Invalid Type2 message", ex);
-      }
-      Type3Message t3m =
-        new Type3Message(t2m, ntcredentials.getPassword(), ntcredentials.getDomain(), ntcredentials.getUserName(), ntcredentials.getHost(),
-                         0);
-      response = Base64.encode(t3m.toByteArray());
+      response = getType3MessageResponse(ntlmchallenge, ntcredentials, method.getParams());
       state = TYPE3_MSG_GENERATED;
     }
     return "NTLM " + response;
   }
+
+  protected String getType1MessageResponse(NTCredentials ntcredentials, HttpMethodParams params) {
+    Type1Message t1m = new Type1Message(Type1Message.getDefaultFlags(), ntcredentials.getDomain(), ntcredentials.getHost());
+    return Base64.encode(t1m.toByteArray());
+  }
+
+  protected String getType3MessageResponse(String type2message, NTCredentials ntcredentials, HttpMethodParams params) throws AuthenticationException {
+    Type2Message t2m;
+    try {
+      t2m = new Type2Message(Base64.decode(type2message));
+    }
+    catch (IOException ex) {
+      throw new AuthenticationException("Invalid Type2 message", ex);
+    }
+    Type3Message t3m =
+      new Type3Message(t2m, ntcredentials.getPassword(), ntcredentials.getDomain(), ntcredentials.getUserName(), ntcredentials.getHost(),
+                       0);
+    return Base64.encode(t3m.toByteArray());
+  }
+
 }

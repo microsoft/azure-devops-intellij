@@ -10,7 +10,6 @@ import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.ThrowableComputable;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ThrowableRunnable;
 import com.intellij.util.concurrency.Semaphore;
 import org.jetbrains.annotations.NotNull;
@@ -142,18 +141,28 @@ public class TfsRequestManager {
               throw new AuthCancelledException(myServerUri);
             }
           }
+          else {
+            credentials.set(TFSConfigurationManager.getInstance().getCredentials(myServerUri));
+          }
         }
         finally {
           ourShowDialogLock.unlock();
         }
       }
+      LOG.assertTrue(!credentials.isNull());
       try {
         myRequestLock.lock();
         ProgressManager.checkCanceled();
         T result = ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
           @Override
           public T compute() throws Exception {
-            return request.execute(credentials.get(), myServerUri, ProgressManager.getInstance().getProgressIndicator());
+            ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+            if (needsAuthentication(credentials.get(), request)) {
+              TfsServerConnectionHelper.ServerDescriptor descriptor =
+                TfsServerConnectionHelper.connect(myServerUri, credentials.get(), true, pi);
+              credentials.set(descriptor.authorizedCredentials);
+            }
+            return request.execute(credentials.get(), myServerUri, pi);
           }
         });
         TFSConfigurationManager.getInstance().storeCredentials(myServerUri, credentials.get());
@@ -175,6 +184,13 @@ public class TfsRequestManager {
         myRequestLock.unlock();
       }
     }
+  }
+
+  private static boolean needsAuthentication(@NotNull Credentials credentials, Request request) {
+    if (!request.retrieveAuthorizedCredentials()) {
+      return false;
+    }
+    return credentials.getUserName().length() == 0 || credentials.getDomain().length() == 0;
   }
 
   private class ExecuteSession<T> implements Runnable {
@@ -217,7 +233,7 @@ public class TfsRequestManager {
             ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableRunnable<Exception>() {
               @Override
               public void run() throws Exception {
-                if (myRequest.retrieveAuthorizedCredentials() && StringUtil.isEmpty(myCredentials.getDomain())) {
+                if (needsAuthentication(myCredentials, myRequest)) {
                   TfsServerConnectionHelper.ServerDescriptor descriptor =
                     TfsServerConnectionHelper.connect(myCurrentServerUri, myCredentials, true, pi);
                   myCredentials = descriptor.authorizedCredentials;
@@ -416,7 +432,9 @@ public class TfsRequestManager {
 
   public static boolean shouldShowLoginDialog(URI serverUri) {
     Credentials credentials = TFSConfigurationManager.getInstance().getCredentials(serverUri);
-    return credentials == null || credentials.getPassword() == null || TfsLoginDialog.shouldPromptForProxyPassword(true);
+    return credentials == null ||
+           credentials.shouldShowLoginDialog() ||
+           TfsLoginDialog.shouldPromptForProxyPassword(true);
   }
 
 }

@@ -39,15 +39,16 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
-import org.jetbrains.tfsIntegration.core.tfs.NTLM2Scheme;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.webservice.auth.NativeNTLM2Scheme;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAP12Factory;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAPBuilder;
 
@@ -65,13 +66,15 @@ public class WebServiceHelper {
   @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
   @NonNls private static final String CONTENT_TYPE_GZIP = "application/gzip";
 
+  public static final String USE_NATIVE_CREDENTIALS = WebServiceHelper.class.getName() + ".overrideCredentials";
+
   static {
     // keep NTLM scheme first
     AuthPolicy.unregisterAuthScheme(AuthPolicy.NTLM);
     AuthPolicy.unregisterAuthScheme(AuthPolicy.DIGEST);
     AuthPolicy.unregisterAuthScheme(AuthPolicy.BASIC);
 
-    AuthPolicy.registerAuthScheme(AuthPolicy.NTLM, NTLM2Scheme.class);
+    AuthPolicy.registerAuthScheme(AuthPolicy.NTLM, NativeNTLM2Scheme.class);
     AuthPolicy.registerAuthScheme(AuthPolicy.DIGEST, DigestScheme.class);
     AuthPolicy.registerAuthScheme(AuthPolicy.BASIC, BasicScheme.class);
 
@@ -185,6 +188,10 @@ public class WebServiceHelper {
     auth.setHost(serverUri.getHost());
     options.setProperty(HTTPConstants.AUTHENTICATE, auth);
 
+    HttpMethodParams params = new HttpMethodParams();
+    params.setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getUseNative() == Credentials.UseNative.Yes);
+    options.setProperty(HTTPConstants.HTTP_METHOD_PARAMS, params);
+
     // proxy
     final HttpTransportProperties.ProxyProperties proxyProperties;
     final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
@@ -210,6 +217,7 @@ public class WebServiceHelper {
     final NTCredentials ntCreds =
       new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
     httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
+    httpClient.getParams().setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getUseNative() == Credentials.UseNative.Yes);
   }
 
   private static InputStream getInputStream(HttpMethod method) throws IOException {

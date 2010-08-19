@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core.configuration;
 
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
+import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Tag;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +28,8 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 @Tag(value = "credentials")
 public class Credentials {
 
+  public enum UseNative {Yes, No, Reset}
+
   private @NotNull String myUserName;
 
   private @NotNull String myDomain;
@@ -35,28 +38,34 @@ public class Credentials {
 
   private boolean myStorePassword;
 
+  private UseNative myUseNative = UseNative.No;
+
   public Credentials() {
-    this("", "", null, false);
+    this("", "", null, false, UseNative.No);
   }
 
   public Credentials(final @NotNull String userName,
                      final @NotNull String domain,
                      final @Nullable String password,
-                     final boolean storePassword) {
+                     final boolean storePassword,
+                     final UseNative useNative) {
     myUserName = userName;
     myDomain = domain;
     myPassword = password;
     myStorePassword = storePassword;
+    myUseNative = useNative;
   }
 
   public Credentials(final @NotNull String credentials,
                      final @Nullable String password,
-                     final boolean storePassword) {
+                     final boolean storePassword,
+                     final UseNative useNative) {
     int i = credentials.indexOf('\\');
     myDomain = i != -1 ? credentials.substring(0, i) : "";
     myUserName = i != -1 ? credentials.substring(i + 1) : credentials;
     myPassword = password;
     myStorePassword = storePassword;
+    myUseNative = useNative;
   }
 
   /**
@@ -70,6 +79,9 @@ public class Credentials {
   public void resetPassword() {
     myPassword = null;
     myStorePassword = false;
+    if (myUseNative == UseNative.Yes) {
+      myUseNative = UseNative.Reset;
+    }
   }
 
   @Nullable
@@ -107,6 +119,24 @@ public class Credentials {
     myUserName = userName;
   }
 
+  public UseNative getUseNative() {
+    return myUseNative;
+  }
+
+  @Attribute("nativeAuth")
+  public String getUseNativeSerialized() {
+    return myUseNative.name();
+  }
+
+  public void setUseNativeSerialized(String useNative) {
+    try {
+      myUseNative = UseNative.valueOf(useNative);
+    }
+    catch (IllegalArgumentException e) {
+      myUseNative = UseNative.Reset;
+    }
+  }
+
   @NotNull
   public String getQualifiedUsername() {
     if (getDomain().length() > 0) {
@@ -133,4 +163,7 @@ public class Credentials {
     return getQualifiedUsername() + "," + (getPassword() != null ? getPassword().replaceAll(".", "x") : "(no password)");
   }
 
+  public boolean shouldShowLoginDialog() {
+    return myUseNative == UseNative.Reset || myUseNative == UseNative.No && myPassword == null;
+  }
 }

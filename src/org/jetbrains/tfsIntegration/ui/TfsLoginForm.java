@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.util.EventDispatcher;
@@ -28,10 +29,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import org.jetbrains.tfsIntegration.webservice.auth.NativeNTLM2Scheme;
 
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.net.URI;
 
 public class TfsLoginForm {
@@ -46,6 +50,10 @@ public class TfsLoginForm {
   private HyperlinkLabel myProxyPasswordLabel;
   private JPasswordField myProxyPasswordField;
   private JPanel myProxyPanel;
+  private JCheckBox myUseSystemCredentialsCheckBox;
+  private JLabel myUsernameLabel;
+  private JLabel myDomainLabel;
+  private JLabel myPasswordLabel;
 
   private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
@@ -90,6 +98,36 @@ public class TfsLoginForm {
     else {
       myProxyPanel.setVisible(false);
     }
+
+    if (NativeNTLM2Scheme.isAvailable()) {
+      myUseSystemCredentialsCheckBox
+        .setSelected(initialCredentials == null || initialCredentials.getUseNative() != Credentials.UseNative.No);
+      myUseSystemCredentialsCheckBox.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          updateOnUseSystemCredentials();
+          if (!myUseSystemCredentialsCheckBox.isSelected()) {
+            IdeFocusManager.findInstanceByComponent(myContentPane).requestFocus(myUsernameField, true);
+          }
+        }
+      });
+    }
+    else {
+      myUseSystemCredentialsCheckBox.setVisible(false);
+    }
+
+    updateOnUseSystemCredentials();
+  }
+
+  private void updateOnUseSystemCredentials() {
+    myUsernameLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myUsernameField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myDomainLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myDomainField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myPasswordLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myPasswordField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myStorePasswordCheckbox.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+    myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
   }
 
   public JComponent getPreferredFocusedComponent() {
@@ -125,7 +163,12 @@ public class TfsLoginForm {
   }
 
   public Credentials getCredentials() {
-    return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected());
+    if (myUseSystemCredentialsCheckBox.isSelected()) {
+      return new Credentials("", "", null, false, Credentials.UseNative.Yes);
+    }
+    else {
+      return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected(), Credentials.UseNative.No);
+    }
   }
 
   public void addListener(ChangeListener listener) {
@@ -156,5 +199,9 @@ public class TfsLoginForm {
         // do nothing, otherwise label text will be antialiased
       }
     };
+  }
+
+  public boolean isUseNative() {
+    return myUseSystemCredentialsCheckBox.isSelected();
   }
 }

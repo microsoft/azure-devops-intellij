@@ -218,9 +218,14 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
   }
 
   public void remove(final @NotNull URI serverUri) {
-    ServerConfiguration config = myServersConfig.get(getConfigKey(serverUri));
+    final ServerConfiguration config = myServersConfig.get(getConfigKey(serverUri));
     if (config != null && config.getAuthCanceledNotification() != null) {
-      config.getAuthCanceledNotification().expire();
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          config.getAuthCanceledNotification().expire();
+        }
+      });
     }
     myServersConfig.remove(getConfigKey(serverUri));
   }

@@ -33,7 +33,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.net.URI;
 
-// TODO pass project
 public class TfsLoginDialog extends DialogWrapper {
 
   private static final Logger LOG = Logger.getInstance(TfsLoginDialog.class.getName());
@@ -99,7 +98,7 @@ public class TfsLoginDialog extends DialogWrapper {
       return TFSBundle.message("login.dialog.address.invalid");
     }
 
-    if (StringUtil.isEmptyOrSpaces(myLoginForm.getUsername())) {
+    if (!myLoginForm.isUseNative() && StringUtil.isEmptyOrSpaces(myLoginForm.getUsername())) {
       return TFSBundle.message("login.dialog.username.empty");
     }
     return null;

@@ -46,7 +46,6 @@ public class TfsServerConnectionHelper {
     public final Credentials authorizedCredentials;
     @Nullable public final TfsBeansHolder beans;
     @Nullable public final URI uri;
-    //public final String icc
 
     protected ServerDescriptor(Credentials authorizedCredentials, URI uri, TfsBeansHolder beans) {
       this.authorizedCredentials = authorizedCredentials;
@@ -151,7 +150,8 @@ public class TfsServerConnectionHelper {
             throw new TfsException(TFSBundle.message("duplicate.server"));
           }
 
-          if (!credentials.getUserName().equalsIgnoreCase(serverDescriptor.getUserName())) {
+          if (credentials.getUseNative() == Credentials.UseNative.No &&
+              !credentials.getUserName().equalsIgnoreCase(serverDescriptor.getUserName())) {
             LOG.warn("authorized user mismatch: current=" + credentials.getQualifiedUsername() +
                      ", authorized: " + serverDescriptor.authorizedCredentials);
             throw new TfsException(TFSBundle.message("authorized.user.mismatch"));
@@ -345,8 +345,9 @@ public class TfsServerConnectionHelper {
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
       if (justAuthenticate) {
-        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()), uri,
-                                    null);
+        return new ServerDescriptor(
+          new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative()), uri,
+          null);
       }
 
       if (pi != null) {
@@ -410,15 +411,16 @@ public class TfsServerConnectionHelper {
       }
 
       TfsBeansHolder beans = new TfsBeansHolder(uri);
-      return new Tfs2010ServerDescriptor(descriptors,
-                                         new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()),
-                                         uri, beans);
+      Credentials authorizedCredentials = new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(),
+                                                          credentials.getUseNative());
+      return new Tfs2010ServerDescriptor(descriptors, authorizedCredentials, uri, beans);
     }
     else {
       if (justAuthenticate) {
-        String authorizedCredentials = getAuthorizedCredentialsFor200x(context, uri, credentials);
-        return new ServerDescriptor(new Credentials(authorizedCredentials, credentials.getPassword(), credentials.isStorePassword()),
-                                    uri, null);
+        String authorizedUsername = getAuthorizedCredentialsFor200x(context, uri, credentials);
+        Credentials authorizedCredentials =
+          new Credentials(authorizedUsername, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
+        return new ServerDescriptor(authorizedCredentials, uri, null);
       }
 
       FrameworkRegistrationEntry[] arrayOfEntries = getRegistrationEntries(stubAndEntries.first, TFSConstants.TOOL_ID_TFS);
@@ -441,7 +443,8 @@ public class TfsServerConnectionHelper {
       }
 
       String qName = getAuthorizedCredentialsFor200x(context, uri, credentials);
-      Credentials authorizedCredentials = new Credentials(qName, credentials.getPassword(), credentials.isStorePassword());
+      Credentials authorizedCredentials =
+        new Credentials(qName, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
 
       TfsBeansHolder beans = new TfsBeansHolder(uri);
       Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);
