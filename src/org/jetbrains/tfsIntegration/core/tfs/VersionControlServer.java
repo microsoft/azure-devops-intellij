@@ -419,9 +419,10 @@ public class VersionControlServer {
 
   public void updateWorkspace(final String oldWorkspaceName,
                               final Workspace newWorkspaceDataBean,
-                              Object projectOrComponent)
+                              Object projectOrComponent,
+                              boolean force)
     throws TfsException {
-    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, new TfsRequestManager.Request<Void>(
+    TfsRequestManager.executeRequest(myServerUri, projectOrComponent, force, new TfsRequestManager.Request<Void>(
       TFSBundle.message("save.workspace.0", newWorkspaceDataBean.getName())) {
       @Override
       public Void execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {

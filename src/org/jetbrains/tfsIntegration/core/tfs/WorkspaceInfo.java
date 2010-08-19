@@ -244,7 +244,7 @@ public class WorkspaceInfo {
   public void saveToServer(Object projectOrComponent, WorkspaceInfo originalWorkspace) throws TfsException {
     checkCurrentOwnerAndComputer();
     if (myOriginalName != null) {
-      getServer().getVCS().updateWorkspace(myOriginalName, toBean(this), projectOrComponent);
+      getServer().getVCS().updateWorkspace(myOriginalName, toBean(this), projectOrComponent, true);
       getServer().replaceWorkspace(originalWorkspace, this);
     }
     else {
