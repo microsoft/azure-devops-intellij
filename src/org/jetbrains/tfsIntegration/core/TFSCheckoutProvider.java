@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -103,7 +105,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       .runProcessWithProgressSynchronously(checkoutRunnable, "Checkout from TFS", true, ProjectManager.getInstance().getDefaultProject());
 
     if (errors.isEmpty()) {
-      Runnable listenerNotificationRunnable = new Runnable() {
+      final Runnable listenerNotificationRunnable = new Runnable() {
         public void run() {
           if (listener != null) {
             if (errors.isEmpty()) {
@@ -116,7 +118,13 @@ public class TFSCheckoutProvider implements CheckoutProvider {
 
       VirtualFile vf = VcsUtil.getVirtualFile(localRoot.get().getPath());
       if (vf != null) {
-        vf.refresh(true, true, listenerNotificationRunnable);
+        vf.refresh(true, true, new Runnable() {
+          @Override
+          public void run() {
+            final ModalityState current = ModalityState.current();
+            ApplicationManager.getApplication().invokeLater(listenerNotificationRunnable, current);
+          }
+        });
       }
       else {
         listenerNotificationRunnable.run();
