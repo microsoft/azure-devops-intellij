@@ -137,7 +137,7 @@
         </constraints>
         <properties>
           <margin top="2" left="0" bottom="2" right="3"/>
-          <text value="&amp;Use system credentials"/>
+          <text value="Us&amp;e system credentials"/>
         </properties>
       </component>
     </children>
