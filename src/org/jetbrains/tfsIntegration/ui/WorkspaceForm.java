@@ -148,7 +148,7 @@ public class WorkspaceForm {
 
       @Override
       public TableCellEditor getEditor(final WorkingFolderInfo item) {
-        return new ServerPathCellEditor(TFSBundle.message("select.local.path.title"), myProject, myServer);
+        return new ServerPathCellEditor(TFSBundle.message("choose.server.path.dialog.title"), myProject, myServer);
       }
     };
 
