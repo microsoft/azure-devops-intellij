@@ -45,10 +45,12 @@ public class TfsServerConnectionHelper {
   public static class ServerDescriptor {
     public final Credentials authorizedCredentials;
     @Nullable public final TfsBeansHolder beans;
+    @Nullable public final URI uri;
     //public final String icc
 
-    protected ServerDescriptor(Credentials authorizedCredentials, TfsBeansHolder beans) {
+    protected ServerDescriptor(Credentials authorizedCredentials, URI uri, TfsBeansHolder beans) {
       this.authorizedCredentials = authorizedCredentials;
+      this.uri = uri;
       this.beans = beans;
     }
 
@@ -63,9 +65,10 @@ public class TfsServerConnectionHelper {
 
     public Tfs200xServerDescriptor(String instanceId,
                                    Credentials authorizedCredentials,
+                                   URI uri,
                                    Workspace[] workspaces,
                                    TfsBeansHolder servicesPaths) {
-      super(authorizedCredentials, servicesPaths);
+      super(authorizedCredentials, uri, servicesPaths);
       this.instanceId = instanceId;
       this.workspaces = workspaces;
     }
@@ -75,8 +78,8 @@ public class TfsServerConnectionHelper {
     public final Collection<TeamProjectCollectionDescriptor> teamProjectCollections;
 
     public Tfs2010ServerDescriptor(Collection<TeamProjectCollectionDescriptor> teamProjectCollections,
-                                   Credentials authorizedCredentials, TfsBeansHolder servicesPaths) {
-      super(authorizedCredentials, servicesPaths);
+                                   Credentials authorizedCredentials, URI uri, TfsBeansHolder servicesPaths) {
+      super(authorizedCredentials, uri, servicesPaths);
       this.teamProjectCollections = teamProjectCollections;
     }
   }
@@ -140,6 +143,7 @@ public class TfsServerConnectionHelper {
                                                                    @Nullable ProgressIndicator pi)
           throws Exception {
           ServerDescriptor serverDescriptor = connect(serverUri, credentials, false, pi);
+          serverUri = serverDescriptor.uri;
           // check duplicate instance id for TFS 2005/2008, TFS 2010 will be checked later when project collection is selected
           if (serverDescriptor instanceof Tfs200xServerDescriptor &&
               TFSConfigurationManager.getInstance()
@@ -341,7 +345,8 @@ public class TfsServerConnectionHelper {
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
       if (justAuthenticate) {
-        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()), null);
+        return new ServerDescriptor(new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()), uri,
+                                    null);
       }
 
       if (pi != null) {
@@ -407,13 +412,13 @@ public class TfsServerConnectionHelper {
       TfsBeansHolder beans = new TfsBeansHolder(uri);
       return new Tfs2010ServerDescriptor(descriptors,
                                          new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword()),
-                                         beans);
+                                         uri, beans);
     }
     else {
       if (justAuthenticate) {
         String authorizedCredentials = getAuthorizedCredentialsFor200x(context, uri, credentials);
         return new ServerDescriptor(new Credentials(authorizedCredentials, credentials.getPassword(), credentials.isStorePassword()),
-                                    null);
+                                    uri, null);
       }
 
       FrameworkRegistrationEntry[] arrayOfEntries = getRegistrationEntries(stubAndEntries.first, TFSConstants.TOOL_ID_TFS);
@@ -440,7 +445,7 @@ public class TfsServerConnectionHelper {
 
       TfsBeansHolder beans = new TfsBeansHolder(uri);
       Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);
-      return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, workspaces, beans);
+      return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, uri, workspaces, beans);
     }
   }
 
