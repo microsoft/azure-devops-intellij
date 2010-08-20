@@ -1,33 +1,46 @@
 package org.jetbrains.tfsIntegration.webservice.auth;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Pair;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.auth.AuthenticationException;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.webservice.WebServiceHelper;
-import sun.net.www.protocol.http.NTLMAuthSequence;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 public class NativeNTLM2Scheme extends NTLM2Scheme {
 
   private static final Logger LOG = Logger.getInstance(NativeNTLM2Scheme.class.getName());
 
   @Nullable
-  private final NTLMAuthSequence mySequence;
+  private final Object myAuthSequenceObject;
+  @Nullable
+  private final Method myGetAuthHeaderMethod;
 
   public NativeNTLM2Scheme() {
-    mySequence = createSequence();
+    Pair<Object, Method> pair = createNativeAuthSequence();
+    myAuthSequenceObject = pair != null ? pair.first : null;
+    myGetAuthHeaderMethod = pair != null ? pair.second : null;
   }
 
   @Nullable
-  private static NTLMAuthSequence createSequence() {
+  private static Pair<Object, Method> createNativeAuthSequence() {
     try {
-      Constructor<NTLMAuthSequence> constructor = NTLMAuthSequence.class.getDeclaredConstructor(String.class, String.class, String.class);
+      Class clazz = Class.forName("sun.net.www.protocol.http.NTLMAuthSequence");
+      if (clazz == null) {
+        return null;
+      }
+      Constructor constructor = clazz.getDeclaredConstructor(String.class, String.class, String.class);
       constructor.setAccessible(true);
-      return constructor.newInstance(new Object[]{null, null, null});
+      Object sequence = constructor.newInstance(new Object[]{null, null, null});
+      Method method = clazz.getMethod("getAuthHeader", String.class);
+      if (method == null) {
+        return null;
+      }
+      return Pair.create(sequence, method);
     }
     catch (Throwable t) {
       LOG.debug(t);
@@ -37,15 +50,15 @@ public class NativeNTLM2Scheme extends NTLM2Scheme {
 
   @Override
   protected String getType1MessageResponse(NTCredentials ntcredentials, HttpMethodParams params) {
-    if (!params.getBooleanParameter(WebServiceHelper.USE_NATIVE_CREDENTIALS, false) || mySequence == null) {
+    if (!params.getBooleanParameter(WebServiceHelper.USE_NATIVE_CREDENTIALS, false) || myAuthSequenceObject == null) {
       return super.getType1MessageResponse(ntcredentials, params);
     }
 
     try {
-      return mySequence.getAuthHeader(null);
+      return (String)myGetAuthHeaderMethod.invoke(myAuthSequenceObject, new Object[]{null});
     }
-    catch (IOException e) {
-      LOG.warn("Native authentication failed", e);
+    catch (Throwable t) {
+      LOG.warn("Native authentication failed", t);
       return "";
     }
   }
@@ -53,20 +66,20 @@ public class NativeNTLM2Scheme extends NTLM2Scheme {
   @Override
   protected String getType3MessageResponse(String type2message, NTCredentials ntcredentials, HttpMethodParams params)
     throws AuthenticationException {
-    if (!params.getBooleanParameter(WebServiceHelper.USE_NATIVE_CREDENTIALS, false) || mySequence == null) {
+    if (!params.getBooleanParameter(WebServiceHelper.USE_NATIVE_CREDENTIALS, false) || myAuthSequenceObject == null) {
       return super.getType3MessageResponse(type2message, ntcredentials, params);
     }
 
     try {
-      return mySequence.getAuthHeader(type2message);
+      return (String)myGetAuthHeaderMethod.invoke(myAuthSequenceObject, new Object[]{type2message});
     }
-    catch (IOException e) {
-      LOG.warn("Native authentication failed", e);
+    catch (Throwable t) {
+      LOG.warn("Native authentication failed", t);
       return "";
     }
   }
 
   public static boolean isAvailable() {
-    return createSequence() != null;
+    return createNativeAuthSequence() != null;
   }
 }
