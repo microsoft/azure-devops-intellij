@@ -10,7 +10,6 @@ import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.ThrowableComputable;
-import com.intellij.util.ThrowableRunnable;
 import com.intellij.util.concurrency.Semaphore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -153,18 +152,8 @@ public class TfsRequestManager {
       try {
         myRequestLock.lock();
         ProgressManager.checkCanceled();
-        T result = ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
-          @Override
-          public T compute() throws Exception {
-            ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
-            if (needsAuthentication(credentials.get(), request)) {
-              TfsServerConnectionHelper.ServerDescriptor descriptor =
-                TfsServerConnectionHelper.connect(myServerUri, credentials.get(), true, pi);
-              credentials.set(descriptor.authorizedCredentials);
-            }
-            return request.execute(credentials.get(), myServerUri, pi);
-          }
-        });
+        ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+        T result = executeRequestImpl(myServerUri, credentials, request, pi);
         TFSConfigurationManager.getInstance().storeCredentials(myServerUri, credentials.get());
         return result;
       }
@@ -186,15 +175,8 @@ public class TfsRequestManager {
     }
   }
 
-  private static boolean needsAuthentication(@NotNull Credentials credentials, Request request) {
-    if (!request.retrieveAuthorizedCredentials()) {
-      return false;
-    }
-    return credentials.getUserName().length() == 0 || credentials.getDomain().length() == 0;
-  }
-
   private class ExecuteSession<T> implements Runnable {
-    private Credentials myCredentials;
+    private final Ref<Credentials> myCredentials;
     private final Object myProjectOrComponent;
     private final Request<T> myRequest;
     private final URI myCurrentServerUri;
@@ -206,7 +188,7 @@ public class TfsRequestManager {
                           Object projectOrComponent,
                           final Request<T> request,
                           URI currentServerUri) {
-      myCredentials = credentials;
+      myCredentials = Ref.create(credentials);
       myProjectOrComponent = projectOrComponent;
       myRequest = request;
       myCurrentServerUri = currentServerUri;
@@ -217,7 +199,7 @@ public class TfsRequestManager {
     }
 
     public Credentials getCredentials() {
-      return myCredentials;
+      return myCredentials.get();
     }
 
     @Override
@@ -230,17 +212,7 @@ public class TfsRequestManager {
         public void run() {
           try {
             myRequestLock.lock();
-            ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableRunnable<Exception>() {
-              @Override
-              public void run() throws Exception {
-                if (needsAuthentication(myCredentials, myRequest)) {
-                  TfsServerConnectionHelper.ServerDescriptor descriptor =
-                    TfsServerConnectionHelper.connect(myCurrentServerUri, myCredentials, true, pi);
-                  myCredentials = descriptor.authorizedCredentials;
-                }
-                myResult = myRequest.execute(myCredentials, myCurrentServerUri, pi);
-              }
-            });
+            myResult = executeRequestImpl(myCurrentServerUri, myCredentials, myRequest, pi);
           }
           catch (Exception e) {
             LOG.warn(e);
@@ -270,7 +242,8 @@ public class TfsRequestManager {
       Project project = myProjectOrComponent instanceof Project ? (Project)myProjectOrComponent : null;
       JComponent component = myProjectOrComponent instanceof JComponent ? (JComponent)myProjectOrComponent : null;
       return ProgressManager.getInstance()
-        .runProcessWithProgressSynchronously(this, myRequest.getProgressTitle(myCredentials, myCurrentServerUri), true, project, component);
+        .runProcessWithProgressSynchronously(this, myRequest.getProgressTitle(myCredentials.get(), myCurrentServerUri), true, project,
+                                             component);
     }
 
   }
@@ -281,28 +254,11 @@ public class TfsRequestManager {
 
   public static <T> T executeRequest(URI serverUri, Object projectOrComponent, boolean force, final Request<T> request)
     throws TfsException {
-    Request<T> wrapper = new Request<T>(null) {
-      @Override
-      public T execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
-        return request.execute(credentials, serverUri, pi);
-      }
-
-      @Override
-      public String getProgressTitle(Credentials credentials, URI serverUri) {
-        return request.getProgressTitle(credentials, serverUri);
-      }
-
-      @Override
-      public boolean retrieveAuthorizedCredentials() {
-        return request.retrieveAuthorizedCredentials();
-      }
-    };
-
     if (ApplicationManager.getApplication().isDispatchThread()) {
-      return getInstance(serverUri).executeRequestInForeground(projectOrComponent, false, null, force, wrapper);
+      return getInstance(serverUri).executeRequestInForeground(projectOrComponent, false, null, force, request);
     }
     else {
-      return getInstance(serverUri).executeRequestInBackground(projectOrComponent, force, wrapper);
+      return getInstance(serverUri).executeRequestInBackground(projectOrComponent, force, request);
     }
   }
 
@@ -435,6 +391,27 @@ public class TfsRequestManager {
     return credentials == null ||
            credentials.shouldShowLoginDialog() ||
            TfsLoginDialog.shouldPromptForProxyPassword(true);
+  }
+
+  private static <T> T executeRequestImpl(final URI serverUri,
+                                          final Ref<Credentials> credentialsRef,
+                                          final Request<T> request,
+                                          final ProgressIndicator pi)
+    throws Exception {
+    return ClassLoaderUtil.runWithClassLoader(TfsRequestManager.class.getClassLoader(), new ThrowableComputable<T, Exception>() {
+      @Override
+      public T compute() throws Exception {
+        Credentials credentials = credentialsRef.get();
+        boolean needsAuthentication =
+          request.retrieveAuthorizedCredentials() && (credentials.getUserName().length() == 0 || credentials.getDomain().length() == 0);
+        if (needsAuthentication) {
+          TfsServerConnectionHelper.ServerDescriptor descriptor =
+            TfsServerConnectionHelper.connect(serverUri, credentialsRef.get(), true, pi);
+          credentialsRef.set(descriptor.authorizedCredentials);
+        }
+        return request.execute(credentialsRef.get(), serverUri, pi);
+      }
+    });
   }
 
 }
