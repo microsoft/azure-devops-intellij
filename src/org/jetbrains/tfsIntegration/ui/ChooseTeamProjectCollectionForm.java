@@ -15,6 +15,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
 
 public class ChooseTeamProjectCollectionForm {
@@ -23,7 +27,11 @@ public class ChooseTeamProjectCollectionForm {
   private TableView myTable;
   private JLabel myMessageLabel;
 
-  private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
+  public interface Listener extends ChangeListener {
+    void selected();
+  }
+
+  private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
   public ChooseTeamProjectCollectionForm(String serverAddress,
                                          Collection<TfsServerConnectionHelper.TeamProjectCollectionDescriptor> items) {
@@ -57,6 +65,23 @@ public class ChooseTeamProjectCollectionForm {
       }
     });
 
+    myTable.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ENTER == e.getKeyCode()) {
+          selected();
+          e.consume();
+        }
+      }
+    });
+
+    myTable.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          selected();
+        }
+      }
+    });
 
     myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
 
@@ -65,6 +90,13 @@ public class ChooseTeamProjectCollectionForm {
     myTable.setModel(
       new ListTableModel<TfsServerConnectionHelper.TeamProjectCollectionDescriptor>(new ColumnInfo[]{displayNameColumn}, sorted, 0));
     myTable.setSelection(Collections.singletonList(sorted.get(0)));
+  }
+
+  private void selected() {
+    TfsServerConnectionHelper.TeamProjectCollectionDescriptor selectedItem = getSelectedItem();
+    if (selectedItem != null) {
+      myEventDispatcher.getMulticaster().selected();
+    }
   }
 
   public JPanel getContentPane() {
@@ -76,7 +108,7 @@ public class ChooseTeamProjectCollectionForm {
     return (TfsServerConnectionHelper.TeamProjectCollectionDescriptor)myTable.getSelectedObject();
   }
 
-  public void addChangeListener(ChangeListener listener) {
+  public void addChangeListener(Listener listener) {
     myEventDispatcher.addListener(listener);
   }
 

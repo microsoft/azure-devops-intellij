@@ -8,7 +8,6 @@ import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.util.Collection;
 
 public class ChooseTeamProjectCollectionDialog extends DialogWrapper {
@@ -23,10 +22,17 @@ public class ChooseTeamProjectCollectionDialog extends DialogWrapper {
     setSize(500, 400);
 
     myForm = new ChooseTeamProjectCollectionForm(serverAddress, items);
-    myForm.addChangeListener(new ChangeListener() {
+    myForm.addChangeListener(new ChooseTeamProjectCollectionForm.Listener() {
       @Override
       public void stateChanged(ChangeEvent e) {
         revalidate();
+      }
+
+      @Override
+      public void selected() {
+        if (getErrorMessage() == null) {
+          doOKAction();
+        }
       }
     });
 
