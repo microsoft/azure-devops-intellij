@@ -13,6 +13,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Workspace;
 import com.microsoft.webservices.*;
 import com.microsoft.wsdl.types.Guid;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -321,7 +322,7 @@ public class TfsServerConnectionHelper {
       }
       catch (RemoteException e1) {
         // show error for original URI
-        throw e;
+        throw getMoreDescriptiveException(e, e1);
       }
     }
 
@@ -450,6 +451,15 @@ public class TfsServerConnectionHelper {
       Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);
       return new Tfs200xServerDescriptor(instanceId, authorizedCredentials, uri, workspaces, beans);
     }
+  }
+
+  private static RemoteException getMoreDescriptiveException(RemoteException first, RemoteException second) {
+    if (first instanceof AxisFault && second instanceof AxisFault) {
+      if (((AxisFault)first).getFaultDetailElement() == null && ((AxisFault)second).getFaultDetailElement() != null) {
+        return second;
+      }
+    }
+    return first;
   }
 
   private static Pair<RegistrationStub, FrameworkRegistrationEntry[]> getRegistrationEntries(ConfigurationContext context,
