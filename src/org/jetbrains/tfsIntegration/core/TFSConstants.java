@@ -32,7 +32,6 @@ public final class TFSConstants {
   @NonNls public static final String OVERRRIDES_ANNOTATION = "IntellijOverrides";
 
   @NonNls public static final String TOOL_ID_TFS = "vstfs";
-  @NonNls public static final String TOOL_ID_FRAMEWORK = "Framework";
   @NonNls public static final String INSTANCE_ID_ATTRIBUTE = "InstanceId";
   @NonNls public static final String SINGLE_RECURSE_STAR = "*";
 

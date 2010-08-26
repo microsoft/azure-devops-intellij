@@ -10,7 +10,6 @@ import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientser
 import org.apache.axis2.context.ConfigurationContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.exceptions.HostNotApplicableException;
@@ -92,11 +91,10 @@ public class TfsBeansHolder {
     }
 
     final ConfigurationContext configContext = WebServiceHelper.getStubConfigurationContext();
-    URI bareUri = TfsServerConnectionHelper.getBareUri(myServerUri);
 
     RegistrationStub registrationStub =
-      new RegistrationStub(configContext, TfsUtil.appendPath(bareUri, TFSConstants.REGISTRATION_ASMX));
-    WebServiceHelper.setupStub(registrationStub, authorizedCredentials, bareUri);
+      new RegistrationStub(configContext, TfsUtil.appendPath(myServerUri, TFSConstants.REGISTRATION_ASMX));
+    WebServiceHelper.setupStub(registrationStub, authorizedCredentials, myServerUri);
     final GetRegistrationEntries getRegistrationEntriesParam = new GetRegistrationEntries();
     ArrayOfFrameworkRegistrationEntry registrationEntries =
       registrationStub.getRegistrationEntries(getRegistrationEntriesParam).getGetRegistrationEntriesResult();

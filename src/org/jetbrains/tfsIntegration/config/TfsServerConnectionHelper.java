@@ -5,6 +5,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Trinity;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.util.ThrowableConvertor;
 import com.microsoft.schemas.teamfoundation._2005._06.services.registration._03.*;
 import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthentication;
 import com.microsoft.schemas.teamfoundation._2005._06.services.serverstatus._03.CheckAuthenticationResponse;
@@ -281,7 +282,7 @@ public class TfsServerConnectionHelper {
     }
   }
 
-  public static ServerDescriptor connect(URI uri, Credentials credentials, boolean justAuthenticate, @Nullable ProgressIndicator pi)
+  public static ServerDescriptor connect(URI uri, final Credentials credentials, boolean justAuthenticate, @Nullable ProgressIndicator pi)
     throws RemoteException, TfsException {
     if (pi != null) {
       pi.setText(TFSBundle.message("connecting.to.server"));
@@ -290,65 +291,60 @@ public class TfsServerConnectionHelper {
     if (justAuthenticate) {
       uri = getBareUri(uri);
     }
-    ConfigurationContext context = WebServiceHelper.getStubConfigurationContext();
+    final ConfigurationContext context = WebServiceHelper.getStubConfigurationContext();
 
-    Pair<RegistrationStub, FrameworkRegistrationEntry[]> stubAndEntries;
+    Pair<URI, ConnectResponse> connectResponse;
+    Pair<URI, FrameworkRegistrationEntry[]> registrationEntries = null;
     try {
-      stubAndEntries = getRegistrationEntries(context, uri, credentials, TFSConstants.TOOL_ID_FRAMEWORK);
+      // first, try to connect to TFS 2010 Locaion service
+      connectResponse = tryDifferentUris(uri, !justAuthenticate, new ThrowableConvertor<URI, ConnectResponse, RemoteException>() {
+        @Override
+        public ConnectResponse convert(URI uri) throws RemoteException {
+          LocationWebServiceStub locationService =
+            new LocationWebServiceStub(context, TfsUtil.appendPath(uri, TFSConstants.LOCATION_SERVICE_ASMX));
+          WebServiceHelper.setupStub(locationService, credentials, uri);
+          Connect connectParam = new Connect();
+          connectParam.setConnectOptions(TFSConstants.INCLUDE_SERVICES_CONNECTION_OPTION);
+          ArrayOfServiceTypeFilter serviceTypeFilters = new ArrayOfServiceTypeFilter();
+          ServiceTypeFilter filter = new ServiceTypeFilter();
+          filter.setServiceType("*");
+          filter.setIdentifier(TFSConstants.FRAMEWORK_SERVER_DATA_PROVIDER_FILTER_GUID);
+          serviceTypeFilters.addServiceTypeFilter(filter);
+          connectParam.setServiceTypeFilters(serviceTypeFilters);
+          connectParam.setLastChangeId(-1);
+          return locationService.connect(connectParam);
+        }
+      });
     }
     catch (RemoteException e) {
-      LOG.debug("connect to URI '" + uri + "' failed", e);
-      if (justAuthenticate) {
-        throw e;
-      }
-
-      String path = uri.getPath();
-      if (StringUtil.isEmpty(path) || "/".equals(path)) {
-        path = TFSConstants.TFS_PATH;
-      }
-      else {
-        path = "/";
-      }
-      try {
-        uri = new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), path, null, null);
-      }
-      catch (URISyntaxException e1) {
-        LOG.error(e);
-        return null;
-      }
-      LOG.debug("Trying to connect to '" + uri + "'");
-      try {
-        stubAndEntries = getRegistrationEntries(context, uri, credentials, TFSConstants.TOOL_ID_FRAMEWORK);
-      }
-      catch (RemoteException e1) {
-        // show error for original URI
-        throw getMoreDescriptiveException(e, e1);
-      }
+      connectResponse = null;
+      // if failed, try to connect to legacy Registration service
+      ThrowableConvertor<URI, FrameworkRegistrationEntry[], RemoteException> c =
+        new ThrowableConvertor<URI, FrameworkRegistrationEntry[], RemoteException>() {
+          @Override
+          public FrameworkRegistrationEntry[] convert(URI uri) throws RemoteException {
+            RegistrationStub registrationStub = new RegistrationStub(context, TfsUtil.appendPath(uri, TFSConstants.REGISTRATION_ASMX));
+            WebServiceHelper.setupStub(registrationStub, credentials, uri);
+            GetRegistrationEntries getRegistrationEntriesParam = new GetRegistrationEntries();
+            getRegistrationEntriesParam.setToolId(TFSConstants.TOOL_ID_TFS);
+            GetRegistrationEntriesResponse registrationEntries1 = registrationStub.getRegistrationEntries(getRegistrationEntriesParam);
+            return registrationEntries1.getGetRegistrationEntriesResult().getRegistrationEntry();
+          }
+        };
+      registrationEntries = tryDifferentUris(uri, !justAuthenticate, c);
     }
 
-    if (stubAndEntries.second != null && stubAndEntries.second.length > 0) {
+    if (connectResponse != null) {
+      uri = connectResponse.first;
       // TFS 2010 -> get team project collections
-      LocationWebServiceStub locationService =
-        new LocationWebServiceStub(context, TfsUtil.appendPath(uri, TFSConstants.LOCATION_SERVICE_ASMX));
-      WebServiceHelper.setupStub(locationService, credentials, uri);
-      Connect connectParam = new Connect();
-      connectParam.setConnectOptions(TFSConstants.INCLUDE_SERVICES_CONNECTION_OPTION);
-      ArrayOfServiceTypeFilter serviceTypeFilters = new ArrayOfServiceTypeFilter();
-      ServiceTypeFilter filter = new ServiceTypeFilter();
-      filter.setServiceType("*");
-      filter.setIdentifier(TFSConstants.FRAMEWORK_SERVER_DATA_PROVIDER_FILTER_GUID);
-      serviceTypeFilters.addServiceTypeFilter(filter);
-      connectParam.setServiceTypeFilters(serviceTypeFilters);
-      connectParam.setLastChangeId(-1);
-      ConnectResponse connectResponse = locationService.connect(connectParam);
-
-      ArrayOfKeyValueOfStringString userProps = connectResponse.getConnectResult().getAuthorizedUser().getAttributes();
+      ConnectionData connectResult = connectResponse.second.getConnectResult();
+      ArrayOfKeyValueOfStringString userProps = connectResult.getAuthorizedUser().getAttributes();
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
+      Credentials authorizedCredentials =
+        new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
       if (justAuthenticate) {
-        return new ServerDescriptor(
-          new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative()), uri,
-          null);
+        return new ServerDescriptor(authorizedCredentials, uri, null);
       }
 
       if (pi != null) {
@@ -356,7 +352,7 @@ public class TfsServerConnectionHelper {
       }
 
       ServiceDefinition[] serviceDefinitions =
-        connectResponse.getConnectResult().getLocationServiceData().getServiceDefinitions().getServiceDefinition();
+        connectResult.getLocationServiceData().getServiceDefinitions().getServiceDefinition();
       if (serviceDefinitions == null) {
         LOG.warn("service definitions node is null");
         throw new HostNotApplicableException(null);
@@ -369,11 +365,11 @@ public class TfsServerConnectionHelper {
         }
       }
       if (catalogServicePath == null) {
-        LOG.warn("catalog service not found by giud");
+        LOG.warn("catalog service not found by guid");
         throw new HostNotApplicableException(null);
       }
 
-      Guid catalogResourceId = connectResponse.getConnectResult().getCatalogResourceId();
+      Guid catalogResourceId = connectResult.getCatalogResourceId();
       CatalogWebServiceStub catalogService = new CatalogWebServiceStub(context, TfsUtil.appendPath(uri, catalogServicePath));
       WebServiceHelper.setupStub(catalogService, credentials, uri);
       QueryResources queryResourcesParam = new QueryResources();
@@ -412,11 +408,12 @@ public class TfsServerConnectionHelper {
       }
 
       TfsBeansHolder beans = new TfsBeansHolder(uri);
-      Credentials authorizedCredentials = new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(),
-                                                          credentials.getUseNative());
       return new Tfs2010ServerDescriptor(descriptors, authorizedCredentials, uri, beans);
     }
     else {
+      LOG.assertTrue(registrationEntries != null);
+      uri = registrationEntries.first;
+      // TFS 200x
       if (justAuthenticate) {
         String authorizedUsername = getAuthorizedCredentialsFor200x(context, uri, credentials);
         Credentials authorizedCredentials =
@@ -424,11 +421,10 @@ public class TfsServerConnectionHelper {
         return new ServerDescriptor(authorizedCredentials, uri, null);
       }
 
-      FrameworkRegistrationEntry[] arrayOfEntries = getRegistrationEntries(stubAndEntries.first, TFSConstants.TOOL_ID_TFS);
       String instanceId = null;
-      if (arrayOfEntries != null) {
+      if (registrationEntries.second != null) {
         outer_loop:
-        for (FrameworkRegistrationEntry entry : arrayOfEntries) {
+        for (FrameworkRegistrationEntry entry : registrationEntries.second) {
           if (TFSConstants.TOOL_ID_TFS.equals(entry.getType())) {
             for (RegistrationExtendedAttribute2 attribute : entry.getRegistrationExtendedAttributes().getRegistrationExtendedAttribute()) {
               if (TFSConstants.INSTANCE_ID_ATTRIBUTE.equals(attribute.getName())) {
@@ -462,25 +458,7 @@ public class TfsServerConnectionHelper {
     return first;
   }
 
-  private static Pair<RegistrationStub, FrameworkRegistrationEntry[]> getRegistrationEntries(ConfigurationContext context,
-                                                                                             URI uri,
-                                                                                             Credentials credentials,
-                                                                                             String toolId)
-    throws RemoteException {
-    RegistrationStub registrationStub = new RegistrationStub(context, TfsUtil.appendPath(uri, TFSConstants.REGISTRATION_ASMX));
-    WebServiceHelper.setupStub(registrationStub, credentials, uri);
-    return Pair.create(registrationStub, getRegistrationEntries(registrationStub, toolId));
-  }
-
-  private static FrameworkRegistrationEntry[] getRegistrationEntries(RegistrationStub registrationStub, String toolId)
-    throws RemoteException {
-    GetRegistrationEntries getRegistrationEntriesParam = new GetRegistrationEntries();
-    getRegistrationEntriesParam.setToolId(toolId);
-    GetRegistrationEntriesResponse registrationEntries = registrationStub.getRegistrationEntries(getRegistrationEntriesParam);
-    return registrationEntries.getGetRegistrationEntriesResult().getRegistrationEntry();
-  }
-
-  public static URI getBareUri(URI uri) {
+  private static URI getBareUri(URI uri) {
     String path = uri.getPath();
     if (StringUtil.isNotEmpty(path) && !path.equals("/")) {
       // path with teamprojectcollection, leave just /tfs
@@ -495,7 +473,7 @@ public class TfsServerConnectionHelper {
     return uri;
   }
 
-  public static Workspace[] queryWorkspaces(Credentials authorizedCredentials,
+  private static Workspace[] queryWorkspaces(Credentials authorizedCredentials,
                                             @Nullable ProgressIndicator pi, TfsBeansHolder beans)
     throws RemoteException, HostNotApplicableException {
     if (pi != null) {
@@ -527,4 +505,40 @@ public class TfsServerConnectionHelper {
     return null;
   }
 
+  private static <T> Pair<URI, T> tryDifferentUris(URI initialUri, boolean doTry, ThrowableConvertor<URI, T, RemoteException> request)
+    throws RemoteException {
+    try {
+      return Pair.create(initialUri, request.convert(initialUri));
+    }
+    catch (RemoteException e) {
+      LOG.debug("connect to URI '" + initialUri + "' failed", e);
+      if (!doTry) {
+        throw e;
+      }
+
+      String path = initialUri.getPath();
+      if (StringUtil.isEmpty(path) || "/".equals(path)) {
+        path = TFSConstants.TFS_PATH;
+      }
+      else {
+        path = "/";
+      }
+      URI uri;
+      try {
+        uri = new URI(initialUri.getScheme(), initialUri.getUserInfo(), initialUri.getHost(), initialUri.getPort(), path, null, null);
+      }
+      catch (URISyntaxException e1) {
+        LOG.error(e);
+        return null;
+      }
+      LOG.debug("Trying to connect to '" + uri + "'");
+      try {
+        return Pair.create(uri, request.convert(uri));
+      }
+      catch (RemoteException e1) {
+        // show error for original URI
+        throw getMoreDescriptiveException(e, e1);
+      }
+    }
+  }
 }
