@@ -403,6 +403,7 @@ public class TfsRequestManager {
       public T compute() throws Exception {
         Credentials credentials = credentialsRef.get();
         boolean needsAuthentication =
+          credentials == null ||
           request.retrieveAuthorizedCredentials() && (credentials.getUserName().length() == 0 || credentials.getDomain().length() == 0);
         if (needsAuthentication) {
           TfsServerConnectionHelper.ServerDescriptor descriptor =
