@@ -59,22 +59,8 @@ public class ManageWorkspacesForm {
   }
 
   public static class ProjectEntry {
-    public final List<StatefulPolicyDescriptor> descriptors;
+    public List<StatefulPolicyDescriptor> descriptors = new ArrayList<StatefulPolicyDescriptor>();
     public @Nullable TfsCheckinPoliciesCompatibility policiesCompatibilityOverride;
-
-    public ProjectEntry() {
-      this(new ArrayList<StatefulPolicyDescriptor>());
-    }
-
-    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors) {
-      this(descriptors, null);
-    }
-
-    public ProjectEntry(List<StatefulPolicyDescriptor> descriptors,
-                        @Nullable TfsCheckinPoliciesCompatibility policiesCompatibilityOverride) {
-      this.descriptors = descriptors;
-      this.policiesCompatibilityOverride = policiesCompatibilityOverride;
-    }
   }
 
   private static final TreeTableColumn<Object> COLUMN_SERVER_WORKSPACE = new TreeTableColumn<Object>("Server / workspace", 200) {
@@ -552,60 +538,46 @@ public class ManageWorkspacesForm {
       public Map<String, ProjectEntry> run() throws TfsException, VcsException {
         Map<String, ProjectEntry> entries = new HashMap<String, ProjectEntry>();
 
-        // load policies
-        final Collection<Annotation> policiesAnnotations = server.getVCS()
-          .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null,
-                            true);
-        for (Annotation annotation : policiesAnnotations) {
-          if (annotation.getValue() == null) {
-            continue;
-          }
-          try {
-            List<StatefulPolicyDescriptor> descriptors = StatefulPolicyParser.parseDescriptors(annotation.getValue());
-            entries.put(annotation.getItem(), new ProjectEntry(descriptors));
-          }
-          catch (PolicyParseException ex) {
-            String message = MessageFormat.format("Cannot load checkin policies definitions:\n{0}", ex.getMessage());
-            throw new OperationFailedException(message);
-          }
-        }
-
-        // load overrides
-        final Collection<Annotation> overridesAnnotations =
-          server.getVCS().queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, Collections.<String>emptyList(), myContentPane, null, true);
-        for (Annotation annotation : overridesAnnotations) {
-          if (annotation.getValue() == null) {
-            continue;
-          }
-
-          try {
-            ProjectEntry entry = entries.get(annotation.getItem());
-            if (entry == null) {
-              entry = new ProjectEntry();
-              entries.put(annotation.getItem(), entry);
-            }
-            entry.policiesCompatibilityOverride = TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(annotation.getValue());
-          }
-          catch (IOException ex) {
-            String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
-            throw new OperationFailedException(message);
-          }
-          catch (JDOMException ex) {
-            String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
-            throw new OperationFailedException(message);
-          }
-        }
-
-        // load projects
         final List<Item> projectItems = server.getVCS().getChildItems(VersionControlPath.ROOT_FOLDER, true, myContentPane, null);
         if (projectItems.isEmpty()) {
           throw new OperationFailedException("No team project found");
         }
 
         for (Item projectItem : projectItems) {
-          if (!entries.containsKey(projectItem.getItem())) {
-            entries.put(projectItem.getItem(), new ProjectEntry());
+          ProjectEntry entry = new ProjectEntry();
+
+          // load policies
+          final Collection<Annotation> policiesAnnotations = server.getVCS()
+            .queryAnnotations(TFSConstants.STATEFUL_CHECKIN_POLICIES_ANNOTATION, projectItem.getItem(), myContentPane, null, true);
+          if (!policiesAnnotations.isEmpty()) {
+            try {
+              entry.descriptors = StatefulPolicyParser.parseDescriptors(policiesAnnotations.iterator().next().getValue());
+            }
+            catch (PolicyParseException ex) {
+              String message = MessageFormat.format("Cannot load checkin policies definitions:\n{0}", ex.getMessage());
+              throw new OperationFailedException(message);
+            }
           }
+
+          // load overrides
+          final Collection<Annotation> overridesAnnotations =
+            server.getVCS()
+              .queryAnnotations(TFSConstants.OVERRRIDES_ANNOTATION, projectItem.getItem(), myContentPane, null, true);
+          if (!overridesAnnotations.isEmpty()) {
+            try {
+              entry.policiesCompatibilityOverride =
+                TfsCheckinPoliciesCompatibility.fromOverridesAnnotationValue(overridesAnnotations.iterator().next().getValue());
+            }
+            catch (IOException ex) {
+              String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
+              throw new OperationFailedException(message);
+            }
+            catch (JDOMException ex) {
+              String message = MessageFormat.format("Cannot load checkin policies overrides:\n{0}", ex.getMessage());
+              throw new OperationFailedException(message);
+            }
+          }
+          entries.put(projectItem.getItem(), entry);
         }
         return entries;
       }

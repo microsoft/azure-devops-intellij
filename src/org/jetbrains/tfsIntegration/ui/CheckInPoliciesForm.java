@@ -104,7 +104,8 @@ public class CheckInPoliciesForm {
     public boolean isModified = false;
 
     public ModifyableProjectEntry(ManageWorkspacesForm.ProjectEntry entry) {
-      super(new ArrayList<StatefulPolicyDescriptor>(entry.descriptors), entry.policiesCompatibilityOverride);
+      descriptors = entry.descriptors;
+      policiesCompatibilityOverride = entry.policiesCompatibilityOverride;
     }
   }
 

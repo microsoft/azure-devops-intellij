@@ -1327,7 +1327,7 @@ public class VersionControlServer {
   }
 
   public Collection<Annotation> queryAnnotations(final String annotationName,
-                                                 final Collection<String> teamProjects,
+                                                 final String serverItem,
                                                  Object projectOrComponent,
                                                  String progressTitle,
                                                  boolean force) throws TfsException {
@@ -1337,9 +1337,7 @@ public class VersionControlServer {
         public ArrayOfAnnotation execute(Credentials credentials, URI serverUri, @Nullable ProgressIndicator pi) throws Exception {
           QueryAnnotation param = new QueryAnnotation();
           param.setAnnotationName(annotationName);
-          param.setAnnotatedItem(
-            teamProjects.size() == 1 && !VersionControlPath.ROOT_FOLDER.equals(teamProjects.iterator().next()) ? teamProjects.iterator()
-              .next() : null);
+          param.setAnnotatedItem(serverItem);
           param.setVersion(0);
           return myBeans.getRepositoryStub(credentials, pi).queryAnnotation(param).getQueryAnnotationResult();
         }
