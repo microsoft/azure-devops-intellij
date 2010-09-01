@@ -16,8 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.DocumentAdapter;
@@ -84,8 +82,7 @@ public class TfsLoginForm {
       @Override
       public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-          HttpConfigurable hc = ShowSettingsUtil.getInstance().findApplicationConfigurable(HttpConfigurable.class);
-          ShowSettingsUtil.getInstance().editConfigurable((Project)null, hc);
+          HttpConfigurable.editConfigurable(TfsLoginForm.this.myContentPane);
         }
       }
     });
