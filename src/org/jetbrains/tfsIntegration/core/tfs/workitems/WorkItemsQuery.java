@@ -28,7 +28,8 @@ public enum WorkItemsQuery {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.ASSIGNED_TO.getSerialized());
       expression1.setOperator(OperatorType.equals);
-      expression1.setString(server.getQualifiedUsername());
+      expression1
+        .setString(server.getVCS().readIdentity(server.getQualifiedUsername(), projectOrComponent, progressMessage).getDisplayName());
 
       Expression_type0 expression2 = new Expression_type0();
       expression2.setColumn(WorkItemField.STATE.getSerialized());
@@ -50,7 +51,8 @@ public enum WorkItemsQuery {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.ASSIGNED_TO.getSerialized());
       expression1.setOperator(OperatorType.equals);
-      expression1.setString(server.getQualifiedUsername());
+      expression1
+        .setString(server.getVCS().readIdentity(server.getQualifiedUsername(), projectOrComponent, progressMessage).getDisplayName());
 
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);
