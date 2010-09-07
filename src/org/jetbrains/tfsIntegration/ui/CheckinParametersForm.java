@@ -25,6 +25,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.EmptyIcon;
@@ -184,6 +185,8 @@ public class CheckinParametersForm {
           }
         }
       });
+
+    new TableSpeedSearch(myWorkItemsTable);
 
     myWarningsTable.setModel(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
 
