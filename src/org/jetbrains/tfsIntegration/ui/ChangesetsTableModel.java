@@ -16,18 +16,14 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.util.text.DateFormatUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 
 import javax.swing.table.AbstractTableModel;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class ChangesetsTableModel extends AbstractTableModel {
-
-  private static final DateFormat DATE_FORMAT = SimpleDateFormat.getInstance();
-
   enum Column {
     Changeset("Changeset", 60) {
       public String getValue(Changeset changeset) {
@@ -36,7 +32,7 @@ public class ChangesetsTableModel extends AbstractTableModel {
     },
     Date("Date", 95) {
       public String getValue(Changeset changeset) {
-        return DATE_FORMAT.format(changeset.getDate().getTime());
+        return DateFormatUtil.formatPrettyDateTime(changeset.getDate().getTimeInMillis());
       }
     },
     User("User", 90) {

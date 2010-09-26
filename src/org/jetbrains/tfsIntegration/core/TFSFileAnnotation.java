@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.editor.EditorGutterAction;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.annotate.*;
@@ -25,22 +24,16 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.EventDispatcher;
-import com.intellij.util.text.SyncDateFormat;
+import com.intellij.util.text.DateFormatUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
-import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 
 public class TFSFileAnnotation implements FileAnnotation {
-
-  private static final SyncDateFormat DATE_FORMAT = new SyncDateFormat(SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT));
-
   private final TFSVcs myVcs;
   private final WorkspaceInfo myWorkspace;
   private final String myAnnotatedContent;
@@ -62,7 +55,7 @@ public class TFSFileAnnotation implements FileAnnotation {
   private final LineAnnotationAspect DATE_ASPECT = new TFSAnnotationAspect() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
-        return DATE_FORMAT.format(myLineRevisions[lineNumber].getRevisionDate());
+        return DateFormatUtil.formatPrettyDate(myLineRevisions[lineNumber].getRevisionDate());
       }
       else {
         return "";
