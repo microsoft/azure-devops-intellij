@@ -110,7 +110,11 @@ public class CheckinParameters {
     myPanel = panel;
     final Collection<FilePath> filePaths = new ArrayList<FilePath>(panel.getFiles().size());
     for (File file : panel.getFiles()) {
-      filePaths.add(VcsUtil.getFilePath(file));
+      FilePath filePath = VcsUtil.getFilePath(file);
+      if (!TFSVcs.isUnderTFS(filePath, myPanel.getProject())) {
+        continue;
+      }
+      filePaths.add(filePath);
     }
 
     final TfsExecutionUtil.ResultWithError<Void> result =

@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import com.intellij.util.PairConsumer;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
@@ -32,6 +33,7 @@ import org.jetbrains.tfsIntegration.checkin.CheckinPoliciesManager;
 import org.jetbrains.tfsIntegration.checkin.DuplicatePolicyIdException;
 import org.jetbrains.tfsIntegration.ui.OverridePolicyWarningsDialog;
 
+import java.io.File;
 import java.text.MessageFormat;
 
 public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
@@ -44,14 +46,28 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           return ReturnResult.COMMIT;
         }
         
-        if (!panel.vcsIsAffected("TFS")) {
+        if (!panel.vcsIsAffected(TFSVcs.TFS_NAME)) {
           return ReturnResult.COMMIT;
         }
-        final TFSVcs tfsVcs = TFSVcs.getInstance(panel.getProject());
 
-        final CheckinParameters parameters = tfsVcs.getCheckinEnvironment().getCheckinParameters();
+        boolean reallyAffected = false;
+        for (File file : panel.getFiles()) {
+          if (TFSVcs.isUnderTFS(VcsUtil.getFilePath(file), panel.getProject())) {
+            reallyAffected = true;
+            break;
+          }
+        }
+
+        if (!reallyAffected) {
+          return ReturnResult.COMMIT;
+        }
+
+        final TFSVcs vcs = TFSVcs.getInstance(panel.getProject());
+
+        final CheckinParameters parameters = vcs.getCheckinEnvironment().getCheckinParameters();
         if (parameters == null) {
           Messages.showErrorDialog(panel.getProject(), "Validation must be performed before checking in", "Checkin");
+          vcs.getCheckinEnvironment().clearCheckinParameters();
           return ReturnResult.CLOSE_WINDOW;
         }
 
@@ -68,6 +84,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           String message = MessageFormat
             .format("Found multiple checkin policies with the same id: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
           Messages.showErrorDialog(panel.getProject(), message, "Checkin Policies Evaluation");
+          vcs.getCheckinEnvironment().clearCheckinParameters();
           return ReturnResult.CLOSE_WINDOW;
         }
 
@@ -81,7 +98,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           }
         }, "Evaluating Checkin Policies", true, panel.getProject());
         if (!completed) {
-          tfsVcs.getCheckinEnvironment().updateMessage();
+          vcs.getCheckinEnvironment().updateMessage();
           return ReturnResult.CANCEL;
         }
 

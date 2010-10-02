@@ -37,6 +37,7 @@ import com.intellij.ui.components.labels.BoldLabel;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +55,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -76,6 +78,17 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   @Nullable
   public RefreshableOnComponent createAdditionalOptionsPanel(final CheckinProjectPanel checkinProjectPanel,
                                                              PairConsumer<Object, Object> additionalDataConsumer) {
+     boolean isAffected = false;
+      for (File file : checkinProjectPanel.getFiles()) {
+        if (TFSVcs.isUnderTFS(VcsUtil.getFilePath(file), checkinProjectPanel.getProject())) {
+          isAffected = true;
+          break;
+        }
+      }
+    if (!isAffected) {
+      return null;
+    }
+
     final JComponent panel = new JPanel();
     panel.setLayout(new BorderLayout(5, 0));
 
@@ -292,6 +305,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       //noinspection ThrowableInstanceNeverThrown
       errors.add(new VcsException(e));
     }
+    clearCheckinParameters();
     myVcs.fireRevisionChanged();
     return errors;
   }
@@ -351,6 +365,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
   public boolean keepChangeListAfterCommit(final ChangeList changeList) {
     return false;
+  }
+
+  public void clearCheckinParameters() {
+    myParameters = null;
   }
 
   // TODO refactor this class

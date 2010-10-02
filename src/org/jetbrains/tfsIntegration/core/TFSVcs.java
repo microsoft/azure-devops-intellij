@@ -32,6 +32,7 @@ import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -229,5 +230,10 @@ public class TFSVcs extends AbstractVcs {
 
   public static VcsKey getKey() {
     return ourKey;
+  }
+
+  public static boolean isUnderTFS(FilePath path, Project project) {
+    AbstractVcs vcs = VcsUtil.getVcsFor(project, path);
+    return vcs != null && TFS_NAME.equals(vcs.getName());
   }
 }
