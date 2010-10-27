@@ -63,7 +63,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new TFSAnnotationAspect() {
+  private final LineAnnotationAspect AUTHOR_ASPECT = new TFSAuthorAnnotationAspect() {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return TfsUtil.getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
@@ -190,6 +190,9 @@ public class TFSFileAnnotation implements FileAnnotation {
         AbstractVcsHelper.getInstance(myVcs.getProject()).showChangesListBrowser(changeList, title);
       }
     }
+  }
+
+  private abstract class TFSAuthorAnnotationAspect extends TFSAnnotationAspect implements MajorLineAnnotationAspect {
   }
 
 }
