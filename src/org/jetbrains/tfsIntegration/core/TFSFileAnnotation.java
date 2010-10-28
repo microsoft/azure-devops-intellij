@@ -41,7 +41,7 @@ public class TFSFileAnnotation implements FileAnnotation {
 
   private final EventDispatcher<AnnotationListener> myEventDispatcher = EventDispatcher.create(AnnotationListener.class);
 
-  private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect() {
+  private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.REVISION, false) {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return myLineRevisions[lineNumber].getRevisionNumber().asString();
@@ -52,7 +52,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private final LineAnnotationAspect DATE_ASPECT = new TFSAnnotationAspect() {
+  private final LineAnnotationAspect DATE_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.DATE, true) {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return DateFormatUtil.formatPrettyDate(myLineRevisions[lineNumber].getRevisionDate());
@@ -63,7 +63,7 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new TFSAuthorAnnotationAspect() {
+  private final LineAnnotationAspect AUTHOR_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.AUTHOR, true) {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
         return TfsUtil.getNameWithoutDomain(myLineRevisions[lineNumber].getAuthor());
@@ -173,6 +173,10 @@ public class TFSFileAnnotation implements FileAnnotation {
   };
 
   private abstract class TFSAnnotationAspect extends LineAnnotationAspectAdapter {
+    public TFSAnnotationAspect(String id, boolean showByDefault) {
+      super(id, showByDefault);
+    }
+
     @Override
     protected void showAffectedPaths(int lineNum) {
       if (lineNum < myLineRevisions.length) {
@@ -191,8 +195,4 @@ public class TFSFileAnnotation implements FileAnnotation {
       }
     }
   }
-
-  private abstract class TFSAuthorAnnotationAspect extends TFSAnnotationAspect implements MajorLineAnnotationAspect {
-  }
-
 }
