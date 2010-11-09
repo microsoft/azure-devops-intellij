@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.util.ui.UIUtil;
+
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -48,11 +50,11 @@ public abstract class MultiLineTableRenderer extends JTextArea implements TableC
     if (hasFocus) {
       if (!isSelected && table.isCellEditable(row, column)) {
         Color col;
-        col = UIManager.getColor("Table.focusCellForeground");
+        col = UIUtil.getTableFocusCellForeground();
         if (col != null) {
           super.setForeground(col);
         }
-        col = UIManager.getColor("Table.focusCellBackground");
+        col = UIUtil.getTableFocusCellBackground();
         if (col != null) {
           super.setBackground(col);
         }
