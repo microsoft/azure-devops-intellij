@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.revision;
 
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NonNls;
@@ -55,7 +56,7 @@ public class TFSTmpFileStore implements TFSContentStore {
 
   private static String getTfsTmpDir() throws IOException {
     if (myTfsTmpDir == null) {
-      File tmpDir = File.createTempFile(TMP_FILE_NAME, "");
+      File tmpDir = FileUtil.createTempFile(TMP_FILE_NAME, "");
       tmpDir.delete();
       tmpDir.mkdir();
       tmpDir.deleteOnExit();
