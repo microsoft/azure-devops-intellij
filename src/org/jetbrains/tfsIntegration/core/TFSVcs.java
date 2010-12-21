@@ -116,14 +116,20 @@ public class TFSVcs extends AbstractVcs {
   }
 
   @NotNull
+  @Override
   public TFSCheckinEnvironment getCheckinEnvironment() {
+    return (TFSCheckinEnvironment) super.getCheckinEnvironment();
+  }
+
+  @NotNull
+  public TFSCheckinEnvironment createCheckinEnvironment() {
     if (myCheckinEnvironment == null) {
       myCheckinEnvironment = new TFSCheckinEnvironment(this);
     }
     return myCheckinEnvironment;
   }
 
-  public RollbackEnvironment getRollbackEnvironment() {
+  public RollbackEnvironment createRollbackEnvironment() {
     return new TFSRollbackEnvironment(myProject);
   }
 
@@ -142,7 +148,7 @@ public class TFSVcs extends AbstractVcs {
     return new TFSEditFileProvider(myProject);
   }
 
-  public UpdateEnvironment getUpdateEnvironment() {
+  public UpdateEnvironment createUpdateEnvironment() {
     if (myUpdateEnvironment == null) {
       myUpdateEnvironment = new TFSUpdateEnvironment(this);
     }
