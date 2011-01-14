@@ -35,7 +35,8 @@ public class DialogContentMerger implements ContentMerger {
                                                                                StreamUtil.convertSeparators(contentTriplet.localContent),
                                                                                StreamUtil.convertSeparators(contentTriplet.baseContent),
                                                                                localFile, project,
-                                                                               ActionButtonPresentation.createApplyButton());
+                                                                               ActionButtonPresentation.APPLY,
+                                                                               ActionButtonPresentation.CANCEL_WITH_PROMPT);
 
     request.setWindowTitle("Merge " + localPath);
     request.setVersionTitles(new String[]{"Server Version (rev. " + conflict.getTver() + ")", "Merge Result", "Local Version"});
