@@ -26,6 +26,7 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
+import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
@@ -42,7 +43,10 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
-import org.jetbrains.tfsIntegration.core.*;
+import org.jetbrains.tfsIntegration.core.TFSChangeList;
+import org.jetbrains.tfsIntegration.core.TFSProjectConfiguration;
+import org.jetbrains.tfsIntegration.core.TFSVcs;
+import org.jetbrains.tfsIntegration.core.TfsBeansHolder;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.core.tfs.*;
@@ -255,7 +259,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
   }
 
   protected void commit(final Collection<Change> changes, final String comment) {
-    TFSCheckinEnvironment env = getVcs().getCheckinEnvironment();
+    CheckinEnvironment env = getVcs().getCheckinEnvironment();
     RefreshableOnComponent panel = env.createAdditionalOptionsPanel(new CheckinProjectPanel() {
       public JComponent getComponent() {
         return null;

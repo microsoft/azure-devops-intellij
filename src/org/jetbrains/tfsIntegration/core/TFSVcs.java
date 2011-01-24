@@ -36,9 +36,11 @@ import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +48,11 @@ public class TFSVcs extends AbstractVcs {
 
   public interface RevisionChangedListener {
     void revisionChanged();
+  }
+
+  public static class CheckinData {
+    public CheckinParameters parameters;
+    JLabel messageLabel;
   }
 
   // TODO make private
@@ -64,6 +71,7 @@ public class TFSVcs extends AbstractVcs {
   private UpdateEnvironment myUpdateEnvironment;
   private AnnotationProvider myAnnotationProvider;
   private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
+  private final CheckinData myCheckinData = new CheckinData();
 
   public TFSVcs(Project project, UltimateVerifier verifier) {
     super(project, TFS_NAME);
@@ -73,6 +81,10 @@ public class TFSVcs extends AbstractVcs {
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
     myDeleteConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.REMOVE, this);
     myCheckoutOptions = vcsManager.getStandardOption(VcsConfiguration.StandardOption.CHECKOUT, this);
+  }
+
+  public CheckinData getCheckinData() {
+    return myCheckinData;
   }
 
   public static TFSVcs getInstance(Project project) {
@@ -113,12 +125,6 @@ public class TFSVcs extends AbstractVcs {
 
   public ChangeProvider getChangeProvider() {
     return new TFSChangeProvider(myProject);
-  }
-
-  @NotNull
-  @Override
-  public TFSCheckinEnvironment getCheckinEnvironment() {
-    return (TFSCheckinEnvironment) super.getCheckinEnvironment();
   }
 
   @NotNull

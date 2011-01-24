@@ -63,16 +63,8 @@ import java.util.List;
 public class TFSCheckinEnvironment implements CheckinEnvironment {
   private final @NotNull TFSVcs myVcs;
 
-  @Nullable private CheckinParameters myParameters;
-  private JLabel myMessageLabel;
-
   public TFSCheckinEnvironment(final @NotNull TFSVcs vcs) {
     myVcs = vcs;
-  }
-
-  @Nullable
-  CheckinParameters getCheckinParameters() {
-    return myParameters;
   }
 
   @Nullable
@@ -92,7 +84,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     final JComponent panel = new JPanel();
     panel.setLayout(new BorderLayout(5, 0));
 
-    myMessageLabel = new BoldLabel() {
+    myVcs.getCheckinData().messageLabel = new BoldLabel() {
 
       @Override
       public JToolTip createToolTip() {
@@ -105,7 +97,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
     };
 
-    panel.add(myMessageLabel, BorderLayout.WEST);
+    panel.add(myVcs.getCheckinData().messageLabel, BorderLayout.WEST);
 
     final JButton configureButton = new JButton("Configure...");
     panel.add(configureButton, BorderLayout.EAST);
@@ -113,13 +105,13 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     configureButton.addActionListener(new ActionListener() {
 
       public void actionPerformed(final ActionEvent event) {
-        CheckinParameters copy = myParameters.createCopy();
+        CheckinParameters copy = myVcs.getCheckinData().parameters.createCopy();
 
         CheckinParametersDialog d = new CheckinParametersDialog(checkinProjectPanel.getProject(), copy);
         d.show();
         if (d.isOK()) {
-          myParameters = copy;
-          updateMessage();
+          myVcs.getCheckinData().parameters = copy;
+          updateMessage(myVcs.getCheckinData());
         }
       }
     });
@@ -127,26 +119,26 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return new TFSAdditionalOptionsPanel(panel, checkinProjectPanel, configureButton);
   }
 
-  public void updateMessage() {
-    if (myParameters == null) {
+  public static void updateMessage(TFSVcs.CheckinData checkinData) {
+    if (checkinData.parameters == null) {
       return;
     }
 
-    final Pair<String, CheckinParameters.Severity> message = myParameters.getValidationMessage(CheckinParameters.Severity.BOTH);
+    final Pair<String, CheckinParameters.Severity> message = checkinData.parameters.getValidationMessage(CheckinParameters.Severity.BOTH);
     if (message == null) {
-      myMessageLabel.setText("<html>Ready to commit</html>"); // prevent bold
-      myMessageLabel.setIcon(null);
-      myMessageLabel.setToolTipText(null);
+      checkinData.messageLabel.setText("<html>Ready to commit</html>"); // prevent bold
+      checkinData.messageLabel.setIcon(null);
+      checkinData.messageLabel.setToolTipText(null);
     }
     else {
-      myMessageLabel.setToolTipText(message.first);
+      checkinData.messageLabel.setToolTipText(message.first);
       if (message.second == CheckinParameters.Severity.ERROR) {
-        myMessageLabel.setText("Errors found");
-        myMessageLabel.setIcon(UIUtil.getBalloonErrorIcon());
+        checkinData.messageLabel.setText("Errors found");
+        checkinData.messageLabel.setIcon(UIUtil.getBalloonErrorIcon());
       }
       else {
-        myMessageLabel.setText("Warnings found");
-        myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
+        checkinData.messageLabel.setText("Warnings found");
+        checkinData.messageLabel.setIcon(UIUtil.getBalloonWarningIcon());
       }
     }
   }
@@ -170,7 +162,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   public List<VcsException> commit(final List<Change> changes,
                                    final String preparedComment,
                                    @NotNull NullableFunction<Object, Object> parametersHolder) {
-    myMessageLabel = null;
+    myVcs.getCheckinData().messageLabel = null;
 
     final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
     final List<FilePath> files = new ArrayList<FilePath>();
@@ -220,20 +212,20 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             }
             TFSProgressUtil.setProgressText2(progressIndicator, "");
 
-            final WorkItemsCheckinParameters state = myParameters.getWorkItems(workspace.getServer());
+            final WorkItemsCheckinParameters state = myVcs.getCheckinData().parameters.getWorkItems(workspace.getServer());
             final Map<WorkItem, CheckinWorkItemAction> workItemActions =
               state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
 
             List<Pair<String, String>> checkinNotes =
-              new ArrayList<Pair<String, String>>(myParameters.getCheckinNotes(workspace.getServer()).size());
-            for (CheckinParameters.CheckinNote checkinNote : myParameters.getCheckinNotes(workspace.getServer())) {
+              new ArrayList<Pair<String, String>>(myVcs.getCheckinData().parameters.getCheckinNotes(workspace.getServer()).size());
+            for (CheckinParameters.CheckinNote checkinNote : myVcs.getCheckinData().parameters.getCheckinNotes(workspace.getServer())) {
               checkinNotes.add(Pair.create(checkinNote.name, StringUtil.notNullize(checkinNote.value)));
             }
 
             TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("checking.in"));
             ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
               .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions, checkinNotes,
-                       myParameters.getPolicyOverride(workspace.getServer()), myVcs.getProject(), null);
+                       myVcs.getCheckinData().parameters.getPolicyOverride(workspace.getServer()), myVcs.getProject(), null);
             errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
 
             Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
@@ -305,7 +297,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       //noinspection ThrowableInstanceNeverThrown
       errors.add(new VcsException(e));
     }
-    clearCheckinParameters();
+    myVcs.getCheckinData().parameters = null;
     myVcs.fireRevisionChanged();
     return errors;
   }
@@ -367,10 +359,6 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return false;
   }
 
-  public void clearCheckinParameters() {
-    myParameters = null;
-  }
-
   // TODO refactor this class
   private class TFSAdditionalOptionsPanel implements CheckinChangeListSpecificComponent {
     private final JComponent myPanel;
@@ -411,16 +399,16 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
       myPanel.setVisible(true);
 
       try {
-        myParameters = new CheckinParameters(myCheckinProjectPanel, true);
+        myVcs.getCheckinData().parameters = new CheckinParameters(myCheckinProjectPanel, true);
         myConfigureButton.setEnabled(true);
-        updateMessage();
+        updateMessage(myVcs.getCheckinData());
       }
       catch (OperationFailedException e) {
-        myParameters = null;
+        myVcs.getCheckinData().parameters = null;
         myConfigureButton.setEnabled(false);
-        myMessageLabel.setIcon(UIUtil.getBalloonErrorIcon());
-        myMessageLabel.setText("Validation failed");
-        myMessageLabel.setToolTipText(e.getMessage());
+        myVcs.getCheckinData().messageLabel.setIcon(UIUtil.getBalloonErrorIcon());
+        myVcs.getCheckinData().messageLabel.setText("Validation failed");
+        myVcs.getCheckinData().messageLabel.setToolTipText(e.getMessage());
       }
     }
 

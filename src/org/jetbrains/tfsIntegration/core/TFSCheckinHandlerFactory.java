@@ -64,11 +64,10 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
 
         final TFSVcs vcs = TFSVcs.getInstance(panel.getProject());
 
-        final CheckinParameters parameters = vcs.getCheckinEnvironment().getCheckinParameters();
+        final CheckinParameters parameters = vcs.getCheckinData().parameters;
         if (parameters == null) {
           Messages.showErrorDialog(panel.getProject(), "Validation must be performed before checking in", "Checkin");
-          vcs.getCheckinEnvironment().clearCheckinParameters();
-          return ReturnResult.CLOSE_WINDOW;
+            return ReturnResult.CLOSE_WINDOW;
         }
 
         @Nullable Pair<String, CheckinParameters.Severity> msg = parameters.getValidationMessage(CheckinParameters.Severity.ERROR);
@@ -84,7 +83,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           String message = MessageFormat
             .format("Found multiple checkin policies with the same id: ''{0}''.\nPlease review your extensions.", e.getDuplicateId());
           Messages.showErrorDialog(panel.getProject(), message, "Checkin Policies Evaluation");
-          vcs.getCheckinEnvironment().clearCheckinParameters();
+          vcs.getCheckinData().parameters = null;
           return ReturnResult.CLOSE_WINDOW;
         }
 
@@ -98,7 +97,7 @@ public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
           }
         }, "Evaluating Checkin Policies", true, panel.getProject());
         if (!completed) {
-          vcs.getCheckinEnvironment().updateMessage();
+          TFSCheckinEnvironment.updateMessage(vcs.getCheckinData());
           return ReturnResult.CANCEL;
         }
 
