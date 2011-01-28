@@ -23,7 +23,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
-import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
+import com.intellij.openapi.vcs.checkin.VcsCheckinHandlerFactory;
 import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
@@ -36,9 +36,14 @@ import org.jetbrains.tfsIntegration.ui.OverridePolicyWarningsDialog;
 import java.io.File;
 import java.text.MessageFormat;
 
-public class TFSCheckinHandlerFactory extends CheckinHandlerFactory {
+public class TFSCheckinHandlerFactory extends VcsCheckinHandlerFactory {
+  public TFSCheckinHandlerFactory() {
+    super(TFSVcs.getKey());
+  }
+
   @NotNull
-  public CheckinHandler createHandler(final CheckinProjectPanel panel) {
+  @Override
+  protected CheckinHandler createVcsHandler(final CheckinProjectPanel panel) {
     return new CheckinHandler() {
       @Override
       public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
