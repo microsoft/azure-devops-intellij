@@ -9,7 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="TFS" />
     <orderEntry type="library" name="JUnit4" level="project" />
-    <orderEntry type="module-library">
+    <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/test-lib/com.teamprise.core.jar!/" />
@@ -18,7 +18,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
+    <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/test-lib/com.cdesg.util.jar!/" />
