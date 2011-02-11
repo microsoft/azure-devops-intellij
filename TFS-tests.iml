@@ -8,7 +8,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="TFS" />
-    <orderEntry type="library" name="JUnit4" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
