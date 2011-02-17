@@ -34,6 +34,7 @@ import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.CharsetToolkit;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.AbstractVcsTestCase;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
@@ -427,7 +428,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     for (FilePath f : files) {
       vfiles.add(VcsUtil.getVirtualFile(f.getIOFile()));
     }
-    scheduleForAddition(vfiles.toArray(new VirtualFile[files.length]));
+    scheduleForAddition(VfsUtil.toVirtualFileArray(vfiles));
   }
 
   protected void scheduleForDeletion(FilePath... files) {
