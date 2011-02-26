@@ -10,6 +10,7 @@ import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.ThrowableComputable;
+import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.concurrency.Semaphore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -132,6 +133,10 @@ public class TfsRequestManager {
                 }
               }
             };
+            final ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+            if (pi != null) {
+              WaitForProgressToShow.execute(pi);
+            }
             ApplicationManager.getApplication().invokeAndWait(showDialogRunnable, ModalityState.defaultModalityState());
             if (!ok.get()) {
               if (!force) {
