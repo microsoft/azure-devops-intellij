@@ -26,10 +26,10 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
-import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Annotation;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinNoteFieldDefinition;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
@@ -110,7 +110,7 @@ public class CheckinParameters {
     myPanel = panel;
     final Collection<FilePath> filePaths = new ArrayList<FilePath>(panel.getFiles().size());
     for (File file : panel.getFiles()) {
-      FilePath filePath = VcsUtil.getFilePath(file);
+      FilePath filePath = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
       if (!TFSVcs.isUnderTFS(filePath, myPanel.getProject())) {
         continue;
       }
