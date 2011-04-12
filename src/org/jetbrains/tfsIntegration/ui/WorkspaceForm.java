@@ -97,7 +97,7 @@ public class WorkspaceForm {
       }
     };
 
-  private static class LocalPathColumn extends ColumnInfo<WorkingFolderInfo, String> implements ValidatingTableEditor.RowHeightProvider {
+  private class LocalPathColumn extends ColumnInfo<WorkingFolderInfo, String> implements ValidatingTableEditor.RowHeightProvider {
 
     public LocalPathColumn() {
       super(TFSBundle.message("working.folder.local.path.column"));
@@ -120,7 +120,7 @@ public class WorkspaceForm {
 
     @Override
     public TableCellEditor getEditor(final WorkingFolderInfo item) {
-      return new LocalPathCellEditor(TFSBundle.message("select.local.path.title"));
+      return new LocalPathCellEditor(TFSBundle.message("select.local.path.title"), myProject);
     }
 
     public int getRowHeight() {
