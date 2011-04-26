@@ -34,6 +34,7 @@ import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.MultiLineTooltipUI;
 import com.intellij.ui.components.labels.BoldLabel;
+import com.intellij.util.FunctionUtil;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
@@ -303,7 +304,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
   }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment) {
-    return commit(changes, preparedComment, NullableFunction.NULL);
+    return commit(changes, preparedComment, FunctionUtil.<Object, Object>nullConstant());
   }
 
   @Nullable
