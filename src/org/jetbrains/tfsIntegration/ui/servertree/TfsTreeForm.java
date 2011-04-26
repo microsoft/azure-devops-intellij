@@ -60,7 +60,7 @@ public class TfsTreeForm implements Disposable, DataProvider {
   private SelectedItem mySelectedItem; // have to cache selected item to be available after form is disposed
 
   public TfsTreeForm() {
-    myTree.putClientProperty(DataManager.CLIENT_PROPERTY_DATA_PROVIDER, this);
+    DataManager.registerDataProvider(myTree, this);
     new TreeSpeedSearch(myTree);
     myTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     myTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
