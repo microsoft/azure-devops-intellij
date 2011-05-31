@@ -20,6 +20,7 @@ import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.util.diff.Diff;
+import com.intellij.util.diff.FilesTooBigForDiffException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -66,7 +67,13 @@ public class AnnotationBuilder {
       final VcsFileRevision previousRevision = iterator.next();
       final String previousContent = contentProvider.getContent(previousRevision);
       final String[] previousLines = splitLines(previousContent);
-      final Diff.Change change = Diff.buildChanges(previousLines, lines);
+      final Diff.Change change;
+      try {
+        change = Diff.buildChanges(previousLines, lines);
+      }
+      catch (FilesTooBigForDiffException e) {
+        throw new VcsException(e);
+      }
 
       annotateAll(change, revision);
       if (allLinesAnnotated()) {
