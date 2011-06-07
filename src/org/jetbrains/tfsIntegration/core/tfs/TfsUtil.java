@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -56,6 +58,7 @@ public class TfsUtil {
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
   @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
   @NonNls private static final String DELIM = "://";
+  private static final NotificationGroup NOTIFICATION_GROUP = new NotificationGroup("TFS", NotificationDisplayType.NONE, true);
 
   @Nullable
   public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath,
@@ -194,6 +197,8 @@ public class TfsUtil {
     Runnable r = new Runnable() {
       public void run() {
         if (project.isDisposed()) return;
+
+        NOTIFICATION_GROUP.createNotification(messageHtml, messageType).notify(project);
 
         final ToolWindowManager manager = ToolWindowManager.getInstance(project);
         if (Arrays.asList(manager.getToolWindowIds()).contains(CHANGES_TOOLWINDOW_ID)) {
