@@ -73,7 +73,7 @@ public class TFSFileRevision implements VcsFileRevision {
     return myCommitMessage;
   }
 
-  public void loadContent() throws VcsException {
+  public byte[] loadContent() throws IOException, VcsException {
     // TODO: encoding
     final String content;
     try {
@@ -83,9 +83,10 @@ public class TFSFileRevision implements VcsFileRevision {
     catch (TfsException e) {
       throw new VcsException("Cannot get revision content", e);
     }
+    return myContent;
   }
 
-  public byte[] getContent() throws IOException {
+  public byte[] getContent() throws IOException, VcsException {
     return myContent;
   }
 
