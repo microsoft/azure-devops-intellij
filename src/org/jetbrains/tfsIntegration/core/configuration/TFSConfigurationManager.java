@@ -112,7 +112,7 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
     ApplicationManager.getApplication().invokeLater(new Runnable() {
       public void run() {
         // notification should be application-wide not to be hidden on project close
-        Notifications.Bus.notify(notification, NotificationDisplayType.STICKY_BALLOON, null);
+        Notifications.Bus.notify(notification, null);
       }
     });
   }
