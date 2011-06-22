@@ -7,7 +7,7 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.treeStructure.SimpleNode;
-import com.intellij.util.Icons;
+import com.intellij.util.PlatformIcons;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
 import org.jetbrains.annotations.NotNull;
@@ -82,8 +82,8 @@ public class TfsTreeNode extends SimpleNode {
     }
     else {
       if (isDirectory()) {
-        presentation.setOpenIcon(Icons.DIRECTORY_OPEN_ICON);
-        presentation.setClosedIcon(Icons.DIRECTORY_CLOSED_ICON);
+        presentation.setOpenIcon(PlatformIcons.DIRECTORY_OPEN_ICON);
+        presentation.setClosedIcon(PlatformIcons.DIRECTORY_CLOSED_ICON);
       }
       else {
         presentation.setIcons(FileTypeManager.getInstance().getFileTypeByFileName(getFileName()).getIcon());
