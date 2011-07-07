@@ -37,9 +37,6 @@
       <grid id="8ed09" layout-manager="BorderLayout" hgap="0" vgap="0">
         <constraints border-constraint="Center"/>
         <properties/>
-        <clientProperties>
-          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory"/>
-        </clientProperties>
         <border type="empty" title="Items:"/>
         <children>
           <scrollpane class="com.intellij.ui.components.JBScrollPane" id="b70b5">
