@@ -11,6 +11,9 @@
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints border-constraint="South"/>
         <properties/>
+        <clientProperties>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory"/>
+        </clientProperties>
         <border type="etched" title="Lock"/>
         <children>
           <component id="cb2cf" class="javax.swing.JRadioButton" binding="myLockCheckInRadioButton" default-binding="true">
@@ -34,6 +37,9 @@
       <grid id="8ed09" layout-manager="BorderLayout" hgap="0" vgap="0">
         <constraints border-constraint="Center"/>
         <properties/>
+        <clientProperties>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory"/>
+        </clientProperties>
         <border type="empty" title="Items:"/>
         <children>
           <scrollpane class="com.intellij.ui.components.JBScrollPane" id="b70b5">
