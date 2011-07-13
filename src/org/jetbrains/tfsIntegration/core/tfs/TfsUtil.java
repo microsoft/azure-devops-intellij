@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
-import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,17 +24,11 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.popup.Balloon;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.openapi.wm.WindowManager;
-import com.intellij.ui.awt.RelativePoint;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -43,22 +36,19 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import javax.swing.*;
-import java.awt.*;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.List;
 
 public class TfsUtil {
 
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
   @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
   @NonNls private static final String DELIM = "://";
-  private static final NotificationGroup NOTIFICATION_GROUP = new NotificationGroup("TFS", NotificationDisplayType.NONE, true);
+  private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID, true);
 
   @Nullable
   public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath,
@@ -194,51 +184,7 @@ public class TfsUtil {
   }
 
   public static void showBalloon(final Project project, final MessageType messageType, final String messageHtml) {
-    Runnable r = new Runnable() {
-      public void run() {
-        if (project.isDisposed()) return;
-
-        NOTIFICATION_GROUP.createNotification(messageHtml, messageType).notify(project);
-
-        final ToolWindowManager manager = ToolWindowManager.getInstance(project);
-        if (Arrays.asList(manager.getToolWindowIds()).contains(CHANGES_TOOLWINDOW_ID)) {
-          manager.notifyByBalloon(CHANGES_TOOLWINDOW_ID, messageType, messageHtml);
-        }
-        else {
-          Frame frame = WindowManager.getInstance().getFrame(project);
-          if (frame != null) {
-            @SuppressWarnings({"HardCodedStringLiteral"})
-            final Balloon balloon = JBPopupFactory.getInstance()
-              .createHtmlTextBalloonBuilder(messageHtml.replace("\n", "<br>"), messageType.getDefaultIcon(),
-                                            messageType.getPopupBackground(), null).createBalloon();
-
-            final JComponent component = WindowManager.getInstance().getFrame(project).getRootPane();
-            final Rectangle rect = component.getVisibleRect();
-            final Point p = new Point(rect.x + 30, rect.y + rect.height - 10);
-            final RelativePoint point = new RelativePoint(component, p);
-            balloon.show(point, Balloon.Position.below);
-          }
-          else {
-            if (messageType == MessageType.INFO) {
-              Messages.showInfoMessage(messageHtml, "TFS");
-            }
-            else if (messageType == MessageType.ERROR) {
-              Messages.showErrorDialog(messageHtml, "TFS");
-            }
-            else {
-              Messages.showWarningDialog(messageHtml, "TFS");
-            }
-          }
-        }
-      }
-    };
-
-    if (ApplicationManager.getApplication().isDispatchThread()) {
-      r.run();
-    }
-    else {
-      SwingUtilities.invokeLater(r);
-    }
+    NOTIFICATION_GROUP.createNotification(messageHtml, messageType).notify(project);
   }
 
   public static void runOrInvokeAndWait(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
