@@ -22,7 +22,6 @@ import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -37,16 +36,10 @@ public class GetOperationsUtil {
         final File newOpPath = VersionControlPath.getFile(newOperation.getSlocal());
         for (int i = 0; i < result.size(); i++) {
           final GetOperation existingOperation = result.get(i);
-          try {
-            if (existingOperation.getSlocal() == null ||
-                FileUtil.isAncestor(newOpPath, VersionControlPath.getFile(existingOperation.getSlocal()), false)) {
-              positionToInsert = i;
-              break;
-            }
-          }
-          catch (IOException e) {
-            // why FileUtil.isAncestor() throws IOException?
-            // ignore
+          if (existingOperation.getSlocal() == null ||
+              FileUtil.isAncestor(newOpPath, VersionControlPath.getFile(existingOperation.getSlocal()), false)) {
+            positionToInsert = i;
+            break;
           }
         }
       }
