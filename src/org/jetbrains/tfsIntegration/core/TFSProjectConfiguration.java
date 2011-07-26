@@ -24,17 +24,16 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.UpdateWorkspaceInfo;
+import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 @State(
   name = "TFS",
   storages = {@Storage(
-    id = "other",
     file = "$WORKSPACE_FILE$")})
 public class TFSProjectConfiguration implements ProjectComponent, PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
 
