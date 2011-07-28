@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -69,7 +70,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
       if (d.isCreateWorkingCopies()) {
         FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
         if (targetLocalPath == null) {
-          FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+          FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
           d.setTitle("Select Local Folder");
           descriptor.setShowFileSystemRoots(true);
           final String message = MessageFormat
@@ -77,13 +78,13 @@ public class BranchAction extends SingleItemAction implements DumbAware {
                     targetServerPath, workspace.getName());
           descriptor.setDescription(message);
 
-          VirtualFile[] selectedFiles = FileChooser.chooseFiles(project, descriptor);
-          if (selectedFiles.length != 1 || selectedFiles[0] == null) {
+          VirtualFile selectedFile = FileChooser.chooseFile(project, descriptor, null);
+          if (selectedFile == null) {
             return;
           }
 
           workspace.addWorkingFolderInfo(
-            new WorkingFolderInfo(WorkingFolderInfo.Status.Active, TfsFileUtil.getFilePath(selectedFiles[0]), targetServerPath));
+            new WorkingFolderInfo(WorkingFolderInfo.Status.Active, TfsFileUtil.getFilePath(selectedFile), targetServerPath));
           workspace.saveToServer(project, workspace);
         }
       }

@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.ComponentWithBrowseButton;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -63,7 +64,7 @@ public class LocalAndServerPathsForm implements Disposable {
       }
     });
 
-    FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);
+    FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
     ComponentWithBrowseButton.BrowseFolderActionListener<JTextField> listener =
       new ComponentWithBrowseButton.BrowseFolderActionListener<JTextField>(TFSBundle.message("choose.local.path.title"),
                                                                            TFSBundle.message("choose.local.path.description"),
