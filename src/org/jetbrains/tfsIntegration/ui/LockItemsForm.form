@@ -2,7 +2,7 @@
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.jetbrains.tfsIntegration.ui.LockItemsForm">
   <grid id="27dc6" binding="myContentPane" layout-manager="BorderLayout" hgap="0" vgap="0">
     <constraints>
-      <xy x="20" y="20" width="500" height="400"/>
+      <xy x="20" y="20" width="535" height="400"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -12,7 +12,7 @@
         <constraints border-constraint="South"/>
         <properties/>
         <clientProperties>
-          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactoryBoldWithIndent"/>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactorySimpleWithIndent"/>
         </clientProperties>
         <border type="etched" title="Lock"/>
         <children>
@@ -37,9 +37,12 @@
       <grid id="8ed09" layout-manager="BorderLayout" hgap="0" vgap="0">
         <constraints border-constraint="Center"/>
         <properties/>
-        <border type="empty" title="Items:"/>
+        <clientProperties>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactorySimpleWithoutIndent"/>
+        </clientProperties>
+        <border type="etched" title="Items"/>
         <children>
-          <scrollpane class="com.intellij.ui.components.JBScrollPane" id="b70b5">
+          <scrollpane id="b70b5" class="com.intellij.ui.components.JBScrollPane">
             <constraints border-constraint="Center"/>
             <properties/>
             <border type="none"/>
