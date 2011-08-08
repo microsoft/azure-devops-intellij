@@ -144,6 +144,16 @@ public class TFSFileAnnotation implements FileAnnotation {
     }
   }
 
+  @Override
+  public Date getLineDate(int lineNumber) {
+    if (lineNumber < myLineRevisions.length) {
+      return myLineRevisions[lineNumber].getRevisionDate();
+    }
+    else {
+      return null;
+    }
+  }
+
   /**
    * Get revision number for the line.
    */
