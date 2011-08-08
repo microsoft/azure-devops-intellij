@@ -176,6 +176,11 @@ public class TFSFileAnnotation implements FileAnnotation {
     return null;
   }
 
+  @Override
+  public int getLineCount() {
+    return myLineRevisions.length;
+  }
+
   private static final Comparator<VcsFileRevision> REVISION_COMPARATOR = new Comparator<VcsFileRevision>() {
     public int compare(final VcsFileRevision revision1, final VcsFileRevision revision2) {
       return revision1.getRevisionNumber().compareTo(revision2.getRevisionNumber());
