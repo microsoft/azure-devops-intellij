@@ -78,7 +78,7 @@ public class ApplyLabelDialog extends DialogWrapper {
                      TFSBundle.message("checking.existing.labels"));
       if (!labels.isEmpty()) {
         String message = MessageFormat.format("Label ''{0}'' already exists.\nDo you want to update it?", getLabelName());
-        if (Messages.showDialog(myProject, message, getTitle(), new String[]{"Update Label", "Cancel"}, 0, Messages.getQuestionIcon()) !=
+        if (Messages.showOkCancelDialog(myProject, message, getTitle(), "Update Label", "Cancel", Messages.getQuestionIcon()) !=
             0) {
           return;
         }
