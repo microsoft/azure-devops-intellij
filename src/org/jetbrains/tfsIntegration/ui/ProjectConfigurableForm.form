@@ -23,7 +23,7 @@
             </constraints>
             <properties/>
             <clientProperties>
-              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactoryBoldWithIndent"/>
+              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$BoldWithIndent"/>
             </clientProperties>
             <border type="none" title="Servers and workspaces"/>
             <children>
@@ -59,7 +59,7 @@
             </constraints>
             <properties/>
             <clientProperties>
-              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactoryBoldWithIndent"/>
+              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$BoldWithIndent"/>
             </clientProperties>
             <border type="none" title="Passwords"/>
             <children>
@@ -85,7 +85,7 @@
             </constraints>
             <properties/>
             <clientProperties>
-              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactoryBoldWithIndent"/>
+              <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$BoldWithIndent"/>
             </clientProperties>
             <border type="none" title="Checkin policies compatibility"/>
             <children>
