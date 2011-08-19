@@ -334,6 +334,15 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
 
       public void restoreState() {
       }
+
+      @Override
+      public boolean isCheckCommitMessageSpelling() {
+        return false;
+      }
+
+      @Override
+      public void setCheckCommitMessageSpelling(boolean checkSpelling) {
+      }
     }, new PseudoMap<Object, Object>());
     ((CheckinChangeListSpecificComponent)panel).onChangeListSelected(new LocalChangeList() {
       @Override
