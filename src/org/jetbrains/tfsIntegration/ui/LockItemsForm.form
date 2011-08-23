@@ -12,7 +12,7 @@
         <constraints border-constraint="South"/>
         <properties/>
         <clientProperties>
-          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$PlainWithIndent"/>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$PlainSmallWithIndent"/>
         </clientProperties>
         <border type="etched" title="Lock"/>
         <children>
@@ -38,7 +38,7 @@
         <constraints border-constraint="Center"/>
         <properties/>
         <clientProperties>
-          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$PlainWithoutIndent"/>
+          <BorderFactoryClass class="java.lang.String" value="com.intellij.ui.IdeBorderFactory$PlainSmallWithoutIndent"/>
         </clientProperties>
         <border type="etched" title="Items"/>
         <children>
