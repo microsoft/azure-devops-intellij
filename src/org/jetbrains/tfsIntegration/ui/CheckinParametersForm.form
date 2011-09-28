@@ -38,7 +38,7 @@
           </component>
         </children>
       </grid>
-      <tabbedpane id="2fb5c" binding="myTabbedPane">
+      <tabbedpane id="2fb5c" class="com.intellij.ui.components.JBTabbedPane" binding="myTabbedPane">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="200"/>
