@@ -79,12 +79,21 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
     if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
       setTitle("Source Workspace");
       myManageWorkspacesForm.setShowWorkspaces(true);
+      if (myModel.getWorkspace() != null) {
       myManageWorkspacesForm.setSelectedWorkspace(myModel.getWorkspace());
+      } else {
+        myManageWorkspacesForm.selectFirstWorkspace();
+      }
     }
     else {
       setTitle("Source Server");
       myManageWorkspacesForm.setShowWorkspaces(false);
-      myManageWorkspacesForm.setSelectedServer(myModel.getServer());
+      if (myModel.getServer() != null) {
+        myManageWorkspacesForm.setSelectedServer(myModel.getServer());
+      }
+      else {
+        myManageWorkspacesForm.selectFirstServer();
+      }
     }
   }
 

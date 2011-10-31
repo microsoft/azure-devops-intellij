@@ -495,6 +495,24 @@ public class ManageWorkspacesForm {
     myTable.select(server);
   }
 
+  public void selectFirstServer() {
+    final Collection<?> servers = myContentProvider.getRoots();
+    if (!servers.isEmpty()) {
+      myTable.select(servers.iterator().next());
+    }
+  }
+
+  public void selectFirstWorkspace() {
+    final Collection<?> servers = myContentProvider.getRoots();
+    for (Object server : servers) {
+      final Collection<?> workspaces = myContentProvider.getChildren(server);
+      if (!workspaces.isEmpty()) {
+        myTable.select(workspaces.iterator().next());
+        break;
+      }
+    }
+  }
+
   public JComponent getContentPane() {
     return myContentPane;
   }
