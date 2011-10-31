@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2000-2008 JetBrains s.r.o.
  *
@@ -167,6 +168,12 @@ public class TfsUtil {
       if (StringUtil.isEmpty(uri.getHost())) {
         return null;
       }
+
+      int port = uri.getPort();
+      if (port < 0 || port > 0xFFFF) {
+        return null;
+      }
+
       if (complainOnPath && !"".equals(uri.getPath()) && !"/".equals(uri.getPath())) {
         return null;
       }
