@@ -106,20 +106,27 @@ public class TfsExceptionManager {
       }
     }
 
+    int errorCode = getTransportErrorCode(axisFault);
+    if (errorCode != -1) {
+      return createHttpTransportErrorException(errorCode, axisFault);
+    }
+    return new UnknownException(axisFault);
+  }
+
+  public static int getTransportErrorCode(AxisFault axisFault) {
     // TODO: is there any way to recognize http transport errors?
     if (axisFault.getMessage() != null && axisFault.getMessage().startsWith(TRANSPORT_ERROR_MESSAGE)) {
       String[] tokens = axisFault.getMessage().substring(TRANSPORT_ERROR_MESSAGE.length()).split(" ");
       if (tokens.length > 0) {
         try {
-          int errorCode = Integer.parseInt(tokens[0]);
-          return createHttpTransportErrorException(errorCode, axisFault);
+          return Integer.parseInt(tokens[0]);
         }
         catch (NumberFormatException e) {
           // skip
         }
       }
     }
-    return new UnknownException(axisFault);
+    return -1;
   }
 
   public static TfsException processException(Exception e) {

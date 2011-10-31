@@ -16,6 +16,7 @@ import com.microsoft.webservices.*;
 import com.microsoft.wsdl.types.Guid;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.commons.httpclient.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
@@ -27,6 +28,7 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 import org.jetbrains.tfsIntegration.exceptions.HostNotApplicableException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
+import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
 import org.jetbrains.tfsIntegration.exceptions.UserCancelledException;
 import org.jetbrains.tfsIntegration.ui.ChooseTeamProjectCollectionDialog;
 import org.jetbrains.tfsIntegration.webservice.TfsRequestManager;
@@ -452,6 +454,12 @@ public class TfsServerConnectionHelper {
   private static RemoteException getMoreDescriptiveException(RemoteException first, RemoteException second) {
     if (first instanceof AxisFault && second instanceof AxisFault) {
       if (((AxisFault)first).getFaultDetailElement() == null && ((AxisFault)second).getFaultDetailElement() != null) {
+        return second;
+      }
+
+      int transportErrorCode1 = TfsExceptionManager.getTransportErrorCode((AxisFault)first);
+      int transportErrorCode2 = TfsExceptionManager.getTransportErrorCode((AxisFault)second);
+      if (transportErrorCode1 == HttpStatus.SC_NOT_FOUND && transportErrorCode2 != -1) {
         return second;
       }
     }
