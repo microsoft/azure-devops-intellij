@@ -8,6 +8,10 @@ import com.microsoft.schemas.teamfoundation._2005._06.services.registration._03.
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.RepositoryStub;
 import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.ClientService2Stub;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
@@ -29,6 +33,7 @@ public class TfsBeansHolder {
   private GroupSecurityServiceStub myGroupSecurityService;
   private String myDownloadUrl;
   private String myUploadUrl;
+  private HttpClient myUploadDownloadClient;
 
   public TfsBeansHolder(URI serverUri) {
     myServerUri = serverUri;
@@ -150,6 +155,18 @@ public class TfsBeansHolder {
     catch (Exception e) {
       LOG.error("Failed to initialize web service stub", e);
     }
+  }
+  
+  public HttpClient getUploadDownloadClient() {
+    if (myUploadDownloadClient == null) {
+      HttpConnectionManager connManager = new MultiThreadedHttpConnectionManager();
+      myUploadDownloadClient = new HttpClient(connManager);
+      HttpClientParams clientParams = new HttpClientParams();
+      // Set the default timeout in case we have a connection pool starvation to 30sec
+      clientParams.setConnectionManagerTimeout(30000);
+      myUploadDownloadClient.setParams(clientParams);
+    }
+    return myUploadDownloadClient;
   }
 
   @Nullable

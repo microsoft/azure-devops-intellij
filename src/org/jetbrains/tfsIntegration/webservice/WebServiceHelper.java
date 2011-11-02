@@ -94,10 +94,13 @@ public class WebServiceHelper {
   }
 
 
-  public static void httpGet(final URI serverUri, final String downloadUrl, final OutputStream outputStream, Credentials credentials)
+  public static void httpGet(final URI serverUri,
+                             final String downloadUrl,
+                             final OutputStream outputStream,
+                             Credentials credentials,
+                             final HttpClient httpClient)
     throws TfsException, IOException {
     TFSVcs.assertTrue(downloadUrl != null);
-    HttpClient httpClient = new HttpClient();
     setCredentials(httpClient, credentials, serverUri);
     setProxy(httpClient);
 
@@ -117,9 +120,10 @@ public class WebServiceHelper {
   public static void httpPost(final @NotNull String uploadUrl,
                               final @NotNull Part[] parts,
                               final @Nullable OutputStream outputStream,
-                              Credentials credentials, URI serverUri)
+                              Credentials credentials,
+                              URI serverUri,
+                              final HttpClient httpClient)
     throws IOException, TfsException {
-    HttpClient httpClient = new HttpClient();
     setCredentials(httpClient, credentials, serverUri);
     setProxy(httpClient);
 
