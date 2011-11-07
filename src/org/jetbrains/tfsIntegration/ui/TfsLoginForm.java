@@ -44,7 +44,6 @@ public class TfsLoginForm {
   private JPasswordField myPasswordField;
   private JCheckBox myStorePasswordCheckbox;
   private JPanel myContentPane;
-  private JLabel myMessageLabel;
   private HyperlinkLabel myProxyPasswordLabel;
   private JPasswordField myProxyPasswordField;
   private JPanel myProxyPanel;
@@ -73,8 +72,6 @@ public class TfsLoginForm {
     myUsernameField.getDocument().addDocumentListener(changeListener);
     myDomainField.getDocument().addDocumentListener(changeListener);
     myPasswordField.getDocument().addDocumentListener(changeListener);
-
-    myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
 
     myProxyPasswordLabel
       .setHyperlinkText("", TFSBundle.message("login.dialog.proxy.label.1"), TFSBundle.message("login.dialog.proxy.label.2"));
@@ -174,14 +171,6 @@ public class TfsLoginForm {
 
   public void removeListener(ChangeListener listener) {
     myEventDispatcher.removeListener(listener);
-  }
-
-  public void setErrorMessage(@Nullable String errorMessage) {
-    if (errorMessage != null && !errorMessage.endsWith(".")) {
-      errorMessage += ".";
-    }
-    myMessageLabel.setText(errorMessage);
-    myMessageLabel.setVisible(errorMessage != null);
   }
 
   public String getProxyPassword() {

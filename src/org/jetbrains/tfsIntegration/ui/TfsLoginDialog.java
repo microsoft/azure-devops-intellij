@@ -115,7 +115,10 @@ public class TfsLoginDialog extends DialogWrapper {
   }
 
   public void setMessage(@Nullable String message, boolean disableOkAction) {
-    myLoginForm.setErrorMessage(message);
+    if (message != null && !message.endsWith(".")) {
+      message += ".";
+    }
+    setErrorText(message);
     setOKActionEnabled(!disableOkAction || message == null);
   }
 
