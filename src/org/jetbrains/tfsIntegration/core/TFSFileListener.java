@@ -41,15 +41,15 @@ public class TFSFileListener extends VcsVFSListener {
   }
 
   protected String getAddTitle() {
-    return "Do you want to schedule addition of these items to TFS?";
+    return TFSBundle.message("add.items");
   }
 
   protected String getSingleFileAddTitle() {
-    return null;
+    return TFSBundle.message("add.item");
   }
 
   protected String getSingleFileAddPromptTemplate() {
-    return null;
+    return TFSBundle.message("add.item.prompt");
   }
 
   protected void executeAdd() {
