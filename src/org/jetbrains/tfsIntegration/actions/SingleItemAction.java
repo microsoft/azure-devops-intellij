@@ -22,6 +22,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -61,26 +62,27 @@ public abstract class SingleItemAction extends AnAction {
     //noinspection ConstantConditions
     final FilePath localPath = TfsFileUtil.getFilePath(file);
 
+    String actionTitle = StringUtil.trimEnd(e.getPresentation().getText(), "...");
     try {
       Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem =
         TfsUtil.getWorkspaceAndExtendedItem(localPath, project, TFSBundle.message("loading.item"));
       if (workspaceAndItem == null) {
         final String itemType = localPath.isDirectory() ? "folder" : "file";
         final String message = MessageFormat.format("No mapping found for {0} ''{1}''", itemType, localPath.getPresentableUrl());
-        Messages.showErrorDialog(project, message, e.getPresentation().getText());
+        Messages.showErrorDialog(project, message, actionTitle);
         return;
       }
       if (workspaceAndItem.second == null) {
         final String itemType = localPath.isDirectory() ? "Folder" : "File";
         final String message = MessageFormat.format("{0} ''{1}'' is unversioned", itemType, localPath.getPresentableUrl());
-        Messages.showErrorDialog(project, message, e.getPresentation().getText());
+        Messages.showErrorDialog(project, message, actionTitle);
         return;
       }
       //noinspection ConstantConditions
       execute(project, workspaceAndItem.first, localPath, workspaceAndItem.second);
     }
     catch (TfsException ex) {
-      Messages.showErrorDialog(project, ex.getMessage(), e.getPresentation().getText());
+      Messages.showErrorDialog(project, ex.getMessage(), actionTitle);
     }
   }
 
