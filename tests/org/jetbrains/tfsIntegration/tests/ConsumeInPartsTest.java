@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.tests;
 
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.ThrowableConsumer;
 import gnu.trove.Equality;
 import junit.framework.TestCase;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -28,7 +29,7 @@ import java.util.List;
 
 public class ConsumeInPartsTest extends TestCase {
 
-  private static class TestConsumer implements TfsUtil.Consumer<List<String>, RuntimeException> {
+  private static class TestConsumer implements ThrowableConsumer<List<String>, RuntimeException> {
     private final List<String[]> myResults = new ArrayList<String[]>();
 
     public void consume(List<String> strings) {

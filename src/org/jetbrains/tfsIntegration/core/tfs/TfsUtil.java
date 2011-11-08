@@ -26,6 +26,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.util.ThrowableConsumer;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -203,12 +204,7 @@ public class TfsUtil {
     return domain + "\\" + userName;
   }
 
-  public interface Consumer<T, E extends Throwable> {
-    void consume(T t) throws E;
-  }
-
-
-  public static <T, E extends Throwable> void consumeInParts(List<T> items, int maxPartSize, Consumer<List<T>, E> consumer) throws E {
+  public static <T, E extends Throwable> void consumeInParts(List<T> items, int maxPartSize, ThrowableConsumer<List<T>, E> consumer) throws E {
     for (int group = 0; group <= items.size() / maxPartSize; group++) {
       List<T> subList = items.subList(group * maxPartSize, Math.min((group + 1) * maxPartSize, items.size()));
       if (!subList.isEmpty()) {
