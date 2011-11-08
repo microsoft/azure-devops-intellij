@@ -140,7 +140,7 @@ public class ResolveConflictHelper {
         throw new VcsException(errorMessage);
       }
     }
-    conflictResolved(conflict, Resolution.AcceptMerge, localName);
+    conflictResolved(conflict, Resolution.AcceptMerge, isNameConflict(conflict) ? localName : null);
   }
 
   public void acceptYours(final @NotNull Conflict conflict) throws TfsException, VcsException {
