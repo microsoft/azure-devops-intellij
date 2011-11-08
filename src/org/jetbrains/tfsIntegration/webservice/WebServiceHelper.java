@@ -105,15 +105,21 @@ public class WebServiceHelper {
     setProxy(httpClient);
 
     HttpMethod method = new GetMethod(downloadUrl);
-    int statusCode = httpClient.executeMethod(method);
-    if (statusCode == HttpStatus.SC_OK) {
-      StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+    try {
+      int statusCode = httpClient.executeMethod(method);
+      if (statusCode == HttpStatus.SC_OK) {
+        StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+      }
+      else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        throw new OperationFailedException(method.getResponseBodyAsString());
+      }
+      else {
+        throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+      }
     }
-    else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-      throw new OperationFailedException(method.getResponseBodyAsString());
-    }
-    else {
-      throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+    finally {
+      // enforce connection release since GZipInputStream may not trigger underlying AutoCloseInputStream.close()
+      method.releaseConnection();
     }
   }
 
@@ -128,21 +134,26 @@ public class WebServiceHelper {
     setProxy(httpClient);
 
     PostMethod method = new PostMethod(uploadUrl);
-    method.setRequestHeader("X-TFS-Version", "1.0.0.0");
-    method.setRequestHeader("accept-language", "en-US");
-    method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
+    try {
+      method.setRequestHeader("X-TFS-Version", "1.0.0.0");
+      method.setRequestHeader("accept-language", "en-US");
+      method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
 
-    int statusCode = httpClient.executeMethod(method);
-    if (statusCode == HttpStatus.SC_OK) {
-      if (outputStream != null) {
-        StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+      int statusCode = httpClient.executeMethod(method);
+      if (statusCode == HttpStatus.SC_OK) {
+        if (outputStream != null) {
+          StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+        }
+      }
+      else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        throw new OperationFailedException(method.getResponseBodyAsString());
+      }
+      else {
+        throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
       }
     }
-    else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-      throw new OperationFailedException(method.getResponseBodyAsString());
-    }
-    else {
-      throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+    finally {
+      method.releaseConnection();
     }
   }
 
@@ -225,7 +236,6 @@ public class WebServiceHelper {
   }
 
   private static InputStream getInputStream(HttpMethod method) throws IOException {
-    // TODO: find proper way to determine gzip compression
     Header contentType = method.getResponseHeader(HTTPConstants.HEADER_CONTENT_TYPE);
     if (contentType != null && CONTENT_TYPE_GZIP.equalsIgnoreCase(contentType.getValue())) {
       return new GZIPInputStream(method.getResponseBodyAsStream());
