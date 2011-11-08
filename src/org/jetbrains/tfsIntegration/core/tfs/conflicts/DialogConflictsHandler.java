@@ -15,10 +15,8 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
+import com.intellij.util.WaitForProgressToShow;
 import org.jetbrains.tfsIntegration.ui.ResolveConflictsDialog;
-
-import java.lang.reflect.InvocationTargetException;
 
 public class DialogConflictsHandler implements ConflictsHandler {
   public void resolveConflicts(final ResolveConflictHelper resolveConflictHelper) {
@@ -26,19 +24,11 @@ public class DialogConflictsHandler implements ConflictsHandler {
       return;
     }
 
-    try {
-      TfsUtil.runOrInvokeAndWait(new Runnable() {
-        public void run() {
-          ResolveConflictsDialog d = new ResolveConflictsDialog(resolveConflictHelper);
-          d.show();
-        }
-      });
-    }
-    catch (InvocationTargetException e) {
-      // ignore
-    }
-    catch (InterruptedException e) {
-      // ignore
-    }
+    WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(new Runnable() {
+      public void run() {
+        ResolveConflictsDialog d = new ResolveConflictsDialog(resolveConflictHelper);
+        d.show();
+      }
+    });
   }
 }

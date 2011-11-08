@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.util.WaitForProgressToShow;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ChangeType_type0;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.GetOperation;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ItemType;
@@ -42,7 +43,6 @@ import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -560,19 +560,12 @@ public class ApplyGetOperations {
       // TODO: more detailed message needed
       final String title = "Modify Files";
       final Ref<Integer> result = new Ref<Integer>();
-      try {
-        TfsUtil.runOrInvokeAndWait(new Runnable() {
-          public void run() {
-            result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
-          }
-        });
-      }
-      catch (InvocationTargetException e) {
-        // ignore
-      }
-      catch (InterruptedException e) {
-        // ignore
-      }
+      WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(new Runnable() {
+        public void run() {
+          result.set(Messages.showYesNoDialog(message, title, Messages.getQuestionIcon()));
+        }
+      });
+
       if (result.get() == DialogWrapper.OK_EXIT_CODE) {
         return true;
       }

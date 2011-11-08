@@ -18,11 +18,7 @@
 package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Pair;
@@ -38,7 +34,6 @@ import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -192,20 +187,6 @@ public class TfsUtil {
 
   public static void showBalloon(final Project project, final MessageType messageType, final String messageHtml) {
     NOTIFICATION_GROUP.createNotification(messageHtml, messageType).notify(project);
-  }
-
-  public static void runOrInvokeAndWait(@NotNull Runnable runnable) throws InvocationTargetException, InterruptedException {
-    final Application application = ApplicationManager.getApplication();
-    if (application.isDispatchThread()) {
-      runnable.run();
-    }
-    else {
-      ModalityState modalityState = ModalityState.NON_MODAL;
-      if (ProgressManager.getInstance().getProgressIndicator() != null) {
-        modalityState = ProgressManager.getInstance().getProgressIndicator().getModalityState();
-      }
-      application.invokeAndWait(runnable, modalityState);
-    }
   }
 
   public static String getPresentableUri(URI uri) {
