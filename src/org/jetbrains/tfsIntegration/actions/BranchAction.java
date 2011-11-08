@@ -71,7 +71,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
         FilePath targetLocalPath = workspace.findLocalPathByServerPath(targetServerPath, true, project);
         if (targetLocalPath == null) {
           FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-          d.setTitle("Select Local Folder");
+          descriptor.setTitle("Select Local Folder");
           descriptor.setShowFileSystemRoots(true);
           final String message = MessageFormat
             .format("Branch target folder ''{0}'' is not mapped. Select a local folder to create a mapping in workspace ''{1}''",
