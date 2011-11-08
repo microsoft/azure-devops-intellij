@@ -33,7 +33,7 @@ public class TfsBeansHolder {
   private GroupSecurityServiceStub myGroupSecurityService;
   private String myDownloadUrl;
   private String myUploadUrl;
-  private HttpClient myUploadDownloadClient;
+  private HttpClient[] myUploadDownloadClients = new HttpClient[2]; // regular, proxy
 
   public TfsBeansHolder(URI serverUri) {
     myServerUri = serverUri;
@@ -157,16 +157,17 @@ public class TfsBeansHolder {
     }
   }
   
-  public HttpClient getUploadDownloadClient() {
-    if (myUploadDownloadClient == null) {
+  public HttpClient getUploadDownloadClient(boolean forProxy) {
+    int index = forProxy ? 1 : 0;
+    if (myUploadDownloadClients[index] == null) {
       HttpConnectionManager connManager = new MultiThreadedHttpConnectionManager();
-      myUploadDownloadClient = new HttpClient(connManager);
+      myUploadDownloadClients[index] = new HttpClient(connManager);
       HttpClientParams clientParams = new HttpClientParams();
       // Set the default timeout in case we have a connection pool starvation to 30sec
       clientParams.setConnectionManagerTimeout(30000);
-      myUploadDownloadClient.setParams(clientParams);
+      myUploadDownloadClients[index].setParams(clientParams);
     }
-    return myUploadDownloadClient;
+    return myUploadDownloadClients[index];
   }
 
   @Nullable

@@ -717,7 +717,7 @@ public class VersionControlServer {
             downloadUrl = TfsUtil.appendPath(serverUri, myBeans.getDownloadUrl(credentials, pi) + "?" + downloadKey);
           }
           LOG.debug((tryProxy ? "Downloading via proxy: " : "Downloading: ") + downloadUrl);
-          WebServiceHelper.httpGet(myServerUri, downloadUrl, outputStream, credentials, myBeans.getUploadDownloadClient());
+          WebServiceHelper.httpGet(myServerUri, downloadUrl, outputStream, credentials, myBeans.getUploadDownloadClient(tryProxy));
           return null;
         }
       });
@@ -1094,7 +1094,7 @@ public class VersionControlServer {
         parts.add(filePart);
         filePart.setCharSet(null);
         WebServiceHelper
-          .httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null, credentials, serverUri, myBeans.getUploadDownloadClient());
+          .httpPost(uploadUrl, parts.toArray(new Part[parts.size()]), null, credentials, serverUri, myBeans.getUploadDownloadClient(false));
         return null;
       }
     });
