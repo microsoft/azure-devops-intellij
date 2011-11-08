@@ -80,7 +80,7 @@ public class VersionControlServer {
   public static final int LOCAL_CONFLICT_REASON_SOURCE = 1;
   public static final int LOCAL_CONFLICT_REASON_TARGET = 3;
 
-  private static final int ITEMS_IN_GROUP = 200;
+  private static final int ITEMS_IN_GROUP = Integer.getInteger("org.jetbrains.tfsIntegration.requestGroupSize", 200);
 
   private final URI myServerUri;
   private final String myInstanceId;
