@@ -109,7 +109,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
         public void run() {
           if (listener != null) {
             if (errors.isEmpty()) {
-              listener.directoryCheckedOut(new File(localRoot.get().getPath()));
+              listener.directoryCheckedOut(new File(localRoot.get().getPath()), TFSVcs.getKey());
             }
             listener.checkoutCompleted();
           }
