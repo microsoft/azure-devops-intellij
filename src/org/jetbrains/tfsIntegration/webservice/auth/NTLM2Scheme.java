@@ -20,6 +20,7 @@ package org.jetbrains.tfsIntegration.webservice.auth;
 // only last method is overridden
 // to be removed since Apache HttpClient 4.0
 
+import com.intellij.openapi.diagnostic.Logger;
 import jcifs.ntlmssp.Type1Message;
 import jcifs.ntlmssp.Type2Message;
 import jcifs.ntlmssp.Type3Message;
@@ -47,7 +48,26 @@ import java.io.IOException;
  */
 public class NTLM2Scheme extends NTLMScheme {
 
-    /** Log object for this class. */
+  private static final Logger LOG = Logger.getInstance(NTLM2Scheme.class.getName());
+
+  private static final int MESSAGE_1_DEFAULT_FLAGS;
+
+    static {
+      int flags = Type1Message.getDefaultFlags();
+      final String flagsStr = System.getProperty("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message1flags");
+      if (flagsStr != null && flagsStr.startsWith("0x")) {
+        try {
+          int userFlags = Integer.parseInt(flagsStr.substring("0x".length()), 16);
+          flags |= userFlags;
+        }
+        catch (NumberFormatException ignored) {
+        }
+      }
+      MESSAGE_1_DEFAULT_FLAGS = flags;
+      LOG.info("Message 1 flags: 0x" + Integer.toString(MESSAGE_1_DEFAULT_FLAGS, 16));
+    }
+
+  /** Log object for this class. */
     //private static final Logger LOG = Logger.getInstance(NTLM2Scheme.class.getName());
 
     /** NTLM challenge string. */
@@ -337,7 +357,7 @@ public class NTLM2Scheme extends NTLMScheme {
   }
 
   protected String getType1MessageResponse(NTCredentials ntcredentials, HttpMethodParams params) {
-    Type1Message t1m = new Type1Message(Type1Message.getDefaultFlags(), ntcredentials.getDomain(), ntcredentials.getHost());
+    Type1Message t1m = new Type1Message(MESSAGE_1_DEFAULT_FLAGS, ntcredentials.getDomain(), ntcredentials.getHost());
     return Base64.encode(t1m.toByteArray());
   }
 
