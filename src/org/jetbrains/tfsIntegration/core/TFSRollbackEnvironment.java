@@ -194,7 +194,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
   }
 
   public void rollbackIfUnchanged(final VirtualFile file) {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+    /*final List<VcsException> errors = new ArrayList<VcsException>();
     boolean unchanged = false;
     try {
       FilePath path = TfsFileUtil.getFilePath(file);
@@ -215,7 +215,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     }
     if (!errors.isEmpty()) {
       AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFS_NAME);
-    }
+    }*/
   }
 
   private void undoPendingChanges(final List<FilePath> localPaths,
