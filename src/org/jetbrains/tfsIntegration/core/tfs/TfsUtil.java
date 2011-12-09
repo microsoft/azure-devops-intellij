@@ -166,7 +166,7 @@ public class TfsUtil {
       }
 
       int port = uri.getPort();
-      if (port < 0 || port > 0xFFFF) {
+      if (port > 0xFFFF) {
         return null;
       }
 
