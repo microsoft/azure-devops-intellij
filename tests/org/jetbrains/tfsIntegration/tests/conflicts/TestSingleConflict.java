@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.tests.conflicts;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
@@ -187,17 +188,19 @@ abstract class TestSingleConflict extends TFSTestCase {
   }
 
   private class ContentMergerImpl implements ContentMerger {
-    public void mergeContent(final Conflict conflict,
-                             final ContentTriplet contentTriplet,
-                             final Project project,
-                             final VirtualFile targetFile,
-                             final String localPathToDisplay) throws IOException, VcsException {
+    public boolean mergeContent(final Conflict conflict,
+                                final ContentTriplet contentTriplet,
+                                final Project project,
+                                final VirtualFile targetFile,
+                                final String localPathToDisplay,
+                                final VcsRevisionNumber serverVersion) throws IOException, VcsException {
       Assert.assertEquals(getExpectedBaseContent(), contentTriplet.baseContent);
       Assert.assertEquals(getExpectedYoursContent(), contentTriplet.localContent);
       Assert.assertEquals(getExpectedTheirsContent(), contentTriplet.serverContent);
 
       ReadOnlyAttributeUtil.setReadOnlyAttribute(targetFile, false);
       setFileContent(targetFile, TestSingleConflict.this.mergeContent());
+      return true;
     }
   }
 }

@@ -20,7 +20,10 @@ import com.intellij.openapi.diff.DiffManager;
 import com.intellij.openapi.diff.DiffRequestFactory;
 import com.intellij.openapi.diff.MergeRequest;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.io.StreamUtil;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vcs.merge.MergeDialogCustomizer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -28,19 +31,33 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 public class DialogContentMerger implements ContentMerger {
 
-  public void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath) {
+  public boolean mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath,
+                              VcsRevisionNumber serverVersion) {
     TFSVcs.assertTrue(localFile.isWritable(), localFile.getPresentableUrl() + " must be writable");
 
-    MergeRequest request = DiffRequestFactory.getInstance().createMergeRequest(StreamUtil.convertSeparators(contentTriplet.serverContent),
-                                                                               StreamUtil.convertSeparators(contentTriplet.localContent),
+    MergeDialogCustomizer c = new MergeDialogCustomizer();
+    MergeRequest request = DiffRequestFactory.getInstance().createMergeRequest(StreamUtil.convertSeparators(contentTriplet.localContent),
+                                                                               StreamUtil.convertSeparators(contentTriplet.serverContent),
                                                                                StreamUtil.convertSeparators(contentTriplet.baseContent),
                                                                                localFile, project,
                                                                                ActionButtonPresentation.APPLY,
                                                                                ActionButtonPresentation.CANCEL_WITH_PROMPT);
 
-    request.setWindowTitle("Merge " + localPath);
-    request.setVersionTitles(new String[]{"Server Version (rev. " + conflict.getTver() + ")", "Merge Result", "Local Version"});
+    request.setWindowTitle(c.getMergeWindowTitle(localFile));
+    request.setVersionTitles(new String[] {
+      c.getLeftPanelTitle(localFile),
+      c.getCenterPanelTitle(localFile),
+      c.getRightPanelTitle(localFile, serverVersion)
+    });
+
     // TODO call canShow() first
     DiffManager.getInstance().getDiffTool().show(request);
+    if (request.getResult() == DialogWrapper.OK_EXIT_CODE) {
+      return true;
+    }
+    else {
+      request.restoreOriginalContent();
+      return false;
+    }
   }
 }

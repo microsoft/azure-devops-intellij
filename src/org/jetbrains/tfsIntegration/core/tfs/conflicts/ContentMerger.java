@@ -17,6 +17,7 @@ package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
 import org.jetbrains.tfsIntegration.ui.ContentTriplet;
@@ -25,7 +26,8 @@ import java.io.IOException;
 
 public interface ContentMerger {
 
-  void mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile targetFile, String localPathToDisplay)
+  boolean mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile targetFile, String localPath,
+                       VcsRevisionNumber serverVersion)
     throws IOException, VcsException;
 
 }

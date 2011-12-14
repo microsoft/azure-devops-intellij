@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -121,6 +122,7 @@ public class ResolveConflictHelper {
       localName = VersionControlPath.localPathFromTfsRepresentation(conflict.getTgtlitem());
     }
 
+    boolean resolved = true;
     // merge content
     if (isContentConflict(conflict)) {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
@@ -129,7 +131,8 @@ public class ResolveConflictHelper {
       if (vFile != null) {
         try {
           TfsFileUtil.setReadOnly(vFile, false);
-          ConflictsEnvironment.getContentMerger().mergeContent(conflict, contentTriplet, myProject, vFile, localName);
+          resolved = ConflictsEnvironment.getContentMerger()
+            .mergeContent(conflict, contentTriplet, myProject, vFile, localName, new VcsRevisionNumber.Int(conflict.getTver()));
         }
         catch (IOException e) {
           throw new VcsException(e);
@@ -140,21 +143,25 @@ public class ResolveConflictHelper {
         throw new VcsException(errorMessage);
       }
     }
-    conflictResolved(conflict, Resolution.AcceptMerge, isNameConflict(conflict) ? localName : null);
+    if (resolved) {
+      conflictResolved(conflict, Resolution.AcceptMerge, localName, isNameConflict(conflict));
+    }
   }
 
   public void acceptYours(final @NotNull Conflict conflict) throws TfsException, VcsException {
-    conflictResolved(conflict, Resolution.AcceptYours, null);
+    String localPath =
+      VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
+    conflictResolved(conflict, Resolution.AcceptYours, conflict.getTgtlitem(), false);
     // no actions will be executed so fill UpdatedFiles explicitly
     if (myUpdatedFiles != null) {
-      String localPath =
-        VersionControlPath.localPathFromTfsRepresentation(conflict.getSrclitem() != null ? conflict.getSrclitem() : conflict.getTgtlitem());
       myUpdatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(localPath, TFSVcs.getKey(), null);
     }
   }
 
   public void acceptTheirs(final @NotNull Conflict conflict) throws TfsException, IOException, VcsException {
-    conflictResolved(conflict, Resolution.AcceptTheirs, null);
+    String localPath =
+      VersionControlPath.localPathFromTfsRepresentation(conflict.getTgtlitem() != null ? conflict.getTgtlitem() : conflict.getSrclitem());
+    conflictResolved(conflict, Resolution.AcceptTheirs, localPath, false);
   }
 
   public void skip(final @NotNull Conflict conflict) {
@@ -203,13 +210,13 @@ public class ResolveConflictHelper {
     return false;
   }
 
-  private void conflictResolved(final Conflict conflict, final Resolution resolution, final @Nullable String newLocalPath)
+  private void conflictResolved(final Conflict conflict, final Resolution resolution, final @NotNull String newLocalPath, boolean sendPath)
     throws TfsException, VcsException {
     WorkspaceInfo workspace = myConflict2Workspace.get(conflict);
 
     VersionControlServer.ResolveConflictParams resolveConflictParams =
       new VersionControlServer.ResolveConflictParams(conflict.getCid(), resolution, LockLevel.Unchanged, -2,
-                                                     VersionControlPath.toTfsRepresentation(newLocalPath));
+                                                     sendPath ? VersionControlPath.toTfsRepresentation(newLocalPath) : null);
 
     ResolveResponse response =
       workspace.getServer().getVCS().resolveConflict(workspace.getName(), workspace.getOwnerName(), resolveConflictParams, myProject,
