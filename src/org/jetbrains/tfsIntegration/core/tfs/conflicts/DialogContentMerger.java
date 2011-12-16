@@ -15,10 +15,13 @@
  */
 package org.jetbrains.tfsIntegration.core.tfs.conflicts;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diff.ActionButtonPresentation;
 import com.intellij.openapi.diff.DiffManager;
 import com.intellij.openapi.diff.DiffRequestFactory;
 import com.intellij.openapi.diff.MergeRequest;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.io.StreamUtil;
@@ -31,7 +34,7 @@ import org.jetbrains.tfsIntegration.ui.ContentTriplet;
 
 public class DialogContentMerger implements ContentMerger {
 
-  public boolean mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, VirtualFile localFile, String localPath,
+  public boolean mergeContent(Conflict conflict, ContentTriplet contentTriplet, Project project, final VirtualFile localFile, String localPath,
                               VcsRevisionNumber serverVersion) {
     TFSVcs.assertTrue(localFile.isWritable(), localFile.getPresentableUrl() + " must be writable");
 
@@ -57,6 +60,13 @@ public class DialogContentMerger implements ContentMerger {
     }
     else {
       request.restoreOriginalContent();
+      // TODO maybe MergeVersion.MergeDocumentVersion.restoreOriginalContent() should save document itself?
+      ApplicationManager.getApplication().runWriteAction(new Runnable() {
+        public void run() {
+          final Document document = FileDocumentManager.getInstance().getDocument(localFile);
+          FileDocumentManager.getInstance().saveDocument(document);
+        }
+      });
       return false;
     }
   }
