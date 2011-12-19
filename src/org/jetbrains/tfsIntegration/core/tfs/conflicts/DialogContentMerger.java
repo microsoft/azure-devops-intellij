@@ -64,7 +64,9 @@ public class DialogContentMerger implements ContentMerger {
       ApplicationManager.getApplication().runWriteAction(new Runnable() {
         public void run() {
           final Document document = FileDocumentManager.getInstance().getDocument(localFile);
-          FileDocumentManager.getInstance().saveDocument(document);
+          if (document != null) {
+              FileDocumentManager.getInstance().saveDocument(document);
+          }
         }
       });
       return false;
