@@ -262,7 +262,7 @@ public class CustomTreeTable<T> extends TreeTable {
 
       JLabel label = (JLabel)c;
       final DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)value;
-      if (HIDDEN_ROOT == treeNode.getUserObject()) {
+      if (treeNode == null || HIDDEN_ROOT == treeNode.getUserObject()) {
         return c;
       }
       //noinspection unchecked
