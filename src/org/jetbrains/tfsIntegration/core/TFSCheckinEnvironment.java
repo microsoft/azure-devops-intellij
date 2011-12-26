@@ -360,6 +360,11 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     return false;
   }
 
+  @Override
+  public boolean isRefreshAfterCommitNeeded() {
+    return true;
+  }
+
   // TODO refactor this class
   private class TFSAdditionalOptionsPanel implements CheckinChangeListSpecificComponent {
     private final JComponent myPanel;
