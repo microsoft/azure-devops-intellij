@@ -21,6 +21,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.util.SystemProperties;
 import org.apache.axis2.databinding.utils.ConverterUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -143,7 +144,7 @@ public class Workstation {
     final File cacheFile;
     if (SystemInfo.isWindows) {
       //noinspection HardCodedStringLiteral
-      cacheFile = new File(System.getProperty("user.home"), CACHE_FILE_WINDOWS);
+      cacheFile = new File(SystemProperties.getUserHome(), CACHE_FILE_WINDOWS);
     }
     else {
       cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX);
