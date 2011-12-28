@@ -102,4 +102,8 @@ public class ChooseModeStep extends CheckoutWizardStep {
   public JComponent getPreferredFocusedComponent() {
     return myForm.getPreferredFocusedComponent();
   }
+
+  public String getHelpId() {
+    return "reference.checkoutTFS.checkoutmode";
+  }
 }

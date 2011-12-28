@@ -93,4 +93,8 @@ public class SummaryStep extends CheckoutWizardStep {
   public JComponent getPreferredFocusedComponent() {
     return null;
   }
+
+  public String getHelpId() {
+    return "reference.checkoutTFS.summary";
+  }
 }

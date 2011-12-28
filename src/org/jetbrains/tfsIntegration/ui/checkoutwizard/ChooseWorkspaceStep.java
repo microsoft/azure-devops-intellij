@@ -152,4 +152,13 @@ public class ChooseWorkspaceStep extends CheckoutWizardStep {
   public JComponent getPreferredFocusedComponent() {
     return myManageWorkspacesForm.getPreferredFocusedComponent();
   }
+
+  public String getHelpId() {
+    if (myModel.getMode() == CheckoutWizardModel.Mode.Manual) {
+      return "reference.checkoutTFS.sourceworkspace";
+    }
+    else {
+      return "reference.checkoutTFS.sourceserver";
+    }
+  }
 }

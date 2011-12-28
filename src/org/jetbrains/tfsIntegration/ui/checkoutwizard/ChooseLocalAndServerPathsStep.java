@@ -129,4 +129,8 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
   public JComponent getPreferredFocusedComponent() {
     return myPathsForm.getPreferredFocusedComponent();
   }
+
+  public String getHelpId() {
+    return "reference.checkoutTFS.choosepaths";
+  }
 }
