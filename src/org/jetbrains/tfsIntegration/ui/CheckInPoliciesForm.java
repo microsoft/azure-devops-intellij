@@ -161,7 +161,7 @@ public class CheckInPoliciesForm {
       }
     });
 
-    myPoliciesTable.setModel(new ListTableModel<Pair<StatefulPolicyDescriptor, Boolean>>(COLUMNS));
+    myPoliciesTable.setModelAndUpdateColumns(new ListTableModel<Pair<StatefulPolicyDescriptor, Boolean>>(COLUMNS));
 
     myEditButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {

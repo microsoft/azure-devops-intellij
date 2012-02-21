@@ -87,7 +87,7 @@ public class ChooseTeamProjectCollectionForm {
 
     new TableSpeedSearch(myTable);
 
-    myTable.setModel(
+    myTable.setModelAndUpdateColumns(
       new ListTableModel<TfsServerConnectionHelper.TeamProjectCollectionDescriptor>(new ColumnInfo[]{displayNameColumn}, sorted, 0));
     myTable.setSelection(Collections.singletonList(sorted.get(0)));
   }

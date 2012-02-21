@@ -188,7 +188,7 @@ public class CheckinParametersForm {
 
     new TableSpeedSearch(myWorkItemsTable);
 
-    myWarningsTable.setModel(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
+    myWarningsTable.setModelAndUpdateColumns(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
 
     myWarningsTable.setTableHeader(null);
     myWarningsTable.addMouseListener(new MouseAdapter() {
