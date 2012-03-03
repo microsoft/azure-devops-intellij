@@ -28,7 +28,7 @@ public class CheckinParametersDialog extends DialogWrapper {
   private final Project myProject;
 
   public CheckinParametersDialog(final Project project, CheckinParameters parameters) {
-    super(project, false);
+    super(project, true);
     myProject = project;
     myParameters = parameters;
     setTitle("Configure Checkin Parameters");
