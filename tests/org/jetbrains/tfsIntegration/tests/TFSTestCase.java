@@ -36,7 +36,7 @@ import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.AbstractVcsTestCase;
+import com.intellij.testFramework.AbstractJunitVcsTestCase;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
 import com.intellij.vcsUtil.VcsUtil;
@@ -70,7 +70,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 @SuppressWarnings({"ConstantConditions", "HardCodedStringLiteral"})
-public abstract class TFSTestCase extends AbstractVcsTestCase {
+public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
 
   protected enum TfsServerVersion {
     TFS_2005_RTM,
@@ -110,7 +110,7 @@ public abstract class TFSTestCase extends AbstractVcsTestCase {
     localRoot.mkdir();
 
 
-    initProject(localRoot);
+    initProject(localRoot, getTestName());
     mySandboxRoot = createDirInCommand(myWorkingCopyDir, SANDBOX_PREFIX +
                                                          Workstation.getComputerName() +
                                                          "_" +
