@@ -112,6 +112,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     return null;
   }
 
+  @Override
+  public RepositoryLocation getForNonLocal(VirtualFile file) {
+    return null;
+  }
+
   public void loadCommittedChanges(ChangeBrowserSettings settings,
                                    RepositoryLocation location,
                                    int maxCount,
