@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -63,6 +64,11 @@ public class TFSFileRevision implements VcsFileRevision {
 
   public Date getRevisionDate() {
     return myDate;
+  }
+
+  @Override
+  public RepositoryLocation getChangedRepositoryPath() {
+    return null;
   }
 
   public String getAuthor() {
