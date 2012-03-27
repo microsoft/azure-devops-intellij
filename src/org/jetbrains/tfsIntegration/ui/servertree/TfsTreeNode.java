@@ -124,6 +124,7 @@ public class TfsTreeNode extends SimpleNode {
     return new TfsTreeNode(this, childPath, false, false);
   }
 
+  @NotNull
   @Override
   public Object[] getEqualityObjects() {
     return new Object[]{myPath};
