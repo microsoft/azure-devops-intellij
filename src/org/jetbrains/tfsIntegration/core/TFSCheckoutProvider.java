@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -135,7 +136,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       for (VcsException e : errors) {
         errorMessage.append(e.getMessage()).append("\n");
       }
-      Messages.showErrorDialog(errorMessage.toString(), "Checkout from TFS");
+      Messages.showErrorDialog(errorMessage.toString(), TFSBundle.message("checkout.from.tfs.error.dialog.title"));
     }
   }
 
@@ -148,7 +149,8 @@ public class TFSCheckoutProvider implements CheckoutProvider {
   private static WorkspaceInfo createWorkspace(CheckoutWizardModel model) throws TfsException {
     WorkspaceInfo workspace = new WorkspaceInfo(model.getServer(), model.getServer().getQualifiedUsername(), Workstation.getComputerName());
     workspace.setName(model.getNewWorkspaceName());
-    workspace.setComment("Automatically created by IntelliJ IDEA for " + model.getServerPath());
+    workspace.setComment(TFSBundle.message("automatic.workspace.comment",
+                                           ApplicationNamesInfo.getInstance().getFullProductName(), model.getServerPath()));
     FilePath localPath = VcsUtil.getFilePath(model.getDestinationFolder(), true);
     WorkingFolderInfo workingFolder = new WorkingFolderInfo(WorkingFolderInfo.Status.Active, localPath, model.getServerPath());
     workspace.addWorkingFolderInfo(workingFolder);
