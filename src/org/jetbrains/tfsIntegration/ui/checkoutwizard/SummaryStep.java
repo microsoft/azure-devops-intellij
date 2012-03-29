@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
@@ -74,7 +75,7 @@ public class SummaryStep extends CheckoutWizardStep {
 
     if (myModel.getMode() == CheckoutWizardModel.Mode.Auto) {
       mySummaryForm.setNewWorkspaceName(myModel.getNewWorkspaceName());
-      mySummaryForm.setLocalPath(myModel.getDestinationFolder());
+      mySummaryForm.setLocalPath(VcsUtil.getFilePath(myModel.getDestinationFolder()).getPresentableUrl());
     }
     else {
       mySummaryForm.setWorkspace(myModel.getWorkspace());

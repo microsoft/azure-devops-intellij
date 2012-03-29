@@ -17,10 +17,12 @@
 package org.jetbrains.tfsIntegration.ui.checkoutwizard;
 
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
@@ -93,11 +95,18 @@ public class ChooseLocalAndServerPathsStep extends CheckoutWizardStep {
   }
 
   @Nullable
-  private static String validateLocalPath(String path) {
+  private static String validateLocalPath(final String path) {
     if (StringUtil.isEmpty(path)) {
       return TFSBundle.message("destination.path.not.specified");
     }
-    VirtualFile file = VcsUtil.getVirtualFile(path);
+    VirtualFile file = ApplicationManager.getApplication().runWriteAction(new Computable<VirtualFile>() {
+      @Nullable
+      @Override
+      public VirtualFile compute() {
+        // do VFS refresh to guarantee correct case if user enters with wrong case
+        return LocalFileSystem.getInstance().refreshAndFindFileByPath(path);
+      }
+    });
     if (file != null && file.exists() && !file.isDirectory()) {
       return TFSBundle.message("destination.path.is.not.a.file");
     }

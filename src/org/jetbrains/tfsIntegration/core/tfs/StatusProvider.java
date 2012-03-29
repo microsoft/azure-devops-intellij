@@ -28,6 +28,7 @@ import org.jetbrains.tfsIntegration.core.TFSProgressUtil;
 import org.jetbrains.tfsIntegration.core.TFSVcs;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
+import java.io.File;
 import java.util.*;
 
 // Note: if item is renamed (moved), same local item and pending change reported by server for source and target names
@@ -235,7 +236,8 @@ public class StatusProvider {
   }
 
   private static boolean equals(FilePath path1, String path2) {
-    return path1.getIOFile().getPath().equals(path2);
+    // compare regarding file system case sensitivity
+    return path1.getIOFile().equals(new File(path2));
   }
 
 }
