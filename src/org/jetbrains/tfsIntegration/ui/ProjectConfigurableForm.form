@@ -47,7 +47,7 @@
                 <properties>
                   <enabled value="true"/>
                   <selected value="false"/>
-                  <text value="&amp;Use IntelliJ IDEA HTTP Proxy settings for TFS"/>
+                  <text value="&amp;Use HTTP Proxy settings"/>
                 </properties>
               </component>
             </children>
