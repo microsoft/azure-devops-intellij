@@ -30,7 +30,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.AnnotationBuilder;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -97,14 +96,14 @@ public class TFSAnnotationProvider implements AnnotationProvider {
           final VersionSpecBase versionSpec = changeset == CURRENT_CHANGESET
                                               ? new WorkspaceVersionSpec(workspace.getName(), workspace.getOwnerName())
                                               : new ChangesetVersionSpec(changeset);
-          final List<VcsFileRevision> revisionList =
+          final List<TFSFileRevision> revisionList =
             TFSHistoryProvider.getRevisions(myVcs.getProject(), path2item.get(localPath).getSitem(), false, workspace, versionSpec);
           TFSProgressUtil.checkCanceled(progressIndicator);
           if (revisionList.isEmpty()) {
             return;
           }
 
-          result.set(annotate(workspace, localPath, path2item.get(localPath).getItemid(), revisionList));
+          result.set(annotate(workspace, localPath, revisionList));
         }
         catch (TfsException e) {
           exception.set(new VcsException(e));
@@ -131,20 +130,19 @@ public class TFSAnnotationProvider implements AnnotationProvider {
   @Nullable
   private FileAnnotation annotate(final WorkspaceInfo workspace,
                                   final FilePath localPath,
-                                  final int itemId,
-                                  final List<VcsFileRevision> revisions) throws VcsException {
+                                  final List<TFSFileRevision> revisions) throws VcsException {
 
     final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
 
     final AnnotationBuilder annotationBuilder = new AnnotationBuilder(revisions, new AnnotationBuilder.ContentProvider() {
-      public String getContent(final VcsFileRevision revision) throws VcsException {
+      public String getContent(final TFSFileRevision revision) throws VcsException {
         TFSProgressUtil.checkCanceled(progressIndicator);
-        int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
         //noinspection ConstantConditions
-        final String content = TFSContentRevision.create(myVcs.getProject(), workspace, localPath, changeset, itemId).getContent();
+        final String content = revision.createContentRevision().getContent();
         if (content == null) {
           final String errorMessage =
-            MessageFormat.format("Cannot load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(), changeset);
+            MessageFormat.format("Cannot load content for file ''{0}'', rev. {1}", localPath.getPresentableUrl(),
+                                 revision.getRevisionNumber().getValue());
           throw new VcsException(errorMessage);
         }
         return content;

@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.util.diff.Diff;
 import com.intellij.util.diff.FilesTooBigForDiffException;
+import org.jetbrains.tfsIntegration.core.TFSFileRevision;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,31 +30,31 @@ import java.util.List;
 public class AnnotationBuilder {
 
   public interface ContentProvider {
-    String getContent(VcsFileRevision revision) throws VcsException;
+    String getContent(TFSFileRevision revision) throws VcsException;
   }
 
   private final String myAnnotatedContent;
   private final VcsFileRevision[] myLineRevisions;
 
   // index of the stored record is the line number in the old revision of the file (which changes while we analyse different revisions),
-  // stored Integer is the corresponding line number in the revision which is being annotated. It is in range [0..myLineRevisions.sise() - 1]
+  // stored Integer is the corresponding line number in the revision which is being annotated. It is in range [0..myLineRevisions.size() - 1]
   // and may be null if this line in old file does not appear in annotated file.
   private final List<Integer> myLineNumbers;
 
   /**
    * @param revisions       sorted list containing revisions of the annotated file.
-   *                        First element of the list (with zero index) must contatin revision which is being annotated,
+   *                        First element of the list (with zero index) must contain revision which is being annotated,
    *                        other list elements (if any) must give all file revisions which are older than the annotated one.
-   * @param contentProvider delegate providing file content. {@link ContentProvider#getContent(VcsFileRevision)} method of provided object
+   * @param contentProvider delegate providing file content. {@link ContentProvider#getContent(TFSFileRevision)} method of provided object
    *                        is called only for specified <code>revisions</code>
    */
-  public AnnotationBuilder(List<VcsFileRevision> revisions, ContentProvider contentProvider) throws VcsException {
+  public AnnotationBuilder(List<TFSFileRevision> revisions, ContentProvider contentProvider) throws VcsException {
     if (revisions == null || revisions.size() < 1) {
       throw new IllegalArgumentException();
     }
 
-    final Iterator<VcsFileRevision> iterator = revisions.iterator();
-    VcsFileRevision revision = iterator.next();
+    final Iterator<TFSFileRevision> iterator = revisions.iterator();
+    TFSFileRevision revision = iterator.next();
     myAnnotatedContent = contentProvider.getContent(revision);
     String[] lines = splitLines(myAnnotatedContent);
 
@@ -64,7 +65,7 @@ public class AnnotationBuilder {
     }
 
     while (iterator.hasNext()) {
-      final VcsFileRevision previousRevision = iterator.next();
+      final TFSFileRevision previousRevision = iterator.next();
       final String previousContent = contentProvider.getContent(previousRevision);
       final String[] previousLines = splitLines(previousContent);
       final Diff.Change change;
@@ -145,6 +146,7 @@ public class AnnotationBuilder {
     }
   }
 
+  // TODO replace this with utility method
   private static String[] splitLines(String string) {
     string = StreamUtil.convertSeparators(string);
 

@@ -75,7 +75,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
         return null;
       }
 
-      final List<VcsFileRevision> revisions =
+      final List<TFSFileRevision> revisions =
         getRevisions(myProject, workspaceAndItem.second.getSitem(), filePath.isDirectory(), workspaceAndItem.first,
                      LatestVersionSpec.INSTANCE);
       if (revisions.isEmpty()) {
@@ -90,7 +90,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   }
 
   private static VcsAbstractHistorySession createSession(final Pair<WorkspaceInfo, ExtendedItem> workspaceAndItem,
-                                                         final List<VcsFileRevision> revisions) {
+                                                         final List<? extends VcsFileRevision> revisions) {
     return new VcsAbstractHistorySession(revisions) {
       public VcsRevisionNumber calcCurrentRevisionNumber() {
         return TfsUtil.getCurrentRevisionNumber(workspaceAndItem.second);
@@ -118,7 +118,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     partner.reportCreatedEmptySession((VcsAbstractHistorySession)session);
   }
 
-  public static List<VcsFileRevision> getRevisions(final Project project,
+  public static List<TFSFileRevision> getRevisions(final Project project,
                                                    final String serverPath,
                                                    final boolean isDirectory,
                                                    WorkspaceInfo workspace,
@@ -127,7 +127,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
       workspace.getServer().getVCS().queryHistory(workspace, serverPath, isDirectory, null, new ChangesetVersionSpec(1), versionTo, project,
                                                   TFSBundle.message("loading.item"));
 
-    List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>(changesets.size());
+    List<TFSFileRevision> revisions = new ArrayList<TFSFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {
       final Item item = changeset.getChanges().getChange()[0].getItem();
       revisions.add(

@@ -54,7 +54,7 @@ public class TFSFileRevision implements VcsFileRevision {
     myItemId = itemId;
   }
 
-  public VcsRevisionNumber getRevisionNumber() {
+  public VcsRevisionNumber.Int getRevisionNumber() {
     return new VcsRevisionNumber.Int(myChangeset);
   }
 
@@ -82,13 +82,8 @@ public class TFSFileRevision implements VcsFileRevision {
   public byte[] loadContent() throws IOException, VcsException {
     // TODO: encoding
     final String content;
-    try {
-      content = TFSContentRevision.create(myProject, myWorkspace, myChangeset, myItemId).getContent();
-      myContent = (content != null) ? content.getBytes() : null;
-    }
-    catch (TfsException e) {
-      throw new VcsException("Cannot get revision content", e);
-    }
+    content = createContentRevision().getContent();
+    myContent = (content != null) ? content.getBytes() : null;
     return myContent;
   }
 
@@ -96,5 +91,12 @@ public class TFSFileRevision implements VcsFileRevision {
     return myContent;
   }
 
-
+  public TFSContentRevision createContentRevision() throws VcsException {
+    try {
+      return TFSContentRevision.create(myProject, myWorkspace, myChangeset, myItemId);
+    }
+    catch (TfsException e) {
+      throw new VcsException("Cannot get revision content", e);
+    }
+  }
 }
