@@ -78,7 +78,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
                     targetServerPath, workspace.getName());
           descriptor.setDescription(message);
 
-          VirtualFile selectedFile = FileChooser.chooseFile(project, descriptor, null);
+          VirtualFile selectedFile = FileChooser.chooseFile(descriptor, project, null);
           if (selectedFile == null) {
             return;
           }
