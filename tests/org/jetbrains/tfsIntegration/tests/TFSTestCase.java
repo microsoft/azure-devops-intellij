@@ -533,7 +533,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     refreshAll();
   }
 
-  protected VirtualFile createFileInCommand(final VirtualFile parent, final String name, @Nullable final String content) {
+  public VirtualFile createFileInCommand(final VirtualFile parent, final String name, @Nullable final String content) {
     final VirtualFile result = super.createFileInCommand(parent, name, content);
     assertFile(result, content, true);
     refreshAll();
@@ -562,7 +562,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     return createDirInCommand(path.getParentPath(), path.getName());
   }
 
-  protected VirtualFile createDirInCommand(final VirtualFile parent, final String name) {
+  public VirtualFile createDirInCommand(final VirtualFile parent, final String name) {
     return createDirInCommand(parent, name, false);
   }
 
