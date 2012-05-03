@@ -16,10 +16,8 @@
 
 package org.jetbrains.tfsIntegration.core;
 
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.*;
+import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +32,7 @@ import java.util.Map;
 @State(
   name = "TFS",
   storages = {@Storage(
-    file = "$WORKSPACE_FILE$")})
+    file = StoragePathMacros.WORKSPACE_FILE)})
 public class TFSProjectConfiguration implements ProjectComponent, PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
 
   @NonNls public static final String COMPONENT_NAME = "TFSProjectConfiguration";
