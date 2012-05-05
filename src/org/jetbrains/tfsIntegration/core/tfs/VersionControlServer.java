@@ -940,7 +940,7 @@ public class VersionControlServer {
         param.setForce(true);
         param.setNoGet(false);
         ArrayOfArrayOfGetOperation response = myBeans.getRepositoryStub(credentials, pi).get(param).getGetResult();
-        TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length == items.size());
+        TFSVcs.assertTrue(response.getArrayOfGetOperation() != null && response.getArrayOfGetOperation().length >= items.size());
 
         List<GetOperation> results = new ArrayList<GetOperation>();
         for (ArrayOfGetOperation arrayOfGetOperation : response.getArrayOfGetOperation()) {
