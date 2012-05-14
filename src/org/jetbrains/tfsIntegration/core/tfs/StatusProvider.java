@@ -236,6 +236,9 @@ public class StatusProvider {
   }
 
   private static boolean equals(FilePath path1, String path2) {
+    if (path2 == null) {
+      return path1 == null;
+    }
     // compare regarding file system case sensitivity
     return path1.getIOFile().equals(new File(path2));
   }
