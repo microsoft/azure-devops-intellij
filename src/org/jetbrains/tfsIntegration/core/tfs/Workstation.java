@@ -49,13 +49,15 @@ public class Workstation {
   @NonNls private static final String CACHE_FILE_WINDOWS =
     "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
 
-  @NonNls private static final String CACHE_FILE_LINUX = "tfs-servers.xml";
+  @NonNls private static final String CACHE_FILE_LINUX_MAC = "tfs-servers.xml";
 
   private static final Logger LOG = Logger.getInstance(Workstation.class.getName());
 
   private final List<ServerInfo> myServerInfos;
 
   private @Nullable Ref<FilePath> myDuplicateMappedPath;
+
+  private static String ourComputerName;
 
   private Workstation() {
     myServerInfos = loadCache();
@@ -143,11 +145,10 @@ public class Workstation {
 
     final File cacheFile;
     if (SystemInfo.isWindows) {
-      //noinspection HardCodedStringLiteral
       cacheFile = new File(SystemProperties.getUserHome(), CACHE_FILE_WINDOWS);
     }
     else {
-      cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX);
+      cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX_MAC);
     }
     return (cacheFile.exists() || !existingOnly) ? cacheFile : null;
   }
@@ -228,15 +229,29 @@ public class Workstation {
     update();
   }
 
-  public static String getComputerName() {
-    try {
-      InetAddress address = InetAddress.getLocalHost();
-      return address.getHostName();
+  public synchronized static String getComputerName() {
+    if (ourComputerName == null) {
+      try {
+        InetAddress address = InetAddress.getLocalHost();
+        String hostName = address.getHostName();
+
+        // Ideally, we should return an equivalent of .NET's Environment.MachineName which
+        // "Gets the NetBIOS name of this local computer."
+        // (see http://msdn.microsoft.com/en-us/library/system.environment.machinename.aspx)
+        // All we can do is just strip DNS suffix
+
+        int i = hostName.indexOf('.');
+        if (i != -1) {
+          hostName = hostName.substring(0, i);
+        }
+        ourComputerName = hostName;
+      }
+      catch (UnknownHostException e) {
+        // must never happen
+        throw new RuntimeException("Cannot retrieve host name.");
+      }
     }
-    catch (UnknownHostException e) {
-      // must never happen
-      throw new RuntimeException("Cannot retrieve host name.");
-    }
+    return ourComputerName;
   }
 
   public Collection<WorkspaceInfo> findWorkspacesCached(final @NotNull FilePath localPath, boolean considerChildMappings) {
@@ -246,7 +261,7 @@ public class Workstation {
       if (workspace.hasMappingCached(localPath, considerChildMappings)) {
         result.add(workspace);
         if (!considerChildMappings) {
-          // optmimization: same local path can't be mapped in different workspaces, so don't process other workspaces
+          // optimization: same local path can't be mapped in different workspaces, so don't process other workspaces
           break;
         }
       }
