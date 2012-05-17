@@ -68,6 +68,9 @@ public class WebServiceHelper {
 
   public static final String USE_NATIVE_CREDENTIALS = WebServiceHelper.class.getName() + ".overrideCredentials";
 
+  @SuppressWarnings("UseOfArchaicSystemPropertyAccessors")
+  private static final int SOCKET_TIMEOUT = Integer.getInteger("org.jetbrains.tfsIntegration.socketTimeout", 30000);
+
   static {
     // keep NTLM scheme first
     AuthPolicy.unregisterAuthScheme(AuthPolicy.NTLM);
@@ -101,8 +104,7 @@ public class WebServiceHelper {
                              final HttpClient httpClient)
     throws TfsException, IOException {
     TFSVcs.assertTrue(downloadUrl != null);
-    setCredentials(httpClient, credentials, serverUri);
-    setProxy(httpClient);
+    setupHttpClient(credentials, serverUri, httpClient);
 
     HttpMethod method = new GetMethod(downloadUrl);
     try {
@@ -130,8 +132,7 @@ public class WebServiceHelper {
                               URI serverUri,
                               final HttpClient httpClient)
     throws IOException, TfsException {
-    setCredentials(httpClient, credentials, serverUri);
-    setProxy(httpClient);
+    setupHttpClient(credentials, serverUri, httpClient);
 
     PostMethod method = new PostMethod(uploadUrl);
     try {
@@ -188,12 +189,19 @@ public class WebServiceHelper {
     }
   }
 
+  private static void setupHttpClient(Credentials credentials, URI serverUri, HttpClient httpClient) {
+    setCredentials(httpClient, credentials, serverUri);
+    setProxy(httpClient);
+    httpClient.getParams().setSoTimeout(SOCKET_TIMEOUT);
+  }
+
   public static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
     Options options = stub._getServiceClient().getOptions();
 
     // http params
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
     options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
+    options.setProperty(HTTPConstants.SO_TIMEOUT, SOCKET_TIMEOUT);
 
     // credentials
     HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
