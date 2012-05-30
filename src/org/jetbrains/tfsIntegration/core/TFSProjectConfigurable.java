@@ -43,11 +43,6 @@ public class TFSProjectConfigurable implements Configurable {
     return null;
   }
 
-  @Nullable
-  public Icon getIcon() {
-    return null;
-  }
-
   @NonNls
   public String getHelpTopic() {
     return "project.propVCSSupport.VCSs.TFS";

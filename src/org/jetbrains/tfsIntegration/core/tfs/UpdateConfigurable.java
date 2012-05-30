@@ -55,10 +55,6 @@ public class UpdateConfigurable implements Configurable {
     return "Update Project";
   }
 
-  public Icon getIcon() {
-    return null;
-  }
-
   public JComponent createComponent() {
     myUpdateSettingsForm = new UpdateSettingsForm(myProject, getDisplayName(), myWorkspaceSettings);
     return myUpdateSettingsForm.getPanel();
