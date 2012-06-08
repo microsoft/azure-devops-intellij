@@ -39,18 +39,7 @@
           <root url="jar://$MODULE_DIR$/lib/axiom-api-1.2.8.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES>
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-tests/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-api/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-integration/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-impl/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-dom/src/main/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-api/src/main/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-dom/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-c14n/src/main/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-c14n/src/test/java" />
-          <root url="file://C:/Programs/axiom-1.2.8/src/modules/axiom-impl/src/main/java" />
-        </SOURCES>
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
