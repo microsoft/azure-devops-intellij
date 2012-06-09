@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.VersionControlLabel;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +32,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.EventListener;
@@ -65,15 +65,16 @@ public class SelectLabelForm {
       }
     });
 
-    myLabelsTable.addMouseListener(new MouseAdapter() {
-      public void mouseClicked(final MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          if (isLabelSelected()) {
-            dialog.close(DialogWrapper.OK_EXIT_CODE);
-          }
+    new DoubleClickListener() {
+      @Override
+      protected boolean onDoubleClick(MouseEvent e) {
+        if (isLabelSelected()) {
+          dialog.close(DialogWrapper.OK_EXIT_CODE);
+          return true;
         }
+        return false;
       }
-    });
+    }.installOn(myLabelsTable);
 
     myFindButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {

@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.EventDispatcher;
 import com.intellij.util.ui.ColumnInfo;
@@ -30,7 +31,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.EventListener;
 import java.util.List;
@@ -53,17 +53,17 @@ public class OverridePolicyWarningsForm {
     myIconLabel.setIcon(Messages.getWarningIcon());
 
     myWarningsTable.setTableHeader(null);
-    myWarningsTable.addMouseListener(new MouseAdapter() {
+    new DoubleClickListener() {
       @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          final PolicyFailure failure = myWarningsTable.getSelectedObject();
-          if (failure != null) {
-            failure.activate(project);
-          }
+      protected boolean onDoubleClick(MouseEvent e) {
+        final PolicyFailure failure = myWarningsTable.getSelectedObject();
+        if (failure != null) {
+          failure.activate(project);
+          return true;
         }
+        return false;
       }
-    });
+    }.installOn(myWarningsTable);
 
     myWarningsTable.setModelAndUpdateColumns(
       new ListTableModel<PolicyFailure>(new ColumnInfo[]{CheckinParametersForm.WARNING_COLUMN_INFO}, failures, -1));

@@ -25,6 +25,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.ui.ColumnInfo;
@@ -50,7 +51,6 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -191,17 +191,17 @@ public class CheckinParametersForm {
     myWarningsTable.setModelAndUpdateColumns(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
 
     myWarningsTable.setTableHeader(null);
-    myWarningsTable.addMouseListener(new MouseAdapter() {
+    new DoubleClickListener() {
       @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          final PolicyFailure failure = myWarningsTable.getSelectedObject();
-          if (failure != null) {
-            failure.activate(myProject);
-          }
+      protected boolean onDoubleClick(MouseEvent e) {
+        final PolicyFailure failure = myWarningsTable.getSelectedObject();
+        if (failure != null) {
+          failure.activate(myProject);
         }
+        return true;
       }
-    });
+    }.installOn(myWarningsTable);
+
 
     myEvaluateButton.setEnabled(myState.evaluationEnabled() && myState.getPoliciesLoadError() == null);
 

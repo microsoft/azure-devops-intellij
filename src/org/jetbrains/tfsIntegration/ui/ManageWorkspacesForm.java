@@ -20,6 +20,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.ui.ClickListener;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Annotation;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
@@ -47,7 +49,9 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -128,14 +132,15 @@ public class ManageWorkspacesForm {
     }
   };
 
-  private final MouseListener myMouseListener = new MouseAdapter() {
-    public void mouseClicked(final MouseEvent e) {
-      if (e.getClickCount() == 2) {
-        final WorkspaceInfo workspace = getSelectedWorkspace();
-        if (workspace != null) {
-          editWorkspace(workspace);
-        }
+  private final ClickListener myClickListener = new DoubleClickListener() {
+    @Override
+    protected boolean onDoubleClick(MouseEvent event) {
+      final WorkspaceInfo workspace = getSelectedWorkspace();
+      if (workspace != null) {
+        editWorkspace(workspace);
+        return true;
       }
+      return false;
     }
   };
 
@@ -296,8 +301,8 @@ public class ManageWorkspacesForm {
     myTable.expandAll();
     myTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     myTable.getSelectionModel().addListSelectionListener(mySelectionListener);
-    myTable.removeMouseListener(myMouseListener);
-    myTable.addMouseListener(myMouseListener);
+    myClickListener.uninstall(myTable);
+    myClickListener.installOn(myTable);
   }
 
   private void updateButtons() {

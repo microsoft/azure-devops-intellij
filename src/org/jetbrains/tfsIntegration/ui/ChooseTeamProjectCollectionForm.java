@@ -1,5 +1,6 @@
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.EventDispatcher;
@@ -17,7 +18,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 
@@ -74,14 +74,13 @@ public class ChooseTeamProjectCollectionForm {
       }
     });
 
-    myTable.addMouseListener(new MouseAdapter() {
+    new DoubleClickListener() {
       @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          selected();
-        }
+      protected boolean onDoubleClick(MouseEvent e) {
+        selected();
+        return true;
       }
-    });
+    }.installOn(myTable);
 
     myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
 

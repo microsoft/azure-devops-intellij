@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ui.CollectionListModel;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.util.EventDispatcher;
 import org.jetbrains.tfsIntegration.checkin.PolicyBase;
 
@@ -24,7 +25,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.EventListener;
 import java.util.List;
@@ -63,16 +63,16 @@ public class ChooseCheckinPolicyForm {
       }
     });
 
-    myPoliciesList.addMouseListener(new MouseAdapter() {
+    new DoubleClickListener() {
       @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          if (getSelectedPolicy() != null) {
-            myEventDispatcher.getMulticaster().close();
-          }
+      protected boolean onDoubleClick(MouseEvent e) {
+        if (getSelectedPolicy() != null) {
+          myEventDispatcher.getMulticaster().close();
+          return true;
         }
+        return false;
       }
-    });
+    }.installOn(myPoliciesList);
 
     myDescriptionArea.setWrapStyleWord(true);
   }

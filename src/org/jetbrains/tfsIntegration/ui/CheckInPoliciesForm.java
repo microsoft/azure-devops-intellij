@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
+import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.ui.ColumnInfo;
@@ -40,7 +41,6 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
 import java.util.*;
@@ -234,17 +234,17 @@ public class CheckInPoliciesForm {
       }
     });
 
-    myPoliciesTable.addMouseListener(new MouseAdapter() {
+    new DoubleClickListener() {
       @Override
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
-          if (descriptor != null) {
-            editPolicy(descriptor);
-          }
+      protected boolean onDoubleClick(MouseEvent e) {
+        final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
+        if (descriptor != null) {
+          editPolicy(descriptor);
         }
+        return true;
       }
-    });
+    }.installOn(myPoliciesTable);
+
 
     myTeampriseCheckBox.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
