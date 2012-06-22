@@ -20,7 +20,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.ui.ClickListener;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Annotation;
@@ -132,19 +131,6 @@ public class ManageWorkspacesForm {
     }
   };
 
-  private final ClickListener myClickListener = new DoubleClickListener() {
-    @Override
-    protected boolean onDoubleClick(MouseEvent event) {
-      final WorkspaceInfo workspace = getSelectedWorkspace();
-      if (workspace != null) {
-        editWorkspace(workspace);
-        return true;
-      }
-      return false;
-    }
-  };
-
-
   private final ContentProvider<Object> myContentProvider = new ContentProvider<Object>() {
 
     public Collection<?> getRoots() {
@@ -254,7 +240,19 @@ public class ManageWorkspacesForm {
 
   private void createUIComponents() {
     myTable = new CustomTreeTable<Object>(new CellRendererImpl(), false, true);
-    configureTable();
+    myTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+    new DoubleClickListener() {
+      @Override
+      protected boolean onDoubleClick(MouseEvent event) {
+        final WorkspaceInfo workspace = getSelectedWorkspace();
+        if (workspace != null) {
+          editWorkspace(workspace);
+          return true;
+        }
+        return false;
+      }
+    }.installOn(myTable);
   }
 
   public void setShowWorkspaces(final boolean showWorkspaces) {
@@ -264,13 +262,17 @@ public class ManageWorkspacesForm {
     myTitleLabel.setText(myShowWorkspaces ? "Team servers and workspaces:" : "Team servers:");
     final List<TreeTableColumn<Object>> columns =
       myShowWorkspaces ? Arrays.asList(COLUMN_SERVER_WORKSPACE, COLUMN_COMMENT) : Collections.singletonList(COLUMN_SERVER);
+
     myTable.initialize(columns, myContentProvider);
-    configureTable();
+    myTable.getSelectionModel().addListSelectionListener(mySelectionListener);
+    myTable.expandAll();
   }
 
   private void updateControls(Object selectedServerOrWorkspace) {
     myTable.updateContent();
-    configureTable();
+    myTable.getSelectionModel().addListSelectionListener(mySelectionListener);
+    myTable.expandAll();
+
     Object newSelection = null;
     for (int i = 0; i < myTable.getModel().getRowCount(); i++) {
       Object o = ((DefaultMutableTreeNode)myTable.getModel().getValueAt(i, 0)).getUserObject();
@@ -295,14 +297,6 @@ public class ManageWorkspacesForm {
       }
     }
     myTable.select(newSelection);
-  }
-
-  private void configureTable() {
-    myTable.expandAll();
-    myTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    myTable.getSelectionModel().addListSelectionListener(mySelectionListener);
-    myClickListener.uninstall(myTable);
-    myClickListener.installOn(myTable);
   }
 
   private void updateButtons() {
