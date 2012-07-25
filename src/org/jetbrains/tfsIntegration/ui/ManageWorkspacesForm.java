@@ -116,7 +116,6 @@ public class ManageWorkspacesForm {
   private JButton myEditWorkspaceButton;
   private JButton myDeleteWorkspaceButton;
   private CustomTreeTable<Object> myTable;
-  private JLabel myTitleLabel;
   private JPanel myWorkspacesPanel;
   private JButton myCheckInPoliciesButton;
   private JButton myReloadWorkspacesButton;
@@ -259,7 +258,6 @@ public class ManageWorkspacesForm {
     myShowWorkspaces = showWorkspaces;
     myWorkspacesPanel.setVisible(myShowWorkspaces);
     myReloadWorkspacesButton.setVisible(myShowWorkspaces);
-    myTitleLabel.setText(myShowWorkspaces ? "Team servers and workspaces:" : "Team servers:");
     final List<TreeTableColumn<Object>> columns =
       myShowWorkspaces ? Arrays.asList(COLUMN_SERVER_WORKSPACE, COLUMN_COMMENT) : Collections.singletonList(COLUMN_SERVER);
 
