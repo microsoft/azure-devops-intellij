@@ -142,4 +142,8 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     return true;
   }
 
+  @Override
+  public DiffFromHistoryHandler getHistoryDiffHandler() {
+    return null;
+  }
 }
