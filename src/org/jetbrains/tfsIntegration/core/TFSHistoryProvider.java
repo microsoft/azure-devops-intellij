@@ -22,6 +22,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Changeset;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
@@ -145,5 +146,10 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
   @Override
   public DiffFromHistoryHandler getHistoryDiffHandler() {
     return null;
+  }
+
+  @Override
+  public boolean canShowHistoryFor(@NotNull VirtualFile file) {
+    return true;
   }
 }
