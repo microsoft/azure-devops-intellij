@@ -140,6 +140,11 @@ public class TFSChangeList implements CommittedChangeList {
     return getChanges();
   }
 
+  @Override
+  public boolean isModifiable() {
+    return true;
+  }
+
   @NotNull
   public String getName() {
     return myComment;
