@@ -30,6 +30,7 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.auth.*;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
 import java.io.IOException;
 
@@ -357,7 +358,7 @@ public class NTLM2Scheme extends NTLMScheme {
   }
 
   protected String getType1MessageResponse(NTCredentials ntcredentials, HttpMethodParams params) {
-    Type1Message t1m = new Type1Message(MESSAGE_1_DEFAULT_FLAGS, ntcredentials.getDomain(), ntcredentials.getHost());
+    Type1Message t1m = new Type1Message(MESSAGE_1_DEFAULT_FLAGS, ntcredentials.getDomain(), Workstation.getComputerName());
     return Base64.encode(t1m.toByteArray());
   }
 
@@ -370,8 +371,8 @@ public class NTLM2Scheme extends NTLMScheme {
       throw new AuthenticationException("Invalid Type2 message", ex);
     }
     Type3Message t3m =
-      new Type3Message(t2m, ntcredentials.getPassword(), ntcredentials.getDomain(), ntcredentials.getUserName(), ntcredentials.getHost(),
-                       0);
+      new Type3Message(t2m, ntcredentials.getPassword(), ntcredentials.getDomain(), ntcredentials.getUserName(),
+                       Workstation.getComputerName(), 0);
     return Base64.encode(t3m.toByteArray());
   }
 
