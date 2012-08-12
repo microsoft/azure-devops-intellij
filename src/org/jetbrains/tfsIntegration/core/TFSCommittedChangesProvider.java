@@ -66,6 +66,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     return new TFSVersionFilterComponent(showDateFilter);
   }
 
+  @Nullable
   public VcsCommittedListsZipper getZipper() {
     return null;
   }
