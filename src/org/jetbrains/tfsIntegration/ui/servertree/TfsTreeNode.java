@@ -78,15 +78,14 @@ public class TfsTreeNode extends SimpleNode {
     if (isRoot()) {
       //noinspection ConstantConditions
       presentation.addText(myTreeContext.myServer.getPresentableUri(), getPlainAttributes());
-      presentation.setIcons(UiConstants.ICON_TEAM_SERVER);
+      presentation.setIcon(UiConstants.ICON_TEAM_SERVER);
     }
     else {
       if (isDirectory()) {
-        presentation.setOpenIcon(PlatformIcons.DIRECTORY_OPEN_ICON);
-        presentation.setClosedIcon(PlatformIcons.DIRECTORY_CLOSED_ICON);
+        presentation.setIcon(PlatformIcons.DIRECTORY_CLOSED_ICON);
       }
       else {
-        presentation.setIcons(FileTypeManager.getInstance().getFileTypeByFileName(getFileName()).getIcon());
+        presentation.setIcon(FileTypeManager.getInstance().getFileTypeByFileName(getFileName()).getIcon());
       }
       SimpleTextAttributes attrs;
       if (myVirtual) {

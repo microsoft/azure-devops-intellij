@@ -16,7 +16,7 @@ public class TfsErrorTreeNode extends SimpleNode {
   protected void update(PresentationData presentation) {
     super.update(presentation);
     presentation.addText(myMessage, getErrorAttributes());
-    presentation.setIcons(PlatformIcons.ERROR_INTRODUCTION_ICON);
+    presentation.setIcon(PlatformIcons.ERROR_INTRODUCTION_ICON);
   }
 
   @Override
