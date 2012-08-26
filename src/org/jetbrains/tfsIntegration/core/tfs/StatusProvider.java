@@ -18,7 +18,9 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
@@ -129,12 +131,13 @@ public class StatusProvider {
 
   private static void addExistingFilesRecursively(final @NotNull Collection<FilePath> result, final @Nullable VirtualFile root) {
     if (root != null && root.exists()) {
-      result.add(TfsFileUtil.getFilePath(root));
-      if (root.isDirectory()) {
-        for (VirtualFile child : root.getChildren()) {
-          addExistingFilesRecursively(result, child);
+      VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor() {
+        @Override
+        public boolean visitFile(@NotNull VirtualFile file) {
+          result.add(TfsFileUtil.getFilePath(file));
+          return true;
         }
-      }
+      });
     }
   }
 
