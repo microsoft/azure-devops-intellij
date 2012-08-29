@@ -65,7 +65,7 @@ public class TfsTreeBuilder extends AbstractTreeBuilder {
   }
 
   @Override
-  protected void runBackgroundLoading(Runnable runnable) {
+  protected void runBackgroundLoading(@NotNull Runnable runnable) {
     if (isDisposed()) return;
     runnable.run();
   }
