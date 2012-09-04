@@ -16,7 +16,6 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
-import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.NonNls;
 
 import javax.swing.*;
@@ -25,8 +24,4 @@ public interface UiConstants {
 
   @NonNls Icon ICON_FILE = UIManager.getIcon("Tree.leafIcon");
   @NonNls Icon ICON_FOLDER = UIManager.getIcon("Tree.closedIcon");
-  @NonNls Icon ICON_TEAM_SERVER = IconLoader.getIcon("/icons/teamserver.gif");
-
-
-
 }

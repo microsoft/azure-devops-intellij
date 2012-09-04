@@ -33,6 +33,7 @@ import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.ListTableModel;
 import com.intellij.util.ui.UIUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
+import icons.TFSIcons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
@@ -129,7 +130,7 @@ public class CheckinParametersForm {
         if (value instanceof ServerInfo) {
           label.setText(((ServerInfo)value).getPresentableUri());
         }
-        label.setIcon(UiConstants.ICON_TEAM_SERVER);
+        label.setIcon(TFSIcons.Teamserver);
         return label;
       }
     });
