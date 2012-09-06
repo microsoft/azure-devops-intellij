@@ -7,7 +7,7 @@
   <depends>com.intellij.modules.vcs</depends>
   <depends>com.intellij.modules.ultimate</depends>
 
-  <vendor logo="/general/ijLogo.png">JetBrains</vendor>
+  <vendor>JetBrains</vendor>
 
   <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
