@@ -19,7 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.ui.TitledSeparatorWithMnemonic;
+import com.intellij.ui.TitledSeparator;
 import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -35,7 +35,7 @@ public class AddItemForm implements Disposable {
   private JPanel myContentPane;
   private SelectRevisionForm mySelectRevisionForm;
   private TfsTreeForm myTreeForm;
-  private TitledSeparatorWithMnemonic myServerItemSeparator;
+  private TitledSeparator myServerItemSeparator;
 
   private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
