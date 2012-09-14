@@ -36,9 +36,9 @@ import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.vcs.AbstractJunitVcsTestCase;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
+import com.intellij.testFramework.vcs.AbstractJunitVcsTestCase;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
@@ -336,12 +336,12 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
       }
 
       @Override
-      public boolean isCheckCommitMessageSpelling() {
+      public boolean isCheckSpelling() {
         return false;
       }
 
       @Override
-      public void setCheckCommitMessageSpelling(boolean checkSpelling) {
+      public void setCheckSpelling(boolean checkSpelling) {
       }
     }, new PseudoMap<Object, Object>());
     ((CheckinChangeListSpecificComponent)panel).onChangeListSelected(new LocalChangeList() {
