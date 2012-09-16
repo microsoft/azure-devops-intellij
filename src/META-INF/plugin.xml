@@ -1,7 +1,8 @@
 <idea-plugin version="2">
   <id>TFS</id>
   <name>TFS Integration</name>
-  <version>1.0</version>
+  <version>999.999</version>
+  <idea-version since-build="122.0"/>
   <description>Integration with Team Foundation Server.</description>
   <category>VCS Integration</category>
   <depends>com.intellij.modules.vcs</depends>
