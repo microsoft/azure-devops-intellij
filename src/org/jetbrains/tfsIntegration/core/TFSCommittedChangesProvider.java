@@ -118,6 +118,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     return null;
   }
 
+  @Override
+  public boolean supportsIncomingChanges() {
+    return true;
+  }
+
   public void loadCommittedChanges(ChangeBrowserSettings settings,
                                    RepositoryLocation location,
                                    int maxCount,
