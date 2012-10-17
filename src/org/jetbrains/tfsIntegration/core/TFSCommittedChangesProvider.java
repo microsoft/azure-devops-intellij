@@ -31,6 +31,7 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.ChangesetVersionSpec;
@@ -58,6 +59,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     myVcs = TFSVcs.getInstance(myProject);
   }
 
+  @NotNull
   public ChangeBrowserSettings createDefaultSettings() {
     return new ChangeBrowserSettings();
   }
