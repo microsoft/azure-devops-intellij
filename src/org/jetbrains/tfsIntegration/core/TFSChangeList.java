@@ -145,6 +145,11 @@ public class TFSChangeList implements CommittedChangeList {
     return true;
   }
 
+  @Override
+  public void setDescription(String newMessage) {
+    myComment = newMessage;
+  }
+
   @NotNull
   public String getName() {
     return myComment;
