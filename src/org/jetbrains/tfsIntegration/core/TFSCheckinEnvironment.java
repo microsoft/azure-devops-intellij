@@ -261,7 +261,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
               // TODO if Rename, invalidate old and new items?
               final FilePath path = VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
               invalidateRoots.add(path);
-              if (changeType.contains(ChangeType_type0.Add)) {
+              if (changeType.contains(ChangeType_type0.Add) || changeType.contains(ChangeType_type0.Rename)) {
                 // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
                 final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myVcs.getProject()).getVcsRootFor(path);
                 if (vcsRoot != null) {
