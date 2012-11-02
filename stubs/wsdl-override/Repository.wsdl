@@ -33,6 +33,7 @@
           <s:enumeration value="Checkin" />
           <s:enumeration value="Local" />
           <s:enumeration value="Merge" />
+          <s:enumeration value="Unknown" />
         </s:restriction>
       </s:simpleType>
       <s:element name="AddConflictResponse">
@@ -77,9 +78,11 @@
           <s:element minOccurs="0" maxOccurs="1" name="Changes" type="tns:ArrayOfChange" />
         </s:all>
         <s:attribute name="cmtr" type="s:string" />
+        <s:attribute name="cmtrdisp" type="s:string" />
         <s:attribute name="date" type="s:dateTime" use="required" />
         <s:attribute name="cset" type="s:int" use="required" />
         <s:attribute name="owner" type="s:string" />
+        <s:attribute name="ownerdisp" type="s:string" />
       </s:complexType>
       <s:complexType name="CheckinNote">
         <s:sequence>
@@ -140,6 +143,7 @@
       <s:complexType name="Item">
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="Properties" type="tns:ArrayOfPropertyValue" />
+          <s:element minOccurs="0" maxOccurs="1" name="PropertyValues" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute default="0" name="cs" type="s:int" />
         <s:attribute name="date" type="s:dateTime" use="required" />
@@ -189,6 +193,7 @@
               <s:enumeration value="Lock" />
               <s:enumeration value="Rollback" />
               <s:enumeration value="SourceRename" />
+              <s:enumeration value="Property" />
             </s:restriction>
           </s:simpleType>
         </s:list>
@@ -254,6 +259,7 @@
         <s:attribute default="0" name="chgEx" type="s:int" />
         <s:attribute default="None" name="chg" type="tns:ChangeType" />
         <s:attribute name="user" type="s:string" />
+        <s:attribute name="userdisp" type="s:string" />
         <s:attribute name="cpp" type="s:string" />
         <s:attribute name="ws" type="s:string" />
       </s:complexType>
@@ -276,6 +282,7 @@
           <s:enumeration value="Lock" />
           <s:enumeration value="Rename" />
           <s:enumeration value="Undelete" />
+          <s:enumeration value="Property" />
         </s:restriction>
       </s:simpleType>
       <s:simpleType name="SeverityType">
@@ -287,6 +294,7 @@
       <s:complexType name="CheckinResult">
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="UndoneServerItems" type="tns:ArrayOfString" />
+          <s:element minOccurs="0" maxOccurs="1" name="LocalVersionUpdates" type="tns:ArrayOfGetOperation" />
           <s:element minOccurs="0" maxOccurs="1" name="ImplicitItems" type="tns:ArrayOfItem" />
         </s:sequence>
         <s:attribute name="cset" type="s:int" use="required" />
@@ -378,11 +386,17 @@
         <s:all>
           <s:element minOccurs="0" maxOccurs="1" name="Comment" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="Folders" type="tns:ArrayOfWorkingFolder" />
+          <s:element minOccurs="0" maxOccurs="1" name="OwnerAliases" type="tns:ArrayOfString" />
           <s:element minOccurs="1" maxOccurs="1" name="LastAccessDate" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" default="0" name="Options" type="s:int" />
         </s:all>
         <s:attribute name="computer" type="s:string" />
+        <!--[IntelliJ] made optional -->
+        <s:attribute name="islocal" type="s:boolean" use="optional" />
         <s:attribute name="name" type="s:string" />
         <s:attribute name="owner" type="s:string" />
+        <s:attribute name="ownerdisp" type="s:string" />
+        <s:attribute name="owneruniq" type="s:string" />
         <s:attribute default="0" name="permissions" type="s:int" />
         <s:attribute name="securitytoken" type="s:string" />
         <s:attribute name="ownertype" type="s:string" />
@@ -513,6 +527,8 @@
           <s:extension base="tns:VersionSpec">
             <s:attribute name="name" type="s:string" />
             <s:attribute name="owner" type="s:string" />
+            <s:attribute name="ownerUniq" type="s:string" />
+            <s:attribute name="ownerDisp" type="s:string" />
           </s:extension>
         </s:complexContent>
       </s:complexType>
@@ -550,8 +566,13 @@
         </s:sequence>
         <s:attribute name="computer" type="s:string" />
         <s:attribute name="owner" type="s:string" />
+        <s:attribute name="ownerdisp" type="s:string" />
+        <s:attribute name="owneruniq" type="s:string" />
+        <!--[IntelliJ] made optional -->
+        <s:attribute name="ownership" type="s:int" use="optional" />
         <s:attribute name="name" type="s:string" />
-        <s:attribute name="type" type="tns:PendingSetType" use="required" />
+        <s:attribute name="type" type="tns:PendingSetType" use="optional" />
+        <s:attribute name="signature" type="s1:guid" use="optional" />
       </s:complexType>
       <s:complexType name="ArrayOfPendingChange">
         <s:sequence>
@@ -561,6 +582,7 @@
       <s:complexType name="PendingChange">
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="MergeSources" type="tns:ArrayOfMergeSource" />
+          <s:element minOccurs="0" maxOccurs="1" name="PropertyValues" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute default="0" name="chgEx" type="s:int" />
         <s:attribute default="None" name="chg" type="tns:ChangeType" />
@@ -578,10 +600,13 @@
         <s:attribute default="0" name="sdi" type="s:int" />
         <s:attribute default="0" name="ver" type="s:int" />
         <s:attribute name="hash" type="s:base64Binary" />
+        <s:attribute default="-1" name="len" type="s:long" />
         <s:attribute name="uhash" type="s:base64Binary" />
         <s:attribute default="0" name="pcid" type="s:int" />
         <s:attribute name="durl" type="s:string" />
         <s:attribute name="shelvedurl" type="s:string" />
+        <!--[IntelliJ] made optional -->
+        <s:attribute name="ct" type="s:int" use="optional" />
       </s:complexType>
       <s:simpleType name="LockLevel">
         <s:restriction base="s:string">
@@ -641,13 +666,16 @@
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="HashValue" type="s:base64Binary" />
           <s:element minOccurs="0" maxOccurs="1" name="Properties" type="tns:ArrayOfPropertyValue" />
+          <s:element minOccurs="0" maxOccurs="1" name="PropertyValues" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute default="Any" name="type" type="tns:ItemType" />
         <s:attribute default="0" name="itemid" type="s:int" />
         <s:attribute name="slocal" type="s:string" />
         <s:attribute name="tlocal" type="s:string" />
         <s:attribute name="titem" type="s:string" />
+        <s:attribute name="sitem" type="s:string" />
         <s:attribute default="0" name="sver" type="s:int" />
+        <s:attribute default="-2" name="vrevto" type="s:int" />
         <s:attribute default="0" name="lver" type="s:int" />
         <s:attribute default="0" name="did" type="s:int" />
         <s:attribute default="0" name="chgEx" type="s:int" />
@@ -662,6 +690,8 @@
         <!--[IntelliJ] attribute made optional-->
         <s:attribute name="nmscnflct" type="s:unsignedByte" />
         <s:attribute name="durl" type="s:string" />
+        <s:attribute default="-2" name="enc" type="s:int" />
+        <s:attribute default="0001-01-01T00:00:00" name="vsd" type="s:dateTime" />
       </s:complexType>
       <s:complexType name="ArrayOfGetOperation">
         <s:sequence>
@@ -717,6 +747,8 @@
         <s:attribute name="date" type="s:dateTime" use="required" />
         <s:attribute name="name" type="s:string" />
         <s:attribute name="owner" type="s:string" />
+        <s:attribute name="ownerdisp" type="s:string" />
+        <s:attribute name="owneruniq" type="s:string" />
         <s:attribute name="scope" type="s:string" />
         <s:attribute name="lid" type="s:int" use="required" />
       </s:complexType>
@@ -784,6 +816,8 @@
         <s:attribute name="ysitem" type="s:string" />
         <s:attribute name="ysitemsrc" type="s:string" />
         <s:attribute name="yenc" type="s:int" use="required" />
+        <!--[IntelliJ] attribute made optional-->
+        <s:attribute name="yprop" type="s:int" />
         <s:attribute name="ytype" type="tns:ItemType" use="required" />
         <s:attribute name="yver" type="s:int" use="required" />
         <s:attribute name="yitemid" type="s:int" use="required" />
@@ -793,6 +827,8 @@
         <s:attribute name="ylmver" type="s:int" use="required" />
         <s:attribute name="bsitem" type="s:string" />
         <s:attribute name="benc" type="s:int" use="required" />
+        <!--[IntelliJ] attribute made optional-->
+        <s:attribute name="bprop" type="s:int" />
         <s:attribute name="bitemid" type="s:int" use="required" />
         <s:attribute name="bver" type="s:int" use="required" />
         <s:attribute name="bhash" type="s:base64Binary" />
@@ -804,14 +840,19 @@
         <s:attribute name="tver" type="s:int" use="required" />
         <s:attribute name="tsitem" type="s:string" />
         <s:attribute name="tenc" type="s:int" use="required" />
+        <!--[IntelliJ] attribute made optional-->
+        <s:attribute name="tprop" type="s:int" />
         <s:attribute name="thash" type="s:base64Binary" />
         <s:attribute name="tdid" type="s:int" use="required" />
         <s:attribute name="ttype" type="tns:ItemType" use="required" />
         <s:attribute name="tlmver" type="s:int" use="required" />
-        <!--[IntelliJ] attribute made optional-->
+        <!--[IntelliJ] attributes made optional-->
         <s:attribute name="tverf" type="s:int" />
+        <s:attribute name="isc" type="s:boolean" />
         <!--[IntelliJ] attribute made optional-->
         <s:attribute name="tctyp" type="s:int" />
+        <s:attribute name="tsn" type="s:string" />
+        <s:attribute name="tson" type="s:string" />
         <s:attribute name="srclitem" type="s:string" />
         <s:attribute name="tgtlitem" type="s:string" />
         <s:attribute name="ctype" type="tns:ConflictType" use="required" />
@@ -870,6 +911,7 @@
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="item" type="tns:ItemSpec" />
           <s:element minOccurs="0" maxOccurs="1" name="vspec" type="tns:VersionSpec" />
+          <s:element minOccurs="0" maxOccurs="1" name="Properties" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute default="None" name="req" type="tns:RequestType" />
         <s:attribute default="0" name="did" type="s:int" />
@@ -1115,6 +1157,7 @@
           <s:element minOccurs="0" maxOccurs="1" name="DenyInherited" type="tns:ArrayOfString" />
         </s:sequence>
         <s:attribute name="ident" type="s:string" />
+        <s:attribute name="disp" type="s:string" />
       </s:complexType>
       <s:element name="QueryGlobalPermissionsResponse">
         <s:complexType>
@@ -1241,6 +1284,7 @@
       <s:complexType name="ExtendedItem">
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" default="false" name="IsBranch" type="s:boolean" />
+          <s:element minOccurs="0" maxOccurs="1" name="PropertyValues" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute default="0" name="lver" type="s:int" />
         <s:attribute default="0" name="did" type="s:int" />
@@ -1256,6 +1300,7 @@
         <s:attribute default="false" name="ochg" type="s:boolean" />
         <s:attribute default="None" name="lock" type="tns:LockLevel" />
         <s:attribute name="lowner" type="s:string" />
+        <s:attribute name="lownerdisp" type="s:string" />
         <!--[IntelliJ] attribute made optional-->
         <s:attribute name="date" type="s:dateTime" />
       </s:complexType>
@@ -1341,6 +1386,7 @@
             <s:element minOccurs="0" maxOccurs="1" name="workspaceOwner" type="s:string" />
             <s:element minOccurs="0" maxOccurs="1" name="source" type="tns:ItemSpec" />
             <s:element minOccurs="0" maxOccurs="1" name="target" type="tns:ItemSpec" />
+            <s:element minOccurs="0" maxOccurs="1" name="options" type="s:int" />
           </s:sequence>
         </s:complexType>
       </s:element>
@@ -1515,10 +1561,13 @@
           <s:element minOccurs="0" maxOccurs="1" name="PolicyOverrideComment" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="CheckinNote" type="tns:CheckinNote" />
           <s:element minOccurs="0" maxOccurs="1" name="Links" type="tns:ArrayOfVersionControlLink" />
+          <s:element minOccurs="0" maxOccurs="1" name="Properties" type="tns:ArrayOfPropertyValue" />
         </s:sequence>
         <s:attribute name="date" type="s:dateTime" use="required" />
         <s:attribute name="name" type="s:string" />
         <s:attribute name="owner" type="s:string" />
+        <s:attribute name="ownerdisp" type="s:string" />
+        <s:attribute name="owneruniq" type="s:string" />
         <s:attribute default="false" name="ce" type="s:boolean" />
       </s:complexType>
       <s:complexType name="ArrayOfVersionControlLink">
@@ -1748,6 +1797,7 @@
               <s:element minOccurs="0" maxOccurs="1" name="Remove" type="tns:ArrayOfString" />
             </s:sequence>
             <s:attribute name="ident" type="s:string" />
+            <s:attribute name="disp" type="s:string" />
           </s:extension>
         </s:complexContent>
       </s:complexType>
