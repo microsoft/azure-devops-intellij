@@ -132,7 +132,8 @@ public class ResolveConflictHelper {
         try {
           TfsFileUtil.setReadOnly(vFile, false);
           resolved = ConflictsEnvironment.getContentMerger()
-            .mergeContent(conflict, contentTriplet, myProject, vFile, localName, new VcsRevisionNumber.Int(conflict.getTver()));
+            .mergeContent(conflict, contentTriplet, myProject, vFile, localName, new TfsRevisionNumber(conflict.getTver(),
+                                                                                                           conflict.getTitemid()));
         }
         catch (IOException e) {
           throw new VcsException(e);

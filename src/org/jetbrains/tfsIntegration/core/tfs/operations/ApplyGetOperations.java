@@ -444,7 +444,7 @@ public class ApplyGetOperations {
   private void addToGroup(String groupId, File file, GetOperation operation) {
     if (myUpdatedFiles != null) {
       int revisionNumber = operation.getSver() != Integer.MIN_VALUE ? operation.getSver() : 0;
-      myUpdatedFiles.getGroupById(groupId).add(file.getPath(), TFSVcs.getKey(), new VcsRevisionNumber.Int(revisionNumber));
+      myUpdatedFiles.getGroupById(groupId).add(file.getPath(), TFSVcs.getKey(), new TfsRevisionNumber(revisionNumber));
     }
   }
 

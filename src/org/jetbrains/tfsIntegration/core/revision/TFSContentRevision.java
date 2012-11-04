@@ -97,7 +97,7 @@ public abstract class TFSContentRevision implements ContentRevision {
 
       @NotNull
       public VcsRevisionNumber getRevisionNumber() {
-        return new VcsRevisionNumber.Int(changeset);
+        return new TfsRevisionNumber(changeset, itemId);
       }
     };
   }
@@ -128,7 +128,7 @@ public abstract class TFSContentRevision implements ContentRevision {
 
       @NotNull
       public VcsRevisionNumber getRevisionNumber() {
-        return new VcsRevisionNumber.Int(changeset);
+        return new TfsRevisionNumber(changeset, itemId);
       }
     };
   }
@@ -166,7 +166,7 @@ public abstract class TFSContentRevision implements ContentRevision {
 
       @NotNull
       public VcsRevisionNumber getRevisionNumber() {
-        return new VcsRevisionNumber.Int(changeset);
+        return new TfsRevisionNumber(changeset);
       }
 
       @NotNull

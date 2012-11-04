@@ -33,10 +33,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
-import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
-import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.Workstation;
+import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -68,9 +65,10 @@ public class TFSDiffProvider implements DiffProvider {
         if (workspaceAndItem == null || workspaceAndItem.second == null) {
           return null;
         }
-        final VcsRevisionNumber.Int intRevisionNumber = (VcsRevisionNumber.Int)vcsRevisionNumber;
-        return TFSContentRevision
-          .create(myProject, workspaceAndItem.first, intRevisionNumber.getValue(), workspaceAndItem.second.getItemid());
+        final TfsRevisionNumber revisionNumber = (TfsRevisionNumber)vcsRevisionNumber;
+        int itemId =
+          revisionNumber.getItemId() != TfsRevisionNumber.UNDEFINED_ID ? revisionNumber.getItemId() : workspaceAndItem.second.getItemid();
+        return TFSContentRevision.create(myProject, workspaceAndItem.first, revisionNumber.getValue(), itemId);
       }
       catch (TfsException e) {
         //noinspection ThrowableInstanceNeverThrown
@@ -104,7 +102,7 @@ public class TFSDiffProvider implements DiffProvider {
         .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
                    false, myProject, TFSBundle.message("loading.item"));
       if (item != null) {
-        VcsRevisionNumber.Int revisionNumber = new VcsRevisionNumber.Int(item.getCs());
+        VcsRevisionNumber.Int revisionNumber = new TfsRevisionNumber(item.getCs(), item.getItemid());
         return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE, false);
       }
       else {

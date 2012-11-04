@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
+import org.jetbrains.tfsIntegration.core.tfs.TfsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
 import javax.swing.*;
@@ -210,13 +211,7 @@ public class TFSVcs extends AbstractVcs {
 
   @Nullable
   public VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {
-    try {
-      int revisionNumber = Integer.parseInt(revisionNumberString);
-      return new VcsRevisionNumber.Int(revisionNumber);
-    }
-    catch (NumberFormatException e) {
-      return null;
-    }
+    return TfsRevisionNumber.tryParse(revisionNumberString);
   }
 
   @Nullable

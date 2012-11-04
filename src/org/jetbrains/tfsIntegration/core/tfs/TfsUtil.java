@@ -87,7 +87,7 @@ public class TfsUtil {
   }
 
   public static VcsRevisionNumber getCurrentRevisionNumber(final @NotNull ExtendedItem item) {
-    return item.getLver() != Integer.MIN_VALUE ? new VcsRevisionNumber.Int(item.getLver()) : VcsRevisionNumber.NULL;
+    return item.getLver() != Integer.MIN_VALUE ? new TfsRevisionNumber(item.getLver(), item.getItemid()) : VcsRevisionNumber.NULL;
   }
 
   public static VcsException collectExceptions(Collection<VcsException> exceptions) {

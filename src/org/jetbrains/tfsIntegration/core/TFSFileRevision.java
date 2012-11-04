@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
+import org.jetbrains.tfsIntegration.core.tfs.TfsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -55,7 +56,7 @@ public class TFSFileRevision implements VcsFileRevision {
   }
 
   public VcsRevisionNumber.Int getRevisionNumber() {
-    return new VcsRevisionNumber.Int(myChangeset);
+    return new TfsRevisionNumber(myChangeset, myItemId);
   }
 
   public String getBranchName() {
