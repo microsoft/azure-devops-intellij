@@ -52,21 +52,28 @@ public class NTLM2Scheme extends NTLMScheme {
   private static final Logger LOG = Logger.getInstance(NTLM2Scheme.class.getName());
 
   private static final int MESSAGE_1_DEFAULT_FLAGS;
+  private static final int MESSAGE_3_DEFAULT_FLAGS;
 
-    static {
-      int flags = Type1Message.getDefaultFlags();
-      final String flagsStr = System.getProperty("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message1flags");
-      if (flagsStr != null && flagsStr.startsWith("0x")) {
-        try {
-          int userFlags = Integer.parseInt(flagsStr.substring("0x".length()), 16);
-          flags |= userFlags;
-        }
-        catch (NumberFormatException ignored) {
-        }
+  static {
+    MESSAGE_1_DEFAULT_FLAGS =
+      Type1Message.getDefaultFlags() | readUserFlags("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message1flags");
+    LOG.info("Message 1 flags: 0x" + Integer.toString(MESSAGE_1_DEFAULT_FLAGS, 16));
+    MESSAGE_3_DEFAULT_FLAGS =
+      Type3Message.getDefaultFlags() | readUserFlags("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message3flags");
+    LOG.info("Message 3 flags: 0x" + Integer.toString(MESSAGE_3_DEFAULT_FLAGS, 16));
+  }
+
+  private static int readUserFlags(String key) {
+    final String flagsStr = System.getProperty(key);
+    if (flagsStr != null && flagsStr.startsWith("0x")) {
+      try {
+        return Integer.parseInt(flagsStr.substring("0x".length()), 16);
       }
-      MESSAGE_1_DEFAULT_FLAGS = flags;
-      LOG.info("Message 1 flags: 0x" + Integer.toString(MESSAGE_1_DEFAULT_FLAGS, 16));
+      catch (NumberFormatException ignored) {
+      }
     }
+    return 0;
+  }
 
   /** Log object for this class. */
     //private static final Logger LOG = Logger.getInstance(NTLM2Scheme.class.getName());
@@ -358,6 +365,7 @@ public class NTLM2Scheme extends NTLMScheme {
   }
 
   protected String getType1MessageResponse(NTCredentials ntcredentials, HttpMethodParams params) {
+    // we cannot put local computer name into credentials, as HttpMethodDirector.authenticateHost() expects it to be server's name
     Type1Message t1m = new Type1Message(MESSAGE_1_DEFAULT_FLAGS, ntcredentials.getDomain(), Workstation.getComputerName());
     return Base64.encode(t1m.toByteArray());
   }
@@ -372,7 +380,7 @@ public class NTLM2Scheme extends NTLMScheme {
     }
     Type3Message t3m =
       new Type3Message(t2m, ntcredentials.getPassword(), ntcredentials.getDomain(), ntcredentials.getUserName(),
-                       Workstation.getComputerName(), 0);
+                       Workstation.getComputerName(), MESSAGE_3_DEFAULT_FLAGS);
     return Base64.encode(t3m.toByteArray());
   }
 
