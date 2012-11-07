@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.TfsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
@@ -32,7 +33,7 @@ import java.util.Date;
 public class TFSFileRevision implements VcsFileRevision {
   private final Project myProject;
   private final Date myDate;
-  private byte[] myContent;
+  @Nullable private byte[] myContent;
   private final String myCommitMessage;
   private final String myAuthor;
   private final int myItemId;
@@ -81,13 +82,10 @@ public class TFSFileRevision implements VcsFileRevision {
   }
 
   public byte[] loadContent() throws IOException, VcsException {
-    // TODO: encoding
-    final String content;
-    content = createContentRevision().getContent();
-    myContent = (content != null) ? content.getBytes() : null;
-    return myContent;
+    return myContent = createContentRevision().doGetContent();
   }
 
+  @Nullable
   public byte[] getContent() throws IOException, VcsException {
     return myContent;
   }

@@ -25,5 +25,5 @@ public interface TFSContentStore {
 
   void saveContent(TfsFileUtil.ContentWriter contentWriter) throws TfsException, IOException;
 
-  String loadContent() throws TfsException, IOException;
+  byte[] loadContent() throws TfsException, IOException;
 }

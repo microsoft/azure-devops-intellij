@@ -18,13 +18,15 @@ package org.jetbrains.tfsIntegration.core.revision;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.io.StreamUtil;
-import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class TFSTmpFileStore implements TFSContentStore {
   @NonNls private static final String TMP_FILE_NAME = "idea_tfs";
@@ -69,12 +71,11 @@ public class TFSTmpFileStore implements TFSContentStore {
     TfsFileUtil.setFileContent(myTmpFile, contentWriter);
   }
 
-  public String loadContent() throws IOException {
+  public byte[] loadContent() throws IOException {
     InputStream fileStream = null;
     try {
       fileStream = new FileInputStream(myTmpFile);
-      byte [] content = StreamUtil.loadFromStream(fileStream);
-      return CharsetToolkit.bytesToString(content);
+      return StreamUtil.loadFromStream(fileStream);
     }
     finally {
       if (fileStream != null) {

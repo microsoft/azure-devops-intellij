@@ -46,7 +46,8 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   private final ServerInfo myServer;
 
-  private String myServerContent;
+  @Nullable
+  private byte[] myContent;
 
   protected TFSContentRevision(final Project project, final ServerInfo server) {
     myProject = project;
@@ -178,9 +179,14 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   @Nullable
   public String getContent() throws VcsException {
-    if (myServerContent == null) {
+    return new String(doGetContent(), getFile().getCharset(myProject));
+  }
+
+  @Nullable
+  public byte[] doGetContent() throws VcsException {
+    if (myContent == null) {
       try {
-        myServerContent = loadContent();
+        myContent = loadContent();
       }
       catch (TfsException e) {
         throw new VcsException(e);
@@ -189,11 +195,11 @@ public abstract class TFSContentRevision implements ContentRevision {
         throw new VcsException(e);
       }
     }
-    return myServerContent;
+    return myContent;
   }
 
   @Nullable
-  private String loadContent() throws TfsException, IOException {
+  private byte[] loadContent() throws TfsException, IOException {
     int itemId = getItemId();
     int changeset = getChangeset();
 
