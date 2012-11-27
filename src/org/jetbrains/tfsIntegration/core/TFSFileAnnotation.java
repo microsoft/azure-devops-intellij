@@ -18,12 +18,15 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.annotate.*;
+import com.intellij.openapi.vcs.VcsKey;
+import com.intellij.openapi.vcs.annotate.AnnotationSourceSwitcher;
+import com.intellij.openapi.vcs.annotate.FileAnnotation;
+import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
+import com.intellij.openapi.vcs.annotate.LineAnnotationAspectAdapter;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.ui.GuiUtils;
-import com.intellij.util.EventDispatcher;
 import com.intellij.util.text.DateFormatUtil;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -33,13 +36,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 
-public class TFSFileAnnotation implements FileAnnotation {
+public class TFSFileAnnotation extends FileAnnotation {
   private final TFSVcs myVcs;
   private final WorkspaceInfo myWorkspace;
   private final String myAnnotatedContent;
   private final VcsFileRevision[] myLineRevisions;
-
-  private final EventDispatcher<AnnotationListener> myEventDispatcher = EventDispatcher.create(AnnotationListener.class);
 
   private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.REVISION, false) {
     public String getValue(int lineNumber) {
@@ -79,7 +80,7 @@ public class TFSFileAnnotation implements FileAnnotation {
       try {
         GuiUtils.runOrInvokeAndWait(new Runnable() {
           public void run() {
-            myEventDispatcher.getMulticaster().onAnnotationChanged();
+            TFSFileAnnotation.this.close();
           }
         });
       }
@@ -101,14 +102,6 @@ public class TFSFileAnnotation implements FileAnnotation {
     myAnnotatedContent = annotatedContent;
     myLineRevisions = lineRevisions;
     myVcs.addRevisionChangedListener(myListener);
-  }
-
-  public void addListener(AnnotationListener listener) {
-    myEventDispatcher.addListener(listener);
-  }
-
-  public void removeListener(AnnotationListener listener) {
-    myEventDispatcher.removeListener(listener);
   }
 
   public void dispose() {
@@ -209,5 +202,16 @@ public class TFSFileAnnotation implements FileAnnotation {
         AbstractVcsHelper.getInstance(myVcs.getProject()).showChangesListBrowser(changeList, title);
       }
     }
+  }
+
+  @Nullable
+  @Override
+  public VcsRevisionNumber getCurrentRevision() {
+    return null;
+  }
+
+  @Override
+  public VcsKey getVcsKey() {
+    return TFSVcs.getKey();
   }
 }
