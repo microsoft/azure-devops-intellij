@@ -104,8 +104,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     final ChangeBrowserSettings settings = createDefaultSettings();
     settings.USE_CHANGE_AFTER_FILTER = true;
     settings.USE_CHANGE_BEFORE_FILTER = true;
-    settings.CHANGE_AFTER = number.asString();
-    settings.CHANGE_BEFORE = number.asString();
+    settings.CHANGE_BEFORE = settings.CHANGE_AFTER = String.valueOf(((TfsRevisionNumber)number).getValue());
     final FilePath filePath = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
     final List<TFSChangeList> list = getCommittedChanges(settings, getLocationFor(filePath), 1);
     if (list.size() == 1) {

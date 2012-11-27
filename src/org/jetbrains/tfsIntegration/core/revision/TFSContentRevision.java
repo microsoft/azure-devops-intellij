@@ -238,6 +238,6 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   @NonNls
   public String toString() {
-    return "TFSContentRevision [file=" + getFile() + ", revision=" + getRevisionNumber().asString() + "]";
+    return "TFSContentRevision [file=" + getFile() + ", revision=" + ((TfsRevisionNumber)getRevisionNumber()).getValue() + "]";
   }
 }

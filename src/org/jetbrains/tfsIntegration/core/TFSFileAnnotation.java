@@ -29,6 +29,7 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.text.DateFormatUtil;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.tfsIntegration.core.tfs.TfsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
 
@@ -45,7 +46,7 @@ public class TFSFileAnnotation extends FileAnnotation {
   private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.REVISION, false) {
     public String getValue(int lineNumber) {
       if (lineNumber < myLineRevisions.length) {
-        return myLineRevisions[lineNumber].getRevisionNumber().asString();
+        return ((TfsRevisionNumber)myLineRevisions[lineNumber].getRevisionNumber()).getChangesetString();
       }
       else {
         return "";
@@ -120,7 +121,8 @@ public class TFSFileAnnotation extends FileAnnotation {
     if (lineNumber < myLineRevisions.length) {
       String commitMessage =
         myLineRevisions[lineNumber].getCommitMessage() == null ? "(no comment)" : myLineRevisions[lineNumber].getCommitMessage();
-      return MessageFormat.format("Changeset {0}: {1}", myLineRevisions[lineNumber].getRevisionNumber().asString(), commitMessage);
+      return MessageFormat.format("Changeset {0}: {1}",
+                                  ((TfsRevisionNumber)myLineRevisions[lineNumber].getRevisionNumber()).getChangesetString(), commitMessage);
     }
     else {
       return "";
@@ -192,13 +194,14 @@ public class TFSFileAnnotation extends FileAnnotation {
         final int changeset = ((VcsRevisionNumber.Int)revision.getRevisionNumber()).getValue();
         final CommittedChangeList changeList =
           new TFSChangeList(myWorkspace, changeset, revision.getAuthor(), revision.getRevisionDate(), revision.getCommitMessage(), myVcs);
-        final String progress = MessageFormat.format("Loading changeset {0}...", revision.getRevisionNumber().asString());
+        String changesetString = ((TfsRevisionNumber)revision.getRevisionNumber()).getChangesetString();
+        final String progress = MessageFormat.format("Loading changeset {0}...", changesetString);
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
           public void run() {
             changeList.getChanges();
           }
         }, progress, false, myVcs.getProject());
-        final String title = MessageFormat.format("Changeset {0}", revision.getRevisionNumber().asString());
+        final String title = MessageFormat.format("Changeset {0}", changesetString);
         AbstractVcsHelper.getInstance(myVcs.getProject()).showChangesListBrowser(changeList, title);
       }
     }
