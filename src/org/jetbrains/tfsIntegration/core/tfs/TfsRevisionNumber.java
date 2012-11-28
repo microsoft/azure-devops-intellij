@@ -55,4 +55,8 @@ public class TfsRevisionNumber extends VcsRevisionNumber.Int {
       return null;
     }
   }
+
+  public String getChangesetString() {
+    return String.valueOf(getValue());
+  }
 }
