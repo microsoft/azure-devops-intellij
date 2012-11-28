@@ -26,6 +26,7 @@ import com.intellij.openapi.vcs.annotate.LineAnnotationAspectAdapter;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.text.DateFormatUtil;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,7 @@ public class TFSFileAnnotation extends FileAnnotation {
   private final WorkspaceInfo myWorkspace;
   private final String myAnnotatedContent;
   private final VcsFileRevision[] myLineRevisions;
+  private final VirtualFile myFile;
 
   private final LineAnnotationAspect REVISION_ASPECT = new TFSAnnotationAspect(TFSAnnotationAspect.REVISION, false) {
     public String getValue(int lineNumber) {
@@ -96,11 +98,13 @@ public class TFSFileAnnotation extends FileAnnotation {
   public TFSFileAnnotation(final TFSVcs vcs,
                            final WorkspaceInfo workspace,
                            final String annotatedContent,
-                           final VcsFileRevision[] lineRevisions) {
+                           final VcsFileRevision[] lineRevisions, VirtualFile file) {
+    super(vcs.getProject());
     myVcs = vcs;
     myWorkspace = workspace;
     myAnnotatedContent = annotatedContent;
     myLineRevisions = lineRevisions;
+    myFile = file;
     myVcs.addRevisionChangedListener(myListener);
   }
 
@@ -213,5 +217,10 @@ public class TFSFileAnnotation extends FileAnnotation {
   @Override
   public VcsKey getVcsKey() {
     return TFSVcs.getKey();
+  }
+
+  @Override
+  public VirtualFile getFile() {
+    return myFile;
   }
 }
