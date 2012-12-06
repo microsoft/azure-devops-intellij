@@ -383,6 +383,12 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
       public void setReadOnly(boolean isReadOnly) {
       }
 
+      @Nullable
+      @Override
+      public Object getData() {
+        return null;
+      }
+
       @Override
       public LocalChangeList copy() {
         return null;
