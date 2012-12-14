@@ -1,9 +1,6 @@
 package org.jetbrains.tfsIntegration.core;
 
-import jcifs.ntlmssp.NtlmFlags;
-import jcifs.ntlmssp.NtlmMessage;
-import jcifs.ntlmssp.Type1Message;
-import jcifs.ntlmssp.Type2Message;
+import jcifs.ntlmssp.*;
 import jcifs.util.Base64;
 
 import java.io.ByteArrayInputStream;
@@ -30,6 +27,9 @@ public class NtlmDecoder {
         break;
       case 2:
         processMessage2(args[1]);
+        break;
+      case 3:
+        processMessage3(args[1]);
         break;
       default:
         System.out.println("Unknown messsage type, should be 1 or 2");
@@ -95,6 +95,17 @@ public class NtlmDecoder {
       else {
         System.out.println("No target information");
       }
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private static void processMessage3(String arg) {
+    System.out.println("Message 3");
+    try {
+      Type3Message message = new Type3Message(Base64.decode(arg));
+      printFlags(message);
     }
     catch (IOException e) {
       e.printStackTrace();
