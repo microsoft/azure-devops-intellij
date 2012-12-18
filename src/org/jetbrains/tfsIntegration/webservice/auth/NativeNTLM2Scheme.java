@@ -2,6 +2,7 @@ package org.jetbrains.tfsIntegration.webservice.auth;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.SystemInfo;
 import org.apache.commons.httpclient.NTCredentials;
 import org.apache.commons.httpclient.auth.AuthenticationException;
 import org.apache.commons.httpclient.params.HttpMethodParams;
@@ -28,8 +29,12 @@ public class NativeNTLM2Scheme extends NTLM2Scheme {
 
   @Nullable
   private static Pair<Object, Method> createNativeAuthSequence() {
+
+    boolean java7 = SystemInfo.isJavaVersionAtLeast("1.7");
     try {
-      Class clazz = Class.forName("sun.net.www.protocol.http.NTLMAuthSequence");
+      Class clazz = java7
+                    ? Class.forName("sun.net.www.protocol.http.ntlm.NTLMAuthSequence")
+                    : Class.forName("sun.net.www.protocol.http.NTLMAuthSequence");
       if (clazz == null) {
         return null;
       }
