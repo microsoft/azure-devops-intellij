@@ -46,8 +46,10 @@ public class Workstation {
   // to be used in tests
   public static boolean PRESERVE_CONFIG_FILE = false;
 
-  @NonNls private static final String CACHE_FILE_WINDOWS =
-    "Local Settings\\Application Data\\Microsoft\\Team Foundation\\1.0\\Cache\\VersionControl.config";
+  private static File getCacheFileWindows(String version) {
+    String path = "Local Settings\\Application Data\\Microsoft\\Team Foundation\\" + version + "\\Cache\\VersionControl.config";
+    return new File(SystemProperties.getUserHome(), path);
+  }
 
   @NonNls private static final String CACHE_FILE_LINUX_MAC = "tfs-servers.xml";
 
@@ -143,9 +145,14 @@ public class Workstation {
       return null;
     }
 
-    final File cacheFile;
+    File cacheFile;
+    String [] versions = new String[] {"4.0", "3.0", "2.0", "1.0"};
     if (SystemInfo.isWindows) {
-      cacheFile = new File(SystemProperties.getUserHome(), CACHE_FILE_WINDOWS);
+      int i = 0;
+      do {
+        cacheFile = getCacheFileWindows(versions[i++]);
+      }
+      while (!cacheFile.exists() && i < versions.length);
     }
     else {
       cacheFile = new File(PathManager.getOptionsPath(), CACHE_FILE_LINUX_MAC);
