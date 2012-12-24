@@ -67,7 +67,7 @@ public class NTLM2Scheme extends NTLMScheme {
     final String flagsStr = System.getProperty(key);
     if (flagsStr != null && flagsStr.startsWith("0x")) {
       try {
-        return Integer.parseInt(flagsStr.substring("0x".length()), 16);
+        return (int)Long.parseLong(flagsStr.substring("0x".length()), 16);
       }
       catch (NumberFormatException ignored) {
       }
