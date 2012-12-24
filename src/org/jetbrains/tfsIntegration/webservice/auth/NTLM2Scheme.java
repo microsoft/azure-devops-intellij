@@ -57,10 +57,10 @@ public class NTLM2Scheme extends NTLMScheme {
   static {
     MESSAGE_1_DEFAULT_FLAGS =
       Type1Message.getDefaultFlags() | readUserFlags("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message1flags");
-    LOG.info("Message 1 flags: 0x" + Integer.toString(MESSAGE_1_DEFAULT_FLAGS, 16));
+    LOG.info("Message 1 flags: 0x" + Integer.toHexString(MESSAGE_1_DEFAULT_FLAGS));
     MESSAGE_3_DEFAULT_FLAGS =
       Type3Message.getDefaultFlags() | readUserFlags("org.jetbrains.tfsIntegration.webservice.auth.ntlm.message3flags");
-    LOG.info("Message 3 flags: 0x" + Integer.toString(MESSAGE_3_DEFAULT_FLAGS, 16));
+    LOG.info("Message 3 flags: 0x" + Integer.toHexString(MESSAGE_3_DEFAULT_FLAGS));
   }
 
   private static int readUserFlags(String key) {
