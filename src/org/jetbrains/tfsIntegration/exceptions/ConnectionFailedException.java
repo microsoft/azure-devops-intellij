@@ -16,6 +16,8 @@
 
 package org.jetbrains.tfsIntegration.exceptions;
 
+import org.apache.commons.httpclient.HttpStatus;
+
 public class ConnectionFailedException extends TfsException {
 
   private static final long serialVersionUID = 1L;
@@ -35,23 +37,25 @@ public class ConnectionFailedException extends TfsException {
     this(cause, CODE_UNDEFINED);
   }
 
-  public ConnectionFailedException(String message) {
-    super((Throwable)null);
-    myHttpStatusCode = CODE_UNDEFINED;
-    myMessage = message;
-  }
-
   public ConnectionFailedException(Throwable cause, String message) {
     super(cause);
     myHttpStatusCode = CODE_UNDEFINED;
     myMessage = message;
   }
 
-  public int getHttpStatusCode() {
-    return myHttpStatusCode;
-  }
-
   public String getMessage() {
-    return myMessage != null ? myMessage : super.getMessage();
+    if (myMessage != null) {
+      return myMessage;
+    }
+
+    String message = super.getMessage();
+    if (message != null) {
+      return message;
+    }
+
+    if (myHttpStatusCode != CODE_UNDEFINED) {
+      return HttpStatus.getStatusText(myHttpStatusCode);
+    }
+    return null;
   }
 }
