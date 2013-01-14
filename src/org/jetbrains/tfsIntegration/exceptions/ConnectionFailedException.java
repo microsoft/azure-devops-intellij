@@ -58,4 +58,8 @@ public class ConnectionFailedException extends TfsException {
     }
     return null;
   }
+
+  public int getHttpStatusCode() {
+    return myHttpStatusCode;
+  }
 }

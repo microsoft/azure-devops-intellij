@@ -12,9 +12,11 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.concurrency.Semaphore;
+import org.apache.commons.httpclient.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.config.TfsServerConnectionHelper;
+import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 import org.jetbrains.tfsIntegration.exceptions.*;
@@ -166,7 +168,7 @@ public class TfsRequestManager {
         final TfsException tfsException = TfsExceptionManager.processException(e);
         LOG.warn(tfsException);
         if (tfsException instanceof UnauthorizedException) {
-          message.set(tfsException.getMessage());
+          message.set(getMessage(tfsException, credentials.get().getType()));
           continue;
         }
         else if (!(tfsException instanceof ConnectionFailedException)) {
@@ -250,7 +252,6 @@ public class TfsRequestManager {
         .runProcessWithProgressSynchronously(this, myRequest.getProgressTitle(myCredentials.get(), myCurrentServerUri), true, project,
                                              component);
     }
-
   }
 
   public static <T> T executeRequest(URI serverUri, Object projectOrComponent, final Request<T> request) throws TfsException {
@@ -307,7 +308,7 @@ public class TfsRequestManager {
           if (error != null) {
             if (error instanceof UnauthorizedException || myServerUri == null || reportErrorsInDialog) {
               // continue with the dialog
-              dialog.setMessage(error.getMessage(), false);
+              dialog.setMessage(getMessage(error, dialog.getCredentials().getType()), false);
               return false;
             }
             else {
@@ -366,7 +367,8 @@ public class TfsRequestManager {
 
     TfsException error = session.getError();
     if (error instanceof UnauthorizedException) {
-      return executeRequestInForeground(projectOrComponent, request, error.getMessage(), reportErrorsInDialog, overrideCredentials, force);
+      return executeRequestInForeground(projectOrComponent, request, getMessage(error, credentials.getType()), reportErrorsInDialog,
+                                        overrideCredentials, force);
     }
 
     TFSConfigurationManager.getInstance().storeCredentials(myServerUri, session.getCredentials());
@@ -377,6 +379,19 @@ public class TfsRequestManager {
     else {
       throw error;
     }
+  }
+
+  private static String getMessage(final TfsException error, final Credentials.Type type) {
+    if (error instanceof ConnectionFailedException &&
+        ((ConnectionFailedException)error).getHttpStatusCode() == HttpStatus.SC_MOVED_TEMPORARILY) {
+      if (type == Credentials.Type.Alternate) {
+        return TFSBundle.message("unauthorized");
+      }
+      else {
+        return TFSBundle.message("consider.using.alternate.credentials", error.getMessage());
+      }
+    }
+    return error.getMessage();
   }
 
   private boolean shouldShowDialog(boolean force) throws UserCancelledException {
@@ -419,5 +434,4 @@ public class TfsRequestManager {
       }
     });
   }
-
 }

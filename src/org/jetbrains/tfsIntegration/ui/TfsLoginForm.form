@@ -121,13 +121,19 @@
           </vspacer>
         </children>
       </grid>
-      <component id="eed28" class="javax.swing.JCheckBox" binding="myUseSystemCredentialsCheckBox" default-binding="true">
+      <component id="5cab9" class="com.intellij.openapi.ui.ComboBox" binding="myTypeCombo">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="bd17b" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <margin top="2" left="0" bottom="2" right="3"/>
-          <text value="Us&amp;e system credentials"/>
+          <labelFor value="5cab9"/>
+          <text value="A&amp;uth:"/>
         </properties>
       </component>
     </children>

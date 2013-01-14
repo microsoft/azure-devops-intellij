@@ -39,6 +39,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.params.HostParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +58,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 public class WebServiceHelper {
@@ -204,16 +209,25 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.SO_TIMEOUT, SOCKET_TIMEOUT);
 
     // credentials
-    HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-    auth.setUsername(credentials.getUserName());
-    auth.setPassword(credentials.getPassword() != null ? credentials.getPassword() : "");
-    auth.setDomain(credentials.getDomain());
-    auth.setHost(serverUri.getHost());
-    options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+    if (credentials.getType() == Credentials.Type.Alternate) {
+      String basicAuth =
+        BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8");
+      Map<String, String> headers = new HashMap<String, String>();
+      headers.put(HTTPConstants.HEADER_AUTHORIZATION, basicAuth);
+      options.setProperty(HTTPConstants.HTTP_HEADERS, headers);
+    }
+    else {
+      HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
+      auth.setUsername(credentials.getUserName());
+      auth.setPassword(credentials.getPassword() != null ? credentials.getPassword() : "");
+      auth.setDomain(credentials.getDomain());
+      auth.setHost(serverUri.getHost());
+      options.setProperty(HTTPConstants.AUTHENTICATE, auth);
 
-    HttpMethodParams params = new HttpMethodParams();
-    params.setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getUseNative() == Credentials.UseNative.Yes);
-    options.setProperty(HTTPConstants.HTTP_METHOD_PARAMS, params);
+      HttpMethodParams params = new HttpMethodParams();
+      params.setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getType() == Credentials.Type.NtlmNative);
+      options.setProperty(HTTPConstants.HTTP_METHOD_PARAMS, params);
+    }
 
     // proxy
     final HttpTransportProperties.ProxyProperties proxyProperties;
@@ -237,10 +251,24 @@ public class WebServiceHelper {
   private static void setCredentials(final @NotNull HttpClient httpClient,
                                      final @NotNull Credentials credentials,
                                      final @NotNull URI serverUri) {
-    final NTCredentials ntCreds =
-      new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
-    httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
-    httpClient.getParams().setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getUseNative() == Credentials.UseNative.Yes);
+    if (credentials.getType() == Credentials.Type.Alternate) {
+      Collection<Header> headers =
+        (Collection<Header>)httpClient.getHostConfiguration().getParams().getParameter(HostParams.DEFAULT_HEADERS);
+      if (headers == null) {
+        headers = new ArrayList<Header>();
+        httpClient.getHostConfiguration().getParams().setParameter(HostParams.DEFAULT_HEADERS, headers);
+      }
+
+      String basicAuth =
+        BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8");
+      headers.add(new Header(HTTPConstants.HEADER_AUTHORIZATION, basicAuth));
+    }
+    else {
+      final NTCredentials ntCreds =
+        new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
+      httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
+      httpClient.getParams().setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getType() == Credentials.Type.NtlmNative);
+    }
   }
 
   private static InputStream getInputStream(HttpMethod method) throws IOException {

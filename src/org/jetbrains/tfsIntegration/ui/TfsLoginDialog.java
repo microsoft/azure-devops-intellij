@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.net.HttpConfigurable;
@@ -31,7 +32,9 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 
 public class TfsLoginDialog extends DialogWrapper {
 
@@ -132,6 +135,14 @@ public class TfsLoginDialog extends DialogWrapper {
     if (shouldPromptForProxyPassword(false)) {
       HttpConfigurable hc = HttpConfigurable.getInstance();
       hc.setPlainProxyPassword(myLoginForm.getProxyPassword());
+    }
+
+    if (myLoginForm.getCredentials().getType() == Credentials.Type.Alternate && "http".equals(getUri().getScheme())) {
+      if (Messages.showYesNoDialog(myLoginForm.getContentPane(),
+                                   "You're about to send your credentials over unsecured HTTP connection. Continue?", getTitle(),
+                                   null) != Messages.YES) {
+        return;
+      }
     }
 
     if (myOkActionCallback == null || myOkActionCallback.value(this)) {

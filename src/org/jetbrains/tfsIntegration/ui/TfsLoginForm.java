@@ -16,14 +16,14 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.HyperlinkLabel;
+import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.util.EventDispatcher;
 import com.intellij.util.net.HttpConfigurable;
-import com.intellij.util.ui.UIUtil;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -47,10 +47,10 @@ public class TfsLoginForm {
   private HyperlinkLabel myProxyPasswordLabel;
   private JPasswordField myProxyPasswordField;
   private JPanel myProxyPanel;
-  private JCheckBox myUseSystemCredentialsCheckBox;
   private JLabel myUsernameLabel;
   private JLabel myDomainLabel;
   private JLabel myPasswordLabel;
+  private ComboBox myTypeCombo;
 
   private final EventDispatcher<ChangeListener> myEventDispatcher = EventDispatcher.create(ChangeListener.class);
 
@@ -93,34 +93,50 @@ public class TfsLoginForm {
       myProxyPanel.setVisible(false);
     }
 
+    myTypeCombo.setRenderer(new ListCellRendererWrapper<Credentials.Type>() {
+      @Override
+      public void customize(final JList list,
+                            final Credentials.Type value,
+                            final int index,
+                            final boolean selected,
+                            final boolean hasFocus) {
+        setText(value.getPresentableText());
+      }
+    });
     if (NativeNTLM2Scheme.isAvailable()) {
-      myUseSystemCredentialsCheckBox
-        .setSelected(initialCredentials == null || initialCredentials.getUseNative() != Credentials.UseNative.No);
-      myUseSystemCredentialsCheckBox.addActionListener(new ActionListener() {
+      myTypeCombo.setModel(new DefaultComboBoxModel(
+        new Credentials.Type[]{Credentials.Type.NtlmNative, Credentials.Type.NtlmExplicit, Credentials.Type.Alternate}));
+      myTypeCombo.setSelectedItem(initialCredentials == null ? Credentials.Type.NtlmNative : initialCredentials.getType());
+      myTypeCombo.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-          updateOnUseSystemCredentials();
-          if (!myUseSystemCredentialsCheckBox.isSelected()) {
+          updateOnTypeChange();
+          if (getCredentialsType() != Credentials.Type.NtlmNative) {
             IdeFocusManager.findInstanceByComponent(myContentPane).requestFocus(myUsernameField, true);
           }
         }
       });
     }
     else {
-      myUseSystemCredentialsCheckBox.setVisible(false);
+      myTypeCombo.setModel(new DefaultComboBoxModel(new Credentials.Type[]{Credentials.Type.NtlmExplicit, Credentials.Type.Alternate}));
     }
 
-    updateOnUseSystemCredentials();
+    updateOnTypeChange();
   }
 
-  private void updateOnUseSystemCredentials() {
-    myUsernameLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myUsernameField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myDomainLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myDomainField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myPasswordLabel.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myPasswordField.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
-    myStorePasswordCheckbox.setEnabled(!myUseSystemCredentialsCheckBox.isSelected());
+  private Credentials.Type getCredentialsType() {
+    return (Credentials.Type)myTypeCombo.getSelectedItem();
+  }
+
+  private void updateOnTypeChange() {
+    boolean isNative = getCredentialsType() == Credentials.Type.NtlmNative;
+    myUsernameLabel.setEnabled(!isNative);
+    myUsernameField.setEnabled(!isNative);
+    myDomainLabel.setEnabled(getCredentialsType() == Credentials.Type.NtlmExplicit);
+    myDomainField.setEnabled(getCredentialsType() == Credentials.Type.NtlmExplicit);
+    myPasswordLabel.setEnabled(!isNative);
+    myPasswordField.setEnabled(!isNative);
+    myStorePasswordCheckbox.setEnabled(!isNative);
     myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
   }
 
@@ -157,11 +173,11 @@ public class TfsLoginForm {
   }
 
   public Credentials getCredentials() {
-    if (myUseSystemCredentialsCheckBox.isSelected()) {
-      return new Credentials("", "", null, false, Credentials.UseNative.Yes);
+    if (getCredentialsType() == Credentials.Type.NtlmNative) {
+      return Credentials.createNative();
     }
     else {
-      return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected(), Credentials.UseNative.No);
+      return new Credentials(getUsername(), getDomain(), getPassword(), myStorePasswordCheckbox.isSelected(), getCredentialsType());
     }
   }
 
@@ -188,6 +204,6 @@ public class TfsLoginForm {
   }
 
   public boolean isUseNative() {
-    return myUseSystemCredentialsCheckBox.isSelected();
+    return getCredentialsType() == Credentials.Type.NtlmNative;
   }
 }

@@ -154,7 +154,7 @@ public class TfsServerConnectionHelper {
             throw new TfsException(TFSBundle.message("duplicate.server"));
           }
 
-          if (credentials.getUseNative() == Credentials.UseNative.No &&
+          if (credentials.getType() != Credentials.Type.NtlmNative &&
               !credentials.getUserName().equalsIgnoreCase(serverDescriptor.getUserName())) {
             LOG.warn("authorized user mismatch: current=" + credentials.getQualifiedUsername() +
                      ", authorized: " + serverDescriptor.authorizedCredentials);
@@ -344,7 +344,7 @@ public class TfsServerConnectionHelper {
       String domain = getPropertyValue(userProps, TFSConstants.DOMAIN);
       String userName = getPropertyValue(userProps, TFSConstants.ACCOUNT);
       Credentials authorizedCredentials =
-        new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
+        new Credentials(userName, domain, credentials.getPassword(), credentials.isStorePassword(), credentials.getType());
       if (justAuthenticate) {
         return new ServerDescriptor(authorizedCredentials, uri, null);
       }
@@ -419,7 +419,7 @@ public class TfsServerConnectionHelper {
       if (justAuthenticate) {
         String authorizedUsername = getAuthorizedCredentialsFor200x(context, uri, credentials);
         Credentials authorizedCredentials =
-          new Credentials(authorizedUsername, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
+          new Credentials(authorizedUsername, credentials.getPassword(), credentials.isStorePassword(), credentials.getType());
         return new ServerDescriptor(authorizedCredentials, uri, null);
       }
 
@@ -443,7 +443,7 @@ public class TfsServerConnectionHelper {
 
       String qName = getAuthorizedCredentialsFor200x(context, uri, credentials);
       Credentials authorizedCredentials =
-        new Credentials(qName, credentials.getPassword(), credentials.isStorePassword(), credentials.getUseNative());
+        new Credentials(qName, credentials.getPassword(), credentials.isStorePassword(), credentials.getType());
 
       TfsBeansHolder beans = new TfsBeansHolder(uri);
       Workspace[] workspaces = queryWorkspaces(authorizedCredentials, pi, beans);

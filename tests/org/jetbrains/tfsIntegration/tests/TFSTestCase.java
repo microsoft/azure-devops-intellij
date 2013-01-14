@@ -157,7 +157,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
       }
     }
 
-    final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false, Credentials.UseNative.No);
+    final Credentials testCredentials = new Credentials(USER, DOMAIN, PASSWORD, false, Credentials.Type.NtlmExplicit);
     TFSConfigurationManager.getInstance().storeCredentials(serverUri, testCredentials);
     if (!serverFound) {
       TfsServerConnectionHelper.ensureAuthenticated(myProject, serverUri, true);
