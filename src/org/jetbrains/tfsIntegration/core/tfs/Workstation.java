@@ -18,11 +18,15 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.JDOMUtil;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.SystemProperties;
 import org.apache.axis2.databinding.utils.ConverterUtil;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.output.XMLOutputter;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,8 +38,7 @@ import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -169,56 +172,55 @@ public class Workstation {
         cacheFile.getParentFile().mkdirs();
       }
       try {
-        XmlUtil.saveFile(cacheFile, new XmlUtil.SaveDelegate() {
+        Document d = new Document();
+        Element rootElement = new Element(XmlConstants.ROOT);
+        d.setRootElement(rootElement);
+        Element serversElement = new Element(XmlConstants.SERVERS);
+        rootElement.addContent(serversElement);
+        for (ServerInfo serverInfo : getServers()) {
+          Element serverInfoElement = new Element(XmlConstants.SERVER_INFO);
+          serversElement.addContent(serverInfoElement);
+          serverInfoElement.setAttribute(XmlConstants.URI_ATTR, serverInfo.getUri().toString());
+          serverInfoElement.setAttribute(XmlConstants.GUID_ATTR, serverInfo.getGuid());
 
-          public void doSave(XmlUtil.SavePerformer savePerformer) {
-            try {
-              savePerformer.startElement(XmlConstants.ROOT);
-              savePerformer.startElement(XmlConstants.SERVERS);
-              for (ServerInfo serverInfo : getServers()) {
-                Map<String, String> serverAttributes = new HashMap<String, String>();
-                serverAttributes.put(XmlConstants.URI_ATTR, serverInfo.getUri().toString());
-                serverAttributes.put(XmlConstants.GUID_ATTR, serverInfo.getGuid());
-                savePerformer.startElement(XmlConstants.SERVER_INFO, serverAttributes);
+          for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
+            Element workspaceInfoElement = new Element(XmlConstants.WORKSPACE_INFO);
+            serverInfoElement.addContent(workspaceInfoElement);
 
-                for (WorkspaceInfo workspaceInfo : serverInfo.getWorkspaces()) {
-                  Map<String, String> workspaceAttributes = new HashMap<String, String>();
-                  workspaceAttributes.put(XmlConstants.NAME_ATTR, workspaceInfo.getName());
-                  workspaceAttributes.put(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
-                  workspaceAttributes.put(XmlConstants.COMPUTER_ATTR, workspaceInfo.getComputer());
-                  if (workspaceInfo.getComment() != null) {
-                    workspaceAttributes.put(XmlConstants.COMMENT_ATTR, workspaceInfo.getComment());
-                  }
-                  workspaceAttributes.put(XmlConstants.TIMESTAMP_ATTR, ConverterUtil.convertToString(workspaceInfo.getTimestamp()));
-                  savePerformer.startElement(XmlConstants.WORKSPACE_INFO, workspaceAttributes);
-                  savePerformer.startElement(XmlConstants.MAPPED_PATHS);
-
-                  for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersCached()) {
-                    Map<String, String> pathAttributes = new HashMap<String, String>();
-                    pathAttributes.put(XmlConstants.PATH_ATTR, folderInfo.getLocalPath().getPath());
-                    savePerformer.writeElement(XmlConstants.MAPPED_PATH, pathAttributes, "");
-                  }
-                  savePerformer.endElement(XmlConstants.MAPPED_PATHS);
-                  savePerformer.endElement(XmlConstants.WORKSPACE_INFO);
-                }
-                savePerformer.endElement(XmlConstants.SERVER_INFO);
-              }
-              savePerformer.endElement(XmlConstants.SERVERS);
-              savePerformer.endElement(XmlConstants.ROOT);
+            workspaceInfoElement.setAttribute(XmlConstants.COMPUTER_ATTR, workspaceInfo.getComputer());
+            workspaceInfoElement.setAttribute(XmlConstants.OWNER_NAME_ATTR, workspaceInfo.getOwnerName());
+            workspaceInfoElement.setAttribute(XmlConstants.TIMESTAMP_ATTR, ConverterUtil.convertToString(workspaceInfo.getTimestamp()));
+            workspaceInfoElement.setAttribute(XmlConstants.NAME_ATTR, workspaceInfo.getName());
+            if (workspaceInfo.getComment() != null) {
+              workspaceInfoElement.setAttribute(XmlConstants.COMMENT_ATTR, workspaceInfo.getComment());
             }
-            catch (SAXException e) {
-              LOG.info("Cannot update workspace cache", e);
+
+            Element mappedPathsElement = new Element(XmlConstants.MAPPED_PATHS);
+            workspaceInfoElement.addContent(mappedPathsElement);
+
+            for (WorkingFolderInfo folderInfo : workspaceInfo.getWorkingFoldersCached()) {
+              Element e = new Element(XmlConstants.MAPPED_PATH);
+              e.setAttribute(XmlConstants.PATH_ATTR, folderInfo.getLocalPath().getPath());
+              mappedPathsElement.addContent(e);
             }
-            //catch (Exception e) {
-            //  LOG.warn("Cannot update workspace cache", e);
-            //}
           }
-        });
+        }
+
+
+        OutputStream stream = new BufferedOutputStream(new FileOutputStream(cacheFile));
+        try {
+          XMLOutputter o = JDOMUtil.createOutputter("\n");
+          o.setFormat(o.getFormat().setOmitDeclaration(true));
+          o.output(d, stream);
+        }
+        catch (NullPointerException e) {
+          LOG.warn(e);
+        }
+        finally {
+          stream.close();
+        }
       }
       catch (IOException e) {
-        LOG.info("Cannot update workspace cache", e);
-      }
-      catch (SAXException e) {
         LOG.info("Cannot update workspace cache", e);
       }
     }
