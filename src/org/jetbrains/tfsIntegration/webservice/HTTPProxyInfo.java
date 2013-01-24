@@ -16,11 +16,10 @@
 
 package org.jetbrains.tfsIntegration.webservice;
 
+import com.intellij.util.net.CommonProxy;
 import com.intellij.util.net.HttpConfigurable;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-
-import java.net.Authenticator;
 
 public class HTTPProxyInfo {
 
@@ -51,9 +50,7 @@ public class HTTPProxyInfo {
 
   public static HTTPProxyInfo getCurrent() {
     // axis will override the higher-level settings with system properties, so explicitly clear them
-    System.clearProperty("http.proxyHost");
-    System.clearProperty("http.proxyPort");
-    Authenticator.setDefault(null);
+    CommonProxy.isInstalledAssertion();
 
     if (TFSConfigurationManager.getInstance().useIdeaHttpProxy()) {
       final HttpConfigurable hc = HttpConfigurable.getInstance();
