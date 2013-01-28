@@ -68,6 +68,7 @@ public class TFSFileRevision implements VcsFileRevision {
     return myDate;
   }
 
+  @Nullable
   @Override
   public RepositoryLocation getChangedRepositoryPath() {
     return null;
