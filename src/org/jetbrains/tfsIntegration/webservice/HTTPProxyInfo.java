@@ -16,8 +16,8 @@
 
 package org.jetbrains.tfsIntegration.webservice;
 
-import com.intellij.util.net.CommonProxy;
 import com.intellij.util.net.HttpConfigurable;
+import com.intellij.util.proxy.CommonProxy;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
 
