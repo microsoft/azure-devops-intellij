@@ -19,6 +19,7 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.LockLevel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.locks.LockItemModel;
 
@@ -61,6 +62,7 @@ public class LockItemsDialog extends DialogWrapper {
     return myLockItemsForm.getContentPane();
   }
 
+  @NotNull
   protected Action[] createActions() {
     return new Action[]{getLockAction(), getUnlockAction(), getCancelAction()};
   }

@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 
@@ -53,6 +54,7 @@ public class ResolveConflictsDialog extends DialogWrapper {
     return resolveConflictsForm.getPanel();
   }
 
+  @NotNull
   protected Action[] createActions() {
     return new Action[]{getOKAction()};
   }
