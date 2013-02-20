@@ -243,4 +243,9 @@ public class TFSVcs extends AbstractVcs {
     AbstractVcs vcs = VcsUtil.getVcsFor(project, path);
     return vcs != null && TFS_NAME.equals(vcs.getName());
   }
+
+  @Override
+  public CheckoutProvider getCheckoutProvider() {
+    return new TFSCheckoutProvider();
+  }
 }
