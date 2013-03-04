@@ -32,6 +32,7 @@ import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
+import com.intellij.util.containers.ContainerUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +43,6 @@ import org.jetbrains.tfsIntegration.core.tfs.TfsRevisionNumber;
 import org.jetbrains.tfsIntegration.core.tfs.Workstation;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TFSVcs extends AbstractVcs {
@@ -71,7 +71,7 @@ public class TFSVcs extends AbstractVcs {
   private TFSCheckinEnvironment myCheckinEnvironment;
   private UpdateEnvironment myUpdateEnvironment;
   private AnnotationProvider myAnnotationProvider;
-  private final List<RevisionChangedListener> myRevisionChangedListeners = new ArrayList<RevisionChangedListener>();
+  private final List<RevisionChangedListener> myRevisionChangedListeners = ContainerUtil.createLockFreeCopyOnWriteList();
   private final CheckinData myCheckinData = new CheckinData();
 
   public TFSVcs(Project project, UltimateVerifier verifier) {
@@ -220,9 +220,7 @@ public class TFSVcs extends AbstractVcs {
   }
 
   public void fireRevisionChanged() {
-    final RevisionChangedListener[] listeners =
-      myRevisionChangedListeners.toArray(new RevisionChangedListener[myRevisionChangedListeners.size()]);
-    for (RevisionChangedListener listener : listeners) {
+    for (RevisionChangedListener listener : myRevisionChangedListeners) {
       listener.revisionChanged();
     }
   }
