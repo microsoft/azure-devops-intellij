@@ -20,6 +20,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -124,9 +125,11 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
                                                    final boolean isDirectory,
                                                    WorkspaceInfo workspace,
                                                    VersionSpecBase versionTo) throws TfsException {
+    VcsConfiguration vcsConfiguration = VcsConfiguration.getInstance(project);
+    int maxCount = vcsConfiguration.LIMIT_HISTORY ? vcsConfiguration.MAXIMUM_HISTORY_ROWS : Integer.MAX_VALUE;
     List<Changeset> changesets =
       workspace.getServer().getVCS().queryHistory(workspace, serverPath, isDirectory, null, new ChangesetVersionSpec(1), versionTo, project,
-                                                  TFSBundle.message("loading.item"));
+                                                  TFSBundle.message("loading.item"), maxCount);
 
     List<TFSFileRevision> revisions = new ArrayList<TFSFileRevision>(changesets.size());
     for (Changeset changeset : changesets) {

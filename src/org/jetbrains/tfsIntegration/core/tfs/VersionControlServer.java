@@ -747,11 +747,11 @@ public class VersionControlServer {
                                       final String user,
                                       final VersionSpec versionFrom,
                                       final VersionSpec versionTo,
-                                      Object projectOrComponent, String progressTitle) throws TfsException {
+                                      Object projectOrComponent, String progressTitle, int maxCount) throws TfsException {
     final VersionSpec itemVersion = LatestVersionSpec.INSTANCE;
     ItemSpec itemSpec = createItemSpec(serverPath, recursive ? RecursionType.Full : null);
     return queryHistory(workspace.getName(), workspace.getOwnerName(), itemSpec, user, itemVersion, versionFrom, versionTo,
-                        Integer.MAX_VALUE, projectOrComponent, progressTitle);
+                        maxCount, projectOrComponent, progressTitle);
   }
 
   public List<Changeset> queryHistory(final String workspaceName,

@@ -148,7 +148,7 @@ public class SelectChangesetForm {
 
       List<Changeset> changesets = myWorkspace.getServer().getVCS()
         .queryHistory(myWorkspace, myServerPath, myRecursive, myUserField.getText(), versionFrom, versionTo, getContentPane(),
-                      TFSBundle.message("loading.history"));
+                      TFSBundle.message("loading.history"), Integer.MAX_VALUE);
 
       if (changesets.isEmpty()) {
         Messages.showInfoMessage(panel, "No matching changesets found", "Find Changeset");
