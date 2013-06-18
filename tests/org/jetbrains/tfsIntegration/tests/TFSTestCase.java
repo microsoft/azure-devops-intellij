@@ -605,7 +605,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     moveFileInCommand(file, newParentFile);
   }
 
-  protected void deleteFileInCommand(final VirtualFile file) {
+  public void deleteFileInCommand(final VirtualFile file) {
     super.deleteFileInCommand(file);
     refreshAll();
   }
