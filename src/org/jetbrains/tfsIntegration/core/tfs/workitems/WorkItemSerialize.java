@@ -16,6 +16,7 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,7 @@ public class WorkItemSerialize {
                                                                  WorkItemField.REASON, WorkItemField.ASSIGNED_TO);
 
   private static final String SERVER_DATE_TIME = "ServerDateTime";
+  private static final Logger LOG = Logger.getInstance(WorkItemSerialize.class);
 
   private enum Reason {
     Fixed, Completed
@@ -55,8 +57,8 @@ public class WorkItemSerialize {
       return new WorkItem(id, assignedTo, state, title, revision, type, reason);
     }
     catch (Exception e) {
-      // TODO remove this
-      throw new OperationFailedException("Cannot load work items: unexpected properties encountered");
+      LOG.warn("Couldn't parse work items: " + Arrays.toString(workItemFieldsValues), e);
+      throw new OperationFailedException("Cannot load work items: unexpected properties encountered", e);
     }
   }
 
