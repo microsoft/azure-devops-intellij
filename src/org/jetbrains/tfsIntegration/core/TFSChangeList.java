@@ -26,6 +26,7 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.revision.TFSContentRevision;
 import org.jetbrains.tfsIntegration.core.tfs.ChangeTypeMask;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlServer;
@@ -91,6 +92,12 @@ public class TFSChangeList implements CommittedChangeList {
 
   public long getNumber() {
     return myRevisionNumber;
+  }
+
+  @Nullable
+  @Override
+  public String getBranch() {
+    return null;
   }
 
   public AbstractVcs getVcs() {
