@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.DumbAware;
@@ -47,7 +48,7 @@ import java.util.Map;
 public class LockAction extends AnAction implements DumbAware {
 
   public void actionPerformed(AnActionEvent e) {
-    final Project project = e.getData(PlatformDataKeys.PROJECT);
+    final Project project = e.getData(CommonDataKeys.PROJECT);
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
 
     final List<LockItemModel> items = new ArrayList<LockItemModel>();
@@ -172,7 +173,7 @@ public class LockAction extends AnAction implements DumbAware {
   }
 
   public void update(final AnActionEvent e) {
-    final Project project = e.getData(PlatformDataKeys.PROJECT);
+    final Project project = e.getData(CommonDataKeys.PROJECT);
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
     e.getPresentation().setEnabled(isEnabled(project, files));
   }

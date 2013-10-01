@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -55,7 +56,7 @@ public abstract class SingleItemAction extends AnAction {
   }
 
   public void actionPerformed(final AnActionEvent e) {
-    final Project project = e.getData(PlatformDataKeys.PROJECT);
+    final Project project = e.getData(CommonDataKeys.PROJECT);
     VirtualFile file = VcsUtil.getOneVirtualFile(e);
 
     // checked by isEnabled()
@@ -87,7 +88,7 @@ public abstract class SingleItemAction extends AnAction {
   }
 
   public void update(final AnActionEvent e) {
-    e.getPresentation().setEnabled(isEnabled(e.getData(PlatformDataKeys.PROJECT), VcsUtil.getOneVirtualFile(e)));
+    e.getPresentation().setEnabled(isEnabled(e.getData(CommonDataKeys.PROJECT), VcsUtil.getOneVirtualFile(e)));
   }
 
   protected final boolean isEnabled(final Project project, final VirtualFile file) {
