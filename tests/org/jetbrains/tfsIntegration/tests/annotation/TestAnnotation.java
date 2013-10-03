@@ -33,7 +33,7 @@ public class TestAnnotation extends TFSTestCase {
     }
 
     file.refresh();
-    final FileAnnotation fileAnnotation = getVcs().getAnnotationProvider().annotate(file.getVirtualFile());
+    final FileAnnotation fileAnnotation = createTestAnnotation(getVcs().getAnnotationProvider(), file.getVirtualFile());
     Assert.assertEquals(fileAnnotation.getAnnotatedContent(), contents[contents.length - 1]);
 
     LineAnnotationAspect[] aspects = fileAnnotation.getAspects();
