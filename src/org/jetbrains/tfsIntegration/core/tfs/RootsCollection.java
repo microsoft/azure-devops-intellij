@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.util.containers.DistinctRootsCollection;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +38,8 @@ public abstract class RootsCollection<T> {
       super(items);
     }
 
-    protected boolean isAncestor(FilePath parent, FilePath child) {
+    @Override
+    protected boolean isAncestor(@NotNull FilePath parent, @NotNull FilePath child) {
       return child.isUnder(parent, false);
     }
 
@@ -52,7 +54,8 @@ public abstract class RootsCollection<T> {
       super(items);
     }
 
-    protected boolean isAncestor(ItemPath parent, ItemPath child) {
+    @Override
+    protected boolean isAncestor(@NotNull ItemPath parent, @NotNull ItemPath child) {
       return child.getLocalPath().isUnder(parent.getLocalPath(), false);
     }
 
@@ -71,7 +74,8 @@ public abstract class RootsCollection<T> {
       super(items);
     }
 
-    protected boolean isAncestor(VirtualFile parent, VirtualFile child) {
+    @Override
+    protected boolean isAncestor(@NotNull VirtualFile parent, @NotNull VirtualFile child) {
       return VfsUtil.isAncestor(parent, child, false);
     }
 
