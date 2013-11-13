@@ -79,7 +79,7 @@ public class ApplyLabelDialog extends DialogWrapper {
       if (!labels.isEmpty()) {
         String message = MessageFormat.format("Label ''{0}'' already exists.\nDo you want to update it?", getLabelName());
         if (Messages.showOkCancelDialog(myProject, message, getTitle(), "Update Label", "Cancel", Messages.getQuestionIcon()) !=
-            0) {
+            Messages.OK) {
           return;
         }
       }

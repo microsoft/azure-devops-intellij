@@ -174,7 +174,7 @@ public class CheckInPoliciesForm {
       public void actionPerformed(ActionEvent e) {
         final StatefulPolicyDescriptor descriptor = getSelectedDescriptor();
         final String message = MessageFormat.format("Are you sure to remove checkin policy ''{0}''?", descriptor.getType().getName());
-        if (Messages.showOkCancelDialog(myProject, message, "Remove Checkin Policy", Messages.getQuestionIcon()) == 0) {
+        if (Messages.showOkCancelDialog(myProject, message, "Remove Checkin Policy", Messages.getQuestionIcon()) == Messages.OK) {
           final ModifyableProjectEntry projectEntry = myProjectToDescriptors.get(getSelectedProject());
           projectEntry.descriptors.remove(descriptor);
           projectEntry.isModified = true;
