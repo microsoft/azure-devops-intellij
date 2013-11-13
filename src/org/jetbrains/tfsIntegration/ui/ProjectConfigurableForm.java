@@ -49,7 +49,7 @@ public class ProjectConfigurableForm {
     myResetPasswordsButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         final String title = "Reset Stored Passwords";
-        if (Messages.showYesNoDialog(myProject, "Do you want to reset all stored passwords?", title, Messages.getQuestionIcon()) == 0) {
+        if (Messages.showYesNoDialog(myProject, "Do you want to reset all stored passwords?", title, Messages.getQuestionIcon()) == Messages.YES) {
           TFSConfigurationManager.getInstance().resetStoredPasswords();
           Messages.showInfoMessage(myProject, "Passwords reset successfully.", title);
         }

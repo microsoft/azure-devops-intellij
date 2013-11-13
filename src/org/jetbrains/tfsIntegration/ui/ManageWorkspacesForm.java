@@ -334,7 +334,7 @@ public class ManageWorkspacesForm {
 
   private void removeServer(final @NotNull ServerInfo server) {
     String warning = TFSBundle.message("remove.server.prompt", server.getPresentableUri());
-    if (Messages.showYesNoDialog(myContentPane, warning, TFSBundle.message("remove.server.title"), Messages.getWarningIcon()) == 0) {
+    if (Messages.showYesNoDialog(myContentPane, warning, TFSBundle.message("remove.server.title"), Messages.getWarningIcon()) == Messages.YES) {
       Workstation.getInstance().removeServer(server);
       updateControls(null);
     }
@@ -437,7 +437,7 @@ public class ManageWorkspacesForm {
 
   private void deleteWorkspace(@NotNull WorkspaceInfo workspace) {
     if (Messages.showYesNoDialog(myContentPane, TFSBundle.message("delete.workspace.prompt", workspace.getName()),
-                                 TFSBundle.message("delete.workspace.title"), Messages.getWarningIcon()) != 0) {
+                                 TFSBundle.message("delete.workspace.title"), Messages.getWarningIcon()) != Messages.YES) {
       return;
     }
 
