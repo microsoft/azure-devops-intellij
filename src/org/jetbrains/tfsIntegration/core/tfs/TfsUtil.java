@@ -27,6 +27,8 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.util.ThrowableConsumer;
+import com.intellij.util.UriUtil;
+import com.intellij.util.io.URLUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +46,6 @@ public class TfsUtil {
 
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
   @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
-  @NonNls private static final String DELIM = "://";
   private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID, true);
 
   @Nullable
@@ -151,7 +152,7 @@ public class TfsUtil {
 
   @Nullable
   public static URI getUrl(String uriText, boolean complainOnPath, boolean trimPath) {
-    int i = uriText.indexOf(DELIM);
+    int i = uriText.indexOf(URLUtil.SCHEME_SEPARATOR);
 
     try {
       final URI uri;
@@ -159,7 +160,7 @@ public class TfsUtil {
         uri = new URI("http", "//" + uriText, null).normalize();
       }
       else {
-        uri = new URI(uriText.substring(0, i), "//" + uriText.substring(i + DELIM.length()), null).normalize();
+        uri = new URI(uriText.substring(0, i), "//" + uriText.substring(i + URLUtil.SCHEME_SEPARATOR.length()), null).normalize();
       }
       if (StringUtil.isEmpty(uri.getHost())) {
         return null;
@@ -170,7 +171,7 @@ public class TfsUtil {
         return null;
       }
 
-      if (complainOnPath && !"".equals(uri.getPath()) && !"/".equals(uri.getPath())) {
+      if (complainOnPath && uri.getPath() != null && !uri.getPath().isEmpty() && !"/".equals(uri.getPath())) {
         return null;
       }
       if (trimPath) {
@@ -214,9 +215,7 @@ public class TfsUtil {
   }
 
   public static String appendPath(URI serverUri, String path) {
-    String uri = StringUtil.trimEnd(serverUri.toString(), "/");
     path = StringUtil.trimStart(path, "/");
-    return uri + "/" + path.replace(" ", "%20");
+    return UriUtil.trimLastSlash(serverUri.toString()) + "/" + path.replace(" ", "%20");
   }
-
 }
