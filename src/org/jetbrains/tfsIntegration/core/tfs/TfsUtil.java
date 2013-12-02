@@ -216,6 +216,6 @@ public class TfsUtil {
 
   public static String appendPath(URI serverUri, String path) {
     path = StringUtil.trimStart(path, "/");
-    return UriUtil.trimLastSlash(serverUri.toString()) + "/" + path.replace(" ", "%20");
+    return UriUtil.trimTrailingSlashes(serverUri.toString()) + "/" + path.replace(" ", "%20");
   }
 }
