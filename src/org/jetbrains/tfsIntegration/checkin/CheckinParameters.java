@@ -33,7 +33,6 @@ import com.intellij.util.containers.MultiMap;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Annotation;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinNoteFieldDefinition;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
-import gnu.trove.THashSet;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
@@ -125,12 +124,7 @@ public class CheckinParameters {
             pi = new MockProgressIndicator();
           }
           pi.setText("Loading checkin notes and policy definitions");
-          final MultiMap<ServerInfo, String> serverToProjects = new MultiMap<ServerInfo, String>() {
-            @Override
-            protected Collection<String> createCollection() {
-              return new THashSet<String>();
-            }
-          };
+          final MultiMap<ServerInfo, String> serverToProjects = MultiMap.createSet();
           final Map<ServerInfo, Collection<FilePath>> serverToFiles = new HashMap<ServerInfo, Collection<FilePath>>();
           WorkstationHelper.processByWorkspaces(filePaths, false, panel.getProject(), new WorkstationHelper.VoidProcessDelegate() {
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
