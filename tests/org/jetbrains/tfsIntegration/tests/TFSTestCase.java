@@ -34,7 +34,7 @@ import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.CharsetToolkit;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
@@ -267,26 +267,32 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
   protected void commit(final Collection<Change> changes, final String comment) {
     CheckinEnvironment env = getVcs().getCheckinEnvironment();
     RefreshableOnComponent panel = env.createAdditionalOptionsPanel(new CheckinProjectPanel() {
+      @Override
       public JComponent getComponent() {
         return null;
       }
 
+      @Override
       public JComponent getPreferredFocusedComponent() {
         return null;
       }
 
+      @Override
       public boolean hasDiffs() {
         return true;
       }
 
+      @Override
       public Collection<VirtualFile> getVirtualFiles() {
         return null;
       }
 
+      @Override
       public Collection<Change> getSelectedChanges() {
         return changes;
       }
 
+      @Override
       public Collection<File> getFiles() {
         Collection<File> result = new ArrayList<File>();
         for (Change change : changes) {
@@ -300,6 +306,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
         return result;
       }
 
+      @Override
       public Project getProject() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
       }
@@ -313,30 +320,38 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
         return Collections.emptyList();
       }
 
+      @Override
       public Collection<VirtualFile> getRoots() {
         return Collections.emptyList();
       }
 
+      @Override
       public void setCommitMessage(String currentDescription) {
       }
 
+      @Override
       public void setWarning(String s) {
       }
 
+      @Override
       public String getCommitMessage() {
         return "test";
       }
 
+      @Override
       public String getCommitActionName() {
         return "test";
       }
 
+      @Override
       public void refresh() {
       }
 
+      @Override
       public void saveState() {
       }
 
+      @Override
       public void restoreState() {
       }
 
@@ -448,7 +463,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     for (FilePath f : files) {
       vfiles.add(VcsUtil.getVirtualFile(f.getIOFile()));
     }
-    scheduleForAddition(VfsUtil.toVirtualFileArray(vfiles));
+    scheduleForAddition(VfsUtilCore.toVirtualFileArray(vfiles));
   }
 
   protected void scheduleForDeletion(FilePath... files) {
@@ -544,6 +559,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     refreshAll();
   }
 
+  @Override
   public VirtualFile createFileInCommand(final VirtualFile parent, final String name, @Nullable final String content) {
     final VirtualFile result = super.createFileInCommand(parent, name, content);
     assertFile(result, content, true);
@@ -560,9 +576,9 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     return createFileInCommand(VcsUtil.getVirtualFile(parent.getIOFile()), name, content);
   }
 
-  private VirtualFile createDirInCommand(final VirtualFile parent, final String name, boolean supressRefresh) {
+  private VirtualFile createDirInCommand(final VirtualFile parent, final String name, boolean suppressRefresh) {
     final VirtualFile result = super.createDirInCommand(parent, name);
-    if (!supressRefresh) {
+    if (!suppressRefresh) {
       refreshAll();
     }
     assertFolder(getChildPath(parent, name), 0);
@@ -573,6 +589,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     return createDirInCommand(path.getParentPath(), path.getName());
   }
 
+  @Override
   public VirtualFile createDirInCommand(final VirtualFile parent, final String name) {
     return createDirInCommand(parent, name, false);
   }
@@ -581,6 +598,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     return createDirInCommand(VcsUtil.getVirtualFile(parent.getIOFile()), name);
   }
 
+  @Override
   protected void renameFileInCommand(final VirtualFile file, final String newName) {
     super.renameFileInCommand(file, newName);
     refreshAll();
@@ -590,6 +608,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     renameFileInCommand(VcsUtil.getVirtualFile(file.getIOFile()), newName);
   }
 
+  @Override
   protected void moveFileInCommand(final VirtualFile file, final VirtualFile newParent) {
     super.moveFileInCommand(file, newParent);
     refreshAll();
@@ -605,6 +624,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     moveFileInCommand(file, newParentFile);
   }
 
+  @Override
   public void deleteFileInCommand(final VirtualFile file) {
     super.deleteFileInCommand(file);
     refreshAll();
@@ -673,7 +693,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     InputStream stream = null;
     try {
       stream = new FileInputStream(file);
-      Assert.assertEquals("File content differs", content, StreamUtil.readText(stream));
+      Assert.assertEquals("File content differs", content, StreamUtil.readText(stream, CharsetToolkit.UTF8));
     }
     catch (IOException e) {
       Assert.fail(e.getMessage());
