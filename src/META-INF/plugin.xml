@@ -3,7 +3,21 @@
   <name>TFS Integration</name>
   <version>999.999</version>
   <idea-version since-build="124.0"/>
-  <description>Integration with Team Foundation Server.</description>
+  <description>
+      <![CDATA[
+      <a href="http://msdn.microsoft.com/en-us/vstudio/ff637362.aspx">Team Foundation Server</a> provides
+       source code management (either via Team Foundation Version Control or Git), reporting, requirements management, project management
+      (for both agile software development and waterfall teams), automated builds, lab management, testing and release management capabilities.
+      This plugin provides integration with the Team Foundation Server.
+      The following features are available:
+      <ul>
+      <li>Dedicated page under the Version Control node in the Settings/Preferences dialog.</li>
+      <li>Ability to create and manage TFS workspaces.</li>
+      <li>Ability to download the files from a TFS server according to the settings from a new or the existing workspace.</li>
+      <li>Checkout from TFS Wizard.</li>
+      </ul>
+      ]]>
+  </description>
   <category>VCS Integration</category>
   <depends>com.intellij.modules.vcs</depends>
   <depends>com.intellij.modules.ultimate</depends>
