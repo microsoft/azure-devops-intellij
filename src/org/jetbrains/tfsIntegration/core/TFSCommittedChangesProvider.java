@@ -109,7 +109,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     final List<TFSChangeList> list = getCommittedChanges(settings, getLocationFor(filePath), 1);
     if (list.size() == 1) {
       // todo - implement in proper way!
-      return new Pair<TFSChangeList, FilePath>(list.get(0), filePath);
+      return Pair.create(list.get(0), filePath);
     }
     return null;
   }
