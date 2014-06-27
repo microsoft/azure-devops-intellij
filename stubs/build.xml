@@ -42,8 +42,10 @@ Endpoints URIs and overrides assume TFS 2010
     <available file="${override}/${wsdl.filename}" property="override-exists"/>
     <antcall target="get-wsdl"/>
     <copy file="${override}/${wsdl.filename}" todir="${temp}/wsdl" failonerror="false"/>
+    <!-- NOTE: Some code currently relies on suppressPrefixes="true". For instance, LatestVersionSpec.writeAttributes() always assumes empty
+    namespace prefix when specifying concrete type. -->
     <codegen wsdlfilename="${wsdl.file}" output="${temp}" wsdlVersion="1.2" unwrap="false" syncOnly="true"
-             unpackClasses="true" skipbuildxml="true" suppressPrefixes="true"/>
+             unpackClasses="true" skipbuildxml="true" suppressPrefixes="true" />
     <!--packagename="org.jetbrains.tfsIntegration.stubs" -->
   </target>
 

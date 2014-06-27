@@ -123,6 +123,9 @@
       <s:complexType name="PropertyValue">
         <s:sequence>
           <s:element minOccurs="1" maxOccurs="1" name="val" nillable="true" />
+          <!--[IntelliJ] minOccurs set to 0 -->
+	  <s:element minOccurs="0" maxOccurs="1" name="ChangedBy" nillable="true" type="s1:guid"/>
+	  <s:element minOccurs="0" maxOccurs="1" name="ChangedDate" nillable="true" type="s:dateTime"/>
         </s:sequence>
         <s:attribute name="pname" type="s:string" />
       </s:complexType>
@@ -1219,12 +1222,18 @@
           <s:enumeration value="Any" />
         </s:restriction>
       </s:simpleType>
-      <s:complexType name="ItemSet">
+      <!-- TODO: Seems this one will cause problems with previous version -->
+      <s:complexType name="BaseItemSetOfItem">
         <s:sequence>
           <s:element minOccurs="0" maxOccurs="1" name="QueryPath" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="Pattern" type="s:string" />
           <s:element minOccurs="0" maxOccurs="1" name="Items" type="tns:ArrayOfItem" />
         </s:sequence>
+      </s:complexType>
+      <s:complexType name="ItemSet">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:BaseItemSetOfItem"/>
+        </s:complexContent>
       </s:complexType>
       <s:complexType name="ArrayOfItemSet">
         <s:sequence>
@@ -1386,6 +1395,7 @@
             <s:element minOccurs="0" maxOccurs="1" name="workspaceOwner" type="s:string" />
             <s:element minOccurs="0" maxOccurs="1" name="source" type="tns:ItemSpec" />
             <s:element minOccurs="0" maxOccurs="1" name="target" type="tns:ItemSpec" />
+            <!-- [IntelliJ] minOccurs set to 0 -->
             <s:element minOccurs="0" maxOccurs="1" name="options" type="s:int" />
           </s:sequence>
         </s:complexType>
@@ -1856,7 +1866,14 @@
         </s:sequence>
       </s:complexType>
       <s:complexType name="LocalVersionUpdate">
-        <s:attribute default="0" name="itemid" type="s:int" />
+        <!-- TODO: Seems to cause problems with old versions -->
+        <s:complexContent mixed="false">
+          <s:extension base="tns:BaseLocalVersionUpdate">
+            <s:attribute default="0" name="itemid" type="s:int" />
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
+      <s:complexType name="BaseLocalVersionUpdate" abstract="true">
         <s:attribute name="tlocal" type="s:string" />
         <s:attribute name="lver" type="s:int" use="required" />
       </s:complexType>
