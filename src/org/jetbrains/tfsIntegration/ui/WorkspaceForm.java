@@ -50,6 +50,7 @@ public class WorkspaceForm {
   private ValidatingTableEditor<WorkingFolderInfo> myTable;
   private JLabel myMessageLabel;
   private JLabel myWorkingFoldrersLabel;
+  private ComboBox myLocationField;
   private ServerInfo myServer;
   private final Project myProject;
   @Nullable private String myWorkingFolderValidationMessage;
@@ -189,6 +190,12 @@ public class WorkspaceForm {
     myTable.setColumnReorderingAllowed(false);
   }
 
+  private void setupLocations() {
+    for (WorkspaceInfo.Location location : WorkspaceInfo.Location.values()) {
+      myLocationField.addItem(location);
+    }
+  }
+
   private WorkspaceForm(final Project project) {
     myProject = project;
 
@@ -202,6 +209,8 @@ public class WorkspaceForm {
     myCommentField.getDocument().addDocumentListener(listener);
 
     myMessageLabel.setIcon(UIUtil.getBalloonWarningIcon());
+
+    setupLocations();
   }
 
   public WorkspaceForm(Project project, @NotNull ServerInfo server) {
@@ -217,6 +226,7 @@ public class WorkspaceForm {
   public WorkspaceForm(Project project, @NotNull WorkspaceInfo workspace) {
     this(project, workspace.getServer());
     myNameField.setText(workspace.getName());
+    myLocationField.setSelectedItem(workspace.getLocation());
     myCommentField.setText(workspace.getComment());
     myTable.setModel(new ColumnInfo[]{STATUS_COLUMN, new LocalPathColumn(), SERVER_PATH_COLUMN},
                      new ArrayList<WorkingFolderInfo>(workspace.getWorkingFoldersCached()));
@@ -228,6 +238,11 @@ public class WorkspaceForm {
 
   public String getWorkspaceName() {
     return myNameField.getText();
+  }
+
+  @NotNull
+  public WorkspaceInfo.Location getWorkspaceLocation() {
+    return (WorkspaceInfo.Location)myLocationField.getSelectedItem();
   }
 
   public String getWorkspaceComment() {

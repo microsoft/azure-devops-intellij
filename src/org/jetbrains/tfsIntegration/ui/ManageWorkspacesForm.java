@@ -371,6 +371,7 @@ public class ManageWorkspacesForm {
         //noinspection ConstantConditions
         WorkspaceInfo newWorkspace = new WorkspaceInfo(server, server.getQualifiedUsername(), Workstation.getComputerName());
         newWorkspace.setName(d.getWorkspaceName());
+        newWorkspace.setLocation(d.getWorkspaceLocation());
         newWorkspace.setComment(d.getWorkspaceComment());
         newWorkspace.setWorkingFolders(d.getWorkingFolders());
         newWorkspace.saveToServer(myContentPane, null);
@@ -420,6 +421,7 @@ public class ManageWorkspacesForm {
     d.show();
     if (d.isOK()) {
       modifiedWorkspace.setName(d.getWorkspaceName());
+      modifiedWorkspace.setLocation(d.getWorkspaceLocation());
       modifiedWorkspace.setComment(d.getWorkspaceComment());
       modifiedWorkspace.setWorkingFolders(d.getWorkingFolders());
       try {

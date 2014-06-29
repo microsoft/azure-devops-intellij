@@ -29,6 +29,8 @@ public class TfsBeansHolder {
   private final URI myServerUri;
 
   private RepositoryStub myRepository;
+  // Newer version of repository service. Required for several operations with local workspaces.
+  private RepositoryStub myRepository4;
   private ClientService2Stub myWorkItemTrackingClientService;
   private GroupSecurityServiceStub myGroupSecurityService;
   private String myDownloadUrl;
@@ -47,6 +49,16 @@ public class TfsBeansHolder {
     }
     WebServiceHelper.setupStub(myRepository, credentials, myServerUri);
     return myRepository;
+  }
+
+  @NotNull
+  public RepositoryStub getRepository4Stub(Credentials credentials, ProgressIndicator pi)
+    throws HostNotApplicableException, RemoteException {
+    if (myRepository4 == null) {
+      createStubs(credentials, pi);
+    }
+    WebServiceHelper.setupStub(myRepository4, credentials, myServerUri);
+    return myRepository4;
   }
 
   @NotNull
@@ -109,6 +121,12 @@ public class TfsBeansHolder {
     if (isccProvider == null) {
       throw new HostNotApplicableException(null);
     }
+    String isccProvider4 =
+      findServicePath(registrationEntries, TFSConstants.VERSION_CONTROL_ENTRY_TYPE, TFSConstants.ISCC_PROVIDER_4_SERVICE_NAME,
+                      TFSConstants.ISCC_PROVIDER_SERVICE_NAME);
+    if (isccProvider4 == null) {
+      throw new HostNotApplicableException(null);
+    }
     String download = findServicePath(registrationEntries, TFSConstants.VERSION_CONTROL_ENTRY_TYPE, TFSConstants.DOWNLOAD_SERVICE_NAME);
     if (download == null) {
       throw new HostNotApplicableException(null);
@@ -127,7 +145,7 @@ public class TfsBeansHolder {
     if (groupSecurityService == null) {
       throw new HostNotApplicableException(null);
     }
-    doCreateStubs(configContext, isccProvider, download, upload, workItemService, groupSecurityService);
+    doCreateStubs(configContext, isccProvider, isccProvider4, download, upload, workItemService, groupSecurityService);
 
     if (pi != null) {
       pi.setText(piText);
@@ -136,6 +154,7 @@ public class TfsBeansHolder {
 
   private void doCreateStubs(@Nullable ConfigurationContext configContext,
                              String isccProvider,
+                             String isccProvider4,
                              String download,
                              String upload,
                              String workItemService,
@@ -147,6 +166,7 @@ public class TfsBeansHolder {
         configContext = WebServiceHelper.getStubConfigurationContext();
       }
       myRepository = new RepositoryStub(configContext, TfsUtil.appendPath(myServerUri, isccProvider));
+      myRepository4 = new RepositoryStub(configContext, TfsUtil.appendPath(myServerUri, isccProvider4));
       myWorkItemTrackingClientService =
         new ClientService2Stub(configContext, TfsUtil.appendPath(myServerUri, workItemService));
       myGroupSecurityService =
@@ -171,7 +191,7 @@ public class TfsBeansHolder {
   }
 
   @Nullable
-  private static String findServicePath(ArrayOfFrameworkRegistrationEntry registrationEntries, String entryType, String interfaceName) {
+  private static String findServicePath(ArrayOfFrameworkRegistrationEntry registrationEntries, String entryType, String... interfaceNames) {
     if (registrationEntries == null) {
       return null;
     }
@@ -179,13 +199,14 @@ public class TfsBeansHolder {
       if (entryType.equals(entry.getType())) {
         RegistrationServiceInterface[] interfaces = entry.getServiceInterfaces().getServiceInterface();
         if (interfaces != null) {
-          for (RegistrationServiceInterface anInterface : interfaces) {
-            if (interfaceName.equals(anInterface.getName())) {
-              return anInterface.getUrl();
+          for (String interfaceName : interfaceNames) {
+            for (RegistrationServiceInterface anInterface : interfaces) {
+              if (interfaceName.equals(anInterface.getName())) {
+                return anInterface.getUrl();
+              }
             }
           }
         }
-
       }
     }
     return null;

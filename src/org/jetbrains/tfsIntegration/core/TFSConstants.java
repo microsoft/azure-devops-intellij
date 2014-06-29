@@ -49,6 +49,7 @@ public final class TFSConstants {
   public static final String WORK_ITEM_TRACKING_ENTRY_TYPE = "WorkItemTracking";
   public static final String VSTFS_ENTRY_TYPE = TOOL_ID_TFS;
 
+  public static final String ISCC_PROVIDER_4_SERVICE_NAME = "ISCCProvider4";
   public static final String ISCC_PROVIDER_SERVICE_NAME = "ISCCProvider";
   public static final String DOWNLOAD_SERVICE_NAME = "Download";
   public static final String UPLOAD_SERVICE_NAME = "Upload";

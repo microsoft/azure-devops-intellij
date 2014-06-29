@@ -413,7 +413,7 @@ public class VersionControlServer {
         final QueryWorkspace param = new QueryWorkspace();
         param.setOwnerName(workspaceOwner);
         param.setWorkspaceName(workspaceName);
-        return myBeans.getRepositoryStub(credentials, pi).queryWorkspace(param).getQueryWorkspaceResult();
+        return myBeans.getRepository4Stub(credentials, pi).queryWorkspace(param).getQueryWorkspaceResult();
       }
     });
   }
@@ -818,7 +818,7 @@ public class VersionControlServer {
           QueryWorkspaces param = new QueryWorkspaces();
           param.setComputer(computer);
           param.setOwnerName(credentials.getQualifiedUsername());
-          return myBeans.getRepositoryStub(credentials, pi).queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
+          return myBeans.getRepository4Stub(credentials, pi).queryWorkspaces(param).getQueryWorkspacesResult().getWorkspace();
         }
       });
 

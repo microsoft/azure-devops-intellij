@@ -43,6 +43,7 @@ public class WorkspaceInfo {
   private Calendar myTimestamp;
   private boolean myLoaded;
   private String myModifiedName;
+  @NotNull private Location myLocation = Location.SERVER;
 
   private List<WorkingFolderInfo> myWorkingFoldersInfos = new ArrayList<WorkingFolderInfo>();
 
@@ -88,6 +89,19 @@ public class WorkspaceInfo {
   public void setName(final String name) {
     checkCurrentOwnerAndComputer();
     myModifiedName = name;
+  }
+
+  @NotNull
+  public Location getLocation() {
+    return myLocation;
+  }
+
+  public void setLocation(@NotNull Location location) {
+    myLocation = location;
+  }
+
+  public boolean isLocal() {
+    return Location.LOCAL.equals(myLocation);
   }
 
   public String getComment() {
@@ -272,6 +286,7 @@ public class WorkspaceInfo {
     bean.setLastAccessDate(info.getTimestamp());
     bean.setName(info.getName());
     bean.setOwner(info.getOwnerName());
+    bean.setIslocal(info.isLocal());
     return bean;
   }
 
@@ -300,6 +315,7 @@ public class WorkspaceInfo {
 
   static void fromBean(Workspace bean, WorkspaceInfo workspace) {
     workspace.myOriginalName = bean.getName();
+    workspace.setLocation(Location.from(bean.getIslocal()));
     workspace.setComment(bean.getComment());
     workspace.setTimestamp(bean.getLastAccessDate());
     final WorkingFolder[] folders;
@@ -321,6 +337,7 @@ public class WorkspaceInfo {
 
   public WorkspaceInfo getCopy() {
     WorkspaceInfo copy = new WorkspaceInfo(myServerInfo, myOwnerName, myComputer);
+    copy.myLocation = myLocation;
     copy.myComment = myComment;
     copy.myLoaded = myLoaded;
     copy.myOriginalName = myOriginalName;
@@ -384,4 +401,13 @@ public class WorkspaceInfo {
            "]";
   }
 
+  public enum Location {
+    LOCAL,
+    SERVER;
+
+    @NotNull
+    public static Location from(boolean isLocal) {
+      return isLocal ? LOCAL : SERVER;
+    }
+  }
 }

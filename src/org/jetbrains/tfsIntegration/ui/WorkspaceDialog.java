@@ -116,6 +116,11 @@ public class WorkspaceDialog extends DialogWrapper {
     return myForm.getWorkspaceName();
   }
 
+  @NotNull
+  public WorkspaceInfo.Location getWorkspaceLocation() {
+    return myForm.getWorkspaceLocation();
+  }
+
   public String getWorkspaceComment() {
     return myForm.getWorkspaceComment();
   }
