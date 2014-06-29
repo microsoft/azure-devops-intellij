@@ -21,10 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 public class WorkItem {
 
-  public enum WorkItemState {
-    Active, Resolved, Closed
-  }
-
   // a great many of other properties may be added here if will be needed in UI or elsewhere
   private final int myId;
 
@@ -87,7 +83,7 @@ public class WorkItem {
   public boolean isActionPossible(CheckinWorkItemAction action) {
     return action == CheckinWorkItemAction.None ||
            action == CheckinWorkItemAction.Associate ||
-           myState == WorkItemState.Active && (myType == WorkItemType.Bug || myType == WorkItemType.Task);
+           myState == WorkItemState.ACTIVE && (myType == WorkItemType.BUG || myType == WorkItemType.TASK);
   }
 
   public boolean equals(final Object o) {

@@ -32,7 +32,7 @@ class WorkItemsTableModel extends AbstractTableModel {
       }},
     Type("Type", 300) {
       public Object getValue(final WorkItem workItem, final CheckinWorkItemAction action) {
-        return workItem.getType().getSerialized();
+        return workItem.getType().getName();
       }},
     Id("Id", 200) {
       public Object getValue(final WorkItem workItem, final CheckinWorkItemAction action) {

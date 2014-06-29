@@ -16,28 +16,64 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
-public enum WorkItemType {
+import java.util.Map;
 
-  Bug("Bug"), QualityOfServiceRequirement("Quality of Service Requirement"), Risk("Risk"), Scenario("Scenario"), Task("Task");
+public class WorkItemType {
 
-  private WorkItemType(@NonNls String serialized) {
-    mySerialized = serialized;
+  private static final Map<String, WorkItemType> ourAllTypes = ContainerUtil.newHashMap();
+
+  public static final WorkItemType BUG = register("Bug");
+  public static final WorkItemType TASK = register("Task");
+
+  @NonNls @NotNull private final String myName;
+
+  private WorkItemType(@NonNls @NotNull String name) {
+    myName = name;
   }
 
-  private @NonNls final String mySerialized;
-
-  public String getSerialized() {
-    return mySerialized;
+  @NotNull
+  public String getName() {
+    return myName;
   }
 
-  public static WorkItemType fromString(String s) {
-    for (WorkItemType type : values()) {
-      if (type.getSerialized().equals(s)) {
-        return type;
-      }
+  @NotNull
+  public static WorkItemType from(@NotNull String typeName) {
+    return register(typeName);
+  }
+
+  @NotNull
+  private static synchronized WorkItemType register(@NotNull String typeName) {
+    WorkItemType result = ourAllTypes.get(typeName);
+
+    if (result == null) {
+      result = new WorkItemType(typeName);
+      ourAllTypes.put(typeName, result);
     }
-    throw new IllegalArgumentException("Unknown work item type serialized form: " + s);
+
+    return result;
+  }
+
+  @Override
+  public String toString() {
+    return myName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof WorkItemType)) return false;
+
+    WorkItemType type = (WorkItemType)o;
+
+    return myName.equals(type.myName);
+  }
+
+  @Override
+  public int hashCode() {
+    return myName.hashCode();
   }
 }

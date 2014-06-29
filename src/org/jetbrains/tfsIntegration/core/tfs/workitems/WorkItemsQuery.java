@@ -34,7 +34,7 @@ public enum WorkItemsQuery {
       Expression_type0 expression2 = new Expression_type0();
       expression2.setColumn(WorkItemField.STATE.getSerialized());
       expression2.setOperator(OperatorType.equals);
-      expression2.setString(WorkItem.WorkItemState.Active.toString());
+      expression2.setString(WorkItemState.ACTIVE.getName());
 
       GroupType groupType = new GroupType();
       groupType.setGroupOperator(GroupOperatorType.And);
@@ -65,7 +65,7 @@ public enum WorkItemsQuery {
       Expression_type0 expression1 = new Expression_type0();
       expression1.setColumn(WorkItemField.STATE.getSerialized());
       expression1.setOperator(OperatorType.equals);
-      expression1.setString(WorkItem.WorkItemState.Active.name());
+      expression1.setString(WorkItemState.ACTIVE.getName());
 
       Query_type0E query_type01 = new Query_type0E();
       query_type01.setExpression(expression1);

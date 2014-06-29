@@ -43,10 +43,10 @@ public class WorkItemSerialize {
   public static WorkItem createFromFields(String[] workItemFieldsValues) throws OperationFailedException {
     try {
       int id = Integer.parseInt(workItemFieldsValues[FIELDS.indexOf(WorkItemField.ID)]);
-      WorkItem.WorkItemState state = WorkItem.WorkItemState.valueOf(workItemFieldsValues[FIELDS.indexOf(WorkItemField.STATE)]);
+      WorkItemState state = WorkItemState.from(workItemFieldsValues[FIELDS.indexOf(WorkItemField.STATE)]);
       String title = workItemFieldsValues[FIELDS.indexOf(WorkItemField.TITLE)];
       int revision = Integer.parseInt(workItemFieldsValues[FIELDS.indexOf(WorkItemField.REVISION)]);
-      WorkItemType type = WorkItemType.fromString(workItemFieldsValues[FIELDS.indexOf(WorkItemField.TYPE)]);
+      WorkItemType type = WorkItemType.from(workItemFieldsValues[FIELDS.indexOf(WorkItemField.TYPE)]);
       String reason = workItemFieldsValues[FIELDS.indexOf(WorkItemField.REASON)];
       @Nullable final String assignedTo;
       if (workItemFieldsValues.length > FIELDS.indexOf(WorkItemField.ASSIGNED_TO)) {
@@ -73,16 +73,16 @@ public class WorkItemSerialize {
     }
 
     final List<Column_type0> columns = new ArrayList<Column_type0>();
-    if (type == WorkItemType.Bug) {
-      columns.add(createColumn(WorkItemField.STATE, null, WorkItem.WorkItemState.Resolved.name()));
+    if (type == WorkItemType.BUG) {
+      columns.add(createColumn(WorkItemField.STATE, null, WorkItemState.RESOLVED.getName()));
       columns.add(createColumn(WorkItemField.REASON, null, Reason.Fixed.name()));
       columns.add(createColumn(WorkItemField.STATE_CHANGE_DATE, SERVER_DATE_TIME, ""));
       columns.add(createColumn(WorkItemField.RESOLVED_DATE, SERVER_DATE_TIME, ""));
       columns.add(createColumn(WorkItemField.RESOLVED_BY, null, identity));
       columns.add(createColumn(WorkItemField.RESOLVED_REASON, null, reason));
     }
-    else if (type == WorkItemType.Task) {
-      columns.add(createColumn(WorkItemField.STATE, null, WorkItem.WorkItemState.Closed.name()));
+    else if (type == WorkItemType.TASK) {
+      columns.add(createColumn(WorkItemField.STATE, null, WorkItemState.CLOSED.getName()));
       columns.add(createColumn(WorkItemField.REASON, null, Reason.Completed.name()));
       columns.add(createColumn(WorkItemField.STATE_CHANGE_DATE, SERVER_DATE_TIME, ""));
       columns.add(createColumn(WorkItemField.CLOSED_DATE, SERVER_DATE_TIME, ""));
@@ -137,10 +137,10 @@ public class WorkItemSerialize {
     if (CheckinWorkItemAction.Resolve.equals(action)) {
       computedColumns.add(createComputedColumn(WorkItemField.STATE_CHANGE_DATE));
 
-      if (type == WorkItemType.Bug) {
+      if (type == WorkItemType.BUG) {
         computedColumns.add(createComputedColumn(WorkItemField.RESOLVED_DATE));
       }
-      else if (type == WorkItemType.Task) {
+      else if (type == WorkItemType.TASK) {
         computedColumns.add(createComputedColumn(WorkItemField.CLOSED_DATE));
       }
       else {
