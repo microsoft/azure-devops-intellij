@@ -1769,6 +1769,7 @@ public class VersionControlServer {
     updateWorkItem_type0.setInsertResourceLink(WorkItemSerialize.generateInsertResourceLinkforUpdateRequest(changeSet));
 
     Package_type0 package_type00 = new Package_type0();
+    package_type00.setXmlns("");
     package_type00.setUpdateWorkItem(updateWorkItem_type0);
 
     final Package_type0E package_type_0 = new Package_type0E();
