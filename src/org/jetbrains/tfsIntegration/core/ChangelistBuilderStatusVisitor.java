@@ -81,14 +81,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
   }
 
   public void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatusm) {
-    if (localItemExists) {
-      if (TfsFileUtil.isFileWritable(localPath)) {
-        myChangelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
-      }
-    }
-    else {
-      myChangelistBuilder.processLocallyDeletedFile(localPath);
-    }
+    upToDate(localPath, localItemExists, serverStatusm);
   }
 
   public void deleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
@@ -99,7 +92,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
 
   public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
     if (localItemExists) {
-      if (TfsFileUtil.isFileWritable(localPath)) {
+      if (!myWorkspace.isLocal() && TfsFileUtil.isFileWritable(localPath)) {
         myChangelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
       }
     }
