@@ -30,7 +30,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="commons-codec" level="project" />
     <orderEntry type="module-library">
       <library name="axiom">
         <CLASSES>

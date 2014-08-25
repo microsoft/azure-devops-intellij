@@ -26,6 +26,7 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.Base64;
 import com.intellij.util.ThrowableConsumer;
 import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.services.authorization._03.Identity;
@@ -38,7 +39,6 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinOptions;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.MergeOptions;
 import com.microsoft.schemas.teamfoundation._2005._06.workitemtracking.clientservices._03.*;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
@@ -1088,7 +1088,7 @@ public class VersionControlServer {
         parts.add(new StringPart(WORKSPACE_OWNER_FIELD, workspaceInfo.getOwnerName()));
         parts.add(new StringPart(LENGTH_FIELD, Long.toString(fileLength)));
         final byte[] hash = TfsFileUtil.calculateMD5(file);
-        parts.add(new StringPart(HASH_FIELD, new String(Base64.encodeBase64(hash), "UTF-8"))); // TODO: check encoding!
+        parts.add(new StringPart(HASH_FIELD, Base64.encode(hash)));
         // TODO: handle files too large to fit in a single POST
         parts.add(new StringPart(RANGE_FIELD, String.format("bytes=0-%d/%d", fileLength - 1, fileLength)));
         FilePart filePart = new FilePart(CONTENT_FIELD, SERVER_ITEM_FIELD, file);
