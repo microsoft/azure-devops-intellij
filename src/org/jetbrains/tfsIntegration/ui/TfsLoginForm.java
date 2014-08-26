@@ -79,7 +79,7 @@ public class TfsLoginForm {
       @Override
       public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-          HttpConfigurable.editConfigurable(TfsLoginForm.this.myContentPane);
+          HttpConfigurable.editConfigurable(myContentPane);
         }
       }
     });
