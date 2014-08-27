@@ -46,7 +46,7 @@ public class TfsUtil {
 
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
   @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
-  private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID, true);
+  private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID);
 
   @Nullable
   public static Pair<WorkspaceInfo, ExtendedItem> getWorkspaceAndExtendedItem(final FilePath localPath,
