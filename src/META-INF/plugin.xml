@@ -65,7 +65,7 @@
       <reference id="CheckStatusForFiles"/>
       <separator/>
       <separator/>
-      <reference id="ChangesView.Rollback"/>
+      <reference id="ChangesView.Revert"/>
       <separator/>
       <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
       <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="_Branch..."/>
