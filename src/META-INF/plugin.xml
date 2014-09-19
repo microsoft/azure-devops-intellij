@@ -43,6 +43,7 @@
 
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
+    <search.topHitProvider implementation="org.jetbrains.tfsIntegration.core.configuration.TFSOptionsTopHitProvider"/>
     <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs" displayName="TFS"/>
     <vcsCheckinHandlerFactory implementation="org.jetbrains.tfsIntegration.core.TFSCheckinHandlerFactory"/>
   </extensions>
