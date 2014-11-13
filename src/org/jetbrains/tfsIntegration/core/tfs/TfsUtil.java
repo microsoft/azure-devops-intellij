@@ -22,10 +22,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.util.ThrowableConsumer;
 import com.intellij.util.UriUtil;
 import com.intellij.util.io.URLUtil;
@@ -45,7 +47,7 @@ import java.util.*;
 public class TfsUtil {
 
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
-  @NonNls private static final String CHANGES_TOOLWINDOW_ID = "Changes";
+  @NonNls private static final String CHANGES_TOOLWINDOW_ID = Registry.is("vcs.merge.toolwindows") ? ToolWindowId.VCS : "Changes";
   private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID);
 
   @Nullable
