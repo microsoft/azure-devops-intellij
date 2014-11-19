@@ -125,8 +125,7 @@ public class TfsRequestManager {
                   d = new TfsLoginDialog((Project)projectOrComponent, myServerUri, credentials.get(), false, null);
                 }
                 d.setMessage(message.get(), false);
-                d.show();
-                if (d.isOK()) {
+                if (d.showAndGet()) {
                   credentials.set(d.getCredentials());
                   ok.set(true);
                 }
@@ -338,8 +337,7 @@ public class TfsRequestManager {
       if (errorMessage != null) {
         d.setMessage(errorMessage, false);
       }
-      d.show();
-      if (d.isOK()) {
+      if (d.showAndGet()) {
         if (fatalError.isNull()) {
           return result.get();
         }

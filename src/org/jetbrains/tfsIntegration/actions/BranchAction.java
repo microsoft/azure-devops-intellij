@@ -55,8 +55,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
     try {
       final String sourceServerPath = sourceExtendedItem.getSitem();
       CreateBranchDialog d = new CreateBranchDialog(project, workspace, sourceServerPath, sourceExtendedItem.getType() == ItemType.Folder);
-      d.show();
-      if (!d.isOK()) {
+      if (!d.showAndGet()) {
         return;
       }
 

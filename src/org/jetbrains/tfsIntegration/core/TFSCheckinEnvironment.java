@@ -109,8 +109,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
         CheckinParameters copy = myVcs.getCheckinData().parameters.createCopy();
 
         CheckinParametersDialog d = new CheckinParametersDialog(checkinProjectPanel.getProject(), copy);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           myVcs.getCheckinData().parameters = copy;
           updateMessage(myVcs.getCheckinData());
         }

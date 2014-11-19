@@ -136,8 +136,7 @@ public class ApplyLabelForm {
 
   public void addItems() {
     AddItemDialog d = new AddItemDialog(myProject, myWorkspace, mySourcePath);
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       //noinspection ConstantConditions
       myLabelModel.add(d.getLabelSpec());
       reloadItems();

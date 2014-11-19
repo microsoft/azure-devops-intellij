@@ -224,8 +224,7 @@ public class TfsServerConnectionHelper {
       else {
         ChooseTeamProjectCollectionDialog d2 =
           new ChooseTeamProjectCollectionDialog(parentComponent, result.first.toString(), teamProjectCollections);
-        d2.show();
-        if (!d2.isOK()) {
+        if (!d2.showAndGet()) {
           return null;
         }
         collection = d2.getSelectedItem();

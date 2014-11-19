@@ -95,8 +95,7 @@ public class SelectRevisionForm {
     changesetVersionText.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         SelectChangesetDialog d = new SelectChangesetDialog(myProject, myWorkspace, myServerPath, myIsDirectory);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           changesetVersionText.setText(String.valueOf(d.getChangeset()));
         }
       }
@@ -105,8 +104,7 @@ public class SelectRevisionForm {
     labelVersionText.getButton().addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         SelectLabelDialog d = new SelectLabelDialog(myProject, myWorkspace);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           labelVersionText.setText(d.getLabelString());
         }
       }

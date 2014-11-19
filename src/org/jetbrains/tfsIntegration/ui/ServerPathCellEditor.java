@@ -48,8 +48,7 @@ public class ServerPathCellEditor extends AbstractTableCellEditor {
     ActionListener listener = new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ServerBrowserDialog d = new ServerBrowserDialog(myTitle, myProject, myServer, (String)getCellEditorValue(), true, false);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           myComponent.getChildComponent().setText(d.getSelectedPath());
         }
       }

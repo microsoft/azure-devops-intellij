@@ -56,8 +56,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
 
     MergeBranchDialog d =
       new MergeBranchDialog(project, workspace, extendedItem.getSitem(), extendedItem.getType() == ItemType.Folder, title);
-    d.show();
-    if (!d.isOK()) {
+    if (!d.showAndGet()) {
       return;
     }
 

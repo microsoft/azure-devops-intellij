@@ -60,9 +60,7 @@ public class TFSCheckoutProvider implements CheckoutProvider {
       .asList(new ChooseModeStep(model), new ChooseWorkspaceStep(project, model), new ChooseLocalAndServerPathsStep(model),
               new ChooseServerPathStep(model), new SummaryStep(model));
     CheckoutWizard w = new CheckoutWizard(project, steps, model);
-    w.show();
-
-    if (w.isOK()) {
+    if (w.showAndGet()) {
       doCheckout(model, listener);
     }
   }

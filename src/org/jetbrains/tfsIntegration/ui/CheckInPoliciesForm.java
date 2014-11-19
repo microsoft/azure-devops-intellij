@@ -211,8 +211,7 @@ public class CheckInPoliciesForm {
         }
 
         ChooseCheckinPolicyDialog d = new ChooseCheckinPolicyDialog(myProject, policies);
-        d.show();
-        if (!d.isOK()) {
+        if (!d.showAndGet()) {
           return;
         }
 

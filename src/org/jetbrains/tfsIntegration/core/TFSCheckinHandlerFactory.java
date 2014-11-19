@@ -50,7 +50,7 @@ public class TFSCheckinHandlerFactory extends VcsCheckinHandlerFactory {
         if (executor != null) {
           return ReturnResult.COMMIT;
         }
-        
+
         if (!panel.vcsIsAffected(TFSVcs.TFS_NAME)) {
           return ReturnResult.COMMIT;
         }
@@ -72,7 +72,7 @@ public class TFSCheckinHandlerFactory extends VcsCheckinHandlerFactory {
         final CheckinParameters parameters = vcs.getCheckinData().parameters;
         if (parameters == null) {
           Messages.showErrorDialog(panel.getProject(), "Validation must be performed before checking in", "Checkin");
-            return ReturnResult.CLOSE_WINDOW;
+          return ReturnResult.CLOSE_WINDOW;
         }
 
         @Nullable Pair<String, CheckinParameters.Severity> msg = parameters.getValidationMessage(CheckinParameters.Severity.ERROR);
@@ -112,10 +112,9 @@ public class TFSCheckinHandlerFactory extends VcsCheckinHandlerFactory {
         }
 
         OverridePolicyWarningsDialog d = new OverridePolicyWarningsDialog(panel.getProject(), parameters.getAllFailures());
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           parameters.setOverrideReason(d.getReason());
-          return CheckinHandler.ReturnResult.COMMIT;
+          return ReturnResult.COMMIT;
         }
         else {
           return ReturnResult.CANCEL;

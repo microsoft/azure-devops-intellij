@@ -115,8 +115,7 @@ public class MergeBranchForm {
         ServerBrowserDialog d =
           new ServerBrowserDialog(TFSBundle.message("choose.source.item.dialog.title"), project, workspace.getServer(),
                                   mySourceField.getText(), false, false);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           final TfsTreeForm.SelectedItem selectedItem = d.getSelectedItem();
           mySourceField.setText(selectedItem != null ? selectedItem.path : null);
           mySourceIsDirectory = selectedItem == null || selectedItem.isDirectory;

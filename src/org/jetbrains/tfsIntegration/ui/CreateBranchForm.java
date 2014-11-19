@@ -57,8 +57,7 @@ public class CreateBranchForm {
         ServerBrowserDialog d =
           new ServerBrowserDialog(TFSBundle.message("choose.branch.target.folder.dialog.title"), project, workspace.getServer(),
                                   serverPath, true, true);
-        d.show();
-        if (d.isOK()) {
+        if (d.showAndGet()) {
           myTargetField.setText(d.getSelectedPath());
         }
       }

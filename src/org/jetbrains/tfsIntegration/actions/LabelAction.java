@@ -44,8 +44,7 @@ public class LabelAction extends SingleItemAction implements DumbAware {
                          final @NotNull ExtendedItem extendedItem) {
 
     final ApplyLabelDialog d = new ApplyLabelDialog(project, workspace, extendedItem.getSitem());
-    d.show();
-    if (!d.isOK()) {
+    if (!d.showAndGet()) {
       return;
     }
 

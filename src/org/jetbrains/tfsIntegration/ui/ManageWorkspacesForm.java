@@ -342,8 +342,7 @@ public class ManageWorkspacesForm {
 
   private void changeProxySettings(final @NotNull ServerInfo server) {
     ProxySettingsDialog d = new ProxySettingsDialog(myProject, server.getUri());
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       TFSConfigurationManager.getInstance().setProxyUri(server.getUri(), d.getProxyUri());
     }
   }
@@ -365,8 +364,7 @@ public class ManageWorkspacesForm {
     }
 
     WorkspaceDialog d = new WorkspaceDialog(myProject, server);
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       try {
         //noinspection ConstantConditions
         WorkspaceInfo newWorkspace = new WorkspaceInfo(server, server.getQualifiedUsername(), Workstation.getComputerName());
@@ -418,8 +416,7 @@ public class ManageWorkspacesForm {
 
     WorkspaceInfo modifiedWorkspace = workspace.getCopy();
     WorkspaceDialog d = new WorkspaceDialog(myProject, modifiedWorkspace);
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       modifiedWorkspace.setName(d.getWorkspaceName());
       modifiedWorkspace.setLocation(d.getWorkspaceLocation());
       modifiedWorkspace.setComment(d.getWorkspaceComment());
@@ -609,8 +606,7 @@ public class ManageWorkspacesForm {
 
     final Map<String, ProjectEntry> projectToDescriptors = loadResult.result;
     final CheckInPoliciesDialog d = new CheckInPoliciesDialog(myProject, getSelectedServer(), projectToDescriptors);
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       final Map<String, ProjectEntry> modifications = d.getModifications();
       if (!modifications.isEmpty()) {
         final TfsExecutionUtil.ResultWithError<Void> saveResult =

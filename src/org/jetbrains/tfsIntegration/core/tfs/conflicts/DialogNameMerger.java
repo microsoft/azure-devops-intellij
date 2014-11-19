@@ -31,13 +31,13 @@ public class DialogNameMerger implements NameMerger {
     if (conflict.getCtype() == ConflictType.Merge) {
       yoursName = conflict.getYsitem();
       theirsName = conflict.getYsitemsrc();
-    } else {
+    }
+    else {
       yoursName = conflict.getYsitemsrc();
       theirsName = conflict.getTsitem();
     }
     MergeNameDialog d = new MergeNameDialog(workspace, yoursName, theirsName, project);
-    d.show();
-    if (d.isOK()) {
+    if (d.showAndGet()) {
       return d.getSelectedPath();
     }
     return null;
