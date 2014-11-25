@@ -74,7 +74,7 @@ public class TFSVcs extends AbstractVcs {
   private final List<RevisionChangedListener> myRevisionChangedListeners = ContainerUtil.createLockFreeCopyOnWriteList();
   private final CheckinData myCheckinData = new CheckinData();
 
-  public TFSVcs(Project project, UltimateVerifier verifier) {
+  public TFSVcs(@NotNull Project project, UltimateVerifier verifier) {
     super(project, TFS_NAME);
     PluginVerifier.verifyUltimatePlugin(verifier);
 
