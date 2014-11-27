@@ -693,7 +693,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     InputStream stream = null;
     try {
       stream = new FileInputStream(file);
-      Assert.assertEquals("File content differs", content, StreamUtil.readText(stream, CharsetToolkit.UTF8));
+      Assert.assertEquals("File content differs", content, StreamUtil.readText(stream, CharsetToolkit.UTF8_CHARSET));
     }
     catch (IOException e) {
       Assert.fail(e.getMessage());
