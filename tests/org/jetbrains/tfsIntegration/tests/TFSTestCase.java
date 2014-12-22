@@ -136,11 +136,6 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
     ConflictsEnvironment.setNameMerger(null);
   }
 
-  @Override
-  protected String getPluginName() {
-    return null;
-  }
-
   private void prepareServer() throws URISyntaxException, TfsException {
     final URI serverUri = new URI(SERVER);
 
