@@ -80,11 +80,11 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
 
   protected static final TfsServerVersion SERVER_VERSION = TfsServerVersion.TFS_2008;
 
-  private static final String SERVER = "http://tfs-2008-01:8080/";
+  private static final String SERVER = "http://tfs2010-e:8080/tfs/IDEATests";
   private static final String SERVER_ROOT = "$/Test";
-  private static final String USER = "tfssetup";
-  private static final String DOMAIN = "SWIFTTEAMS";
-  private static final String PASSWORD = "";
+  private static final String USER = "IDEATfsTest";
+  private static final String DOMAIN = "TFS2010-E";
+  private static final String PASSWORD = "mwxXU2gyaA";
   private static final String PROXY = null; //"http://tfs-proxy-01:8081/";
 
 
