@@ -20,8 +20,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.StreamUtil;
+import com.intellij.util.containers.ContainerUtil;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
@@ -252,16 +254,28 @@ public class WebServiceHelper {
                                      final @NotNull Credentials credentials,
                                      final @NotNull URI serverUri) {
     if (credentials.getType() == Credentials.Type.Alternate) {
-      Collection<Header> headers =
-        (Collection<Header>)httpClient.getHostConfiguration().getParams().getParameter(HostParams.DEFAULT_HEADERS);
+      HostParams parameters = httpClient.getHostConfiguration().getParams();
+      Collection<Header> headers = (Collection<Header>)parameters.getParameter(HostParams.DEFAULT_HEADERS);
+
       if (headers == null) {
         headers = new ArrayList<Header>();
-        httpClient.getHostConfiguration().getParams().setParameter(HostParams.DEFAULT_HEADERS, headers);
+        parameters.setParameter(HostParams.DEFAULT_HEADERS, headers);
       }
 
-      String basicAuth =
-        BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8");
-      headers.add(new Header(HTTPConstants.HEADER_AUTHORIZATION, basicAuth));
+      Header authHeader = ContainerUtil.find(headers, new Condition<Header>() {
+        @Override
+        public boolean value(Header header) {
+          return header.getName().equals(HTTPConstants.HEADER_AUTHORIZATION);
+        }
+      });
+
+      if (authHeader == null) {
+        authHeader = new Header(HTTPConstants.HEADER_AUTHORIZATION, "");
+        headers.add(authHeader);
+      }
+
+      authHeader
+        .setValue(BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8"));
     }
     else {
       final NTCredentials ntCreds =
