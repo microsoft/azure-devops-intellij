@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2014 JetBrains s.r.o.
+ * Copyright 2000-2008 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jetbrains.tfsIntegration.webservice;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.StreamUtil;
-import com.intellij.openapi.vfs.CharsetToolkit;
-import gnu.trove.THashMap;
+import com.intellij.util.containers.ContainerUtil;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axis2.Constants;
 import org.apache.axis2.client.Options;
@@ -31,19 +32,17 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.auth.AUTH;
-import org.apache.http.auth.NTCredentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.fluent.Executor;
-import org.apache.http.client.fluent.Request;
-import org.apache.http.util.CharArrayBuffer;
-import org.apache.http.util.EncodingUtils;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.BasicScheme;
+import org.apache.commons.httpclient.auth.DigestScheme;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
+import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.params.HostParams;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +51,7 @@ import org.jetbrains.tfsIntegration.core.configuration.Credentials;
 import org.jetbrains.tfsIntegration.exceptions.OperationFailedException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.TfsExceptionManager;
+import org.jetbrains.tfsIntegration.webservice.auth.NativeNTLM2Scheme;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAP12Factory;
 import org.jetbrains.tfsIntegration.webservice.compatibility.CustomSOAPBuilder;
 
@@ -60,16 +60,34 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 public class WebServiceHelper {
+
   private static final Logger LOG = Logger.getInstance(WebServiceHelper.class.getName());
 
   @NonNls private static final String SOAP_BUILDER_KEY = "application/soap+xml";
   @NonNls private static final String CONTENT_TYPE_GZIP = "application/gzip";
 
+  public static final String USE_NATIVE_CREDENTIALS = WebServiceHelper.class.getName() + ".overrideCredentials";
+
+  @SuppressWarnings("UseOfArchaicSystemPropertyAccessors")
+  private static final int SOCKET_TIMEOUT = Integer.getInteger("org.jetbrains.tfsIntegration.socketTimeout", 30000);
+
   static {
+    // keep NTLM scheme first
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.NTLM);
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.DIGEST);
+    AuthPolicy.unregisterAuthScheme(AuthPolicy.BASIC);
+
+    AuthPolicy.registerAuthScheme(AuthPolicy.NTLM, NativeNTLM2Scheme.class);
+    AuthPolicy.registerAuthScheme(AuthPolicy.DIGEST, DigestScheme.class);
+    AuthPolicy.registerAuthScheme(AuthPolicy.BASIC, BasicScheme.class);
+
     System.setProperty(OMAbstractFactory.SOAP12_FACTORY_NAME_PROPERTY, CustomSOAP12Factory.class.getName());
   }
 
@@ -85,6 +103,7 @@ public class WebServiceHelper {
     //System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.commons.httpclient", "debug");
   }
 
+
   public static void httpGet(final URI serverUri,
                              final String downloadUrl,
                              final OutputStream outputStream,
@@ -92,45 +111,58 @@ public class WebServiceHelper {
                              final HttpClient httpClient)
     throws TfsException, IOException {
     TFSVcs.assertTrue(downloadUrl != null);
-    HttpResponse response = createExecutor(credentials, serverUri, httpClient).execute(Request.Get(downloadUrl)).returnResponse();
-    int statusCode = response.getStatusLine().getStatusCode();
-    if (statusCode == HttpStatus.SC_OK) {
-      StreamUtil.copyStreamContent(getInputStream(response), outputStream);
+    setupHttpClient(credentials, serverUri, httpClient);
+
+    HttpMethod method = new GetMethod(downloadUrl);
+    try {
+      int statusCode = httpClient.executeMethod(method);
+      if (statusCode == HttpStatus.SC_OK) {
+        StreamUtil.copyStreamContent(getInputStream(method), outputStream);
+      }
+      else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+        throw new OperationFailedException(method.getResponseBodyAsString());
+      }
+      else {
+        throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
+      }
     }
-    else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-      throw new OperationFailedException(StreamUtil.readText(response.getEntity().getContent(), CharsetToolkit.UTF8_CHARSET));
-    }
-    else {
-      throw TfsExceptionManager.createHttpTransportErrorException(response.getStatusLine(), null);
+    finally {
+      // enforce connection release since GZipInputStream may not trigger underlying AutoCloseInputStream.close()
+      method.releaseConnection();
     }
   }
 
   public static void httpPost(final @NotNull String uploadUrl,
-                              @NotNull HttpEntity body,
+                              final @NotNull Part[] parts,
                               final @Nullable OutputStream outputStream,
                               Credentials credentials,
                               URI serverUri,
                               final HttpClient httpClient)
     throws IOException, TfsException {
-    createExecutor(credentials, serverUri, httpClient);
+    setupHttpClient(credentials, serverUri, httpClient);
 
-    HttpResponse response = createExecutor(credentials, serverUri, httpClient).execute(Request.Post(uploadUrl)
-                                                                                         .addHeader("X-TFS-Version", "1.0.0.0")
-                                                                                         .addHeader("accept-language", "en-US")
-                                                                                         .body(body))
-      .returnResponse();
-      int statusCode = response.getStatusLine().getStatusCode();
+    PostMethod method = new PostMethod(uploadUrl);
+    try {
+      method.setRequestHeader("X-TFS-Version", "1.0.0.0");
+      method.setRequestHeader("accept-language", "en-US");
+      method.setRequestEntity(new MultipartRequestEntity(parts, method.getParams()));
+
+      int statusCode = httpClient.executeMethod(method);
       if (statusCode == HttpStatus.SC_OK) {
         if (outputStream != null) {
-          StreamUtil.copyStreamContent(getInputStream(response), outputStream);
+          StreamUtil.copyStreamContent(getInputStream(method), outputStream);
         }
       }
       else if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-        throw new OperationFailedException(StreamUtil.readText(response.getEntity().getContent(), CharsetToolkit.UTF8_CHARSET));
+        throw new OperationFailedException(method.getResponseBodyAsString());
       }
       else {
-        throw TfsExceptionManager.createHttpTransportErrorException(response.getStatusLine(), null);
+        throw TfsExceptionManager.createHttpTransportErrorException(statusCode, null);
       }
+    }
+    finally {
+      method.releaseConnection();
+    }
   }
 
   public static ConfigurationContext getStubConfigurationContext() {
@@ -149,16 +181,25 @@ public class WebServiceHelper {
     });
   }
 
-  @NotNull
-  private static Executor createExecutor(@NotNull Credentials credentials, @NotNull URI serverUri, @NotNull HttpClient httpClient) {
-    Executor executor = Executor.newInstance(httpClient);
-    if (credentials.getType() == Credentials.Type.Alternate) {
-      executor.auth(credentials.getUserName(), credentials.getPassword());
+  private static void setProxy(HttpClient httpClient) {
+    final HTTPProxyInfo proxy = HTTPProxyInfo.getCurrent();
+    if (proxy.host != null) {
+      httpClient.getHostConfiguration().setProxy(proxy.host, proxy.port);
+      if (proxy.user != null) {
+        Pair<String, String> domainAndUser = getDomainAndUser(proxy.user);
+        UsernamePasswordCredentials creds = new NTCredentials(domainAndUser.second, proxy.password, proxy.host, domainAndUser.first);
+        httpClient.getState().setProxyCredentials(AuthScope.ANY, creds);
+      }
     }
     else {
-      executor.auth(new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain()));
+      httpClient.getHostConfiguration().setProxyHost(null);
     }
-    return executor;
+  }
+
+  private static void setupHttpClient(Credentials credentials, URI serverUri, HttpClient httpClient) {
+    setCredentials(httpClient, credentials, serverUri);
+    setProxy(httpClient);
+    httpClient.getParams().setSoTimeout(SOCKET_TIMEOUT);
   }
 
   public static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
@@ -167,20 +208,14 @@ public class WebServiceHelper {
     // http params
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
     options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
+    options.setProperty(HTTPConstants.SO_TIMEOUT, SOCKET_TIMEOUT);
 
     // credentials
     if (credentials.getType() == Credentials.Type.Alternate) {
-      UsernamePasswordCredentials credentials1 = new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword());
-      String data = credentials1.getUserPrincipal().getName() +
-                    ":" + ((credentials.getPassword() == null) ? "null" : credentials.getPassword());
-      byte[] base64password = new Base64(0).encode(EncodingUtils.getBytes(data, CharsetToolkit.UTF8));
-      CharArrayBuffer buffer = new CharArrayBuffer(32);
-      buffer.append(AUTH.WWW_AUTH_RESP);
-      buffer.append(": Basic ");
-      buffer.append(base64password, 0, base64password.length);
-
-      Map<String, String> headers = new THashMap<String, String>();
-      headers.put(HTTPConstants.HEADER_AUTHORIZATION, buffer.toString());
+      String basicAuth =
+        BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8");
+      Map<String, String> headers = new HashMap<String, String>();
+      headers.put(HTTPConstants.HEADER_AUTHORIZATION, basicAuth);
       options.setProperty(HTTPConstants.HTTP_HEADERS, headers);
     }
     else {
@@ -190,6 +225,10 @@ public class WebServiceHelper {
       auth.setDomain(credentials.getDomain());
       auth.setHost(serverUri.getHost());
       options.setProperty(HTTPConstants.AUTHENTICATE, auth);
+
+      HttpMethodParams params = new HttpMethodParams();
+      params.setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getType() == Credentials.Type.NtlmNative);
+      options.setProperty(HTTPConstants.HTTP_METHOD_PARAMS, params);
     }
 
     // proxy
@@ -211,15 +250,48 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.PROXY, proxyProperties);
   }
 
-  @NotNull
-  private static InputStream getInputStream(@NotNull HttpResponse response) throws IOException {
-    HttpEntity entity = response.getEntity();
-    Header contentType = entity.getContentType();
-    if (contentType != null && CONTENT_TYPE_GZIP.equalsIgnoreCase(contentType.getValue())) {
-      return new GZIPInputStream(entity.getContent());
+  private static void setCredentials(final @NotNull HttpClient httpClient,
+                                     final @NotNull Credentials credentials,
+                                     final @NotNull URI serverUri) {
+    if (credentials.getType() == Credentials.Type.Alternate) {
+      HostParams parameters = httpClient.getHostConfiguration().getParams();
+      Collection<Header> headers = (Collection<Header>)parameters.getParameter(HostParams.DEFAULT_HEADERS);
+
+      if (headers == null) {
+        headers = new ArrayList<Header>();
+        parameters.setParameter(HostParams.DEFAULT_HEADERS, headers);
+      }
+
+      Header authHeader = ContainerUtil.find(headers, new Condition<Header>() {
+        @Override
+        public boolean value(Header header) {
+          return header.getName().equals(HTTPConstants.HEADER_AUTHORIZATION);
+        }
+      });
+
+      if (authHeader == null) {
+        authHeader = new Header(HTTPConstants.HEADER_AUTHORIZATION, "");
+        headers.add(authHeader);
+      }
+
+      authHeader
+        .setValue(BasicScheme.authenticate(new UsernamePasswordCredentials(credentials.getUserName(), credentials.getPassword()), "UTF-8"));
     }
     else {
-      return entity.getContent();
+      final NTCredentials ntCreds =
+        new NTCredentials(credentials.getUserName(), credentials.getPassword(), serverUri.getHost(), credentials.getDomain());
+      httpClient.getState().setCredentials(AuthScope.ANY, ntCreds);
+      httpClient.getParams().setBooleanParameter(USE_NATIVE_CREDENTIALS, credentials.getType() == Credentials.Type.NtlmNative);
+    }
+  }
+
+  private static InputStream getInputStream(HttpMethod method) throws IOException {
+    Header contentType = method.getResponseHeader(HTTPConstants.HEADER_CONTENT_TYPE);
+    if (contentType != null && CONTENT_TYPE_GZIP.equalsIgnoreCase(contentType.getValue())) {
+      return new GZIPInputStream(method.getResponseBodyAsStream());
+    }
+    else {
+      return method.getResponseBodyAsStream();
     }
   }
 
@@ -247,4 +319,5 @@ public class WebServiceHelper {
     String user = slashPos >= 0 ? s.substring(slashPos + 1) : s;
     return Pair.create(domain, user);
   }
+
 }
