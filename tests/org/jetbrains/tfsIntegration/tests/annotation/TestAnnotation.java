@@ -6,6 +6,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
+import com.intellij.openapi.vfs.VirtualFile;
 import junit.framework.Assert;
 import org.jetbrains.tfsIntegration.core.TFSChangeList;
 import org.jetbrains.tfsIntegration.tests.TFSTestCase;
@@ -32,8 +33,8 @@ public class TestAnnotation extends TFSTestCase {
       commit();
     }
 
-    file.refresh();
-    final FileAnnotation fileAnnotation = createTestAnnotation(getVcs().getAnnotationProvider(), file.getVirtualFile());
+    VirtualFile vf = file.getVirtualFile();
+    final FileAnnotation fileAnnotation = createTestAnnotation(getVcs().getAnnotationProvider(), vf);
     Assert.assertEquals(fileAnnotation.getAnnotatedContent(), contents[contents.length - 1]);
 
     LineAnnotationAspect[] aspects = fileAnnotation.getAspects();

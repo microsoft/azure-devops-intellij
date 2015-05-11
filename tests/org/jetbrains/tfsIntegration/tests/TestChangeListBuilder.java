@@ -283,7 +283,6 @@ public class TestChangeListBuilder extends MockChangelistBuilder {
   }
 
   private void assertFileStatus(FilePath path, FileStatus expectedStatus) {
-    path.refresh();
     assertFileStatus(path.getIOFile().getPath(), expectedStatus);
   }
 
