@@ -103,6 +103,9 @@
           <s:element minOccurs="0" maxOccurs="1" name="ParentIdentifier" type="s1:guid" />
           <!--[IntelliJ] ******************* -->
           <s:element minOccurs="0" maxOccurs="1" default="Active" name="Status" type="tns:ServiceStatus" />
+          <!--[IntelliJ] minOccurs set to 0 -->
+          <s:element minOccurs="0" maxOccurs="1" name="InheritLevel" type="tns:InheritLevel"/>
+          <!--[IntelliJ] ******************* -->
         </s:sequence>
         <s:attribute name="serviceType" type="s:string" />
         <s:attribute name="identifier" type="s1:guid" use="required" />
@@ -137,6 +140,15 @@
           <s:enumeration value="Assigned" />
           <s:enumeration value="Active" />
           <s:enumeration value="Moving" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="InheritLevel">
+        <s:restriction base="s:string">
+          <s:enumeration value="None"/>
+          <s:enumeration value="Deployment"/>
+          <s:enumeration value="Account"/>
+          <s:enumeration value="Collection"/>
+          <s:enumeration value="All"/>
         </s:restriction>
       </s:simpleType>
       <s:complexType name="ArrayOfKeyValueOfStringString">
