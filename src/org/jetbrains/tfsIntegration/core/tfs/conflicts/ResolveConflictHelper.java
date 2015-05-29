@@ -20,7 +20,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -126,8 +125,7 @@ public class ResolveConflictHelper {
     // merge content
     if (isContentConflict(conflict)) {
       TFSVcs.assertTrue(conflict.getYtype() == ItemType.File);
-      localPath.refresh();
-      final VirtualFile vFile = localPath.getVirtualFile();
+      VirtualFile vFile = localPath.getVirtualFile();
       if (vFile != null) {
         try {
           TfsFileUtil.setReadOnly(vFile, false);
