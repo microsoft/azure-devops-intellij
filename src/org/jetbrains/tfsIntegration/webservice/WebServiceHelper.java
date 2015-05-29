@@ -23,6 +23,7 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.StreamUtil;
+import com.intellij.openapi.util.registry.Registry;
 import com.intellij.util.containers.ContainerUtil;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axis2.Constants;
@@ -200,6 +201,10 @@ public class WebServiceHelper {
     setCredentials(httpClient, credentials, serverUri);
     setProxy(httpClient);
     httpClient.getParams().setSoTimeout(SOCKET_TIMEOUT);
+    if (Registry.is("tfs.set.connection.timeout")) {
+      httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(SOCKET_TIMEOUT);
+      httpClient.getHttpConnectionManager().getParams().setSoTimeout(SOCKET_TIMEOUT);
+    }
   }
 
   public static void setupStub(final @NotNull Stub stub, final @NotNull Credentials credentials, final @NotNull URI serverUri) {
@@ -209,6 +214,9 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
     options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
     options.setProperty(HTTPConstants.SO_TIMEOUT, SOCKET_TIMEOUT);
+    if (Registry.is("tfs.set.connection.timeout")) {
+      options.setProperty(HTTPConstants.CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
+    }
 
     // credentials
     if (credentials.getType() == Credentials.Type.Alternate) {
