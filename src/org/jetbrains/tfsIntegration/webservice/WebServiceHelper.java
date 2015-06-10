@@ -201,7 +201,7 @@ public class WebServiceHelper {
     setCredentials(httpClient, credentials, serverUri);
     setProxy(httpClient);
     httpClient.getParams().setSoTimeout(SOCKET_TIMEOUT);
-    if (Registry.is("tfs.set.connection.timeout")) {
+    if (Registry.is("tfs.set.connection.timeout", false)) {
       httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(SOCKET_TIMEOUT);
       httpClient.getHttpConnectionManager().getParams().setSoTimeout(SOCKET_TIMEOUT);
     }
@@ -214,7 +214,7 @@ public class WebServiceHelper {
     options.setProperty(HTTPConstants.CHUNKED, Constants.VALUE_FALSE);
     options.setProperty(HTTPConstants.MC_ACCEPT_GZIP, Boolean.TRUE);
     options.setProperty(HTTPConstants.SO_TIMEOUT, SOCKET_TIMEOUT);
-    if (Registry.is("tfs.set.connection.timeout")) {
+    if (Registry.is("tfs.set.connection.timeout", false)) {
       options.setProperty(HTTPConstants.CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
     }
 

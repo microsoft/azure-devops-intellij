@@ -47,7 +47,7 @@ import java.util.*;
 public class TfsUtil {
 
   private static final Logger LOG = Logger.getInstance(TfsUtil.class.getName());
-  @NonNls private static final String CHANGES_TOOLWINDOW_ID = Registry.is("vcs.merge.toolwindows") ? ToolWindowId.VCS : "Changes";
+  @NonNls private static final String CHANGES_TOOLWINDOW_ID = Registry.is("vcs.merge.toolwindows", false) ? ToolWindowId.VCS : "Changes";
   private static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.toolWindowGroup("TFS", CHANGES_TOOLWINDOW_ID);
 
   @Nullable
