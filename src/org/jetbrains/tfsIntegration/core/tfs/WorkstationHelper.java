@@ -67,14 +67,13 @@ public class WorkstationHelper {
       for (FilePath localPath : currentLocalPaths) {
         Collection<String> serverPaths = workspace.findServerPathsByLocalPath(localPath, considerChildMappings, projectOrComponent);
         if (!considerChildMappings) {
-          // optimization + actual isDirectory flag
           currentItemPaths.add(new ItemPath(localPath, serverPaths.iterator().next()));
         }
         else {
           for (String serverPath : serverPaths) {
-            // isDirectory = true since (child) mappings can be set for folders, not for files
             //noinspection ConstantConditions
-            currentItemPaths.add(new ItemPath(workspace.findLocalPathByServerPath(serverPath, true, projectOrComponent), serverPath));
+            currentItemPaths.add(
+              new ItemPath(workspace.findLocalPathByServerPath(serverPath, localPath.isDirectory(), projectOrComponent), serverPath));
           }
         }
       }
