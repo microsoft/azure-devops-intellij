@@ -19,20 +19,16 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.MultiLineLabelUI;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.DoubleClickListener;
-import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.table.TableView;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.ListTableModel;
 import com.intellij.util.ui.UIUtil;
-import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import icons.TFSIcons;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,10 +37,6 @@ import org.jetbrains.tfsIntegration.checkin.CheckinPoliciesManager;
 import org.jetbrains.tfsIntegration.checkin.NotInstalledPolicyFailure;
 import org.jetbrains.tfsIntegration.checkin.PolicyFailure;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
-import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemsQuery;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -66,9 +58,6 @@ public class CheckinParametersForm {
 
   private JPanel myContentPane;
   private JComboBox myServersCombo;
-  private JComboBox myQueriesCombo;
-  private JButton mySearchButton;
-  private JTable myWorkItemsTable;
   private JPanel myServerChooserPanel;
   private JTabbedPane myTabbedPane;
   private JPanel myNotesPanel;
@@ -78,8 +67,7 @@ public class CheckinParametersForm {
   private JPanel myPoliciesTab;
   private TableView<PolicyFailure> myWarningsTable;
   private JButton myEvaluateButton;
-
-  private final WorkItemsTableModel myWorkItemsTableModel;
+  private WorkItemsPanel myWorkItemsPanel;
 
   private final CheckinParameters myState;
   private final Project myProject;
@@ -137,57 +125,12 @@ public class CheckinParametersForm {
 
     myServersCombo.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
-        updateQueryCombo();
-        updateWorkItemsTable();
+        myWorkItemsPanel.update();
         udpateCheckinNotes();
         updatePoliciesWarnings();
         updateErrorMessage(false);
       }
     });
-
-    myQueriesCombo.setModel(new DefaultComboBoxModel(WorkItemsQuery.values()));
-
-    mySearchButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent event) {
-        queryWorkItems();
-      }
-    });
-
-    myWorkItemsTableModel = new WorkItemsTableModel();
-
-    myWorkItemsTable.setModel(myWorkItemsTableModel);
-    myWorkItemsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-    for (int i = 0; i < WorkItemsTableModel.Column.values().length; i++) {
-      myWorkItemsTable.getColumnModel().getColumn(i).setPreferredWidth(WorkItemsTableModel.Column.values()[i].getWidth());
-    }
-
-    final JComboBox actionCombo =
-      new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
-
-    myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.Checkbox.ordinal())
-      .setCellRenderer(new NoBackgroundBooleanTableCellRenderer());
-    myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.CheckinAction.ordinal())
-      .setCellEditor(new DefaultCellEditor(actionCombo) {
-        @Nullable
-        public Component getTableCellEditorComponent(final JTable table,
-                                                     final Object value,
-                                                     final boolean isSelected,
-                                                     final int row,
-                                                     final int column) {
-          WorkItem workItem = ((WorkItemsTableModel)table.getModel()).getWorkItem(row);
-          CheckinWorkItemAction action = ((WorkItemsTableModel)table.getModel()).getAction(workItem);
-          if (action != null && workItem.isActionPossible(CheckinWorkItemAction.Resolve)) {
-            actionCombo.setSelectedItem(action);
-            return super.getTableCellEditorComponent(table, value, isSelected, row, column);
-          }
-          else {
-            return null;
-          }
-        }
-      });
-
-    new TableSpeedSearch(myWorkItemsTable);
 
     myWarningsTable.setModelAndUpdateColumns(new ListTableModel<PolicyFailure>(WARNING_COLUMN_INFO));
 
@@ -222,11 +165,18 @@ public class CheckinParametersForm {
     myServersCombo.setSelectedItem(pair.first);
     myTabbedPane.setSelectedIndex(myTabbedPane.indexOfComponent(pair.second));
 
-    updateQueryCombo();
-    updateWorkItemsTable();
+    myWorkItemsPanel.update();
     udpateCheckinNotes();
     updatePoliciesWarnings();
     updateErrorMessage(false);
+  }
+
+  public CheckinParameters getState() {
+    return myState;
+  }
+
+  public Project getProject() {
+    return myProject;
   }
 
   private void evaluatePolicies() {
@@ -292,12 +242,8 @@ public class CheckinParametersForm {
     return Pair.create(myState.getServers().get(0), myWorkItemsTab);
   }
 
-  private void updateQueryCombo() {
-    final WorkItemsQuery previousQuery = myState.getWorkItems(getSelectedServer()).getQuery();
-    myQueriesCombo.setSelectedItem(previousQuery != null ? previousQuery : WorkItemsQuery.AllMyActive);
-  }
-
   private void createUIComponents() {
+    myWorkItemsPanel = new WorkItemsPanel(this);
     // TODO until MultiLineLabel is moved to openapi
     myErrorLabel = new JLabel() {
       public void updateUI() {
@@ -311,33 +257,7 @@ public class CheckinParametersForm {
     myErrorLabel.setVerticalTextPosition(SwingConstants.TOP);
   }
 
-  private void queryWorkItems() {
-    final TfsExecutionUtil.ResultWithError<List<WorkItem>> result =
-      TfsExecutionUtil.executeInBackground("Performing Query", myProject, new TfsExecutionUtil.Process<List<WorkItem>>() {
-        public List<WorkItem> run() throws TfsException, VcsException {
-          final WorkItemsQuery selectedQuery = (WorkItemsQuery)myQueriesCombo.getSelectedItem();
-          return selectedQuery.queryWorkItems(getSelectedServer(), CheckinParametersForm.this, null);
-        }
-      });
-
-    final String title = "Query Work Items";
-    if (result.cancelled || result.showDialogIfError(title)) {
-      return;
-    }
-
-    if (result.result.isEmpty()) {
-      final String message = "No work items found for the selected query";
-      Messages.showInfoMessage(myProject, message, title);
-    }
-    myState.getWorkItems(getSelectedServer()).update((WorkItemsQuery)myQueriesCombo.getSelectedItem(), result.result);
-    updateWorkItemsTable();
-  }
-
-  private void updateWorkItemsTable() {
-    myWorkItemsTableModel.setContent(myState.getWorkItems(getSelectedServer()));
-  }
-
-  private ServerInfo getSelectedServer() {
+  public ServerInfo getSelectedServer() {
     return (ServerInfo)myServersCombo.getSelectedItem();
   }
 
