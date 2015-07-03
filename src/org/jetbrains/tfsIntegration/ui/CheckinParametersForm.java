@@ -164,11 +164,6 @@ public class CheckinParametersForm {
 
     myServersCombo.setSelectedItem(pair.first);
     myTabbedPane.setSelectedIndex(myTabbedPane.indexOfComponent(pair.second));
-
-    myWorkItemsPanel.update();
-    udpateCheckinNotes();
-    updatePoliciesWarnings();
-    updateErrorMessage(false);
   }
 
   public CheckinParameters getState() {
