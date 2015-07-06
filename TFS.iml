@@ -84,6 +84,14 @@
     <orderEntry type="module" module-name="ultimate-verifier" />
     <orderEntry type="module" module-name="platform-ultimate" />
     <orderEntry type="module" module-name="platform-impl" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/com.microsoft.tfs.sdk-14.0.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
-
