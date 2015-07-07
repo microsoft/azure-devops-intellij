@@ -7,7 +7,7 @@ import com.intellij.util.PlatformIcons;
 public class TfsErrorTreeNode extends SimpleNode {
   private final String myMessage;
 
-  protected TfsErrorTreeNode(SimpleNode parent, String message) {
+  public TfsErrorTreeNode(SimpleNode parent, String message) {
     super(parent);
     myMessage = message;
   }

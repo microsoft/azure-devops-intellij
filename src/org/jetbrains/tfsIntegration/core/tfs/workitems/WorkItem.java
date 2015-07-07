@@ -16,7 +16,10 @@
 
 package org.jetbrains.tfsIntegration.core.tfs.workitems;
 
+import com.intellij.openapi.util.text.StringUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
+import com.microsoft.tfs.core.clients.workitem.fields.FieldCollection;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class WorkItem {
@@ -50,6 +53,31 @@ public class WorkItem {
     myState = state;
     myTitle = title;
     myType = type;
+  }
+
+  @NotNull
+  public static WorkItem create(@NotNull com.microsoft.tfs.core.clients.workitem.WorkItem workItem) {
+    int id = workItem.getID();
+    String assignedTo = getStringValue(workItem, WorkItemField.ASSIGNED_TO);
+    String state = getStringValue(workItem, WorkItemField.STATE);
+    String title = workItem.getTitle();
+    int revision = workItem.getFields().getRevision();
+    String type = workItem.getType().getName();
+    String reason = getStringValue(workItem, WorkItemField.REASON);
+
+    return new WorkItem(id, assignedTo, WorkItemState.from(state), title, revision, WorkItemType.from(type), reason);
+  }
+
+  @NotNull
+  private static String getStringValue(@NotNull com.microsoft.tfs.core.clients.workitem.WorkItem workItem, @NotNull WorkItemField field) {
+    FieldCollection fields = workItem.getFields();
+    String result = null;
+
+    if (fields.contains(field.getSerialized())) {
+      result = (String)fields.getField(field.getSerialized()).getValue();
+    }
+
+    return StringUtil.notNullize(result);
   }
 
   public int getId() {

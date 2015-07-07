@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.util.Disposer;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 
 import javax.swing.*;
@@ -39,6 +40,7 @@ public class CheckinParametersDialog extends DialogWrapper {
 
   protected JComponent createCenterPanel() {
     myForm = new CheckinParametersForm(myParameters, myProject);
+    Disposer.register(getDisposable(), myForm);
     //myForm.addListener(new CheckinParametersForm.Listener() {
     //  public void stateChanged() {
     //  }

@@ -16,10 +16,12 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MultiLineLabelUI;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.DocumentAdapter;
@@ -48,7 +50,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CheckinParametersForm {
+public class CheckinParametersForm implements Disposable {
 
   private static final Color REQUIRED_BACKGROUND_COLOR = new Color(252, 248, 199);
   private static final Color NOT_INSTALLED_POLICY_COLOR = UIUtil.getInactiveTextColor();
@@ -239,6 +241,7 @@ public class CheckinParametersForm {
 
   private void createUIComponents() {
     myWorkItemsPanel = new WorkItemsPanel(this);
+    Disposer.register(this, myWorkItemsPanel);
     // TODO until MultiLineLabel is moved to openapi
     myErrorLabel = new JLabel() {
       public void updateUI() {
@@ -308,5 +311,9 @@ public class CheckinParametersForm {
     @Nullable Pair<String, CheckinParameters.Severity> message = myState.getValidationMessage(CheckinParameters.Severity.BOTH);
     myErrorLabel.setText(message != null ? message.first : null);
     myErrorLabel.setIcon(message == null ? null : message.second == CheckinParameters.Severity.ERROR ? ERROR_ICON : WARNING_ICON);
+  }
+
+  @Override
+  public void dispose() {
   }
 }

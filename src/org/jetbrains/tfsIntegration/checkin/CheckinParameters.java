@@ -509,6 +509,11 @@ public class CheckinParameters {
     return new ArrayList<ServerInfo>(myData.keySet());
   }
 
+  @NotNull
+  public Set<String> getProjectPaths(@NotNull ServerInfo server) {
+    return myData.get(server).myPolicies.keySet();
+  }
+
   public List<CheckinNote> getCheckinNotes(ServerInfo server) {
     //noinspection ConstantConditions
     return Collections.unmodifiableList(myData.get(server).myCheckinNotes);

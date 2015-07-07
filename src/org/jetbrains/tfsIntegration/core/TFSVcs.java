@@ -105,6 +105,7 @@ public class TFSVcs extends AbstractVcs {
   @Override
   public void activate() {
     myFileListener = new TFSFileListener(getProject(), this);
+    TfsSdkManager.activate();
   }
 
   @Override
