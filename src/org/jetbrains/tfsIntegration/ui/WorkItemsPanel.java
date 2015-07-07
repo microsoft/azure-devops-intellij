@@ -5,7 +5,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.treeStructure.NullNode;
 import com.intellij.ui.treeStructure.SimpleTree;
@@ -17,13 +16,9 @@ import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemsQuery;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -32,8 +27,6 @@ import java.util.List;
 public class WorkItemsPanel implements Disposable {
 
   @SuppressWarnings("unused") private JPanel myMainPanel;
-  private JComboBox myQueriesCombo;
-  private JButton mySearchButton;
   private JTable myWorkItemsTable;
   private SimpleTree myWorkItemQueriesTree;
   private WorkItemQueriesTreeBuilder myTreeBuilder;
@@ -43,18 +36,6 @@ public class WorkItemsPanel implements Disposable {
 
   public WorkItemsPanel(CheckinParametersForm form) {
     myForm = form;
-
-    myQueriesCombo.setModel(new DefaultComboBoxModel(WorkItemsQuery.values()));
-    mySearchButton.addActionListener(new ActionListener() {
-      public void actionPerformed(final ActionEvent event) {
-        queryWorkItems(new TfsExecutionUtil.Process<List<WorkItem>>() {
-          public List<WorkItem> run() throws TfsException, VcsException {
-            final WorkItemsQuery selectedQuery = (WorkItemsQuery)myQueriesCombo.getSelectedItem();
-            return selectedQuery.queryWorkItems(myForm.getSelectedServer(), WorkItemsPanel.this, null);
-          }
-        });
-      }
-    });
 
     myWorkItemsTableModel = new WorkItemsTableModel();
     myWorkItemsTable.setModel(myWorkItemsTableModel);
@@ -112,13 +93,8 @@ public class WorkItemsPanel implements Disposable {
       final String message = "No work items found for the selected query";
       Messages.showInfoMessage(getProject(), message, title);
     }
-    getState().getWorkItems(myForm.getSelectedServer()).update((WorkItemsQuery)myQueriesCombo.getSelectedItem(), result.result);
+    getState().getWorkItems(myForm.getSelectedServer()).update(null, result.result);
     updateWorkItemsTable();
-  }
-
-  private void updateQueryCombo() {
-    final WorkItemsQuery previousQuery = getState().getWorkItems(myForm.getSelectedServer()).getQuery();
-    myQueriesCombo.setSelectedItem(previousQuery != null ? previousQuery : WorkItemsQuery.AllMyActive);
   }
 
   private void updateWorkItemsTable() {
@@ -126,7 +102,6 @@ public class WorkItemsPanel implements Disposable {
   }
 
   public void update() {
-    updateQueryCombo();
     updateWorkItemsTable();
     updateWorkItemQueries();
   }
@@ -147,12 +122,17 @@ public class WorkItemsPanel implements Disposable {
   }
 
   private void setNewTreeStructure() {
-    WorkItemQueriesTreeStructure newTreeStructure = new WorkItemQueriesTreeStructure(this);
+    final WorkItemQueriesTreeStructure newTreeStructure = new WorkItemQueriesTreeStructure(this);
 
     myTreeBuilder.setTreeStructure(newTreeStructure);
     Disposer.register(myTreeBuilder, newTreeStructure);
 
-    myTreeBuilder.queueUpdate();
+    myTreeBuilder.queueUpdate().doWhenDone(new Runnable() {
+      @Override
+      public void run() {
+        myTreeBuilder.expand(newTreeStructure.getPredefinedQueriesGroupNode(), null);
+      }
+    });
   }
 
   @NotNull

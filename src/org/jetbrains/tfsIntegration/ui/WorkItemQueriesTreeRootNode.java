@@ -9,8 +9,17 @@ import java.util.List;
 
 public class WorkItemQueriesTreeRootNode extends BaseQueryNode {
 
+  @NotNull private final PredefinedQueriesGroupNode myPredefinedQueriesGroupNode;
+
   public WorkItemQueriesTreeRootNode(@NotNull QueriesTreeContext context) {
     super(context);
+
+    myPredefinedQueriesGroupNode = new PredefinedQueriesGroupNode(myQueriesTreeContext);
+  }
+
+  @NotNull
+  public PredefinedQueriesGroupNode getPredefinedQueriesGroupNode() {
+    return myPredefinedQueriesGroupNode;
   }
 
   @NotNull
@@ -23,6 +32,7 @@ public class WorkItemQueriesTreeRootNode extends BaseQueryNode {
   public SimpleNode[] getChildren() {
     List<SimpleNode> result = ContainerUtil.newArrayList();
 
+    result.add(myPredefinedQueriesGroupNode);
     for (String projectPath : getState().getProjectPaths(getServer())) {
       result.add(new SavedQueryFolderNode(myQueriesTreeContext, projectPath));
     }

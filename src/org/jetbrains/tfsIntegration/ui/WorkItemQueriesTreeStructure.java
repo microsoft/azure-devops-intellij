@@ -28,6 +28,11 @@ public class WorkItemQueriesTreeStructure extends SimpleTreeStructure implements
     myProjectCollection = new TFSTeamProjectCollection(myServer.getUri(), TfsSdkManager.getCredentials(myServer));
   }
 
+  @NotNull
+  public PredefinedQueriesGroupNode getPredefinedQueriesGroupNode() {
+    return myRootNode.getPredefinedQueriesGroupNode();
+  }
+
   @Override
   public Object getRootElement() {
     return myRootNode;
