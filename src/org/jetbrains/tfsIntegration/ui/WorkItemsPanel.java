@@ -3,7 +3,6 @@ package org.jetbrains.tfsIntegration.ui;
 import com.intellij.ide.util.treeView.AbstractTreeStructure;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.TableSpeedSearch;
 import com.intellij.ui.treeStructure.NullNode;
@@ -89,10 +88,6 @@ public class WorkItemsPanel implements Disposable {
       return;
     }
 
-    if (result.result.isEmpty()) {
-      final String message = "No work items found for the selected query";
-      Messages.showInfoMessage(getProject(), message, title);
-    }
     getState().getWorkItems(myForm.getSelectedServer()).update(result.result);
     updateWorkItemsTable();
   }
