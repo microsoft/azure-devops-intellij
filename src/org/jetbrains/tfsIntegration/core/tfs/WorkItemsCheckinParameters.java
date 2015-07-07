@@ -16,62 +16,59 @@
 
 package org.jetbrains.tfsIntegration.core.tfs;
 
+import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemsQuery;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class WorkItemsCheckinParameters {
-  private List<WorkItem> myWorkItems;
-  private Map<WorkItem, CheckinWorkItemAction> myActions;
-  private WorkItemsQuery myQuery;
 
-  private WorkItemsCheckinParameters(final List<WorkItem> workItems,
-                               final Map<WorkItem, CheckinWorkItemAction> actions,
-                               final WorkItemsQuery query) {
+  @NotNull private List<WorkItem> myWorkItems;
+  @NotNull private final Map<WorkItem, CheckinWorkItemAction> myActions;
+
+  private WorkItemsCheckinParameters(@NotNull List<WorkItem> workItems, @NotNull Map<WorkItem, CheckinWorkItemAction> actions) {
     myWorkItems = workItems;
     myActions = actions;
-    myQuery = query;
   }
 
   public WorkItemsCheckinParameters() {
-    this(Collections.<WorkItem>emptyList(), new HashMap<WorkItem, CheckinWorkItemAction>(), null);
+    this(Collections.<WorkItem>emptyList(), ContainerUtil.<WorkItem, CheckinWorkItemAction>newHashMap());
   }
 
   @Nullable
-  public CheckinWorkItemAction getAction(final @NotNull WorkItem workItem) {
+  public CheckinWorkItemAction getAction(@NotNull WorkItem workItem) {
     return myActions.get(workItem);
   }
 
-  public void setAction(final @NotNull WorkItem workItem, final @NotNull CheckinWorkItemAction action) {
+  public void setAction(@NotNull WorkItem workItem, @NotNull CheckinWorkItemAction action) {
     myActions.put(workItem, action);
   }
 
-  public void removeAction(final @NotNull WorkItem workItem) {
+  public void removeAction(@NotNull WorkItem workItem) {
     myActions.remove(workItem);
   }
 
-  public WorkItemsQuery getQuery() {
-    return myQuery;
-  }
-
+  @NotNull
   public List<WorkItem> getWorkItems() {
     return Collections.unmodifiableList(myWorkItems);
   }
 
+  @NotNull
   public WorkItemsCheckinParameters createCopy() {
-    return new WorkItemsCheckinParameters(new ArrayList<WorkItem>(myWorkItems), new HashMap<WorkItem, CheckinWorkItemAction>(myActions), myQuery);
+    return new WorkItemsCheckinParameters(ContainerUtil.newArrayList(myWorkItems), ContainerUtil.newHashMap(myActions));
   }
 
-  public void update(final WorkItemsQuery query, final List<WorkItem> workItems) {
-    myQuery = query;
+  public void update(@NotNull List<WorkItem> workItems) {
     myWorkItems = workItems;
     myActions.clear();
   }
 
+  @NotNull
   public Map<WorkItem, CheckinWorkItemAction> getWorkItemsActions() {
     return Collections.unmodifiableMap(myActions);
   }

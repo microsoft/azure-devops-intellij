@@ -93,7 +93,7 @@ public class WorkItemsPanel implements Disposable {
       final String message = "No work items found for the selected query";
       Messages.showInfoMessage(getProject(), message, title);
     }
-    getState().getWorkItems(myForm.getSelectedServer()).update(null, result.result);
+    getState().getWorkItems(myForm.getSelectedServer()).update(result.result);
     updateWorkItemsTable();
   }
 
