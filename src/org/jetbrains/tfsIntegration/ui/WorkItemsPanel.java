@@ -5,19 +5,17 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.TableSpeedSearch;
+import com.intellij.ui.table.TableView;
 import com.intellij.ui.treeStructure.NullNode;
 import com.intellij.ui.treeStructure.SimpleTree;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
-import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.List;
 
 /**
@@ -26,7 +24,7 @@ import java.util.List;
 public class WorkItemsPanel implements Disposable {
 
   @SuppressWarnings("unused") private JPanel myMainPanel;
-  private JTable myWorkItemsTable;
+  private TableView<WorkItem> myWorkItemsTable;
   private SimpleTree myWorkItemQueriesTree;
   private WorkItemQueriesTreeBuilder myTreeBuilder;
   private final WorkItemsTableModel myWorkItemsTableModel;
@@ -37,37 +35,8 @@ public class WorkItemsPanel implements Disposable {
     myForm = form;
 
     myWorkItemsTableModel = new WorkItemsTableModel();
-    myWorkItemsTable.setModel(myWorkItemsTableModel);
+    myWorkItemsTable.setModelAndUpdateColumns(myWorkItemsTableModel);
     myWorkItemsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-    for (int i = 0; i < WorkItemsTableModel.Column.values().length; i++) {
-      myWorkItemsTable.getColumnModel().getColumn(i).setPreferredWidth(WorkItemsTableModel.Column.values()[i].getWidth());
-    }
-
-    final JComboBox actionCombo =
-      new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
-
-    myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.Checkbox.ordinal())
-      .setCellRenderer(new NoBackgroundBooleanTableCellRenderer());
-    myWorkItemsTable.getColumnModel().getColumn(WorkItemsTableModel.Column.CheckinAction.ordinal())
-      .setCellEditor(new DefaultCellEditor(actionCombo) {
-        @Nullable
-        public Component getTableCellEditorComponent(final JTable table,
-                                                     final Object value,
-                                                     final boolean isSelected,
-                                                     final int row,
-                                                     final int column) {
-          WorkItem workItem = ((WorkItemsTableModel)table.getModel()).getWorkItem(row);
-          CheckinWorkItemAction action = ((WorkItemsTableModel)table.getModel()).getAction(workItem);
-          if (action != null && workItem.isActionPossible(CheckinWorkItemAction.Resolve)) {
-            actionCombo.setSelectedItem(action);
-            return super.getTableCellEditorComponent(table, value, isSelected, row, column);
-          }
-          else {
-            return null;
-          }
-        }
-      });
 
     new TableSpeedSearch(myWorkItemsTable);
 

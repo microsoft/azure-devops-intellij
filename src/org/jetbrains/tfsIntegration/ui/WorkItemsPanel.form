@@ -36,7 +36,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="3d49b" class="com.intellij.ui.table.JBTable" binding="myWorkItemsTable" default-binding="true">
+              <component id="7a480" class="com.intellij.ui.table.TableView" binding="myWorkItemsTable">
                 <constraints/>
                 <properties/>
               </component>
