@@ -3,6 +3,9 @@
 .idea/tasks.xml
 .idea/dictionaries
 
+# Binary files not tracked by Git -- see README.TXT
+lib
+
 # IntelliJ outpt for Build -> Make Project
 out
 

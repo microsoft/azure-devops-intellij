@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.microsoft.vso.idea</groupId>
+  <artifactId>com.microsoft.vso.idea</artifactId>
+  <version>0.1</version>
+  <packaging>jar</packaging>
+
+  <name>Microsoft Visual Studio Online</name>
+  <url>https://www.visualstudio.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <com.microsoft.vss.sdk.version>0.4.1-SNAPSHOT</com.microsoft.vss.sdk.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <!-- contains the dependencies for com.microsoft.vss.sdk below -->
+      <id>tfsxp-boundary</id>
+      <url>http://tfsxp-boundary.northamerica.corp.microsoft.com/maven-repo/repository</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- to add the following com.microsoft.vss.sdk dependencies locally, execute the following maven command from your Java.Shared git repo directory -->
+    <!-- mvn install -->
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.teamfoundation.client.build2</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.teamfoundation.client.core</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.teamfoundation.client.distributedtask</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.teamfoundation.client.sourcecontrol</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.teamfoundation.client.workitemtracking</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.vss.sdk</groupId>
+      <artifactId>com.microsoft.vss.client.core</artifactId>
+      <version>${com.microsoft.vss.sdk.version}</version>
+    </dependency>
+  </dependencies>
+
+</project>
