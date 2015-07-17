@@ -10,4 +10,4 @@ lib
 out
 
 # IntelliJ output for Build -> Prepare Module for Deployment
-com.microsoft.vso.idea.jar
+com.microsoft.vso.idea.zip
