@@ -1,16 +1,16 @@
 <idea-plugin version="2">
   <id>com.microsoft.vso.idea</id>
-  <name>Microsoft Visual Studio Online</name>
+  <name>Microsoft Visual Studio Online plugin for IntelliJ IDEA</name>
   <version>0.1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+  <vendor email="support@microsoft.com" url="http://www.microsoft.com">Microsoft Corporation</vendor>
 
   <description><![CDATA[
-      Enter short description for your plugin here.<br>
+      This pluign allows working with Git repositories on Visual Sutdio Online and Team Foundation Server 2015<br>
       <em>most HTML tags may be used</em>
     ]]></description>
 
   <change-notes><![CDATA[
-      Add change notes here.<br>
+      First version supports checking out, sharing code and browsing Git repositories<br>
       <em>most HTML tags may be used</em>
     ]]>
   </change-notes>
@@ -37,7 +37,15 @@
   </project-components>
 
   <actions>
-    <!-- Add your actions here -->
+    <action id="VSO.Open.In.Browser" class="com.microsoft.vso.idea.actions.VSOOpenInBrowserAction">
+      <add-to-group group-id="EditorPopupMenu"/>
+      <add-to-group group-id="ProjectViewPopupMenu"/>
+      <add-to-group group-id="EditorTabPopupMenu"/>
+    </action>
+    <action id="VSO.Open.Commit.In.Browser" class="com.microsoft.vso.idea.actions.VSOVCSLogActions">
+      <add-to-group group-id="Git.LogContextMenu" />
+      <add-to-group group-id="Vcs.Log.ContextMenu" />
+    </action>
   </actions>
 
 </idea-plugin>
