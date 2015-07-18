@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.microsoft.vso.idea</groupId>
-  <artifactId>com.microsoft.vso.idea</artifactId>
+  <artifactId>vso-idea-parent</artifactId>
   <version>0.1</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
-  <name>Microsoft Visual Studio Online</name>
+  <name>Microsoft Visual Studio Online plugin for IntelliJ IDEA</name>
   <url>https://www.visualstudio.com</url>
 
   <properties>
@@ -24,8 +24,6 @@
   </repositories>
 
   <dependencies>
-    <!-- to add the following com.microsoft.vss.sdk dependencies locally, execute the following maven command from your Java.Shared git repo directory -->
-    <!-- mvn install -->
     <dependency>
       <groupId>com.microsoft.vss.sdk.httpclient</groupId>
       <artifactId>vss-http-client</artifactId>
