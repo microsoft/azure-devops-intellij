@@ -14,13 +14,14 @@ Dev Env Setup
 =============
 From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea
 
-1 - Setup a JDK for 1.6 and call it "IDEA jdk"
+1 - Setup a JDK for 1.6 called "IDEA jdk"
     * File -> Project Structure -> Platform Settings -> SDKs -> little green plus
 
-2 - Setup an IntelliJ Plugin SDK, point it to IntelliJ community edition location on disk and call it "IntelliJ IDEA Community Edition"
+2 - Setup an IntelliJ Plugin SDK called "IntelliJ IDEA Community Edition", point it to IntelliJ community edition location on disk 
     * File -> Project Structure -> Platform Settings -> SDKs -> little green plus
 
-3 - Setup a Global library, point it to <IntelliJ community edition location on disk>\plugins\git4idea\lib\git4idea.jar
+3 - Setup a Global library called "git4idea", point it to <IntelliJ community edition location on disk>\plugins\git4idea\lib\git4idea.jar 
+    * File -> Project Structure -> Project Settings -> Libraries -> little green plus
 
 Build from IntelliJ
 ===================

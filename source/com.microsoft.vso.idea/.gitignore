@@ -3,6 +3,9 @@
 .idea/tasks.xml
 .idea/dictionaries
 
+# git4idea library -- see README.TXT
+.idea/libraries/git4idea.xml
+
 # Binary files not tracked by Git -- see README.TXT
 lib
 
