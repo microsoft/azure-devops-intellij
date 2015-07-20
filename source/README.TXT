@@ -21,7 +21,7 @@ From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea
     * File -> Project Structure -> Platform Settings -> SDKs -> little green plus
 
 3 - Setup a Global library called "git4idea", point it to <IntelliJ community edition location on disk>\plugins\git4idea\lib\git4idea.jar 
-    * File -> Project Structure -> Project Settings -> Libraries -> little green plus
+    * File -> Project Structure -> Platform Settings -> Libraries -> little green plus
 
 Build from IntelliJ
 ===================
