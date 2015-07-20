@@ -17,7 +17,6 @@ package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.UpdateWorkspaceInfo;
@@ -28,51 +27,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 @State(name = "TFS", storages = @Storage(file = StoragePathMacros.WORKSPACE_FILE))
-public class TFSProjectConfiguration implements ProjectComponent, PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
-
-  @NonNls public static final String COMPONENT_NAME = "TFSProjectConfiguration";
-
+public class TFSProjectConfiguration implements PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
   private ConfigurationBean myConfigurationBean;
-
-  public boolean UPDATE_RECURSIVELY = true;
 
   private final Map<WorkspaceInfo, UpdateWorkspaceInfo> myUpdateWorkspaceInfos = new HashMap<WorkspaceInfo, UpdateWorkspaceInfo>();
 
   public static class ConfigurationBean {
+    public boolean UPDATE_RECURSIVELY = true;
   }
 
   public TFSProjectConfiguration() {
     myConfigurationBean = new ConfigurationBean();
   }
 
+  @Nullable
+  public static TFSProjectConfiguration getInstance(@NotNull Project project) {
+    return ServiceManager.getService(project, TFSProjectConfiguration.class);
+  }
+
   @Override
   @NotNull
-  public String getComponentName() {
-    return COMPONENT_NAME;
-  }
-
-  @Nullable
-  public static TFSProjectConfiguration getInstance(Project project) {
-    return project.getComponent(TFSProjectConfiguration.class);
-  }
-
-  @Override
-  public void initComponent() {
-  }
-
-  @Override
-  public void disposeComponent() {
-  }
-
-  @Override
-  public void projectOpened() {
-  }
-
-  @Override
-  public void projectClosed() {
-  }
-
-  @Override
   public ConfigurationBean getState() {
     return myConfigurationBean;
   }

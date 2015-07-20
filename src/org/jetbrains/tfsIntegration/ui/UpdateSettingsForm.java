@@ -61,6 +61,7 @@ public class UpdateSettingsForm {
     myWorkspaceSettings = workspaceSettings;
     List<WorkspaceInfo> workspaces = new ArrayList<WorkspaceInfo>(myWorkspaceSettings.keySet());
     Collections.sort(workspaces, new Comparator<WorkspaceInfo>() {
+      @Override
       public int compare(final WorkspaceInfo o1, final WorkspaceInfo o2) {
         return o1.getName().compareTo(o2.getName());
       }
@@ -70,6 +71,7 @@ public class UpdateSettingsForm {
     myWorkspacesList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
     myWorkspacesList.setCellRenderer(new DefaultListCellRenderer() {
+      @Override
       public Component getListCellRendererComponent(final JList list,
                                                     final Object value,
                                                     final int index,
@@ -84,6 +86,7 @@ public class UpdateSettingsForm {
     });
 
     myWorkspacesList.addListSelectionListener(new ListSelectionListener() {
+      @Override
       public void valueChanged(ListSelectionEvent e) {
         try {
           applyCurrentValue();
@@ -127,7 +130,7 @@ public class UpdateSettingsForm {
 
 
   public void reset(final TFSProjectConfiguration configuration) {
-    myRecursiveBox.setSelected(configuration.UPDATE_RECURSIVELY);
+    myRecursiveBox.setSelected(configuration.getState().UPDATE_RECURSIVELY);
 
     for (Map.Entry<WorkspaceInfo, WorkspaceSettings> e : myWorkspaceSettings.entrySet()) {
       e.getValue().version = configuration.getUpdateWorkspaceInfo(e.getKey()).getVersion();
@@ -136,7 +139,7 @@ public class UpdateSettingsForm {
 
   public void apply(final TFSProjectConfiguration configuration) throws ConfigurationException {
     applyCurrentValue();
-    configuration.UPDATE_RECURSIVELY = myRecursiveBox.isSelected();
+    configuration.getState().UPDATE_RECURSIVELY = myRecursiveBox.isSelected();
 
     for (Map.Entry<WorkspaceInfo, WorkspaceSettings> e : myWorkspaceSettings.entrySet()) {
       configuration.getUpdateWorkspaceInfo(e.getKey()).setVersion(e.getValue().version);

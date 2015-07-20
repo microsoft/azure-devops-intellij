@@ -46,9 +46,11 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     myVcs = vcs;
   }
 
+  @Override
   public void fillGroups(final UpdatedFiles updatedFiles) {
   }
 
+  @Override
   @NotNull
   public UpdateSession updateDirectories(@NotNull final FilePath[] contentRoots,
                                          final UpdatedFiles updatedFiles,
@@ -61,13 +63,14 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
       List<FilePath> orphanPaths =
         WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, myVcs.getProject(),
                                               new WorkstationHelper.VoidProcessDelegate() {
+          @Override
           public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
             VersionSpecBase version = LatestVersionSpec.INSTANCE;
             RecursionType recursionType = RecursionType.Full;
             TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myVcs.getProject());
             if (configuration != null) {
               version = configuration.getUpdateWorkspaceInfo(workspace).getVersion();
-              recursionType = configuration.UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
+              recursionType = configuration.getState().UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
             }
 
             // 1. query get operations for contentRoots - to let server know which version we need to report corresponding server conflicts
@@ -116,30 +119,36 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     TfsFileUtil.refreshAndInvalidate(myVcs.getProject(), contentRoots, false);
 
     return new UpdateSession() {
+      @Override
       @NotNull
       public List<VcsException> getExceptions() {
         return exceptions;
       }
 
+      @Override
       public void onRefreshFilesCompleted() {
         myVcs.fireRevisionChanged();
       }
 
+      @Override
       public boolean isCanceled() {
         return false;
       }
     };
   }
 
+  @Override
   @Nullable
   public Configurable createConfigurable(final Collection<FilePath> files) {
     final Map<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings> workspacesSettings =
       new HashMap<WorkspaceInfo, UpdateSettingsForm.WorkspaceSettings>();
     final Ref<TfsException> error = new Ref<TfsException>();
     Runnable r = new Runnable() {
+      @Override
       public void run() {
         try {
           WorkstationHelper.processByWorkspaces(files, true, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
+            @Override
             public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
               final Map<FilePath, ExtendedItem> result =
                 workspace.getExtendedItems2(paths, myVcs.getProject(), TFSBundle.message("loading.items"));
@@ -193,6 +202,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     return new UpdateConfigurable(myVcs.getProject(), workspacesSettings);
   }
 
+  @Override
   public boolean validateOptions(final Collection<FilePath> roots) {
     return true;
   }

@@ -26,13 +26,6 @@
 
   <resource-bundle>org.jetbrains.tfsIntegration.core.TFSBundle</resource-bundle>
 
-  <project-components>
-    <component>
-      <implementation-class>org.jetbrains.tfsIntegration.core.TFSProjectConfiguration</implementation-class>
-      <option name="workspace" value="true"/>
-    </component>
-  </project-components>
-
   <extensionPoints>
     <extensionPoint qualifiedName="TFS.checkinPolicy" interface="org.jetbrains.tfsIntegration.checkin.PolicyBase"/>
   </extensionPoints>
@@ -46,6 +39,8 @@
     <search.topHitProvider implementation="org.jetbrains.tfsIntegration.core.configuration.TFSOptionsTopHitProvider"/>
     <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs" displayName="TFS"/>
     <vcsCheckinHandlerFactory implementation="org.jetbrains.tfsIntegration.core.TFSCheckinHandlerFactory"/>
+
+    <projectService serviceImplementation="org.jetbrains.tfsIntegration.core.TFSProjectConfiguration"/>
   </extensions>
 
   <actions>

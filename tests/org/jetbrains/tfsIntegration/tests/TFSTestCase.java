@@ -714,7 +714,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
   protected void update(VirtualFile root, int revision) {
     TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myProject);
     configuration.getUpdateWorkspaceInfo(myTestWorkspace).setVersion(new ChangesetVersionSpec(revision));
-    configuration.UPDATE_RECURSIVELY = true;
+    configuration.getState().UPDATE_RECURSIVELY = true;
     final UpdatedFiles updatedFiles = UpdatedFiles.create();
     final UpdateSession session = getVcs().getUpdateEnvironment()
       .updateDirectories(new FilePath[]{TfsFileUtil.getFilePath(root)}, updatedFiles, null, new Ref<SequentialUpdatesContext>());
