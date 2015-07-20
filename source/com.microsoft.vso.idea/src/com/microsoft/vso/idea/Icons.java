@@ -1,7 +1,7 @@
 package com.microsoft.vso.idea;
 
 import com.intellij.openapi.util.IconLoader;
-import javax.swing.*;
+import javax.swing.Icon;
 
 /**
  * Created by madhurig on 7/18/2015.

@@ -20,6 +20,8 @@ From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea
 2 - Setup an IntelliJ Plugin SDK, point it to IntelliJ community edition location on disk and call it "IntelliJ IDEA Community Edition"
     * File -> Project Structure -> Platform Settings -> SDKs -> little green plus
 
+3 - Setup a Global library, point it to <IntelliJ community edition location on disk>\plugins\git4idea\lib\git4idea.jar
+
 Build from IntelliJ
 ===================
 From IntelliJ:

@@ -4,6 +4,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.microsoft.vso.idea.Icons;
+import git4idea.repo.GitRepository;
 
 /**
  * Created by madhurig on 7/18/2015.
