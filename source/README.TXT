@@ -12,7 +12,7 @@ From the command line, got to your Java.IntelliJ/source folder and execute the f
 
 Dev Env Setup
 =============
-From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea/com.microsofot.vso.ide.iml
+From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea
 
 1 - Setup a JDK for 1.6 and call it "IDEA jdk"
     * File -> Project Structure -> Platform Settings -> SDKs -> little green plus
@@ -23,5 +23,11 @@ From IntelliJ, open the project Java.IntelliJ/source/com.microsoft.vso.idea/com.
 Build from IntelliJ
 ===================
 From IntelliJ:
+    * Build -> Make Project to compile
     * Build -> Prepare Plugin Module 'com.microsoft.vso.idea' For Deployment
+    
+Debug from IntelliJ
+===================
+Run -> Edit Configurations, Add a default "Plugin" configuration, name it "vsoidea"
+Run -> Debug vsoidea
 
