@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jetbrains.tfsIntegration.core;
 
 import com.intellij.openapi.components.*;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -29,10 +27,7 @@ import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-@State(
-  name = "TFS",
-  storages = {@Storage(
-    file = StoragePathMacros.WORKSPACE_FILE)})
+@State(name = "TFS", storages = @Storage(file = StoragePathMacros.WORKSPACE_FILE))
 public class TFSProjectConfiguration implements ProjectComponent, PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
 
   @NonNls public static final String COMPONENT_NAME = "TFSProjectConfiguration";
@@ -46,10 +41,11 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
   public static class ConfigurationBean {
   }
 
-  public TFSProjectConfiguration(final Project project) {
+  public TFSProjectConfiguration() {
     myConfigurationBean = new ConfigurationBean();
   }
 
+  @Override
   @NotNull
   public String getComponentName() {
     return COMPONENT_NAME;
@@ -60,22 +56,28 @@ public class TFSProjectConfiguration implements ProjectComponent, PersistentStat
     return project.getComponent(TFSProjectConfiguration.class);
   }
 
+  @Override
   public void initComponent() {
   }
 
+  @Override
   public void disposeComponent() {
   }
 
+  @Override
   public void projectOpened() {
   }
 
+  @Override
   public void projectClosed() {
   }
 
+  @Override
   public ConfigurationBean getState() {
     return myConfigurationBean;
   }
 
+  @Override
   public void loadState(ConfigurationBean state) {
     myConfigurationBean = state;
   }
