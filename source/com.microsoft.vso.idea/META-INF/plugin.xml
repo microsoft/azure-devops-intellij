@@ -25,7 +25,7 @@
   -->
 
   <extensions defaultExtensionNs="com.intellij">
-    <!-- Add your extensions here -->
+    <checkoutProvider implementation="com.microsoft.vso.idea.extensions.VSOCheckoutProvider"/>
   </extensions>
 
   <application-components>

@@ -28,4 +28,15 @@ public class VSOLoginBundle {
     public static String message(@NotNull @PropertyKey(resourceBundle = BUNDLE_NAME) String key, @NotNull Object... params) {
         return CommonBundle.message(getBundle(), key, params);
     }
+
+    //Keys from properties file
+    public static String Auth_Windows="Auth_Windows";
+    public static String Auth_Alternate="Auth_Alternate";
+    public static String Auth_PAT="Auth_PAT";
+
+    public static String AddVSOAccount="AddVSOAccount";
+    public static String SetupAlternateCredentials="SetupAlternateCredentials";
+    public static String GenerateToken="GenerateToken";
+    public static String GetStarted="GetStarted";
+
 }

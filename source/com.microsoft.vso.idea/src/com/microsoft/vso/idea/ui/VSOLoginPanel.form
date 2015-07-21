@@ -46,6 +46,7 @@
             </constraints>
             <properties>
               <enabled value="true"/>
+              <model/>
             </properties>
           </component>
           <component id="48745" class="javax.swing.JCheckBox" binding="savePasswordCheckBox">
@@ -113,7 +114,7 @@
               <text resource-bundle="com/microsoft/vso/idea/ui/VSOLogin" key="Token"/>
             </properties>
           </component>
-          <component id="2efa0" class="javax.swing.JTextField" binding="tokenTextField">
+          <component id="237af" class="javax.swing.JPasswordField" binding="tokenPasswordField">
             <constraints>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
