@@ -5,14 +5,16 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.vso.idea.controllers.VSOConnectionsManager;
 import com.microsoft.vso.idea.resources.VSOLoginBundle;
+import com.microsoft.vso.idea.utils.VSOConnection;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-public class VSOLoginDialog extends DialogWrapper {
+public class VSOLoginDialog extends DialogWrapper implements Observer {
 
     VSOLoginPanel vsoLoginPanel = null;
 
@@ -45,6 +47,16 @@ public class VSOLoginDialog extends DialogWrapper {
         connectionsManager.addConnection(vsoLoginPanel.getServerUrl(),
                 vsoLoginPanel.getAuthentication(), vsoLoginPanel.getUserName(), vsoLoginPanel.getPassword());
         dispose();
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        if(this.isVisible()) {
+            //arg has connection data from model
+            if(arg != null) {
+                List<VSOConnection> connectionsList = (List<VSOConnection>)arg;
+            }
+        }
     }
 
     private void onCancel() {

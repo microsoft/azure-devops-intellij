@@ -11,10 +11,9 @@ import java.util.Observable;
  */
 public class VSOConnectionsModel extends Observable {
 
-    private List<VSOConnection> vsoConnections;
+    private static List<VSOConnection> vsoConnections = new ArrayList<VSOConnection>();
 
     public VSOConnectionsModel() {
-        vsoConnections = new ArrayList<VSOConnection>();
     }
 
     public synchronized void addConnection(VSOConnection connection) {

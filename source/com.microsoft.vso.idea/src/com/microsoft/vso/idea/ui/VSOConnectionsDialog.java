@@ -9,11 +9,12 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.util.List;
 import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by madhurig on 7/21/2015.
  */
-public class VSOConnectionsDialog extends DialogWrapper implements java.util.Observer {
+public class VSOConnectionsDialog extends DialogWrapper implements Observer {
 
     private ConnectToTeamProjectsPanel connectToTeamProjectsPanel;
 
