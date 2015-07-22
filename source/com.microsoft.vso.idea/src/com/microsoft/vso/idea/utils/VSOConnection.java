@@ -34,7 +34,7 @@ public class VSOConnection {
     }
 
     public Client getClient() {
-
+        //validate connection
         try {
             Client c = null;
             Credentials credentials = null;
@@ -57,7 +57,7 @@ public class VSOConnection {
             return c;
         }
         catch (Exception e) {
-            String message = e.getLocalizedMessage();
+            String message = e.getLocalizedMessage(); //TODO: how to surface connection errors to UI?
         }
         return null;
 

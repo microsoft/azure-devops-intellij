@@ -43,6 +43,7 @@ public class VSOLoginDialog extends DialogWrapper implements Observer {
 
     @Override
     protected void doOKAction() {
+        //call the controller to validate connection and update the model
         VSOConnectionsManager connectionsManager = new VSOConnectionsManager();
         connectionsManager.addConnection(vsoLoginPanel.getServerUrl(),
                 vsoLoginPanel.getAuthentication(), vsoLoginPanel.getUserName(), vsoLoginPanel.getPassword());
@@ -50,9 +51,10 @@ public class VSOLoginDialog extends DialogWrapper implements Observer {
     }
 
     @Override
+    //gets called when model is updated
     public void update(Observable o, Object arg) {
         if(this.isVisible()) {
-            //arg has connection data from model
+            //arg has connection data from model, so view does not need to take reference on model
             if(arg != null) {
                 List<VSOConnection> connectionsList = (List<VSOConnection>)arg;
             }

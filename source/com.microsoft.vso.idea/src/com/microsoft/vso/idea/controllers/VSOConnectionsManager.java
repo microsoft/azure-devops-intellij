@@ -24,11 +24,13 @@ public class VSOConnectionsManager {
     VSOLoginDialog vsoLoginDialog;
 
     public VSOConnectionsManager() {
-        connectionsModel = new VSOConnectionsModel(); //load existing connections from store
+        connectionsModel = new VSOConnectionsModel();
+
+        //register the observers for the model
         connectionsDialog = new VSOConnectionsDialog();
         vsoLoginDialog = new VSOLoginDialog();
         connectionsModel.addObserver(connectionsDialog);
-        //connectionsModel.addObserver(vsoLoginDialog);
+        connectionsModel.addObserver(vsoLoginDialog);
     }
 
     public void addConnection(String serverUrl, AuthenticationType authenticationType, String userName, String password) {
@@ -36,9 +38,5 @@ public class VSOConnectionsManager {
         Client c = connection.getClient();
         CoreHttpClient cc = new CoreHttpClient(c, URLHelper.getBaseUri(serverUrl));
         connectionsModel.addConnection(connection);
-    }
-
-    private void validateConnection(VSOConnection connection) {
-
     }
 }

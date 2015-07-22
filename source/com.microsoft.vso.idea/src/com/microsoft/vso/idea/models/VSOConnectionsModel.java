@@ -16,6 +16,7 @@ public class VSOConnectionsModel extends Observable {
     public VSOConnectionsModel() {
     }
 
+    //example where model notifies observers with some data when changed
     public synchronized void addConnection(VSOConnection connection) {
         vsoConnections.add(connection);
         setChanged();
