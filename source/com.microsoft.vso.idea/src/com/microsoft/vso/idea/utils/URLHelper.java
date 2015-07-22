@@ -1,9 +1,7 @@
 package com.microsoft.vso.idea.utils;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 
 /**
  * Created by madhurig on 7/21/2015.
@@ -24,5 +22,14 @@ public class URLHelper {
             //connection couldn't be established
         }
         return isValid;
+    }
+
+    public static URI getBaseUri(final String uri) {
+        try {
+            return new URI(uri);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

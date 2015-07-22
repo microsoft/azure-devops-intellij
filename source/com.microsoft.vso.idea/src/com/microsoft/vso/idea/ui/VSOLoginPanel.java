@@ -40,6 +40,8 @@ public class VSOLoginPanel {
     private JPasswordField tokenPasswordField;
     private JTextPane infoTextPane;
 
+    private AuthenticationType authenticationType;
+
     private final String Auth_Alternate_RelativePath = "/_details/security/altcreds";
     private final String Auth_PAT_RelativePath = "/_details/security/tokens";
     private final String DefaultInfoMsgText = "Visual Studio Online ";
@@ -81,6 +83,7 @@ public class VSOLoginPanel {
     }
 
     private void setAuthentication(AuthenticationType auth) {
+        authenticationType = auth;
         if(auth.equals(AuthenticationType.WINDOWS)) {
             authenticationComboBox.setSelectedItem(VSOLoginBundle.message(VSOLoginBundle.Auth_Windows));
             hideTokenFields();
@@ -131,8 +134,8 @@ public class VSOLoginPanel {
                 BrowserUtil.browse(e.getURL());
             }
         });
-        infoTextPane.setBackground(UIUtil.TRANSPARENT_COLOR);
-        infoTextPane.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        infoTextPane.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        infoTextPane.setText(constructMsgLink(DefaultInfoMsgText, DefaultInfoLink, VSOLoginBundle.message(VSOLoginBundle.GetStarted)));
     }
 
     private void setInfo(AuthenticationType auth) {
@@ -168,5 +171,31 @@ public class VSOLoginPanel {
 
     public JComponent getPreferredFocusedComponent() {
         return serverUrlTextField;
+    }
+
+    public String getServerUrl() {
+        return serverUrlTextField.getText().trim();
+    }
+
+    public AuthenticationType getAuthentication() {
+        return authenticationType;
+    }
+
+    public String getUserName() {
+        return userNameTextField.getText().trim();
+    }
+
+    public String getPassword() {
+        if(authenticationType.equals(AuthenticationType.WINDOWS)
+            || authenticationType.equals(AuthenticationType.ALTERNATE_CREDENTIALS)) {
+            return String.valueOf(passwordField.getPassword());
+        }
+        else if(authenticationType.equals(AuthenticationType.PAT)) {
+            return String.valueOf(tokenPasswordField.getPassword());
+        }
+        else{
+            //unsupport authentication type
+            return null;
+        }
     }
 }

@@ -38,5 +38,4 @@ public class VSOLoginBundle {
     public static String SetupAlternateCredentials="SetupAlternateCredentials";
     public static String GenerateToken="GenerateToken";
     public static String GetStarted="GetStarted";
-
 }

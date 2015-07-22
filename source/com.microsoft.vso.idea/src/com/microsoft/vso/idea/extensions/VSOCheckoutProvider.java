@@ -2,6 +2,7 @@ package com.microsoft.vso.idea.extensions;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProvider;
+import com.microsoft.vso.idea.ui.VSOConnectionsDialog;
 import com.microsoft.vso.idea.ui.VSOLoginDialog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +20,7 @@ public class VSOCheckoutProvider implements CheckoutProvider {
     @Override
     public void doCheckout(@NotNull final Project project, @Nullable final Listener listener) {
         //TODO: Temporary implementation to verify views
+        //final VSOConnectionsDialog dlg = new VSOConnectionsDialog(project);
         final VSOLoginDialog dlg = new VSOLoginDialog(project);
         dlg.show();
     }
