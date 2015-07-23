@@ -44,7 +44,7 @@ Build from IntelliJ
 To compile:
     * Build -> Make Project
 To package the plugin:
-    * Build -> Prepare Plugin Module 'com.microsoft.tf.idea' For Deployment
+    * Build -> Prepare All Plugin Modules For Deployment -> com.microsoft.tf
     
 Debug from IntelliJ
 ===================

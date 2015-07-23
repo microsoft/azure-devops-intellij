@@ -1,5 +1,6 @@
 package com.microsoft.tf.common.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -24,6 +25,39 @@ public class Connection {
     private final String password;
 
     public Connection(String serverUrl, AuthenticationType authenticationType, String userName, String password) {
+        // Validate serverUrl
+        if (StringUtils.isBlank(serverUrl)) {
+            throw new IllegalArgumentException("serverUrl");
+        }
+
+        // Validate credentials
+        if (authenticationType == AuthenticationType.ALTERNATE_CREDENTIALS) {
+            if (StringUtils.isBlank(userName)) {
+                throw new IllegalArgumentException("userName");
+            }
+            if (StringUtils.isBlank(password)) {
+                throw new IllegalArgumentException("password");
+            }
+        }
+        else if (authenticationType == AuthenticationType.PERSONAL_ACCESS_TOKEN) {
+            if (StringUtils.isBlank(password)) {
+                throw new IllegalArgumentException("password");
+            }
+        }
+        else if (authenticationType == AuthenticationType.WINDOWS) {
+            if (userName != null || password != null) {
+                if (StringUtils.isBlank(userName) || userName.indexOf('\\') == -1) {
+                    throw new IllegalArgumentException("userName");
+                }
+                if (StringUtils.isBlank(password)) {
+                    throw new IllegalArgumentException("password");
+                }
+            }
+        }
+        else {
+            throw new UnsupportedOperationException(authenticationType.toString());
+        }
+
         this.serverUrl = serverUrl;
         this.authenticationType = authenticationType;
         this.userName = userName;
