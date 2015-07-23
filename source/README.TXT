@@ -7,8 +7,8 @@ From the command line, go to your Java.Shared git repo folder and run the follow
 Copy Maven Dependencies
 =======================
 From the command line, got to your Java.IntelliJ/source folder and execute the following two maven commands:
-    * mvn dependency:copy-dependencies -DoutputDirectory=com.microsoft.vso.idea/lib/classes
-    * mvn dependency:copy-dependencies -DoutputDirectory=com.microsoft.vso.idea/lib/src -Dclassifier=sources
+    * mvn dependency:copy-dependencies -DoutputDirectory=TfIntelliJPlugin/lib/classes
+    * mvn dependency:copy-dependencies -DoutputDirectory=TfIntelliJPlugin/lib/src -Dclassifier=sources
 
 Dev Env Setup
 =============
