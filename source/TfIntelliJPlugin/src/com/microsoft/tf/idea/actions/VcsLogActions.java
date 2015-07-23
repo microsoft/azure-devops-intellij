@@ -8,6 +8,7 @@ import com.intellij.vcs.log.VcsFullCommitDetails;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
 import com.microsoft.tf.common.utils.TFGitUtil;
+import com.microsoft.tf.common.utils.UrlHelper;
 import com.microsoft.tf.idea.resources.Icons;
 import com.microsoft.tf.idea.resources.TfPluginBundle;
 import git4idea.GitUtil;
@@ -26,32 +27,35 @@ public class VcsLogActions extends AbstractVSOOpenInBrowserAction {
     }
     @Override
     public void update(@NotNull AnActionEvent e) {
-        Project project = e.getData(CommonDataKeys.PROJECT);
-        VcsLog log = e.getData(VcsLogDataKeys.VCS_LOG);
+        final Project project = e.getData(CommonDataKeys.PROJECT);
+        final VcsLog log = e.getData(VcsLogDataKeys.VCS_LOG);
         if(project == null || log == null) {
             e.getPresentation().setEnabledAndVisible(false);
             return;
         }
-        List<VcsFullCommitDetails> commits = log.getSelectedDetails();
+        final List<VcsFullCommitDetails> commits = log.getSelectedDetails();
         if(commits.size() != 1) {
             e.getPresentation().setEnabledAndVisible(false);
             return;
         }
-        GitRepository repository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commits.get(0).getRoot());
+        final GitRepository repository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commits.get(0).getRoot());
         e.getPresentation().setEnabledAndVisible(repository != null); //TODO: also check if repo is on VSO/TFS
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        Project project = e.getRequiredData(CommonDataKeys.PROJECT);
-        VcsFullCommitDetails commit = e.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
-        GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
+        final Project project = e.getRequiredData(CommonDataKeys.PROJECT);
+        final VcsFullCommitDetails commit = e.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
+        final GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
 
         final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
         if(remoteUrl != null) {
             StringBuilder stringBuilder = new StringBuilder(remoteUrl);
             stringBuilder.append("/commit/");
             stringBuilder.append(commit.getId().asString());
-            BrowserUtil.browse(stringBuilder.toString());
+            final String urlToBrowseTo = stringBuilder.toString();
+            if(UrlHelper.isValidServerUrl(urlToBrowseTo)) {
+                BrowserUtil.browse(urlToBrowseTo);
+            }
         }
     }}

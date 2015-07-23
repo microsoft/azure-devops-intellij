@@ -20,7 +20,7 @@ public class TFGitUtil {
         }
 
         String remoteUrl = getFirstRemoteUrl(gitRepository);
-        if (remoteUrl != null && (remoteUrl.contains(".visualstudio.com/") || remoteUrl.contains("/_git/"))) {
+        if (remoteUrl != null && (remoteUrl.contains(".visualstudio.com/") || remoteUrl.contains(".tfsallin.net/") || remoteUrl.contains("/_git/"))) {
             //TODO this is a placeholder hack a the moment until we figure out how to interrogate the server & cache the result
             return true;
         }

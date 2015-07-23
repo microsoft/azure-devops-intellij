@@ -41,13 +41,13 @@ abstract public class AbstractVSOOpenInBrowserAction extends DumbAwareAction{
 
     @Override
     public void update(final AnActionEvent e) {
-        Project project = e.getData(CommonDataKeys.PROJECT);
-        VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
+        final Project project = e.getData(CommonDataKeys.PROJECT);
+        final VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
         if (project == null || project.isDefault() || virtualFile == null) {
             setVisibleEnabled(e, false, false);
             return;
         }
-        GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
+        final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
 
         final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
         if (gitRepository == null) {
@@ -60,45 +60,19 @@ abstract public class AbstractVSOOpenInBrowserAction extends DumbAwareAction{
             return;
         }
 
-        ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+        final ChangeListManager changeListManager = ChangeListManager.getInstance(project);
         if (changeListManager.isUnversioned(virtualFile)) {
             setVisibleEnabled(e, true, false);
             return;
         }
 
-        Change change = changeListManager.getChange(virtualFile);
+        final Change change = changeListManager.getChange(virtualFile);
         if (change != null && change.getType() == Change.Type.NEW) {
             setVisibleEnabled(e, true, false);
             return;
         }
 
         setVisibleEnabled(e, true, true);
-    }
-
-    @Override
-    public void actionPerformed(final AnActionEvent e) {
-        final Project project = e.getData(CommonDataKeys.PROJECT);
-        final VirtualFile virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE);
-        final Editor editor = e.getData(CommonDataKeys.EDITOR);
-        if (virtualFile == null || project == null || project.isDisposed()) {
-            return;
-        }
-
-        final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-        final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
-
-        final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
-        if(remoteUrl != null) {
-            final String rootPath = gitRepository.getRoot().getPath();
-            final String path = virtualFile.getPath();
-            final String relativePath = path.substring(rootPath.length());
-
-            StringBuilder stringBuilder = new StringBuilder(remoteUrl);
-            stringBuilder.append("/#path=");
-            stringBuilder.append(relativePath);
-
-            BrowserUtil.browse(stringBuilder.toString());
-        }
     }
 
 }
