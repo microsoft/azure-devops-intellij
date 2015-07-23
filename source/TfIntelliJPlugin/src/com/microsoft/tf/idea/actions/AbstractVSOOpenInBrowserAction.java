@@ -9,6 +9,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.tf.common.utils.TFGitUtil;
+import git4idea.GitUtil;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
@@ -53,7 +55,7 @@ abstract public class AbstractVSOOpenInBrowserAction extends DumbAwareAction{
             return;
         }
 
-        if (!isVSORepo(gitRepository)) {
+        if (!TFGitUtil.isTFGitRepository(gitRepository)) {
             setVisibleEnabled(e, false, false);
             return;
         }
@@ -82,38 +84,21 @@ abstract public class AbstractVSOOpenInBrowserAction extends DumbAwareAction{
             return;
         }
 
-        GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-        final GitRepository repo = manager.getRepositoryForFile(virtualFile);
-        String urlToOpen = getVSOUrl(repo);
+        final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
+        final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
 
-        final String rootPath = repo.getRoot().getPath();
-        final String path = virtualFile.getPath();
-        String relativePath = path.substring(rootPath.length());
-        urlToOpen =  urlToOpen + "/#path=" + relativePath;
-        if (urlToOpen != null) {
-            BrowserUtil.browse(urlToOpen);
-        }
-    }
+        final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
+        if(remoteUrl != null) {
+            final String rootPath = gitRepository.getRoot().getPath();
+            final String path = virtualFile.getPath();
+            final String relativePath = path.substring(rootPath.length());
 
-    protected String getVSOUrl(GitRepository repo) {
-        String url = "https://www.visualstudio.com/";
-        for (GitRemote gitRemote : repo.getRemotes()) {
-            for (String remoteUrl : gitRemote.getUrls()) {
-                url = remoteUrl;
-            }
-        }
-        return url;
-    }
+            StringBuilder stringBuilder = new StringBuilder(remoteUrl);
+            stringBuilder.append("/#path=");
+            stringBuilder.append(relativePath);
 
-    private boolean isVSORepo(GitRepository repo) {
-        for (GitRemote gitRemote : repo.getRemotes()) {
-            for (String remoteUrl : gitRemote.getUrls()) {
-                if(remoteUrl.contains("visualstudio.com") || remoteUrl.contains("tfsallin.net")) {
-                    return true; //TODO: how to detect VSO URLs for onprem
-                }
-            }
+            BrowserUtil.browse(stringBuilder.toString());
         }
-        return false;
     }
 
 }

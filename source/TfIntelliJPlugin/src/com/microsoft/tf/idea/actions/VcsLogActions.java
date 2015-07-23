@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.VcsFullCommitDetails;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
+import com.microsoft.tf.common.utils.TFGitUtil;
 import com.microsoft.tf.idea.resources.Icons;
 import com.microsoft.tf.idea.resources.TfPluginBundle;
 import git4idea.GitUtil;
@@ -44,11 +45,13 @@ public class VcsLogActions extends AbstractVSOOpenInBrowserAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getRequiredData(CommonDataKeys.PROJECT);
         VcsFullCommitDetails commit = e.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
-        GitRepository repository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
+        GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
 
-        String url = getVSOUrl(repository);
-        String commitUrl = url + "/commit/" + commit.getId().asString();
-        if (commitUrl != null) {
-            BrowserUtil.browse(commitUrl);
+        final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
+        if(remoteUrl != null) {
+            StringBuilder stringBuilder = new StringBuilder(remoteUrl);
+            stringBuilder.append("/commit/");
+            stringBuilder.append(commit.getId().asString());
+            BrowserUtil.browse(stringBuilder.toString());
         }
     }}
