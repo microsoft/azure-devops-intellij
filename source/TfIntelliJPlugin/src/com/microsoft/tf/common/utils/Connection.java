@@ -46,7 +46,7 @@ public class Connection {
         }
         else if (authenticationType == AuthenticationType.WINDOWS) {
             if (userName != null || password != null) {
-                if (StringUtils.isBlank(userName) || userName.indexOf('\\') == -1) {
+                if (StringUtils.isBlank(userName)) {
                     throw new IllegalArgumentException("userName");
                 }
                 if (StringUtils.isBlank(password)) {
