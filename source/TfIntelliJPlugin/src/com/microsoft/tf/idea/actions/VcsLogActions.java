@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.VcsFullCommitDetails;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
-import com.microsoft.tf.common.utils.TFGitUtil;
+import com.microsoft.tf.idea.utils.TFGitUtil;
 import com.microsoft.tf.common.utils.UrlHelper;
 import com.microsoft.tf.idea.resources.Icons;
 import com.microsoft.tf.idea.resources.TfPluginBundle;

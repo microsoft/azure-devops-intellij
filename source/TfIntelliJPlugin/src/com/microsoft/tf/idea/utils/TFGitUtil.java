@@ -1,4 +1,4 @@
-package com.microsoft.tf.common.utils;
+package com.microsoft.tf.idea.utils;
 
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
