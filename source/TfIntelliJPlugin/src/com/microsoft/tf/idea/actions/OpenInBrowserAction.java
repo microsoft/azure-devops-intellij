@@ -8,14 +8,10 @@ import com.microsoft.tf.idea.resources.TfPluginBundle;
 /**
  * Created by madhurig on 7/18/2015.
  */
-public class OpenInBrowserAction extends DumbAwareAction {
+public class OpenInBrowserAction extends AbstractVSOOpenInBrowserAction {
 
     protected OpenInBrowserAction() {
         super(TfPluginBundle.OpenInBrowser, TfPluginBundle.OpenInBrowserMsg, Icons.VSLogo);
     }
 
-    @Override
-    public void actionPerformed(final AnActionEvent e) {
-        //TODO: Not implemented - tf git, show item history in browser
-    }
 }

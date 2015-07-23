@@ -1,7 +1,9 @@
 package com.microsoft.tf.common.utils;
 
-import java.io.IOException;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 /**
  * Created by madhurig on 7/21/2015.
