@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.VcsFullCommitDetails;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
-import com.microsoft.tf.idea.utils.TFGitUtil;
+import com.microsoft.tf.idea.utils.TFGitHelper;
 import com.microsoft.tf.common.utils.UrlHelper;
 import com.microsoft.tf.idea.resources.Icons;
 import com.microsoft.tf.idea.resources.TfPluginBundle;
@@ -25,8 +25,9 @@ public class VcsLogActions extends AbstractVSOOpenInBrowserAction {
     public VcsLogActions() {
         super(TfPluginBundle.OpenInBrowser, TfPluginBundle.OpenInBrowserMsg, Icons.VSLogo);
     }
+
     @Override
-    public void update(@NotNull AnActionEvent e) {
+    public void update(@NotNull final  AnActionEvent e) {
         final Project project = e.getData(CommonDataKeys.PROJECT);
         final VcsLog log = e.getData(VcsLogDataKeys.VCS_LOG);
         if(project == null || log == null) {
@@ -43,14 +44,14 @@ public class VcsLogActions extends AbstractVSOOpenInBrowserAction {
     }
 
     @Override
-    public void actionPerformed(@NotNull AnActionEvent e) {
+    public void actionPerformed(@NotNull final AnActionEvent e) {
         final Project project = e.getRequiredData(CommonDataKeys.PROJECT);
         final VcsFullCommitDetails commit = e.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
         final GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
 
-        final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
+        final String remoteUrl = TFGitHelper.getFirstRemoteUrl(gitRepository);
         if(remoteUrl != null) {
-            StringBuilder stringBuilder = new StringBuilder(remoteUrl);
+            final StringBuilder stringBuilder = new StringBuilder(remoteUrl);
             stringBuilder.append("/commit/");
             stringBuilder.append(commit.getId().asString());
             final String urlToBrowseTo = stringBuilder.toString();

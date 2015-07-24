@@ -2,11 +2,12 @@ package com.microsoft.tf.idea.utils;
 
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by jasholl on 7/21/2015.
  */
-public class TFGitUtil {
+public class TFGitHelper {
 
     /**
      * Returns <code>true</code> if the specified GitRepository is a TF GitRepository (VSO or OnPrem).
@@ -14,12 +15,12 @@ public class TFGitUtil {
      * @param gitRepository must not be <code>null</code>
      * @return
      */
-    public static boolean isTFGitRepository(GitRepository gitRepository) {
+    public static boolean isTFGitRepository(@NotNull final GitRepository gitRepository) {
         if(gitRepository == null){
             throw new NullPointerException();
         }
 
-        String remoteUrl = getFirstRemoteUrl(gitRepository);
+        final String remoteUrl = getFirstRemoteUrl(gitRepository);
         if (remoteUrl != null && (remoteUrl.contains(".visualstudio.com/") || remoteUrl.contains(".tfsallin.net/") || remoteUrl.contains("/_git/"))) {
             //TODO this is a placeholder hack a the moment until we figure out how to interrogate the server & cache the result
             return true;
@@ -33,7 +34,7 @@ public class TFGitUtil {
      * @param gitRepository must not be <code>null</code>
      * @return
      */
-    public static String getFirstRemoteUrl(GitRepository gitRepository) {
+    public static String getFirstRemoteUrl(@NotNull final GitRepository gitRepository) {
         if(gitRepository == null){
             throw new NullPointerException();
         }

@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.microsoft.tf.idea.utils.TFGitUtil;
+import com.microsoft.tf.idea.utils.TFGitHelper;
 import com.microsoft.tf.common.utils.UrlHelper;
 import com.microsoft.tf.idea.resources.Icons;
 import com.microsoft.tf.idea.resources.TfPluginBundle;
@@ -35,7 +35,7 @@ public class OpenInBrowserAction extends AbstractVSOOpenInBrowserAction {
         final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
         final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
 
-        final String remoteUrl = TFGitUtil.getFirstRemoteUrl(gitRepository);
+        final String remoteUrl = TFGitHelper.getFirstRemoteUrl(gitRepository);
         if(remoteUrl != null) {
             final String rootPath = gitRepository.getRoot().getPath();
             final String path = virtualFile.getPath();
