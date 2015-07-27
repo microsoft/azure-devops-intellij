@@ -16,11 +16,17 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.treeStructure.treetable.ListTreeTableModelOnColumns;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
+import com.intellij.util.Function;
+import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.ui.ColumnInfo;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
+import com.microsoft.tfs.core.clients.workitem.query.WorkItemLinkInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.WorkItemsCheckinParameters;
@@ -34,8 +40,12 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
+import java.util.List;
+import java.util.Map;
 
 class WorkItemsTableModel extends ListTreeTableModelOnColumns {
+
+  private static final Logger LOG = Logger.getInstance(WorkItemsTableModel.class);
 
   @NotNull private final DefaultMutableTreeNode myRoot;
   @NotNull private final WorkItemsCheckinParameters myContent;
@@ -58,10 +68,69 @@ class WorkItemsTableModel extends ListTreeTableModelOnColumns {
     myContent.update(content);
 
     myRoot.removeAllChildren();
-    for (WorkItem workItem : content.getWorkItems()) {
+    buildModel();
+    reload(myRoot);
+  }
+
+  private void buildModel() {
+    List<WorkItemLinkInfo> links = myContent.getLinks();
+
+    if (!ContainerUtil.isEmpty(links)) {
+      buildTreeModel(links);
+    }
+    else {
+      buildFlatModel();
+    }
+  }
+
+  private void buildTreeModel(@NotNull List<WorkItemLinkInfo> links) {
+    validateLinksStructure(links);
+
+    Map<Integer, DefaultMutableTreeNode> workItemsMap =
+      ContainerUtil.map2Map(myContent.getWorkItems(), new Function<WorkItem, Pair<Integer, DefaultMutableTreeNode>>() {
+        @Override
+        public Pair<Integer, DefaultMutableTreeNode> fun(@NotNull WorkItem workItem) {
+          return Pair.create(workItem.getId(), new DefaultMutableTreeNode(workItem));
+        }
+      });
+    workItemsMap.put(0, myRoot);
+
+    for (WorkItemLinkInfo link : links) {
+      DefaultMutableTreeNode parentNode = workItemsMap.get(link.getSourceID());
+      DefaultMutableTreeNode childNode = workItemsMap.get(link.getTargetID());
+
+      if (parentNode != null && childNode != null) {
+        parentNode.add(childNode);
+      }
+      else {
+        LOG.info("Could not resolve work item link " + link.getSourceID() + "-" + link.getTargetID());
+      }
+    }
+  }
+
+  private void validateLinksStructure(@NotNull List<WorkItemLinkInfo> links) {
+    if (links.size() != myContent.getWorkItems().size()) {
+      String linksValue = StringUtil.join(links, new Function<WorkItemLinkInfo, String>() {
+        @Override
+        public String fun(@NotNull WorkItemLinkInfo info) {
+          return info.getSourceID() + " - " + info.getTargetID();
+        }
+      }, ", ");
+      String workItemIdsValue = StringUtil.join(myContent.getWorkItems(), new Function<WorkItem, String>() {
+        @Override
+        public String fun(@NotNull WorkItem workItem) {
+          return String.valueOf(workItem.getId());
+        }
+      }, ", ");
+
+      LOG.error("Unknown work item links structure\nLinks: " + linksValue + "\nWork Items: " + workItemIdsValue);
+    }
+  }
+
+  private void buildFlatModel() {
+    for (WorkItem workItem : myContent.getWorkItems()) {
       myRoot.add(new DefaultMutableTreeNode(workItem));
     }
-    reload(myRoot);
   }
 
   @Override

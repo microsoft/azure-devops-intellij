@@ -18,6 +18,7 @@ package org.jetbrains.tfsIntegration.core.tfs;
 
 import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
+import com.microsoft.tfs.core.clients.workitem.query.WorkItemLinkInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
@@ -31,14 +32,18 @@ public class WorkItemsCheckinParameters {
 
   @NotNull private List<WorkItem> myWorkItems;
   @NotNull private Map<WorkItem, CheckinWorkItemAction> myActions;
+  @Nullable private List<WorkItemLinkInfo> myLinks;
 
-  private WorkItemsCheckinParameters(@NotNull List<WorkItem> workItems, @NotNull Map<WorkItem, CheckinWorkItemAction> actions) {
+  private WorkItemsCheckinParameters(@NotNull List<WorkItem> workItems,
+                                     @NotNull Map<WorkItem, CheckinWorkItemAction> actions,
+                                     @Nullable List<WorkItemLinkInfo> links) {
     myWorkItems = workItems;
     myActions = actions;
+    myLinks = links;
   }
 
   public WorkItemsCheckinParameters() {
-    this(Collections.<WorkItem>emptyList(), ContainerUtil.<WorkItem, CheckinWorkItemAction>newHashMap());
+    this(Collections.<WorkItem>emptyList(), ContainerUtil.<WorkItem, CheckinWorkItemAction>newHashMap(), null);
   }
 
   @Nullable
@@ -59,18 +64,25 @@ public class WorkItemsCheckinParameters {
     return Collections.unmodifiableList(myWorkItems);
   }
 
+  @Nullable
+  public List<WorkItemLinkInfo> getLinks() {
+    return myLinks != null ? Collections.unmodifiableList(myLinks) : null;
+  }
+
   @NotNull
   public WorkItemsCheckinParameters createCopy() {
-    return new WorkItemsCheckinParameters(ContainerUtil.newArrayList(myWorkItems), ContainerUtil.newHashMap(myActions));
+    return new WorkItemsCheckinParameters(ContainerUtil.newArrayList(myWorkItems), ContainerUtil.newHashMap(myActions), getLinks());
   }
 
   public void update(@NotNull WorkItemsQueryResult queryResult) {
     myWorkItems = queryResult.getWorkItems();
+    myLinks = queryResult.getLinks();
     myActions.clear();
   }
 
   public void update(@NotNull WorkItemsCheckinParameters parameters) {
     myWorkItems = parameters.myWorkItems;
+    myLinks = parameters.myLinks;
     myActions = parameters.myActions;
   }
 
