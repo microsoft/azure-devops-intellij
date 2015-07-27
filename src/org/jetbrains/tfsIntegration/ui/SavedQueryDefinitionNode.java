@@ -19,7 +19,6 @@ import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemField;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemSerialize;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -149,10 +148,6 @@ public class SavedQueryDefinitionNode extends BaseQueryNode {
 
   @NotNull
   private Map<String, Object> buildQueryContext() {
-    HashMap<String, Object> parameters = ContainerUtil.newHashMap();
-
-    parameters.put("project", myQueryDefinition.getProject().getName());
-
-    return parameters;
+    return WorkItemQueryUtils.makeContext(myQueryDefinition.getProject(), null);
   }
 }
