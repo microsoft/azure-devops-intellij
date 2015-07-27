@@ -16,8 +16,10 @@
 
 package org.jetbrains.tfsIntegration.ui;
 
+import com.intellij.ui.treeStructure.treetable.ListTreeTableModelOnColumns;
+import com.intellij.ui.treeStructure.treetable.TreeTable;
+import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.util.ui.ListTableModel;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.CheckinWorkItemAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,19 +31,22 @@ import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemType;
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 
-class WorkItemsTableModel extends ListTableModel<WorkItem> {
+class WorkItemsTableModel extends ListTreeTableModelOnColumns {
 
-  private WorkItemsCheckinParameters myContent;
+  @NotNull private final DefaultMutableTreeNode myRoot;
+  @NotNull private final WorkItemsCheckinParameters myContent;
 
-  public WorkItemsTableModel() {
-    setColumnInfos(new ColumnInfo[]{CHECKBOX, TYPE, ID, TITLE, STATE, CHECKIN_ACTION});
-  }
+  public WorkItemsTableModel(@NotNull WorkItemsCheckinParameters content) {
+    super(null, new ColumnInfo[]{new CheckBoxColumn(content), TYPE, ID, TITLE, STATE, new CheckInActionColumn(content)});
 
-  @NotNull
-  public WorkItem getWorkItem(int index) {
-    return myContent.getWorkItems().get(index);
+    myContent = content;
+
+    myRoot = new DefaultMutableTreeNode();
+    setRoot(myRoot);
   }
 
   @Nullable
@@ -50,18 +55,23 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
   }
 
   public void setContent(@NotNull WorkItemsCheckinParameters content) {
-    myContent = content;
+    myContent.update(content);
 
-    setItems(content.getWorkItems());
+    myRoot.removeAllChildren();
+    for (WorkItem workItem : content.getWorkItems()) {
+      myRoot.add(new DefaultMutableTreeNode(workItem));
+    }
+    reload(myRoot);
   }
 
-  public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
-    super.setValueAt(aValue, rowIndex, columnIndex);
+  @Override
+  public void setValueAt(Object aValue, Object node, int column) {
+    super.setValueAt(aValue, node, column);
 
-    fireTableRowsUpdated(rowIndex, rowIndex);
+    nodeChanged((TreeNode)node);
   }
 
-  abstract static class WorkItemFieldColumn<Aspect> extends ColumnInfo<WorkItem, Aspect> {
+  abstract static class WorkItemFieldColumn<Aspect> extends ColumnInfo<DefaultMutableTreeNode, Aspect> {
 
     private final int myWidth;
 
@@ -84,13 +94,37 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
 
     @Nullable
     @Override
+    public Aspect valueOf(@NotNull DefaultMutableTreeNode node) {
+      Object userObject = node.getUserObject();
+
+      return userObject instanceof WorkItem ? valueOf((WorkItem)userObject) : null;
+    }
+
+    @Override
+    public void setValue(@NotNull DefaultMutableTreeNode node, @NotNull Aspect value) {
+      if (node.getUserObject() instanceof WorkItem) {
+        setValue((WorkItem)node.getUserObject(), value);
+      }
+    }
+
+    public void setValue(@NotNull WorkItem workItem, @NotNull Aspect value) {
+    }
+
+    @Nullable
     public abstract Aspect valueOf(@NotNull WorkItem workItem);
   }
 
-  WorkItemFieldColumn<Boolean> CHECKBOX = new WorkItemFieldColumn<Boolean>(" ", 50) {
+  static class CheckBoxColumn extends WorkItemFieldColumn<Boolean> {
 
+    @NotNull private final WorkItemsCheckinParameters myContent;
     // TODO: Do we need this renderer?
     private TableCellRenderer myRenderer = new NoBackgroundBooleanTableCellRenderer();
+
+    public CheckBoxColumn(@NotNull WorkItemsCheckinParameters content) {
+      super(" ", 50);
+
+      myContent = content;
+    }
 
     @Nullable
     @Override
@@ -106,13 +140,13 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
     }
 
     @Override
-    public boolean isCellEditable(@NotNull WorkItem workItem) {
+    public boolean isCellEditable(@NotNull DefaultMutableTreeNode node) {
       return true;
     }
 
     @Nullable
     @Override
-    public TableCellRenderer getRenderer(@NotNull WorkItem workItem) {
+    public TableCellRenderer getRenderer(@NotNull DefaultMutableTreeNode node) {
       return myRenderer;
     }
 
@@ -128,7 +162,7 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
         myContent.removeAction(workItem);
       }
     }
-  };
+  }
 
   static WorkItemFieldColumn<WorkItemType> TYPE = new WorkItemFieldColumn<WorkItemType>("Type", 300) {
     @Nullable
@@ -152,6 +186,12 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
     public String valueOf(@NotNull WorkItem workItem) {
       return workItem.getTitle();
     }
+
+    @Override
+    public Class<?> getColumnClass() {
+      // Such column class indicates that this column will be used as tree - indentations, icons, etc. will be displayed in this column
+      return TreeTableModel.class;
+    }
   };
 
   static WorkItemFieldColumn<WorkItemState> STATE = new WorkItemFieldColumn<WorkItemState>("State", 300) {
@@ -162,7 +202,7 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
     }
   };
 
-  WorkItemFieldColumn<CheckinWorkItemAction> CHECKIN_ACTION = new WorkItemFieldColumn<CheckinWorkItemAction>("Checkin Action", 400) {
+  static class CheckInActionColumn extends WorkItemFieldColumn<CheckinWorkItemAction> {
 
     private JComboBox myComboBox =
       new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
@@ -173,8 +213,10 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
                                                    final boolean isSelected,
                                                    final int row,
                                                    final int column) {
-        WorkItemsTableModel model = (WorkItemsTableModel)table.getModel();
-        WorkItem workItem = model.getWorkItem(row);
+        TreeTable treeTable = (TreeTable)table;
+        WorkItemsTableModel model = (WorkItemsTableModel)treeTable.getTableModel();
+        WorkItem workItem =
+          (WorkItem)((DefaultMutableTreeNode)treeTable.getTree().getPathForRow(row).getLastPathComponent()).getUserObject();
         CheckinWorkItemAction action = model.getAction(workItem);
 
         if (action != null && workItem.isActionPossible(CheckinWorkItemAction.Resolve)) {
@@ -188,6 +230,14 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
       }
     };
 
+    @NotNull private final WorkItemsCheckinParameters myContent;
+
+    public CheckInActionColumn(@NotNull WorkItemsCheckinParameters content) {
+      super("Checkin Action", 400);
+
+      myContent = content;
+    }
+
     @Nullable
     @Override
     public CheckinWorkItemAction valueOf(@NotNull WorkItem workItem) {
@@ -197,13 +247,13 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
     }
 
     @Override
-    public boolean isCellEditable(@NotNull WorkItem workItem) {
+    public boolean isCellEditable(@NotNull DefaultMutableTreeNode node) {
       return true;
     }
 
     @Nullable
     @Override
-    public TableCellEditor getEditor(@NotNull WorkItem workItem) {
+    public TableCellEditor getEditor(@NotNull DefaultMutableTreeNode node) {
       return myCellEditor;
     }
 
@@ -211,5 +261,5 @@ class WorkItemsTableModel extends ListTableModel<WorkItem> {
     public void setValue(@NotNull WorkItem workItem, @NotNull CheckinWorkItemAction value) {
       myContent.setAction(workItem, value);
     }
-  };
+  }
 }

@@ -29,7 +29,7 @@ import java.util.Map;
 public class WorkItemsCheckinParameters {
 
   @NotNull private List<WorkItem> myWorkItems;
-  @NotNull private final Map<WorkItem, CheckinWorkItemAction> myActions;
+  @NotNull private Map<WorkItem, CheckinWorkItemAction> myActions;
 
   private WorkItemsCheckinParameters(@NotNull List<WorkItem> workItems, @NotNull Map<WorkItem, CheckinWorkItemAction> actions) {
     myWorkItems = workItems;
@@ -66,6 +66,11 @@ public class WorkItemsCheckinParameters {
   public void update(@NotNull List<WorkItem> workItems) {
     myWorkItems = workItems;
     myActions.clear();
+  }
+
+  public void update(@NotNull WorkItemsCheckinParameters parameters) {
+    myWorkItems = parameters.myWorkItems;
+    myActions = parameters.myActions;
   }
 
   @NotNull

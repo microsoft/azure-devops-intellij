@@ -36,7 +36,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="7a480" class="com.intellij.ui.table.TableView" binding="myWorkItemsTable">
+              <component id="3fb46" class="com.intellij.ui.dualView.TreeTableView" binding="myWorkItemsTable" custom-create="true">
                 <constraints/>
                 <properties/>
               </component>

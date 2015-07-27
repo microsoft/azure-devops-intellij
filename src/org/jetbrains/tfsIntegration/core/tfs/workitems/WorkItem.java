@@ -128,4 +128,9 @@ public class WorkItem {
   public int hashCode() {
     return myId;
   }
+
+  @Override
+  public String toString() {
+    return myTitle;
+  }
 }

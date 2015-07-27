@@ -4,18 +4,21 @@ import com.intellij.ide.util.treeView.AbstractTreeStructure;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.ui.TableSpeedSearch;
-import com.intellij.ui.table.TableView;
+import com.intellij.ui.TreeTableSpeedSearch;
+import com.intellij.ui.dualView.TreeTableView;
 import com.intellij.ui.treeStructure.NullNode;
 import com.intellij.ui.treeStructure.SimpleTree;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
+import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
+import org.jetbrains.tfsIntegration.core.tfs.WorkItemsCheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
 import java.util.List;
 
 /**
@@ -24,21 +27,22 @@ import java.util.List;
 public class WorkItemsPanel implements Disposable {
 
   @SuppressWarnings("unused") private JPanel myMainPanel;
-  private TableView<WorkItem> myWorkItemsTable;
+  private TreeTableView myWorkItemsTable;
   private SimpleTree myWorkItemQueriesTree;
   private WorkItemQueriesTreeBuilder myTreeBuilder;
-  private final WorkItemsTableModel myWorkItemsTableModel;
+  private WorkItemsTableModel myWorkItemsTableModel;
 
   private final CheckinParametersForm myForm;
 
   public WorkItemsPanel(CheckinParametersForm form) {
     myForm = form;
 
-    myWorkItemsTableModel = new WorkItemsTableModel();
-    myWorkItemsTable.setModelAndUpdateColumns(myWorkItemsTableModel);
     myWorkItemsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-    new TableSpeedSearch(myWorkItemsTable);
+    myWorkItemsTable.getTree().setRootVisible(false);
+    myWorkItemsTable.setShowGrid(true);
+    myWorkItemsTable.setGridColor(UIUtil.getTableGridColor());
+    myWorkItemsTable.setMaxItemsForSizeCalculation(1);
+    new TreeTableSpeedSearch(myWorkItemsTable);
 
     setupWorkItemQueries();
   }
@@ -116,5 +120,17 @@ public class WorkItemsPanel implements Disposable {
 
   @Override
   public void dispose() {
+  }
+
+  private void createUIComponents() {
+    myWorkItemsTableModel = new WorkItemsTableModel(new WorkItemsCheckinParameters());
+    myWorkItemsTable = new TreeTableView(myWorkItemsTableModel) {
+      @Override
+      protected void onTableChanged(@NotNull TableModelEvent e) {
+        super.onTableChanged(e);
+
+        getTree().setRowHeight(calculateRowHeight());
+      }
+    };
   }
 }
