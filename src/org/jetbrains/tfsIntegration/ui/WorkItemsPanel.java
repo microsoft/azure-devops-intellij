@@ -15,11 +15,9 @@ import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
 import org.jetbrains.tfsIntegration.core.tfs.WorkItemsCheckinParameters;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
-import java.util.List;
 
 /**
  * @author Konstantin Kolosovsky.
@@ -52,8 +50,8 @@ public class WorkItemsPanel implements Disposable {
     Disposer.register(this, myTreeBuilder);
   }
 
-  public void queryWorkItems(@NotNull TfsExecutionUtil.Process<List<WorkItem>> query) {
-    final TfsExecutionUtil.ResultWithError<List<WorkItem>> result =
+  public void queryWorkItems(@NotNull TfsExecutionUtil.Process<WorkItemsQueryResult> query) {
+    final TfsExecutionUtil.ResultWithError<WorkItemsQueryResult> result =
       TfsExecutionUtil.executeInBackground("Performing Query", getProject(), query);
 
     final String title = "Query Work Items";

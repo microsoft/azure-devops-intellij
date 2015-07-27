@@ -21,6 +21,7 @@ import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservi
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
+import org.jetbrains.tfsIntegration.ui.WorkItemsQueryResult;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,8 +64,8 @@ public class WorkItemsCheckinParameters {
     return new WorkItemsCheckinParameters(ContainerUtil.newArrayList(myWorkItems), ContainerUtil.newHashMap(myActions));
   }
 
-  public void update(@NotNull List<WorkItem> workItems) {
-    myWorkItems = workItems;
+  public void update(@NotNull WorkItemsQueryResult queryResult) {
+    myWorkItems = queryResult.getWorkItems();
     myActions.clear();
   }
 

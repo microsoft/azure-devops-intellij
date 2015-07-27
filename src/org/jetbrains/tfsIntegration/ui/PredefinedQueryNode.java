@@ -7,11 +7,8 @@ import com.intellij.ui.treeStructure.SimpleNode;
 import com.intellij.ui.treeStructure.SimpleTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItemsQuery;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
-
-import java.util.List;
 
 public class PredefinedQueryNode extends BaseQueryNode {
 
@@ -48,11 +45,11 @@ public class PredefinedQueryNode extends BaseQueryNode {
 
   @Override
   public void handleSelection(@NotNull final SimpleTree tree) {
-    myQueriesTreeContext.queryWorkItems(new TfsExecutionUtil.Process<List<WorkItem>>() {
+    myQueriesTreeContext.queryWorkItems(new TfsExecutionUtil.Process<WorkItemsQueryResult>() {
       @NotNull
       @Override
-      public List<WorkItem> run() throws TfsException, VcsException {
-        return myQuery.queryWorkItems(getServer(), tree, null);
+      public WorkItemsQueryResult run() throws TfsException, VcsException {
+        return new WorkItemsQueryResult(myQuery.queryWorkItems(getServer(), tree, null));
       }
     });
   }

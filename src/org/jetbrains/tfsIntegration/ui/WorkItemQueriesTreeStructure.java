@@ -8,9 +8,6 @@ import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.TfsSdkManager;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-
-import java.util.List;
 
 public class WorkItemQueriesTreeStructure extends SimpleTreeStructure implements QueriesTreeContext, Disposable {
 
@@ -62,7 +59,7 @@ public class WorkItemQueriesTreeStructure extends SimpleTreeStructure implements
   }
 
   @Override
-  public void queryWorkItems(@NotNull TfsExecutionUtil.Process<List<WorkItem>> query) {
+  public void queryWorkItems(@NotNull TfsExecutionUtil.Process<WorkItemsQueryResult> query) {
     myPanel.queryWorkItems(query);
   }
 

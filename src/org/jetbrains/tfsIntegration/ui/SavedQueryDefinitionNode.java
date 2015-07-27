@@ -12,7 +12,6 @@ import com.microsoft.tfs.core.clients.workitem.queryhierarchy.QueryDefinition;
 import com.microsoft.tfs.core.clients.workitem.queryhierarchy.QueryType;
 import com.microsoft.tfs.core.ws.runtime.exceptions.ProxyException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
 import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
@@ -58,10 +57,10 @@ public class SavedQueryDefinitionNode extends BaseQueryNode {
   @Override
   public void handleSelection(@NotNull SimpleTree tree) {
     if (isListQuery()) {
-      myQueriesTreeContext.queryWorkItems(new TfsExecutionUtil.Process<List<WorkItem>>() {
-        @Nullable
+      myQueriesTreeContext.queryWorkItems(new TfsExecutionUtil.Process<WorkItemsQueryResult>() {
+        @NotNull
         @Override
-        public List<WorkItem> run() throws TfsException, VcsException {
+        public WorkItemsQueryResult run() throws TfsException, VcsException {
           return runListQuery();
         }
       });
@@ -73,7 +72,7 @@ public class SavedQueryDefinitionNode extends BaseQueryNode {
   }
 
   @NotNull
-  private List<WorkItem> runListQuery() throws VcsException {
+  private WorkItemsQueryResult runListQuery() throws VcsException {
     List<WorkItem> result = ContainerUtil.newArrayList();
 
     try {
@@ -90,7 +89,7 @@ public class SavedQueryDefinitionNode extends BaseQueryNode {
       throw new VcsException(e);
     }
 
-    return result;
+    return new WorkItemsQueryResult(result);
   }
 
   @NotNull

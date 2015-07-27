@@ -5,9 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
 import org.jetbrains.tfsIntegration.core.tfs.TfsExecutionUtil;
-import org.jetbrains.tfsIntegration.core.tfs.workitems.WorkItem;
-
-import java.util.List;
 
 public interface QueriesTreeContext {
 
@@ -20,5 +17,5 @@ public interface QueriesTreeContext {
   @NotNull
   TFSTeamProjectCollection getProjectCollection();
 
-  void queryWorkItems(@NotNull TfsExecutionUtil.Process<List<WorkItem>> query);
+  void queryWorkItems(@NotNull TfsExecutionUtil.Process<WorkItemsQueryResult> query);
 }
