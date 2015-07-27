@@ -10,6 +10,7 @@ import com.intellij.ui.treeStructure.NullNode;
 import com.intellij.ui.treeStructure.SimpleTree;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.checkin.CheckinParameters;
 import org.jetbrains.tfsIntegration.core.tfs.ServerInfo;
@@ -65,6 +66,7 @@ public class WorkItemsPanel implements Disposable {
 
   private void updateWorkItemsTable() {
     myWorkItemsTableModel.setContent(getState().getWorkItems(myForm.getSelectedServer()));
+    TreeUtil.expandAll(myWorkItemsTable.getTree());
   }
 
   public void update() {
