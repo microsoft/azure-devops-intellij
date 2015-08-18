@@ -36,13 +36,15 @@ import org.jetbrains.tfsIntegration.exceptions.DuplicateMappingException;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 import org.jetbrains.tfsIntegration.exceptions.WorkspaceHasNoMappingException;
 import org.jetbrains.tfsIntegration.xmlutil.XmlUtil;
-import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class Workstation {
 
@@ -124,15 +126,6 @@ public class Workstation {
         WorkstationCacheReader reader = new WorkstationCacheReader();
         XmlUtil.parseFile(cacheFile, reader);
         return reader.getServers();
-      }
-      catch (IOException e) {
-        LOG.info("Cannot read workspace cache", e);
-      }
-      catch (SAXException e) {
-        LOG.info("Cannot read workspace cache", e);
-      }
-      catch (RuntimeException e) {
-        LOG.info("Cannot read workspace cache", e);
       }
       catch (Exception e) {
         LOG.info("Cannot read workspace cache", e);

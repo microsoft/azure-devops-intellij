@@ -16,49 +16,45 @@
 
 package org.jetbrains.tfsIntegration.xmlutil;
 
+import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 
-@SuppressWarnings({"CallToPrintStackTrace", "ThrowFromFinallyBlock", "CaughtExceptionImmediatelyRethrown"})
 public class XmlUtil {
+
+  private static final Logger LOG = Logger.getInstance(XmlUtil.class);
 
   private XmlUtil() {
   }
 
-  public static void parseFile(File file, DefaultHandler handler) throws IOException, SAXException {
-    InputStream is = null;
-    boolean read = false;
+  public static void parseFile(@NotNull File file, @Nullable DefaultHandler handler)
+    throws IOException, ParserConfigurationException, SAXException {
+    boolean parsed = false;
+    InputStream stream = new BufferedInputStream(new FileInputStream(file));
+
     try {
-      is = new BufferedInputStream(new FileInputStream(file));
-      SAXParser p = SAXParserFactory.newInstance().newSAXParser();
-      p.parse(new InputSource(is), handler);
-      read = true;
-    }
-    catch (ParserConfigurationException e) {
-      e.printStackTrace();
+      SAXParserFactory.newInstance().newSAXParser().parse(new InputSource(stream), handler);
+      parsed = true;
     }
     finally {
-      if (is != null) {
+      if (!parsed) {
         try {
-          is.close();
+          stream.close();
         }
-        catch (IOException e) {
-          if (read) {
-            throw e;
-          }
+        catch (Throwable t) {
+          LOG.info(t);
         }
+      }
+      else {
+        stream.close();
       }
     }
   }
-
-
-
-
-
 }
