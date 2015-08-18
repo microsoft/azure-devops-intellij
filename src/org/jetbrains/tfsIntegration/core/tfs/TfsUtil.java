@@ -21,7 +21,9 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
@@ -29,6 +31,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.util.ThrowableConsumer;
+import com.intellij.util.ThrowableRunnable;
 import com.intellij.util.UriUtil;
 import com.intellij.util.io.URLUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
@@ -219,5 +222,13 @@ public class TfsUtil {
   public static String appendPath(URI serverUri, String path) {
     path = StringUtil.trimStart(path, "/");
     return UriUtil.trimTrailingSlashes(serverUri.toString()) + "/" + path.replace(" ", "%20");
+  }
+
+  public static <T, E extends Throwable> T forcePluginClassLoader(@NotNull ThrowableComputable<T, E> computable) throws E {
+    return ClassLoaderUtil.runWithClassLoader(null, computable);
+  }
+
+  public static <E extends Throwable> void forcePluginClassLoader(@NotNull ThrowableRunnable<E> runnable) throws E {
+    ClassLoaderUtil.runWithClassLoader(null, runnable);
   }
 }

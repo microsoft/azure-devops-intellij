@@ -17,15 +17,19 @@
 package org.jetbrains.tfsIntegration.xmlutil;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.ThrowableRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
+import static org.jetbrains.tfsIntegration.core.tfs.TfsUtil.forcePluginClassLoader;
 
 public class XmlUtil {
 
@@ -34,13 +38,17 @@ public class XmlUtil {
   private XmlUtil() {
   }
 
-  public static void parseFile(@NotNull File file, @Nullable DefaultHandler handler)
-    throws IOException, ParserConfigurationException, SAXException {
+  public static void parseFile(@NotNull File file, @Nullable final DefaultHandler handler) throws Exception {
     boolean parsed = false;
-    InputStream stream = new BufferedInputStream(new FileInputStream(file));
+    final InputStream stream = new BufferedInputStream(new FileInputStream(file));
 
     try {
-      SAXParserFactory.newInstance().newSAXParser().parse(new InputSource(stream), handler);
+      forcePluginClassLoader(new ThrowableRunnable<Exception>() {
+        @Override
+        public void run() throws Exception {
+          SAXParserFactory.newInstance().newSAXParser().parse(new InputSource(stream), handler);
+        }
+      });
       parsed = true;
     }
     finally {

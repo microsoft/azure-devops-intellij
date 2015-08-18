@@ -1,6 +1,7 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.ide.projectView.PresentationData;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.treeStructure.SimpleNode;
@@ -17,7 +18,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.tfs.VersionControlPath;
 import org.jetbrains.tfsIntegration.ui.servertree.TfsErrorTreeNode;
 
+import java.util.Collection;
 import java.util.List;
+
+import static org.jetbrains.tfsIntegration.core.tfs.TfsUtil.forcePluginClassLoader;
 
 public class SavedQueryFolderNode extends BaseQueryNode {
 
@@ -65,7 +69,12 @@ public class SavedQueryFolderNode extends BaseQueryNode {
     List<SimpleNode> result = ContainerUtil.newArrayList();
 
     try {
-      result.addAll(getChildren(getQueryFolder()));
+      result.addAll(forcePluginClassLoader(new ThrowableComputable<Collection<? extends SimpleNode>, VcsException>() {
+        @Override
+        public Collection<? extends SimpleNode> compute() throws VcsException {
+          return getChildren(getQueryFolder());
+        }
+      }));
     }
     catch (VcsException e) {
       result.add(buildErrorNode(e));
