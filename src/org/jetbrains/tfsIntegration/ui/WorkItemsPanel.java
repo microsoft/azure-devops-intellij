@@ -9,6 +9,7 @@ import com.intellij.ui.dualView.TreeTableView;
 import com.intellij.ui.treeStructure.NullNode;
 import com.intellij.ui.treeStructure.SimpleTree;
 import com.intellij.ui.treeStructure.SimpleTreeStructure;
+import com.intellij.util.ObjectUtils;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +61,8 @@ public class WorkItemsPanel implements Disposable {
       return;
     }
 
-    getState().getWorkItems(myForm.getSelectedServer()).update(result.result);
+    // if process is not cancelled and there are no errors - we should get not null result
+    getState().getWorkItems(myForm.getSelectedServer()).update(ObjectUtils.assertNotNull(result.result));
     updateWorkItemsTable();
   }
 
