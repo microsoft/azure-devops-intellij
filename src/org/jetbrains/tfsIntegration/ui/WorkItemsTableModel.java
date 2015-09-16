@@ -17,6 +17,7 @@
 package org.jetbrains.tfsIntegration.ui;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.treeStructure.treetable.ListTreeTableModelOnColumns;
@@ -273,8 +274,7 @@ class WorkItemsTableModel extends ListTreeTableModelOnColumns {
 
   static class CheckInActionColumn extends WorkItemFieldColumn<CheckinWorkItemAction> {
 
-    private JComboBox myComboBox =
-      new JComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
+    private ComboBox myComboBox = new ComboBox(new CheckinWorkItemAction[]{CheckinWorkItemAction.Resolve, CheckinWorkItemAction.Associate});
     private TableCellEditor myCellEditor = new DefaultCellEditor(myComboBox) {
       @Nullable
       public Component getTableCellEditorComponent(final JTable table,
