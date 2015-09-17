@@ -19,7 +19,6 @@ package org.jetbrains.tfsIntegration.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Pair;
@@ -31,6 +30,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.ExtendedItem;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.tfsIntegration.core.TFSBundle;
 import org.jetbrains.tfsIntegration.core.tfs.TfsFileUtil;
 import org.jetbrains.tfsIntegration.core.tfs.TfsUtil;
@@ -87,16 +87,12 @@ public abstract class SingleItemAction extends AnAction {
     }
   }
 
-  public void update(final AnActionEvent e) {
-    e.getPresentation().setEnabled(isEnabled(e.getData(CommonDataKeys.PROJECT), VcsUtil.getOneVirtualFile(e)));
+  public void update(@NotNull AnActionEvent e) {
+    e.getPresentation().setEnabled(isEnabled(e.getProject(), VcsUtil.getOneVirtualFile(e)));
   }
 
-  protected final boolean isEnabled(final Project project, final VirtualFile file) {
-    if (file == null) {
-      return false;
-    }
-    final FileStatus status = FileStatusManager.getInstance(project).getStatus(file);
-    return getAllowedStatuses().contains(status);
+  protected final boolean isEnabled(@Nullable Project project, @Nullable VirtualFile file) {
+    return project != null && file != null && getAllowedStatuses().contains(FileStatusManager.getInstance(project).getStatus(file));
   }
 
 }
