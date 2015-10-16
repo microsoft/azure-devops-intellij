@@ -1,0 +1,82 @@
+<idea-plugin version="2">
+  <id>com.microsoft.vso.idea</id>
+  <name>Visual Studio Team Foundation</name>
+  <version>0.1.2</version>
+  <vendor url="http://visualstudio.com/java">Microsoft Corporation</vendor>
+
+  <description><![CDATA[
+    <b>Preview</b>
+    <br>
+      Visual Studio Team Foundation is a plugin to enable working with Git repositories on Visual Studio Online or Team Foundation Server 2015.
+      <br>
+      <a href=https://github.com/Microsoft/vso-intelliJ">GitHub</a> | <a href="https://github.com/Microsoft/vso-intelliJ/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
+      <br>
+      <br>
+      <b>Features</b>
+      <br>
+      <ul>
+        <li>Supports authenticating with Visual Studio Online and Team Foundation Server 2015 to work with source code in Git repositories.</li>
+        <li>Checkout code from Git repositories on Visual Studio Online and Team Foundation Server 2015.</li>
+        <li>Import IntelliJ projects into Git repositories on Visual Studio Online and Team Foundation Server 2015.</li>
+        <li>Create pull requests.</li>
+        <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
+      </ul>
+      <br>
+      <i>Compiled with Java 1.6</i>
+      <i>Compatible with IntelliJ IDEA 14 and Android Studio 1.2 - 1.4</i>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      v 0.1.2 <i>Preview</i>
+    ]]>
+  </change-notes>
+
+  <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
+  <idea-version since-build="131"/>
+
+  <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+  <depends>Git4Idea</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
+    <applicationService serviceInterface="com.microsoft.alm.plugin.idea.utils.ServerContextSettings"
+                        serviceImplementation="com.microsoft.alm.plugin.idea.utils.ServerContextSettings"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="Git4Idea">
+    <GitHttpAuthDataProvider implementation="com.microsoft.alm.plugin.idea.extensions.TfGitHttpAuthDataProvider" />
+  </extensions>
+
+  <application-components>
+    <component>
+      <implementation-class>com.microsoft.alm.plugin.idea.setup.ApplicationStartup</implementation-class>
+    </component>
+  </application-components>
+
+  <project-components>
+    <!-- Add your project components here -->
+  </project-components>
+
+  <actions>
+    <action id="VSO.Open.In.Browser" class="com.microsoft.alm.plugin.idea.actions.OpenFileInBrowserAction">
+      <add-to-group group-id="EditorPopupMenu"/>
+      <add-to-group group-id="ProjectViewPopupMenu"/>
+      <add-to-group group-id="EditorTabPopupMenu"/>
+    </action>
+    <action id="VSO.Open.Commit.In.Browser" class="com.microsoft.alm.plugin.idea.actions.OpenCommitInBrowserAction">
+      <add-to-group group-id="Git.LogContextMenu" />
+      <add-to-group group-id="Vcs.Log.ContextMenu" />
+    </action>
+    <action id="VSO.Import" class="com.microsoft.alm.plugin.idea.actions.ImportAction">
+      <add-to-group group-id="Vcs.Import" />
+    </action>
+    <action id="VSO.Create.Pull.Request" class="com.microsoft.alm.plugin.idea.actions.CreatePullRequestAction">
+        <add-to-group group-id="Git.Menu" />
+    </action>
+  </actions>
+
+</idea-plugin>
