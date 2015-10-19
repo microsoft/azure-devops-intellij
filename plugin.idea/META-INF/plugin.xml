@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>com.microsoft.vso.idea</id>
   <name>Visual Studio Team Foundation</name>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
   <vendor url="http://visualstudio.com/java">Microsoft Corporation</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     <br>
       Visual Studio Team Foundation is a plugin to enable working with Git repositories on Visual Studio Online or Team Foundation Server 2015.
       <br>
-      <a href=https://github.com/Microsoft/vso-intelliJ">GitHub</a> | <a href="https://github.com/Microsoft/vso-intelliJ/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
+      <a href="https://github.com/Microsoft/vso-intelliJ">GitHub</a> | <a href="https://github.com/Microsoft/vso-intelliJ/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
       <br>
       <br>
       <b>Features</b>
@@ -27,7 +27,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      v 0.1.2 <i>Preview</i>
+      v 0.1.3 <i>Preview</i>
     ]]>
   </change-notes>
 
