@@ -34,17 +34,11 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
     CreatePullRequestModel underTest;
 
     Project projectMock;
-
     GitRepository gitRepositoryMock;
-
     GitRepoInfo gitRepoInfoMock;
-
     GitRemote tfsRemote;
-
     DiffCompareInfoProvider diffProviderMock;
-
     CreatePullRequestModel.ApplicationProvider applicationProviderMock;
-
     Observer observerMock;
 
     @Before

@@ -68,6 +68,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
+import static com.microsoft.alm.plugin.idea.ui.pullrequest.PullRequestHelper.PRCreateStatus;
+
 public class CreatePullRequestModel extends AbstractModel {
 
     private static final Logger logger = LoggerFactory.getLogger(CreatePullRequestModel.class);
@@ -551,12 +553,12 @@ public class CreatePullRequestModel extends AbstractModel {
                                     @NotNull final String description,
                                     @NotNull final String branchNameOnRemoteServer,
                                     @NotNull final GitRemoteBranch targetBranch) {
-        try {
-            //should this be a method on the serverContext object?
-            final URI collectionURI = URI.create(String.format("%s/%s", context.getUri().toString(),
-                    context.getTeamProjectCollectionReference().getName()));
-            final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+        //should this be a method on the serverContext object?
+        final URI collectionURI = URI.create(String.format("%s/%s", context.getUri().toString(),
+                context.getTeamProjectCollectionReference().getName()));
+        final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
 
+        try {
             final UUID repositoryId = context.getGitRepository().getId();
             final UUID projectId = context.getTeamProjectReference().getId();
 
@@ -572,8 +574,16 @@ public class CreatePullRequestModel extends AbstractModel {
 
         } catch (Throwable t) {
             // catch everything so we don't bubble up to Intellij
-            notifiyCreateFailedError(project, t.getMessage());
-            logger.warn("Create pull request failed", t);
+            final Pair<PRCreateStatus, String> parsed
+                    = pullRequestHelper.parseException(t, branchNameOnRemoteServer, targetBranch, context, gitClient);
+
+            if (parsed.getFirst() == PRCreateStatus.DUPLICATE) {
+                notifySuccess(project,
+                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ALREADY_EXISTS_TITLE), parsed.getSecond());
+            } else {
+                notifiyCreateFailedError(project, parsed.getSecond());
+                logger.warn("Create pull request failed", t);
+            }
         }
     }
 
