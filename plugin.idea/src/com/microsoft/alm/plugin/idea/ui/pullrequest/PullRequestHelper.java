@@ -3,24 +3,53 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
+import com.intellij.openapi.util.Pair;
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
 import git4idea.GitCommit;
 import git4idea.GitRemoteBranch;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Helper utility class for pull request related methods
  */
 public class PullRequestHelper {
 
+    private static final Logger logger = LoggerFactory.getLogger(PullRequestHelper.class);
+
+    public static enum PRCreateStatus {
+        UNKNOWN,
+        FAILED,
+        SUCCESS,
+        DUPLICATE
+    }
+
+    public static final String PR_EXISTS_EXEPTION_NAME = "GitPullRequestExistsException";
+
     private static final String WEB_ACCESS_PR_FORMAT = "%s/pullrequest/%d#view=discussion";
     private static final String TF_REF_FORMATTER = "refs/heads/%s";
 
+    /**
+     * Create a default title for pull request
+     *
+     * If there is only one commit, use its subject; otherwise use a standard template
+     * "Merge source to target".
+     *
+     * Default titles will be less than 120 chars.
+     *
+     * @return default title
+     */
     public String createDefaultTitle(final List<GitCommit> commits, final String sourceBranchName,
                                      final String targetBranchName) {
 
@@ -49,6 +78,14 @@ public class PullRequestHelper {
         return TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_DEFAULT_TITLE, sourceBranchName, targetBranchName);
     }
 
+    /**
+     * Create a default description for pull request
+     *
+     * If there is only one commit, use its message; otherwise use a standard template
+     * "-Subject" for every commit
+     *
+     * @return default Description
+     */
     public String createDefaultDescription(final List<GitCommit> commits) {
         if (commits == null || commits.isEmpty()) {
             return StringUtils.EMPTY;
@@ -84,12 +121,18 @@ public class PullRequestHelper {
                 ? descBuilder.toString() : descBuilder.substring(0, CreatePullRequestModel.MAX_SIZE_DESCRIPTION - 10);
     }
 
+    /**
+     * A html document points to the webaccess PR link
+     *
+     * @param repositoryRemoteUrl git repo url
+     * @param id pull request id
+     * @return html document with link to specified pull request
+     */
     public String getHtmlMsg(final String repositoryRemoteUrl, final int id) {
         final String text = TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_CREATED_MESSAGE, id);
         final String webAccessUrl = String.format(WEB_ACCESS_PR_FORMAT, repositoryRemoteUrl, id);
         return String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, webAccessUrl, text);
     }
-
 
     public GitPullRequest generateGitPullRequest(@NotNull final String title,
                                                   @NotNull final String description,
@@ -98,9 +141,57 @@ public class PullRequestHelper {
         final GitPullRequest pullRequest = new GitPullRequest();
         pullRequest.setTitle(title);
         pullRequest.setDescription(description);
-        pullRequest.setSourceRefName(String.format(TF_REF_FORMATTER, branchNameOnRemoteServer));
-        pullRequest.setTargetRefName(String.format(TF_REF_FORMATTER, targetBranch.getNameForRemoteOperations()));
+        pullRequest.setSourceRefName(getVSORefName(branchNameOnRemoteServer));
+        pullRequest.setTargetRefName(getVSORefName(targetBranch.getNameForRemoteOperations()));
 
         return pullRequest;
+    }
+
+    /**
+     * Parse the exception we got when generating pull request
+     *
+     * if we have a duplicate pr on server, try locate its id and generate a link to it
+     *
+     * @return status and string message as a pair
+     */
+    public Pair<PRCreateStatus, String> parseException(final Throwable t, final String sourceBranch,
+                                                       final GitRemoteBranch targetBranch, final ServerContext context,
+                                                       final GitHttpClient gitClient) {
+        if (t == null) {
+            // if there is no throwale, why are we here?
+            return new Pair(PRCreateStatus.UNKNOWN, StringUtils.EMPTY);
+        }
+
+        if (StringUtils.indexOf(t.getMessage(), PR_EXISTS_EXEPTION_NAME) > -1) {
+            try {
+                // look for the existing PR
+                final UUID repoId = context.getGitRepository().getId();
+                final GitPullRequestSearchCriteria searchCriteria = new GitPullRequestSearchCriteria();
+                searchCriteria.setRepositoryId(repoId);
+                searchCriteria.setStatus(PullRequestStatus.ACTIVE);
+                searchCriteria.setSourceRefName(getVSORefName(sourceBranch));
+                searchCriteria.setTargetRefName(getVSORefName(targetBranch.getNameForRemoteOperations()));
+                List<GitPullRequest> pullRequests = gitClient.getPullRequests(repoId, searchCriteria, null, 0, 1);
+
+                if (pullRequests != null && pullRequests.size() > 0) {
+                    final String repositoryRemoteUrl = context.getGitRepository().getRemoteUrl();
+                    final String notifyMsgInHtml = getHtmlMsg(repositoryRemoteUrl, pullRequests.get(0).getPullRequestId());
+
+                    return new Pair(PRCreateStatus.DUPLICATE, notifyMsgInHtml);
+                }
+            } catch (Throwable innerT) {
+                logger.error("Failed to retrieve existing pull request", innerT);
+
+                // since we are making server calls, it's possible this call will fail, in that case, just return
+                // the original exception, never let any exception bubble up to intellij
+                return new Pair(PRCreateStatus.FAILED, t.getMessage());
+            }
+        }
+
+        return new Pair(PRCreateStatus.FAILED, t.getMessage());
+    }
+
+    private String getVSORefName(final String name) {
+        return String.format(TF_REF_FORMATTER, name);
     }
 }

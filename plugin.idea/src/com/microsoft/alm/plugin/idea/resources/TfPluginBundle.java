@@ -117,6 +117,7 @@ public class TfPluginBundle {
     @NonNls public static final String KEY_CREATE_PR_DIALOG_CREATE_BUTTON = "CreatePullRequestDialog.CreateButton";
     @NonNls public static final String KEY_CREATE_PR_DIALOG_TITLE = "CreatePullRequestDialog.Title";
     @NonNls public static final String KEY_CREATE_PR_CREATED_TITLE = "CreatePullRequestDialog.Created.Title";
+    @NonNls public static final String KEY_CREATE_PR_ALREADY_EXISTS_TITLE= "CreatePullRequestDialog.AlreadyExists.Title";
     @NonNls public static final String KEY_CREATE_PR_CREATED_MESSAGE = "CreatePullRequestDialog.Created.Message";
     @NonNls public static final String KEY_CREATE_PR_PUSH_TITLE = "CreatePullRequestDialog.Push.Title";
     @NonNls public static final String KEY_CREATE_PR_ERRORS_DIFF_FAILED_TITLE = "CreatePullRequestDialog.Errors.DiffFailed.Title";
