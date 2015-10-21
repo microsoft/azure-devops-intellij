@@ -78,6 +78,14 @@ public class PullRequestHelper {
         return TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_DEFAULT_TITLE, sourceBranchName, targetBranchName);
     }
 
+    /**
+     * Create a default description for pull request
+     *
+     * If there is only one commit, use its message; otherwise use a standard template
+     * "-Subject" for every commit
+     *
+     * @return default Description
+     */
     public String createDefaultDescription(final List<GitCommit> commits) {
         if (commits == null || commits.isEmpty()) {
             return StringUtils.EMPTY;
@@ -113,6 +121,13 @@ public class PullRequestHelper {
                 ? descBuilder.toString() : descBuilder.substring(0, CreatePullRequestModel.MAX_SIZE_DESCRIPTION - 10);
     }
 
+    /**
+     * A html document points to the webaccess PR link
+     *
+     * @param repositoryRemoteUrl git repo url
+     * @param id pull request id
+     * @return html document with link to specified pull request
+     */
     public String getHtmlMsg(final String repositoryRemoteUrl, final int id) {
         final String text = TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_CREATED_MESSAGE, id);
         final String webAccessUrl = String.format(WEB_ACCESS_PR_FORMAT, repositoryRemoteUrl, id);
@@ -132,6 +147,13 @@ public class PullRequestHelper {
         return pullRequest;
     }
 
+    /**
+     * Parse the exception we got when generating pull request
+     *
+     * if we have a duplicate pr on server, try locate its id and generate a link to it
+     *
+     * @return status and string message as a pair
+     */
     public Pair<PRCreateStatus, String> parseException(final Throwable t, final String sourceBranch,
                                                        final GitRemoteBranch targetBranch, final ServerContext context,
                                                        final GitHttpClient gitClient) {
