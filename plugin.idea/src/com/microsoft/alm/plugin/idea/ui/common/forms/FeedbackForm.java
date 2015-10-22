@@ -53,7 +53,12 @@ public class FeedbackForm {
 
     public JComponent getContentPanel(final boolean smile) {
         ensureInitialized(smile);
+        contentPanel.setPreferredSize(new Dimension(JBUI.scale(400), JBUI.scale(300)));
         return contentPanel;
+    }
+
+    public JComponent getEmailComponent() {
+        return email;
     }
 
     private void ensureInitialized(final boolean smile) {

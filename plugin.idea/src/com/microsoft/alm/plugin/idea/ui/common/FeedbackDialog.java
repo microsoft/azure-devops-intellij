@@ -4,8 +4,11 @@
 package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.forms.FeedbackForm;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.validator.routines.EmailValidator;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
@@ -20,7 +23,7 @@ public class FeedbackDialog extends BaseDialogImpl {
                 TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE),
                 smile ? TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE) :
                         TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN),
-                null,
+                TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE,
                 /* showFeedback */ false,
                 Collections.<String,Object>singletonMap(PROP_SMILE, smile));
     }
@@ -36,6 +39,18 @@ public class FeedbackDialog extends BaseDialogImpl {
     public void addActionListener(final ActionListener listener) {
         // Hook up listener to all actions
         feedbackForm.addActionListener(listener);
+    }
+
+    @Override
+    protected ValidationInfo doValidate() {
+        String email = getEmail();
+        if (!StringUtils.isEmpty(email) && !EmailValidator.getInstance().isValid(email)) {
+            return new ValidationInfo(
+                    TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_ERRORS_INVALID_EMAIL, email),
+                    feedbackForm.getEmailComponent());
+        }
+
+        return super.doValidate();
     }
 
     @Override
