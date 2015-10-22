@@ -151,6 +151,9 @@ subprojects {
         delete 'lib'
     }
 
+    /**
+     * TODO: need to separate the dependencies per subproject to avoid accidental coupling 
+     */
     task copyDependencies(type: Copy, dependsOn: ['copyDependenciesSource', 'copyTestDependencies', ':plugin.idea:copyDll']) {
         from configurations.compile
         into 'lib/classes'
@@ -188,7 +191,7 @@ subprojects {
     /**
      * Preparing for release build
      */
-    task prepRelease(dependsOn: ['delTestTelemetryPropFile']) {
+    task prepRelease(dependsOn: [':plugin.idea:delTestTelemetryPropFile']) {
     }
 
     /**
