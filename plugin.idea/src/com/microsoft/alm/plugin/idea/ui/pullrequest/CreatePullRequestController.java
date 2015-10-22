@@ -5,11 +5,14 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ValidationListener;
+import com.microsoft.alm.plugin.idea.ui.controls.WrappingLabel;
 import git4idea.repo.GitRepository;
 
+import javax.swing.JOptionPane;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Observable;
@@ -54,7 +57,12 @@ public class CreatePullRequestController implements Observer, ActionListener {
     }
 
     public void showModalDialog() {
-        this.createDialog.showAndGet();
+        // before we show the dialog, let's do a sanity check.  This is the last chance to
+        // exit out the dialog, but the sanity check method should handle displaying all errors to users
+        // as the dialog isn't shown yet
+        if (this.sanityCheckOnModel()) {
+            this.createDialog.showAndGet();
+        }
     }
 
     @Override
@@ -96,6 +104,25 @@ public class CreatePullRequestController implements Observer, ActionListener {
         if (arg == null || CreatePullRequestModel.PROP_DIFF_MODEL.equals(arg)) {
             this.createDialog.populateDiff(this.createModel.getProject(), this.createModel.getLocalBranchChanges());
         }
+
+    }
+
+    private boolean sanityCheckOnModel() {
+        // if we have no target branches
+        if (this.createModel.getRemoteBranchDropdownModel() == null
+                || this.createModel.getRemoteBranchDropdownModel().getSize() == 0) {
+
+            final WrappingLabel warningMessage = new WrappingLabel(500);
+            warningMessage.setText(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_NO_VALID_TARGET_WARNING_MESSAGE));
+            JOptionPane.showMessageDialog(this.createDialog.getContentPanel(),
+                    warningMessage,
+                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_SANITY_CHECK_FAILED_WARNING_TITLE),
+                    JOptionPane.WARNING_MESSAGE);
+
+            return false;
+        }
+
+        return true;
     }
 
     private ValidationInfo validate() {

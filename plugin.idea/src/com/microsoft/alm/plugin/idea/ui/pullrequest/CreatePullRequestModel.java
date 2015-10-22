@@ -166,8 +166,10 @@ public class CreatePullRequestModel extends AbstractModel {
         return StringUtils.isNotBlank(title) ? title : StringUtils.EMPTY;
     }
 
-    public synchronized void setTitle(final String title) {
-        this.title = StringUtils.trim(title);
+    public void setTitle(final String title) {
+        synchronized(this) {
+            this.title = StringUtils.trim(title);
+        }
         setChangedAndNotify(PROP_TITLE);
     }
 
@@ -175,8 +177,10 @@ public class CreatePullRequestModel extends AbstractModel {
         return StringUtils.isNotBlank(description) ? description : StringUtils.EMPTY;
     }
 
-    public synchronized void setDescription(final String description) {
-        this.description = StringUtils.trim(description);
+    public void setDescription(final String description) {
+        synchronized(this) {
+            this.description = StringUtils.trim(description);
+        }
         setChangedAndNotify(PROP_DESCRIPTION);
     }
 
@@ -262,17 +266,17 @@ public class CreatePullRequestModel extends AbstractModel {
 
         // only show valid remote branches
         sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(),
-                new Predicate<GitRemoteBranch>() {
-                    @Override
-                    public boolean apply(final GitRemoteBranch remoteBranch) {
+                        new Predicate<GitRemoteBranch>() {
+                            @Override
+                            public boolean apply(final GitRemoteBranch remoteBranch) {
                         /* two conditions:
                          *   1. remote must be a alm remote
                          *   2. this isn't the remote tracking branch of current local branch
                          */
-                        return tfGitRemotes.contains(remoteBranch.getRemote())
-                                    && !remoteBranch.equals(remoteTrackingBranch);
-                    }
-                })
+                                return tfGitRemotes.contains(remoteBranch.getRemote())
+                                        && !remoteBranch.equals(remoteTrackingBranch);
+                            }
+                        })
         );
 
         sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems()));
@@ -359,7 +363,6 @@ public class CreatePullRequestModel extends AbstractModel {
      */
     public void loadDiff() {
         if (this.getSourceBranch() != null && this.getTargetBranch() != null) {
-
             ListenableFuture<GitChangesContainer> diffFuture = this.executorService.submit(new Callable<GitChangesContainer>() {
                 @Override
                 public GitChangesContainer call() throws Exception {
@@ -466,7 +469,7 @@ public class CreatePullRequestModel extends AbstractModel {
         final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
         if (authenticationInfo == null) {
             notifiyCreateFailedError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_NO_ACTIVE_SERVER_CONTEXT));
+                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_NO_AUTHENTICATION_INFO_IN_CONTEXT));
             return;
         }
 
