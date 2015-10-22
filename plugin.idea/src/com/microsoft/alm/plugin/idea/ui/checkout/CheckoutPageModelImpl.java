@@ -214,7 +214,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_ERRORS_DESTINATION_EXISTS, directoryName);
             }
             //verify destination directory parent exists, we can reach this condition if user specifies a path for directory name
-            if (!destDirectoryOnDisk.getParentFile().exists()) {
+            if (destDirectoryOnDisk.getParentFile() == null || !destDirectoryOnDisk.getParentFile().exists()) {
                 return ModelValidationInfo.createWithResource(PROP_DIRECTORY_NAME,
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID,
                         directoryName, destDirectoryOnDisk.getParent());
