@@ -11,7 +11,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 import java.awt.BorderLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -52,8 +51,7 @@ public class ImportPageImpl extends JPanel implements ImportPage {
             this.removeAll();
             if (showLogin) {
                 this.add(loginForm.getContentPanel(), BorderLayout.CENTER);
-            }
-            else {
+            } else {
                 this.add(importForm.getContentPanel(), BorderLayout.CENTER);
             }
             this.revalidate();
@@ -62,7 +60,7 @@ public class ImportPageImpl extends JPanel implements ImportPage {
         }
     }
 
-    public void initFocus(){
+    public void initFocus() {
         if (loginShowing) {
             loginForm.initFocus();
         } else {
@@ -123,10 +121,10 @@ public class ImportPageImpl extends JPanel implements ImportPage {
 
     @Override
     public JComponent getComponent(final String name) {
-        if(VsoImportPageModel.PROP_REPO_NAME.equals(name)) {
+        if (VsoImportPageModel.PROP_REPO_NAME.equals(name)) {
             return importForm.getRepositoryNameComponent();
         }
-        if(VsoImportPageModel.PROP_SERVER_NAME.equals(name)) {
+        if (VsoImportPageModel.PROP_SERVER_NAME.equals(name)) {
             return loginForm.getServerNameComponent();
         }
         return null;

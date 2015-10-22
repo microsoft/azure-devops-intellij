@@ -22,7 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.TableModel;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;

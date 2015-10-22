@@ -154,6 +154,7 @@ public class CheckoutForm {
     public void initFocus() {
         repositoryFilter.requestFocus();
     }
+
     public void setRepositoryTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
         repositoryTable.setModel(tableModel);
         repositoryTable.setSelectionModel(selectionModel);

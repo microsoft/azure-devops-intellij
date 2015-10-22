@@ -7,7 +7,6 @@ import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 
 public interface ImportPageModel extends LoginPageModel {
     String PROP_LOADING = "loading";
@@ -16,19 +15,24 @@ public interface ImportPageModel extends LoginPageModel {
     String PROP_PROJECT_TABLE = "teamProjectTable";
 
     String getRepositoryName();
+
     void setRepositoryName(final String repositoryName);
 
     String getTeamProjectFilter();
+
     void setTeamProjectFilter(final String teamProjectFilter);
 
     boolean isLoading();
+
     void setLoading(final boolean loading);
 
     void setImportEnabled(final boolean importEnabled);
 
     ServerContextTableModel getTableModel();
+
     ListSelectionModel getTableSelectionModel();
 
     void loadTeamProjects();
+
     void importIntoRepository();
 }

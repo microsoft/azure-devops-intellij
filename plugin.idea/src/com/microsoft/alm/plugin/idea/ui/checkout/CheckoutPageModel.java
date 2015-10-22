@@ -7,7 +7,6 @@ import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 
 /**
  * This interface represents the model for either the VSO or TFS "checkout from version control" pages.
@@ -23,23 +22,29 @@ public interface CheckoutPageModel extends LoginPageModel {
     String DEFAULT_SOURCE_PATH = System.getProperty("user.home");
 
     String getParentDirectory();
+
     void setParentDirectory(String parentDirectory);
 
     String getDirectoryName();
+
     void setDirectoryName(String directoryName);
 
     String getRepositoryFilter();
+
     void setRepositoryFilter(String repositoryFilter);
 
     boolean isLoading();
+
     void setLoading(boolean loading);
 
     void setCloneEnabled(boolean cloneEnabled);
 
     ServerContextTableModel getTableModel();
+
     ListSelectionModel getTableSelectionModel();
 
     void loadRepositories();
+
     void cloneSelectedRepo();
 
 }

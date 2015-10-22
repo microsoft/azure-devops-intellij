@@ -133,10 +133,10 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
 
                     //successfully logged in to VSO and obtained list of accounts, save the context so user doesn't have to login again
                     final List<ServerContext> accountContexts = accountLookupOperation.castResults(results).getServerContexts();
-                    if(accountContexts != null && !accountContexts.isEmpty()) {
+                    if (accountContexts != null && !accountContexts.isEmpty()) {
                         final ServerContext activeContext = ServerContextManager.getInstance().getActiveContext();
                         //set the active context only if there is no active context for VSO already
-                        if(activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
+                        if (activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
                             ServerContextManager.getInstance().setActiveContext(accountContexts.get(0));
                         }
                     }
