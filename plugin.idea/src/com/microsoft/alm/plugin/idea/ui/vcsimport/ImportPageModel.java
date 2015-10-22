@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
@@ -25,7 +26,7 @@ public interface ImportPageModel extends LoginPageModel {
 
     void setImportEnabled(final boolean importEnabled);
 
-    TableModel getTableModel();
+    ServerContextTableModel getTableModel();
     ListSelectionModel getTableSelectionModel();
 
     void loadTeamProjects();

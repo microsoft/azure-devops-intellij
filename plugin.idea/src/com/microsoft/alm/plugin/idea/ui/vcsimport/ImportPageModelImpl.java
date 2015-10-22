@@ -451,7 +451,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
 
     @Override
-    public TableModel getTableModel() {
+    public ServerContextTableModel getTableModel() {
         return teamProjectTableModel;
     }
 
@@ -491,17 +491,10 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     /**
-     * This method is provided to allow the derived classes an easy way to get the selected teamProject index.
-     */
-    protected int getSelectedRowIndex() {
-        return teamProjectTableModel.getSelectionModel().getMinSelectionIndex();
-    }
-
-    /**
      * This method is provided to allow the derived classes an easy way to get the selected team project instance.
      */
     protected ServerContext getSelectedContext() {
-        return teamProjectTableModel.getServerContext(getSelectedRowIndex());
+        return teamProjectTableModel.getSelectedContext();
     }
 
     @Override

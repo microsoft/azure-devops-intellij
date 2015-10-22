@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
@@ -73,7 +74,7 @@ class CheckoutPageImpl extends JPanel implements CheckoutPage {
     }
 
     @Override
-    public void setRepositoryTable(final TableModel tableModel, final ListSelectionModel selectionModel) {
+    public void setRepositoryTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
         checkoutForm.setRepositoryTable(tableModel, selectionModel);
     }
 

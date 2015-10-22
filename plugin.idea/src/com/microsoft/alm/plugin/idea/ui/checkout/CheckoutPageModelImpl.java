@@ -149,7 +149,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
 
     @Override
     public void setCloneEnabled(final boolean cloneEnabled) {
-        if(this.cloneEnabled != cloneEnabled) {
+        if (this.cloneEnabled != cloneEnabled) {
             this.cloneEnabled = cloneEnabled;
             getParentModel().updateCloneEnabled();
         }
@@ -161,7 +161,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     }
 
     @Override
-    public TableModel getTableModel() {
+    public ServerContextTableModel getTableModel() {
         return repositoryTableModel;
     }
 
@@ -215,7 +215,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_ERRORS_DESTINATION_EXISTS, directoryName);
             }
             //verify destination directory parent exists, we can reach this condition if user specifies a path for directory name
-            if(!destDirectoryOnDisk.getParentFile().exists()) {
+            if (!destDirectoryOnDisk.getParentFile().exists()) {
                 return ModelValidationInfo.createWithResource(PROP_DIRECTORY_NAME,
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID,
                         directoryName, destDirectoryOnDisk.getParent());
@@ -267,7 +267,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
      * This method is provided to allow the derived classes an easy way to get the selected repository instance.
      */
     protected ServerContext getSelectedContext() {
-        return repositoryTableModel.getServerContext(getSelectedRowIndex());
+        return repositoryTableModel.getSelectedContext();
     }
 
     /**
@@ -292,18 +292,18 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
         appendContexts(Collections.singletonList(serverContext));
     }
 
-    private int getSelectedRowIndex() {
-        return repositoryTableModel.getSelectionModel().getMinSelectionIndex();
-    }
-
     private void setupSelectionListener() {
         // Set up event listener to set the Directory name when the selection changes
         repositoryTableModel.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                final ServerContext row = repositoryTableModel.getServerContext(repositoryTableModel.getSelectionModel().getMinSelectionIndex());
-                final String repositoryName = (row != null && row.getGitRepository() != null) ? row.getGitRepository().getName() : "";
-                setDirectoryName(repositoryName);
+                // No need to change things while the list is adjusting
+                if (!e.getValueIsAdjusting()) {
+                    final ServerContext row = repositoryTableModel.getSelectedContext();
+                    // Get the repository name and set the directory name to match
+                    final String repositoryName = (row != null && row.getGitRepository() != null) ? row.getGitRepository().getName() : "";
+                    setDirectoryName(repositoryName);
+                }
             }
         });
     }

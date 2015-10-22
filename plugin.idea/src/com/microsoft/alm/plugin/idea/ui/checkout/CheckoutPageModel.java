@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
@@ -35,7 +36,7 @@ public interface CheckoutPageModel extends LoginPageModel {
 
     void setCloneEnabled(boolean cloneEnabled);
 
-    TableModel getTableModel();
+    ServerContextTableModel getTableModel();
     ListSelectionModel getTableSelectionModel();
 
     void loadRepositories();

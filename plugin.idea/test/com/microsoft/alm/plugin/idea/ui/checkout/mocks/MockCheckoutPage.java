@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.checkout.mocks;
 
 import com.microsoft.alm.plugin.idea.ui.checkout.CheckoutPage;
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
@@ -48,7 +49,7 @@ public class MockCheckoutPage implements CheckoutPage {
     }
 
     @Override
-    public void setRepositoryTable(TableModel tableModel, ListSelectionModel selectionModel) {
+    public void setRepositoryTable(ServerContextTableModel tableModel, ListSelectionModel selectionModel) {
 
     }
 

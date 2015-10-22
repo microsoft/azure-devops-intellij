@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
@@ -90,7 +91,7 @@ public class ImportPageImpl extends JPanel implements ImportPage {
     }
 
     @Override
-    public void setTeamProjectTable(final TableModel tableModel, final ListSelectionModel selectionModel) {
+    public void setTeamProjectTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
         importForm.setTeamProjectTable(tableModel, selectionModel);
     }
 

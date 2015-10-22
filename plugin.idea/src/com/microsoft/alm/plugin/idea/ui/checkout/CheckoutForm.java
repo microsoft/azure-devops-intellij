@@ -9,7 +9,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -152,13 +154,25 @@ public class CheckoutForm {
     public void initFocus() {
         repositoryFilter.requestFocus();
     }
-    public void setRepositoryTable(final TableModel tableModel, final ListSelectionModel selectionModel) {
+    public void setRepositoryTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
         repositoryTable.setModel(tableModel);
         repositoryTable.setSelectionModel(selectionModel);
 
         // Setup table sorter
         RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
         repositoryTable.setRowSorter(sorter);
+
+        // Attach an index converter to fix the indexes if the user sorts the list
+        tableModel.setSelectionConverter(new TableModelSelectionConverter() {
+            @Override
+            public int convertRowIndexToModel(int viewRowIndex) {
+                if (viewRowIndex >= 0) {
+                    return repositoryTable.convertRowIndexToModel(viewRowIndex);
+                }
+
+                return viewRowIndex;
+            }
+        });
     }
 
     public void setParentDirectory(final String path) {

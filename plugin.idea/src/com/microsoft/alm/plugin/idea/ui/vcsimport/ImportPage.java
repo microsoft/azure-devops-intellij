@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
+
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableModel;
@@ -22,7 +24,7 @@ public interface ImportPage {
     void setTeamProjectFilter(final String filter);
     String getTeamProjectFilter();
 
-    void setTeamProjectTable(final TableModel tableModel, final ListSelectionModel selectionModel);
+    void setTeamProjectTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel);
 
     void setRepositoryName(final String name);
     String getRepositoryName();
