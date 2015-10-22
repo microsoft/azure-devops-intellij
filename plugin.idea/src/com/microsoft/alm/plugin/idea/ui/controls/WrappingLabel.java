@@ -18,7 +18,11 @@ public class WrappingLabel extends JPanel {
     private final JLabel label;
 
     public WrappingLabel() {
-        final Dimension size = new Dimension(JBUI.scale(100), -1);
+        this(100);
+    }
+
+    public WrappingLabel(final int width) {
+        final Dimension size = new Dimension(JBUI.scale(width), -1);
         label = new JLabel();
         label.setPreferredSize(size);
         setLayout(new BorderLayout());

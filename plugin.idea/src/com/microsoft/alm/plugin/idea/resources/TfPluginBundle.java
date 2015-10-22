@@ -131,10 +131,13 @@ public class TfPluginBundle {
     @NonNls public static final String KEY_CREATE_PR_ERRORS_TARGET_NOT_SELECTED = "CreatePullRequestDialog.Errors.TargetNotSelected";
     @NonNls public static final String KEY_CREATE_PR_ERRORS_TARGET_IS_LOCAL_TRACKING = "CreatePullRequestDialog.Errors.TargetIsLocalTracking";
     @NonNls public static final String KEY_CREATE_PR_ERRORS_NO_ACTIVE_SERVER_CONTEXT = "CreatePullRequestDialog.Errors.NoActiveServerContext";
+    @NonNls public static final String KEY_CREATE_PR_ERRORS_NO_AUTHENTICATION_INFO_IN_CONTEXT = "CreatePullRequestDialog.Errors.NoAuthenticationInfoInContext";
     @NonNls public static final String KEY_CREATE_PR_ERRORS_SOURCE_EMPTY = "CreatePullRequestDialog.Errors.SourceEmpty";
     @NonNls public static final String KEY_CREATE_PR_CHANGES_PANE_TITLE = "CreatePullRequestDialog.ChangesPane.Title";
     @NonNls public static final String KEY_CREATE_PR_COMMITS_PANE_TITLE = "CreatePullRequestDialog.CommitsPane.Title";
-    @NonNls public static final String KEY_CREATE_PR_DEFAULT_TITLE= "CreatePullRequestDialog.Default.Title";
+    @NonNls public static final String KEY_CREATE_PR_DEFAULT_TITLE = "CreatePullRequestDialog.Default.Title";
+    @NonNls public static final String KEY_CREATE_PR_SANITY_CHECK_FAILED_WARNING_TITLE = "CreatePullRequestDialog.SanityCheckFailed.Title";
+    @NonNls public static final String KEY_CREATE_PR_NO_VALID_TARGET_WARNING_MESSAGE = "CreatePullRequestDialog.NoValidTargetWarning.Message";
 
 
     //actions
