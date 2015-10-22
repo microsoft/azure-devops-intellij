@@ -8,7 +8,6 @@ import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,8 @@ public class MockCheckoutPage implements CheckoutPage {
     }
 
     @Override
-    public void setAuthenticating(final boolean authenticating) {}
+    public void setAuthenticating(final boolean authenticating) {
+    }
 
     @Override
     public void setRepositoryFilter(String filter) {
@@ -64,7 +64,9 @@ public class MockCheckoutPage implements CheckoutPage {
     }
 
     @Override
-    public JComponent getComponent(String name) { return null; }
+    public JComponent getComponent(String name) {
+        return null;
+    }
 
     @Override
     public void setDirectoryName(String name) {

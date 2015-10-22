@@ -8,7 +8,6 @@ import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportPage;
 
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
