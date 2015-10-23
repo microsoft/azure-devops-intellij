@@ -2,18 +2,18 @@
   <id>com.microsoft.vso.idea</id>
   <name>Visual Studio Team Foundation (Preview)</name>
   <version>0.1.4</version>
-  <vendor url="http://visualstudio.com/java">Microsoft Corporation</vendor>
+  <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
 
   <description><![CDATA[
     <b>Preview</b>
-    <br>
+    <br />
       Visual Studio Team Foundation is a plugin to enable working with Git repositories on Visual Studio Online or Team Foundation Server 2015.
-      <br>
-      <a href="https://github.com/Microsoft/vso-intelliJ">GitHub</a> | <a href="https://github.com/Microsoft/vso-intelliJ/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
-      <br>
-      <br>
+      <br />
+      <a href="https://github.com/Microsoft/vso-intellij">GitHub</a> | <a href="https://github.com/Microsoft/vso-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
+      <br />
+      <br />
       <b>Features</b>
-      <br>
+      <br />
       <ul>
         <li>Supports authenticating with Visual Studio Online and Team Foundation Server 2015 to work with source code in Git repositories.</li>
         <li>Checkout code from Git repositories on Visual Studio Online and Team Foundation Server 2015.</li>
@@ -21,8 +21,13 @@
         <li>Create pull requests.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
       </ul>
-      <br>
+      <b>For More Information</b>
+      <br />
+      See <a href="https://java.visualstudio.com/">Visual Studio Online – Java</a>
+      <br />
+      <br />
       <i>Compiled with Java 1.6</i>
+      <br />
       <i>Compatible with IntelliJ IDEA 14 and Android Studio 1.2 - 1.4</i>
     ]]></description>
 
