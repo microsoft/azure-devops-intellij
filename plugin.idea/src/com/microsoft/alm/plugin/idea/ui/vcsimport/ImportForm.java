@@ -9,7 +9,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -145,13 +147,25 @@ public class ImportForm {
         teamProjectFilter.requestFocus();
     }
 
-    public void setTeamProjectTable(final TableModel tableModel, final ListSelectionModel selectionModel) {
+    public void setTeamProjectTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
         teamProjectTable.setModel(tableModel);
         teamProjectTable.setSelectionModel(selectionModel);
 
         // Setup table sorter
         final RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
         teamProjectTable.setRowSorter(sorter);
+
+        // Attach an index converter to fix the indexes if the user sorts the list
+        tableModel.setSelectionConverter(new TableModelSelectionConverter() {
+            @Override
+            public int convertRowIndexToModel(int viewRowIndex) {
+                if (viewRowIndex >= 0) {
+                    return teamProjectTable.convertRowIndexToModel(viewRowIndex);
+                }
+
+                return viewRowIndex;
+            }
+        });
     }
 
     public void setRepositoryName(final String name) {

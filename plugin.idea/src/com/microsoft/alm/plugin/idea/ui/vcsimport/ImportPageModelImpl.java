@@ -52,7 +52,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -166,13 +165,13 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
     @Override
     public void setImportEnabled(final boolean importEnabled) {
-        if(this.importEnabled != importEnabled) {
+        if (this.importEnabled != importEnabled) {
             this.importEnabled = importEnabled;
             getParentModel().updateImportEnabled();
         }
     }
 
-    protected  void setConnectionStatus(final boolean connected) {
+    protected void setConnectionStatus(final boolean connected) {
         setConnected(connected);
         setImportEnabled(connected);
     }
@@ -263,7 +262,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                         false);
                                 dialog.setTitle(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SELECT_FILES_DIALOG_TITLE));
                                 DialogManager.show(dialog);
-                                if(dialog.isOK()) {
+                                if (dialog.isOK()) {
                                     //add files only if user clicked OK on the SelectFilesDialog
                                     filesToCommit.addAll(dialog.getSelectedFiles());
                                 }
@@ -328,16 +327,16 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     t = null;
                 } catch (VssServiceException vssEx) {
                     t = vssEx;
-                } catch(Throwable otherEx) {
+                } catch (Throwable otherEx) {
                     //handle any unexpected server exceptions as well to avoid crashing the plugin
                     t = otherEx;
                 } finally {
-                    if(t != null) {
+                    if (t != null) {
                         logger.error("doImport: Failed to create remote git repository name: {} collection: {}", repositoryName, collectionURI.toString());
                         logger.warn("doImport", t);
                         final String errorMessage;
                         final String teamProjectUrl = collectionURI.toASCIIString() + "/" + context.getTeamProjectReference().getName(); //TODO: how can we reliably compute these URLs
-                        if(t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitRepositoryNameAlreadyExists")) {
+                        if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitRepositoryNameAlreadyExists")) {
                             //The REST SDK asserts for exceptions that are not handled, there could be a very large number of server exceptions to manually add code for
                             //Handling it here since we are not decided on what to do with exceptions on the REST SDK
                             errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_ALREADY_EXISTS_ERROR,
@@ -351,7 +350,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         notifyImportError(project, errorMessage, action, context);
                         return;
                     }
-                    if(remoteRepository == null) {
+                    if (remoteRepository == null) {
                         //We shouldn't get here if it is null, but logging just to be safe
                         logger.error("doImport: remoteRepository is null after trying to remote git repository name: {} collection: {}", repositoryName, collectionURI.toString());
                         return;
@@ -451,7 +450,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
 
     @Override
-    public TableModel getTableModel() {
+    public ServerContextTableModel getTableModel() {
         return teamProjectTableModel;
     }
 
@@ -491,17 +490,10 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     /**
-     * This method is provided to allow the derived classes an easy way to get the selected teamProject index.
-     */
-    protected int getSelectedRowIndex() {
-        return teamProjectTableModel.getSelectionModel().getMinSelectionIndex();
-    }
-
-    /**
      * This method is provided to allow the derived classes an easy way to get the selected team project instance.
      */
     protected ServerContext getSelectedContext() {
-        return teamProjectTableModel.getServerContext(getSelectedRowIndex());
+        return teamProjectTableModel.getSelectedContext();
     }
 
     @Override

@@ -3,9 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
+
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.TableModel;
 import java.awt.event.ActionListener;
 
 /**
@@ -18,22 +19,27 @@ public interface CheckoutPage {
     void setLoginShowing(boolean showLogin);
 
     void setLoading(boolean loading);
+
     void setAuthenticating(boolean authenticating);
 
     void setRepositoryFilter(String filter);
+
     String getRepositoryFilter();
 
-    void setRepositoryTable(TableModel tableModel, ListSelectionModel selectionModel);
+    void setRepositoryTable(ServerContextTableModel tableModel, ListSelectionModel selectionModel);
 
     void setParentDirectory(String path);
+
     String getParentDirectory();
 
     void setDirectoryName(String name);
+
     String getDirectoryName();
 
     void setUserName(String name);
 
     void setServerName(String name);
+
     String getServerName();
 
     JComponent getComponent(String name);

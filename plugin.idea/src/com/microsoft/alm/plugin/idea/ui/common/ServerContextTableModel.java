@@ -22,17 +22,29 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ServerContextTableModel extends AbstractTableModel {
-    public enum Column { REPOSITORY, PROJECT, COLLECTION, ACCOUNT }
-    public final static Column[] VSO_REPO_COLUMNS = new Column[] { Column.REPOSITORY, Column.PROJECT, Column.ACCOUNT };
-    public final static Column[] TFS_REPO_COLUMNS = new Column[] { Column.REPOSITORY, Column.PROJECT, Column.COLLECTION };
-    public final static Column[] VSO_PROJECT_COLUMNS = new Column[] { Column.PROJECT, Column.ACCOUNT };
-    public final static Column[] TFS_PROJECT_COLUMNS = new Column[] { Column.PROJECT, Column.COLLECTION };
+    public enum Column {REPOSITORY, PROJECT, COLLECTION, ACCOUNT}
+
+    public final static Column[] VSO_REPO_COLUMNS = new Column[]{Column.REPOSITORY, Column.PROJECT, Column.ACCOUNT};
+    public final static Column[] TFS_REPO_COLUMNS = new Column[]{Column.REPOSITORY, Column.PROJECT, Column.COLLECTION};
+    public final static Column[] VSO_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.ACCOUNT};
+    public final static Column[] TFS_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.COLLECTION};
+
+    /**
+     * The default converter simply returns the index given.
+     */
+    private final static TableModelSelectionConverter DEFAULT_CONVERTER = new TableModelSelectionConverter() {
+        @Override
+        public int convertRowIndexToModel(int viewRowIndex) {
+            return viewRowIndex;
+        }
+    };
 
     private ListSelectionModel selectionModel = new DefaultListSelectionModel();
     private List<ServerContext> rows = new ArrayList<ServerContext>(1000);
     private List<ServerContext> filteredRows = null;
     private String filter;
     private final Column[] columns;
+    private TableModelSelectionConverter converter;
 
     public ServerContextTableModel(Column[] columns) {
         assert columns != null;
@@ -87,9 +99,32 @@ public class ServerContextTableModel extends AbstractTableModel {
         select(selectedContext);
     }
 
-    private ServerContext getSelectedContext() {
-        final int selectedIndex = selectionModel.getMaxSelectionIndex();
-        final ServerContext selectedContext = getServerContext(selectedIndex);
+    public void setSelectionConverter(TableModelSelectionConverter converter) {
+        this.converter = converter;
+    }
+
+    public TableModelSelectionConverter getSelectionConverter() {
+        if (converter == null) {
+            return DEFAULT_CONVERTER;
+        } else {
+            return converter;
+        }
+    }
+
+    public int getSelectedIndex() {
+        final int viewSelectedIndex;
+        // Check both the max and min selected indexes to see which one is really selected
+        if (selectionModel.isSelectedIndex(selectionModel.getMinSelectionIndex())) {
+            viewSelectedIndex = selectionModel.getMinSelectionIndex();
+        } else {
+            viewSelectedIndex = selectionModel.getMaxSelectionIndex();
+        }
+        final int selectedIndex = getSelectionConverter().convertRowIndexToModel(viewSelectedIndex);
+        return selectedIndex;
+    }
+
+    public ServerContext getSelectedContext() {
+        final ServerContext selectedContext = getServerContext(getSelectedIndex());
         return selectedContext;
     }
 
@@ -218,7 +253,7 @@ public class ServerContextTableModel extends AbstractTableModel {
     private boolean rowContains(ServerContext repositoryRow) {
         // search for the string in a case insensitive way
         // check each column for a match, if any column contains the string the result is true
-        for(int c = 0; c < columns.length; c++) {
+        for (int c = 0; c < columns.length; c++) {
             if (StringUtils.containsIgnoreCase(getValueFor(repositoryRow, c), filter)) {
                 return true;
             }

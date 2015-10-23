@@ -81,7 +81,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         }
 
         //verify server url is a valid url
-        if(!UrlHelper.isValidServerUrl(serverName)) {
+        if (!UrlHelper.isValidServerUrl(serverName)) {
             addError(ModelValidationInfo.createWithResource(PROP_SERVER_NAME, TfPluginBundle.KEY_LOGIN_FORM_TFS_ERRORS_INVALID_SERVER_URL, serverName));
             setConnectionStatus(false);
             return;
@@ -134,7 +134,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         final ServerContext context = ServerContext.createTFSContext(serverUrl, authenticationProvider.getAuthenticationInfo());
 
         //successfully logged in and loading repositories, save this context if there is no active context
-        if(ServerContextManager.getInstance().getActiveContext() == ServerContext.NO_CONTEXT) {
+        if (ServerContextManager.getInstance().getActiveContext() == ServerContext.NO_CONTEXT) {
             ServerContextManager.getInstance().setActiveContext(context);
         }
 
