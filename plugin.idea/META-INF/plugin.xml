@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>com.microsoft.vso.idea</id>
   <name>Visual Studio Team Foundation (Preview)</name>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
   <vendor url="http://visualstudio.com/java">Microsoft Corporation</vendor>
 
   <description><![CDATA[
