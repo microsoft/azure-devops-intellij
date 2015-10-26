@@ -17,7 +17,7 @@ public class MockServerContext extends ServerContext {
     }
 
     public MockServerContext(final VsoAuthenticationInfo authenticationInfo, final URI uri, final Account account) {
-        super(Type.VSO, authenticationInfo, uri, account);
+        super(Type.VSO, authenticationInfo, uri, account.getAccountId());
     }
 
 }

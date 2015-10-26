@@ -50,7 +50,7 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
             //TODO: handle case where session token cannot be created
             SessionToken sessionToken = patFactory.createSessionToken(
                     TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC),
-                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccount().getAccountId());
+                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
 
             //create a VSO context with session token
             final AuthenticationInfo finalAuthenticationInfo = new VsoAuthenticationInfo(context.getUri().toString(),

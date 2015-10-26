@@ -36,6 +36,7 @@ import javax.ws.rs.client.ClientRequestFilter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * This class holds all information needed to contact a TFS/VSO server except for
@@ -52,7 +53,7 @@ public class ServerContext<E extends AuthenticationInfo> {
     private final URI uri;
 
     // used for VSO
-    private final Account account;
+    private final UUID accountId;
 
     // lazily initialized
     private volatile CloseableHttpClient httpClient;
@@ -68,20 +69,33 @@ public class ServerContext<E extends AuthenticationInfo> {
     public static ServerContext<VsoAuthenticationInfo> createVSODeploymentContext(final Account account, final VsoAuthenticationInfo authenticationInfo) {
         assert account != null;
         assert authenticationInfo != null;
-        return new ServerContext<VsoAuthenticationInfo>(Type.VSO_DEPLOYMENT, authenticationInfo, UrlHelper.getVSOAccountURI(account.getAccountName()), account);
+        return createVSODeploymentContext(UrlHelper.getVSOAccountURI(account.getAccountName()), account.getAccountId(), authenticationInfo);
+    }
+
+    public static ServerContext<VsoAuthenticationInfo> createVSODeploymentContext(final URI accountUri, final UUID accountId, final VsoAuthenticationInfo authenticationInfo) {
+        assert accountId != null;
+        assert authenticationInfo != null;
+        return new ServerContext<VsoAuthenticationInfo>(Type.VSO_DEPLOYMENT, authenticationInfo, accountUri, accountId);
     }
 
     public static ServerContext<VsoAuthenticationInfo> createVSOContext(final Account account, final VsoAuthenticationInfo authenticationInfo) {
         assert account != null;
         assert authenticationInfo != null;
-        return new ServerContext<VsoAuthenticationInfo>(Type.VSO, authenticationInfo, UrlHelper.getVSOAccountURI(account.getAccountName()), account);
+        return createVSOContext(UrlHelper.getVSOAccountURI(account.getAccountName()), account.getAccountId(), authenticationInfo);
+    }
+
+    public static ServerContext<VsoAuthenticationInfo> createVSOContext(final URI accountUri, final UUID accountId, final VsoAuthenticationInfo authenticationInfo) {
+        assert accountId != null;
+        assert authenticationInfo != null;
+        return new ServerContext<VsoAuthenticationInfo>(Type.VSO, authenticationInfo, accountUri, accountId);
     }
 
     public static ServerContext<VsoAuthenticationInfo> createVSOContext(final ServerContext context, final VsoAuthenticationInfo authenticationInfo) {
         assert context != null;
         assert authenticationInfo != null;
+        assert context.getType() != Type.TFS;
 
-        final ServerContext<VsoAuthenticationInfo> vsoContext = createVSOContext(context.getAccount(), authenticationInfo);
+        final ServerContext<VsoAuthenticationInfo> vsoContext = createVSOContext(context.getUri(), context.getAccountId(), authenticationInfo);
         vsoContext.setTeamProjectCollectionReference(context.getTeamProjectCollectionReference());
         vsoContext.setTeamProjectReference(context.getTeamProjectReference());
         vsoContext.setGitRepository(context.getGitRepository());
@@ -98,11 +112,11 @@ public class ServerContext<E extends AuthenticationInfo> {
     /*
      *   Protected for mocking only.
      */
-    protected ServerContext(final Type type, final E authenticationInfo, final URI uri, final Account account) {
+    protected ServerContext(final Type type, final E authenticationInfo, final URI uri, final UUID accountId) {
         this.type = type;
         this.authenticationInfo = authenticationInfo;
         this.uri = uri;
-        this.account = account;
+        this.accountId = accountId;
     }
 
     public URI getUri() {
@@ -122,8 +136,8 @@ public class ServerContext<E extends AuthenticationInfo> {
      *
      * @return
      */
-    public Account getAccount() {
-        return account;
+    public UUID getAccountId() {
+        return accountId;
     }
 
     public Client getClient() {
