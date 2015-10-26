@@ -264,8 +264,8 @@ public class TfsTelemetryHelper {
 
         private String getServerId(final ServerContext context) {
             if (context != null) {
-                if (context.getAccount() != null && context.getAccount().getAccountId() != null) {
-                    return context.getAccount().getAccountId().toString();
+                if (context.getAccountId() != null) {
+                    return context.getAccountId().toString();
                 } else if (context.getUri() != null) {
                     return context.getUri().getHost();
                 }

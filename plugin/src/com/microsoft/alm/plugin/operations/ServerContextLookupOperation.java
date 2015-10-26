@@ -259,7 +259,7 @@ public class ServerContextLookupOperation {
                         doSoapCollectionLookup(context);
                     } else { // VSO_DEPLOYMENT || VSO
                         //testing only
-                        //AuthenticationManager.getInstance().getSessionTokenInfo(context.getAuthenticationResult(), context.getAccount(), context.getUri().toString(), true);
+                        //AuthenticationManager.getInstance().getSessionTokenInfo(context.getAuthenticationResult(), context.getAccountId(), context.getUri().toString(), true);
                         doRestCollectionLookup(context);
                     }
                 }
@@ -347,7 +347,7 @@ public class ServerContextLookupOperation {
                             gitServerContext = ServerContext.createTFSContext(context.getUri(), ((ServerContext<TfsAuthenticationInfo>) context).getAuthenticationInfo());
                         } else {
                             // Create a VSO deployment context. This allows us to query for more information, but does not contain credentials (no PAT)
-                            gitServerContext = ServerContext.createVSODeploymentContext(context.getAccount(), ((ServerContext<VsoAuthenticationInfo>) context).getAuthenticationInfo());
+                            gitServerContext = ServerContext.createVSODeploymentContext(context.getUri(), context.getAccountId(), ((ServerContext<VsoAuthenticationInfo>) context).getAuthenticationInfo());
                         }
                         gitServerContext.setGitRepository(gitRepository);
                         gitServerContext.setTeamProjectReference(gitRepository.getProjectReference());

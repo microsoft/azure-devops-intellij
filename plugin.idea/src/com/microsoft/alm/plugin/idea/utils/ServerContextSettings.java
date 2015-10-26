@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * Stores a ServerContext to file and handles writing and reading the objects
@@ -105,7 +106,7 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
         if(context != ServerContext.NO_CONTEXT) {
             setType(context.getType());
             setUri(context.getUri().toString());
-            setAccount(context.getAccount());
+            setAccount(context.getAccountId());
             setTeamProjectCollectionReference(context.getTeamProjectCollectionReference());
             setTeamProjectReference(context.getTeamProjectReference());
             setGitRepository(context.getGitRepository());
@@ -181,8 +182,8 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
         return state.uri;
     }
 
-    private void setAccount(final Account account) {
-        state.account = writeToJson(account);
+    private void setAccount(final UUID accountId) {
+        state.account = writeToJson(accountId);
     }
 
     private Account getAccount() {
