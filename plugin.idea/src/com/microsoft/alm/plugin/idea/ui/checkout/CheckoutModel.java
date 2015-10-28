@@ -27,8 +27,8 @@ public class CheckoutModel extends PageModelImpl {
         this(project, listener, null, null);
     }
 
-    protected CheckoutModel (final Project project, final CheckoutProvider.Listener listener,
-                             final CheckoutPageModel vsoModel, final CheckoutPageModel tfsModel) {
+    protected CheckoutModel(final Project project, final CheckoutProvider.Listener listener,
+                            final CheckoutPageModel vsoModel, final CheckoutPageModel tfsModel) {
         this.project = project;
         this.listener = listener;
         this.vsoModel = vsoModel == null ? new VsoCheckoutPageModel(this) : vsoModel;
@@ -48,7 +48,7 @@ public class CheckoutModel extends PageModelImpl {
     }
 
     public boolean isCloneEnabled() {
-        if(isVsoSelected()) {
+        if (isVsoSelected()) {
             return cloneEnabledForVso;
         } else {
             return cloneEnabledForTfs;
@@ -56,23 +56,23 @@ public class CheckoutModel extends PageModelImpl {
     }
 
     public void updateCloneEnabled() {
-        if(vsoModel != null) {
+        if (vsoModel != null) {
             setCloneEnabledForVso(vsoModel.isConnected());
         }
-        if(tfsModel != null) {
+        if (tfsModel != null) {
             setCloneEnabledForTfs(tfsModel.isConnected());
         }
     }
 
     protected void setCloneEnabledForTfs(final boolean value) {
-        if(cloneEnabledForTfs != value) {
+        if (cloneEnabledForTfs != value) {
             cloneEnabledForTfs = value;
             super.setChangedAndNotify(PROP_CLONE_ENABLED);
         }
     }
 
-    protected  void setCloneEnabledForVso(final boolean value) {
-        if(cloneEnabledForVso != value) {
+    protected void setCloneEnabledForVso(final boolean value) {
+        if (cloneEnabledForVso != value) {
             cloneEnabledForVso = value;
             super.setChangedAndNotify(PROP_CLONE_ENABLED);
         }
@@ -94,7 +94,7 @@ public class CheckoutModel extends PageModelImpl {
         return listener;
     }
 
-    public void dispose(){
+    public void dispose() {
         vsoModel.dispose();
         tfsModel.dispose();
     }

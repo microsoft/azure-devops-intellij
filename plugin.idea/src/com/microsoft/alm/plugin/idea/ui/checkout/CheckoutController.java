@@ -74,7 +74,7 @@ public class CheckoutController implements Observer {
             //evaluate whether to enable/disable clone button every time tab is changed
             dialog.setOkEnabled(model.isCloneEnabled());
         } else if (CheckoutModel.PROP_ERRORS.equals(arg)) {
-            if(model.hasErrors()) {
+            if (model.hasErrors()) {
                 dialog.displayError(model.getErrors().get(0).getValidationMessage());
             } else {
                 dialog.displayError(null);
@@ -110,7 +110,7 @@ public class CheckoutController implements Observer {
         });
 
         final ServerContext context = ServerContextManager.getInstance().getActiveContext();
-        if(context != ServerContext.NO_CONTEXT && context.getType() == ServerContext.Type.TFS) {
+        if (context != ServerContext.NO_CONTEXT && context.getType() == ServerContext.Type.TFS) {
             dialog.setSelectedTabIndex(TAB_TFS);
         }
 
@@ -134,7 +134,7 @@ public class CheckoutController implements Observer {
             error = pageModel.validate();
         }
 
-        if(error != null) {
+        if (error != null) {
             final JComponent errorSource = model.isVsoSelected() ?
                     vsoController.getComponent(error.getValidationSource()) : tfsController.getComponent(error.getValidationSource());
             result = new ValidationInfo(error.getValidationMessage(), errorSource);

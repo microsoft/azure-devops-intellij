@@ -74,7 +74,7 @@ public class CatalogServiceImpl implements CatalogService {
         final CatalogData catalogDataOrganizationRoot = getCatalogDataFromServer(queryForOrganizationRoot);
         //If auth fails, you can get here and catalogDataOrganizationRoot is null
         //TODO: can we get to null from our UI workflows, should we bubble up exception?
-        if(catalogDataOrganizationRoot != null) {
+        if (catalogDataOrganizationRoot != null) {
             final CatalogResource organizationRoot = catalogDataOrganizationRoot.catalogResources.get(0);
 
             final QueryData queryForFoundationServer = new QueryData(organizationRoot.nodeReferencePaths[0] + SINGLE_RECURSE_STAR, QUERY_OPTIONS_EXPAND_DEPENDENCIES, TEAM_FOUNDATION_SERVER_INSTANCE);
@@ -127,7 +127,7 @@ public class CatalogServiceImpl implements CatalogService {
         httpPost.addHeader(new BasicHeader("Content-Type", "application/soap+xml; charset=utf-8")); //$NON-NLS-1$ //$NON-NLS-2$
 
         try {
-            if(context == null || context.getHttpClient() == null) {
+            if (context == null || context.getHttpClient() == null) {
                 logger.warn("getCatalogDataFromServer context.getHttpClient() is null");
                 return null;
             }

@@ -7,7 +7,7 @@ import com.intellij.ide.BrowserUtil;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
@@ -37,14 +37,14 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
 
     /**
      * Generates a new server context with session token information for VSO and saves it as the active context
+     *
      * @param context
      * @return
      */
     public ServerContext completeSignIn(final ServerContext context) {
-        if(context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
-           //generate PAT
-            VsoAuthenticationInfo vsoAuthenticationInfo = (VsoAuthenticationInfo) context.getAuthenticationInfo();
-            final AuthenticationResult result = AuthHelper.getAuthenticationResult(vsoAuthenticationInfo);
+        if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
+            //generate PAT
+            final AuthenticationResult result = VsoAuthenticationProvider.getInstance().getAuthenticationResult();
             final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
 
             //TODO: handle case where session token cannot be created
@@ -53,9 +53,8 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
                     Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
 
             //create a VSO context with session token
-            final AuthenticationInfo finalAuthenticationInfo = new VsoAuthenticationInfo(context.getUri().toString(),
-                    result, sessionToken);
-            final ServerContext newContext = ServerContext.createVSOContext(context, (VsoAuthenticationInfo) finalAuthenticationInfo);
+            final AuthenticationInfo finalAuthenticationInfo = AuthHelper.createAuthenticationInfo(context.getUri().toString(), result, sessionToken);
+            final ServerContext newContext = ServerContext.createVSOContext(context, finalAuthenticationInfo);
             ServerContextManager.getInstance().setActiveContext(newContext);
             return newContext;
         } else {

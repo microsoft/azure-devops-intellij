@@ -121,7 +121,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // nonTfsMaster should be filtered out
         assertEquals(3, underTest.getRemoteBranchDropdownModel().getSize());
-        for(int i = 0; i < underTest.getRemoteBranchDropdownModel().getSize(); ++i) {
+        for (int i = 0; i < underTest.getRemoteBranchDropdownModel().getSize(); ++i) {
             assertNotEquals(nonTfsMaster, underTest.getRemoteBranchDropdownModel().getElementAt(i));
         }
     }

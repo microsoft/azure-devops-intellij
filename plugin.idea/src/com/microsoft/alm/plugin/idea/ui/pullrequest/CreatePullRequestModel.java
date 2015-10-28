@@ -131,25 +131,25 @@ public class CreatePullRequestModel extends AbstractModel {
 
         this.diffCompareInfoProvider = new DiffCompareInfoProvider();
         this.diffCache = CacheBuilder.newBuilder().maximumSize(20)
-            .build(
-                new CacheLoader<Pair<String, String>, GitCommitCompareInfo>() {
-                    @Override
-                    public GitCommitCompareInfo load(Pair<String, String> key) throws Exception {
-                        // if we missed the cache, then show the loading spinner, otherwise
-                        // just switch to the diff we have to avoid flickering the screen
-                        applicationProvider.invokeAndWaitWithAnyModality(new Runnable() {
+                .build(
+                        new CacheLoader<Pair<String, String>, GitCommitCompareInfo>() {
                             @Override
-                            public void run() {
-                                // set the view to show loading
-                                setLoading(true);
-                            }
-                        });
+                            public GitCommitCompareInfo load(Pair<String, String> key) throws Exception {
+                                // if we missed the cache, then show the loading spinner, otherwise
+                                // just switch to the diff we have to avoid flickering the screen
+                                applicationProvider.invokeAndWaitWithAnyModality(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // set the view to show loading
+                                        setLoading(true);
+                                    }
+                                });
 
-                        return getDiffCompareInfoProvider()
-                                .getBranchCompareInfo(project, gitRepository, key.getFirst(), key.getSecond());
-                    }
-                }
-            );
+                                return getDiffCompareInfoProvider()
+                                        .getBranchCompareInfo(project, gitRepository, key.getFirst(), key.getSecond());
+                            }
+                        }
+                );
 
         this.executorService = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
     }
@@ -167,7 +167,7 @@ public class CreatePullRequestModel extends AbstractModel {
     }
 
     public void setTitle(final String title) {
-        synchronized(this) {
+        synchronized (this) {
             this.title = StringUtils.trim(title);
         }
         setChangedAndNotify(PROP_TITLE);
@@ -178,7 +178,7 @@ public class CreatePullRequestModel extends AbstractModel {
     }
 
     public void setDescription(final String description) {
-        synchronized(this) {
+        synchronized (this) {
             this.description = StringUtils.trim(description);
         }
         setChangedAndNotify(PROP_DESCRIPTION);
@@ -292,9 +292,9 @@ public class CreatePullRequestModel extends AbstractModel {
 
     /**
      * This method for now assumes the default branch name is master
-     *
+     * <p/>
      * If there is no master, return the first branch on the list or null for empty list
-     *
+     * <p/>
      * We should get the default branch from TF if necessary, but that's a server call
      */
     @Nullable
@@ -319,12 +319,12 @@ public class CreatePullRequestModel extends AbstractModel {
     /**
      * This method calculates the commits and diff information against the tip of current branch and
      * the common ancestor of source branch (current branch) and target branch (selected remote branch).
-     *
+     * <p/>
      * If there is no common parent (two branches are parallel), return an empty GitCommitCompareInfo
-     *
+     * <p/>
      * This is potentially an expensive calculation, probably should do it on a background thread.
      * We will also attempt to cache the result
-     *
+     * <p/>
      * default access for testing so we bypass UI code,
      * TODO: reevaluate the testing to properly shutoff the access level
      *
@@ -358,7 +358,7 @@ public class CreatePullRequestModel extends AbstractModel {
 
     /**
      * This method spawns a background thread to calculate the diff
-     *
+     * <p/>
      * TODO: refactor the onSuccess/onFailure callback so we can test this method
      */
     public void loadDiff() {
@@ -420,16 +420,16 @@ public class CreatePullRequestModel extends AbstractModel {
 
     /**
      * Create pull request on a background thread
-     *
+     * <p/>
      * This method will first check to see if the local branch has a tracking branch:
      * yes:
-     *      push the commits to the remote tracking branch
+     * push the commits to the remote tracking branch
      * no:
-     *      try create a remote branch matching the local branch name exactly, with the remote set to the GitRemote of
-     *      the target branch
-     *
+     * try create a remote branch matching the local branch name exactly, with the remote set to the GitRemote of
+     * the target branch
+     * <p/>
      * If push fails for whatever reason, stop and show an error message
-     *
+     * <p/>
      * After we push the local branch, then create the pull request.  Pull request link should be returned
      * in a notification bubble
      */
@@ -510,10 +510,10 @@ public class CreatePullRequestModel extends AbstractModel {
     }
 
     private ListenableFuture<Pair<String, GitCommandResult>> doPushCommits(@NotNull final Project project,
-                                                            @NotNull final GitRepository gitRepository,
-                                                            @NotNull final GitLocalBranch localBranch,
-                                                            @NotNull final GitRemote gitRemote,
-                                                            @NotNull final ProgressIndicator indicator) {
+                                                                           @NotNull final GitRepository gitRepository,
+                                                                           @NotNull final GitLocalBranch localBranch,
+                                                                           @NotNull final GitRemote gitRemote,
+                                                                           @NotNull final ProgressIndicator indicator) {
         // just set the result without going off to another thread, we should already be in a background task
         SettableFuture<Pair<String, GitCommandResult>> pushResult
                 = SettableFuture.<Pair<String, GitCommandResult>>create();
@@ -604,32 +604,32 @@ public class CreatePullRequestModel extends AbstractModel {
     }
 
     public ModelValidationInfo validate() {
-        if (StringUtils.isEmpty(this.getTitle()))  {
+        if (StringUtils.isEmpty(this.getTitle())) {
             return ModelValidationInfo.createWithResource(PROP_TITLE,
                     TfPluginBundle.KEY_CREATE_PR_ERRORS_TITLE_EMPTY);
         }
 
-        if (this.getTitle().length() > MAX_SIZE_TITLE)  {
+        if (this.getTitle().length() > MAX_SIZE_TITLE) {
             return ModelValidationInfo.createWithResource(PROP_TITLE,
                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_TITLE_TOO_LONG, MAX_SIZE_TITLE));
         }
 
-        if (StringUtils.isEmpty(this.getDescription()))  {
+        if (StringUtils.isEmpty(this.getDescription())) {
             return ModelValidationInfo.createWithResource(PROP_DESCRIPTION,
                     TfPluginBundle.KEY_CREATE_PR_ERRORS_DESCRIPTION_EMPTY);
         }
 
-        if (this.getDescription().length() > MAX_SIZE_DESCRIPTION)  {
+        if (this.getDescription().length() > MAX_SIZE_DESCRIPTION) {
             return ModelValidationInfo.createWithResource(PROP_DESCRIPTION,
                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DESCRIPTION_TOO_LONG, MAX_SIZE_DESCRIPTION));
         }
 
-        if (this.getSourceBranch() == null)  {
+        if (this.getSourceBranch() == null) {
             return ModelValidationInfo.createWithResource(PROP_SOURCE_BRANCH,
                     TfPluginBundle.KEY_CREATE_PR_ERRORS_SOURCE_EMPTY);
         }
 
-        if (this.getTargetBranch() == null)  {
+        if (this.getTargetBranch() == null) {
             return ModelValidationInfo.createWithResource(PROP_TARGET_BRANCH,
                     TfPluginBundle.KEY_CREATE_PR_ERRORS_TARGET_NOT_SELECTED);
         }

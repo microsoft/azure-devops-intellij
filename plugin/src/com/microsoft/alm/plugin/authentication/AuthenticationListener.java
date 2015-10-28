@@ -6,16 +6,43 @@ package com.microsoft.alm.plugin.authentication;
 /**
  * This interface should be implemented by classes that use the AuthenticationProviders.
  */
-public interface AuthenticationListener <E extends AuthenticationInfo> {
+public interface AuthenticationListener {
+
+    class Helper {
+        static void onAuthenticating(final AuthenticationListener listener) {
+            if (listener != null) {
+                listener.onAuthenticating();
+            }
+        }
+
+        static void onSuccess(final AuthenticationListener listener) {
+            if (listener != null) {
+                listener.onSuccess();
+            }
+        }
+
+        static void onFailure(final AuthenticationListener listener, final Throwable throwable) {
+            if (listener != null) {
+                listener.onFailure(throwable);
+            }
+        }
+    }
+
     /**
      * This method is called by the provider when it begins authenticating.
      */
-    void authenticating();
+    void onAuthenticating();
 
     /**
-     * This method is called when the provider is done authenticating whether it succeeded or not.
-     * @param authenticationInfo the successful authentication result, it will be <code>null</code> if authentication failed for any reason.
-     * @param throwable if authentication failed, this is the exception. Cancelled or successful results do not have an exception.
+     * This method is called when the provider is done successfully authenticating
      */
-    void authenticated(final E authenticationInfo, final Throwable throwable);
+    void onSuccess();
+
+    /**
+     * This method is called if authentication fails.
+     *
+     * @param throwable
+     */
+    void onFailure(final Throwable throwable);
+
 }

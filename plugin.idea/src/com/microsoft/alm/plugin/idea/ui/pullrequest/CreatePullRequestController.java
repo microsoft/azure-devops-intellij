@@ -27,7 +27,8 @@ public class CreatePullRequestController implements Observer, ActionListener {
     private CreatePullRequestModel createModel;
 
     /* default for DI*/
-    CreatePullRequestController() {}
+    CreatePullRequestController() {
+    }
 
     public CreatePullRequestController(final Project project, final GitRepository gitRepository) {
         this.createDialog = new CreatePullRequestDialog(project);

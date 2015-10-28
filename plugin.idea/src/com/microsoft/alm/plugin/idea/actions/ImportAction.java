@@ -30,7 +30,7 @@ public class ImportAction extends InstrumentedAction {
     @Override
     public void doUpdate(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
-        if(project == null || project.isDefault()) {
+        if (project == null || project.isDefault()) {
             anActionEvent.getPresentation().setVisible(false);
             anActionEvent.getPresentation().setEnabled(false);
             return;
@@ -52,7 +52,7 @@ public class ImportAction extends InstrumentedAction {
         try {
             final ImportController controller = new ImportController(project);
             controller.showModalDialog();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             //unexpected error
             logger.warn("ImportAction doActionPerformed failed unexpected error", t);
             VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_IMPORT),

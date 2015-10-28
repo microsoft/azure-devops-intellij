@@ -7,19 +7,19 @@ package com.microsoft.alm.plugin.authentication;
  * This interface allows UI components to initiate an async authentication process.
  * Classes using this interface should call setListener to get feedback on events.
  */
-public interface AuthenticationProvider<E extends AuthenticationInfo> {
+public interface AuthenticationProvider {
     /**
      * Use this method to get the current authenticationInfo object.
      * This returns null if isAuthenticated returns false.
      */
-    E getAuthenticationInfo();
+    AuthenticationInfo getAuthenticationInfo();
 
     /**
      * Use this method to initiate the background authentication.
      *
      * @param serverUri the server to authenticate with
      */
-    void authenticateAsync(final String serverUri, final AuthenticationListener<E> listener);
+    void authenticateAsync(final String serverUri, final AuthenticationListener listener);
 
     /**
      * Use this method to clear all authentication information and set isAuthenticated to false.

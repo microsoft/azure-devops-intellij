@@ -17,7 +17,7 @@ public class ServerContextHelper {
     public static ServerContext getNewServerContext(String name, boolean isVso) {
         //remove spaces in the name
         final String nameNoSpaces = name.replace(" ", "");
-        final String serverUri = isVso? String.format("https://%s.visualstudio.com", name) : String.format("http://%s:8080/tfs", nameNoSpaces);
+        final String serverUri = isVso ? String.format("https://%s.visualstudio.com", name) : String.format("http://%s:8080/tfs", nameNoSpaces);
         final ServerContext context = new MockServerContext(null, URI.create(serverUri));
 
         final TeamProjectCollectionReference collection = new TeamProjectCollectionReference();

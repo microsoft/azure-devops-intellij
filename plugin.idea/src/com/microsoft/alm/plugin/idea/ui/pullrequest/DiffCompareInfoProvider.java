@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * Compare information provider
- *
+ * <p/>
  * Calculate commits and diff information from git4idea utilities
  */
 public class DiffCompareInfoProvider {
@@ -65,9 +65,10 @@ public class DiffCompareInfoProvider {
 
     /**
      * Return zero-length list of commits and diffs
-     *
+     * <p/>
      * This doesn't mean the GitCommitCompareInfo's isEmpty() method will return true, it considers an zero-length
      * list as a diff still
+     *
      * @param gitRepository
      * @return compare info which contains empty commits and diff lists
      */

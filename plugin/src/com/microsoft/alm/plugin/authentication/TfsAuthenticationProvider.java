@@ -17,39 +17,39 @@ import java.net.URISyntaxException;
 /**
  * Use this AuthenticationProvider to authenticate with a TFS server.
  */
-public class TfsAuthenticationProvider implements AuthenticationProvider<TfsAuthenticationInfo> {
+public class TfsAuthenticationProvider implements AuthenticationProvider {
     private final static String USER_NAME = "user.name";
 
-    private TfsAuthenticationInfo authenticationInfo;
+    private AuthenticationInfo authenticationInfo;
 
     public TfsAuthenticationProvider() {
     }
 
-    public TfsAuthenticationProvider(final TfsAuthenticationInfo authenticationInfo) {
+    public TfsAuthenticationProvider(final AuthenticationInfo authenticationInfo) {
         assert authenticationInfo != null;
         this.authenticationInfo = authenticationInfo;
     }
 
     @Override
-    public TfsAuthenticationInfo getAuthenticationInfo() {
+    public AuthenticationInfo getAuthenticationInfo() {
         return authenticationInfo;
     }
 
     @Override
-    public void authenticateAsync(final String serverUrl, final AuthenticationListener<TfsAuthenticationInfo> listener) {
+    public void authenticateAsync(final String serverUrl, final AuthenticationListener listener) {
         // TODO: Create a thread for this work. Push back onto the UI thread to ask for authenticatedContext
-        onAuthenticating(listener);
+        AuthenticationListener.Helper.onAuthenticating(listener);
 
         final URI serverUri;
         try {
             serverUri = new URI(serverUrl);
         } catch (URISyntaxException e) {
-            onAuthenticated(listener, null, e);
+            AuthenticationListener.Helper.onFailure(listener, e);
             return;
         }
 
         Credentials credentials;
-        TfsAuthenticationInfo newAuthenticationInfo = null;
+        AuthenticationInfo newAuthenticationInfo = null;
         boolean result = false;
         Exception error = null;
 
@@ -65,7 +65,7 @@ public class TfsAuthenticationProvider implements AuthenticationProvider<TfsAuth
             try {
                 // TODO: having this object depend on ServerContext is problematic. Remove the dependency via an interface or callback
                 // Test the authenticatedContext against the server
-                newAuthenticationInfo = new TfsAuthenticationInfo(serverUrl, credentials);
+                newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials);
                 ServerContext context = ServerContext.createTFSContext(serverUri, newAuthenticationInfo);
                 context.getSoapServices().getCatalogService().getProjectCollections();
                 result = true;
@@ -86,11 +86,11 @@ public class TfsAuthenticationProvider implements AuthenticationProvider<TfsAuth
 
         if (!result) {
             clearAuthenticationDetails();
-            onAuthenticated(listener, null, error);
+            AuthenticationListener.Helper.onFailure(listener, error);
         } else {
             // We have a valid authenticatedContext, remember it
             authenticationInfo = newAuthenticationInfo;
-            onAuthenticated(listener, authenticationInfo, null);
+            AuthenticationListener.Helper.onSuccess(listener);
         }
     }
 
@@ -126,15 +126,4 @@ public class TfsAuthenticationProvider implements AuthenticationProvider<TfsAuth
         return credentials;
     }
 
-    private static void onAuthenticating(final AuthenticationListener listener) {
-        if (listener != null) {
-            listener.authenticating();
-        }
-    }
-
-    private static void onAuthenticated(final AuthenticationListener listener, final TfsAuthenticationInfo authenticationInfo, final Throwable throwable) {
-        if (listener != null) {
-            listener.authenticated(authenticationInfo, throwable);
-        }
-    }
 }

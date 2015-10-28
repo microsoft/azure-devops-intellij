@@ -3,8 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.plugin.authentication.AuthHelper;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.tf.common.authentication.aad.AccountsCallback;
@@ -48,11 +47,14 @@ public class AccountLookupOperation extends Operation {
         }
     }
 
-    private final VsoAuthenticationInfo vsoAuthenticationInfo;
+    private final AuthenticationInfo authenticationInfo;
+    private final AuthenticationResult authenticationResult;
 
-    public AccountLookupOperation(final VsoAuthenticationInfo vsoAuthenticationInfo) {
-        assert vsoAuthenticationInfo != null;
-        this.vsoAuthenticationInfo = vsoAuthenticationInfo;
+    public AccountLookupOperation(final AuthenticationInfo authenticationInfo, final AuthenticationResult authenticationResult) {
+        assert authenticationInfo != null;
+        assert authenticationResult != null;
+        this.authenticationInfo = authenticationInfo;
+        this.authenticationResult = authenticationResult;
     }
 
     public AccountLookupResults castResults(final LookupResults results) {
@@ -65,7 +67,6 @@ public class AccountLookupOperation extends Operation {
 
         try {
             final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            final AuthenticationResult authenticationResult = AuthHelper.getAuthenticationResult(vsoAuthenticationInfo);
             final Profile me = azureAuthenticator.getUserProfile(authenticationResult);
             azureAuthenticator.getAccountsAsync(authenticationResult, me, new AccountsCallback() {
                 @Override
@@ -77,7 +78,7 @@ public class AccountLookupOperation extends Operation {
 
                     final AccountLookupResults results = new AccountLookupResults();
                     for (final Account a : accounts) {
-                        final ServerContext accountContext = ServerContext.createVSODeploymentContext(a, vsoAuthenticationInfo);
+                        final ServerContext accountContext = ServerContext.createVSODeploymentContext(a, authenticationInfo);
                         results.serverContexts.add(accountContext);
                     }
                     onLookupResults(results);

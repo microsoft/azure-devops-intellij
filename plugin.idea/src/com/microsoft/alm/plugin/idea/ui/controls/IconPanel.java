@@ -21,11 +21,12 @@ public class IconPanel extends JPanel {
      * Use this constructor if you need to set the icon dynamically.
      */
     public IconPanel() {
-        setPreferredSize(new Dimension(JBUI.scale(32),JBUI.scale(32)));
+        setPreferredSize(new Dimension(JBUI.scale(32), JBUI.scale(32)));
     }
 
     /**
      * Create the IconPanel. The preferred size and min size are derived from the width and height of the icon.
+     *
      * @param icon
      */
     public IconPanel(Icon icon) {

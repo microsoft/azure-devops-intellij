@@ -26,9 +26,9 @@ public class ImportModel extends PageModelImpl {
         this(project, null, null);
     }
 
-    protected ImportModel (final Project project,
-                           final ImportPageModel vsoImportPageModel,
-                           final ImportPageModel tfsImportPageModel) {
+    protected ImportModel(final Project project,
+                          final ImportPageModel vsoImportPageModel,
+                          final ImportPageModel tfsImportPageModel) {
         this.project = project;
         this.vsoImportPageModel = vsoImportPageModel == null ? new VsoImportPageModel(this) : vsoImportPageModel;
         this.tfsImportPageModel = tfsImportPageModel == null ? new TfsImportPageModel(this) : tfsImportPageModel;
@@ -58,13 +58,13 @@ public class ImportModel extends PageModelImpl {
         return project;
     }
 
-    public void dispose(){
+    public void dispose() {
         vsoImportPageModel.dispose();
         tfsImportPageModel.dispose();
     }
 
     public boolean isImportEnabled() {
-        if(isVsoSelected()) {
+        if (isVsoSelected()) {
             return importEnabledForVso;
         } else {
             return importEnabledForTfs;
@@ -72,23 +72,23 @@ public class ImportModel extends PageModelImpl {
     }
 
     public void updateImportEnabled() {
-        if(vsoImportPageModel != null) {
+        if (vsoImportPageModel != null) {
             setImportEnabledForVso(vsoImportPageModel.isConnected());
         }
-        if(tfsImportPageModel != null) {
+        if (tfsImportPageModel != null) {
             setImportEnabledForTfs(tfsImportPageModel.isConnected());
         }
     }
 
     protected void setImportEnabledForVso(final boolean value) {
-        if(importEnabledForVso != value) {
+        if (importEnabledForVso != value) {
             importEnabledForVso = value;
             super.setChangedAndNotify(PROP_IMPORT_ENABLED);
         }
     }
 
     protected void setImportEnabledForTfs(final boolean value) {
-        if(importEnabledForTfs != value) {
+        if (importEnabledForTfs != value) {
             importEnabledForTfs = value;
             super.setChangedAndNotify(PROP_IMPORT_ENABLED);
         }

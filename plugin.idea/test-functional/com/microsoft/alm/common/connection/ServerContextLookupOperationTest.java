@@ -4,15 +4,11 @@
 package com.microsoft.alm.common.connection;
 
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.ui.common.mocks.MockServerContext;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
-import com.microsoft.visualstudio.services.account.webapi.model.Account;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
-import com.microsoftopentechnologies.auth.UserInfo;
 import org.apache.http.auth.NTCredentials;
 import org.junit.Assert;
 import org.junit.Before;
@@ -128,15 +124,10 @@ public class ServerContextLookupOperationTest extends AbstractTest {
 
             ServerContext serverContext;
             if (url.endsWith("visualstudio.com")) {
-                final UserInfo userInfo = new UserInfo(userId, userId, userId, null, null, userId, null);
-                final AuthenticationResult authenticationResult = new AuthenticationResult(null, null, null, -1, null, userInfo);
-                final SessionToken sessionToken = new SessionToken();
-                sessionToken.setToken(password);
-
-                final VsoAuthenticationInfo authenticationInfo = new VsoAuthenticationInfo(url, authenticationResult, sessionToken);
-                serverContext = new MockServerContext(authenticationInfo, uri, new Account());
+                final AuthenticationInfo authenticationInfo = new AuthenticationInfo(userId, password, uri.toString(), userId);
+                serverContext = new MockServerContext(authenticationInfo, uri, null);
             } else {
-                final TfsAuthenticationInfo authenticationInfo = new TfsAuthenticationInfo(url, new NTCredentials(userId + ":" + password));
+                final AuthenticationInfo authenticationInfo = AuthHelper.createAuthenticationInfo(url, new NTCredentials(userId + ":" + password));
                 serverContext = new MockServerContext(authenticationInfo, uri);
             }
 
@@ -258,7 +249,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         Assert.assertNotNull(aResults);
         Assert.assertNotNull(bResults);
         Assert.assertEquals(aResults.size(), bResults.size());
-//        for (ServerContextLookupOperation.ServerContext aResult : aResults) {
+//        for (ServerContextLookupOperation.ServerContextItemStore aResult : aResults) {
 //            Assert.assertTrue(bResults.contains(aResult));
 //        }
     }

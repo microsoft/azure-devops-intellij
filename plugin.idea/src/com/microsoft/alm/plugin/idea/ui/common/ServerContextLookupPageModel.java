@@ -9,11 +9,14 @@ import java.util.List;
 
 public interface ServerContextLookupPageModel {
     void setLoading(final boolean loading);
+
     boolean isLoading();
 
     void addError(final ModelValidationInfo validationInfo);
+
     void clearErrors();
 
     void appendContexts(final List<ServerContext> serverContexts);
+
     void clearContexts();
 }

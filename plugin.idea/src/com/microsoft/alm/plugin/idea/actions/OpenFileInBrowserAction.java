@@ -38,7 +38,7 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
     protected OpenFileInBrowserAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_OPEN_BROWSER),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_OPEN_BROWSER_MSG),
-                        Icons.VSLogoSmall);
+                Icons.VSLogoSmall);
     }
 
     @Override

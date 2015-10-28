@@ -42,10 +42,10 @@ public class PullRequestHelper {
 
     /**
      * Create a default title for pull request
-     *
+     * <p/>
      * If there is only one commit, use its subject; otherwise use a standard template
      * "Merge source to target".
-     *
+     * <p/>
      * Default titles will be less than 120 chars.
      *
      * @return default title
@@ -80,7 +80,7 @@ public class PullRequestHelper {
 
     /**
      * Create a default description for pull request
-     *
+     * <p/>
      * If there is only one commit, use its message; otherwise use a standard template
      * "-Subject" for every commit
      *
@@ -125,7 +125,7 @@ public class PullRequestHelper {
      * A html document points to the webaccess PR link
      *
      * @param repositoryRemoteUrl git repo url
-     * @param id pull request id
+     * @param id                  pull request id
      * @return html document with link to specified pull request
      */
     public String getHtmlMsg(final String repositoryRemoteUrl, final int id) {
@@ -135,9 +135,9 @@ public class PullRequestHelper {
     }
 
     public GitPullRequest generateGitPullRequest(@NotNull final String title,
-                                                  @NotNull final String description,
-                                                  @NotNull final String branchNameOnRemoteServer,
-                                                  @NotNull final GitRemoteBranch targetBranch) {
+                                                 @NotNull final String description,
+                                                 @NotNull final String branchNameOnRemoteServer,
+                                                 @NotNull final GitRemoteBranch targetBranch) {
         final GitPullRequest pullRequest = new GitPullRequest();
         pullRequest.setTitle(title);
         pullRequest.setDescription(description);
@@ -149,7 +149,7 @@ public class PullRequestHelper {
 
     /**
      * Parse the exception we got when generating pull request
-     *
+     * <p/>
      * if we have a duplicate pr on server, try locate its id and generate a link to it
      *
      * @return status and string message as a pair

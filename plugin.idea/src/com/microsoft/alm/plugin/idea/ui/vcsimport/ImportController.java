@@ -69,7 +69,7 @@ public class ImportController implements Observer {
 
     @Override
     public void update(final Observable o, final Object arg) {
-        if(ImportModel.PROP_IMPORT_ENABLED.equals(arg)) {
+        if (ImportModel.PROP_IMPORT_ENABLED.equals(arg)) {
             dialog.setOkEnabled(model.isImportEnabled());
         } else if (ImportModel.PROP_VSO_SELECTED.equals(arg)) {
             dialog.setSelectedTabIndex(model.isVsoSelected() ? TAB_VSO : TAB_TFS);
@@ -112,7 +112,7 @@ public class ImportController implements Observer {
         });
 
         final ServerContext context = ServerContextManager.getInstance().getActiveContext();
-        if(context != ServerContext.NO_CONTEXT && context.getType() == ServerContext.Type.TFS) {
+        if (context != ServerContext.NO_CONTEXT && context.getType() == ServerContext.Type.TFS) {
             dialog.setSelectedTabIndex(TAB_TFS);
         }
 
@@ -136,7 +136,7 @@ public class ImportController implements Observer {
             error = pageModel.validate();
         }
 
-        if(error != null) {
+        if (error != null) {
             final JComponent errorSource = model.isVsoSelected() ?
                     vsoPageController.getComponent(error.getValidationSource()) : tfsPageController.getComponent(error.getValidationSource());
             result = new ValidationInfo(error.getValidationMessage(), errorSource);

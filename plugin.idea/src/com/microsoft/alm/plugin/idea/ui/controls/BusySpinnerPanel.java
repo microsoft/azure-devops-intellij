@@ -67,9 +67,9 @@ public class BusySpinnerPanel extends JPanel {
         // Draw 12 lines around the center point in a circle
         int lineLength = Math.min(width, height) / 5;
         int lineWidth = lineLength / 4;
-        int cx = width/2;
-        int cy = height/2;
-        Graphics2D g2 = (Graphics2D)g.create();
+        int cx = width / 2;
+        int cy = height / 2;
+        Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2.setPaint(JBColor.black);
@@ -78,7 +78,7 @@ public class BusySpinnerPanel extends JPanel {
             g2.drawLine(cx + lineLength, cy, cx + lineLength * 2, cy);
             g2.rotate(-Math.PI / 6, cx, cy);
             g2.setComposite(AlphaComposite.getInstance(
-                    AlphaComposite.SRC_OVER, ((11-i)/12.0f) * (2.0f/3.0f)));
+                    AlphaComposite.SRC_OVER, ((11 - i) / 12.0f) * (2.0f / 3.0f)));
         }
         g2.dispose();
     }

@@ -44,7 +44,7 @@ public class MockBaseDialog implements BaseDialog {
     }
 
     public void validate() {
-        for(ValidationListener vl : validationListeners) {
+        for (ValidationListener vl : validationListeners) {
             ValidationInfo vi = vl.doValidate();
             displayError = vi != null ? vi.message : null;
         }

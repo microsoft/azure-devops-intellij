@@ -4,8 +4,8 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
-import com.microsoftopentechnologies.auth.UserInfo;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -18,46 +18,51 @@ import java.net.UnknownHostException;
 public class AuthHelper {
     private final static String COMPUTER_NAME = "computername";
 
-    /**
-     * Creates an AuthenticationResult object from VsoAuthenticationInfo object
-     * @param info
-     * @return
-     */
-    public static AuthenticationResult getAuthenticationResult(VsoAuthenticationInfo info) {
-        if(info == null) {
-            return null;
-        }
+    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final Credentials credentials) {
+        return new AuthenticationInfo(
+                serverUri,
+                credentials.getUserPrincipal().getName(),
+                credentials.getPassword(),
+                credentials.getUserPrincipal().getName()
+        );
+    }
 
-        final VsoAuthenticationInfo.AuthenticationResultInfo resultInfo = info.getAuthenticationResultInfo();
+    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final AuthenticationResult authenticationResult) {
+        return new AuthenticationInfo(
+                getUserId(authenticationResult),
+                getPassword(authenticationResult),
+                serverUri,
+                getEmail(authenticationResult)
+        );
+    }
 
-        final UserInfo userInfo = new UserInfo(resultInfo.getUserId(), resultInfo.getGivenName(),
-                resultInfo.getFamilyName(), resultInfo.getIdentityProvider(), resultInfo.getUpn(),
-                resultInfo.getUniqueName(), resultInfo.getTenantId());
-
-        final AuthenticationResult result = new AuthenticationResult(
-                resultInfo.getAccessTokenType(), resultInfo.getAccessToken(),
-                resultInfo.getRefreshToken(), resultInfo.getExpiresOn(),
-                resultInfo.getResource(), userInfo);
-
-        return result;
+    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final AuthenticationResult authenticationResult, final SessionToken sessionToken) {
+        return new AuthenticationInfo(
+                getUserId(authenticationResult),
+                sessionToken.getToken(),
+                serverUri,
+                getEmail(authenticationResult)
+        );
     }
 
     /**
      * Returns the NTCredentials or UsernamePasswordCredentials object
+     *
      * @param type
      * @param authenticationInfo
      * @return
      */
     public static Credentials getCredentials(final ServerContext.Type type, final AuthenticationInfo authenticationInfo) {
-        if(type == ServerContext.Type.TFS) {
+        if (type == ServerContext.Type.TFS) {
             return getNTCredentials(authenticationInfo.getUserName(), authenticationInfo.getPassword());
-        }else {
+        } else {
             return new UsernamePasswordCredentials(authenticationInfo.getUserName(), authenticationInfo.getPassword());
         }
     }
 
     /**
      * Returns an NTCredentials object for given username and password
+     *
      * @param userName
      * @param password
      * @return
@@ -103,5 +108,24 @@ public class AuthHelper {
         } catch (UnknownHostException e) {
             return System.getenv(COMPUTER_NAME);
         }
+    }
+
+    private static String getUserId(final AuthenticationResult authenticationResult) {
+        return authenticationResult.getUserInfo().getUniqueName();
+    }
+
+    private static String getPassword(final AuthenticationResult authenticationResult) {
+        return authenticationResult.getAccessToken();
+    }
+
+    private static String getEmail(final AuthenticationResult authenticationResult) {
+        final String email;
+        final String identityProvider = authenticationResult.getUserInfo().getIdentityProvider();
+        if (identityProvider == null || identityProvider.isEmpty()) {
+            email = authenticationResult.getUserInfo().getUniqueName();
+        } else {
+            email = authenticationResult.getUserInfo().getUniqueName().substring(identityProvider.length() + 1);
+        }
+        return email;
     }
 }
