@@ -1,0 +1,221 @@
+/**
+ * This is the main gradle build file for the VSO IntelliJ Plugin.
+ */
+
+/**
+ * settings common to ALL projects (even the root level project)
+ */
+allprojects {
+    configurations {
+        ideaSdkLibs
+        git4ideaLibs
+        codeAnalysisLibs
+    }
+
+    version = '0.1.4'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://artifacts.cloudapp.net:8081/nexus/content/repositories/snapshots"
+        }
+        maven {
+            url "http://artifacts.cloudapp.net:8081/nexus/content/repositories/releases"
+        }
+    }
+}
+
+/**
+ * settings shared by each subproject (part 1)
+ */
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'checkstyle'
+    apply plugin: 'pmd'
+    apply plugin: 'findbugs'
+
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+}
+
+/**
+ * specific settings for each project
+ */
+project(":common") {
+}
+
+project(":plugin") {
+    dependencies {
+        compile project(':common')
+    }
+}
+
+project(":plugin.idea") {
+    dependencies {
+        compile project(':plugin')
+        testCompile project(':plugin').sourceSets.test.output
+    }
+
+    jar {
+        baseName 'com.microsoft.alm'
+        from('.') {
+            include 'META-INF/plugin.xml'
+        }
+    }
+
+    task delTestTelemetryPropFile << {
+        delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
+    }
+    
+    task copyDll (type: Copy) {
+        from 'third-party-packages/ICE_JNIRegistry.dll'
+        into 'resources'
+    }
+
+    /**
+     * Create the plugin zip
+     */
+    task zip(type: Zip, dependsOn: ['test', 'check', 'copyDll']) {
+        into('com.microsoft.alm/lib') {
+            from configurations.runtime
+            from configurations.runtime.allArtifacts.files
+        }
+    }
+
+}
+
+/**
+ * settings shared by each subproject (part 2)
+ */
+subprojects {
+    dependencies {
+        ideaSdkLibs fileTree(dir: "$ideaSdk", include: '*.jar')
+        git4ideaLibs fileTree(dir: "$git4idea", include: '*.jar')
+        codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
+
+        compile group: 'com.microsoft.vss.sdk.httpclient', name: 'vss-http-client', version: '0.4.2-SNAPSHOT'
+        compile group: 'com.microsoft.tf', name: 'aad-pat-generator', version: '1.0.1'
+        compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.0'
+        compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
+        compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
+        compile group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1'
+
+        compile files('third-party-packages/registry.jar')
+
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+        testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+        testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.3'
+        testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
+        testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.6.3'
+    }
+
+    sourceSets {
+        main {
+            compileClasspath += configurations.ideaSdkLibs
+            compileClasspath += configurations.git4ideaLibs
+            compileClasspath += configurations.codeAnalysisLibs
+
+            java {
+                srcDir 'src'
+            }
+
+            resources {
+                srcDir 'resources'
+            }
+        }
+
+        test {
+            compileClasspath += configurations.ideaSdkLibs
+            compileClasspath += configurations.git4ideaLibs
+            compileClasspath += configurations.codeAnalysisLibs
+            runtimeClasspath += configurations.ideaSdkLibs
+            runtimeClasspath += configurations.git4ideaLibs
+            runtimeClasspath += configurations.codeAnalysisLibs
+
+            java {
+                srcDir 'test'
+            }
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+
+    /**
+     * Dependencies management for Intellij project
+     *
+     * The Intellij project expects all dependencies are stored in the 'lib' folder
+     */
+    task cleanLibFolder << {
+        delete 'lib'
+    }
+
+    /**
+     * TODO: need to separate the dependencies per subproject to avoid accidental coupling 
+     */
+    task copyDependencies(type: Copy, dependsOn: ['copyDependenciesSource', 'copyTestDependencies', ':plugin.idea:copyDll']) {
+        from configurations.compile
+        into 'lib/classes'
+    }
+
+    task copyTestDependencies(type: Copy) {
+        from configurations.testCompile - configurations.compile
+        into 'lib/testclasses'
+    }
+
+    task copyDependenciesSource(type: Copy, dependsOn: 'cleanLibFolder') {
+        def sources = configurations.compile.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+            project.dependencies.create([
+                    group     : artifact.moduleVersion.id.group,
+                    name      : artifact.moduleVersion.id.name,
+                    version   : artifact.moduleVersion.id.version,
+                    classifier: 'sources'
+            ])
+        }
+        from configurations.detachedConfiguration(sources as Dependency[])
+                .resolvedConfiguration.lenientConfiguration.getFiles(Specs.SATISFIES_ALL)
+        include '*-sources.jar'
+        into file( 'lib/src' )
+    }
+
+
+    tasks.withType(FindBugs) {
+        ignoreFailures = true
+        reports {
+            html { enabled = true }
+            xml.enabled = !html.enabled
+        }
+    }
+
+    /**
+     * Preparing for release build
+     */
+    task prepRelease(dependsOn: [':plugin.idea:delTestTelemetryPropFile']) {
+    }
+
+    /**
+     * Open source prep
+     */
+    checkstyle {
+        toolVersion = "6.1"
+        ignoreFailures = false
+        configFile = file "${rootDir}/config/checkstyle/custom-rules.xml"
+        configProperties = [
+            'checkstyle.java.header': "${rootDir}/config/checkstyle/java.header"
+        ]
+    }
+
+    pmd {
+        toolVersion = "5.0.3"
+        ignoreFailures = true
+        ruleSetFiles = files "${rootDir}/config/pmd/custom-pmd-rules.xml"
+    }
+
+    /**
+     * Static code analysis tools
+     */
+    findbugs {
+      toolVersion = "2.0.3"
+    }
+}

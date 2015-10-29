@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ruleset name="TFIntellij-Plugin-Rules"
+   xmlns="http://pmd.sf.net/ruleset/1.0.0"
+   xmlns:xsi="http://www.w1.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd">
+   <description>PMD Rules for the Intellij Plugin.</description>
+   <exclude-pattern>.*/test/.*</exclude-pattern>
+   <rule ref="rulesets/java/empty.xml" />
+   <rule ref="rulesets/java/basic.xml" />
+   <rule ref="rulesets/java/braces.xml" />
+
+   <rule ref="rulesets/java/design.xml/AvoidReassigningParameters" />
+   <rule ref="rulesets/java/design.xml/ConstructorCallsOverridableMethod" />
+   <rule ref="rulesets/java/design.xml/EqualsNull" />
+   <rule ref="rulesets/java/design.xml/InstantiationToGetClass" />
+   <rule ref="rulesets/java/design.xml/NonThreadSafeSingleton" />
+   <rule ref="rulesets/java/design.xml/PreserveStackTrace" />
+   <rule ref="rulesets/java/design.xml/ClassWithOnlyPrivateConstructorsShouldBeFinal" />
+   <rule ref="rulesets/java/design.xml/EmptyMethodInAbstractClassShouldBeAbstract" />
+   <rule ref="rulesets/java/design.xml/ReturnEmptyArrayRatherThanNull" />
+
+   <rule ref="rulesets/java/strictexception.xml/ExceptionAsFlowControl" />
+   <rule ref="rulesets/java/strictexception.xml/AvoidCatchingNPE" />
+
+   <rule ref="rulesets/java/controversial.xml/DontImportSun" />
+   <rule ref="rulesets/java/controversial.xml/DoNotCallGarbageCollectionExplicitly" />
+
+   <rule ref="rulesets/java/finalizers.xml/AvoidCallingFinalize" />
+
+   <rule ref="rulesets/java/naming.xml/VariableNamingConventions" />
+   <rule ref="rulesets/java/naming.xml/MethodNamingConventions" />
+   <rule ref="rulesets/java/naming.xml/ClassNamingConventions" />
+
+   <rule ref="rulesets/java/imports.xml/DuplicateImports" />
+   <rule ref="rulesets/java/imports.xml/DontImportJavaLang" />
+   <rule ref="rulesets/java/imports.xml/UnusedImports" />
+   <rule ref="rulesets/java/imports.xml/ImportFromSamePackage" />
+
+   <rule ref="rulesets/java/optimizations.xml/LocalVariableCouldBeFinal" />
+   <rule ref="rulesets/java/optimizations.xml/MethodArgumentCouldBeFinal" />
+</ruleset>

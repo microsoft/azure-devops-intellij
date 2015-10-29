@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+"-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+"http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<!--
+  Checkstyle configuration that checks the project's open source license policy
+-->
+
+<module name="Checker">
+    <!-- Must have the Microsoft Copyright Header -->
+    <module name="Header">
+        <property name="headerFile" value="${checkstyle.java.header}"/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+    <!-- No tabs -->
+    <module name="FileTabCharacter">
+        <property name="fileExtensions" value="java, xml, properties"/>
+    </module>
+    <module name="TreeWalker">
+        <module name="UnusedImports"/>
+        <module name="AvoidStarImport"/>
+    </module>
+</module>
