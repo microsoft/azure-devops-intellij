@@ -20,19 +20,19 @@ import java.net.URISyntaxException;
 public class TfsAuthenticationProvider implements AuthenticationProvider {
     private final static String USER_NAME = "user.name";
 
-    private AuthenticationInfo authenticationInfo;
+    private AuthenticationInfo lastAuthenticationInfo;
 
     public TfsAuthenticationProvider() {
     }
 
     public TfsAuthenticationProvider(final AuthenticationInfo authenticationInfo) {
         assert authenticationInfo != null;
-        this.authenticationInfo = authenticationInfo;
+        this.lastAuthenticationInfo = authenticationInfo;
     }
 
     @Override
     public AuthenticationInfo getAuthenticationInfo() {
-        return authenticationInfo;
+        return lastAuthenticationInfo;
     }
 
     @Override
@@ -89,19 +89,19 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
             AuthenticationListener.Helper.onFailure(listener, error);
         } else {
             // We have a valid authenticatedContext, remember it
-            authenticationInfo = newAuthenticationInfo;
+            lastAuthenticationInfo = newAuthenticationInfo;
             AuthenticationListener.Helper.onSuccess(listener);
         }
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        authenticationInfo = null;
+        lastAuthenticationInfo = null;
     }
 
     @Override
     public boolean isAuthenticated() {
-        return authenticationInfo != null;
+        return lastAuthenticationInfo != null;
     }
 
     private Credentials getCredentials(final String serverUrl) {

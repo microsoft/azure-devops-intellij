@@ -3,14 +3,20 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
+import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
+import com.microsoft.tf.common.authentication.aad.TokenScope;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
+import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
+import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
@@ -27,7 +33,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     public static final String VSO_ROOT = "http://visualstudio.com";
 
-    private static AuthenticationResult authenticationResult;
+    private static AuthenticationResult lastDeploymentAuthenticationResult;
+    private static AuthenticationInfo lastDeploymentAuthenticationInfo;
 
     private static class AzureAuthenticatorHolder {
         private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
@@ -56,34 +63,35 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     }
 
     public AuthenticationResult getAuthenticationResult() {
-        return authenticationResult;
+        return lastDeploymentAuthenticationResult;
     }
 
     @Override
     public AuthenticationInfo getAuthenticationInfo() {
-        return null;
+        return lastDeploymentAuthenticationInfo;
     }
 
     @Override
     public boolean isAuthenticated() {
         synchronized (this) {
-            if (authenticationResult != null) {
+            if (lastDeploymentAuthenticationResult != null) {
                 try {
                     // always refresh it -- this is the only way to ensure it is valid
-                    authenticationResult = getAzureAuthenticator().refreshAadAccessToken(authenticationResult);
+                    lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(lastDeploymentAuthenticationResult);
                 } catch (IOException e) {
-                    authenticationResult = null;
+                    lastDeploymentAuthenticationResult = null;
                     // refreshing failed, log exception
                     logger.warn("Refreshing access token failed", e);
                 }
             }
-            return authenticationResult != null;
+            return lastDeploymentAuthenticationResult != null;
         }
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        authenticationResult = null;
+        lastDeploymentAuthenticationResult = null;
+        lastDeploymentAuthenticationInfo = null;
     }
 
     @Override
@@ -100,7 +108,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                         clearAuthenticationDetails();
                         AuthenticationListener.Helper.onFailure(listener, null);
                     } else {
-                        authenticationResult = result;
+                        lastDeploymentAuthenticationResult = result;
+                        lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, lastDeploymentAuthenticationResult);
                         AuthenticationListener.Helper.onSuccess(listener);
                     }
                 }
@@ -117,4 +126,14 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
+    public AuthenticationInfo generatePatAuthInfo(final ServerContext context, final String patDisplayName) {
+        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(lastDeploymentAuthenticationResult);
+
+        //TODO: handle case where session token cannot be created
+        SessionToken sessionToken = patFactory.createSessionToken(
+                patDisplayName,
+                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
+
+        return AuthHelper.createAuthenticationInfo(context.getUri().toString(), lastDeploymentAuthenticationResult, sessionToken);
+    }
 }

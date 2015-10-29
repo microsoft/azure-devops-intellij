@@ -17,6 +17,7 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContext.Type;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.alm.plugin.services.ServerContextStore.Key;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,18 +46,39 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
 
     private static final Logger logger = LoggerFactory.getLogger(ServerContextSettings.class);
 
-    private ServerContextItemsStore restoredState;
+    /**
+     * Lifecycle:
+     * <ol>
+     * <li>During plugin startup, IntelliJ calls the settings file from disk and calls loadState() which sets restoreState</li>
+     * <li>Later ServerContextManager loads and takes ownership of this data and sets restoreState to <code>null</code></li>
+     * <li>Finally, during plugin shutdown, IntelliJ calls getState() get the contents to write back out to disk</li>
+     * </ol>
+     * One other interesting note, is that ServerContextManager makes calls to save the passwords as it goes
+     * (but doesn't update any other state data).  Ideally, the passwords would be saved at the same time everything
+     * is saved (i.e. in getState()), but this is not possible, because by the time IntelliJ calls into here the
+     * PasswordManager service has already been shut down.
+     */
+    private ServerContextItemsStore restoreState;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    // IntelliJ calls this method to load from stored state
+    /**
+     * IntelliJ calls this method to load from stored state during plugin initialization.
+     * <p/>
+     * Shortly thereafter, ServerContextManager will initialize and will take ownership of this data with actively
+     * managed ServerContexts, and this state data should not be used again.
+     *
+     * @param state
+     */
     public void loadState(final ServerContextItemsStore state) {
-        this.restoredState = state;
+        this.restoreState = state;
     }
 
-    // IntelliJ calls this method to save to stored state
+    /**
+     * IntelliJ calls this method to save to stored state when it shuts down.
+     */
     public ServerContextItemsStore getState() {
-        return restoredState;
+        return getServerContextsToPersist();
     }
 
     public static class ServerContextItemsStore {
@@ -93,9 +116,39 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
         writePassword(key, stringValue);
     }
 
-    public List<ServerContext> restoreServerContexts() {
+    private ServerContextItemsStore getServerContextsToPersist() {
+        if (restoreState != null) {
+            // ServerContextManager never loaded the data
+            return restoreState;
+        } else {
+            final ServerContextItemsStore saveState = new ServerContextItemsStore();
+
+            List<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+            List<ServerContextItemsStore.ServerContextItemStore> stores = new ArrayList<ServerContextItemsStore.ServerContextItemStore>();
+            for (ServerContext context : serverContexts) {
+                if (context.getType() != Type.VSO_DEPLOYMENT) { // do not save VSO_DEPLOYMENT
+                    ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
+                    store.type = context.getType();
+                    store.uri = context.getUri().toString();
+                    store.accountUUID = context.getAccountId() != null ? context.getAccountId().toString() : null;
+                    store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
+                    store.teamProjectReference = writeToJson(context.getTeamProjectReference());
+                    store.gitRepository = writeToJson(context.getGitRepository());
+                    stores.add(store);
+                }
+            }
+            saveState.serverContextItemStores = stores.toArray(new ServerContextItemsStore.ServerContextItemStore[stores.size()]);
+            return saveState;
+        }
+    }
+
+    public List<ServerContext> getServerContextsToRestore() {
+        if (restoreState == null || restoreState.serverContextItemStores == null) {
+            return Collections.EMPTY_LIST;
+        }
+
         final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
-        for (final ServerContextItemsStore.ServerContextItemStore toRestore : restoredState.serverContextItemStores) {
+        for (final ServerContextItemsStore.ServerContextItemStore toRestore : restoreState.serverContextItemStores) {
             Key key = null;
             try {
                 final URI serverUri = UrlHelper.getBaseUri(toRestore.uri);
@@ -130,15 +183,13 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
                 }
             }
         }
+
+        restoreState = null; // null this out since data ownership has now been passed
         return serverContexts;
     }
 
     public void forgetServerContextSecrets(final Key key) {
-        try {
-            PasswordSafe.getInstance().removePassword(null, ServerContextSettings.class, key.stringValue());
-        } catch (PasswordSafeException e) {
-            logger.warn("Failed to clear password store", e);
-        }
+        forgetPassword(key);
     }
 
     public AuthenticationInfo getServerContextSecrets(final Key key) throws IOException {
@@ -175,6 +226,14 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
             object = mapper.readValue(json, valueType);
         }
         return object;
+    }
+
+    private void forgetPassword(final Key key) {
+        try {
+            PasswordSafe.getInstance().removePassword(null, this.getClass(), key.stringValue());
+        } catch (PasswordSafeException e) {
+            logger.warn("Failed to clear password store", e);
+        }
     }
 
     private void writePassword(final Key key, final String value) {

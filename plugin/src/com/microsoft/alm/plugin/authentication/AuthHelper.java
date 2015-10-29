@@ -20,9 +20,9 @@ public class AuthHelper {
 
     public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final Credentials credentials) {
         return new AuthenticationInfo(
-                serverUri,
                 credentials.getUserPrincipal().getName(),
                 credentials.getPassword(),
+                serverUri,
                 credentials.getUserPrincipal().getName()
         );
     }
@@ -118,7 +118,7 @@ public class AuthHelper {
         return authenticationResult.getAccessToken();
     }
 
-    private static String getEmail(final AuthenticationResult authenticationResult) {
+    public static String getEmail(final AuthenticationResult authenticationResult) {
         final String email;
         final String identityProvider = authenticationResult.getUserInfo().getIdentityProvider();
         if (identityProvider == null || identityProvider.isEmpty()) {

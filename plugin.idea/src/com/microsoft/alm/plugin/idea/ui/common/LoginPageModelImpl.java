@@ -5,21 +5,14 @@ package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.intellij.ide.BrowserUtil;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
-import com.microsoft.tf.common.authentication.aad.TokenScope;
-import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,17 +37,8 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
     public ServerContext completeSignIn(final ServerContext context) {
         if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
             //generate PAT
-            final AuthenticationResult result = VsoAuthenticationProvider.getInstance().getAuthenticationResult();
-            final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
-
-            //TODO: handle case where session token cannot be created
-            SessionToken sessionToken = patFactory.createSessionToken(
-                    TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC),
-                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
-
-            //create a VSO context with session token
-            final AuthenticationInfo finalAuthenticationInfo = AuthHelper.createAuthenticationInfo(context.getUri().toString(), result, sessionToken);
-            final ServerContext newContext = ServerContext.createVSOContext(context, finalAuthenticationInfo);
+            final AuthenticationInfo authenticationInfo = VsoAuthenticationProvider.getInstance().generatePatAuthInfo(context, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC));
+            final ServerContext newContext = ServerContext.createVSOContext(context, authenticationInfo);
             ServerContextManager.getInstance().setActiveContext(newContext);
             return newContext;
         } else {

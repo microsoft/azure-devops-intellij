@@ -12,6 +12,18 @@ public class AuthenticationInfo {
     private final String serverUri;
     private final String userNameForDisplay;
 
+    /**
+     * Empty constructor for JSON deserialization only.  Do not use this otherwise (which is why it is marked deprecated).
+     *
+     * @deprecated
+     */
+    public AuthenticationInfo() {
+        userName = null;
+        password = null;
+        serverUri = null;
+        userNameForDisplay = null;
+    }
+
     public AuthenticationInfo(final String userName, final String password, final String serverUri, final String userNameForDisplay) {
         this.userName = userName;
         this.password = password;

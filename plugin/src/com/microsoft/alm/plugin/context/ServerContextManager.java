@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -38,9 +39,7 @@ public class ServerContextManager {
 
     private ServerContextManager() {
         try {
-            if (PluginServiceProvider.getInstance().isInsideIDE()) {
-                restoreFromSavedState();
-            }
+            restoreFromSavedState();
         } catch (Throwable t) {
             // being careful here
             logger.error("constructor", t);
@@ -84,7 +83,17 @@ public class ServerContextManager {
 
     public synchronized void setActiveContext(final ServerContext context) {
         activeContext = context;
-        getStore().saveServerContext(context);
+        if (context != ServerContext.NO_CONTEXT) {
+            switch (context.getType()) {
+                case TFS:
+                case VSO:
+                    getStore().saveServerContext(context);
+                    break;
+                case VSO_DEPLOYMENT:
+                    //do not persist VSO_DEPLOYMENT
+                    break;
+            }
+        }
     }
 
     public synchronized void clearServerContext(final URI serverUri) {
@@ -104,14 +113,18 @@ public class ServerContextManager {
         activeContext = ServerContext.NO_CONTEXT;
     }
 
-
     public synchronized ServerContext getServerContextByHostURI(final URI uri) {
         //TODO -- only one for now
         if (activeContext != ServerContext.NO_CONTEXT &&
-                activeContext.getUri().getHost().equalsIgnoreCase(uri.getHost())) {
+                activeContext.getUri().getHost().equals(uri.getHost())) {
             return activeContext;
         }
         return ServerContext.NO_CONTEXT;
+    }
+
+    public synchronized List<ServerContext> getAllServerContexts() {
+        //TODO -- only one for now
+        return activeContext == ServerContext.NO_CONTEXT ? Collections.EMPTY_LIST : Collections.singletonList(activeContext);
     }
 
 
@@ -119,10 +132,14 @@ public class ServerContextManager {
         return PluginServiceProvider.getInstance().getServerContextStore();
     }
 
+    /**
+     * Called once from constructor restore the state from disk between sessions.
+     */
     private void restoreFromSavedState() {
-        //TODO -- only one for now
-        List<ServerContext> loaded = getStore().restoreServerContexts();
-        activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
+        if (PluginServiceProvider.getInstance().isInsideIDE()) {
+            //TODO -- only one for now
+            List<ServerContext> loaded = getStore().restoreServerContexts();
+            activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
+        }
     }
-
 }

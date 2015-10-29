@@ -21,7 +21,7 @@ public class ServerContextStoreImpl implements ServerContextStore {
 
     @Override
     public List<ServerContext> restoreServerContexts() {
-        return ServerContextSettings.getInstance().restoreServerContexts();
+        return ServerContextSettings.getInstance().getServerContextsToRestore();
     }
 
     @Override
