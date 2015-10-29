@@ -109,7 +109,9 @@ public class ServerContextManager {
     }
 
     public synchronized void clearServerContext(final ServerContext context) {
-        getStore().forgetServerContext(ServerContextStore.Key.create(context));
+        if(ServerContext.NO_CONTEXT != context) {
+            getStore().forgetServerContext(ServerContextStore.Key.create(context));
+        }
         activeContext = ServerContext.NO_CONTEXT;
     }
 
