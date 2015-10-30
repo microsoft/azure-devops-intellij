@@ -83,9 +83,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                                         logger.warn("Authenticating with Visual Studio Online failed", throwable);
                                     }
                                     //try to load the repos
-                                    if (authenticationInfo != null) {
-                                        loadReposFromAllAccounts();
-                                    }
+                                    loadReposFromAllAccounts();
                                 }
                             }, ModalityState.any());
                         }

@@ -75,10 +75,8 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                             if (throwable != null) {
                                 logger.warn("Authenticating with Visual Studio Online failed", throwable);
                             }
-                            if (authenticationInfo != null) {
-                                //try to load the team projects
-                                loadProjectsFromAllAccounts();
-                            }
+                            //try to load the team projects
+                            loadProjectsFromAllAccounts();
                         }
                     }, ModalityState.any());
                 }

@@ -109,10 +109,8 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                             if (throwable != null) {
                                 logger.warn("Connecting to TFS server failed", throwable);
                             }
-                            //try to load the repos if it succeeded
-                            if (authenticationInfo != null) {
-                                loadRepositoriesInternal();
-                            }
+                            //try to load the repos
+                            loadRepositoriesInternal();
                         }
                     }, ModalityState.any());
                 }

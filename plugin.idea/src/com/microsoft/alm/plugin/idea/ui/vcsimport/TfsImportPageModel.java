@@ -104,9 +104,7 @@ public class TfsImportPageModel extends ImportPageModelImpl {
                                 logger.warn("Connecting to TFS server failed", throwable);
                             }
                             //try to load the team projects
-                            if (authenticationInfo != null) {
-                                loadTeamProjectsInternal();
-                            }
+                            loadTeamProjectsInternal();
                         }
                     }, ModalityState.any());
                 }
