@@ -96,7 +96,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public void authenticateAsync(final String serverUri, final AuthenticationListener listener) {
-        AuthenticationListener.Helper.onAuthenticating(listener);
+        AuthenticationListener.Helper.authenticating(listener);
 
         //invoke AAD authentication library to get an account access token
         try {
@@ -106,23 +106,22 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                     if (result == null) {
                         //User closed the browser window without signing in
                         clearAuthenticationDetails();
-                        AuthenticationListener.Helper.onFailure(listener, null);
                     } else {
                         lastDeploymentAuthenticationResult = result;
                         lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, lastDeploymentAuthenticationResult);
-                        AuthenticationListener.Helper.onSuccess(listener);
                     }
+                    AuthenticationListener.Helper.authenticated(listener, lastDeploymentAuthenticationInfo, null);
                 }
 
                 @Override
                 public void onFailure(final Throwable throwable) {
                     clearAuthenticationDetails();
-                    AuthenticationListener.Helper.onFailure(listener, throwable);
+                    AuthenticationListener.Helper.authenticated(listener, null, throwable);
                 }
             });
         } catch (IOException e) {
             clearAuthenticationDetails();
-            AuthenticationListener.Helper.onFailure(listener, e);
+            AuthenticationListener.Helper.authenticated(listener, null, e);
         }
     }
 

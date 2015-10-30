@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
@@ -66,28 +65,13 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         } else {
             authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener() {
                         @Override
-                        public void onAuthenticating() {
+                        public void authenticating() {
                             // We are starting to authenticate, so set the boolean
                             setAuthenticating(true);
                         }
 
                         @Override
-                        public void onSuccess() {
-                            // Push this event back onto the UI thread
-                            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // Authentication is over, so set the boolean
-                                    setAuthenticating(false);
-                                    //try to load the repos
-                                    loadReposFromAllAccounts();
-                                }
-                            }, ModalityState.any());
-
-                        }
-
-                        @Override
-                        public void onFailure(final Throwable throwable) {
+                        public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                             // Push this event back onto the UI thread
                             ApplicationManager.getApplication().invokeLater(new Runnable() {
                                 @Override
@@ -98,12 +82,14 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                                     if (throwable != null) {
                                         logger.warn("Authenticating with Visual Studio Online failed", throwable);
                                     }
+                                    //try to load the repos
+                                    if (authenticationInfo != null) {
+                                        loadReposFromAllAccounts();
+                                    }
                                 }
                             }, ModalityState.any());
                         }
-
                     }
-
             );
         }
     }
@@ -144,13 +130,6 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
 
                     //successfully logged in to VSO and obtained list of accounts, save the context so user doesn't have to login again
                     final List<ServerContext> accountContexts = accountLookupOperation.castResults(results).getServerContexts();
-                    if (accountContexts != null && !accountContexts.isEmpty()) {
-                        final ServerContext activeContext = ServerContextManager.getInstance().getActiveContext();
-                        //set the active context only if there is no active context for VSO already
-                        if (activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
-                            ServerContextManager.getInstance().setActiveContext(accountContexts.get(0));
-                        }
-                    }
 
                     // Take the list of accounts and use them to query the repos
                     getRepositoryProvider().loadContexts(accountContexts,

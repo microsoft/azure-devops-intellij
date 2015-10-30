@@ -38,13 +38,13 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     @Override
     public void authenticateAsync(final String serverUrl, final AuthenticationListener listener) {
         // TODO: Create a thread for this work. Push back onto the UI thread to ask for authenticatedContext
-        AuthenticationListener.Helper.onAuthenticating(listener);
+        AuthenticationListener.Helper.authenticating(listener);
 
         final URI serverUri;
         try {
             serverUri = new URI(serverUrl);
         } catch (URISyntaxException e) {
-            AuthenticationListener.Helper.onFailure(listener, e);
+            AuthenticationListener.Helper.authenticated(listener, null, e);
             return;
         }
 
@@ -86,11 +86,11 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
 
         if (!result) {
             clearAuthenticationDetails();
-            AuthenticationListener.Helper.onFailure(listener, error);
+            AuthenticationListener.Helper.authenticated(listener, null, error);
         } else {
             // We have a valid authenticatedContext, remember it
             lastAuthenticationInfo = newAuthenticationInfo;
-            AuthenticationListener.Helper.onSuccess(listener);
+            AuthenticationListener.Helper.authenticated(listener, lastAuthenticationInfo, null);
         }
     }
 

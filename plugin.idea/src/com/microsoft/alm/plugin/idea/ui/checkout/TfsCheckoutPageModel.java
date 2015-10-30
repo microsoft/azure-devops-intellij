@@ -91,40 +91,30 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         } else {
             authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener() {
                 @Override
-                public void onAuthenticating() {
+                public void authenticating() {
                     // We are starting to authenticate, so set the boolean
                     setAuthenticating(true);
                 }
 
                 @Override
-                public void onSuccess() {
+                public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
                     ApplicationManager.getApplication().invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             // Authentication is over, so set the boolean
                             setAuthenticating(false);
-                            //try to load the repos
-                            loadRepositoriesInternal();
-                        }
-                    }, ModalityState.any());
-                }
 
-                @Override
-                public void onFailure(final Throwable throwable) {
-                    // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            setAuthenticating(false);
-                            //Log exception
+                            //Log exception if it failed
                             if (throwable != null) {
                                 logger.warn("Connecting to TFS server failed", throwable);
                             }
-
+                            //try to load the repos if it succeeded
+                            if (authenticationInfo != null) {
+                                loadRepositoriesInternal();
+                            }
                         }
                     }, ModalityState.any());
-                    // Authentication is over, so set the boolean
                 }
             });
         }

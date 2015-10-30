@@ -9,21 +9,15 @@ package com.microsoft.alm.plugin.authentication;
 public interface AuthenticationListener {
 
     class Helper {
-        static void onAuthenticating(final AuthenticationListener listener) {
+        static void authenticating(final AuthenticationListener listener) {
             if (listener != null) {
-                listener.onAuthenticating();
+                listener.authenticating();
             }
         }
 
-        static void onSuccess(final AuthenticationListener listener) {
+        static void authenticated(final AuthenticationListener listener, final AuthenticationInfo authenticationInfo, final Throwable throwable) {
             if (listener != null) {
-                listener.onSuccess();
-            }
-        }
-
-        static void onFailure(final AuthenticationListener listener, final Throwable throwable) {
-            if (listener != null) {
-                listener.onFailure(throwable);
+                listener.authenticated(authenticationInfo, throwable);
             }
         }
     }
@@ -31,18 +25,14 @@ public interface AuthenticationListener {
     /**
      * This method is called by the provider when it begins authenticating.
      */
-    void onAuthenticating();
+    void authenticating();
 
     /**
-     * This method is called when the provider is done successfully authenticating
-     */
-    void onSuccess();
-
-    /**
-     * This method is called if authentication fails.
+     * This method is called when the provider is done authenticating whether it succeeded or not.
      *
-     * @param throwable
+     * @param authenticationInfo the successful authentication result, it will be <code>null</code> if authentication failed for any reason.
+     * @param throwable          if an exception caused authentication failure, this is it. Cancelled or successful results do not have an exception.
      */
-    void onFailure(final Throwable throwable);
+    void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable);
 
 }

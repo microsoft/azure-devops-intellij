@@ -126,16 +126,14 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
             List<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
             List<ServerContextItemsStore.ServerContextItemStore> stores = new ArrayList<ServerContextItemsStore.ServerContextItemStore>();
             for (ServerContext context : serverContexts) {
-                if (context.getType() != Type.VSO_DEPLOYMENT) { // do not save VSO_DEPLOYMENT
-                    ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
-                    store.type = context.getType();
-                    store.uri = context.getUri().toString();
-                    store.accountUUID = context.getAccountId() != null ? context.getAccountId().toString() : null;
-                    store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
-                    store.teamProjectReference = writeToJson(context.getTeamProjectReference());
-                    store.gitRepository = writeToJson(context.getGitRepository());
-                    stores.add(store);
-                }
+                ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
+                store.type = context.getType();
+                store.uri = context.getUri().toString();
+                store.accountUUID = context.getAccountId() != null ? context.getAccountId().toString() : null;
+                store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
+                store.teamProjectReference = writeToJson(context.getTeamProjectReference());
+                store.gitRepository = writeToJson(context.getGitRepository());
+                stores.add(store);
             }
             saveState.serverContextItemStores = stores.toArray(new ServerContextItemsStore.ServerContextItemStore[stores.size()]);
             return saveState;

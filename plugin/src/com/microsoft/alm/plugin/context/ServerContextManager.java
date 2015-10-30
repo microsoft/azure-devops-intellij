@@ -56,7 +56,8 @@ public class ServerContextManager {
 
     public synchronized ServerContext getActiveGitRepoContext(final String gitRepoUrl) {
         final ServerContext currentContext = getActiveContext();
-        if (currentContext.getGitRepository() != null &&
+        if (currentContext != null &&
+                currentContext.getGitRepository() != null &&
                 StringUtils.equalsIgnoreCase(currentContext.getGitRepository().getRemoteUrl(), gitRepoUrl)) {
             return currentContext;
         }
@@ -90,8 +91,7 @@ public class ServerContextManager {
                     getStore().saveServerContext(context);
                     break;
                 case VSO_DEPLOYMENT:
-                    //do not persist VSO_DEPLOYMENT
-                    break;
+                    throw new IllegalArgumentException("ServerContext type not allowed: " + ServerContext.Type.VSO_DEPLOYMENT);
             }
         }
     }
@@ -109,7 +109,7 @@ public class ServerContextManager {
     }
 
     public synchronized void clearServerContext(final ServerContext context) {
-        if(ServerContext.NO_CONTEXT != context) {
+        if (ServerContext.NO_CONTEXT != context) {
             getStore().forgetServerContext(ServerContextStore.Key.create(context));
         }
         activeContext = ServerContext.NO_CONTEXT;
@@ -118,7 +118,7 @@ public class ServerContextManager {
     public synchronized ServerContext getServerContextByHostURI(final URI uri) {
         //TODO -- only one for now
         if (activeContext != ServerContext.NO_CONTEXT &&
-                activeContext.getUri().getHost().equals(uri.getHost())) {
+                StringUtils.equalsIgnoreCase(activeContext.getUri().getHost(), uri.getHost())) {
             return activeContext;
         }
         return ServerContext.NO_CONTEXT;

@@ -86,28 +86,13 @@ public class TfsImportPageModel extends ImportPageModelImpl {
         } else {
             authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener() {
                 @Override
-                public void onAuthenticating() {
+                public void authenticating() {
                     // We are starting to authenticate, so set the boolean
                     setAuthenticating(true);
                 }
 
                 @Override
-                public void onSuccess() {
-                    // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            // Authentication is over, so set the boolean
-                            setAuthenticating(false);
-                            //try to load the team projects
-                            loadTeamProjectsInternal();
-                        }
-                    }, ModalityState.any());
-
-                }
-
-                @Override
-                public void onFailure(final Throwable throwable) {
+                public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
                     ApplicationManager.getApplication().invokeLater(new Runnable() {
                         @Override
@@ -117,6 +102,10 @@ public class TfsImportPageModel extends ImportPageModelImpl {
                             //Log exception
                             if (throwable != null) {
                                 logger.warn("Connecting to TFS server failed", throwable);
+                            }
+                            //try to load the team projects
+                            if (authenticationInfo != null) {
+                                loadTeamProjectsInternal();
                             }
                         }
                     }, ModalityState.any());
