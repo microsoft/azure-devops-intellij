@@ -7,6 +7,7 @@ Compatible with IntelliJ IDEA Community and Ultimate editions (version 14) and A
 
 ## Pre-Reqs
 1. Install JDK 6
+  * You can find the JDK 6 download on Oracle's web site at <a href="http://www.oracle.com/technetwork/java/javase/downloads/java-archive-downloads-javase6-419409.html" target="_blank">Java SE 6 Downloads</a>.
 1. Install IntelliJ IDEA Community Edition version 14.x
 
 ## Create (or Update) the Gradle Properties file
@@ -24,8 +25,8 @@ From a terminal/console window,
 
   * Sample property file on Linux
 ```
-ideaSdk=~/idea-IC-141.2735.5/lib
-git4idea=~/idea-IC-141.2735.5/plugins/git4idea/lib
+ideaSdk=/home/user/idea-IC-141.2735.5/lib
+git4idea=/home/user/idea-IC-141.2735.5/plugins/git4idea/lib
 ```
   * Sample property file on Mac
 ```
@@ -42,17 +43,15 @@ git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.
 Once your `gradle.properties` file has been updated, run the build.
 
 1. From a terminal/console window, change to the root folder of the IntelliJ repository and then run `./gradlew zip`.
+  * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.6 JDK.
 1. The plugin zip file will be created in the `plugin.idea/build/distributions/` folder.
 
 
 ## Build and Run with IntelliJ
-1. Before you can build and run with IntelliJ, you must run `gradlew` to download the project dependencies.  If you have already built with Gradle
-using the steps in the previous section, you can skip the next step and just open the IntelliJ project file detailed below.
+1. Before you can build and run with IntelliJ, you must run `gradlew` to download the project dependencies.  Open a terminal/console window 
+and run `./gradlew copyDependencies` from the root directory of the IntelliJ repository.  This will download all of the necessary build dependencies to your local disk.
 
-1. If you have not built with Gradle yet, open a terminal/console window and run `./gradlew copyDependencies` from the root directory of the IntelliJ repository.
-This will download all of the necessary build dependencies to your local disk.
-
-1. Open the existing IntelliJ project file `com.microsoft.alm.plugin.idea.iml` from the `plugin.idea` directory.
+1. After starting IntelliJ, open the existing IntelliJ project file `com.microsoft.alm.plugin.idea.iml` from the `plugin.idea` directory.
 
 1. Configure a "IntelliJ Platform Plugin SDK" based on JDK 6 and IntelliJ 14.x.
  * File -> Project Structure -> Project Settings -> Project
@@ -72,6 +71,7 @@ This will download all of the necessary build dependencies to your local disk.
   * File -> Project Structure -> Project Settings -> Libraries -> Add new Java library
   * Select <IntelliJ community edition location on disk>/plugins/git4idea/lib/git4idea.jar, name it `git4idea`
   * Add this git4idea lib to the `com.microsoft.alm.plugin.idea` module
+    * If there is an existing git4idea dependency that is missing (shown in red), remove it from the list
   * IMPORTANT: you ***must*** make sure the scope for `git4idea` is changed from `Compile` to `Provided`
     * Project Settings -> Modules -> com.microsoft.alm.plugin.idea -> Dependencies.  Change `git4idea` to `Provided`
 
@@ -83,6 +83,7 @@ This will download all of the necessary build dependencies to your local disk.
   * Provide a name for the configuration (e.g., IntelliJ for TFS)
   * Set "Use classpath of module" to `com.microsoft.alm.plugin.idea`
 
+1. To debug the plugin, click Run -> Debug.
 
 ## Contributing
 
