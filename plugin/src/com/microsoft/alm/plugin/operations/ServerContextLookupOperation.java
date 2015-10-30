@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
@@ -344,10 +342,10 @@ public class ServerContextLookupOperation {
                         ServerContext gitServerContext;
 
                         if (context.getType() == ServerContext.Type.TFS) {
-                            gitServerContext = ServerContext.createTFSContext(context.getUri(), ((ServerContext<TfsAuthenticationInfo>) context).getAuthenticationInfo());
+                            gitServerContext = ServerContext.createTFSContext(context.getUri(), context.getAuthenticationInfo());
                         } else {
                             // Create a VSO deployment context. This allows us to query for more information, but does not contain credentials (no PAT)
-                            gitServerContext = ServerContext.createVSODeploymentContext(context.getUri(), context.getAccountId(), ((ServerContext<VsoAuthenticationInfo>) context).getAuthenticationInfo());
+                            gitServerContext = ServerContext.createVSODeploymentContext(context.getUri(), context.getAccountId(), context.getAuthenticationInfo());
                         }
                         gitServerContext.setGitRepository(gitRepository);
                         gitServerContext.setTeamProjectReference(gitRepository.getProjectReference());

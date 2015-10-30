@@ -44,7 +44,7 @@ public class WrappingLabel extends JPanel {
         if (currentBorder == null || currentBorder instanceof EmptyBorder) {
             setBorder(empty);
         } else if (currentBorder instanceof CompoundBorder) {
-            final CompoundBorder current = (CompoundBorder)currentBorder;
+            final CompoundBorder current = (CompoundBorder) currentBorder;
             final Border insideBorder = current.getInsideBorder();
             setBorder(new CompoundBorder(empty, insideBorder));
         } else {

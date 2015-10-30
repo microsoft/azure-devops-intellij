@@ -29,29 +29,31 @@ public class ModelValidationInfo {
         this.lookupResource = lookupResource;
         validationSource = source;
         validationMessageKey = messageKey;
-        if(arguments == null || arguments.length == 0) {
+        if (arguments == null || arguments.length == 0) {
             validationMessageArgs = null;
-        }
-        else {
+        } else {
             validationMessageArgs = arguments;
         }
     }
 
     public String getValidationMessage() {
-        if(lookupResource) {
+        if (lookupResource) {
             if (validationMessageArgs == null || validationMessageArgs.length == 0) {
                 return TfPluginBundle.message(validationMessageKey);
             } else {
                 return TfPluginBundle.message(validationMessageKey, validationMessageArgs);
             }
-        }
-        else {
+        } else {
             return validationMessageKey; //Not a resource string, return the key which is the message
         }
     }
 
-    public String getValidationSource() { return validationSource; }
+    public String getValidationSource() {
+        return validationSource;
+    }
 
     //for testing
-    public String getValidationMessageKey() { return validationMessageKey; }
+    public String getValidationMessageKey() {
+        return validationMessageKey;
+    }
 }

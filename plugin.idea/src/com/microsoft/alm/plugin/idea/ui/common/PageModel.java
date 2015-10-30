@@ -9,8 +9,11 @@ public interface PageModel {
     String PROP_ERRORS = "errors";
 
     void addError(final ModelValidationInfo error);
+
     void clearErrors();
+
     List<ModelValidationInfo> getErrors();
+
     boolean hasErrors();
 
     ModelValidationInfo validate();

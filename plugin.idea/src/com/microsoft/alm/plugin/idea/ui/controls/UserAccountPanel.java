@@ -63,7 +63,7 @@ public class UserAccountPanel extends JPanel {
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = x;
         c.gridy = y;
-        c.gridwidth= spanX;
+        c.gridwidth = spanX;
         c.gridheight = spanY;
         c.insets.right = 4;
         if (topMargin != 0) {

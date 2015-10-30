@@ -20,6 +20,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
         assert pageModel != null;
         this.pageModel = pageModel;
     }
+
     public void loadContexts(final List<ServerContext> contexts, final ServerContextLookupOperation.ContextScope resultScope) {
         ServerContextLookupOperation activeOperation = new ServerContextLookupOperation(contexts, resultScope);
         loadContexts(activeOperation);

@@ -4,30 +4,47 @@
 package com.microsoft.alm.plugin.authentication;
 
 /**
- * This interface is the basis for VSO and TFS authentication.
+ * Immutable
  */
-public interface AuthenticationInfo {
-    /**
-     * Provides the server uri for which the Authentication is valid.
-     * @return
-     */
-    String getServerUri();
+public class AuthenticationInfo {
+    private final String userName;
+    private final String password;
+    private final String serverUri;
+    private final String userNameForDisplay;
 
     /**
-     * Provides the user name to create a Credentials object to authenticate with the server URI
-     * @return
+     * Empty constructor for JSON deserialization only.  Do not use this otherwise (which is why it is marked deprecated).
+     *
+     * @deprecated
      */
-    String getUserName();
+    public AuthenticationInfo() {
+        userName = null;
+        password = null;
+        serverUri = null;
+        userNameForDisplay = null;
+    }
 
-    /**
-     * Provides a password to create a Credentials object to authenticate with the server URI
-     * @return
-     */
-    String getPassword();
+    public AuthenticationInfo(final String userName, final String password, final String serverUri, final String userNameForDisplay) {
+        this.userName = userName;
+        this.password = password;
+        this.serverUri = serverUri;
+        this.userNameForDisplay = userNameForDisplay;
+    }
 
-    /**
-     * Use this method to get the authenticated user name for display purposes.
-     * This returns empty string if isAuthenticated is false
-     */
-    String getUserNameForDisplay();
+    public String getServerUri() {
+        return serverUri;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getUserNameForDisplay() {
+        return userNameForDisplay;
+    }
+
 }

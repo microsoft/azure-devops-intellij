@@ -51,6 +51,7 @@ public class HintTextFieldUI extends BasicTextFieldUI implements FocusListener {
         super.installListeners();
         getComponent().addFocusListener(this);
     }
+
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
@@ -58,7 +59,7 @@ public class HintTextFieldUI extends BasicTextFieldUI implements FocusListener {
     }
 
     private void repaint() {
-        if(getComponent() != null) {
+        if (getComponent() != null) {
             getComponent().repaint();
         }
     }

@@ -44,8 +44,8 @@ public class MockImportPageModel extends ImportPageModelImpl {
 
     @Override
     public ModelValidationInfo validate() {
-        if(validationError != null) {
-            if(validationError.equals(NO_ERRORS)) {
+        if (validationError != null) {
+            if (validationError.equals(NO_ERRORS)) {
                 return null; //Don't call the default validation
             }
             return ModelValidationInfo.createWithMessage(validationError);
@@ -64,7 +64,7 @@ public class MockImportPageModel extends ImportPageModelImpl {
 
         // allow empty strings to go through to base class for testing
         // skip non empty strings to avoid popping up browser window during tests
-        if(StringUtils.isEmpty(url)) {
+        if (StringUtils.isEmpty(url)) {
             super.gotoLink(url);
         }
     }

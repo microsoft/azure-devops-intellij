@@ -52,7 +52,9 @@ public class TfsLoginForm implements LoginForm {
     }
 
     @Override
-    public void setServerName(final String serverName) { serverUrl.setText(serverName);}
+    public void setServerName(final String serverName) {
+        serverUrl.setText(serverName);
+    }
 
     @Override
     public JComponent getServerNameComponent() {

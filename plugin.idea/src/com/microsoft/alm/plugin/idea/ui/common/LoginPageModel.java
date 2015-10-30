@@ -21,16 +21,21 @@ public interface LoginPageModel extends PageModel {
     void addObserver(Observer o);
 
     boolean isConnected();
+
     void setConnected(boolean connected);
+
     void signOut();
 
     String getUserName();
+
     void setUserName(String userName);
 
     boolean isAuthenticating();
+
     void setAuthenticating(boolean authenticating);
 
     String getServerName();
+
     void setServerName(String serverName);
 
     void gotoLink(String url);

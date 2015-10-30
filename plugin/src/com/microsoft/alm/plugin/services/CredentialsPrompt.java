@@ -9,6 +9,8 @@ package com.microsoft.alm.plugin.services;
  */
 public interface CredentialsPrompt {
     boolean prompt(String serverUrl, String defaultUserName);
+
     String getUserName();
+
     String getPassword();
 }

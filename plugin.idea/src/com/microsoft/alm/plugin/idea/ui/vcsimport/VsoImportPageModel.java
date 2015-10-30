@@ -7,10 +7,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
@@ -24,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * This class implements the AbstractImportPageModel for VSO.
  */
 public class VsoImportPageModel extends ImportPageModelImpl {
-    private VsoAuthenticationProvider authenticationProvider;
+    private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
     private static final Logger logger = LoggerFactory.getLogger(VsoImportPageModel.class);
 
 
@@ -37,22 +34,14 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         setConnectionStatus(false);
         setAuthenticating(false);
 
-        // check to see if the activeContext is a VSO context, if so, use it
-        final ServerContext<VsoAuthenticationInfo> activeContext = ServerContextManager.getInstance().getActiveVsoContext();
-        if (ServerContext.NO_CONTEXT != activeContext) {
-            setAuthenticationProvider(new VsoAuthenticationProvider(activeContext.getAuthenticationInfo()));
+        //TODO this check needs to be reworked because it touches the server
+        if (authenticationProvider.isAuthenticated()) {
             loadTeamProjects();
-        } else {
-            setAuthenticationProvider(new VsoAuthenticationProvider());
         }
     }
 
     protected AuthenticationInfo getAuthenticationInfo() {
         return authenticationProvider.getAuthenticationInfo();
-    }
-
-    private void setAuthenticationProvider(final VsoAuthenticationProvider authenticationProvider) {
-        this.authenticationProvider = authenticationProvider;
     }
 
     @Override
@@ -67,7 +56,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         if (authenticationProvider.isAuthenticated()) {
             loadProjectsFromAllAccounts();
         } else {
-            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener<VsoAuthenticationInfo>() {
+            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener() {
                 @Override
                 public void authenticating() {
                     // We are starting to authenticate, so set the boolean
@@ -75,7 +64,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                 }
 
                 @Override
-                public void authenticated(final VsoAuthenticationInfo vsoAuthenticationInfo, final Throwable exception) {
+                public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
                     ApplicationManager.getApplication().invokeLater(new Runnable() {
                         @Override
@@ -83,8 +72,8 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                             // Authentication is over, so set the boolean
                             setAuthenticating(false);
                             //Log exception
-                            if (exception != null) {
-                                logger.warn("Authenticating with Visual Studio Online failed", exception);
+                            if (throwable != null) {
+                                logger.warn("Authenticating with Visual Studio Online failed", throwable);
                             }
                             //try to load the team projects
                             loadProjectsFromAllAccounts();
@@ -107,7 +96,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         clearContexts();
 
-        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider.getAuthenticationInfo());
+        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider.getAuthenticationInfo(), authenticationProvider.getAuthenticationResult());
         accountLookupOperation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {

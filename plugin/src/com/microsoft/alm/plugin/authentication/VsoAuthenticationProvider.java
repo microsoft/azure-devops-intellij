@@ -3,20 +3,27 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
+import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
+import com.microsoft.tf.common.authentication.aad.TokenScope;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
+import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.concurrent.ExecutionException;
+import java.util.Arrays;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
  */
-public class VsoAuthenticationProvider implements AuthenticationProvider<VsoAuthenticationInfo> {
+public class VsoAuthenticationProvider implements AuthenticationProvider {
+    private static final Logger logger = LoggerFactory.getLogger(VsoAuthenticationProvider.class);
+
     //azure connection strings
     private static final String LOGIN_WINDOWS_NET_AUTHORITY = "login.windows.net";
     private static final String COMMON_TENANT = "common";
@@ -26,7 +33,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider<VsoAuth
 
     public static final String VSO_ROOT = "http://visualstudio.com";
 
-    private VsoAuthenticationInfo authenticationInfo;
+    private static AuthenticationResult lastDeploymentAuthenticationResult;
+    private static AuthenticationInfo lastDeploymentAuthenticationInfo;
 
     private static class AzureAuthenticatorHolder {
         private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
@@ -43,33 +51,52 @@ public class VsoAuthenticationProvider implements AuthenticationProvider<VsoAuth
         return AzureAuthenticatorHolder.INSTANCE;
     }
 
-    public VsoAuthenticationProvider() {
+    private VsoAuthenticationProvider() {
     }
 
-    public VsoAuthenticationProvider(VsoAuthenticationInfo authenticationInfo) {
-        assert authenticationInfo != null;
-        this.authenticationInfo = authenticationInfo;
+    private static class VsoAuthenticationProviderHolder {
+        private static VsoAuthenticationProvider INSTANCE = new VsoAuthenticationProvider();
+    }
+
+    public static VsoAuthenticationProvider getInstance() {
+        return VsoAuthenticationProviderHolder.INSTANCE;
+    }
+
+    public AuthenticationResult getAuthenticationResult() {
+        return lastDeploymentAuthenticationResult;
     }
 
     @Override
-    public VsoAuthenticationInfo getAuthenticationInfo() {
-        this.authenticationInfo = getValidAuthenticationInfo(authenticationInfo, true);
-        return this.authenticationInfo;
+    public AuthenticationInfo getAuthenticationInfo() {
+        return lastDeploymentAuthenticationInfo;
     }
 
     @Override
     public boolean isAuthenticated() {
-        return authenticationInfo != null;
+        synchronized (this) {
+            if (lastDeploymentAuthenticationResult != null) {
+                try {
+                    // always refresh it -- this is the only way to ensure it is valid
+                    lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(lastDeploymentAuthenticationResult);
+                } catch (IOException e) {
+                    lastDeploymentAuthenticationResult = null;
+                    // refreshing failed, log exception
+                    logger.warn("Refreshing access token failed", e);
+                }
+            }
+            return lastDeploymentAuthenticationResult != null;
+        }
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        authenticationInfo = null;
+        lastDeploymentAuthenticationResult = null;
+        lastDeploymentAuthenticationInfo = null;
     }
 
     @Override
-    public void authenticateAsync(final String serverUri, final AuthenticationListener<VsoAuthenticationInfo> listener) {
-        onAuthenticating(listener);
+    public void authenticateAsync(final String serverUri, final AuthenticationListener listener) {
+        AuthenticationListener.Helper.authenticating(listener);
 
         //invoke AAD authentication library to get an account access token
         try {
@@ -79,89 +106,33 @@ public class VsoAuthenticationProvider implements AuthenticationProvider<VsoAuth
                     if (result == null) {
                         //User closed the browser window without signing in
                         clearAuthenticationDetails();
-                        onAuthenticated(listener, null, null);
                     } else {
-                        authenticationInfo = new VsoAuthenticationInfo(serverUri, result, null);
-                        onAuthenticated(listener, authenticationInfo, null);
+                        lastDeploymentAuthenticationResult = result;
+                        lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, lastDeploymentAuthenticationResult);
                     }
+                    AuthenticationListener.Helper.authenticated(listener, lastDeploymentAuthenticationInfo, null);
                 }
 
                 @Override
                 public void onFailure(final Throwable throwable) {
                     clearAuthenticationDetails();
-                    onAuthenticated(listener, null, throwable);
+                    AuthenticationListener.Helper.authenticated(listener, null, throwable);
                 }
             });
         } catch (IOException e) {
-            onAuthenticated(listener, null, e);
+            clearAuthenticationDetails();
+            AuthenticationListener.Helper.authenticated(listener, null, e);
         }
     }
 
-    private VsoAuthenticationInfo getValidAuthenticationInfo(final VsoAuthenticationInfo vsoAuthenticationInfo, final boolean autoRefresh) {
-        AuthenticationResult authenticationResult = AuthHelper.getAuthenticationResult(vsoAuthenticationInfo);
-        if (authenticationResult != null) {
-            if (!isExpired(authenticationResult)) {
-                // found an unexpired one
-                return vsoAuthenticationInfo;
-            } else if (autoRefresh) {
-                try {
-                    // refresh it
-                    final AuthenticationResult newResult = getAzureAuthenticator().refreshAadAccessToken(authenticationResult);
-                    if (newResult != null) {
-                        return new VsoAuthenticationInfo(vsoAuthenticationInfo.getServerUri(), newResult, vsoAuthenticationInfo.getSessionToken());
-                    }
-                } catch (IOException e) {
-                    // refreshing failed, get a new one
-                    return getNewAccessToken(vsoAuthenticationInfo);
-                }
-            }
-        } else if (autoRefresh) {
-            // get a new one
-            return getNewAccessToken(null);
-        }
-        return null;
-    }
+    public AuthenticationInfo generatePatAuthInfo(final ServerContext context, final String patDisplayName) {
+        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(lastDeploymentAuthenticationResult);
 
-    private VsoAuthenticationInfo getNewAccessToken(final VsoAuthenticationInfo vsoAuthenticationInfo) {
-        try {
-            final AuthenticationResult authenticationResult = getAzureAuthenticator().getAadAccessToken();
-            if (authenticationResult != null) { // will return null if user cancels login sequence
-                return new VsoAuthenticationInfo(vsoAuthenticationInfo.getServerUri(), authenticationResult, vsoAuthenticationInfo.getSessionToken());
-            }
-            return null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+        //TODO: handle case where session token cannot be created
+        SessionToken sessionToken = patFactory.createSessionToken(
+                patDisplayName,
+                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
 
-    private boolean isExpired(final AuthenticationResult authenticationResult) {
-        final long secondsToExpiry = authenticationResult.getExpiresOn();
-        Date dateOfExpiry = new Date(secondsToExpiry * 1000);
-        Date dateNow = new Date();
-        return dateNow.after(dateOfExpiry);
-    }
-
-    private static boolean isExpired(final SessionToken sessionToken) {
-        Date dateOfExpiry = sessionToken.getValidTo();
-        Date dateNow = new Date();
-        return dateNow.after(dateOfExpiry);
-    }
-
-    //TODO this should be turned into a utility method and combined with the TFS version
-    private static void onAuthenticating(final AuthenticationListener<VsoAuthenticationInfo> listener) {
-        if (listener != null) {
-            listener.authenticating();
-        }
-    }
-
-    //TODO this should be turned into a utility method and combined with the TFS version
-    private static void onAuthenticated(final AuthenticationListener<VsoAuthenticationInfo> listener, final VsoAuthenticationInfo vsoAuthenticationInfo, Throwable throwable) {
-        if (listener != null) {
-            listener.authenticated(vsoAuthenticationInfo, throwable);
-        }
+        return AuthHelper.createAuthenticationInfo(context.getUri().toString(), lastDeploymentAuthenticationResult, sessionToken);
     }
 }

@@ -7,10 +7,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
@@ -27,7 +25,7 @@ import java.util.List;
  */
 class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(VsoCheckoutPageModel.class);
-    private VsoAuthenticationProvider authenticationProvider;
+    private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
 
     public VsoCheckoutPageModel(CheckoutModel checkoutModel) {
         super(checkoutModel, ServerContextTableModel.VSO_REPO_COLUMNS);
@@ -38,13 +36,9 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         setConnectionStatus(false);
         setAuthenticating(false);
 
-        // check to see if the activeContext is a VSO context, if so, use it
-        final ServerContext<VsoAuthenticationInfo> activeContext = ServerContextManager.getInstance().getActiveVsoContext();
-        if (ServerContext.NO_CONTEXT != activeContext) {
-            setAuthenticationProvider(new VsoAuthenticationProvider(activeContext.getAuthenticationInfo()));
+        //TODO this check needs to be reworked because it touches the server
+        if (authenticationProvider.isAuthenticated()) {
             loadReposFromAllAccounts();
-        } else {
-            setAuthenticationProvider(new VsoAuthenticationProvider());
         }
     }
 
@@ -69,31 +63,32 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         if (authenticationProvider.isAuthenticated()) {
             loadReposFromAllAccounts();
         } else {
-            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener<VsoAuthenticationInfo>() {
-                @Override
-                public void authenticating() {
-                    // We are starting to authenticate, so set the boolean
-                    setAuthenticating(true);
-                }
-
-                @Override
-                public void authenticated(final VsoAuthenticationInfo vsoAuthenticationInfo, final Throwable exception) {
-                    // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener() {
                         @Override
-                        public void run() {
-                            // Authentication is over, so set the boolean
-                            setAuthenticating(false);
-                            //Log exception
-                            if (exception != null) {
-                                logger.warn("Authenticating with Visual Studio Online failed", exception);
-                            }
-                            //try to load the repos
-                            loadReposFromAllAccounts();
+                        public void authenticating() {
+                            // We are starting to authenticate, so set the boolean
+                            setAuthenticating(true);
                         }
-                    }, ModalityState.any());
-                }
-            });
+
+                        @Override
+                        public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
+                            // Push this event back onto the UI thread
+                            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // Authentication is over, so set the boolean
+                                    setAuthenticating(false);
+                                    //Log exception
+                                    if (throwable != null) {
+                                        logger.warn("Authenticating with Visual Studio Online failed", throwable);
+                                    }
+                                    //try to load the repos
+                                    loadReposFromAllAccounts();
+                                }
+                            }, ModalityState.any());
+                        }
+                    }
+            );
         }
     }
 
@@ -109,7 +104,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         clearContexts();
 
-        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider.getAuthenticationInfo());
+        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider.getAuthenticationInfo(), authenticationProvider.getAuthenticationResult());
         accountLookupOperation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {
@@ -133,13 +128,6 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
 
                     //successfully logged in to VSO and obtained list of accounts, save the context so user doesn't have to login again
                     final List<ServerContext> accountContexts = accountLookupOperation.castResults(results).getServerContexts();
-                    if (accountContexts != null && !accountContexts.isEmpty()) {
-                        final ServerContext activeContext = ServerContextManager.getInstance().getActiveContext();
-                        //set the active context only if there is no active context for VSO already
-                        if (activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
-                            ServerContextManager.getInstance().setActiveContext(accountContexts.get(0));
-                        }
-                    }
 
                     // Take the list of accounts and use them to query the repos
                     getRepositoryProvider().loadContexts(accountContexts,

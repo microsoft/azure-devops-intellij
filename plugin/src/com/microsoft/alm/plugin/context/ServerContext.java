@@ -6,8 +6,6 @@ package com.microsoft.alm.plugin.context;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
@@ -42,14 +40,14 @@ import java.util.UUID;
  * This class holds all information needed to contact a TFS/VSO server except for
  * authentication details. Those must be provided to certain methods as needed.
  */
-public class ServerContext<E extends AuthenticationInfo> {
+public class ServerContext {
     // constant to indicate there is no context.
     public static final ServerContext NO_CONTEXT = null;
 
     public enum Type {VSO_DEPLOYMENT, VSO, TFS}
 
     private final Type type;
-    private final E authenticationInfo;
+    private final AuthenticationInfo authenticationInfo;
     private final URI uri;
 
     // used for VSO
@@ -66,36 +64,30 @@ public class ServerContext<E extends AuthenticationInfo> {
 
     private boolean disposed = false;
 
-    public static ServerContext<VsoAuthenticationInfo> createVSODeploymentContext(final Account account, final VsoAuthenticationInfo authenticationInfo) {
+    public static ServerContext createVSODeploymentContext(final Account account, final AuthenticationInfo authenticationInfo) {
         assert account != null;
         assert authenticationInfo != null;
         return createVSODeploymentContext(UrlHelper.getVSOAccountURI(account.getAccountName()), account.getAccountId(), authenticationInfo);
     }
 
-    public static ServerContext<VsoAuthenticationInfo> createVSODeploymentContext(final URI accountUri, final UUID accountId, final VsoAuthenticationInfo authenticationInfo) {
+    public static ServerContext createVSODeploymentContext(final URI accountUri, final UUID accountId, final AuthenticationInfo authenticationInfo) {
         assert accountId != null;
         assert authenticationInfo != null;
-        return new ServerContext<VsoAuthenticationInfo>(Type.VSO_DEPLOYMENT, authenticationInfo, accountUri, accountId);
+        return new ServerContext(Type.VSO_DEPLOYMENT, authenticationInfo, accountUri, accountId);
     }
 
-    public static ServerContext<VsoAuthenticationInfo> createVSOContext(final Account account, final VsoAuthenticationInfo authenticationInfo) {
-        assert account != null;
-        assert authenticationInfo != null;
-        return createVSOContext(UrlHelper.getVSOAccountURI(account.getAccountName()), account.getAccountId(), authenticationInfo);
-    }
-
-    public static ServerContext<VsoAuthenticationInfo> createVSOContext(final URI accountUri, final UUID accountId, final VsoAuthenticationInfo authenticationInfo) {
+    public static ServerContext createVSOContext(final URI accountUri, final UUID accountId, final AuthenticationInfo authenticationInfo) {
         assert accountId != null;
         assert authenticationInfo != null;
-        return new ServerContext<VsoAuthenticationInfo>(Type.VSO, authenticationInfo, accountUri, accountId);
+        return new ServerContext(Type.VSO, authenticationInfo, accountUri, accountId);
     }
 
-    public static ServerContext<VsoAuthenticationInfo> createVSOContext(final ServerContext context, final VsoAuthenticationInfo authenticationInfo) {
+    public static ServerContext createVSOContext(final ServerContext context, final AuthenticationInfo authenticationInfo) {
         assert context != null;
         assert authenticationInfo != null;
         assert context.getType() != Type.TFS;
 
-        final ServerContext<VsoAuthenticationInfo> vsoContext = createVSOContext(context.getUri(), context.getAccountId(), authenticationInfo);
+        final ServerContext vsoContext = createVSOContext(context.getUri(), context.getAccountId(), authenticationInfo);
         vsoContext.setTeamProjectCollectionReference(context.getTeamProjectCollectionReference());
         vsoContext.setTeamProjectReference(context.getTeamProjectReference());
         vsoContext.setGitRepository(context.getGitRepository());
@@ -103,16 +95,16 @@ public class ServerContext<E extends AuthenticationInfo> {
         return vsoContext;
     }
 
-    public static ServerContext<TfsAuthenticationInfo> createTFSContext(final URI uri, final TfsAuthenticationInfo authenticationInfo) {
+    public static ServerContext createTFSContext(final URI uri, final AuthenticationInfo authenticationInfo) {
         assert uri != null;
         assert authenticationInfo != null;
-        return new ServerContext<TfsAuthenticationInfo>(Type.TFS, authenticationInfo, uri, null);
+        return new ServerContext(Type.TFS, authenticationInfo, uri, null);
     }
 
     /*
      *   Protected for mocking only.
      */
-    protected ServerContext(final Type type, final E authenticationInfo, final URI uri, final UUID accountId) {
+    protected ServerContext(final Type type, final AuthenticationInfo authenticationInfo, final URI uri, final UUID accountId) {
         this.type = type;
         this.authenticationInfo = authenticationInfo;
         this.uri = uri;
@@ -123,7 +115,7 @@ public class ServerContext<E extends AuthenticationInfo> {
         return uri;
     }
 
-    public E getAuthenticationInfo() {
+    public AuthenticationInfo getAuthenticationInfo() {
         return authenticationInfo;
     }
 
@@ -153,7 +145,7 @@ public class ServerContext<E extends AuthenticationInfo> {
                         client.register(new ClientRequestFilter() {
                             @Override
                             public void filter(final ClientRequestContext requestContext) throws IOException {
-                                requestContext.getHeaders().putSingle("Authorization", "Bearer " + ((VsoAuthenticationInfo) authenticationInfo).getBearerToken());
+                                requestContext.getHeaders().putSingle("Authorization", "Bearer " + authenticationInfo.getPassword());
                             }
                         });
                     } else {

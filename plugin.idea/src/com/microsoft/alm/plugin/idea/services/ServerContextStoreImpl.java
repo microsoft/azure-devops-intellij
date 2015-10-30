@@ -7,28 +7,25 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.utils.ServerContextSettings;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 
+import java.util.List;
+
 /**
- * This implementation of ServerContextStore simply wraps calls to the IntelliJ plugin class implemenation that
+ * This implementation of ServerContextStore simply wraps calls to the IntelliJ plugin class implementation that
  * saves our Server information.
  */
 public class ServerContextStoreImpl implements ServerContextStore {
     @Override
-    public void forgetServerContext(final String key) {
-        ServerContextSettings.getInstance().forgetServerContext(key);
+    public void forgetServerContext(final Key key) {
+        ServerContextSettings.getInstance().forgetServerContextSecrets(key);
     }
 
     @Override
-    public String getKey(final ServerContext context) {
-        return ServerContextSettings.getKey(context);
+    public List<ServerContext> restoreServerContexts() {
+        return ServerContextSettings.getInstance().getServerContextsToRestore();
     }
 
     @Override
-    public ServerContext loadServerContext(final String key) {
-        return ServerContextSettings.getInstance().getServerContext(key);
-    }
-
-    @Override
-    public void saveServerContext(final String key, final ServerContext context) {
-        ServerContextSettings.getInstance().saveServerContext(key, context);
+    public void saveServerContext(final ServerContext context) {
+        ServerContextSettings.getInstance().saveServerContextSecrets(context);
     }
 }

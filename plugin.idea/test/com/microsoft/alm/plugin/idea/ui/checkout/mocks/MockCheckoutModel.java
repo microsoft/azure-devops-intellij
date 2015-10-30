@@ -11,14 +11,14 @@ public class MockCheckoutModel extends CheckoutModel {
         super(null, null, new MockCheckoutPageModel(null, ServerContextTableModel.VSO_REPO_COLUMNS),
                 new MockCheckoutPageModel(null, ServerContextTableModel.TFS_REPO_COLUMNS));
         ((MockCheckoutPageModel) getVsoModel()).initialize(this);
-        ((MockCheckoutPageModel)getTfsModel()).initialize(this);
+        ((MockCheckoutPageModel) getTfsModel()).initialize(this);
     }
 
     public MockCheckoutPageModel getMockVsoModel() {
-        return (MockCheckoutPageModel)getVsoModel();
+        return (MockCheckoutPageModel) getVsoModel();
     }
 
     public MockCheckoutPageModel getMockTfsModel() {
-        return (MockCheckoutPageModel)getTfsModel();
+        return (MockCheckoutPageModel) getTfsModel();
     }
 }

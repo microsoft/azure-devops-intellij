@@ -13,57 +13,87 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
-import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContext.Type;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.services.ServerContextStore;
+import com.microsoft.alm.plugin.services.ServerContextStore.Key;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
-import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Stores a ServerContext to file and handles writing and reading the objects
+ * Stores a ServerContextItemStore to file and handles writing and reading the objects
  */
 @State(
-        name="TfServers",
+        name = "TfServers",
         storages = {@Storage(
                 file = StoragePathMacros.APP_CONFIG + "/tf_settings.xml")}
 )
-public class ServerContextSettings implements PersistentStateComponent<ServerContextSettings.ServerContextStore> {
+public class ServerContextSettings implements PersistentStateComponent<ServerContextSettings.ServerContextItemsStore> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerContextSettings.class);
 
-    private ServerContextStore state = new ServerContextStore();
+    /**
+     * Lifecycle:
+     * <ol>
+     * <li>During plugin startup, IntelliJ calls the settings file from disk and calls loadState() which sets restoreState</li>
+     * <li>Later ServerContextManager loads and takes ownership of this data and sets restoreState to <code>null</code></li>
+     * <li>Finally, during plugin shutdown, IntelliJ calls getState() get the contents to write back out to disk</li>
+     * </ol>
+     * One other interesting note, is that ServerContextManager makes calls to save the passwords as it goes
+     * (but doesn't update any other state data).  Ideally, the passwords would be saved at the same time everything
+     * is saved (i.e. in getState()), but this is not possible, because by the time IntelliJ calls into here the
+     * PasswordManager service has already been shut down.
+     */
+    private ServerContextItemsStore restoreState;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public void loadState(final ServerContextStore state) {
-        this.state = state;
+    /**
+     * IntelliJ calls this method to load from stored state during plugin initialization.
+     * <p/>
+     * Shortly thereafter, ServerContextManager will initialize and will take ownership of this data with actively
+     * managed ServerContexts, and this state data should not be used again.
+     *
+     * @param state
+     */
+    public void loadState(final ServerContextItemsStore state) {
+        this.restoreState = state;
     }
 
-    public ServerContextStore getState() {
-        return state;
+    /**
+     * IntelliJ calls this method to save to stored state when it shuts down.
+     */
+    public ServerContextItemsStore getState() {
+        return getServerContextsToPersist();
     }
 
-    public static class ServerContextStore {
-        //fields have to be public, so IntelliJ can write them to the persistent store
-        public Type type = null;
-        public String uri = null;
-        public String account = null;
-        public String teamProjectCollectionReference = null;
-        public String teamProjectReference = null;
-        public String gitRepository = null;
+    public static class ServerContextItemsStore {
+
+        public ServerContextItemStore[] serverContextItemStores;
+
+        public static class ServerContextItemStore {
+            //fields have to be public, so IntelliJ can write them to the persistent store
+            public Type type = null;
+            public String uri = null;
+            public String accountUUID = null;
+            public String teamProjectCollectionReference = null;
+            public String teamProjectReference = null;
+            public String gitRepository = null;
+        }
     }
 
     // This default instance is only returned in the case of tests or we are somehow running outside of IntelliJ
@@ -77,169 +107,100 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
         }
     }
 
-    public static String getKey(final ServerContext context) {
-        if (context != null) {
-            return getKey(context.getUri());
-        }
+    public void saveServerContextSecrets(final ServerContext context) {
+        final Key key = ServerContextStore.Key.create(context);
 
-        return "";
+        final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
+        final String stringValue = writeToJson(authenticationInfo);
+
+        writePassword(key, stringValue);
     }
 
-    public static String getKey(final String uriString) {
-        if (!StringUtils.isEmpty(uriString)) {
-            return getKey(UrlHelper.getBaseUri(uriString));
-        }
-
-        return "";
-    }
-
-    public static String getKey(final URI uri) {
-        if (uri != null) {
-            return uri.getHost();
-        }
-
-        return "";
-    }
-
-
-    public void saveServerContext(final String hostKey, final ServerContext context) {
-        if(context != ServerContext.NO_CONTEXT) {
-            setType(context.getType());
-            setUri(context.getUri().toString());
-            setAccount(context.getAccountId());
-            setTeamProjectCollectionReference(context.getTeamProjectCollectionReference());
-            setTeamProjectReference(context.getTeamProjectReference());
-            setGitRepository(context.getGitRepository());
-            setAuthenticationInfo(hostKey, context.getAuthenticationInfo());
-        }
-    }
-
-    public ServerContext getServerContext(final String hostKey) {
-        final String savedUri = getUri();
-        if(savedUri != null && (StringUtils.isBlank(hostKey) ||
-                StringUtils.equalsIgnoreCase(getKey(savedUri), hostKey))) {
-            final Type type = getType();
-            final Account account = getAccount();
-            final AuthenticationInfo info = getAuthenticationInfo(getKey(savedUri));
-            if(info != null) {
-                ServerContext context = null;
-                if (type == Type.VSO_DEPLOYMENT) {
-                    context = ServerContext.createVSODeploymentContext(account, (VsoAuthenticationInfo) info);
-                }
-                else if (type == Type.VSO) {
-                    context = ServerContext.createVSOContext(account, (VsoAuthenticationInfo) info);
-                }
-                else if (type == Type.TFS) {
-                    context = ServerContext.createTFSContext(UrlHelper.getBaseUri(savedUri), (TfsAuthenticationInfo) info);
-                }
-
-                if(context != null) {
-                    context.setTeamProjectCollectionReference(getTeamProjectCollectionReference());
-                    context.setTeamProjectReference(getTeamProjectReference());
-                    context.setGitRepository(getGitRepository());
-                    return context;
-                }
-            }
-
-        }
-        return ServerContext.NO_CONTEXT;
-    }
-
-    public void forgetServerContext(final String hostKey) {
-        if(StringUtils.isNotBlank(state.uri)) {
-            final String savedKey = getKey(state.uri);
-            if(StringUtils.equalsIgnoreCase(hostKey, savedKey)) {
-                //clear out all fields in the State
-                state.type = null;
-                state.uri = null;
-                state.account = null;
-                state.teamProjectCollectionReference = null;
-                state.teamProjectReference = null;
-                state.gitRepository = null;
-
-                try {
-                    PasswordSafe.getInstance().removePassword(null, ServerContextSettings.class, hostKey);
-                } catch(PasswordSafeException e) {
-                    logger.warn("Failed to clear password store", e);
-                }
-            }
-        }
-    }
-
-    private void setType(final Type type) {
-        state.type = type;
-    }
-
-    private Type getType() {
-        return state.type;
-    }
-
-    private void setUri(final String uri) {
-        state.uri = uri;
-    }
-
-    private String getUri() {
-        return state.uri;
-    }
-
-    private void setAccount(final UUID accountId) {
-        state.account = writeToJson(accountId);
-    }
-
-    private Account getAccount() {
-        return readFromJson(state.account, Account.class);
-    }
-
-    private void setTeamProjectCollectionReference(final TeamProjectCollectionReference collectionReference) {
-        state.teamProjectCollectionReference = writeToJson(collectionReference);
-    }
-
-    private TeamProjectCollectionReference getTeamProjectCollectionReference() {
-        return readFromJson(state.teamProjectCollectionReference, TeamProjectCollectionReference.class);
-    }
-
-    private void setTeamProjectReference(final TeamProjectReference teamProjectReference) {
-        state.teamProjectReference = writeToJson(teamProjectReference);
-    }
-
-    private TeamProjectReference getTeamProjectReference() {
-        return readFromJson(state.teamProjectReference, TeamProjectReference.class);
-    }
-
-    private void setGitRepository(final GitRepository gitRepository) {
-        state.gitRepository = writeToJson(gitRepository);
-    }
-
-    private GitRepository getGitRepository() {
-        return readFromJson(state.gitRepository, GitRepository.class);
-    }
-
-    private void setAuthenticationInfo(final String hostKey, final AuthenticationInfo authInfo) {
-        final String value;
-        if(getType() == Type.VSO || getType() == Type.VSO_DEPLOYMENT) {
-            value = writeToJson((VsoAuthenticationInfo) authInfo);
+    private ServerContextItemsStore getServerContextsToPersist() {
+        if (restoreState != null) {
+            // ServerContextManager never loaded the data
+            return restoreState;
         } else {
-            value = writeToJson((TfsAuthenticationInfo) authInfo);
+            final ServerContextItemsStore saveState = new ServerContextItemsStore();
+
+            List<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+            List<ServerContextItemsStore.ServerContextItemStore> stores = new ArrayList<ServerContextItemsStore.ServerContextItemStore>();
+            for (ServerContext context : serverContexts) {
+                ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
+                store.type = context.getType();
+                store.uri = context.getUri().toString();
+                store.accountUUID = context.getAccountId() != null ? context.getAccountId().toString() : null;
+                store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
+                store.teamProjectReference = writeToJson(context.getTeamProjectReference());
+                store.gitRepository = writeToJson(context.getGitRepository());
+                stores.add(store);
+            }
+            saveState.serverContextItemStores = stores.toArray(new ServerContextItemsStore.ServerContextItemStore[stores.size()]);
+            return saveState;
         }
-        writePassword(null, ServerContextSettings.class, hostKey, value);
     }
 
-    private AuthenticationInfo getAuthenticationInfo(final String hostKey) {
-        final String authInfoSerialized = readPassword(null, ServerContextSettings.class, hostKey);
+    public List<ServerContext> getServerContextsToRestore() {
+        if (restoreState == null || restoreState.serverContextItemStores == null) {
+            return Collections.EMPTY_LIST;
+        }
+
+        final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
+        for (final ServerContextItemsStore.ServerContextItemStore toRestore : restoreState.serverContextItemStores) {
+            Key key = null;
+            try {
+                final URI serverUri = UrlHelper.getBaseUri(toRestore.uri);
+                key = ServerContextStore.Key.create(serverUri);
+                final AuthenticationInfo authenticationInfo = getServerContextSecrets(key);
+                if (authenticationInfo != null) {
+                    ServerContext context = null;
+                    if (toRestore.type == Type.VSO) {
+                        final UUID accountUuid = UUID.fromString(toRestore.accountUUID);
+                        context = ServerContext.createVSOContext(serverUri, accountUuid, authenticationInfo);
+                    } else if (toRestore.type == Type.TFS) {
+                        context = ServerContext.createTFSContext(serverUri, authenticationInfo);
+                    }
+                    if (context != null) {
+                        context.setTeamProjectCollectionReference(readFromJson(toRestore.teamProjectCollectionReference, TeamProjectCollectionReference.class));
+                        context.setTeamProjectReference(readFromJson(toRestore.teamProjectReference, TeamProjectReference.class));
+                        context.setGitRepository(readFromJson(toRestore.gitRepository, GitRepository.class));
+                        serverContexts.add(context);
+                    } else {
+                        forgetServerContextSecrets(key);
+                    }
+                }
+            } catch (final Throwable restoreThrowable) {
+                logger.warn("Failed to restore server context", restoreThrowable);
+                // attempt to clean up left over data
+                if (key != null) {
+                    try {
+                        forgetServerContextSecrets(key);
+                    } catch (final Throwable cleanupThrowable) {
+                        logger.warn("Failed to cleanup invalid server context");
+                    }
+                }
+            }
+        }
+
+        restoreState = null; // null this out since data ownership has now been passed
+        return serverContexts;
+    }
+
+    public void forgetServerContextSecrets(final Key key) {
+        forgetPassword(key);
+    }
+
+    public AuthenticationInfo getServerContextSecrets(final Key key) throws IOException {
+        final String authInfoSerialized = readPassword(key);
 
         AuthenticationInfo info = null;
         if (StringUtils.isNotEmpty(authInfoSerialized)) {
-            if (getType() == Type.VSO_DEPLOYMENT || getType() == Type.VSO) {
-                info = readFromJson(authInfoSerialized, VsoAuthenticationInfo.class);
-            }
-            if (getType() == Type.TFS) {
-                info = readFromJson(authInfoSerialized, TfsAuthenticationInfo.class);
-            }
+            info = readFromJson(authInfoSerialized, AuthenticationInfo.class);
         }
 
         if (info == null) {
-            forgetServerContext(hostKey);
-            logger.warn("getAuthenticationInfo: info was null for hostKey ", hostKey);
+            forgetServerContextSecrets(key);
+            logger.warn("getServerContextSecrets: info was null for key: ", key);
             return null;
         }
         return info;
@@ -247,7 +208,7 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
 
     private <T> String writeToJson(final T object) {
         String json = null;
-        if(object != null) {
+        if (object != null) {
             try {
                 json = mapper.writeValueAsString(object);
             } catch (JsonProcessingException e) {
@@ -257,34 +218,35 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
         return json;
     }
 
-    private <T> T readFromJson(final String json, final Class<T> valueType) {
+    private <T> T readFromJson(final String json, final Class<T> valueType) throws IOException {
         T object = null;
-        if(json != null && valueType != null) {
-            try {
-                object = mapper.readValue(json, valueType);
-            } catch (JsonProcessingException e) {
-                logger.warn("Failed to parse object from json", e);
-                //TODO: should we forget server context? was file corrupted?
-            } catch (IOException e) {
-                logger.warn("Failed to get object from json", e);
-            }
+        if (json != null) {
+            object = mapper.readValue(json, valueType);
         }
         return object;
     }
 
-    private <T> void writePassword(final Project project, final Class<T> valueType, final String key, final String value) {
+    private void forgetPassword(final Key key) {
         try {
-            PasswordSafe.getInstance().storePassword(project, valueType, key, value);
-        } catch(PasswordSafeException e) {
+            PasswordSafe.getInstance().removePassword(null, this.getClass(), key.stringValue());
+        } catch (PasswordSafeException e) {
+            logger.warn("Failed to clear password store", e);
+        }
+    }
+
+    private void writePassword(final Key key, final String value) {
+        try {
+            PasswordSafe.getInstance().storePassword(null, this.getClass(), key.stringValue(), value);
+        } catch (PasswordSafeException e) {
             logger.warn("Failed to get password", e);
         }
     }
 
-    private <T> String readPassword(final Project project, final Class<T> valueType, final String key) {
+    private String readPassword(final Key key) {
         String password = null;
         try {
-            password = PasswordSafe.getInstance().getPassword(project, valueType, key);
-        } catch(PasswordSafeException e) {
+            password = PasswordSafe.getInstance().getPassword(null, this.getClass(), key.stringValue());
+        } catch (PasswordSafeException e) {
             logger.warn("Failed to read password", e);
         }
         return password;

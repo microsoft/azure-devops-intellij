@@ -31,7 +31,7 @@ public class GitCheckoutProvider implements CheckoutProvider {
 
             final CheckoutController controller = new CheckoutController(project, listener);
             controller.showModalDialog();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             //unexpected error
             logger.warn("doCheckout failed unexpected error", t);
             VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),

@@ -8,7 +8,6 @@ import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -38,7 +37,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         setAuthenticating(false);
 
         // check to see if the activeContext is a TFS context, if so, use it
-        final ServerContext<TfsAuthenticationInfo> activeContext = ServerContextManager.getInstance().getActiveTfsContext();
+        final ServerContext activeContext = ServerContextManager.getInstance().getActiveTfsContext();
         if (ServerContext.NO_CONTEXT != activeContext) {
             setServerNameInternal(activeContext.getUri().toString());
             setAuthenticationProvider(new TfsAuthenticationProvider(activeContext.getAuthenticationInfo()));
@@ -90,7 +89,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         if (authenticationProvider.isAuthenticated()) {
             loadRepositoriesInternal();
         } else {
-            authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener<TfsAuthenticationInfo>() {
+            authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener() {
                 @Override
                 public void authenticating() {
                     // We are starting to authenticate, so set the boolean
@@ -98,16 +97,17 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                 }
 
                 @Override
-                public void authenticated(final TfsAuthenticationInfo tfsAuthenticationInfo, final Throwable exception) {
+                public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
                     ApplicationManager.getApplication().invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             // Authentication is over, so set the boolean
                             setAuthenticating(false);
-                            //Log exception
-                            if (exception != null) {
-                                logger.warn("Connecting to TFS server failed", exception);
+
+                            //Log exception if it failed
+                            if (throwable != null) {
+                                logger.warn("Connecting to TFS server failed", throwable);
                             }
                             //try to load the repos
                             loadRepositoriesInternal();

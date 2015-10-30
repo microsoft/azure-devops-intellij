@@ -24,8 +24,8 @@ public class CreatePullRequestAction extends InstrumentedAction {
 
     public CreatePullRequestAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_CREATE_PULL_REQUEST),
-            TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_CREATE_PULL_REQUEST_MSG),
-            Icons.VSLogoSmall);
+                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_CREATE_PULL_REQUEST_MSG),
+                Icons.VSLogoSmall);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
         // We should try to prioritize the parse git url story
         // if we can't finish that story in time, then add the detailed error message before we release to public
 
-       if (project == null || project.isDefault() || gitRepository == null
+        if (project == null || project.isDefault() || gitRepository == null
                 || ServerContextManager.getInstance().getActiveGitRepoContext(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl()) == ServerContext.NO_CONTEXT) {
             anActionEvent.getPresentation().setVisible(false);
             anActionEvent.getPresentation().setEnabled(false);
