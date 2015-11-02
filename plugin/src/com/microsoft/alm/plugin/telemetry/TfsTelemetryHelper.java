@@ -263,10 +263,8 @@ public class TfsTelemetryHelper {
         }
 
         private String getServerId(final ServerContext context) {
-            if (context != null) {
-                if (context.getUri() != null) {
-                    return context.getUri().getHost();
-                }
+            if (context != null && context.getUri() != null) {
+                return context.getUri().getHost();
             }
 
             return UNKNOWN;

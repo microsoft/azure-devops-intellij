@@ -139,8 +139,8 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
     }
 
     // This method exists to make sure we can deserialize the collection reference.
-    private TeamProjectCollectionReference restrict(TeamProjectCollectionReference reference) {
-        TeamProjectCollectionReference newReference = new TeamProjectCollectionReference();
+    private TeamProjectCollectionReference restrict(final TeamProjectCollectionReference reference) {
+        final TeamProjectCollectionReference newReference = new TeamProjectCollectionReference();
         newReference.setName(reference.getName());
         newReference.setId(reference.getId());
         newReference.setUrl(reference.getUrl());
@@ -148,8 +148,8 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
     }
 
     // This method exists to make sure we can deserialize the project reference.
-    private TeamProjectReference restrict(TeamProjectReference reference) {
-        TeamProjectReference newReference = new TeamProjectReference();
+    private TeamProjectReference restrict(final TeamProjectReference reference) {
+        final TeamProjectReference newReference = new TeamProjectReference();
         newReference.setName(reference.getName());
         newReference.setId(reference.getId());
         newReference.setUrl(reference.getUrl());
