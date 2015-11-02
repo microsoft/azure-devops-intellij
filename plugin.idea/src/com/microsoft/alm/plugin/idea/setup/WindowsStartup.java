@@ -3,11 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.setup;
 
-import com.ice.jni.registry.NoSuchKeyException;
-import com.ice.jni.registry.NoSuchValueException;
-import com.ice.jni.registry.Registry;
-import com.ice.jni.registry.RegistryException;
-import com.ice.jni.registry.RegistryKey;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,19 +11,18 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
+import com.sun.jna.platform.win32.Win32Exception;
 
 /**
  * This class contains the startup steps for when the plugin is launched from a Windows OS. Registry keys must be checked and created if missing.
  */
 public final class WindowsStartup {
     private static final Logger logger = LoggerFactory.getLogger(WindowsStartup.class);
-    private static final String JNI_REGISTRY_PACKAGE = RegistryKey.class.getPackage().getName();
-    private static final String URL_FILE_PREFIX = "file:/";
-    private static final String JAVA_LIBRARY_PATH = "java.library.path";
-    private static final String SYS_PATH = "sys_paths";
     public static final String VSOI_KEY = "vsoi\\Shell\\Open\\Command";
     private static final String INTELLIJ_KEY = "IntelliJIdeaProjectFile\\shell\\open\\command";
 
@@ -37,72 +31,35 @@ public final class WindowsStartup {
      */
     public static void startup() {
         try {
-            addDllPath(getDllDirectory());
-
             // get most up-to-date IntelliJ exe
-            final RegistryKey rootKey = Registry.getTopLevelKey("HKEY_CLASSES_ROOT");
-            final RegistryKey intellijKey = rootKey.openSubKey(INTELLIJ_KEY);
-            final String intellijExe = intellijKey.getDefaultValue();
+            final String intellijExe = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, INTELLIJ_KEY, "");
 
-            if (!StringUtils.isEmpty(getValidExe(intellijExe)) && !checkIfKeysExistAndMatch(intellijExe, rootKey)) {
+            if (!StringUtils.isEmpty(getValidExe(intellijExe)) && !checkIfKeysExistAndMatch(intellijExe)) {
                 final File regeditFile = createRegeditFile(intellijExe);
                 launchElevatedCreation(regeditFile.getPath());
                 regeditFile.delete();
             }
-        } catch (RegistryException e) {
-            logger.debug("The IntelliJ exe path could not be extracted from the registry: {}", e.getMessage());
         } catch (IOException e) {
-            logger.debug("An IOException was encountered while creating/writing to the Regedit file: {}", e.getMessage());
-        } catch (IllegalAccessException e) {
-            logger.debug("Access denied while setting java.library.path: {}", e.getMessage());
-        } catch (NoSuchFieldException e) {
-            logger.debug("Exception while getting sys_path: {}", e.getMessage());
+            logger.warn("An IOException was encountered while creating/writing to the Regedit file: {}", e.getMessage());
+        } catch (Win32Exception e) {
+            logger.warn("A Win32Exception was encountered while trying to get IntelliJ's registry key: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.warn("An exception was encountered while trying to create vsoi registry key: {}", e.getMessage());
         }
     }
 
     /**
-     * Add ICE_JNIRegistry.dll to java.library path for native C operations
-     *
-     * @param dllDirectory
-     * @throws NoSuchFieldException
-     * @throws IllegalAccessException
-     */
-    protected static void addDllPath(String dllDirectory) throws NoSuchFieldException, IllegalAccessException {
-        final String existingPath = System.getProperty(JAVA_LIBRARY_PATH);
-        final String newPath = StringUtils.isEmpty(existingPath) ? dllDirectory : existingPath + ";" + dllDirectory;
-        System.setProperty(JAVA_LIBRARY_PATH, newPath);
-        final Field sysPath = ClassLoader.class.getDeclaredField(SYS_PATH);
-        sysPath.setAccessible(true);
-        // when the sys_paths field is set to null, the next time loadLibrary is called it will trigger
-        // the library paths to be set again which pulls in the new addition of the dll to java.library.path
-        sysPath.set(null, null);
-    }
-
-    /**
-     * Check if vsoi registry keys exist already and match IntelliJ
+     * Check if vsoi registry keys exist already and matches current IntelliJ exe
      *
      * @param intellijExe
-     * @param rootKey
      * @return if keys exists or not
      */
-    protected static boolean checkIfKeysExistAndMatch(final String intellijExe, final RegistryKey rootKey) {
-        // default that keys don't exist because it's ok to recreate them
-        boolean isKeyCreated = false;
-        try {
-            // exception thrown if key is not found
-            final RegistryKey vsoiKey = rootKey.openSubKey(VSOI_KEY);
-            // check idea.exe is the same in both places
-            if (intellijExe.equals(vsoiKey.getDefaultValue())) {
-                isKeyCreated = true;
-            }
-        } catch (NoSuchKeyException e) {
-            // suppressing exception since if key cannot be opened it doesn't exist and needs to be created
-            logger.debug("The vsoi registry key does not exist: {}", VSOI_KEY);
-        } catch (NoSuchValueException e) {
-            // suppressing exception since if exe value doesn't exist then it needs to be created
-            logger.debug("The value for the exe path does not exist: {}");
-        } finally {
-            return isKeyCreated;
+    protected static boolean checkIfKeysExistAndMatch(final String intellijExe) {
+        if (Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY) &&
+                Advapi32Util.registryValueExists(WinReg.HKEY_CLASSES_ROOT,  VSOI_KEY, intellijExe)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -118,9 +75,9 @@ public final class WindowsStartup {
             final Process process = processBuilder.start();
             process.waitFor();
         } catch (IOException e) {
-            logger.debug("Running regedit encountered an IOException: {}", e.getMessage());
+            logger.warn("Running regedit encountered an IOException: {}", e.getMessage());
         } catch (Exception e) {
-            logger.debug("Waiting for the process to execute resulted in an error: " + e.getMessage());
+            logger.warn("Waiting for the process to execute resulted in an error: " + e.getMessage());
         }
     }
 
@@ -133,7 +90,7 @@ public final class WindowsStartup {
      */
     protected static File createRegeditFile(final String intellijExe) throws IOException {
         final String exePath = getValidExe(intellijExe); //TODO remove line once trimming arguments isn't needed
-        final File script = File.createTempFile("CreateKeys", ".reg");
+        final File script = File.createTempFile("CreateKeys" , ".reg");
         final FileWriter fileWriter = new FileWriter(script);
         final BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         try {
@@ -150,18 +107,6 @@ public final class WindowsStartup {
             }
         }
         return script;
-    }
-
-    /**
-     * Finds the DLL directory of the plugin by finding the location of an existing JAR dependency
-     *
-     * @return plugin's base directory
-     */
-    protected static String getDllDirectory() {
-        final String jarUrlPath = WindowsStartup.class.getClassLoader().getResource(JNI_REGISTRY_PACKAGE.replace(".", "/")).getPath();
-        final int endOfBaseDir = jarUrlPath.lastIndexOf("lib");
-        final String baseDir = jarUrlPath.substring(0, endOfBaseDir).replace(URL_FILE_PREFIX, "").replace("/", "\\");
-        return baseDir.concat("classes\\");
     }
 
     /**

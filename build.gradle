@@ -66,16 +66,11 @@ project(":plugin.idea") {
     task delTestTelemetryPropFile << {
         delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
     }
-    
-    task copyDll (type: Copy) {
-        from 'third-party-packages/ICE_JNIRegistry.dll'
-        into 'resources'
-    }
 
     /**
      * Create the plugin zip
      */
-    task zip(type: Zip, dependsOn: ['test', 'check', 'copyDll']) {
+    task zip(type: Zip, dependsOn: ['test', 'check']) {
         into('com.microsoft.alm/lib') {
             from configurations.runtime
             from configurations.runtime.allArtifacts.files
@@ -105,8 +100,6 @@ subprojects {
         }
         /* Task 454223: anchor JNA dependency to version 3.4.0 to match Android Studio 1.4 and IntelliJ IDEA 14 */
         compile group: 'net.java.dev.jna', name: 'jna', version: '3.4.0'
-
-        compile files('third-party-packages/registry.jar')
 
         testCompile group: 'junit', name: 'junit', version: '4.12'
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
@@ -160,7 +153,7 @@ subprojects {
     /**
      * TODO: need to separate the dependencies per subproject to avoid accidental coupling 
      */
-    task copyDependencies(type: Copy, dependsOn: ['copyDependenciesSource', 'copyTestDependencies', ':plugin.idea:copyDll']) {
+    task copyDependencies(type: Copy, dependsOn: ['copyDependenciesSource', 'copyTestDependencies']) {
         from configurations.compile
         into 'lib/classes'
     }

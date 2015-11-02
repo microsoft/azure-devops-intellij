@@ -3,15 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.setup;
 
-import com.ice.jni.registry.NoSuchKeyException;
-import com.ice.jni.registry.NoSuchValueException;
-import com.ice.jni.registry.Registry;
-import com.ice.jni.registry.RegistryException;
-import com.ice.jni.registry.RegistryKey;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.WinReg;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -27,7 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Registry.class})
+@PrepareForTest({Advapi32Util.class})
 public class WindowsStartupTest extends IdeaAbstractTest {
     private static final String TEST_EXE_PATH = "exe/path/idea.exe";
     private static final String DIFFERENT_EXE_PATH = "different/path/to/exe/idea.exe";
@@ -42,56 +38,26 @@ public class WindowsStartupTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: ignoring test until creating keys is added back in")
-    public void testDllSet() throws Exception {
-        boolean dllFound = false;
-        File testDll = File.createTempFile("ICE_JNIRegistry", "dll");
-        WindowsStartup.addDllPath(testDll.getParent());
-
-        String prop = System.getProperty("java.library.path");
-        String pathSeparator = System.getProperty("path.separator");
-        String[] paths = prop.split(pathSeparator);
-        for (String path : paths) {
-            File dll = new File(path + "/" + testDll.getName());
-            if (dll.exists()) {
-                dllFound = true;
-            }
-        }
-        Assert.assertTrue(dllFound);
+    public void testCheckIfKeysExistAndMatchHappyCase() {
+        PowerMockito.mockStatic(Advapi32Util.class);
+        Mockito.when(Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY)).thenReturn(true);
+        Mockito.when(Advapi32Util.registryValueExists(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, TEST_EXE_PATH)).thenReturn(true);
+        Assert.assertTrue(WindowsStartup.checkIfKeysExistAndMatch(TEST_EXE_PATH));
     }
 
     @Test
-    public void testCheckIfKeysExistAndMatchHappyCase() throws RegistryException {
-        RegistryKey mockVsoiKey = Mockito.mock(RegistryKey.class);
-        Mockito.when(mockVsoiKey.getDefaultValue()).thenReturn(TEST_EXE_PATH);
-        RegistryKey mockIntellijKey = PowerMockito.mock(RegistryKey.class);
-        Mockito.when(mockIntellijKey.openSubKey(WindowsStartup.VSOI_KEY)).thenReturn(mockVsoiKey);
-        Assert.assertTrue(WindowsStartup.checkIfKeysExistAndMatch(TEST_EXE_PATH, mockIntellijKey));
+    public void testCheckIfKeysExistAndMatchMismatchingExePaths()  {
+        PowerMockito.mockStatic(Advapi32Util.class);
+        Mockito.when(Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY)).thenReturn(true);
+        Mockito.when(Advapi32Util.registryValueExists(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, TEST_EXE_PATH)).thenReturn(false);
+        Assert.assertFalse(WindowsStartup.checkIfKeysExistAndMatch(DIFFERENT_EXE_PATH));
     }
 
     @Test
-    public void testCheckIfKeysExistAndMatchMismatchingExePaths() throws RegistryException {
-        RegistryKey mockVsoiKey = Mockito.mock(RegistryKey.class);
-        Mockito.when(mockVsoiKey.getDefaultValue()).thenReturn(TEST_EXE_PATH);
-        RegistryKey mockIntellijKey = PowerMockito.mock(RegistryKey.class);
-        Mockito.when(mockIntellijKey.openSubKey(WindowsStartup.VSOI_KEY)).thenReturn(mockVsoiKey);
-        Assert.assertFalse(WindowsStartup.checkIfKeysExistAndMatch(DIFFERENT_EXE_PATH, mockIntellijKey));
-    }
-
-    @Test
-    public void testCheckIfKeysExistAndMatchNoVsoiKeyFound() throws RegistryException {
-        RegistryKey mockIntellijKey = PowerMockito.mock(RegistryKey.class);
-        Mockito.when(mockIntellijKey.openSubKey(WindowsStartup.VSOI_KEY)).thenThrow(new NoSuchKeyException());
-        Assert.assertFalse(WindowsStartup.checkIfKeysExistAndMatch(DIFFERENT_EXE_PATH, mockIntellijKey));
-    }
-
-    @Test
-    public void testCheckIfKeysExistAndMatchNoVsoiDefaultValueFound() throws RegistryException {
-        RegistryKey mockVsoiKey = Mockito.mock(RegistryKey.class);
-        Mockito.when(mockVsoiKey.getDefaultValue()).thenThrow(new NoSuchValueException());
-        RegistryKey mockIntellijKey = PowerMockito.mock(RegistryKey.class);
-        Mockito.when(mockIntellijKey.openSubKey(WindowsStartup.VSOI_KEY)).thenReturn(mockVsoiKey);
-        Assert.assertFalse(WindowsStartup.checkIfKeysExistAndMatch(DIFFERENT_EXE_PATH, mockIntellijKey));
+    public void testCheckIfKeysExistAndMatchNoVsoiKeyFound() {
+        PowerMockito.mockStatic(Advapi32Util.class);
+        Mockito.when(Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY)).thenReturn(false);
+        Assert.assertFalse(WindowsStartup.checkIfKeysExistAndMatch(DIFFERENT_EXE_PATH));
     }
 
     @Test

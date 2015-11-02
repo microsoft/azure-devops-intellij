@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.sun.jna.Platform;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +18,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ApplicationStartup implements ApplicationComponent {
     private static final Logger logger = LoggerFactory.getLogger(ApplicationStartup.class);
-    private static final String OS_NAME = "os.name";
-    private static final String WINDOWS = "windows";
 
     public ApplicationStartup() {
     }
@@ -46,8 +45,7 @@ public class ApplicationStartup implements ApplicationComponent {
      * Finds the OS type the plugin is running on and calls the setup for it
      */
     protected void doOsSetup() {
-        final String osName = System.getProperty(OS_NAME).toLowerCase();
-        if (osName.startsWith(WINDOWS)) {
+        if (Platform.isWindows()) {
             logger.debug("Windows operating system detected");
             // WindowsStartup.startup(); TODO: comment back in once arguments are being passed
         } else {
