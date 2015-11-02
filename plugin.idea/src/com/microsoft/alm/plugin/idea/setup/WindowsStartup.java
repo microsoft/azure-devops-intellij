@@ -90,7 +90,7 @@ public final class WindowsStartup {
      */
     protected static File createRegeditFile(final String intellijExe) throws IOException {
         final String exePath = getValidExe(intellijExe); //TODO remove line once trimming arguments isn't needed
-        final File script = File.createTempFile("CreateKeys" , ".reg");
+        final File script = File.createTempFile("CreateKeys", ".reg");
         final FileWriter fileWriter = new FileWriter(script);
         final BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         try {
