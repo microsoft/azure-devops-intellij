@@ -170,16 +170,18 @@ public class ServerContextManager {
     public ServerContext getAuthenticatedContext(String gitRemoteUrl, String patDescription, boolean setAsActiveContext) {
         // get context from builder, create PAT if needed, and store in active context
         ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
-        if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
-            // Generate a PAT and get the new context
-            context = createVsoContext(context,
-                    VsoAuthenticationProvider.getInstance(),
-                    patDescription);
-        }
+        if (context != null) {
+            if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
+                // Generate a PAT and get the new context
+                context = createVsoContext(context,
+                        VsoAuthenticationProvider.getInstance(),
+                        patDescription);
+            }
 
-        if (setAsActiveContext) {
-            // Set the active context for later use
-            ServerContextManager.getInstance().setActiveContext(context);
+            if (setAsActiveContext) {
+                // Set the active context for later use
+                ServerContextManager.getInstance().setActiveContext(context);
+            }
         }
 
         return context;

@@ -128,14 +128,36 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
                 ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
                 store.type = context.getType();
                 store.uri = context.getUri().toString();
-                store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
-                store.teamProjectReference = writeToJson(context.getTeamProjectReference());
+                store.teamProjectCollectionReference = writeToJson(restrict(context.getTeamProjectCollectionReference()));
+                store.teamProjectReference = writeToJson(restrict(context.getTeamProjectReference()));
                 store.gitRepository = writeToJson(context.getGitRepository());
                 stores.add(store);
             }
             saveState.serverContextItemStores = stores.toArray(new ServerContextItemsStore.ServerContextItemStore[stores.size()]);
             return saveState;
         }
+    }
+
+    // This method exists to make sure we can deserialize the collection reference.
+    private TeamProjectCollectionReference restrict(TeamProjectCollectionReference reference) {
+        TeamProjectCollectionReference newReference = new TeamProjectCollectionReference();
+        newReference.setName(reference.getName());
+        newReference.setId(reference.getId());
+        newReference.setUrl(reference.getUrl());
+        return newReference;
+    }
+
+    // This method exists to make sure we can deserialize the project reference.
+    private TeamProjectReference restrict(TeamProjectReference reference) {
+        TeamProjectReference newReference = new TeamProjectReference();
+        newReference.setName(reference.getName());
+        newReference.setId(reference.getId());
+        newReference.setUrl(reference.getUrl());
+        newReference.setAbbreviation(reference.getAbbreviation());
+        newReference.setDescription(reference.getDescription());
+        newReference.setRevision(reference.getRevision());
+        newReference.setState(reference.getState());
+        return newReference;
     }
 
     public List<ServerContext> getServerContextsToRestore() {

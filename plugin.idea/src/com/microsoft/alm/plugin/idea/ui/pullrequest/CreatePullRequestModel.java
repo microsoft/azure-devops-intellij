@@ -470,6 +470,11 @@ public class CreatePullRequestModel extends AbstractModel {
                 final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl,
                             TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC), true);
 
+                if (context == null) {
+                    notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_CANCELED_BY_USER));
+                    return;
+                }
+
                 ListenableFuture<Pair<String, GitCommandResult>> pushResult
                         = doPushCommits(project, gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
 
