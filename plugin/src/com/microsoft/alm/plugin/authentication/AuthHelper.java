@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
@@ -11,6 +12,7 @@ import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import java.net.UnknownHostException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Static helpers for Authentication
@@ -43,6 +45,35 @@ public class AuthHelper {
                 serverUri,
                 getEmail(authenticationResult)
         );
+    }
+
+    /**
+     * This method wraps the normal Async call to authenticate and waits on the result.
+     *
+     * @throws Throwable
+     */
+    public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl) throws Throwable {
+        final SettableFuture<AuthenticationInfo> future = SettableFuture.create();
+
+        provider.authenticateAsync(gitRemoteUrl, new AuthenticationListener() {
+            @Override
+            public void authenticating() {
+                // do nothing
+            }
+
+            @Override
+            public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
+                if (throwable != null) {
+                    future.setException(throwable);
+                } else {
+                    future.set(authenticationInfo);
+                }
+            }
+        });
+
+        // Wait for the authentication info object to be ready
+        // Don't wait any longer than 15 minutes for the user to authenticate
+        return future.get(15, TimeUnit.MINUTES);
     }
 
     /**

@@ -18,21 +18,15 @@ public class ServerContextHelper {
         //remove spaces in the name
         final String nameNoSpaces = name.replace(" ", "");
         final String serverUri = isVso ? String.format("https://%s.visualstudio.com", name) : String.format("http://%s:8080/tfs", nameNoSpaces);
-        final ServerContext context = new MockServerContext(null, URI.create(serverUri));
-
         final TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
         collection.setName(String.format("Collection_%s", name));
-        context.setTeamProjectCollectionReference(collection);
-
         final TeamProjectReference teamProject = new TeamProjectReference();
         teamProject.setName(name);
-        context.setTeamProjectReference(teamProject);
-
         final GitRepository gitRepo = new GitRepository();
         gitRepo.setName(name);
         gitRepo.setRemoteUrl(serverUri + "/Collection/Project/_git/" + nameNoSpaces);
         gitRepo.setProjectReference(teamProject);
-        context.setGitRepository(gitRepo);
+        final ServerContext context = new MockServerContext(isVso ? ServerContext.Type.VSO_DEPLOYMENT : ServerContext.Type.TFS, null, URI.create(serverUri), collection, teamProject, gitRepo);
 
         return context;
     }

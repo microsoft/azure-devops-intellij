@@ -6,8 +6,6 @@ package com.microsoft.alm.plugin.idea.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.pullrequest.CreatePullRequestController;
@@ -33,13 +31,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final GitRepository gitRepository = getTfGitRepository(project);
 
-        //TODO Get context from Git URI
-        // blocking showing the menu item for now if there is no active serverContext.
-        // We should try to prioritize the parse git url story
-        // if we can't finish that story in time, then add the detailed error message before we release to public
-
-        if (project == null || project.isDefault() || gitRepository == null
-                || ServerContextManager.getInstance().getActiveGitRepoContext(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl()) == ServerContext.NO_CONTEXT) {
+        if (project == null || project.isDefault() || gitRepository == null) {
             anActionEvent.getPresentation().setVisible(false);
             anActionEvent.getPresentation().setEnabled(false);
         } else {

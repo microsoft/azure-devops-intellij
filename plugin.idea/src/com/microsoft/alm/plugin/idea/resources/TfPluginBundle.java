@@ -64,6 +64,8 @@ public class TfPluginBundle {
     // Common
     @NonNls
     public static final String KEY_OPERATION_ERRORS_LOOKUP_CANCELED = "Operation.Errors.LookupCanceled";
+    @NonNls
+    public static final String KEY_PAT_TOKEN_DESC = "PAT.TokenDesc";
 
     // Checkout dialog ui and models
     @NonNls
@@ -90,8 +92,6 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DESTINATION_EXISTS = "CheckoutDialog.Errors.DestinationExists";
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID = "CheckoutDialog.Errors.DirNameInvalid";
-    @NonNls
-    public static final String KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC = "CheckoutDialog.PAT.TokenDesc";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
 

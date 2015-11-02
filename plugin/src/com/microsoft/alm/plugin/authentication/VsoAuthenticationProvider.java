@@ -3,20 +3,14 @@
 
 package com.microsoft.alm.plugin.authentication;
 
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
-import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
-import com.microsoft.tf.common.authentication.aad.TokenScope;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
-import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
@@ -123,16 +117,5 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             clearAuthenticationDetails();
             AuthenticationListener.Helper.authenticated(listener, null, e);
         }
-    }
-
-    public AuthenticationInfo generatePatAuthInfo(final ServerContext context, final String patDisplayName) {
-        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(lastDeploymentAuthenticationResult);
-
-        //TODO: handle case where session token cannot be created
-        SessionToken sessionToken = patFactory.createSessionToken(
-                patDisplayName,
-                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), context.getAccountId());
-
-        return AuthHelper.createAuthenticationInfo(context.getUri().toString(), lastDeploymentAuthenticationResult, sessionToken);
     }
 }

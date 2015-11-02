@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
@@ -127,7 +128,10 @@ public class TfsImportPageModel extends ImportPageModelImpl {
 
         // Create the tfs context and load repositories
         final URI serverUrl = UrlHelper.getBaseUri(getServerName());
-        final ServerContext context = ServerContext.createTFSContext(serverUrl, authenticationProvider.getAuthenticationInfo());
+        final ServerContext context =
+                new ServerContextBuilder().type(ServerContext.Type.TFS)
+                        .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo()).build();
+
         getTeamProjectProvider().loadContexts(Collections.singletonList(context), ServerContextLookupOperation.ContextScope.PROJECT);
     }
 
