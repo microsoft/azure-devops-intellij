@@ -67,6 +67,11 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public boolean isAuthenticated() {
+        return lastDeploymentAuthenticationResult != null;
+    }
+
+    // TODO this method is not used because it throws an exception
+    public void forceRefreshResult() {
         synchronized (this) {
             if (lastDeploymentAuthenticationResult != null) {
                 try {
@@ -78,7 +83,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                     logger.warn("Refreshing access token failed", e);
                 }
             }
-            return lastDeploymentAuthenticationResult != null;
         }
     }
 
