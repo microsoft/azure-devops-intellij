@@ -183,17 +183,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertTrue(validationInfo != null);
         Assert.assertEquals(CheckoutPageModel.PROP_REPO_TABLE, validationInfo.getValidationSource());
         // Add repo1 to the table and select it
-        ServerContext context = new MockServerContext(null, URI.create("https://server.com"));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context.setTeamProjectCollectionReference(collection);
-        collection.setName("coll");
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName("proj");
-        GitRepository repo1 = new GitRepository();
-        context.setGitRepository(repo1);
-        repo1.setName("repo1");
-        repo1.setProjectReference(teamProject1);
-        repo1.setRemoteUrl("remoteUrl");
+        ServerContext context = getServerContext("https://server.com", "coll", "proj", "repo1", "remoteUrl");
         ((MockCheckoutPageModel) pm).addContext(context);
         Assert.assertEquals(1, pm.getTableModel().getRowCount());
         pm.getTableSelectionModel().setSelectionInterval(0, 0);
@@ -215,6 +205,18 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         validationInfo = pm.validate();
         Assert.assertTrue(validationInfo != null);
         Assert.assertEquals(CheckoutPageModel.PROP_DIRECTORY_NAME, validationInfo.getValidationSource());
+    }
+
+    private ServerContext getServerContext(String serverName, String collectionName, String projectName, String repoName, String repoUrl) {
+        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
+        collection.setName(collectionName);
+        TeamProjectReference teamProject1 = new TeamProjectReference();
+        teamProject1.setName(projectName);
+        GitRepository repo1 = new GitRepository();
+        repo1.setName(repoName);
+        repo1.setProjectReference(teamProject1);
+        repo1.setRemoteUrl(repoUrl);
+        return new MockServerContext(ServerContext.Type.TFS, null, URI.create(serverName), collection, teamProject1, repo1);
     }
 
     private String getFirstDir(final File root) {
@@ -333,24 +335,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        collection.setName(collName);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName("repo1");
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName("repo2");
-        repo2.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, "repo1", "");
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, "repo2", "");
 
         // Add repo1 to the table
         ((MockCheckoutPageModel) pm).addContext(context1);
@@ -388,24 +374,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        collection.setName(collName);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName("repo1");
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName("repo2");
-        repo2.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, "repo1", "");
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, "repo2", "");
 
         // Add repo1 to the table
         ((MockCheckoutPageModel) pm).addContext(context1);
@@ -446,26 +416,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        collection.setName(collName);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName(repoName1);
-        repo1.setRemoteUrl(repoUrl1);
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName(repoName2);
-        repo2.setRemoteUrl(repoUrl2);
-        repo2.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, repoName1, repoUrl1);
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, repoName2, repoUrl2);
 
         // Add repo1 to the table
         ((MockCheckoutPageModel) pm).addContext(context1);
@@ -514,36 +466,10 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context3 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context4 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        collection.setName(collName);
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        context3.setTeamProjectCollectionReference(collection);
-        context4.setTeamProjectCollectionReference(collection);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName(repoName1);
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName(repoName2);
-        repo2.setProjectReference(teamProject2);
-        GitRepository repo3 = new GitRepository();
-        context3.setGitRepository(repo3);
-        repo3.setName(repoName3);
-        repo3.setProjectReference(teamProject1);
-        GitRepository repo4 = new GitRepository();
-        context4.setGitRepository(repo4);
-        repo4.setName(repoName4);
-        repo4.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, repoName1, "");
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, repoName2, "");
+        ServerContext context3 = getServerContext(serverName, collName, projectName1, repoName3, "");
+        ServerContext context4 = getServerContext(serverName, collName, projectName2, repoName4, "");
 
         // Add repos to the table out of order (2,1,4,3)
         ((MockCheckoutPageModel) pm).addContext(context2);
@@ -580,24 +506,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        collection.setName(collName);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName(repoName1);
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName(repoName2);
-        repo2.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, repoName1, "");
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, repoName2, "");
 
         // Add repo1 to the table
         ((MockCheckoutPageModel) pm).addContext(context1);
@@ -676,24 +586,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
-        ServerContext context1 = new MockServerContext(null, URI.create(serverName));
-        ServerContext context2 = new MockServerContext(null, URI.create(serverName));
-        TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
-        context1.setTeamProjectCollectionReference(collection);
-        context2.setTeamProjectCollectionReference(collection);
-        collection.setName(collName);
-        TeamProjectReference teamProject1 = new TeamProjectReference();
-        teamProject1.setName(projectName1);
-        TeamProjectReference teamProject2 = new TeamProjectReference();
-        teamProject2.setName(projectName2);
-        GitRepository repo1 = new GitRepository();
-        context1.setGitRepository(repo1);
-        repo1.setName(repoName1);
-        repo1.setProjectReference(teamProject1);
-        GitRepository repo2 = new GitRepository();
-        context2.setGitRepository(repo2);
-        repo2.setName(repoName2);
-        repo2.setProjectReference(teamProject2);
+        ServerContext context1 = getServerContext(serverName, collName, projectName1, repoName1, "");
+        ServerContext context2 = getServerContext(serverName, collName, projectName2, repoName2, "");
 
         // Add a filter for repo1 and verify the data
         pm.setRepositoryFilter(repoName1);

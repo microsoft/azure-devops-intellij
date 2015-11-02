@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
@@ -339,17 +340,11 @@ public class ServerContextLookupOperation {
                             }
                         }
 
-                        ServerContext gitServerContext;
-
-                        if (context.getType() == ServerContext.Type.TFS) {
-                            gitServerContext = ServerContext.createTFSContext(context.getUri(), context.getAuthenticationInfo());
-                        } else {
-                            // Create a VSO deployment context. This allows us to query for more information, but does not contain credentials (no PAT)
-                            gitServerContext = ServerContext.createVSODeploymentContext(context.getUri(), context.getAccountId(), context.getAuthenticationInfo());
-                        }
-                        gitServerContext.setGitRepository(gitRepository);
-                        gitServerContext.setTeamProjectReference(gitRepository.getProjectReference());
-                        gitServerContext.setTeamProjectCollectionReference(teamProjectCollectionReference);
+                        ServerContext gitServerContext = new ServerContextBuilder(context)
+                                .repository(gitRepository)
+                                .teamProject(gitRepository.getProjectReference())
+                                .collection(teamProjectCollectionReference)
+                                .build();
                         serverContexts.add(gitServerContext);
                     }
                     lookup.addResults(serverContexts);

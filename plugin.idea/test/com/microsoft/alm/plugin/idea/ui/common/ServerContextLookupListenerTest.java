@@ -60,7 +60,7 @@ public class ServerContextLookupListenerTest extends IdeaAbstractTest {
         }
 
         // Make sure null scope fails
-        contexts.add(new MockServerContext(null, URI.create("http://notanurl")));
+        contexts.add(new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl"), null, null, null));
         try {
             listener.loadContexts(contexts, null);
             fail("null scope worked");
@@ -74,12 +74,12 @@ public class ServerContextLookupListenerTest extends IdeaAbstractTest {
         MockServerContextLookupPageModel pageModel = new MockServerContextLookupPageModel();
         ServerContextLookupListener listener = new ServerContextLookupListener(pageModel);
         List<ServerContext> contexts = new ArrayList<ServerContext>();
-        contexts.add(new MockServerContext(null, URI.create("http://notanurl0")));
+        contexts.add(new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl0"), null, null, null));
         assertEquals(1, contexts.size());
 
         // Add some existing contexts to the page model so the clear has something to do
-        pageModel.contexts.add(new MockServerContext(null, URI.create("http://notanurl1")));
-        pageModel.contexts.add(new MockServerContext(null, URI.create("http://notanurl2")));
+        pageModel.contexts.add(new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl1"), null, null, null));
+        pageModel.contexts.add(new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl2"), null, null, null));
         assertEquals(2, pageModel.contexts.size());
 
         MockServerContextLookupOperation operation = new MockServerContextLookupOperation(

@@ -22,6 +22,7 @@ import com.intellij.util.containers.ContainerUtil;
 import com.intellij.vcsUtil.VcsFileUtil;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModelImpl;
@@ -196,6 +197,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_IMPORTING_PROJECT), true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull final ProgressIndicator indicator) {
+                // Local context can change if the creation of the repo succeeds
+                ServerContext localContext = context;
                 final String action = "import";
                 //find if the project belongs to a local git repository
                 final GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
@@ -221,7 +224,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         //git init failed
                         notifyImportError(project,
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT_ERROR, project.getName(), hInit.errors().get(0).getMessage()),
-                                action, context);
+                                action, localContext);
                         return;
                     }
                     GitInit.refreshAndConfigureVcsMappings(project, rootVirtualFile, rootVirtualFile.getPath());
@@ -280,14 +283,14 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                 //unable to commit
                                 notifyImportError(project,
                                         TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), hCommit.getStderr()),
-                                        action, context);
+                                        action, localContext);
                                 return;
                             }
                             VcsFileUtil.refreshFiles(project, filesToCommit);
                         } else {
                             notifyImportError(project,
                                     TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_NO_SELECTED_FILES),
-                                    action, context);
+                                    action, localContext);
                             return;
                         }
 
@@ -295,34 +298,34 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         // Log the exact exception here
                         TfsTelemetryHelper.getInstance().sendException(ve,
                                 new TfsTelemetryHelper.PropertyMapBuilder()
-                                        .currentOrActiveContext(context)
+                                        .currentOrActiveContext(localContext)
                                         .actionName(action)
                                         .success(false)
                                         .build());
 
                         notifyImportError(project,
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), ve.getMessage()),
-                                action, context);
+                                action, localContext);
                         return;
                     }
                 }
 
                 //create remote repository
                 indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO));
-                final URI collectionURI = URI.create(context.getUri().toString() + "/" + context.getTeamProjectCollectionReference().getName());
-                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+                final URI collectionURI = URI.create(localContext.getUri().toString() + "/" + localContext.getTeamProjectCollectionReference().getName());
+                final GitHttpClient gitClient = new GitHttpClient(localContext.getClient(), collectionURI);
                 final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository gitRepoToCreate =
                         new com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository();
                 gitRepoToCreate.setName(repositoryName);
-                gitRepoToCreate.setProjectReference(context.getTeamProjectReference());
+                gitRepoToCreate.setProjectReference(localContext.getTeamProjectReference());
                 com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository = null;
                 Throwable t = null;
                 try {
                     remoteRepository = gitClient.createRepository(gitRepoToCreate, context.getTeamProjectReference().getId());
 
                     //remote repo creation succeeded, save active context with the repository information
-                    context.setGitRepository(remoteRepository);
-                    ServerContextManager.getInstance().setActiveContext(context);
+                    localContext = new ServerContextBuilder(localContext).repository(remoteRepository).build();
+                    ServerContextManager.getInstance().setActiveContext(localContext);
 
                     t = null;
                 } catch (VssServiceException vssEx) {
@@ -335,7 +338,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         logger.error("doImport: Failed to create remote git repository name: {} collection: {}", repositoryName, collectionURI.toString());
                         logger.warn("doImport", t);
                         final String errorMessage;
-                        final String teamProjectUrl = collectionURI.toASCIIString() + "/" + context.getTeamProjectReference().getName(); //TODO: how can we reliably compute these URLs
+                        final String teamProjectUrl = collectionURI.toASCIIString() + "/" + localContext.getTeamProjectReference().getName(); //TODO: how can we reliably compute these URLs
                         if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitRepositoryNameAlreadyExists")) {
                             //The REST SDK asserts for exceptions that are not handled, there could be a very large number of server exceptions to manually add code for
                             //Handling it here since we are not decided on what to do with exceptions on the REST SDK
@@ -347,7 +350,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                     repositoryName,
                                     teamProjectUrl);
                         }
-                        notifyImportError(project, errorMessage, action, context);
+                        notifyImportError(project, errorMessage, action, localContext);
                         return;
                     }
                     if (remoteRepository == null) {
@@ -367,14 +370,14 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     //check the remotes
                     int index = 0;
                     for (final GitRemote remote : gitRemotes) {
-                        if (remote.getName().contains(context.getUri().getHost())) {
+                        if (remote.getName().contains(localContext.getUri().getHost())) {
                             index = index + 1;
                         }
                     }
                     if (index == 0) {
-                        remoteName = context.getUri().getHost();
+                        remoteName = localContext.getUri().getHost();
                     } else {
-                        remoteName = context.getUri().getHost() + "_" + index;
+                        remoteName = localContext.getUri().getHost() + "_" + index;
                     }
                 }
 
@@ -387,7 +390,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 if (hRemote.getExitCode() != 0) {
                     notifyImportError(project,
                             TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE_ERROR, remoteGitUrl, hRemote.getStderr()),
-                            action, context);
+                            action, localContext);
                     return;
                 }
                 localRepository.update();
@@ -401,7 +404,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     if (!result.success()) {
                         notifyImportError(project,
                                 result.getErrorOutputAsJoinedString(),
-                                action, context);
+                                action, localContext);
                         return;
                     }
                 }
@@ -414,7 +417,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 // Add Telemetry for a successful import
                 TfsTelemetryHelper.getInstance().sendEvent(action,
                         new TfsTelemetryHelper.PropertyMapBuilder()
-                                .currentOrActiveContext(context)
+                                .currentOrActiveContext(localContext)
                                 .actionName(action)
                                 .success(true)
                                 .build());

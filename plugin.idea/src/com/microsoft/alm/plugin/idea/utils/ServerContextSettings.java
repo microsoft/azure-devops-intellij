@@ -17,6 +17,7 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContext.Type;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.alm.plugin.services.ServerContextStore.Key;
@@ -32,7 +33,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Stores a ServerContextItemStore to file and handles writing and reading the objects
@@ -89,7 +89,6 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
             //fields have to be public, so IntelliJ can write them to the persistent store
             public Type type = null;
             public String uri = null;
-            public String accountUUID = null;
             public String teamProjectCollectionReference = null;
             public String teamProjectReference = null;
             public String gitRepository = null;
@@ -129,15 +128,36 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
                 ServerContextItemsStore.ServerContextItemStore store = new ServerContextItemsStore.ServerContextItemStore();
                 store.type = context.getType();
                 store.uri = context.getUri().toString();
-                store.accountUUID = context.getAccountId() != null ? context.getAccountId().toString() : null;
-                store.teamProjectCollectionReference = writeToJson(context.getTeamProjectCollectionReference());
-                store.teamProjectReference = writeToJson(context.getTeamProjectReference());
+                store.teamProjectCollectionReference = writeToJson(restrict(context.getTeamProjectCollectionReference()));
+                store.teamProjectReference = writeToJson(restrict(context.getTeamProjectReference()));
                 store.gitRepository = writeToJson(context.getGitRepository());
                 stores.add(store);
             }
             saveState.serverContextItemStores = stores.toArray(new ServerContextItemsStore.ServerContextItemStore[stores.size()]);
             return saveState;
         }
+    }
+
+    // This method exists to make sure we can deserialize the collection reference.
+    private TeamProjectCollectionReference restrict(final TeamProjectCollectionReference reference) {
+        final TeamProjectCollectionReference newReference = new TeamProjectCollectionReference();
+        newReference.setName(reference.getName());
+        newReference.setId(reference.getId());
+        newReference.setUrl(reference.getUrl());
+        return newReference;
+    }
+
+    // This method exists to make sure we can deserialize the project reference.
+    private TeamProjectReference restrict(final TeamProjectReference reference) {
+        final TeamProjectReference newReference = new TeamProjectReference();
+        newReference.setName(reference.getName());
+        newReference.setId(reference.getId());
+        newReference.setUrl(reference.getUrl());
+        newReference.setAbbreviation(reference.getAbbreviation());
+        newReference.setDescription(reference.getDescription());
+        newReference.setRevision(reference.getRevision());
+        newReference.setState(reference.getState());
+        return newReference;
     }
 
     public List<ServerContext> getServerContextsToRestore() {
@@ -153,21 +173,14 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
                 key = ServerContextStore.Key.create(serverUri);
                 final AuthenticationInfo authenticationInfo = getServerContextSecrets(key);
                 if (authenticationInfo != null) {
-                    ServerContext context = null;
-                    if (toRestore.type == Type.VSO) {
-                        final UUID accountUuid = UUID.fromString(toRestore.accountUUID);
-                        context = ServerContext.createVSOContext(serverUri, accountUuid, authenticationInfo);
-                    } else if (toRestore.type == Type.TFS) {
-                        context = ServerContext.createTFSContext(serverUri, authenticationInfo);
-                    }
-                    if (context != null) {
-                        context.setTeamProjectCollectionReference(readFromJson(toRestore.teamProjectCollectionReference, TeamProjectCollectionReference.class));
-                        context.setTeamProjectReference(readFromJson(toRestore.teamProjectReference, TeamProjectReference.class));
-                        context.setGitRepository(readFromJson(toRestore.gitRepository, GitRepository.class));
-                        serverContexts.add(context);
-                    } else {
-                        forgetServerContextSecrets(key);
-                    }
+                    serverContexts.add(new ServerContextBuilder()
+                            .type(toRestore.type)
+                            .uri(serverUri)
+                            .authentication(authenticationInfo)
+                            .collection(readFromJson(toRestore.teamProjectCollectionReference, TeamProjectCollectionReference.class))
+                            .teamProject(readFromJson(toRestore.teamProjectReference, TeamProjectReference.class))
+                            .repository(readFromJson(toRestore.gitRepository, GitRepository.class))
+                            .build());
                 }
             } catch (final Throwable restoreThrowable) {
                 logger.warn("Failed to restore server context", restoreThrowable);

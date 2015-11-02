@@ -125,10 +125,10 @@ public class ServerContextLookupOperationTest extends AbstractTest {
             ServerContext serverContext;
             if (url.endsWith("visualstudio.com")) {
                 final AuthenticationInfo authenticationInfo = new AuthenticationInfo(userId, password, uri.toString(), userId);
-                serverContext = new MockServerContext(authenticationInfo, uri, null);
+                serverContext = new MockServerContext(ServerContext.Type.VSO_DEPLOYMENT, authenticationInfo, uri, null, null, null);
             } else {
                 final AuthenticationInfo authenticationInfo = AuthHelper.createAuthenticationInfo(url, new NTCredentials(userId + ":" + password));
-                serverContext = new MockServerContext(authenticationInfo, uri);
+                serverContext = new MockServerContext(ServerContext.Type.TFS, authenticationInfo, uri, null, null, null);
             }
 
             serverContextList.add(serverContext);

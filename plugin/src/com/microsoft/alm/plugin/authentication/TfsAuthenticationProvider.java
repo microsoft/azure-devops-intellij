@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
@@ -66,7 +67,9 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
                 // TODO: having this object depend on ServerContext is problematic. Remove the dependency via an interface or callback
                 // Test the authenticatedContext against the server
                 newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials);
-                ServerContext context = ServerContext.createTFSContext(serverUri, newAuthenticationInfo);
+                final ServerContext context =
+                        new ServerContextBuilder().type(ServerContext.Type.TFS)
+                                .uri(serverUri).authentication(newAuthenticationInfo).build();
                 context.getSoapServices().getCatalogService().getProjectCollections();
                 result = true;
                 break;

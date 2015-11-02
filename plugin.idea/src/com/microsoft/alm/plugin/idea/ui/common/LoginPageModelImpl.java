@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.intellij.ide.BrowserUtil;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -37,8 +36,10 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
     public ServerContext completeSignIn(final ServerContext context) {
         if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
             //generate PAT
-            final AuthenticationInfo authenticationInfo = VsoAuthenticationProvider.getInstance().generatePatAuthInfo(context, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC));
-            final ServerContext newContext = ServerContext.createVSOContext(context, authenticationInfo);
+            final ServerContext newContext = ServerContextManager.getInstance().createVsoContext(
+                    context,
+                    VsoAuthenticationProvider.getInstance(),
+                    TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC));
             ServerContextManager.getInstance().setActiveContext(newContext);
             return newContext;
         } else {

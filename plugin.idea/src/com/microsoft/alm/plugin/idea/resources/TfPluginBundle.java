@@ -63,7 +63,11 @@ public class TfPluginBundle {
 
     // Common
     @NonNls
+    public static final String KEY_ERRORS_AUTH_CANCELED_BY_USER = "Errors.AuthCanceledByUser";
+    @NonNls
     public static final String KEY_OPERATION_ERRORS_LOOKUP_CANCELED = "Operation.Errors.LookupCanceled";
+    @NonNls
+    public static final String KEY_PAT_TOKEN_DESC = "PAT.TokenDesc";
 
     // Checkout dialog ui and models
     @NonNls
@@ -90,8 +94,6 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DESTINATION_EXISTS = "CheckoutDialog.Errors.DestinationExists";
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID = "CheckoutDialog.Errors.DirNameInvalid";
-    @NonNls
-    public static final String KEY_CHECKOUT_DIALOG_PAT_TOKEN_DESC = "CheckoutDialog.PAT.TokenDesc";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
 
@@ -211,10 +213,6 @@ public class TfPluginBundle {
     public static final String KEY_CREATE_PR_ERRORS_TARGET_NOT_SELECTED = "CreatePullRequestDialog.Errors.TargetNotSelected";
     @NonNls
     public static final String KEY_CREATE_PR_ERRORS_TARGET_IS_LOCAL_TRACKING = "CreatePullRequestDialog.Errors.TargetIsLocalTracking";
-    @NonNls
-    public static final String KEY_CREATE_PR_ERRORS_NO_ACTIVE_SERVER_CONTEXT = "CreatePullRequestDialog.Errors.NoActiveServerContext";
-    @NonNls
-    public static final String KEY_CREATE_PR_ERRORS_NO_AUTHENTICATION_INFO_IN_CONTEXT = "CreatePullRequestDialog.Errors.NoAuthenticationInfoInContext";
     @NonNls
     public static final String KEY_CREATE_PR_ERRORS_SOURCE_EMPTY = "CreatePullRequestDialog.Errors.SourceEmpty";
     @NonNls

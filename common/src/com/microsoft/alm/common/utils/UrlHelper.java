@@ -68,6 +68,18 @@ public class UrlHelper {
         return URI.create("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
     }
 
+    /**
+     * This method returns the account name based on the VSO url provided.
+     *
+     * @param vsoUri the VSO url to parse
+     * @return the string after the "http://" and before the first "/".
+     */
+    public static String getVSOAccountName(final URI vsoUri) {
+        final String[] hostParts = vsoUri.getHost().split("\\.");
+        final String accountName = hostParts.length > 0 ? hostParts[0] : "";
+        return accountName;
+    }
+
     public static URI resolveEndpointUri(URI baseUri, String endpointPath) {
         if (!baseUri.getPath().endsWith("/")) {
             baseUri = URI.create(baseUri.toString() + "/");
@@ -115,23 +127,36 @@ public class UrlHelper {
     }
 
     public static class ParseResult {
-        public static final ParseResult FAILED = new ParseResult(null, null, null, null);
+        public static final ParseResult FAILED = new ParseResult(null, null, null, null, null, null);
 
+        private final String accountName;
+        private final String serverUrl;
         private final String collectionUrl;
         private final String collectionName;
         private final String projectName;
         private final String repoName;
 
-        public ParseResult(final String collectionUrl, final String collectionName,
-                           final String projectName, final String repoName) {
+        // A ParseResult.Builder might make a lot of sense here if we really want this ctor to be public.
+        public ParseResult(final String serverUrl, final String collectionUrl, final String collectionName,
+                           final String projectName, final String repoName, final String accountName) {
+            this.serverUrl = serverUrl;
             this.collectionUrl = collectionUrl;
             this.collectionName = collectionName;
             this.projectName = projectName;
             this.repoName = repoName;
+            this.accountName = accountName;
         }
 
         public boolean isSuccess() {
             return this != FAILED;
+        }
+
+        public boolean isVSO() {
+            return UrlHelper.isVSO(UrlHelper.getBaseUri(this.serverUrl));
+        }
+
+        public String getServerUrl() {
+            return serverUrl;
         }
 
         public String getCollectionUrl() {
@@ -148,6 +173,10 @@ public class UrlHelper {
 
         public String getRepoName() {
             return repoName;
+        }
+
+        public String getAccountName() {
+            return accountName;
         }
     }
 
@@ -230,25 +259,34 @@ public class UrlHelper {
 
         private static ParseResult buildParseResult(final URI gitUri, final String[] pathSegments,
                                                     final boolean explicitProjectName) {
+            // if this is vso then the account name is the very first part of the url
+            final String accountName = UrlHelper.getVSOAccountName(gitUri);
+
             // carry over scheme and authority (host+port)
-            final StringBuilder collectionUrlBuilder = new StringBuilder(gitUri.getScheme()).append("://")
+            final StringBuilder urlBuilder = new StringBuilder(gitUri.getScheme()).append("://")
                     .append(gitUri.getAuthority()).append("/");
 
             final int gitSegmentPos = getGitPathSegmentPosition(pathSegments);
             final int collectionSegmentPos = explicitProjectName ? gitSegmentPos - 2 : gitSegmentPos - 1;
 
-            for (int i = 0; i <= collectionSegmentPos; ++i) {
-                collectionUrlBuilder.append(pathSegments[i]).append("/");
+            // Add all segments before the collection segment to collectionUrlBuilder
+            for (int i = 0; i < collectionSegmentPos; ++i) {
+                urlBuilder.append(pathSegments[i]).append("/");
             }
+            final String serverUrl = urlBuilder.toString();
+
+            // now add the collection name
+            final String collectionName = pathSegments[collectionSegmentPos];
+            urlBuilder.append(collectionName).append("/");
+            final String collectionUrl = urlBuilder.toString();
 
             final int size = pathSegments.length;
 
             // repo is always the last segment
             final String repositoryName = pathSegments[size - 1];
-            final String collectionName = pathSegments[collectionSegmentPos];
             final String projectName = explicitProjectName ? pathSegments[collectionSegmentPos + 1] : repositoryName;
 
-            return new ParseResult(collectionUrlBuilder.toString(), collectionName, projectName, repositoryName);
+            return new ParseResult(serverUrl, collectionUrl, collectionName, projectName, repositoryName, accountName);
         }
     }
 

@@ -30,7 +30,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
@@ -440,45 +439,42 @@ public class CreatePullRequestModel extends AbstractModel {
 
         if (sourceBranch == null) {
             // how did we get here? validation failed?
-            notifiyCreateFailedError(project,
+            notifyCreateFailedError(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_SOURCE_EMPTY));
             return;
         }
 
         if (targetBranch == null) {
             // how did we get here? validation failed?
-            notifiyCreateFailedError(project,
+            notifyCreateFailedError(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_TARGET_NOT_SELECTED));
             return;
         }
 
         if (targetBranch.equals(this.getRemoteTrackingBranch())) {
             // how did we get here? Didn't we filter you out?
-            notifiyCreateFailedError(project,
+            notifyCreateFailedError(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_TARGET_IS_LOCAL_TRACKING));
             return;
         }
 
-        final ServerContext context = serverContextManager.getActiveContext();
-        if (context == null) {
-            notifiyCreateFailedError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_NO_ACTIVE_SERVER_CONTEXT));
-            return;
-        }
-
-        final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
-        if (authenticationInfo == null) {
-            notifiyCreateFailedError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_NO_AUTHENTICATION_INFO_IN_CONTEXT));
-            return;
-        }
-
+        //TODO Determine the correct/best way to get the remote url
+        final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
         final CreatePullRequestModel createModel = this;
         /* Let's keep all server interactions to a background thread */
         final Task.Backgroundable createPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_IMPORTING_PROJECT),
                 true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
+                // get context from manager, create PAT if needed, and store in active context
+                final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl,
+                            TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC), true);
+
+                if (context == null) {
+                    notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_CANCELED_BY_USER));
+                    return;
+                }
+
                 ListenableFuture<Pair<String, GitCommandResult>> pushResult
                         = doPushCommits(project, gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
 
@@ -490,17 +486,17 @@ public class CreatePullRequestModel extends AbstractModel {
                             final String description = createModel.getDescription();
                             final String branchNameOnRemoteServer = result.getFirst();
 
-                            doCreatePullRequst(project, context, title, description, branchNameOnRemoteServer, targetBranch);
+                            doCreatePullRequest(project, context, title, description, branchNameOnRemoteServer, targetBranch);
                         } else {
                             // I really don't have anything else to say, push failed, the title says it all
                             // I have no error message to be more specific
-                            notifiyPushFailedError(createModel.getProject(), StringUtils.EMPTY);
+                            notifyPushFailedError(createModel.getProject(), StringUtils.EMPTY);
                         }
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        notifiyPushFailedError(createModel.getProject(), t.getLocalizedMessage());
+                        notifyPushFailedError(createModel.getProject(), t.getLocalizedMessage());
                     }
                 });
             }
@@ -550,12 +546,12 @@ public class CreatePullRequestModel extends AbstractModel {
         return pushResult;
     }
 
-    private void doCreatePullRequst(@NotNull final Project project,
-                                    @NotNull final ServerContext context,
-                                    @NotNull final String title,
-                                    @NotNull final String description,
-                                    @NotNull final String branchNameOnRemoteServer,
-                                    @NotNull final GitRemoteBranch targetBranch) {
+    private void doCreatePullRequest(@NotNull final Project project,
+                                     @NotNull final ServerContext context,
+                                     @NotNull final String title,
+                                     @NotNull final String description,
+                                     @NotNull final String branchNameOnRemoteServer,
+                                     @NotNull final GitRemoteBranch targetBranch) {
         //should this be a method on the serverContext object?
         final URI collectionURI = URI.create(String.format("%s/%s", context.getUri().toString(),
                 context.getTeamProjectCollectionReference().getName()));
@@ -584,7 +580,7 @@ public class CreatePullRequestModel extends AbstractModel {
                 notifySuccess(project,
                         TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ALREADY_EXISTS_TITLE), parsed.getSecond());
             } else {
-                notifiyCreateFailedError(project, parsed.getSecond());
+                notifyCreateFailedError(project, parsed.getSecond());
                 logger.warn("Create pull request failed", t);
             }
         }
@@ -654,11 +650,11 @@ public class CreatePullRequestModel extends AbstractModel {
         notifyError(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DIFF_FAILED_TITLE), message);
     }
 
-    private void notifiyPushFailedError(final Project project, final String message) {
+    private void notifyPushFailedError(final Project project, final String message) {
         notifyError(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_PUSH_FAILED_TITLE), message);
     }
 
-    private void notifiyCreateFailedError(final Project project, final String message) {
+    private void notifyCreateFailedError(final Project project, final String message) {
         notifyError(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_CREATE_FAILED_TITLE), message);
     }
 

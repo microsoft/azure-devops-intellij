@@ -159,7 +159,7 @@ public class PullRequestHelper {
                                                        final GitHttpClient gitClient) {
         if (t == null) {
             // if there is no throwale, why are we here?
-            return new Pair(PRCreateStatus.UNKNOWN, StringUtils.EMPTY);
+            return Pair.create(PRCreateStatus.UNKNOWN, StringUtils.EMPTY);
         }
 
         if (StringUtils.indexOf(t.getMessage(), PR_EXISTS_EXEPTION_NAME) > -1) {
@@ -177,18 +177,18 @@ public class PullRequestHelper {
                     final String repositoryRemoteUrl = context.getGitRepository().getRemoteUrl();
                     final String notifyMsgInHtml = getHtmlMsg(repositoryRemoteUrl, pullRequests.get(0).getPullRequestId());
 
-                    return new Pair(PRCreateStatus.DUPLICATE, notifyMsgInHtml);
+                    return Pair.create(PRCreateStatus.DUPLICATE, notifyMsgInHtml);
                 }
             } catch (Throwable innerT) {
                 logger.error("Failed to retrieve existing pull request", innerT);
 
                 // since we are making server calls, it's possible this call will fail, in that case, just return
                 // the original exception, never let any exception bubble up to intellij
-                return new Pair(PRCreateStatus.FAILED, t.getMessage());
+                return Pair.create(PRCreateStatus.FAILED, t.getMessage());
             }
         }
 
-        return new Pair(PRCreateStatus.FAILED, t.getMessage());
+        return Pair.create(PRCreateStatus.FAILED, t.getMessage());
     }
 
     private String getVSORefName(final String name) {
