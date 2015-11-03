@@ -285,8 +285,10 @@ public class CreatePullRequestModel extends AbstractModel {
 
     @Nullable
     private GitRemoteBranch getRemoteTrackingBranch() {
-        return getSourceBranch() != null
-                ? getSourceBranch().findTrackedBranch(this.gitRepository) : null;
+        final GitLocalBranch localBranch = this.getSourceBranch();
+
+        return localBranch != null && this.gitRepository != null
+                ? localBranch.findTrackedBranch(this.gitRepository) : null;
     }
 
     /**
@@ -386,10 +388,14 @@ public class CreatePullRequestModel extends AbstractModel {
                                     List<GitCommit> commits
                                             = compareInfo.getBranchToHeadCommits(changesContainer.getGitRepository());
 
-                                    if (commits != null) {
+                                    final GitLocalBranch sourceBranch = getSourceBranch();
+                                    final GitRemoteBranch targetBranch = getTargetBranch();
+
+                                    if (commits != null && sourceBranch.getName() != null
+                                            && targetBranch.getNameForRemoteOperations()!= null) {
                                         final String defaultTitle = pullRequestHelper.createDefaultTitle(commits,
-                                                getSourceBranch().getName(),
-                                                getTargetBranch().getNameForRemoteOperations());
+                                                sourceBranch.getName(),
+                                                targetBranch.getNameForRemoteOperations());
                                         setTitle(defaultTitle);
 
                                         final String defaultDescription
@@ -405,8 +411,10 @@ public class CreatePullRequestModel extends AbstractModel {
                 }
 
                 public void onFailure(Throwable thrown) {
-                    final String sourceBranchName = getSourceBranch() != null ? getSourceBranch().getName() : null;
-                    final String targetBranchName = getTargetBranch() != null ? getTargetBranch().getName() : null;
+                    final GitLocalBranch sourceBranch = getSourceBranch();
+                    final GitRemoteBranch targetBranch = getTargetBranch();
+                    final String sourceBranchName = sourceBranch != null ? sourceBranch.getName() : null;
+                    final String targetBranchName = targetBranch != null ? targetBranch.getName() : null;
                     notifyDiffFailedError(getProject(),
                             TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DIFF_FAILED_MSG,
                                     sourceBranchName, targetBranchName));
@@ -537,7 +545,7 @@ public class CreatePullRequestModel extends AbstractModel {
                 = git.push(gitRepository, gitRemoteName, fetchUrl, pushSpecStr, true);
 
         if (result.success()) {
-            pushResult.set(new Pair<String, GitCommandResult>(createdBranchNameOnServer, result));
+            pushResult.set(Pair.create(createdBranchNameOnServer, result));
         } else {
             final String errMsg = result.getErrorOutputAsJoinedString();
             pushResult.setException(new GitExecutionException(errMsg, null));
@@ -590,13 +598,26 @@ public class CreatePullRequestModel extends AbstractModel {
         return gitRemote.getFirstUrl();
     }
 
-    /* if user has changed the dropdown while we calculate the diff, this diff is no longer
-     * valid and we shouldn't fire any events, just toss it */
+    /* if user has changed the dropdown while we calculate the diff, this diff is out of date */
     private boolean isChangesUpToDate(final GitChangesContainer changesContainer) {
-        return changesContainer.getTargetBranchName() != null && this.getTargetBranch() != null
-                && changesContainer.getTargetBranchName().equals(this.getTargetBranch().getName())
-                && changesContainer.getSourceBranchName() != null && this.getSourceBranch() != null
-                && changesContainer.getSourceBranchName().equals(this.getSourceBranch().getName());
+
+        // target branches must match
+        final GitRemoteBranch targetBranch = this.getTargetBranch();
+        if (changesContainer.getTargetBranchName() != null && targetBranch != null) {
+            if (!changesContainer.getTargetBranchName().equals(targetBranch.getName())) {
+               return  false;
+            }
+        }
+
+        // source branches must match
+        final GitLocalBranch sourceBranch = this.getSourceBranch();
+        if (changesContainer.getSourceBranchName() != null && sourceBranch != null) {
+            if (!changesContainer.getSourceBranchName().equals(sourceBranch.getName())) {
+               return false;
+            }
+        }
+
+        return true;
     }
 
     public ModelValidationInfo validate() {

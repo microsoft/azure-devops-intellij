@@ -83,7 +83,7 @@ public class BusySpinnerPanel extends JPanel {
         g2.dispose();
     }
 
-    private class TimerListener implements ActionListener {
+    private static class TimerListener implements ActionListener {
 
         private BusySpinnerPanel owner;
 

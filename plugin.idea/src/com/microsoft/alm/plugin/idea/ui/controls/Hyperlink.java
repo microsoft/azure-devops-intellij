@@ -9,7 +9,6 @@ import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.ui.components.labels.LinkListener;
 
 import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -78,7 +77,6 @@ public class Hyperlink extends LinkLabel<Object> {
         super.paintComponent(g);
         if (hasFocus()) {
             g.setColor(JBColor.black);
-            final Rectangle r = super.getBounds();
             DarculaUIUtil.paintFocusRing(g, 0, 0, getWidth(), getHeight());
         }
     }

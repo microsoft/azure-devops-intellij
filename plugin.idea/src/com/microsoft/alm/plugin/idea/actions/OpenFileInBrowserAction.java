@@ -143,6 +143,11 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
         final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
         final GitRemote gitRemote = TfGitHelper.getTfGitRemote(gitRepository);
 
+        // guard for null so findbugs doesn't complain
+        if (gitRemote == null || gitRepository == null || gitRepository.getRoot() == null) {
+            return;
+        }
+
         final StringBuilder stringBuilder = new StringBuilder(gitRemote.getFirstUrl());
 
         stringBuilder.append("#path=");

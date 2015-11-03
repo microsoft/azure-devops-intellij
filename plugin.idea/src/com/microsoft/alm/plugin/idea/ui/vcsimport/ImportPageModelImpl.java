@@ -229,6 +229,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     }
                     GitInit.refreshAndConfigureVcsMappings(project, rootVirtualFile, rootVirtualFile.getPath());
                     localRepository = repositoryManager.getRepositoryForRoot(rootVirtualFile);
+                    //TODO: we have a potential NPE here as getRepositoryForRoot() could return null.
                 } else {
                     localRepository = repo;
                 }

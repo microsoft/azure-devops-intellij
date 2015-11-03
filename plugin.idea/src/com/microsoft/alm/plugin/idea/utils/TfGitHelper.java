@@ -41,6 +41,10 @@ public class TfGitHelper {
     }
 
     private static boolean isTfGitRemote(final GitRemote gitRemote) {
+        if (gitRemote == null) {
+            return false;
+        }
+
         final String remoteUrl = gitRemote.getFirstUrl();
         if (remoteUrl != null && (remoteUrl.contains(".visualstudio.com/") || remoteUrl.contains(".tfsallin.net/") || remoteUrl.contains("/_git/"))) {
             //TODO once we have the connections cached, we should rework this to also query those for better OnPrem detection.
