@@ -78,11 +78,16 @@ public class OpenCommitInBrowserAction extends InstrumentedAction {
         final GitRemote remote = TfGitHelper.getTfGitRemote(gitRepository);
 
         // guard for null so findbugs doesn't complain
-        if (remote == null || remote.getFirstUrl() == null) {
+        if (remote == null) {
             return;
         }
 
-        final StringBuilder stringBuilder = new StringBuilder(remote.getFirstUrl());
+        final String remoteUrl = remote.getFirstUrl();
+        if (remoteUrl == null) {
+            return;
+        }
+
+        final StringBuilder stringBuilder = new StringBuilder(remoteUrl);
         // vso will redirect to /commits (which shows the full history)if the particular commit does not exist on vso
         stringBuilder.append("/commit/");
         stringBuilder.append(commit.getId().asString());
