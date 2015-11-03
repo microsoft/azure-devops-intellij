@@ -34,7 +34,8 @@ public class UrlHelper {
     //TODO: how much validation should we do, should we handle other exceptions here?
     public static boolean isValidServerUrl(final String serverUrl) {
         try {
-            final URL url = new URL(serverUrl);
+            new URL(serverUrl);
+
             return true;
         } catch (MalformedURLException e) {
             //URL is not in a valid form

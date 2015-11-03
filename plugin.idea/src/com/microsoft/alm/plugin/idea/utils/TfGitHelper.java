@@ -55,7 +55,7 @@ public class TfGitHelper {
 
         return Collections2.filter(gitRemotes, new Predicate<GitRemote>() {
             @Override
-            public boolean apply(final GitRemote remote) {
+            public boolean apply(@NotNull final GitRemote remote) {
                 return TfGitHelper.isTfGitRemote(remote);
             }
         });

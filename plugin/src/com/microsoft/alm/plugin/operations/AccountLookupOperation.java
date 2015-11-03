@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class AccountLookupOperation extends Operation {
 
-    public class AccountLookupResults implements LookupResults {
+    public static class AccountLookupResults implements LookupResults {
         private boolean isCanceled = false;
         private Throwable error = null;
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();

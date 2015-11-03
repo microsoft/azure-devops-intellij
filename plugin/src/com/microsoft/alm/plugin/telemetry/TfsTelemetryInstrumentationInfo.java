@@ -63,8 +63,6 @@ public abstract class TfsTelemetryInstrumentationInfo {
                         props.getProperty("telemetry.instrumentation.is_test_environment"); //$NON-NLS-1$
                 final String isDeveloperModeProperty =
                         props.getProperty("telemetry.instrumentation.is_developer_mode"); //$NON-NLS-1$
-                final String initializerClassProperty =
-                        props.getProperty("telemetry.instrumentation.initializer_class"); //$NON-NLS-1$
 
                 // Default to production environment, all invalid inputs
                 // will be resolved as "false"

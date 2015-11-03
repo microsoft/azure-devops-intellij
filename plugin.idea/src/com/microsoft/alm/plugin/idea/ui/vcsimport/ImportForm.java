@@ -49,7 +49,6 @@ public class ImportForm {
     private JScrollPane teamProjectScrollPane;
 
     private boolean initialized = false;
-    private boolean vsoSelected = true;
     private Timer timer;
 
     @NonNls

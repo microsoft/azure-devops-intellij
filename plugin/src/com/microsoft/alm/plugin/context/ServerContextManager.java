@@ -154,7 +154,7 @@ public class ServerContextManager {
     /**
      * Called once from constructor restore the state from disk between sessions.
      */
-    private void restoreFromSavedState() {
+    private synchronized void restoreFromSavedState() {
         if (PluginServiceProvider.getInstance().isInsideIDE()) {
             //TODO -- only one for now
             List<ServerContext> loaded = getStore().restoreServerContexts();
@@ -201,7 +201,6 @@ public class ServerContextManager {
             throw new IllegalArgumentException("originalContext must be a VSO_DEPLOYMENT context");
         }
         //generate PAT
-        AuthenticationInfo vsoAuthenticationInfo = originalContext.getAuthenticationInfo();
         final AuthenticationResult result = authenticationProvider.getAuthenticationResult();
         final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
 
@@ -286,7 +285,7 @@ public class ServerContextManager {
         return null;
     }
 
-    private class Validator implements UrlHelper.ParseResultValidator {
+    private static class Validator implements UrlHelper.ParseResultValidator {
         private final Client client;
         private GitRepository repository;
         private TeamProjectCollection collection;
