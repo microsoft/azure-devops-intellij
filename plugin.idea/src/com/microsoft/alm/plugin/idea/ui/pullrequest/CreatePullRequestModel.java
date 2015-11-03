@@ -470,7 +470,7 @@ public class CreatePullRequestModel extends AbstractModel {
         final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
         final CreatePullRequestModel createModel = this;
         /* Let's keep all server interactions to a background thread */
-        final Task.Backgroundable createPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_IMPORTING_PROJECT),
+        final Task.Backgroundable createPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_DIALOG_TITLE),
                 true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
