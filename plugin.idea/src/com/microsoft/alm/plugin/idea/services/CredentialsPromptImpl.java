@@ -5,6 +5,9 @@ package com.microsoft.alm.plugin.idea.services;
 
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.vcsUtil.AuthDialog;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 
@@ -40,5 +43,15 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
     @Override
     public String getPassword() {
         return password;
+    }
+
+    @Override
+    public void validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo) {
+        // Test the authenticatedContext against the server
+        final ServerContext context =
+                new ServerContextBuilder().type(ServerContext.Type.TFS)
+                        .uri(serverUrl).authentication(authenticationInfo).build();
+        //TODO we need to find a better REST endpoint to call, something light weight
+        context.getSoapServices().getCatalogService().getProjectCollections();
     }
 }

@@ -20,11 +20,26 @@ public class AuthenticationInfoTest extends AbstractTest {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Test
+    public void constructor() {
+        final AuthenticationInfo info = new AuthenticationInfo();
+        Assert.assertNull(info.getPassword());
+        Assert.assertNull(info.getServerUri());
+        Assert.assertNull(info.getUserName());
+        Assert.assertNull(info.getUserNameForDisplay());
+
+        final AuthenticationInfo info2 = new AuthenticationInfo("userName", "password", "serverurl", "fordisplay");
+        Assert.assertEquals("userName", info2.getUserName());
+        Assert.assertEquals("password", info2.getPassword());
+        Assert.assertEquals("serverurl", info2.getServerUri());
+        Assert.assertEquals("fordisplay", info2.getUserNameForDisplay());
+    }
+
+    @Test
     public void testIsAuthenticaitonInfoJSONWrappable() {
         try {
-            AuthenticationInfo authenticationInfo = new AuthenticationInfo("user", "password", "http://server:8080/tfs", "name");
-            String str = mapper.writeValueAsString(authenticationInfo);
-            AuthenticationInfo restored = mapper.readValue(str, AuthenticationInfo.class);
+            final AuthenticationInfo authenticationInfo = new AuthenticationInfo("user", "password", "http://server:8080/tfs", "name");
+            final String str = mapper.writeValueAsString(authenticationInfo);
+            final AuthenticationInfo restored = mapper.readValue(str, AuthenticationInfo.class);
         } catch (JsonProcessingException e) {
             Assert.fail("Failed converting AuthenticationInfo to String or vice versa: " + e.getMessage());
         } catch (IOException e) {
