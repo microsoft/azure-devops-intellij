@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.authentication;
 
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
@@ -41,9 +39,8 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
         // TODO: Create a thread for this work. Push back onto the UI thread to ask for authenticatedContext
         AuthenticationListener.Helper.authenticating(listener);
 
-        final URI serverUri;
         try {
-            serverUri = new URI(serverUrl);
+            final URI serverUri = new URI(serverUrl);
         } catch (URISyntaxException e) {
             AuthenticationListener.Helper.authenticated(listener, null, e);
             return;
@@ -64,13 +61,11 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
             }
 
             try {
-                // TODO: having this object depend on ServerContext is problematic. Remove the dependency via an interface or callback
                 // Test the authenticatedContext against the server
                 newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials);
-                final ServerContext context =
-                        new ServerContextBuilder().type(ServerContext.Type.TFS)
-                                .uri(serverUri).authentication(newAuthenticationInfo).build();
-                context.getSoapServices().getCatalogService().getProjectCollections();
+                final CredentialsPrompt prompt = PluginServiceProvider.getInstance().getCredentialsPrompt();
+                prompt.validateCredentials(serverUrl, newAuthenticationInfo);
+
                 result = true;
                 break;
             } catch (RuntimeException ex) {
@@ -110,7 +105,7 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     private Credentials getCredentials(final String serverUrl) {
         final Credentials credentials;
         // Prompt for username AND password
-        String password = null;
+        String password;
         String userName = System.getProperty(USER_NAME);
         if (ServerContextManager.isNtlmEnabled()) {
             //user current logged in user name if on windows

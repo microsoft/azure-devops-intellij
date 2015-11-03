@@ -3,7 +3,12 @@
 
 package com.microsoft.alm.plugin;
 
+import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
+import com.microsoft.alm.plugin.mocks.MockServerContextStore;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import com.microsoft.applicationinsights.extensibility.ContextInitializer;
+import com.microsoft.applicationinsights.telemetry.TelemetryContext;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 
@@ -22,6 +27,13 @@ public class AbstractTest {
         logger = Logger.getLogger(TfsTelemetryHelper.class);
         appender = new TestAppender();
         logger.addAppender(appender);
+
+        // Attach appropriate test services
+        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), new ContextInitializer() {
+            @Override
+            public void initialize(TelemetryContext context) {
+            }
+        }, false);
     }
 
     public static void assertLogged(final String s) {
