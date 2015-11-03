@@ -72,4 +72,14 @@ public class TfsTelemetryHelperTest extends AbstractTest {
         TfsTelemetryHelper.getInstance().sendException(ex, null);
         assertLogged(String.format("sendException(%s, {})", ex.getMessage()));
     }
+
+    @Test
+    public void testInstrumentationInfoObject() {
+        // constructor
+        MockTfsTelemetryInstrumentationInfo info = new MockTfsTelemetryInstrumentationInfo();
+    }
+
+    private static class MockTfsTelemetryInstrumentationInfo extends TfsTelemetryInstrumentationInfo {
+
+    }
 }

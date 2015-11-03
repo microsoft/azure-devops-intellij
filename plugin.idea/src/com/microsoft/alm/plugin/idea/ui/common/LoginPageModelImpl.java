@@ -70,12 +70,9 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
 
     @Override
     public void signOut() {
-        // TODO should this be in the generic impl class?
         setAuthenticating(false);
         setConnected(false);
         setServerName("");
-        // since the user explicitly signed out, clear the context
-        ServerContextManager.getInstance().clearServerContext(ServerContextManager.getInstance().getActiveContext());
     }
 
     @Override

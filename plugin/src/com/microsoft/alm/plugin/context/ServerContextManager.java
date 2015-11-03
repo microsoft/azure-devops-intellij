@@ -41,6 +41,7 @@ public class ServerContextManager {
     private static final Logger logger = LoggerFactory.getLogger(ServerContextManager.class);
 
     private static final boolean NTLM_ENABLED;
+    //TODO remove the concept of 1 active context and replace with a list of contexts that you retrieve by URI
     private ServerContext activeContext = null;
 
     static {
@@ -73,28 +74,11 @@ public class ServerContextManager {
         return activeContext;
     }
 
-    public synchronized ServerContext getActiveGitRepoContext(final String gitRepoUrl) {
-        final ServerContext currentContext = getActiveContext();
-        if (currentContext != ServerContext.NO_CONTEXT && currentContext.getGitRepository() != null &&
-                StringUtils.equalsIgnoreCase(currentContext.getGitRepository().getRemoteUrl(), gitRepoUrl)) {
-            return currentContext;
-        }
-        return null;
-    }
-
+    //TODO this should go away when TFS Auth Provider works the same as VSO auth provider
     public synchronized ServerContext getActiveTfsContext() {
         final ServerContext currentContext = getActiveContext();
         if (currentContext != ServerContext.NO_CONTEXT &&
                 currentContext.getType() == ServerContext.Type.TFS) {
-            return currentContext;
-        }
-        return null;
-    }
-
-    public synchronized ServerContext getActiveVsoContext() {
-        final ServerContext currentContext = getActiveContext();
-        if (ServerContext.NO_CONTEXT != currentContext &&
-                (ServerContext.Type.VSO_DEPLOYMENT == currentContext.getType() || ServerContext.Type.VSO == currentContext.getType())) {
             return currentContext;
         }
         return null;
@@ -126,14 +110,7 @@ public class ServerContextManager {
         }
     }
 
-    public synchronized void clearServerContext(final ServerContext context) {
-        if (ServerContext.NO_CONTEXT != context) {
-            getStore().forgetServerContext(ServerContextStore.Key.create(context));
-        }
-        activeContext = ServerContext.NO_CONTEXT;
-    }
-
-    public synchronized ServerContext getServerContextByHostURI(final URI uri) {
+    public synchronized ServerContext getServerContext(final URI uri) {
         //TODO -- only one for now
         if (activeContext != ServerContext.NO_CONTEXT &&
                 StringUtils.equalsIgnoreCase(activeContext.getUri().getHost(), uri.getHost())) {
@@ -144,7 +121,7 @@ public class ServerContextManager {
 
     public synchronized List<ServerContext> getAllServerContexts() {
         //TODO -- only one for now
-        return activeContext == ServerContext.NO_CONTEXT ? Collections.EMPTY_LIST : Collections.singletonList(activeContext);
+        return activeContext == ServerContext.NO_CONTEXT ? Collections.<ServerContext>emptyList() : Collections.singletonList(activeContext);
     }
 
     private ServerContextStore getStore() {
@@ -155,11 +132,8 @@ public class ServerContextManager {
      * Called once from constructor restore the state from disk between sessions.
      */
     private synchronized void restoreFromSavedState() {
-        if (PluginServiceProvider.getInstance().isInsideIDE()) {
-            //TODO -- only one for now
-            List<ServerContext> loaded = getStore().restoreServerContexts();
-            activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
-        }
+        List<ServerContext> loaded = getStore().restoreServerContexts();
+        activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
     }
 
     /**
@@ -230,7 +204,12 @@ public class ServerContextManager {
 
         try {
             // Get matching context from manager
-            ServerContext context = ServerContextManager.getInstance().getActiveGitRepoContext(gitRemoteUrl);
+            ServerContext context = getActiveContext();
+            if (context == ServerContext.NO_CONTEXT || context.getGitRepository() == null ||
+                    !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl(), gitRemoteUrl)) {
+                context = null;
+            }
+
             if (context == null) {
                 // Manager didn't have a matching context, so create one
                 final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
