@@ -35,7 +35,7 @@ public class AuthenticationInfoTest extends AbstractTest {
     }
 
     @Test
-    public void testIsAuthenticaitonInfoJSONWrappable() {
+    public void testIsAuthenticationInfoJSONWrappable() {
         try {
             final AuthenticationInfo authenticationInfo = new AuthenticationInfo("user", "password", "http://server:8080/tfs", "name");
             final String str = mapper.writeValueAsString(authenticationInfo);

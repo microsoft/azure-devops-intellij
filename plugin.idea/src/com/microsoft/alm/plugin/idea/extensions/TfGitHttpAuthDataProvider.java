@@ -17,7 +17,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     public AuthData getAuthData(final String url) {
         assert url != null;
         final URI serverUri = UrlHelper.getBaseUri(url);
-        final ServerContext context = ServerContextManager.getInstance().getServerContextByHostURI(serverUri);
+        final ServerContext context = ServerContextManager.getInstance().getServerContext(serverUri);
         if (context != null) {
             final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
             if (authenticationInfo != null) {

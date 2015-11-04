@@ -65,6 +65,8 @@ public class ServerContext {
                             final Client client, final TeamProjectCollectionReference teamProjectCollectionReference,
                             final TeamProjectReference teamProjectReference,
                             final GitRepository gitRepository) {
+        assert type != null;
+
         this.type = type;
         this.authenticationInfo = authenticationInfo;
         this.uri = uri;
