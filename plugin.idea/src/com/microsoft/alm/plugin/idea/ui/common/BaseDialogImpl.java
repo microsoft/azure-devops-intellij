@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.ui.common;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -82,7 +81,7 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
      */
     @Override
     protected JComponent createCenterPanel() {
-        tabPanel = new JBTabbedPane();
+        tabPanel = new JTabbedPane();
         tabPanel.setPreferredSize(new Dimension(JBUI.scale(500), JBUI.scale(600)));
         tabPanel.addChangeListener(new ChangeListener() {
             @Override
@@ -123,7 +122,7 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
     @Override
     public void addTabPage(final String text, final Component component) {
         if (tabPanel != null) {
-            tabPanel.add(text, component);
+            tabPanel.addTab(text, component);
         }
     }
 

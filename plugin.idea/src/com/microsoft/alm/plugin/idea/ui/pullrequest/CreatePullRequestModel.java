@@ -112,7 +112,6 @@ public class CreatePullRequestModel extends AbstractModel {
 
     private ApplicationProvider applicationProvider;
 
-    private ServerContextManager serverContextManager;
 
     public CreatePullRequestModel(@NotNull final Project project,
                                   @NotNull final GitRepository gitRepository) {
@@ -125,7 +124,6 @@ public class CreatePullRequestModel extends AbstractModel {
         this.targetBranch = (GitRemoteBranch) this.remoteBranchComboModel.getSelectedItem();
 
         this.applicationProvider = new ApplicationProvider();
-        this.serverContextManager = ServerContextManager.getInstance();
         this.pullRequestHelper = new PullRequestHelper();
 
         this.diffCompareInfoProvider = new DiffCompareInfoProvider();
@@ -265,17 +263,17 @@ public class CreatePullRequestModel extends AbstractModel {
 
         // only show valid remote branches
         sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(),
-                        new Predicate<GitRemoteBranch>() {
-                            @Override
-                            public boolean apply(final GitRemoteBranch remoteBranch) {
+                new Predicate<GitRemoteBranch>() {
+                    @Override
+                    public boolean apply(final GitRemoteBranch remoteBranch) {
                         /* two conditions:
-                         *   1. remote must be a alm remote
+                         *   1. remote must be a vso/tfs remote
                          *   2. this isn't the remote tracking branch of current local branch
                          */
-                                return tfGitRemotes.contains(remoteBranch.getRemote())
-                                        && !remoteBranch.equals(remoteTrackingBranch);
-                            }
-                        })
+                        return tfGitRemotes.contains(remoteBranch.getRemote())
+                                && !remoteBranch.equals(remoteTrackingBranch);
+                        }
+                    })
         );
 
         sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems()));
@@ -484,7 +482,7 @@ public class CreatePullRequestModel extends AbstractModel {
                 }
 
                 ListenableFuture<Pair<String, GitCommandResult>> pushResult
-                        = doPushCommits(project, gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
+                        = doPushCommits(gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
 
                 Futures.addCallback(pushResult, new FutureCallback<Pair<String, GitCommandResult>>() {
                     @Override
@@ -513,8 +511,7 @@ public class CreatePullRequestModel extends AbstractModel {
         createPullRequestTask.queue();
     }
 
-    private ListenableFuture<Pair<String, GitCommandResult>> doPushCommits(@NotNull final Project project,
-                                                                           @NotNull final GitRepository gitRepository,
+    private ListenableFuture<Pair<String, GitCommandResult>> doPushCommits(@NotNull final GitRepository gitRepository,
                                                                            @NotNull final GitLocalBranch localBranch,
                                                                            @NotNull final GitRemote gitRemote,
                                                                            @NotNull final ProgressIndicator indicator) {
