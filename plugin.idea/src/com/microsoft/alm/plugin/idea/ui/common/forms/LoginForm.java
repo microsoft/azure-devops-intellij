@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 public interface LoginForm {
     String CMD_SIGN_IN = "signIn";
     String CMD_CREATE_ACCOUNT = "createAccount";
+    String CMD_LEARN_MORE = "learnMore";
     String CMD_ENTER_KEY = "enterKey";
 
     JPanel getContentPanel();
