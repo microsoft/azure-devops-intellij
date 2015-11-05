@@ -15,14 +15,18 @@ IF "%2" == "" (
 SET masterRepoUrl=%1
 SET mirrorRepoURL=%2
 
+IF NOT "%3" == "" (
+  cd %3
+)
+
 SET mirrorDirName=repoMirror
 
 echo Delete local mirror directory
-rd /S /Q %mirrorDirName%
+IF EXIST %mirrorDirName% rd /S /Q %mirrorDirName%
 
-set ERRORLEVEL=0
 echo Clone master repository to mirror directory
-git clone --mirror %masterRepoUrl% %mirrorDirName%
+git clone --mirror %masterRepoUrl% %mirrorDirName% 
+IF NOT EXIST %mirrorDirName% GOTO ERROR
 IF NOT %ERRORLEVEL% EQU 0 GOTO ERROR
 
 cd %mirrorDirName%
@@ -46,12 +50,13 @@ rd /S /Q %mirrorDirName%
 exit /b %ERRORLEVEL%
 
 :ERROR
-echo Errors during script execution
+echo Errors during script execution 1>&2
 GOTO END
 
 :USAGE
-echo MirrorChanges.bat MasterRepositoryURL MirrorRepositoryURL
+echo Invalid arguments passed to script 1>&2
+echo MirrorChanges.bat MasterRepositoryURL MirrorRepositoryURL LocalRepoRootDir
 echo MasterRepositoryURL is the remote URL of the Git repository which contains the changes to be mirrored
 echo MirrorRepositoryURL is the remote UL of the Git repository which will mirror the changes in the master repository
-set ERRORLEVEL=1
+echo LocalRepoRootDir (Optional) is the root directory where the repository will be cloned. Defaults to the current directory.
 GOTO END
