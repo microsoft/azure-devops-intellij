@@ -28,7 +28,7 @@ public class PullRequestHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(PullRequestHelper.class);
 
-    public static enum PRCreateStatus {
+    public enum PRCreateStatus {
         UNKNOWN,
         FAILED,
         SUCCESS,
