@@ -147,9 +147,14 @@ public class ServerContextManager {
         if (context != null) {
             if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
                 // Generate a PAT and get the new context
-                context = createVsoContext(context,
+                final ServerContext newContext = createVsoContext(context,
                         VsoAuthenticationProvider.getInstance(),
                         patDescription);
+                if (newContext != null) {
+                    context = newContext;
+                } else {
+                    logger.error("Unable to create PAT token");
+                }
             }
 
             if (setAsActiveContext) {
@@ -171,9 +176,13 @@ public class ServerContextManager {
     public ServerContext createVsoContext(ServerContext originalContext, VsoAuthenticationProvider authenticationProvider, String tokenDescription) {
         // If the context is a VSO_DEPLOYMENT, then we can generate the PAT and create a new context
         // Otherwise, throw an exception
-        if (originalContext.getType() != ServerContext.Type.VSO_DEPLOYMENT) {
+        if (originalContext == null || originalContext.getType() != ServerContext.Type.VSO_DEPLOYMENT) {
             throw new IllegalArgumentException("originalContext must be a VSO_DEPLOYMENT context");
         }
+        if (authenticationProvider == null) {
+            throw new IllegalArgumentException("authenticationProvider must be set");
+        }
+
         //generate PAT
         final AuthenticationResult result = authenticationProvider.getAuthenticationResult();
         final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
@@ -181,16 +190,20 @@ public class ServerContextManager {
         final String accountName = UrlHelper.getVSOAccountName(originalContext.getUri());
         final Account account = AccountLookupOperation.getAccount(result, accountName);
 
-        //TODO: handle case where session token cannot be created
-        SessionToken sessionToken = patFactory.createSessionToken(tokenDescription,
-                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), account.getAccountId());
+        if (account != null) {
+            //TODO: handle case where session token cannot be created
+            SessionToken sessionToken = patFactory.createSessionToken(tokenDescription,
+                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), account.getAccountId());
+            //create a VSO context with session token (remove the original client and allow that to be recreated)
+            final AuthenticationInfo finalAuthenticationInfo = AuthHelper.createAuthenticationInfo(originalContext.getUri().toString(), result, sessionToken);
+            final ServerContext newContext =
+                    new ServerContextBuilder(originalContext).type(ServerContext.Type.VSO)
+                            .authentication(finalAuthenticationInfo).buildWithClient(null);
+            return newContext;
+        }
 
-        //create a VSO context with session token (remove the original client and allow that to be recreated)
-        final AuthenticationInfo finalAuthenticationInfo = AuthHelper.createAuthenticationInfo(originalContext.getUri().toString(), result, sessionToken);
-        final ServerContext newContext =
-                new ServerContextBuilder(originalContext).type(ServerContext.Type.VSO)
-                        .authentication(finalAuthenticationInfo).buildWithClient(null);
-        return newContext;
+        logger.debug("Account not found: " + accountName);
+        return null;
     }
 
     /**

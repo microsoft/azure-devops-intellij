@@ -19,9 +19,25 @@ import java.util.Properties;
  *
  * @threadsafety thread-safe
  */
-public abstract class TfsTelemetryInstrumentationInfo {
+public class TfsTelemetryInstrumentationInfo {
 
     private final static Logger logger = LoggerFactory.getLogger(TfsTelemetryInstrumentationInfo.class);
+
+    private static class Holder {
+        private final static TfsTelemetryInstrumentationInfo INSTANCE = new TfsTelemetryInstrumentationInfo();
+    }
+
+    /**
+     * The constructor is protected to allow for testing this class.
+     */
+    protected TfsTelemetryInstrumentationInfo() {
+        final InputStream in = TfsTelemetryInstrumentationInfo.class.getResourceAsStream(TELEMETRY_INSTRUMENTATION_PROPERTIES_RESOURCE);
+        initialize(in);
+    }
+
+    public static TfsTelemetryInstrumentationInfo getInstance() {
+        return Holder.INSTANCE;
+    }
 
     /**
      * This resource should contain all telemetry information.
@@ -35,7 +51,7 @@ public abstract class TfsTelemetryInstrumentationInfo {
      * Default to "is_test_environment" to false in case this file does not
      * exist
      */
-    public static final String TELEMETRY_INSTRUMENTATION_PROPERTIES_RESOURCE =
+    private static final String TELEMETRY_INSTRUMENTATION_PROPERTIES_RESOURCE =
             "/telemetry/com.microsoft.alm.plugin-telemetry.properties"; //$NON-NLS-1$
 
     private static final String VSO_INTELLIJ_PROD_KEY = "132bb2e2-06d4-4908-a34b-87be041cc31c"; //$NON-NLS-1$
@@ -44,13 +60,7 @@ public abstract class TfsTelemetryInstrumentationInfo {
     private static boolean isTestEnv;
     private static boolean isDeveloperMode;
 
-    static {
-        final InputStream in =
-                TfsTelemetryInstrumentationInfo.class.getResourceAsStream(TELEMETRY_INSTRUMENTATION_PROPERTIES_RESOURCE);
-        initialize(in);
-    }
-
-    static void initialize(final InputStream in) {
+    protected void initialize(final InputStream in) {
         // Default to production environment with batch uploading
         isTestEnv = false;
         isDeveloperMode = false;
@@ -94,15 +104,15 @@ public abstract class TfsTelemetryInstrumentationInfo {
         }
     }
 
-    public static boolean isDeveloperMode() {
+    public boolean isDeveloperMode() {
         return isDeveloperMode;
     }
 
-    public static boolean isTestKey() {
+    public boolean isTestKey() {
         return isTestEnv;
     }
 
-    public static String getInstrumentationKey() {
+    public String getInstrumentationKey() {
         return isTestKey() ? VSO_INTELLIJ_TEST_KEY : VSO_INTELLIJ_PROD_KEY;
     }
 }

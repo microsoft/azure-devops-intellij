@@ -76,7 +76,7 @@ public class TfsTelemetryHelper {
         // Create a channel to AppInsights
         final TelemetryChannel channel = TelemetryConfiguration.getActive().getChannel();
         if (channel != null) {
-            channel.setDeveloperMode(TfsTelemetryInstrumentationInfo.isDeveloperMode());
+            channel.setDeveloperMode(TfsTelemetryInstrumentationInfo.getInstance().isDeveloperMode());
         } else {
             logger.error("Failed to load telemetry channel");
             return;
@@ -85,9 +85,9 @@ public class TfsTelemetryHelper {
         // Create the telemetry client and cache it for later use
         logger.debug("AppInsights telemetry initialized"); //$NON-NLS-1$
         logger.debug(MessageFormat.format(
-                "    Developer Mode: {0}", TfsTelemetryInstrumentationInfo.isDeveloperMode())); //$NON-NLS-1$
+                "    Developer Mode: {0}", TfsTelemetryInstrumentationInfo.getInstance().isDeveloperMode())); //$NON-NLS-1$
         logger.debug(MessageFormat.format(
-                "    Production Environment: {0}", !TfsTelemetryInstrumentationInfo.isTestKey())); //$NON-NLS-1$
+                "    Production Environment: {0}", !TfsTelemetryInstrumentationInfo.getInstance().isTestKey())); //$NON-NLS-1$
 
         telemetryClient = new TelemetryClient();
         telemetryClient.getContext().getSession().setId(UUID.randomUUID().toString());

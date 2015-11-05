@@ -40,12 +40,15 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
                     context,
                     VsoAuthenticationProvider.getInstance(),
                     TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC));
-            ServerContextManager.getInstance().setActiveContext(newContext);
-            return newContext;
-        } else {
-            ServerContextManager.getInstance().setActiveContext(context);
-            return context;
+
+            if (newContext != null) {
+                ServerContextManager.getInstance().setActiveContext(newContext);
+                return newContext;
+            }
         }
+
+        ServerContextManager.getInstance().setActiveContext(context);
+        return context;
     }
 
     @Override

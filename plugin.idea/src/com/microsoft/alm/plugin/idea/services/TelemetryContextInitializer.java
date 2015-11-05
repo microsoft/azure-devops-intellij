@@ -51,7 +51,7 @@ public class TelemetryContextInitializer
     }
 
     private void initializeInstrumentationKey(final TelemetryContext context) {
-        context.setInstrumentationKey(TfsTelemetryInstrumentationInfo.getInstrumentationKey());
+        context.setInstrumentationKey(TfsTelemetryInstrumentationInfo.getInstance().getInstrumentationKey());
     }
 
     private void initializeUser(final UserContext user) {

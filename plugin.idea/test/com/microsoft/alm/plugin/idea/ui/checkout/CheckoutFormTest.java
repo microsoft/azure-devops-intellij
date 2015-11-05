@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -37,7 +36,6 @@ public class CheckoutFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void parentDirectory() {
         final CheckoutForm form = new CheckoutForm(false);
         form.setParentDirectory("C:/My Path ");
@@ -45,7 +43,6 @@ public class CheckoutFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void directoryName() {
         final CheckoutForm form = new CheckoutForm(true);
         form.setDirectoryName(" My Directory");
@@ -53,7 +50,6 @@ public class CheckoutFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void repositoryFilter() {
         final CheckoutForm form = new CheckoutForm(false);
         form.setRepositoryFilter("My repo ");

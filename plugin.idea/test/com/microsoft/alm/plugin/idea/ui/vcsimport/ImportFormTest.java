@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +37,7 @@ public class ImportFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
+    //@Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void repositoryName() {
         final ImportForm form = new ImportForm(false);
         form.setRepositoryName(" MyNewRepo ");
@@ -46,7 +45,7 @@ public class ImportFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
+    //@Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void projectFilter() {
         final ImportForm form = new ImportForm(false);
         form.setTeamProjectFilter("My project ");
