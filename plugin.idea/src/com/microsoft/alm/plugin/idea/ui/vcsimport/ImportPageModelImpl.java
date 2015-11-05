@@ -11,15 +11,19 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.vcsUtil.VcsFileUtil;
+import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -253,7 +257,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         allFiles.addAll(trackedFiles);
                         allFiles.addAll(untrackedFiles);
 
-                        final Collection<VirtualFile> filesToCommit = new ArrayList<VirtualFile>();
+                        final List<VirtualFile> filesToCommit = new ArrayList<VirtualFile>();
                         ApplicationManager.getApplication().invokeAndWait(new Runnable() {
                             @Override
                             public void run() {
@@ -273,7 +277,6 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                             }
                         }, indicator.getModalityState());
 
-
                         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                         GitFileUtils.addFiles(project, rootVirtualFile, filesToCommit);
                         if (filesToCommit.size() > 0) {
@@ -287,7 +290,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                         action, localContext);
                                 return;
                             }
-                            VcsFileUtil.refreshFiles(project, filesToCommit);
+                            VfsUtil.markDirtyAndRefresh(false, true, false, ArrayUtil.toObjectArray(filesToCommit, VirtualFile.class));
+                            VcsFileUtil.markFilesDirty(project, getFilePaths(filesToCommit));
                         } else {
                             notifyImportError(project,
                                     TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_NO_SELECTED_FILES),
@@ -425,6 +429,16 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             }
         }.queue();
 
+    }
+
+    private List<FilePath> getFilePaths(final List<VirtualFile> virtualFiles) {
+        assert virtualFiles != null;
+        final List<FilePath> filePaths = new ArrayList<FilePath>(virtualFiles.size());
+        for (VirtualFile vf : virtualFiles) {
+            filePaths.add(VcsUtil.getFilePath(vf));
+        }
+
+        return filePaths;
     }
 
     private void notifyImportError(final Project project, final String message, final String action, ServerContext context) {
