@@ -53,6 +53,7 @@ public class ServerContextLookupOperation {
     public ServerContextLookupOperation(final List<ServerContext> contextList, final ContextScope resultScope) {
         assert contextList != null;
         assert !contextList.isEmpty();
+        assert resultScope != null;
 
         this.contextList = new ArrayList<ServerContext>(contextList.size());
         this.contextList.addAll(contextList);
@@ -61,9 +62,9 @@ public class ServerContextLookupOperation {
         this.resultScope = resultScope;
     }
 
-    private Lookup lookup;
+    protected Lookup lookup;
 
-    private class Lookup {
+    public class Lookup {
         //TODO these should be moved elsewhere and shared
         final int MAX_THREADS = 10;
         final int CORE_THREADS = Math.min(contextList.size(), MAX_THREADS);
@@ -131,7 +132,7 @@ public class ServerContextLookupOperation {
             }
         }
 
-        private void execute(final Runnable runnable) {
+        public void execute(final Runnable runnable) {
             final WrappedRunnable wrappedRunnable = new WrappedRunnable(runnable);
             try {
                 writeLock.lock();
@@ -155,7 +156,7 @@ public class ServerContextLookupOperation {
             }
         }
 
-        private void addResults(final List<ServerContext> results) {
+        public void addResults(final List<ServerContext> results) {
             if (isCanceled()) {
                 return;
             }
@@ -169,7 +170,7 @@ public class ServerContextLookupOperation {
             }
         }
 
-        private void notifyStarting() {
+        public void notifyStarting() {
             if (isCanceled()) {
                 return;
             }
@@ -270,7 +271,7 @@ public class ServerContextLookupOperation {
         lookup.execute(rootRunnable);
     }
 
-    private void doRestCollectionLookup(final ServerContext context) {
+    protected void doRestCollectionLookup(final ServerContext context) {
         final Runnable projectCollectionsRunnable = new Runnable() {
             @Override
             public void run() {
@@ -286,7 +287,7 @@ public class ServerContextLookupOperation {
         lookup.execute(projectCollectionsRunnable);
     }
 
-    private void doSoapCollectionLookup(final ServerContext context) {
+    protected void doSoapCollectionLookup(final ServerContext context) {
         final Runnable projectCollectionsRunnable = new Runnable() {
             @Override
             public void run() {
@@ -302,7 +303,7 @@ public class ServerContextLookupOperation {
         lookup.execute(projectCollectionsRunnable);
     }
 
-    private void doLookup(final ServerContext context, final List<TeamProjectCollectionReference> collections) {
+    protected void doLookup(final ServerContext context, final List<TeamProjectCollectionReference> collections) {
         for (final TeamProjectCollectionReference teamProjectCollectionReference : collections) {
             final Runnable projectLookupRunnable = new Runnable() {
                 @Override
@@ -321,37 +322,42 @@ public class ServerContextLookupOperation {
 
                     final URI collectionURI = URI.create(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
                     final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-                    final List<GitRepository> gitRepositories = gitClient.getRepositories();
+                    final List<GitRepository> gitRepositories = gitClient.getRepositories();        
+
                     if (isCanceled()) {
                         return;
                     }
 
-                    final List<ServerContext> serverContexts = new ArrayList<ServerContext>(gitRepositories.size());
-                    final Set<UUID> includedContexts = new HashSet<UUID>(gitRepositories.size());
-
-                    for (final GitRepository gitRepository : gitRepositories) {
-                        // If we are just looking for projects, only get the unique ones
-                        if (resultScope == ContextScope.PROJECT) {
-                            final UUID key = gitRepository.getProjectReference().getId();
-                            if (includedContexts.contains(key)) {
-                                continue;
-                            } else {
-                                includedContexts.add(key);
-                            }
-                        }
-
-                        ServerContext gitServerContext = new ServerContextBuilder(context)
-                                .repository(gitRepository)
-                                .teamProject(gitRepository.getProjectReference())
-                                .collection(teamProjectCollectionReference)
-                                .build();
-                        serverContexts.add(gitServerContext);
-                    }
-                    lookup.addResults(serverContexts);
+                    addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
                 }
             };
             lookup.execute(projectLookupRunnable);
         }
+    }
+
+    protected void addRepositoryResults(final List<GitRepository> gitRepositories, final ServerContext context, final TeamProjectCollectionReference teamProjectCollectionReference) {
+        final List<ServerContext> serverContexts = new ArrayList<ServerContext>(gitRepositories.size());
+        final Set<UUID> includedContexts = new HashSet<UUID>(gitRepositories.size());
+
+        for (final GitRepository gitRepository : gitRepositories) {
+            // If we are just looking for projects, only get the unique ones
+            if (resultScope == ContextScope.PROJECT) {
+                final UUID key = gitRepository.getProjectReference().getId();
+                if (includedContexts.contains(key)) {
+                    continue;
+                } else {
+                    includedContexts.add(key);
+                }
+            }
+
+            ServerContext gitServerContext = new ServerContextBuilder(context)
+                    .repository(gitRepository)
+                    .teamProject(gitRepository.getProjectReference())
+                    .collection(teamProjectCollectionReference)
+                    .build();
+            serverContexts.add(gitServerContext);
+        }
+        lookup.addResults(serverContexts);
     }
 
 

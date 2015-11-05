@@ -4,6 +4,8 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.plugin.AbstractTest;
+import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,11 +16,11 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
     @Test
     public void constructor() {
         // Make sure basic ctor works
-        TfsAuthenticationProvider provider = new TfsAuthenticationProvider();
+        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider();
 
         // Make sure that that null is not allowed
         try {
-            TfsAuthenticationProvider provider2 = new TfsAuthenticationProvider(null);
+            final TfsAuthenticationProvider provider2 = new TfsAuthenticationProvider(null);
             Assert.fail("constructor allows null info");
         } catch (AssertionError error) {
             // correct error thrown
@@ -27,16 +29,16 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
 
     @Test
     public void getAuthenticationInfo() {
-        AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
-        TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
+        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
         Assert.assertEquals(info, provider.getAuthenticationInfo());
         Assert.assertTrue(provider.isAuthenticated());
     }
 
     @Test
     public void clearAuthenticationDetails() {
-        AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
-        TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
+        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
         Assert.assertEquals(info, provider.getAuthenticationInfo());
         Assert.assertTrue(provider.isAuthenticated());
         provider.clearAuthenticationDetails();
@@ -45,11 +47,11 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
     }
 
     @Test
-    public void authenticate() {
+    public void authenticate_succeeded() {
         final SettableFuture<Boolean> futureAuthenticatingCalled = SettableFuture.create();
         final SettableFuture<AuthenticationInfo> futureAuthenticated = SettableFuture.create();
-        AuthenticationInfo info = new AuthenticationInfo("userName0", "", "", "");
-        TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final AuthenticationInfo info = new AuthenticationInfo("userName0", "", "", "");
+        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
         provider.authenticateAsync("serverUrl", new AuthenticationListener() {
             @Override
             public void authenticating() {
@@ -77,4 +79,42 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
         }
     }
 
+    @Test
+    public void authenticate_failed() {
+        final String serverUrl = "http://authenticate_failed/path";
+        // register the server to fail
+        ((MockCredentialsPrompt)PluginServiceProvider.getInstance().getCredentialsPrompt()).registerServer(serverUrl, false);
+        final SettableFuture<Boolean> futureAuthenticatingCalled = SettableFuture.create();
+        final SettableFuture<Throwable> futureAuthenticated = SettableFuture.create();
+        final AuthenticationInfo info = new AuthenticationInfo("userName0", "", "", "");
+        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        provider.authenticateAsync(serverUrl, new AuthenticationListener() {
+            @Override
+            public void authenticating() {
+                futureAuthenticatingCalled.set(true);
+            }
+
+            @Override
+            public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
+                futureAuthenticated.set(throwable);
+            }
+        });
+
+        try {
+            // Make sure that the cred prompt was called
+            final Throwable throwable = futureAuthenticated.get();
+            Assert.assertNotNull(throwable);
+
+            // Make sure that authenticating was called
+            Assert.assertTrue(futureAuthenticatingCalled.get());
+
+        } catch (InterruptedException e) {
+            Assert.fail(e.getMessage());
+        } catch (ExecutionException e) {
+            Assert.fail(e.getMessage());
+        }
+
+        // unregister the server
+        ((MockCredentialsPrompt)PluginServiceProvider.getInstance().getCredentialsPrompt()).unregisterServer(serverUrl);
+    }
 }

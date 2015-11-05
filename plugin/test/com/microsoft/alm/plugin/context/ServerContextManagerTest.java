@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.mocks.MockVsoAuthenticationProvider;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
@@ -13,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.List;
 
 public class ServerContextManagerTest extends AbstractTest {
     // short hand
@@ -29,6 +31,11 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
         manager.setActiveContext(context);
         Assert.assertEquals(context, manager.getActiveContext());
+
+        // Check the Tfs method - it should return the same context
+        Assert.assertNotNull(manager.getActiveTfsContext());
+        Assert.assertEquals(context, manager.getActiveTfsContext());
+
         manager.setActiveContext(ServerContext.NO_CONTEXT);
         Assert.assertNull(manager.getActiveContext());
     }
@@ -39,6 +46,10 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).build();
         manager.setActiveContext(context);
         Assert.assertEquals(context, manager.getActiveContext());
+
+        // Check the Tfs method - it should return null
+        Assert.assertNull(manager.getActiveTfsContext());
+
         manager.setActiveContext(ServerContext.NO_CONTEXT);
         Assert.assertNull(manager.getActiveContext());
 
@@ -58,6 +69,10 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext testContext = manager.getServerContext(uri);
         Assert.assertNotNull(testContext);
         Assert.assertEquals(uri, testContext.getUri());
+
+        List<ServerContext> contexts = manager.getAllServerContexts();
+        Assert.assertEquals(1, contexts.size());
+        Assert.assertEquals(uri, contexts.get(0).getUri());
     }
 
     @Test
@@ -78,7 +93,7 @@ public class ServerContextManagerTest extends AbstractTest {
      * that is already the active context.
      */
     @Test
-    public void getAuthenticatedContext_Simplest() {
+    public void getAuthenticatedContext_simplest() {
         Assert.assertNull(manager.getActiveContext());
 
         URI gitUri = URI.create("http://server/_git/repo1");
@@ -97,6 +112,35 @@ public class ServerContextManagerTest extends AbstractTest {
 
 
     @Test
-    public void test4() {
+    public void createVsoContext_basics() {
+        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
+        final ServerContext vsoContext = new ServerContextBuilder().type(ServerContext.Type.VSO).build();
+        final ServerContext vsoDeploymentContext = new ServerContextBuilder()
+                .type(ServerContext.Type.VSO_DEPLOYMENT)
+                .uri("http://server.vs.com/path")
+                .build();
+
+        try {
+            manager.createVsoContext(null, null, null);
+            Assert.fail();
+        } catch (IllegalArgumentException ex) { /* correct */ }
+        try {
+            manager.createVsoContext(tfsContext, null, null);
+            Assert.fail();
+        } catch (IllegalArgumentException ex) { /* correct */ }
+        try {
+            manager.createVsoContext(vsoContext, null, null);
+            Assert.fail();
+        } catch (IllegalArgumentException ex) { /* correct */ }
+        try {
+            manager.createVsoContext(vsoDeploymentContext, null, null);
+            Assert.fail();
+        } catch (IllegalArgumentException ex) { /* correct */ }
+
+        // Make sure that createVsoContext doesn't throw in the case where we can't get the account
+        final AuthenticationInfo info = new AuthenticationInfo("", "", "", "");
+        final MockVsoAuthenticationProvider authProvider = new MockVsoAuthenticationProvider(info);
+        ServerContext context = manager.createVsoContext(vsoDeploymentContext, authProvider, null);
+        Assert.assertNull(context);
     }
 }

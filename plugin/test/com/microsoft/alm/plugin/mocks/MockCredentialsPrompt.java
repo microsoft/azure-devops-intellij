@@ -6,7 +6,20 @@ package com.microsoft.alm.plugin.mocks;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MockCredentialsPrompt implements CredentialsPrompt {
+
+    private Map<String,Boolean> serverSuccessMap = new HashMap<String, Boolean>();
+
+    public void registerServer(String serverUrl, Boolean success) {
+        serverSuccessMap.put(serverUrl, success);
+    }
+
+    public void unregisterServer(String serverUrl) {
+        serverSuccessMap.remove(serverUrl);
+    }
 
     @Override
     public boolean prompt(String serverUrl, String defaultUserName) {
@@ -25,6 +38,8 @@ public class MockCredentialsPrompt implements CredentialsPrompt {
 
     @Override
     public void validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo) {
-        // don't do anything here
+        if (serverSuccessMap.containsKey(serverUrl) && !serverSuccessMap.get(serverUrl)) {
+            throw new RuntimeException("Purposefully throwing a failure for testing.");
+        }
     }
 }

@@ -110,45 +110,51 @@ public class ServerContext {
                 }
             });
         } else {
-            final Credentials credentials = AuthHelper.getCredentials(type, authenticationInfo);
-
-            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(AuthScope.ANY, credentials);
-
-            final ConnectorProvider connectorProvider = new ApacheConnectorProvider();
-
-            final ClientConfig clientConfig = new ClientConfig().connectorProvider(connectorProvider);
-            clientConfig.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider);
-
-            clientConfig.property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true);
-            clientConfig.property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED);
-
-            //Define fiddler as a local HTTP proxy
-            if (System.getProperty("proxySet") != null && System.getProperty("proxySet").equals("true")) {
-                final String proxyHost;
-                if (System.getProperty("proxyHost") != null) {
-                    proxyHost = System.getProperty("proxyHost");
-                } else {
-                    proxyHost = "127.0.0.1";
-                }
-
-                final String proxyPort;
-                if (System.getProperty("proxyPort") != null) {
-                    proxyPort = System.getProperty("proxyPort");
-                } else {
-                    proxyPort = "8888";
-                }
-
-                final String proxyUrl = String.format("http://%s:%s", proxyHost, proxyPort);
-
-                clientConfig.property(ClientProperties.PROXY_URI, proxyUrl);
-                clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
-            }
+            final ClientConfig clientConfig = getClientConfig(type, authenticationInfo,
+                    System.getProperty("proxySet") != null && System.getProperty("proxySet").equals("true"));
 
             localClient = ClientBuilder.newClient(clientConfig);
         }
 
         return localClient;
+    }
+
+    protected static ClientConfig getClientConfig(final Type type, final AuthenticationInfo authenticationInfo, final boolean includeProxySettings) {
+        final Credentials credentials = AuthHelper.getCredentials(type, authenticationInfo);
+
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, credentials);
+
+        final ConnectorProvider connectorProvider = new ApacheConnectorProvider();
+
+        final ClientConfig clientConfig = new ClientConfig().connectorProvider(connectorProvider);
+        clientConfig.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider);
+
+        clientConfig.property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true);
+        clientConfig.property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED);
+
+        //Define fiddler as a local HTTP proxy
+        if (includeProxySettings) {
+            final String proxyHost;
+            if (System.getProperty("proxyHost") != null) {
+                proxyHost = System.getProperty("proxyHost");
+            } else {
+                proxyHost = "127.0.0.1";
+            }
+
+            final String proxyPort;
+            if (System.getProperty("proxyPort") != null) {
+                proxyPort = System.getProperty("proxyPort");
+            } else {
+                proxyPort = "8888";
+            }
+
+            final String proxyUrl = String.format("http://%s:%s", proxyHost, proxyPort);
+
+            clientConfig.property(ClientProperties.PROXY_URI, proxyUrl);
+            clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
+        }
+        return clientConfig;
     }
 
     private static SslConfigurator getSslConfigurator() {

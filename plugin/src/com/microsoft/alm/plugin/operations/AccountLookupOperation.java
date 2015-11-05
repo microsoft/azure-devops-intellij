@@ -113,6 +113,10 @@ public class AccountLookupOperation extends Operation {
      * @return the Account object that matches the name or null if none could be found
      */
     public static Account getAccount(final AuthenticationResult authenticationResult, final String accountName) {
+        if (authenticationResult == null) {
+            return null;
+        }
+
         try {
             final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
             final Profile me = azureAuthenticator.getUserProfile(authenticationResult);

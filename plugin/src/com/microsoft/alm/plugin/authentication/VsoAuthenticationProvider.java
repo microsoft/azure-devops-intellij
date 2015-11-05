@@ -45,7 +45,10 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         return AzureAuthenticatorHolder.INSTANCE;
     }
 
-    private VsoAuthenticationProvider() {
+    /**
+     * This constructor is protected to allow for testing
+     */
+    protected VsoAuthenticationProvider() {
     }
 
     private static class VsoAuthenticationProviderHolder {

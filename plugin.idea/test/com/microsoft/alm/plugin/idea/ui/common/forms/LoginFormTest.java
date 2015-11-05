@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.common.forms;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -18,7 +17,6 @@ import static org.junit.Assert.assertTrue;
 public class LoginFormTest extends IdeaAbstractTest {
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void tfsLoginForm() {
         final TfsLoginForm form = new TfsLoginForm();
 
@@ -37,7 +35,6 @@ public class LoginFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: these tests are failing because of a dependency issue in swt")
     public void vsoLoginForm() {
         final VsoLoginForm form = new VsoLoginForm();
         form.setAuthenticating(true);
