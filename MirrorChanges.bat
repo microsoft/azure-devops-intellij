@@ -57,6 +57,6 @@ GOTO END
 echo Invalid arguments passed to script 1>&2
 echo MirrorChanges.bat MasterRepositoryURL MirrorRepositoryURL LocalRepoRootDir
 echo MasterRepositoryURL is the remote URL of the Git repository which contains the changes to be mirrored
-echo MirrorRepositoryURL is the remote UL of the Git repository which will mirror the changes in the master repository
+echo MirrorRepositoryURL is the remote URL of the Git repository which will mirror the changes in the master repository
 echo LocalRepoRootDir (Optional) is the root directory where the repository will be cloned. Defaults to the current directory.
 GOTO END
