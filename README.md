@@ -88,6 +88,7 @@ and run `./gradlew copyDependencies` from the root directory of the IntelliJ rep
 ## Contributing
 
 We welcome Pull Requests, please fork this repo and send us your contributions.
+
 Note: This repo is mirrored so any branches created in this repo will be removed.  Please fork.
 
 A few styles we follow:
