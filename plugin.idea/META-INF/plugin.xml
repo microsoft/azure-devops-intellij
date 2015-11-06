@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Foundation (Preview)</name>
-    <version>0.1.4</version>
+    <version>0.91.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -40,12 +40,12 @@
     <change-notes><![CDATA[
       v 0.91.0 <i>Preview</i>
       <br />
-      Bugs:
+      This release includes several bug fixes.
       <br />
       <ul>
-      <li>Added support for IntelliJ 15</li>
-      <li>Fixed dialog rendering issues on Mac OS</li>
-      <li>Fixed exceptions customers encountered when trying to bring up VCS-Git menu</li>
+        <li>Added support for IntelliJ 15</li>
+        <li>Fixed dialog rendering issues on Mac OS</li>
+        <li>Fixed exceptions customers encountered when trying to bring up VCS-Git menu</li>
       </ul>
     ]]>
     </change-notes>
