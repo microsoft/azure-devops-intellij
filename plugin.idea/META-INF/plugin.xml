@@ -1,4 +1,4 @@
-<idea-plugin version="2">
+﻿<idea-plugin version="2">
   <id>com.microsoft.vso.idea</id>
   <name>Visual Studio Team Foundation (Preview)</name>
   <version>0.1.4</version>
@@ -21,6 +21,8 @@
         <li>Create pull requests.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
       </ul>
+      <br />
+      <br />
       <b>For More Information</b>
       <br />
       See <a href="https://java.visualstudio.com/">Visual Studio Online – Java</a>
@@ -28,11 +30,19 @@
       <br />
       <i>Compiled with Java 1.6</i>
       <br />
-      <i>Compatible with IntelliJ IDEA 14 and Android Studio 1.2 - 1.4</i>
+      <i>Compatible with IntelliJ IDEA 14 - 15 and Android Studio 1.2 - 1.4</i>
     ]]></description>
 
   <change-notes><![CDATA[
       v 0.91.0 <i>Preview</i>
+      <br />
+      Bugs:
+      <br />
+      <ul>
+      <li>Added support for IntelliJ 15</li>
+      <li>Fixed dialog rendering issues on Mac OS</li>
+      <li>Fixed exceptions customers encountered when trying to bring up VCS-Git menu</li>
+      </ul>
     ]]>
   </change-notes>
 
