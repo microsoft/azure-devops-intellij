@@ -98,6 +98,8 @@ class CheckoutPageController implements Observer, ActionListener {
             // No action needed here. We updated the model above which should filter the list automatically.
         } else if (LoginForm.CMD_CREATE_ACCOUNT.equals(e.getActionCommand())) {
             model.gotoLink(CheckoutPageModel.URL_CREATE_ACCOUNT);
+        } else if (LoginForm.CMD_LEARN_MORE.equals(e.getActionCommand())) {
+            model.gotoLink(CheckoutPageModel.URL_VSO_JAVA);
         }
     }
 

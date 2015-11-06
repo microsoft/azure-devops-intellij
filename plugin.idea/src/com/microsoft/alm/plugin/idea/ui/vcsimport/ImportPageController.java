@@ -76,23 +76,23 @@ public class ImportPageController implements Observer, ActionListener {
     public void actionPerformed(final ActionEvent e) {
         // Update pageModel from page before we initiate any actions
         updateModel();
+        pageModel.clearErrors();
 
         if (LoginForm.CMD_CREATE_ACCOUNT.equals(e.getActionCommand())) {
             // Go to the URL
-            pageModel.clearErrors();
             pageModel.gotoLink(LoginPageModel.URL_CREATE_ACCOUNT);
-        } else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
+        } else if (LoginForm.CMD_LEARN_MORE.equals(e.getActionCommand())) {
+            pageModel.gotoLink(LoginPageModel.URL_VSO_JAVA);
+        }
+        else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for projects, will prompt for login if needed
-            pageModel.clearErrors();
             pageModel.loadTeamProjects();
         } else if (ImportForm.CMD_REFRESH.equals(e.getActionCommand())) {
             // Reload the table (the refresh button shouldn't be visible if the query is currently running)
-            pageModel.clearErrors();
             pageModel.loadTeamProjects();
         } else if (UserAccountPanel.CMD_SIGN_OUT.equals(e.getActionCommand())) {
             // Go back to a disconnected state
-            pageModel.clearErrors();
             pageModel.signOut();
         } else if (ImportForm.CMD_PROJECT_FILTER_CHANGED.equals(e.getActionCommand())) {
             // No action needed here. We updated the pageModel above which should filter the list automatically.
