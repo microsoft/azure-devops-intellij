@@ -24,20 +24,20 @@ From a terminal/console window,
 1. Add or update the values of ideaSdk and git4idea as shown below.
 
   * Sample property file on Linux
-```
-ideaSdk=/home/user/idea-IC-141.2735.5/lib
-git4idea=/home/user/idea-IC-141.2735.5/plugins/git4idea/lib
-```
+  ```
+  ideaSdk=/home/user/idea-IC-141.2735.5/lib
+  git4idea=/home/user/idea-IC-141.2735.5/plugins/git4idea/lib
+  ```
   * Sample property file on Mac
-```
-ideaSdk=/Applications/IntelliJ IDEA 14 CE.app/Contents/lib
-git4idea=/Applications/IntelliJ\ IDEA\ 14\ CE.app/Contents/plugins/git4idea/lib
-```
+  ```
+  ideaSdk=/Applications/IntelliJ IDEA 14 CE.app/Contents/lib
+  git4idea=/Applications/IntelliJ\ IDEA\ 14\ CE.app/Contents/plugins/git4idea/lib
+  ```
   * Sample property file on Windows
-```
-ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\lib
-git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\plugins\\git4idea\\lib
-```
+  ```
+  ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\lib
+  git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\plugins\\git4idea\\lib
+  ```
 
 ## Build with Gradle
 Once your `gradle.properties` file has been updated, run the build.
@@ -87,14 +87,16 @@ and run `./gradlew copyDependencies` from the root directory of the IntelliJ rep
 
 ## Contributing
 
-We welcome Pull Requests.
+We welcome Pull Requests, please fork this repo and send us your contributions.
+Note: This repo is mirrored so any branches created in this repo will be removed.  Please fork.
 
 A few styles we follow:
+
 1. All Java source files must have the following two lines at the top:
-```
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See License.txt in the project root.
-```
+ ```
+ // Copyright (c) Microsoft. All rights reserved.
+ // Licensed under the MIT license. See License.txt in the project root.
+ ```
   * Settings -> Editor -> Copyright -> Copyright Profiles -> Create a new "Copyright Profile" with those two lines
   * Assign this profile to the current project
 
