@@ -8,6 +8,9 @@ import com.intellij.util.ui.JBUI;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import java.awt.AWTKeyStroke;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -47,5 +50,19 @@ public class SwingHelper {
         final Insets insets = source.getInsets();
         target.setFont(source.getFont());
         target.setMargin(insets);
+    }
+
+    public static void setMargin(final JComponent component, final Insets newMargin) {
+        final Border currentBorder = component.getBorder();
+        final Border empty = new EmptyBorder(newMargin.top, newMargin.left, newMargin.bottom, newMargin.right);
+        if (currentBorder == null || currentBorder instanceof EmptyBorder) {
+            component.setBorder(empty);
+        } else if (currentBorder instanceof CompoundBorder) {
+            final CompoundBorder current = (CompoundBorder) currentBorder;
+            final Border insideBorder = current.getInsideBorder();
+            component.setBorder(new CompoundBorder(empty, insideBorder));
+        } else {
+            component.setBorder(new CompoundBorder(empty, currentBorder));
+        }
     }
 }

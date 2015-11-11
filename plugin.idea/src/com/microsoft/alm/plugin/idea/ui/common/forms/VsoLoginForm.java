@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.IconPanel;
@@ -35,6 +36,7 @@ public class VsoLoginForm implements LoginForm {
     private JLabel headerLabel;
     private JLabel loginProgressLabel;
     private Hyperlink learnMoreLink;
+    private JLabel moreInfoLabel;
     private boolean initialized = false;
 
     @Override
@@ -102,6 +104,9 @@ public class VsoLoginForm implements LoginForm {
 
             // Add some margin under the description label
             descriptionLabel.setMargin(new Insets(0, 0, JBUI.scale(15), 0));
+
+            // Add some margin above the more info label
+            SwingHelper.setMargin(moreInfoLabel, new Insets(JBUI.scale(20), 0, 0, 0));
 
             initialized = true;
         }
