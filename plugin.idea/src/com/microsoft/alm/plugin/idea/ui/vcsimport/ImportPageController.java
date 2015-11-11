@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.idea.ui.common.AbstractController;
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -10,15 +11,13 @@ import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Observable;
-import java.util.Observer;
 
 /**
  * This class binds the UI (ImportPage) with the Model (VsoImportPageModel) by attaching listeners to both and keeping them
  * in sync.
  */
-public class ImportPageController implements Observer, ActionListener {
+public class ImportPageController extends AbstractController {
     private final ImportPage page;
     private final ImportPageModel pageModel;
 
@@ -83,23 +82,25 @@ public class ImportPageController implements Observer, ActionListener {
             pageModel.gotoLink(LoginPageModel.URL_CREATE_ACCOUNT);
         } else if (LoginForm.CMD_LEARN_MORE.equals(e.getActionCommand())) {
             pageModel.gotoLink(LoginPageModel.URL_VSO_JAVA);
-        }
-        else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
+        } else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for projects, will prompt for login if needed
             pageModel.loadTeamProjects();
         } else if (ImportForm.CMD_REFRESH.equals(e.getActionCommand())) {
             // Reload the table (the refresh button shouldn't be visible if the query is currently running)
             pageModel.loadTeamProjects();
+            super.requestFocus(page);
         } else if (UserAccountPanel.CMD_SIGN_OUT.equals(e.getActionCommand())) {
             // Go back to a disconnected state
             pageModel.signOut();
+            super.requestFocus(page);
         } else if (ImportForm.CMD_PROJECT_FILTER_CHANGED.equals(e.getActionCommand())) {
             // No action needed here. We updated the pageModel above which should filter the list automatically.
         }
     }
 
-    public void updateModel() {
+    @Override
+    protected void updateModel() {
         // Update model from page before we initiate any actions
         pageModel.setRepositoryName(page.getRepositoryName());
         pageModel.setTeamProjectFilter(page.getTeamProjectFilter());

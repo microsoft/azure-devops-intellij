@@ -20,9 +20,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -65,6 +67,7 @@ public class TfsLoginForm implements LoginForm {
     public void addActionListener(final ActionListener listener) {
         // Hook up listener to all actions
         signInLink.addActionListener(listener);
+        contentPanel.registerKeyboardAction(listener, LoginForm.CMD_ENTER_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     @Override
@@ -105,8 +108,8 @@ public class TfsLoginForm implements LoginForm {
     }
 
     @Override
-    public void initFocus() {
-        serverUrl.requestFocus();
+    public JComponent getPreferredFocusedComponent() {
+        return serverUrl;
     }
 
     /**

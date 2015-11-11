@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.microsoft.alm.plugin.idea.ui.common.FocusableTabPage;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.JComponent;
@@ -12,7 +13,7 @@ import java.awt.event.ActionListener;
 /**
  * This interface exists to make testing the controller possible
  */
-public interface CheckoutPage {
+public interface CheckoutPage extends FocusableTabPage {
 
     void addActionListener(ActionListener listener);
 

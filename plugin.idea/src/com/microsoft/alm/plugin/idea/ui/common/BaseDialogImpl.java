@@ -142,6 +142,22 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
         }
     }
 
+    /**
+     * This method returns the correct JComponent to set focus on from within the selected tab.
+     */
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        if (tabPanel != null) {
+            final int i = getSelectedTabIndex();
+            final Component tab = tabPanel.getComponentAt(i);
+            if (tab instanceof FocusableTabPage) {
+                return ((FocusableTabPage) tab).getPreferredFocusedComponent();
+            }
+            return tabPanel;
+        }
+        return super.getPreferredFocusedComponent();
+    }
+
     @Override
     public void setOkEnabled(final boolean enabled) {
         super.setOKActionEnabled(enabled);

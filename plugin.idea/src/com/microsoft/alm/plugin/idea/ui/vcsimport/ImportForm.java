@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
+import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -37,7 +38,7 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
-public class ImportForm {
+public class ImportForm implements BasicForm {
     private JPanel contentPanel;
     private UserAccountPanel userAccountPanel;
     private JTextField teamProjectFilter;
@@ -141,8 +142,8 @@ public class ImportForm {
         return teamProjectFilter.getText();
     }
 
-    public void initFocus() {
-        teamProjectFilter.requestFocus();
+    public JComponent getPreferredFocusedComponent() {
+        return teamProjectFilter;
     }
 
     public void setTeamProjectTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {
