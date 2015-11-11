@@ -4,12 +4,10 @@
 package com.microsoft.alm.plugin.idea.ui.controls;
 
 import com.intellij.util.ui.JBUI;
+import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -39,16 +37,6 @@ public class WrappingLabel extends JPanel {
     }
 
     public void setMargin(final Insets newMargin) {
-        final Border currentBorder = getBorder();
-        final Border empty = new EmptyBorder(newMargin.top, newMargin.left, newMargin.bottom, newMargin.right);
-        if (currentBorder == null || currentBorder instanceof EmptyBorder) {
-            setBorder(empty);
-        } else if (currentBorder instanceof CompoundBorder) {
-            final CompoundBorder current = (CompoundBorder) currentBorder;
-            final Border insideBorder = current.getInsideBorder();
-            setBorder(new CompoundBorder(empty, insideBorder));
-        } else {
-            setBorder(new CompoundBorder(empty, currentBorder));
-        }
+        SwingHelper.setMargin(this, newMargin);
     }
 }

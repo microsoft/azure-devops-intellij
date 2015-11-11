@@ -51,9 +51,7 @@
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
-        <properties>
-          <horizontalScrollBarPolicy value="31"/>
-        </properties>
+        <properties/>
         <border type="none"/>
         <children>
           <component id="25f55" class="javax.swing.JTextArea" binding="comment">
