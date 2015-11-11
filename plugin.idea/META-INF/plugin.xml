@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Foundation (Preview)</name>
-    <version>0.91.0</version>
+    <version>0.92.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -38,7 +38,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.91.0 <i>Preview</i>
+      v 0.92.0 <i>Preview</i>
       <br />
       This release includes several bug fixes.
       <br />
