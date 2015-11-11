@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -58,6 +59,7 @@ public class CreatePullRequestForm {
     private BusySpinnerPanel spinner;
     private JPanel spinnerPanel;
     private JScrollPane descriptionScrollPane;
+    private JSplitPane splitPane;
 
     private boolean initialized = false;
 
@@ -80,9 +82,14 @@ public class CreatePullRequestForm {
             SwingHelper.setPreferredHeight(descriptionScrollPane, 80);
             SwingHelper.copyFontAndMargins(descriptionTextArea, titleTextField);
 
+            // Give the description field a min size
             Dimension descriptionScrollPaneSize = new Dimension(JBUI.scale(80), JBUI.scale(80));
             descriptionScrollPane.setPreferredSize(descriptionScrollPaneSize);
             descriptionScrollPane.setMinimumSize(descriptionScrollPaneSize);
+
+            // Make sure splitter is big enough in all DPIs
+            splitPane.setDividerSize(JBUI.scale(15));
+
             this.initialized = true;
         }
     }
@@ -238,12 +245,10 @@ public class CreatePullRequestForm {
     private void $$$setupUI$$$() {
         createUIComponents();
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(10, 4, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(9, 4, new Insets(0, 0, 0, 0), -1, -1));
         sourceBranchLabel = new JLabel();
         this.$$$loadLabelText$$$(sourceBranchLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreatePullRequestDialog.SourceBranchLabel"));
         contentPanel.add(sourceBranchLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        quickDiffPane = new JTabbedPane();
-        contentPanel.add(quickDiffPane, new GridConstraints(9, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         titleLabel = new JLabel();
         this.$$$loadLabelText$$$(titleLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreatePullRequestDialog.TitleLabel"));
         contentPanel.add(titleLabel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -259,19 +264,28 @@ public class CreatePullRequestForm {
         sourceBranch = new JLabel();
         sourceBranch.setText("");
         contentPanel.add(sourceBranch, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        splitPane = new JSplitPane();
+        splitPane.setOrientation(0);
+        contentPanel.add(splitPane, new GridConstraints(7, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        descriptionScrollPane = new JScrollPane();
+        splitPane.setLeftComponent(descriptionScrollPane);
+        descriptionTextArea = new JTextArea();
+        descriptionTextArea.setLineWrap(true);
+        descriptionTextArea.setWrapStyleWord(true);
+        descriptionScrollPane.setViewportView(descriptionTextArea);
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        splitPane.setRightComponent(panel1);
+        quickDiffPane = new JTabbedPane();
+        panel1.add(quickDiffPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         spinnerPanel = new JPanel();
         spinnerPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        contentPanel.add(spinnerPanel, new GridConstraints(8, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
+        panel1.add(spinnerPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
         spinner = new BusySpinnerPanel();
         spinnerPanel.add(spinner);
         loadingLabel = new JLabel();
         this.$$$loadLabelText$$$(loadingLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreatePullRequestDialog.LoadingDiffLabel"));
         spinnerPanel.add(loadingLabel);
-        descriptionScrollPane = new JScrollPane();
-        contentPanel.add(descriptionScrollPane, new GridConstraints(7, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        descriptionTextArea = new JTextArea();
-        descriptionTextArea.setWrapStyleWord(true);
-        descriptionScrollPane.setViewportView(descriptionTextArea);
     }
 
     /**
