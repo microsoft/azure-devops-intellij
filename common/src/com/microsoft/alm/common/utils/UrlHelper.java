@@ -65,6 +65,14 @@ public class UrlHelper {
         }
     }
 
+    public static boolean isGitRemoteUrl(final String gitRemoteUrl) {
+        if (gitRemoteUrl != null && gitRemoteUrl.contains("/_git/")) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static URI getVSOAccountURI(final String accountName) {
         return URI.create("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
     }
