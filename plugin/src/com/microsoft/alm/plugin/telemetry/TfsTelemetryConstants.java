@@ -13,6 +13,7 @@ public class TfsTelemetryConstants {
     public static final String CONTEXT_PROPERTY_MAJOR_VERSION = "Context.Default.VSO.Core.MajorVersion"; //$NON-NLS-1$
     public static final String CONTEXT_PROPERTY_MINOR_VERSION = "Context.Default.VSO.Core.MinorVersion"; //$NON-NLS-1$
     public static final String CONTEXT_PROPERTY_EXE_NAME = "Context.Default.VSO.Core.ExeName"; //$NON-NLS-1$
+    public static final String CONTEXT_PROPERTY_PLUGIN_VERSION = "Context.Plugin.Version"; //$NON-NLS-1$
 
     public static final String CONTEXT_PROPERTY_PROCESSOR_ARCHITECTURE = "Context.Default.VSO.Core.Machine.Processor.Architecture"; //$NON-NLS-1$
     public static final String CONTEXT_PROPERTY_LOCALE_NAME = "Context.Default.VSO.Core.Locale.SystemLocaleName"; //$NON-NLS-1$
