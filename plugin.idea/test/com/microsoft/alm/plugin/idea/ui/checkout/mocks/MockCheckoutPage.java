@@ -92,4 +92,9 @@ public class MockCheckoutPage implements CheckoutPage {
     public String getServerName() {
         return null;
     }
+
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return null;
+    }
 }

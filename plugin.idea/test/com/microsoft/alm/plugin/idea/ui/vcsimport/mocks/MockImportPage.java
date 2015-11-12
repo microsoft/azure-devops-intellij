@@ -86,4 +86,9 @@ public class MockImportPage implements ImportPage {
     public JComponent getComponent(final String name) {
         return null;
     }
+
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return null;
+    }
 }

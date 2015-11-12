@@ -18,9 +18,11 @@ import com.microsoft.alm.plugin.idea.ui.controls.WrappingLabel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -68,10 +70,11 @@ public class VsoLoginForm implements LoginForm {
         signInLink.addActionListener(listener);
         createAnAccountLink.addActionListener(listener);
         learnMoreLink.addActionListener(listener);
+        contentPanel.registerKeyboardAction(listener, LoginForm.CMD_ENTER_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     @Override
-    public void setAuthenticating(boolean inProgress) {
+    public void setAuthenticating(final boolean inProgress) {
         if (inProgress) {
             busySpinnerPanel.start(true);
             loginProgressLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_LOGIN_FORM_AUTHENTICATING_VSO));
@@ -98,7 +101,7 @@ public class VsoLoginForm implements LoginForm {
             signInLink.setFont(JBUI.Fonts.label(16.0f));
 
             // Make sure the busy spinner size is scaled properly
-            Dimension size = new Dimension(JBUI.scale(20), JBUI.scale(20));
+            final Dimension size = new Dimension(JBUI.scale(20), JBUI.scale(20));
             busySpinnerPanel.setPreferredSize(size);
             busySpinnerPanel.setMinimumSize(size);
 
@@ -113,8 +116,8 @@ public class VsoLoginForm implements LoginForm {
     }
 
     @Override
-    public void initFocus() {
-        signInLink.requestFocus();
+    public JComponent getPreferredFocusedComponent() {
+        return signInLink;
     }
 
     /**

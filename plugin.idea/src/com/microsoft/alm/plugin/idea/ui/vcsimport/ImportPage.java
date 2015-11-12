@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.idea.ui.common.FocusableTabPage;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 
 import javax.swing.JComponent;
@@ -12,7 +13,7 @@ import java.awt.event.ActionListener;
 /**
  * This interface exists to make testing the Import page controllers possible
  */
-public interface ImportPage {
+public interface ImportPage extends FocusableTabPage {
     void addActionListener(final ActionListener listener);
 
     void setLoginShowing(final boolean showLogin);

@@ -3,79 +3,29 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.idea.ui.common.LoginPageImpl;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
-import java.awt.BorderLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 
 /**
  * This class is a panel that switches between showing the TfsLoginForm and the ImportForm.
- * The loginShowing property controls which form is shown.
  */
-public class ImportPageImpl extends JPanel implements ImportPage {
-
+public class ImportPageImpl extends LoginPageImpl implements ImportPage {
     private final ImportForm importForm;
-    private final LoginForm loginForm;
-    private boolean loginShowing;
 
     public ImportPageImpl(LoginForm loginForm, ImportForm importForm) {
-        this.setLayout(new BorderLayout());
-
-        this.loginForm = loginForm;
+        super(loginForm, importForm);
         this.importForm = importForm;
-        setLoginShowing(true);
-
-        // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.getInstance().sendDialogOpened(this.getClass().getName(), TfsTelemetryHelper.PropertyMapBuilder.EMPTY);
     }
 
-    @Override
-    public void addActionListener(final ActionListener listener) {
-        //hook up all action listeners
-        loginForm.addActionListener(listener);
-        loginForm.getContentPanel().registerKeyboardAction(listener, LoginForm.CMD_ENTER_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
-        importForm.addActionListener(listener);
-    }
-
-    @Override
-    public void setLoginShowing(final boolean showLogin) {
-        if (loginShowing != showLogin) {
-            loginShowing = showLogin;
-            this.removeAll();
-            if (showLogin) {
-                this.add(loginForm.getContentPanel(), BorderLayout.CENTER);
-            } else {
-                this.add(importForm.getContentPanel(), BorderLayout.CENTER);
-            }
-            this.revalidate();
-            this.repaint();
-            initFocus();
-        }
-    }
-
-    public void initFocus() {
-        if (loginShowing) {
-            loginForm.initFocus();
-        } else {
-            importForm.initFocus();
-        }
-    }
+    // Import form accessors //
 
     @Override
     public void setLoading(final boolean loading) {
         importForm.setLoading(loading);
-    }
-
-    @Override
-    public void setAuthenticating(final boolean authenticating) {
-        loginForm.setAuthenticating(authenticating);
     }
 
     @Override
@@ -108,25 +58,20 @@ public class ImportPageImpl extends JPanel implements ImportPage {
         importForm.setUserName(name);
     }
 
+    // Overrides of LoginPage //
+
     @Override
     public void setServerName(final String name) {
-        loginForm.setServerName(name);
+        super.setServerName(name);
         importForm.setServerName(name);
     }
 
     @Override
-    public String getServerName() {
-        return loginForm.getServerName();
-    }
-
-    @Override
     public JComponent getComponent(final String name) {
-        if (VsoImportPageModel.PROP_REPO_NAME.equals(name)) {
+        if (ImportPageModel.PROP_REPO_NAME.equals(name)) {
             return importForm.getRepositoryNameComponent();
         }
-        if (VsoImportPageModel.PROP_SERVER_NAME.equals(name)) {
-            return loginForm.getServerNameComponent();
-        }
-        return null;
+
+        return super.getComponent(name);
     }
 }

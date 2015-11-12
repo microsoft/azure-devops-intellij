@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
+import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -41,7 +42,7 @@ import java.util.ResourceBundle;
 /**
  * This form is hosted by the CheckoutPageImpl.
  */
-public class CheckoutForm {
+public class CheckoutForm implements BasicForm {
     private JTextField repositoryFilter;
     private JTable repositoryTable;
     private JTextField directoryName;
@@ -151,8 +152,8 @@ public class CheckoutForm {
         return repositoryFilter.getText();
     }
 
-    public void initFocus() {
-        repositoryFilter.requestFocus();
+    public JComponent getPreferredFocusedComponent() {
+        return repositoryFilter;
     }
 
     public void setRepositoryTable(final ServerContextTableModel tableModel, final ListSelectionModel selectionModel) {

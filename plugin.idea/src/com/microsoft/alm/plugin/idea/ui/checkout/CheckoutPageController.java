@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.microsoft.alm.plugin.idea.ui.common.AbstractController;
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
@@ -10,15 +11,13 @@ import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Observable;
-import java.util.Observer;
 
 /**
  * This class binds the UI with the Model by attaching listeners to both and keeping them
  * in sync.
  */
-class CheckoutPageController implements Observer, ActionListener {
+class CheckoutPageController extends AbstractController {
     private final CheckoutPage page;
     private final CheckoutPageModel model;
 
@@ -79,21 +78,21 @@ class CheckoutPageController implements Observer, ActionListener {
     public void actionPerformed(final ActionEvent e) {
         // Update model from page before we initiate any actions
         updateModel();
+        model.clearErrors();
 
         if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for repositories, will prompt for login if needed
-            model.clearErrors();
             model.loadRepositories();
+            super.requestFocus(page);
         } else if (CheckoutForm.CMD_REFRESH.equals(e.getActionCommand())) {
             // Reload the table (the refresh button shouldn't be visible if the query is currently running)
-            model.clearErrors();
             model.loadRepositories();
         } else if (UserAccountPanel.CMD_SIGN_OUT.equals(e.getActionCommand())) {
             // Go back to a disconnected state
-            model.clearErrors();
             model.setConnected(false);
             model.signOut();
+            super.requestFocus(page);
         } else if (CheckoutForm.CMD_REPO_FILTER_CHANGED.equals(e.getActionCommand())) {
             // No action needed here. We updated the model above which should filter the list automatically.
         } else if (LoginForm.CMD_CREATE_ACCOUNT.equals(e.getActionCommand())) {
@@ -103,7 +102,8 @@ class CheckoutPageController implements Observer, ActionListener {
         }
     }
 
-    public void updateModel() {
+    @Override
+    protected void updateModel() {
         model.setParentDirectory(page.getParentDirectory());
         model.setDirectoryName(page.getDirectoryName());
         model.setRepositoryFilter(page.getRepositoryFilter());
