@@ -66,11 +66,7 @@ public class UrlHelper {
     }
 
     public static boolean isGitRemoteUrl(final String gitRemoteUrl) {
-        if (gitRemoteUrl != null && gitRemoteUrl.contains("/_git/")) {
-            return true;
-        }
-
-        return false;
+        return StringUtils.contains(gitRemoteUrl, "/_git/");
     }
 
     public static URI getVSOAccountURI(final String accountName) {
