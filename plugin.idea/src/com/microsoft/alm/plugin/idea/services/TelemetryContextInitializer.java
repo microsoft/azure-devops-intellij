@@ -100,6 +100,9 @@ public class TelemetryContextInitializer
         properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_BUILD_NUMBER, appInfo.getBuild().asString());
         properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_EXE_NAME, appInfo.getFullApplicationName());
 
+        // Get our plugin version
+        properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_PLUGIN_VERSION, getPluginVersion());
+
         properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_PROCESSOR_ARCHITECTURE, getProcessorArchitecture());
         properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_LOCALE_NAME, getLocaleName());
 
@@ -185,7 +188,7 @@ public class TelemetryContextInitializer
 
     // Get version info of our Plugin
     private String getPluginVersion() {
-        final IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId(TfPluginBundle.BUNDLE_NAME));
+        final IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId("com.microsoft.vso.idea"));
         final String v = plugin != null ? plugin.getVersion() : DEFAULT_VERSION;
         return StringUtils.isNotEmpty(v) ? v : DEFAULT_VERSION;
     }

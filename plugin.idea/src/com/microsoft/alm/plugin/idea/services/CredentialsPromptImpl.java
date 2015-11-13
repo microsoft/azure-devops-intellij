@@ -3,8 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.services;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.vcsUtil.AuthDialog;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -18,9 +21,27 @@ import com.microsoft.alm.plugin.services.CredentialsPrompt;
 public class CredentialsPromptImpl implements CredentialsPrompt {
     private String userName;
     private String password;
+    private boolean promptSuccess;
+    private RuntimeException validationError;
 
     @Override
     public boolean prompt(final String serverUrl, final String defaultUserName) {
+        promptSuccess = false;
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            promptSuccess = promptInternal(serverUrl, defaultUserName);
+        } else {
+            ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    promptSuccess = promptInternal(serverUrl, defaultUserName);
+                }
+            }, ModalityState.any());
+        }
+
+        return promptSuccess;
+    }
+
+    private boolean promptInternal(final String serverUrl, final String defaultUserName) {
         final AuthDialog authDialog = new AuthDialog(ProjectManager.getInstance().getDefaultProject(),
                 TfPluginBundle.message(TfPluginBundle.KEY_PROMPT_CREDENTIALS_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_PROMPT_CREDENTIALS_MESSAGE, serverUrl),
@@ -46,12 +67,45 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
     }
 
     @Override
-    public void validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo) {
+    public void validateCredentials(final String serverUrl, final AuthenticationInfo authenticationInfo) {
         // Test the authenticatedContext against the server
+        validationError = null;
+        if (UrlHelper.isGitRemoteUrl(serverUrl)) {
+            tryToParseDeploymentUrl(serverUrl, authenticationInfo);
+            if (validationError != null) {
+                throw validationError;
+            }
+        } else {
+            // Assume it is a deployment url
+            tryDeploymentUrl(serverUrl, authenticationInfo, true);
+        }
+    }
+
+    private void tryToParseDeploymentUrl(final String gitRemoteUrl, final AuthenticationInfo authenticationInfo) {
+        UrlHelper.ParseResult result = UrlHelper.tryParse(gitRemoteUrl, new UrlHelper.ParseResultValidator() {
+            @Override
+            public boolean validate(final UrlHelper.ParseResult parseResult) {
+                return tryDeploymentUrl(parseResult.getServerUrl(), authenticationInfo, false);
+            }
+        });
+    }
+
+    private boolean tryDeploymentUrl(final String deploymentUrl, final AuthenticationInfo authenticationInfo, final boolean throwOnFailure) {
+        validationError = null;
         final ServerContext context =
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
-                        .uri(serverUrl).authentication(authenticationInfo).build();
-        //TODO we need to find a better REST endpoint to call, something light weight
-        context.getSoapServices().getCatalogService().getProjectCollections();
+                        .uri(deploymentUrl).authentication(authenticationInfo).build();
+        try {
+            //TODO we need to find a better REST endpoint to call, something light weight
+            context.getSoapServices().getCatalogService().getProjectCollections();
+            return true;
+        } catch (RuntimeException ex) {
+            validationError = ex;
+            if (throwOnFailure) {
+                throw ex;
+            }
+
+            return false;
+        }
     }
 }
