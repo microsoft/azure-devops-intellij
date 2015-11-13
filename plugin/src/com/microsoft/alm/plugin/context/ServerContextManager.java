@@ -219,7 +219,7 @@ public class ServerContextManager {
             // Get matching context from manager
             ServerContext context = getActiveContext();
             if (context == ServerContext.NO_CONTEXT || context.getGitRepository() == null ||
-                    !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl(), gitRemoteUrl)) {
+                    !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl().replace(" ", "%20"), gitRemoteUrl)) {
                 context = null;
             }
 
