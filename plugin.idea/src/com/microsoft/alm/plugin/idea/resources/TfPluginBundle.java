@@ -35,6 +35,12 @@ public class TfPluginBundle {
         return CommonBundle.message(getBundle(), key, params);
     }
 
+    // Plugin general
+    @NonNls
+    public static final String KEY_TF_GIT = "Providers.TfGitCheckoutProvider";
+    @NonNls
+    public static final String KEY_GIT_NOT_CONFIGURED = "Plugin.Error.GitExeNotConfigured";
+
     // Login form
     @NonNls
     public static final String KEY_LOGIN_FORM_AUTHENTICATING_VSO = "LoginForm.VSO.Authenticating";

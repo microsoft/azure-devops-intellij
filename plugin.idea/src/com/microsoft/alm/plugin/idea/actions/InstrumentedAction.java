@@ -5,7 +5,11 @@ package com.microsoft.alm.plugin.idea.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.ui.Messages;
+import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import git4idea.GitVcs;
+import git4idea.config.GitExecutableValidator;
 
 import javax.swing.Icon;
 
@@ -15,11 +19,13 @@ import javax.swing.Icon;
  * @see javax.swing.Action
  */
 public abstract class InstrumentedAction extends DumbAwareAction {
+    private final boolean actionUsesGitExe;
 
     /**
      * Default constructor
      */
     protected InstrumentedAction() {
+        actionUsesGitExe = true;
     }
 
     /**
@@ -27,6 +33,7 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     protected InstrumentedAction(final String text) {
         super(text);
+        actionUsesGitExe = true;
     }
 
     /**
@@ -35,6 +42,12 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     protected InstrumentedAction(final String text, final String description, final Icon icon) {
         super(text, description, icon);
+        actionUsesGitExe = true;
+    }
+
+    protected InstrumentedAction(final String text, final String description, final Icon icon, final boolean usesGitExe) {
+        super(text, description, icon);
+        actionUsesGitExe = usesGitExe;
     }
 
     /**
@@ -88,6 +101,17 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     @Override
     public final void actionPerformed(final AnActionEvent anActionEvent) {
+        if(actionUsesGitExe) {
+            final GitExecutableValidator validator = GitVcs.getInstance(anActionEvent.getProject()).getExecutableValidator();
+            if (!validator.checkExecutableAndNotifyIfNeeded()) {
+                //action requires Git.exe but it is not set correctly, show message and return without doing any action
+                Messages.showWarningDialog(anActionEvent.getProject(),
+                        TfPluginBundle.message(TfPluginBundle.KEY_GIT_NOT_CONFIGURED),
+                        TfPluginBundle.message(TfPluginBundle.KEY_TF_GIT));
+                return;
+            }
+        }
+
         try {
             SendStartActionEvent();
             doActionPerformed(anActionEvent);
