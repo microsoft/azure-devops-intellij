@@ -6,9 +6,12 @@ package com.microsoft.alm.plugin.idea.utils;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.ConfirmDialog;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.jetbrains.annotations.NotNull;
+
+import javax.swing.Icon;
 
 public class IdeaHelper {
     public IdeaHelper() {
@@ -30,5 +33,16 @@ public class IdeaHelper {
         }
 
         return true;
+    }
+
+    /**
+     * Shows a dialog with OK and cancel actions to prompt for confirmation from user
+     * @return true if user clicks on ok action and false if user clicks on cancel action
+     */
+    public static boolean showConfirmationDialog(@NotNull final Project project, final String message, final String title,
+                                                 final Icon logo, final String okActionMessage, final String cancelActionMessage) {
+
+        ConfirmDialog confirmDialog = new ConfirmDialog(project, title, message, logo, okActionMessage, cancelActionMessage);
+        return confirmDialog.showAndGet();
     }
 }
