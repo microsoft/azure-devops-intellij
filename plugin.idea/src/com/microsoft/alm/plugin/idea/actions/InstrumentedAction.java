@@ -98,9 +98,11 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     @Override
     public final void actionPerformed(final AnActionEvent anActionEvent) {
-        if(actionUsesGitExe && !IdeaHelper.isGitExeConfigured(anActionEvent.getProject())) {
-            //git.exe is required for this action but not correctly configured
-            return;
+        if(anActionEvent != null && anActionEvent.getProject() != null) {
+            if (actionUsesGitExe && !IdeaHelper.isGitExeConfigured(anActionEvent.getProject())) {
+                //git.exe is required for this action but not correctly configured
+                return;
+            }
         }
 
         try {
