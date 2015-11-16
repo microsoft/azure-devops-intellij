@@ -12,18 +12,22 @@ import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
 import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Use this operation class to lookup the accounts on VSO for a particular user.
  */
 public class AccountLookupOperation extends Operation {
+    private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
 
-    public static class AccountLookupResults implements LookupResults {
+    public static class AccountLookupResults implements Results {
         private boolean isCanceled = false;
         private Throwable error = null;
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
@@ -50,6 +54,7 @@ public class AccountLookupOperation extends Operation {
 
     private final AuthenticationInfo authenticationInfo;
     private final AuthenticationResult authenticationResult;
+    private Future innerOperation;
 
     public AccountLookupOperation(final AuthenticationInfo authenticationInfo, final AuthenticationResult authenticationResult) {
         assert authenticationInfo != null;
@@ -58,24 +63,22 @@ public class AccountLookupOperation extends Operation {
         this.authenticationResult = authenticationResult;
     }
 
-    public AccountLookupResults castResults(final LookupResults results) {
+    public AccountLookupResults castResults(final Results results) {
         return (AccountLookupResults) results;
     }
 
-    public void doLookup(final LookupInputs inputs) {
+    public void doWork(final Inputs inputs) {
         onLookupStarted();
-        // TODO handle cancellation
 
         try {
+            if (isCancelled()) { return; }
             final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            final Profile me = azureAuthenticator.getUserProfile(authenticationResult);
-            azureAuthenticator.getAccountsAsync(authenticationResult, me, new AccountsCallback() {
+            final Profile me = getProfile(authenticationResult);
+            if (isCancelled()) { return; }
+            innerOperation = azureAuthenticator.getAccountsAsync(authenticationResult, me, new AccountsCallback() {
                 @Override
                 public void onSuccess(final List<Account> accounts) {
-                    if (authenticationResult == null) {
-                        // User canceled login
-                        return;
-                    }
+                    if (isCancelled()) { return; }
 
                     final AccountLookupResults results = new AccountLookupResults();
                     for (final Account a : accounts) {
@@ -90,18 +93,64 @@ public class AccountLookupOperation extends Operation {
 
                 @Override
                 public void onFailure(final Throwable t) {
-                    final AccountLookupResults results = new AccountLookupResults();
-                    results.error = t;
-                    onLookupResults(results);
-                    onLookupCompleted();
+                    if (isCancelled()) { return; }
+                    terminate(t);
                 }
             });
-        } catch (IOException ioe) {
-            final AccountLookupResults results = new AccountLookupResults();
-            results.error = ioe;
-            onLookupResults(results);
-            onLookupCompleted();
+        } catch (Throwable ex) {
+            terminate(ex);
         }
+    }
+
+    @Override
+    public void cancel() {
+        super.cancel();
+
+        if (innerOperation != null && !innerOperation.isDone()) {
+            innerOperation.cancel(true);
+        }
+
+        final AccountLookupResults results = new AccountLookupResults();
+        results.isCanceled = true;
+        onLookupResults(results);
+        onLookupCompleted();
+    }
+
+    @Override
+    protected void terminate(Throwable throwable) {
+        super.terminate(throwable);
+
+        final AccountLookupResults results = new AccountLookupResults();
+        results.error = throwable;
+        onLookupResults(results);
+        onLookupCompleted();
+    }
+
+    private static Profile getProfile(final AuthenticationResult authenticationResult) {
+        try {
+            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
+            AuthenticationResult newResult = refreshAuthenticationResult(azureAuthenticator, authenticationResult);
+            if (newResult == null) {
+                // We couldn't refresh the token, but we will try using it anyway
+                newResult = authenticationResult;
+            }
+            return azureAuthenticator.getUserProfile(newResult);
+        } catch (IOException e) {
+            logger.warn("Getting azure profile failed", e);
+            throw new RuntimeException(e.getLocalizedMessage(), e);
+        }
+    }
+
+    private static AuthenticationResult refreshAuthenticationResult(final AzureAuthenticator azureAuthenticator, final AuthenticationResult authenticationResult) {
+        try {
+            // always refresh it -- this is the only way to ensure it is valid
+            return azureAuthenticator.refreshAadAccessToken(authenticationResult);
+        } catch (IOException e) {
+            // refreshing failed, log exception
+            logger.warn("Refreshing access token failed", e);
+        }
+
+        return null;
     }
 
     /**
@@ -119,7 +168,7 @@ public class AccountLookupOperation extends Operation {
 
         try {
             final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            final Profile me = azureAuthenticator.getUserProfile(authenticationResult);
+            final Profile me = getProfile(authenticationResult);
             List<Account> accounts = azureAuthenticator.getAccounts(authenticationResult, me);
             for (Account a : accounts) {
                 if (a.getAccountName().equalsIgnoreCase(accountName)) {
@@ -127,6 +176,7 @@ public class AccountLookupOperation extends Operation {
                 }
             }
         } catch (IOException e) {
+            logger.warn("Getting account failed", e);
             throw new RuntimeException(e.getLocalizedMessage(), e);
         }
 
