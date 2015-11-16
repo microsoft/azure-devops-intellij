@@ -354,7 +354,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                 GitFileUtils.addFiles(project, rootVirtualFile, filesToCommit);
                 if (filesToCommit.size() > 0) {
-                    GitSimpleHandler hCommit = new GitSimpleHandler(project, rootVirtualFile, GitCommand.COMMIT);
+                    final GitSimpleHandler hCommit = new GitSimpleHandler(project, rootVirtualFile, GitCommand.COMMIT);
                     hCommit.addParameters("-m", TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                     GitHandlerUtil.runInCurrentThread(hCommit, null, true, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                     if (hCommit.getExitCode() != 0) {
@@ -487,7 +487,6 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             hRemote.addParameters("add", REMOTE_ORIGIN, remoteGitUrl);
         }
 
-
         GitHandlerUtil.runInCurrentThread(hRemote, null, true, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE));
         if (hRemote.getExitCode() != 0) {
             notifyImportError(project,
@@ -507,9 +506,9 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         //push current branch to remote
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_PUSH));
         final Git git = ServiceManager.getService(Git.class);
-        GitLocalBranch currentBranch = localRepository.getCurrentBranch();
+        final GitLocalBranch currentBranch = localRepository.getCurrentBranch();
         if (currentBranch != null) {
-            GitCommandResult result = git.push(localRepository, REMOTE_ORIGIN, remoteGitUrl, currentBranch.getName(), true);
+            final GitCommandResult result = git.push(localRepository, REMOTE_ORIGIN, remoteGitUrl, currentBranch.getName(), true);
             if (!result.success()) {
                 notifyImportError(project,
                         result.getErrorOutputAsJoinedString(),
@@ -568,7 +567,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
     @Override
     public ModelValidationInfo validate() {
-        ModelValidationInfo result = super.validate();
+        final ModelValidationInfo result = super.validate();
 
         if (result == ModelValidationInfo.NO_ERRORS) {
             if (getSelectedContext() == null) {
