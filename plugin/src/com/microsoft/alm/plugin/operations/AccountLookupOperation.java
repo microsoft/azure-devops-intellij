@@ -71,14 +71,20 @@ public class AccountLookupOperation extends Operation {
         onLookupStarted();
 
         try {
-            if (isCancelled()) { return; }
+            if (isCancelled()) {
+                return;
+            }
             final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
             final Profile me = getProfile(authenticationResult);
-            if (isCancelled()) { return; }
+            if (isCancelled()) {
+                return;
+            }
             innerOperation = azureAuthenticator.getAccountsAsync(authenticationResult, me, new AccountsCallback() {
                 @Override
                 public void onSuccess(final List<Account> accounts) {
-                    if (isCancelled()) { return; }
+                    if (isCancelled()) {
+                        return;
+                    }
 
                     final AccountLookupResults results = new AccountLookupResults();
                     for (final Account a : accounts) {
@@ -93,7 +99,9 @@ public class AccountLookupOperation extends Operation {
 
                 @Override
                 public void onFailure(final Throwable t) {
-                    if (isCancelled()) { return; }
+                    if (isCancelled()) {
+                        return;
+                    }
                     terminate(t);
                 }
             });

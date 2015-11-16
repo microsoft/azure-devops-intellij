@@ -341,7 +341,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 allFiles.addAll(untrackedFiles);
 
                 final List<VirtualFile> filesToCommit = new ArrayList<VirtualFile>();
-                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                IdeaHelper.runOnUIThread(new Runnable() {
                     @Override
                     public void run() {
                         final SelectFilesDialog dialog = SelectFilesDialog.init(project,
@@ -358,7 +358,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                             filesToCommit.addAll(dialog.getSelectedFiles());
                         }
                     }
-                }, indicator.getModalityState());
+                }, true, indicator.getModalityState());
 
                 indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                 GitFileUtils.addFiles(project, rootVirtualFile, filesToCommit);
@@ -466,7 +466,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             for(GitRemote remote : gitRemotes) {
                 if(StringUtils.equalsIgnoreCase(remote.getName(), REMOTE_ORIGIN)){
                     //remote named origin exits, ask user if they want to overwrite it and proceed or cancel
-                    ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                    IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
                         public void run() {
                             final boolean replaceOrigin = IdeaHelper.showConfirmationDialog(project,
@@ -479,7 +479,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                 remoteParams.add("set-url");
                             }
                         }
-                    }, indicator.getModalityState());
+                    }, true, indicator.getModalityState());
                     if(remoteParams.size() == 0) {
                         //user chose to cancel import
                         logger.warn("setupRemoteOnLocalRepo: User chose to cancel import for project: {}, local repo: {}",

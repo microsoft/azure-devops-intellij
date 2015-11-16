@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.services;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.vcsUtil.AuthDialog;
 import com.microsoft.alm.common.utils.UrlHelper;
@@ -12,6 +10,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 
 /**
@@ -27,16 +26,12 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
     @Override
     public boolean prompt(final String serverUrl, final String defaultUserName) {
         promptSuccess = false;
-        if (ApplicationManager.getApplication().isDispatchThread()) {
-            promptSuccess = promptInternal(serverUrl, defaultUserName);
-        } else {
-            ApplicationManager.getApplication().invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    promptSuccess = promptInternal(serverUrl, defaultUserName);
-                }
-            }, ModalityState.any());
-        }
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                promptSuccess = promptInternal(serverUrl, defaultUserName);
+            }
+        }, true);
 
         return promptSuccess;
     }

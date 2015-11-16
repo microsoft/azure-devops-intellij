@@ -3,10 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 
 import java.util.List;
@@ -37,7 +36,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
 
     @Override
     public void notifyLookupStarted() {
-        runOnUIThread(new Runnable() {
+        IdeaHelper.runOnUIThread(new Runnable() {
             @Override
             public void run() {
                 pageModel.setLoading(true);
@@ -49,7 +48,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
     @Override
     public void notifyLookupCompleted() {
         operationDone();
-        runOnUIThread(new Runnable() {
+        IdeaHelper.runOnUIThread(new Runnable() {
             public void run() {
                 pageModel.setLoading(false);
             }
@@ -59,7 +58,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
     @Override
     public void notifyLookupCanceled() {
         operationDone();
-        runOnUIThread(new Runnable() {
+        IdeaHelper.runOnUIThread(new Runnable() {
             public void run() {
                 pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED));
                 pageModel.setLoading(false);
@@ -69,22 +68,11 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
 
     @Override
     public void notifyLookupResults(final List<ServerContext> serverContexts) {
-        runOnUIThread(new Runnable() {
+        IdeaHelper.runOnUIThread(new Runnable() {
             public void run() {
                 pageModel.appendContexts(serverContexts);
             }
         });
-    }
-
-    private void runOnUIThread(final Runnable runnable) {
-        //TODO this class cannot depend on ApplicationManager (the UI should handle moving this back to the UI thread)
-        if (ApplicationManager.getApplication() != null) {
-            ApplicationManager.getApplication().invokeLater(runnable, ModalityState.any());
-        } else {
-            // If we don't have an application then we are testing, just run the runnable here
-            runnable.run();
-        }
-
     }
 
     private void operationDone() {

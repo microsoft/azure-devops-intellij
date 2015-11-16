@@ -3,14 +3,13 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.AccountLookupOperation;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
@@ -66,7 +65,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                 @Override
                 public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
                         public void run() {
                             // Authentication is over, so set the boolean
@@ -78,7 +77,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                             //try to load the team projects
                             loadProjectsFromAllAccounts();
                         }
-                    }, ModalityState.any());
+                    });
                 }
             });
         }
@@ -126,7 +125,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                 // If there was an error or cancellation message, send it back to the user
                 if (validationInfo != ModelValidationInfo.NO_ERRORS) {
                     // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
                         public void run() {
                             addError(validationInfo);
