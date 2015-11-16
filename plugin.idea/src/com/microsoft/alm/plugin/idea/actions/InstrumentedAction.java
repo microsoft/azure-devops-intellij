@@ -5,11 +5,8 @@ package com.microsoft.alm.plugin.idea.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
-import com.intellij.openapi.ui.Messages;
-import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import git4idea.GitVcs;
-import git4idea.config.GitExecutableValidator;
 
 import javax.swing.Icon;
 
@@ -101,15 +98,9 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     @Override
     public final void actionPerformed(final AnActionEvent anActionEvent) {
-        if(actionUsesGitExe) {
-            final GitExecutableValidator validator = GitVcs.getInstance(anActionEvent.getProject()).getExecutableValidator();
-            if (!validator.checkExecutableAndNotifyIfNeeded()) {
-                //action requires Git.exe but it is not set correctly, show message and return without doing any action
-                Messages.showWarningDialog(anActionEvent.getProject(),
-                        TfPluginBundle.message(TfPluginBundle.KEY_GIT_NOT_CONFIGURED),
-                        TfPluginBundle.message(TfPluginBundle.KEY_TF_GIT));
-                return;
-            }
+        if(actionUsesGitExe && !IdeaHelper.isGitExeConfigured(anActionEvent.getProject())) {
+            //git.exe is required for this action but not correctly configured
+            return;
         }
 
         try {
