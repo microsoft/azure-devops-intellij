@@ -18,8 +18,8 @@ import java.awt.Dimension;
  * A confirmation dialog which allows setting custom ok and cancel button text
  */
 public class ConfirmDialog extends DialogWrapper {
-    private String message;
-    private Icon icon;
+    final private String message;
+    final private Icon icon;
     private ConfirmForm confirmForm;
 
     public ConfirmDialog(final Project project, final String title, final String message,

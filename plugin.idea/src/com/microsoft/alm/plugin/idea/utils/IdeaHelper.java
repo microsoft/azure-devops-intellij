@@ -42,7 +42,7 @@ public class IdeaHelper {
     public static boolean showConfirmationDialog(@NotNull final Project project, final String message, final String title,
                                                  final Icon logo, final String okActionMessage, final String cancelActionMessage) {
 
-        ConfirmDialog confirmDialog = new ConfirmDialog(project, title, message, logo, okActionMessage, cancelActionMessage);
+        final ConfirmDialog confirmDialog = new ConfirmDialog(project, title, message, logo, okActionMessage, cancelActionMessage);
         return confirmDialog.showAndGet();
     }
 }
