@@ -73,7 +73,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
                             setAuthenticating(false);
                             //Log exception
                             if (throwable != null) {
-                                logger.warn("Authenticating with Visual Studio Online failed", throwable);
+                                logger.warn("Authenticating with Team Services failed", throwable);
                             }
                             //try to load the team projects
                             loadProjectsFromAllAccounts();
