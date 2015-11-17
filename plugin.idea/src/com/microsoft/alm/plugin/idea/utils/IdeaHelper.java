@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.utils;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.ui.common.ConfirmDialog;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ public class IdeaHelper {
     public static boolean showConfirmationDialog(@NotNull final Project project, final String message, final String title,
                                                  final Icon logo, final String okActionMessage, final String cancelActionMessage) {
 
-        final ConfirmDialog confirmDialog = new ConfirmDialog(project, title, message, logo, okActionMessage, cancelActionMessage);
-        return confirmDialog.showAndGet();
+        final int result = Messages.showYesNoDialog(project, message, title, okActionMessage, cancelActionMessage, logo);
+        return result == 0 ? true : false;
     }
 }

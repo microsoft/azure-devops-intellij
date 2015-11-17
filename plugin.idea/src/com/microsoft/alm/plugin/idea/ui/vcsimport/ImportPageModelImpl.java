@@ -217,12 +217,12 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     final GitRepository localRepository = repo != null ? repo :
                             setupGitRepositoryForProject(project, rootVirtualFile, localContext, indicator);
                     if (localRepository == null) {
-                        //current project is not in a Git repository as expected
+                        logger.error("doImport: current project {} is not in a Git repository", project.getName());
                         return;
                     }
 
                     if (!doFirstCommitIfRequired(project, localRepository, rootVirtualFile, localContext, indicator)) {
-                        //failed to do first commit on the repo, return
+                        logger.error("doImport: failed to do first commit on the local repository at: {}", localRepository.getRoot().getUrl());
                         return;
                     }
 
@@ -233,25 +233,31 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         localContext = new ServerContextBuilder(localContext).repository(remoteRepository).build();
                         ServerContextManager.getInstance().setActiveContext(localContext);
                     } else {
-                        //failed to create remote repo, return
+                        logger.error("doImport: failed to create remote repository with name: {} on server: {}, collection: {}",
+                                repositoryName, localContext.getUri(), localContext.getTeamProjectCollectionReference().getName());
                         return;
                     }
 
                     if (!setupRemoteOnLocalRepo(project, localRepository, remoteRepository, localContext, indicator)) {
-                        //failed to setup remote origin to point to remote repository, return
+                        logger.error("doImport: failed to setup remote origin on local repository at: {} to point to remote repository: {}",
+                                localRepository.getRoot().getUrl(), remoteRepository.getRemoteUrl());
                         return;
-                    } else {
-                        remoteUrlForDisplay = remoteRepository.getRemoteUrl();
                     }
 
-                   pushChangesToRemoteRepo(project, localRepository, remoteRepository, localContext, indicator);
+                    if(!pushChangesToRemoteRepo(project, localRepository, remoteRepository, localContext, indicator)) {
+                        logger.error("doImport: failed to push changes to remote repository: {}", remoteRepository.getRemoteUrl());
+                        return;
+                    }
+
+                    //all steps completed successfully
+                    remoteUrlForDisplay = remoteRepository.getRemoteUrl();
 
                 }catch (Throwable unexpectedError) {
+                    remoteUrlForDisplay = "";
                     logger.error("doImport: Unexpected error during import");
                     logger.warn("doImport", unexpectedError);
-                    VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_FAILED),
-                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ERRORS_UNEXPECTED, unexpectedError.getLocalizedMessage()));
-                    remoteUrlForDisplay = "";
+                    notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ERRORS_UNEXPECTED, unexpectedError.getLocalizedMessage()),
+                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_FAILED), localContext);
 
                 } finally {
                     if(StringUtils.isNotEmpty(remoteUrlForDisplay)) {
@@ -299,8 +305,11 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         GitHandlerUtil.runInCurrentThread(hInit, null, true, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT, project.getName()));
         if (!hInit.errors().isEmpty()) {
             //git init failed
+            final String error = hInit.errors().get(0).getMessage();
+            logger.error("setupGitRepositoryForProject: git init failed on project: {} at root: {} with error: {}",
+                    project.getName(), rootVirtualFile.getUrl(), error);
             notifyImportError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT_ERROR, project.getName(), hInit.errors().get(0).getMessage()),
+                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT_ERROR, project.getName(), error),
                     ACTION_NAME, localContext);
             return null;
         }
@@ -359,6 +368,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     GitHandlerUtil.runInCurrentThread(hCommit, null, true, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));
                     if (hCommit.getExitCode() != 0) {
                         //unable to commit
+                        logger.error("doFirstCommitIfRequired: git commit failed for project: {}, repoRoot: {} with error: {}",
+                                project.getName(), rootVirtualFile.getUrl(), hCommit.getStderr());
                         notifyImportError(project,
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), hCommit.getStderr()),
                                 ACTION_NAME, localContext);
@@ -367,6 +378,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     VfsUtil.markDirtyAndRefresh(false, true, false, ArrayUtil.toObjectArray(filesToCommit, VirtualFile.class));
                     VcsFileUtil.markFilesDirty(project, getFilePaths(filesToCommit));
                 } else {
+                    logger.error("doFirstCommitIfRequired: No files to do first commit in project: {}, repoRoot: {}",
+                            project.getName(), rootVirtualFile.getUrl());
                     notifyImportError(project,
                             TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_NO_SELECTED_FILES),
                             ACTION_NAME, localContext);
@@ -374,6 +387,9 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 }
 
             } catch (VcsException ve) {
+                logger.error("doFirstCommitIfRequired: VcsException occurred when trying to do a commit on project: {}, repoRoot: {}",
+                        project.getName(), rootVirtualFile.getUrl());
+                logger.warn("doFirstCommitIfRequired", ve);
                 // Log the exact exception here
                 TfsTelemetryHelper.getInstance().sendException(ve,
                         new TfsTelemetryHelper.PropertyMapBuilder()
@@ -466,6 +482,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     }, indicator.getModalityState());
                     if(remoteParams.size() == 0) {
                         //user chose to cancel import
+                        logger.warn("setupRemoteOnLocalRepo: User chose to cancel import for project: {}, local repo: {}",
+                                project.getName(), localRepository.getGitDir().getUrl());
                         notifyImportError(project,
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED),
                                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_IMPORT),
@@ -489,6 +507,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
         GitHandlerUtil.runInCurrentThread(hRemote, null, true, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE));
         if (hRemote.getExitCode() != 0) {
+            logger.error("setupRemoteOnLocalRepo: git remote failed for project: {}, local repo: {}, error: {}, output: {}",
+                    project.getName(), localRepository.getRoot().getUrl(), hRemote.getStderr(), hRemote.getStdout());
             notifyImportError(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE_ERROR, remoteGitUrl, hRemote.getStderr()),
                     ACTION_NAME, localContext);
@@ -510,6 +530,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         if (currentBranch != null) {
             final GitCommandResult result = git.push(localRepository, REMOTE_ORIGIN, remoteGitUrl, currentBranch.getName(), true);
             if (!result.success()) {
+                logger.error("pushChangesToRemoteRepo: push to remote: {} failed with error: {}, outuput: {}",
+                        remoteGitUrl, result.getErrorOutputAsJoinedString(), result.getOutputAsJoinedString());
                 notifyImportError(project,
                         result.getErrorOutputAsJoinedString(),
                         ACTION_NAME, localContext);
