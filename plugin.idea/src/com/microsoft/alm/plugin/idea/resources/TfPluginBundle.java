@@ -69,7 +69,7 @@ public class TfPluginBundle {
 
     // Common
     @NonNls
-    public static final String KEY_ERRORS_AUTH_CANCELED_BY_USER = "Errors.AuthCanceledByUser";
+    public static final String KEY_ERRORS_AUTH_NOT_SUCCESSFUL = "Errors.AuthNotSuccessful";
     @NonNls
     public static final String KEY_OPERATION_ERRORS_LOOKUP_CANCELED = "Operation.Errors.LookupCanceled";
     @NonNls

@@ -10,14 +10,19 @@ import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Static helpers for Authentication
  */
 public class AuthHelper {
+    private final static Logger logger = LoggerFactory.getLogger(AuthHelper.class);
     private final static String COMPUTER_NAME = "computername";
 
     public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final Credentials credentials) {
@@ -49,10 +54,8 @@ public class AuthHelper {
 
     /**
      * This method wraps the normal Async call to authenticate and waits on the result.
-     *
-     * @throws Throwable
      */
-    public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl) throws Throwable {
+    public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl){
         final SettableFuture<AuthenticationInfo> future = SettableFuture.create();
 
         provider.authenticateAsync(gitRemoteUrl, new AuthenticationListener() {
@@ -73,7 +76,22 @@ public class AuthHelper {
 
         // Wait for the authentication info object to be ready
         // Don't wait any longer than 15 minutes for the user to authenticate
-        return future.get(15, TimeUnit.MINUTES);
+        Throwable t = null;
+        try {
+            return future.get(15, TimeUnit.MINUTES);
+        } catch(InterruptedException ie) {
+            t = ie;
+        } catch(ExecutionException ee) {
+            t = ee;
+        } catch(TimeoutException te) {
+            t = te;
+        } finally {
+            if (t != null) {
+                logger.error("getAuthenticationInfoSynchronously: failed to get authentication info from user");
+                logger.warn("getAuthenticationInfoSynchronously", t);
+            }
+        }
+        return null;
     }
 
     /**
