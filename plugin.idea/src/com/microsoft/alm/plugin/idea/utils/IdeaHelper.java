@@ -10,6 +10,8 @@ import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.Icon;
+
 public class IdeaHelper {
     public IdeaHelper() {
     }
@@ -30,5 +32,16 @@ public class IdeaHelper {
         }
 
         return true;
+    }
+
+    /**
+     * Shows a dialog with OK and cancel actions to prompt for confirmation from user
+     * @return true if user clicks on ok action and false if user clicks on cancel action
+     */
+    public static boolean showConfirmationDialog(@NotNull final Project project, final String message, final String title,
+                                                 final Icon logo, final String okActionMessage, final String cancelActionMessage) {
+
+        final int result = Messages.showYesNoDialog(project, message, title, okActionMessage, cancelActionMessage, logo);
+        return result == 0 ? true : false;
     }
 }
