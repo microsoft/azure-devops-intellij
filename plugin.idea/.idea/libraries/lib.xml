@@ -7,6 +7,7 @@
     <SOURCES>
       <root url="file://$PROJECT_DIR$/lib/src" />
       <root url="file://$PROJECT_DIR$/../plugin/src" />
+      <root url="file://$PROJECT_DIR$/../common/src" />
     </SOURCES>
     <jarDirectory url="file://$PROJECT_DIR$/lib/classes" recursive="false" />
     <jarDirectory url="file://$PROJECT_DIR$/lib/src" recursive="false" type="SOURCES" />

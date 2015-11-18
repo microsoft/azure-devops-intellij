@@ -215,28 +215,24 @@ public class ServerContextManager {
     public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl) {
         assert !StringUtils.isEmpty(gitRemoteUrl);
 
-        try {
-            // Get matching context from manager
-            ServerContext context = getActiveContext();
-            if (context == ServerContext.NO_CONTEXT || context.getGitRepository() == null ||
-                    !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl().replace(" ", "%20"), gitRemoteUrl)) {
-                context = null;
-            }
-
-            if (context == null) {
-                // Manager didn't have a matching context, so create one
-                final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
-                final AuthenticationInfo authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
-                if (authenticationInfo != null) {
-                    // Create a new context object and store it back in the manager
-                    context = createServerContext(gitRemoteUrl, authenticationInfo);
-                }
-            }
-
-            return context;
-        } catch (Throwable ex) {
-            throw new RuntimeException(ex.getLocalizedMessage(), ex);
+        // Get matching context from manager
+        ServerContext context = getActiveContext();
+        if (context == ServerContext.NO_CONTEXT || context.getGitRepository() == null ||
+                !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl().replace(" ", "%20"), gitRemoteUrl)) {
+            context = null;
         }
+
+        if (context == null) {
+            // Manager didn't have a matching context, so create one
+            final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
+            final AuthenticationInfo authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
+            if (authenticationInfo != null) {
+                // Create a new context object and store it back in the manager
+                context = createServerContext(gitRemoteUrl, authenticationInfo);
+            }
+        }
+
+        return context;
     }
 
     /**
@@ -312,7 +308,8 @@ public class ServerContextManager {
                 final CoreHttpClient coreClient = new CoreHttpClient(client, serverUri);
                 collection = coreClient.getProjectCollection(parseResult.getCollectionName());
             } catch (Throwable throwable) {
-                //TODO Log the failure
+                logger.error("validate: failed");
+                logger.warn("validate", throwable);
                 return false;
             }
 

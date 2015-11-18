@@ -69,7 +69,7 @@ public class TfPluginBundle {
 
     // Common
     @NonNls
-    public static final String KEY_ERRORS_AUTH_CANCELED_BY_USER = "Errors.AuthCanceledByUser";
+    public static final String KEY_ERRORS_AUTH_NOT_SUCCESSFUL = "Errors.AuthNotSuccessful";
     @NonNls
     public static final String KEY_OPERATION_ERRORS_LOOKUP_CANCELED = "Operation.Errors.LookupCanceled";
     @NonNls
@@ -151,6 +151,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_IMPORT_FAILED = "Import.Failed";
     @NonNls
+    public static final String KEY_IMPORT_CANCELED = "Import.Canceled";
+    @NonNls
     public static final String KEY_IMPORT_SUCCEEDED = "Import.Succeeded";
     @NonNls
     public static final String KEY_IMPORT_SUCCEEDED_MESSAGE = "Import.Succeeded.Message";
@@ -180,6 +182,12 @@ public class TfPluginBundle {
     public static final String KEY_IMPORT_GIT_REMOTE = "Import.GitRemote";
     @NonNls
     public static final String KEY_IMPORT_GIT_REMOTE_ERROR = "Import.Errors.GitRemote";
+    @NonNls
+    public static final String KEY_IMPORT_ORIGIN_EXISTS= "Import.OriginExists";
+    @NonNls
+    public static final String KEY_IMPORT_UPDATE_ORIGIN= "Import.UpdateOrigin";
+    @NonNls
+    public static final String KEY_IMPORT_CANCEL = "Import.Cancel";
     @NonNls
     public static final String KEY_IMPORT_GIT_PUSH = "Import.GitPush";
     @NonNls
