@@ -477,7 +477,7 @@ public class CreatePullRequestModel extends AbstractModel {
                             TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC), true);
 
                 if (context == null) {
-                    notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_CANCELED_BY_USER));
+                    notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));
                     return;
                 }
 

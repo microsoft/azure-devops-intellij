@@ -123,9 +123,14 @@ public class UrlHelper {
         }
 
         // only support http and https (ssh support will come later when the format of the url is better understood)
-        final String scheme = gitUri.getScheme() != null ? gitUri.getScheme().toLowerCase() : null;
-        if (HTTPS_PROTOCOL.equals(scheme) || HTTP_PROTOCOL.equals(scheme)) {
-            return HttpGitUrlParser.tryParse(gitUri, validator);
+        try {
+            final String scheme = gitUri.getScheme() != null ? gitUri.getScheme().toLowerCase() : null;
+            if (HTTPS_PROTOCOL.equals(scheme) || HTTP_PROTOCOL.equals(scheme)) {
+                return HttpGitUrlParser.tryParse(gitUri, validator);
+            }
+        } catch (Throwable t) {
+            logger.error("tryParse: unexpected error");
+            logger.warn("tryParse", t);
         }
 
         return ParseResult.FAILED;
