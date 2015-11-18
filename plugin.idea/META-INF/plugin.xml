@@ -5,13 +5,13 @@
 
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
-    <name>Visual Studio Team Foundation (Preview)</name>
+    <name>Visual Studio Team Services (Preview)</name>
     <version>0.92.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
     <br />
-      Visual Studio Team Foundation is a plugin to enable working with Git repositories on Visual Studio Online or Team Foundation Server 2015.
+      Visual Studio Team Services is a plugin to enable working with Git repositories on Visual Studio Team Services or Team Foundation Server 2015.
       <br />
       <a href="https://github.com/Microsoft/vso-intellij">GitHub</a> | <a href="https://github.com/Microsoft/vso-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
       <br />
@@ -19,9 +19,9 @@
       <b>Features</b>
       <br />
       <ul>
-        <li>Supports authenticating with Visual Studio Online and Team Foundation Server 2015 to work with source code in Git repositories.</li>
-        <li>Checkout code from Git repositories on Visual Studio Online and Team Foundation Server 2015.</li>
-        <li>Import IntelliJ projects into Git repositories on Visual Studio Online and Team Foundation Server 2015.</li>
+        <li>Supports authenticating with Visual Studio Team Services and Team Foundation Server 2015 to work with source code in Git repositories.</li>
+        <li>Checkout code from Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
+        <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
         <li>Create pull requests.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
       </ul>
@@ -29,7 +29,7 @@
       <br />
       <b>For More Information</b>
       <br />
-      See <a href="https://java.visualstudio.com/">Visual Studio Online – Java</a>
+      See <a href="https://java.visualstudio.com/">Visual Studio Team Services – Java</a>
       <br />
       <br />
       <i>Compiled with Java 1.6</i>

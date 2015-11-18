@@ -80,7 +80,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                                     setAuthenticating(false);
                                     //Log exception
                                     if (throwable != null) {
-                                        logger.warn("Authenticating with Visual Studio Online failed", throwable);
+                                        logger.warn("Authenticating with Team Services failed", throwable);
                                     }
                                     //try to load the repos
                                     loadReposFromAllAccounts();

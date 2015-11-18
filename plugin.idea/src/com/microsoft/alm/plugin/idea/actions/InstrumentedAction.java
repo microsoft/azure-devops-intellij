@@ -11,7 +11,7 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import javax.swing.Icon;
 
 /**
- * Represents an base class for all Actions performed by the Team Foundation plugin for IntelliJ.
+ * Represents an base class for all Actions performed by the Visual Studio Team Services plugin for IntelliJ.
  *
  * @see javax.swing.Action
  */
