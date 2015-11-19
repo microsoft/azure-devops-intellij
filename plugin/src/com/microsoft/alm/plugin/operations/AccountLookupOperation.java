@@ -135,18 +135,29 @@ public class AccountLookupOperation extends Operation {
     }
 
     private static Profile getProfile(final AuthenticationResult authenticationResult) {
+        // Try to get the profile with the old result
         try {
-            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            AuthenticationResult newResult = refreshAuthenticationResult(azureAuthenticator, authenticationResult);
-            if (newResult == null) {
-                // We couldn't refresh the token, but we will try using it anyway
-                newResult = authenticationResult;
-            }
-            return azureAuthenticator.getUserProfile(newResult);
+            return getProfile(authenticationResult, false);
         } catch (IOException e) {
-            logger.warn("Getting azure profile failed", e);
+            logger.warn("Getting azure profile failed - refreshToken: false", e);
+        }
+
+        // try again but this time refresh the token
+        try {
+            return getProfile(authenticationResult, true);
+        } catch (IOException e) {
+            logger.warn("Getting azure profile failed - refreshToken: true", e);
             throw new RuntimeException(e.getLocalizedMessage(), e);
         }
+    }
+
+    private static Profile getProfile(final AuthenticationResult authenticationResult, final boolean refreshToken) throws IOException {
+            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
+            AuthenticationResult newResult = authenticationResult;
+            if (refreshToken) {
+                newResult = refreshAuthenticationResult(azureAuthenticator, authenticationResult);
+            }
+            return azureAuthenticator.getUserProfile(newResult);
     }
 
     private static AuthenticationResult refreshAuthenticationResult(final AzureAuthenticator azureAuthenticator, final AuthenticationResult authenticationResult) {
@@ -156,9 +167,8 @@ public class AccountLookupOperation extends Operation {
         } catch (IOException e) {
             // refreshing failed, log exception
             logger.warn("Refreshing access token failed", e);
+            throw new RuntimeException(e.getLocalizedMessage(), e);
         }
-
-        return null;
     }
 
     /**

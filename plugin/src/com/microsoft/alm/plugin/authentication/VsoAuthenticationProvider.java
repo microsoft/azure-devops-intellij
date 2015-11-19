@@ -73,20 +73,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         return lastDeploymentAuthenticationResult != null;
     }
 
-    // TODO this method is not used because it throws an exception
-    public void forceRefreshResult() {
-        synchronized (this) {
-            if (lastDeploymentAuthenticationResult != null) {
-                try {
-                    // always refresh it -- this is the only way to ensure it is valid
-                    lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(lastDeploymentAuthenticationResult);
-                } catch (IOException e) {
-                    lastDeploymentAuthenticationResult = null;
-                    // refreshing failed, log exception
-                    logger.warn("Refreshing access token failed", e);
-                }
-            }
-        }
+    public static void saveLastResult(AuthenticationResult lastResult) {
+        lastDeploymentAuthenticationResult = lastResult;
     }
 
     @Override
