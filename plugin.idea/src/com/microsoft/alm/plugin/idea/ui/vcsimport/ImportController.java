@@ -99,6 +99,7 @@ public class ImportController implements Observer {
                     //TODO dispose of the model correctly
                     model.dispose();
                 } else if (BaseDialog.CMD_TAB_CHANGED.equals(e.getActionCommand())) {
+                    model.clearErrors();
                     model.setVsoSelected(dialog.getSelectedTabIndex() == TAB_VSO);
                 }
             }

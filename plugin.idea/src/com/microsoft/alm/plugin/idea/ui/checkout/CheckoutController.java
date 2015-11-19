@@ -97,6 +97,7 @@ public class CheckoutController implements Observer {
                     //TODO do we need to dispose of the model in other cases
                     model.dispose();
                 } else if (BaseDialog.CMD_TAB_CHANGED.equals(e.getActionCommand())) {
+                    model.clearErrors();
                     model.setVsoSelected(dialog.getSelectedTabIndex() == TAB_VSO);
                 }
             }
