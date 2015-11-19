@@ -11,6 +11,9 @@ import javax.swing.KeyStroke;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import java.awt.AWTKeyStroke;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -64,5 +67,27 @@ public class SwingHelper {
         } else {
             component.setBorder(new CompoundBorder(empty, currentBorder));
         }
+    }
+
+    public static void setMaxCharLimit(final JTextArea textField, final int limit) {
+        textField.setDocument(new MaxCharLimitDocument(limit));
+    }
+
+    private static class MaxCharLimitDocument extends PlainDocument {
+        private final int maxCharLimit;
+
+        MaxCharLimitDocument(final int limit) {
+            maxCharLimit = limit;
+        }
+
+        @Override
+        public void insertString(final int offset, final String str, final AttributeSet attr) throws BadLocationException {
+            if (str == null) return;
+
+            if (getLength() + str.length() <= maxCharLimit) {
+                super.insertString(offset, str, attr);
+            }
+        }
+
     }
 }
