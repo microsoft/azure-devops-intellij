@@ -63,11 +63,6 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
     }
 
     @Override
-    protected void setServerNameInternal(String serverName) {
-        super.setServerNameInternal(serverName);
-    }
-
-    @Override
     public void loadRepositories() {
         clearErrors();
 
