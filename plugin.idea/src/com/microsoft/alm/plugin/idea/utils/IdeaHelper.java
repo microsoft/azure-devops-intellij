@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.utils;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
@@ -18,6 +20,7 @@ public class IdeaHelper {
 
     /**
      * Verifies if Git exe is configured, show notification and warning message if not
+     *
      * @param project Idea project
      * @return true if Git exe is configured, false if Git exe is not correctly configured
      */
@@ -32,6 +35,31 @@ public class IdeaHelper {
         }
 
         return true;
+    }
+
+    public static void runOnUIThread(final Runnable runnable) {
+        runOnUIThread(runnable, false);
+    }
+
+    public static void runOnUIThread(final Runnable runnable, final boolean wait) {
+        runOnUIThread(runnable, wait,
+                ApplicationManager.getApplication() != null ?
+                        ApplicationManager.getApplication().getAnyModalityState() :
+                        null);
+    }
+
+    public static void runOnUIThread(final Runnable runnable, final boolean wait, final ModalityState modalityState) {
+        if (ApplicationManager.getApplication() != null && !ApplicationManager.getApplication().isDispatchThread()) {
+            if (wait) {
+                ApplicationManager.getApplication().invokeAndWait(runnable, modalityState);
+            } else {
+                ApplicationManager.getApplication().invokeLater(runnable, modalityState);
+            }
+        } else {
+            // If we are already on the dispatch thread then we can run it here
+            // If we don't have an application then we are testing, just run the runnable here
+            runnable.run();
+        }
     }
 
     /**

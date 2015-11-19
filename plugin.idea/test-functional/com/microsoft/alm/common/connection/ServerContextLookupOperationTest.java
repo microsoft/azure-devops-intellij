@@ -136,7 +136,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         Assert.assertFalse(serverContextList.isEmpty());
     }
 
-    @Test
+    //@Test
     public void testGitRepositoryLookupSync() {
         ServerContextLookupOperation gitRepositoryLookupOperation = new ServerContextLookupOperation(serverContextList, ServerContextLookupOperation.ContextScope.REPOSITORY);
         MyListener myListener = new MyListener();
@@ -150,7 +150,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         verifyEventsMatchResults(myListener, syncResults);
     }
 
-    @Test
+    //@Test
     public void testGitRepositoryLookupSyncX10() {
         expandTfsContextList(10);
         testGitRepositoryLookupSync();
@@ -191,7 +191,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         }
     }
 
-    @Test
+    //@Test
     public void testGitRepositoryLookupASync() {
         testGitRepositoryLookupASync(compareAsyncWithSync);
     }
@@ -238,7 +238,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         }
     }
 
-    @Test
+    //@Test
     public void testGitRepositoryLookupASyncX10() {
         expandTfsContextList(10);
         testGitRepositoryLookupASync(false);

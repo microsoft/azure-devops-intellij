@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
@@ -15,6 +13,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -100,7 +99,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                 @Override
                 public void authenticated(final AuthenticationInfo authenticationInfo, final Throwable throwable) {
                     // Push this event back onto the UI thread
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
                         public void run() {
                             // Authentication is over, so set the boolean
@@ -113,7 +112,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                             //try to load the repos
                             loadRepositoriesInternal();
                         }
-                    }, ModalityState.any());
+                    });
                 }
             });
         }
