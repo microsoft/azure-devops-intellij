@@ -77,6 +77,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
     }
 
     private void runOnUIThread(final Runnable runnable) {
+        //TODO this class cannot depend on ApplicationManager (the UI should handle moving this back to the UI thread)
         if (ApplicationManager.getApplication() != null) {
             ApplicationManager.getApplication().invokeLater(runnable, ModalityState.any());
         } else {

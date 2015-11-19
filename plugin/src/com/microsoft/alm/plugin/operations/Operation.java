@@ -4,23 +4,26 @@
 package com.microsoft.alm.plugin.operations;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This is an abstract Operation class to use as a base class for other operations.
  */
 public abstract class Operation {
-    public final static LookupInputs EMPTY_INPUTS = null;
+    public final static Inputs EMPTY_INPUTS = null;
+
+    public enum State {NOT_STARTED, STARTED, CANCELLED, COMPLETED}
 
     public interface Listener {
         void notifyLookupStarted();
 
         void notifyLookupCompleted();
 
-        void notifyLookupResults(LookupResults results);
+        void notifyLookupResults(Results results);
     }
 
-    public interface LookupResults {
+    public interface Results {
         Throwable getError();
 
         boolean hasError();
@@ -28,13 +31,33 @@ public abstract class Operation {
         boolean isCanceled();
     }
 
-    public interface LookupInputs {
+    public interface Inputs {
     }
 
     private final List<Listener> listeners = new CopyOnWriteArrayList<Listener>();
+    private final UUID id;
+    private State state;
 
+    // This constructor is protected to make sure users don't create one directly
     protected Operation() {
-        // This constructor is protected to make sure users don't create one directly
+        id = UUID.randomUUID();
+        state = State.NOT_STARTED;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public boolean isFinished() {
+        return state == State.COMPLETED || state == State.CANCELLED;
+    }
+
+    public boolean isCancelled() {
+        return state == State.CANCELLED;
     }
 
     public void addListener(final Listener listener) {
@@ -45,21 +68,38 @@ public abstract class Operation {
         listeners.remove(listener);
     }
 
-    public abstract void doLookup(LookupInputs inputs);
+    public void doWorkAsync(final Inputs inputs) {
+        OperationExecutor.getInstance().executeAsync(this, inputs);
+    }
+
+    public abstract void doWork(final Inputs inputs);
+
+    public void cancel() {
+        state = State.CANCELLED;
+    }
+
+    protected void terminate(final Throwable throwable) {
+        state = State.COMPLETED;
+    }
 
     protected void onLookupStarted() {
+        state = State.STARTED;
         for (final Listener listener : listeners) {
             listener.notifyLookupStarted();
         }
     }
 
     protected void onLookupCompleted() {
+        if (state != State.CANCELLED) {
+            state = State.COMPLETED;
+        }
+
         for (final Listener listener : listeners) {
             listener.notifyLookupCompleted();
         }
     }
 
-    protected void onLookupResults(LookupResults results) {
+    protected void onLookupResults(final Results results) {
         for (final Listener listener : listeners) {
             listener.notifyLookupResults(results);
         }

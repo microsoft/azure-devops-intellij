@@ -36,7 +36,6 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         setConnectionStatus(false);
         setAuthenticating(false);
 
-        //TODO this check needs to be reworked because it touches the server
         if (authenticationProvider.isAuthenticated()) {
             loadReposFromAllAccounts();
         }
@@ -45,10 +44,6 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     @Override
     protected AuthenticationInfo getAuthenticationInfo() {
         return authenticationProvider.getAuthenticationInfo();
-    }
-
-    private void setAuthenticationProvider(VsoAuthenticationProvider authenticationProvider) {
-        this.authenticationProvider = authenticationProvider;
     }
 
     @Override
@@ -117,7 +112,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
             }
 
             @Override
-            public void notifyLookupResults(final Operation.LookupResults results) {
+            public void notifyLookupResults(final Operation.Results results) {
                 final ModelValidationInfo validationInfo;
                 if (results.hasError()) {
                     validationInfo = ModelValidationInfo.createWithMessage(results.getError().getMessage());
@@ -143,13 +138,13 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                             addError(validationInfo);
                             signOut();
                         }
-                    });
+                    }, ModalityState.any());
                 }
             }
         });
 
         // Start the operation
-        accountLookupOperation.doLookup(Operation.EMPTY_INPUTS);
+        accountLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
     }
 
 }

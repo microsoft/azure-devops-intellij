@@ -109,7 +109,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
             }
 
             @Override
-            public void notifyLookupResults(final Operation.LookupResults results) {
+            public void notifyLookupResults(final Operation.Results results) {
                 final ModelValidationInfo validationInfo;
                 if (results.hasError()) {
                     validationInfo = ModelValidationInfo.createWithMessage(results.getError().getMessage());
@@ -137,6 +137,6 @@ public class VsoImportPageModel extends ImportPageModelImpl {
             }
         });
         // Start the operation
-        accountLookupOperation.doLookup(Operation.EMPTY_INPUTS);
+        accountLookupOperation.doWork(Operation.EMPTY_INPUTS);
     }
 }
