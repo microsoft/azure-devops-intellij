@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.common.forms;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
@@ -78,6 +77,8 @@ public class FeedbackForm {
             SwingHelper.setPreferredHeight(commentScrollPane, 100);
             commentScrollPane.setMinimumSize(new Dimension(JBUI.scale(200), JBUI.scale(70)));
             SwingHelper.copyFontAndMargins(comment, email);
+            // Right now the limit on properties is 1024 in AppInsights
+            SwingHelper.setMaxCharLimit(comment, 1024);
 
             initialized = true;
         }
@@ -103,15 +104,13 @@ public class FeedbackForm {
      */
     private void $$$setupUI$$$() {
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
         commentLabel = new JLabel();
         this.$$$loadLabelText$$$(commentLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackDialog.CommentLabel.Smile"));
         contentPanel.add(commentLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         privacyLink = new Hyperlink();
         this.$$$loadLabelText$$$(privacyLink, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackForm.PrivacyLink"));
         contentPanel.add(privacyLink, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        contentPanel.add(spacer1, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackForm.EmailLabel"));
         contentPanel.add(label1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

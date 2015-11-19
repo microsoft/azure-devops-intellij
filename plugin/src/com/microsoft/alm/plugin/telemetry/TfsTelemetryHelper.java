@@ -212,9 +212,9 @@ public class TfsTelemetryHelper {
             if (context != null) {
                 final boolean isHosted = (context.getType() == ServerContext.Type.VSO) ||
                         (context.getType() == ServerContext.Type.VSO_DEPLOYMENT);
-                properties.put(TfsTelemetryConstants.SHARED_PROPERTY_IS_HOSTED, Boolean.toString(isHosted));
-                properties.put(TfsTelemetryConstants.SHARED_PROPERTY_SERVER_ID, getServerId(context));
-                properties.put(TfsTelemetryConstants.SHARED_PROPERTY_COLLECTION_ID, getCollectionId(context));
+                add(TfsTelemetryConstants.SHARED_PROPERTY_IS_HOSTED, Boolean.toString(isHosted));
+                add(TfsTelemetryConstants.SHARED_PROPERTY_SERVER_ID, getServerId(context));
+                add(TfsTelemetryConstants.SHARED_PROPERTY_COLLECTION_ID, getCollectionId(context));
             }
             return this;
         }
@@ -236,28 +236,28 @@ public class TfsTelemetryHelper {
 
         public PropertyMapBuilder actionName(final String actionName) {
             if (!StringUtils.isEmpty(actionName)) {
-                properties.put(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_COMMAND_NAME, actionName);
+                add(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_COMMAND_NAME, actionName);
             }
             return this;
         }
 
         public PropertyMapBuilder success(final Boolean success) {
             if (success != null) {
-                properties.put(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_IS_SUCCESS, success.toString());
+                add(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_IS_SUCCESS, success.toString());
             }
             return this;
         }
 
         public PropertyMapBuilder message(final String message) {
             if (!StringUtils.isEmpty(message)) {
-                properties.put(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_MESSAGE, message);
+                add(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_MESSAGE, message);
             }
             return this;
         }
 
         public PropertyMapBuilder pair(final String key, final String value) {
             if (!StringUtils.isEmpty(key) && !StringUtils.isEmpty(value)) {
-                properties.put(key, value);
+                add(key, value);
             }
             return this;
         }
@@ -278,6 +278,11 @@ public class TfsTelemetryHelper {
             }
 
             return UNKNOWN;
+        }
+
+        private void add(final String key, final String value) {
+            // remove any newlines from the value field. Newlines currently cause the event to be lost in AppInsights
+            properties.put(key, value.replace("\r", "").replace("\n", " "));
         }
 
         @Override
