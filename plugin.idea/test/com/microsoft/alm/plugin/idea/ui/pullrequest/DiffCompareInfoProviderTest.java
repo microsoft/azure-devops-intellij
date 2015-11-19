@@ -16,8 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -76,7 +76,6 @@ public class DiffCompareInfoProviderTest extends IdeaAbstractTest {
         assertCompareInfoEmptiness(underTest.getBranchCompareInfo(projectMock, gitRepositoryMock, "test1", "test2"));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testBranchCompare() throws VcsException {
         when(gitUtilWrapperMock.getMergeBase(any(Project.class), any(VirtualFile.class), eq("test2"), eq("test1")))
@@ -84,15 +83,15 @@ public class DiffCompareInfoProviderTest extends IdeaAbstractTest {
 
         GitCommit commitMock1 = PRGitObjectMockHelper.getCommit(projectMock, fileMock);
         when(gitUtilWrapperMock.history(any(Project.class), any(VirtualFile.class), eq("myparent..")))
-                .thenReturn(Arrays.asList(commitMock1));
+                .thenReturn(Collections.singletonList(commitMock1));
 
         GitCommit commitMock2 = PRGitObjectMockHelper.getCommit(projectMock, fileMock);
         when(gitUtilWrapperMock.history(any(Project.class), any(VirtualFile.class), eq("..myparent")))
-                .thenReturn(Arrays.asList(commitMock2));
+                .thenReturn(Collections.singletonList(commitMock2));
 
         Change diff = Mockito.mock(Change.class);
         when(gitUtilWrapperMock.getDiff(any(Project.class), any(VirtualFile.class), eq("myparent"), eq("test1")))
-                .thenReturn(Arrays.asList(diff));
+                .thenReturn(Collections.singletonList(diff));
 
         final GitCommitCompareInfo compareInfo
                 = underTest.getBranchCompareInfo(projectMock, gitRepositoryMock, "test1", "test2");
@@ -107,7 +106,7 @@ public class DiffCompareInfoProviderTest extends IdeaAbstractTest {
 
         Collection<Change> diffs = compareInfo.getTotalDiff();
         assertEquals(1, diffs.size());
-        assertEquals(diff, new LinkedList(diffs).get(0));
+        assertEquals(diff, new LinkedList<Change>(diffs).get(0));
     }
 
 

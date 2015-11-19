@@ -62,6 +62,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     public CatalogServiceImpl(final ServerContext context) {
+        assert context != null;
         this.context = context;
 
         final URI baseURI = context.getUri();
@@ -73,7 +74,7 @@ public class CatalogServiceImpl implements CatalogService {
         final QueryData queryForOrganizationRoot = new QueryData(SINGLE_RECURSE_STAR, QUERY_OPTIONS_NONE, ORGANIZATIONAL_ROOT);
         final CatalogData catalogDataOrganizationRoot = getCatalogDataFromServer(queryForOrganizationRoot);
         //If auth fails, you can get here and catalogDataOrganizationRoot is null
-        //TODO: can we get to null from our UI workflows, should we bubble up exception?
+        //TODO: can we get to null from our UI work flows, should we bubble up exception?
         if (catalogDataOrganizationRoot != null) {
             final CatalogResource organizationRoot = catalogDataOrganizationRoot.catalogResources.get(0);
 
@@ -127,14 +128,14 @@ public class CatalogServiceImpl implements CatalogService {
         httpPost.addHeader(new BasicHeader("Content-Type", "application/soap+xml; charset=utf-8")); //$NON-NLS-1$ //$NON-NLS-2$
 
         try {
-            if (context == null || context.getHttpClient() == null) {
+            if (context.getHttpClient() == null) {
                 logger.warn("getCatalogDataFromServer context.getHttpClient() is null");
                 return null;
             }
             final HttpResponse httpResponse = context.getHttpClient().execute(httpPost);
             final int responseStatusCode = httpResponse.getStatusLine().getStatusCode();
 
-            CatalogData catalogData = null;
+            CatalogData catalogData;
             if (responseStatusCode == HttpStatus.SC_OK) {
                 catalogData = new CatalogData(queryData.filterOnResourceType);
                 readResponse(httpResponse, catalogData);
@@ -213,6 +214,7 @@ public class CatalogServiceImpl implements CatalogService {
                     try {
                         reader.close();
                     } catch (final XMLStreamException e) {
+                        // Ignore and continue
                     }
                 }
             }
@@ -224,6 +226,7 @@ public class CatalogServiceImpl implements CatalogService {
                 try {
                     responseStream.close();
                 } catch (IOException e) {
+                    // Ignore and continue
                 }
             }
         }
@@ -361,7 +364,7 @@ public class CatalogServiceImpl implements CatalogService {
                      * The element type is an array.
                      */
                         int event0;
-                        final List list0 = new ArrayList();
+                        final List<String> list0 = new ArrayList<String>();
 
                         do {
                             event0 = reader.nextTag();
@@ -372,7 +375,7 @@ public class CatalogServiceImpl implements CatalogService {
                         }
                         while (event0 != XMLStreamConstants.END_ELEMENT);
 
-                        this.nodeReferencePaths = (String[]) list0.toArray(new String[list0.size()]);
+                        this.nodeReferencePaths = list0.toArray(new String[list0.size()]);
                     } else {
                         // Read the unknown child element until its end
                         readUntilElementEnd(reader);

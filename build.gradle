@@ -43,11 +43,18 @@ subprojects {
  * specific settings for each project
  */
 project(":common") {
+    jar {
+        baseName 'com.microsoft.alm.common'
+    }
 }
 
 project(":plugin") {
     dependencies {
         compile project(':common')
+    }
+
+    jar {
+        baseName 'com.microsoft.alm.plugin'
     }
 }
 
@@ -58,7 +65,7 @@ project(":plugin.idea") {
     }
 
     jar {
-        baseName 'com.microsoft.alm'
+        baseName 'com.microsoft.alm.plugin.idea'
         from('.') {
             include 'META-INF/plugin.xml'
         }

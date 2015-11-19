@@ -67,8 +67,6 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
      * <p/>
      * Shortly thereafter, ServerContextManager will initialize and will take ownership of this data with actively
      * managed ServerContexts, and this state data should not be used again.
-     *
-     * @param state
      */
     public void loadState(final ServerContextItemsStore state) {
         this.restoreState = state;
@@ -162,7 +160,7 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
 
     public List<ServerContext> getServerContextsToRestore() {
         if (restoreState == null || restoreState.serverContextItemStores == null) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
