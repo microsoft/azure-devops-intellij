@@ -6,11 +6,12 @@ package com.microsoft.alm.plugin.idea.ui.common;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
+import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 
 import java.util.List;
 
-public class ServerContextLookupListener implements ServerContextLookupOperation.Listener {
+public class ServerContextLookupListener implements Operation.Listener {
 
     private final ServerContextLookupPageModel pageModel;
     private ServerContextLookupOperation activeOperation;
@@ -31,7 +32,7 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
         terminateActiveOperation();
         this.activeOperation = activeOperation;
         this.activeOperation.addListener(this);
-        this.activeOperation.lookupContextsAsync();
+        this.activeOperation.doWorkAsync(Operation.EMPTY_INPUTS);
     }
 
     @Override
@@ -56,23 +57,23 @@ public class ServerContextLookupListener implements ServerContextLookupOperation
     }
 
     @Override
-    public void notifyLookupCanceled() {
-        operationDone();
-        IdeaHelper.runOnUIThread(new Runnable() {
-            public void run() {
-                pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED));
-                pageModel.setLoading(false);
-            }
-        });
-    }
-
-    @Override
-    public void notifyLookupResults(final List<ServerContext> serverContexts) {
-        IdeaHelper.runOnUIThread(new Runnable() {
-            public void run() {
-                pageModel.appendContexts(serverContexts);
-            }
-        });
+    public void notifyLookupResults(final Operation.Results results) {
+        final ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults)results;
+        if (lookupResults.isCancelled()) {
+            operationDone();
+            IdeaHelper.runOnUIThread(new Runnable() {
+                public void run() {
+                    pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED));
+                    pageModel.setLoading(false);
+                }
+            });
+        } else {
+            IdeaHelper.runOnUIThread(new Runnable() {
+                public void run() {
+                    pageModel.appendContexts(lookupResults.getServerContexts());
+                }
+            });
+        }
     }
 
     private void operationDone() {
