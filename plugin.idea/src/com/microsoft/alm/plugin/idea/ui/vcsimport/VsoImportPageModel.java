@@ -95,7 +95,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         clearContexts();
 
-        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider.getAuthenticationInfo(), authenticationProvider.getAuthenticationResult());
+        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider);
         accountLookupOperation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {

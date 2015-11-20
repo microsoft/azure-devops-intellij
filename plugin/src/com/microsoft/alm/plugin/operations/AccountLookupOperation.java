@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -11,7 +10,7 @@ import com.microsoft.tf.common.authentication.aad.AccountsCallback;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
 import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import com.microsoft.visualstudio.services.account.webapi.model.Profile;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,15 +51,12 @@ public class AccountLookupOperation extends Operation {
         }
     }
 
-    private final AuthenticationInfo authenticationInfo;
-    private final AuthenticationResult authenticationResult;
+    private final VsoAuthenticationProvider authenticationProvider;
     private Future innerOperation;
 
-    public AccountLookupOperation(final AuthenticationInfo authenticationInfo, final AuthenticationResult authenticationResult) {
-        assert authenticationInfo != null;
-        assert authenticationResult != null;
-        this.authenticationInfo = authenticationInfo;
-        this.authenticationResult = authenticationResult;
+    public AccountLookupOperation(final VsoAuthenticationProvider authenticationProvider) {
+        assert authenticationProvider != null;
+        this.authenticationProvider = authenticationProvider;
     }
 
     public AccountLookupResults castResults(final Results results) {
@@ -74,12 +70,12 @@ public class AccountLookupOperation extends Operation {
             if (isCancelled()) {
                 return;
             }
-            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            final Profile me = getProfile(authenticationResult);
+            final AzureAuthenticator azureAuthenticator = authenticationProvider.getAzureAuthenticator();
+            final Profile me = authenticationProvider.getAuthenticatedUserProfile();
             if (isCancelled()) {
                 return;
             }
-            innerOperation = azureAuthenticator.getAccountsAsync(authenticationResult, me, new AccountsCallback() {
+            innerOperation = azureAuthenticator.getAccountsAsync(authenticationProvider.getAuthenticationResult(), me, new AccountsCallback() {
                 @Override
                 public void onSuccess(final List<Account> accounts) {
                     if (isCancelled()) {
@@ -90,7 +86,7 @@ public class AccountLookupOperation extends Operation {
                     for (final Account a : accounts) {
                         final ServerContext accountContext =
                                 new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
-                                        .accountUri(a).authentication(authenticationInfo).build();
+                                        .accountUri(a).authentication(authenticationProvider.getAuthenticationInfo()).build();
                         results.serverContexts.add(accountContext);
                     }
                     onLookupResults(results);
@@ -134,68 +130,32 @@ public class AccountLookupOperation extends Operation {
         onLookupCompleted();
     }
 
-    private static Profile getProfile(final AuthenticationResult authenticationResult) {
-        // Try to get the profile with the old result
-        try {
-            return getProfile(authenticationResult, false);
-        } catch (IOException e) {
-            logger.warn("Getting azure profile failed - refreshToken: false", e);
-        }
-
-        // try again but this time refresh the token
-        try {
-            return getProfile(authenticationResult, true);
-        } catch (IOException e) {
-            logger.warn("Getting azure profile failed - refreshToken: true", e);
-            throw new RuntimeException(e.getLocalizedMessage(), e);
-        }
-    }
-
-    private static Profile getProfile(final AuthenticationResult authenticationResult, final boolean refreshToken) throws IOException {
-            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            AuthenticationResult newResult = authenticationResult;
-            if (refreshToken) {
-                newResult = refreshAuthenticationResult(azureAuthenticator, authenticationResult);
-            }
-            return azureAuthenticator.getUserProfile(newResult);
-    }
-
-    private static AuthenticationResult refreshAuthenticationResult(final AzureAuthenticator azureAuthenticator, final AuthenticationResult authenticationResult) {
-        try {
-            // always refresh it -- this is the only way to ensure it is valid
-            return azureAuthenticator.refreshAadAccessToken(authenticationResult);
-        } catch (IOException e) {
-            // refreshing failed, log exception
-            logger.warn("Refreshing access token failed", e);
-            throw new RuntimeException(e.getLocalizedMessage(), e);
-        }
-    }
-
     /**
      * This method returns the matching Account object from a call to Azure Authenticator getAccounts.
      * This method is synchronous and should be called on a background thread.
      *
-     * @param authenticationResult The Authentication Result returned from authentication provider
+     * @param authenticationProvider The authentication provider
      * @param accountName          The name of the account to retrieve
      * @return the Account object that matches the name or null if none could be found
      */
-    public static Account getAccount(final AuthenticationResult authenticationResult, final String accountName) {
-        if (authenticationResult == null) {
+    public static Account getAccount(final VsoAuthenticationProvider authenticationProvider, final String accountName) {
+        if (authenticationProvider == null) {
             return null;
         }
 
         try {
-            final AzureAuthenticator azureAuthenticator = VsoAuthenticationProvider.getAzureAuthenticator();
-            final Profile me = getProfile(authenticationResult);
-            List<Account> accounts = azureAuthenticator.getAccounts(authenticationResult, me);
-            for (Account a : accounts) {
-                if (a.getAccountName().equalsIgnoreCase(accountName)) {
-                    return a;
+            final AzureAuthenticator azureAuthenticator = authenticationProvider.getAzureAuthenticator();
+            final Profile me = authenticationProvider.getAuthenticatedUserProfile();
+            if(azureAuthenticator != null && me != null) {
+                List<Account> accounts = azureAuthenticator.getAccounts(authenticationProvider.getAuthenticationResult(), me);
+                for (Account a : accounts) {
+                    if (StringUtils.equalsIgnoreCase(a.getAccountName(), accountName)) {
+                        return a;
+                    }
                 }
             }
         } catch (IOException e) {
             logger.warn("Getting account failed", e);
-            throw new RuntimeException(e.getLocalizedMessage(), e);
         }
 
         return null;

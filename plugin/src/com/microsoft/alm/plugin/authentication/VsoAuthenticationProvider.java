@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
+import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.slf4j.Logger;
@@ -73,10 +74,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         return lastDeploymentAuthenticationResult != null;
     }
 
-    public static void saveLastResult(AuthenticationResult lastResult) {
-        lastDeploymentAuthenticationResult = lastResult;
-    }
-
     @Override
     public void clearAuthenticationDetails() {
         lastDeploymentAuthenticationResult = null;
@@ -111,6 +108,47 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         } catch (IOException e) {
             clearAuthenticationDetails();
             AuthenticationListener.Helper.authenticated(listener, null, e);
+        }
+    }
+
+    public Profile getAuthenticatedUserProfile() {
+        if(!isAuthenticated()) {
+            return null;
+        }
+
+        Profile profile = null;
+        try {
+            profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
+        } catch(IOException ie) {
+            logger.warn("getAuthenticatedUserProfile", ie);
+        } catch(Throwable t) {
+            logger.warn("getAuthenticatedUserProfile", t);
+        }
+
+        if(profile == null) {
+            //refresh the authentication result and try again
+            refreshAuthenticationResult();
+            try {
+                profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
+            } catch(IOException ie) {
+                logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", ie);
+                throw new RuntimeException("Authentication expired, please 'Sign in...' and try again.");
+            } catch(Throwable t) {
+                logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
+                throw new RuntimeException("Authentication expired, please 'Sign in...' and try again.");
+            }
+        }
+
+        return profile;
+    }
+
+    private void refreshAuthenticationResult() {
+        try {
+            lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
+        } catch (IOException e) {
+            // refreshing failed, log exception
+            logger.warn("Refreshing access token failed", e);
+            lastDeploymentAuthenticationResult = null;
         }
     }
 }
