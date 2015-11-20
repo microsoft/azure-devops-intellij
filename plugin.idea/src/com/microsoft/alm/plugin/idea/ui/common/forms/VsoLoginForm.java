@@ -18,11 +18,9 @@ import com.microsoft.alm.plugin.idea.ui.controls.WrappingLabel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.KeyStroke;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -70,7 +68,6 @@ public class VsoLoginForm implements LoginForm {
         signInLink.addActionListener(listener);
         createAnAccountLink.addActionListener(listener);
         learnMoreLink.addActionListener(listener);
-        contentPanel.registerKeyboardAction(listener, LoginForm.CMD_ENTER_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     @Override
@@ -78,9 +75,11 @@ public class VsoLoginForm implements LoginForm {
         if (inProgress) {
             busySpinnerPanel.start(true);
             loginProgressLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_LOGIN_FORM_AUTHENTICATING_VSO));
+            signInLink.setEnabled(false);
         } else {
             busySpinnerPanel.stop(true);
             loginProgressLabel.setText("");
+            signInLink.setEnabled(true);
         }
     }
 

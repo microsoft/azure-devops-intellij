@@ -82,7 +82,7 @@ public class ImportPageController extends AbstractController {
             pageModel.gotoLink(LoginPageModel.URL_CREATE_ACCOUNT);
         } else if (LoginForm.CMD_LEARN_MORE.equals(e.getActionCommand())) {
             pageModel.gotoLink(LoginPageModel.URL_VSO_JAVA);
-        } else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
+        } else if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand())) {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for projects, will prompt for login if needed
             pageModel.loadTeamProjects();

@@ -82,7 +82,7 @@ public class Hyperlink extends LinkLabel<Object> {
     }
 
     private void notifyActionListeners() {
-        if (listeners == null || listeners.size() == 0) {
+        if (listeners == null || listeners.size() == 0 || !super.isEnabled()) {
             return;
         }
 
