@@ -88,7 +88,7 @@ public class CreatePullRequestForm {
             descriptionScrollPane.setMinimumSize(descriptionScrollPaneSize);
 
             // Make sure splitter is big enough in all DPIs
-            splitPane.setDividerSize(JBUI.scale(15));
+            splitPane.setDividerSize(JBUI.scale(10));
 
             this.initialized = true;
         }

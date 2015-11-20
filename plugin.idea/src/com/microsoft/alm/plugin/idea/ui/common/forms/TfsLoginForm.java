@@ -67,7 +67,7 @@ public class TfsLoginForm implements LoginForm {
     public void addActionListener(final ActionListener listener) {
         // Hook up listener to all actions
         signInLink.addActionListener(listener);
-        contentPanel.registerKeyboardAction(listener, LoginForm.CMD_ENTER_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        serverUrl.registerKeyboardAction(listener, LoginForm.CMD_SIGN_IN, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     @Override

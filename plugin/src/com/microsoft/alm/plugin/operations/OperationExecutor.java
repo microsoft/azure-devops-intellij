@@ -17,9 +17,12 @@ import java.util.concurrent.TimeUnit;
 
 public class OperationExecutor {
     private static final Logger logger = LoggerFactory.getLogger(OperationExecutor.class);
-    final int MAX_THREADS = 5;
-    final int CORE_THREADS = MAX_THREADS;
     final int THREAD_RECOVERY_TIMEOUT_SECONDS = 5;
+    // For now we are limiting ourselves to 5 threads (single threaded is way too slow)
+    final int MAX_THREADS = 5;
+    // No need for Core threads and Max threads to be different
+    final int CORE_THREADS = MAX_THREADS;
+    // The number of items that can be in the Queue needs to be bigger than the number of threads (10x is somewhat arbitrary)
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(MAX_THREADS * 10);
     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(CORE_THREADS, MAX_THREADS, THREAD_RECOVERY_TIMEOUT_SECONDS, TimeUnit.SECONDS, queue);
 

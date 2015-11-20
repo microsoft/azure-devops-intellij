@@ -80,7 +80,7 @@ class CheckoutPageController extends AbstractController {
         updateModel();
         model.clearErrors();
 
-        if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand()) || LoginForm.CMD_ENTER_KEY.equals(e.getActionCommand())) {
+        if (LoginForm.CMD_SIGN_IN.equals(e.getActionCommand())) {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for repositories, will prompt for login if needed
             model.loadRepositories();
