@@ -123,31 +123,21 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         Profile profile = null;
         try {
             profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-        } catch(Throwable t) {
-            logger.warn("getAuthenticatedUserProfile", t);
+        } catch(IOException ie) {
+            logger.warn("getAuthenticatedUserProfile", ie);
         }
 
         if(profile == null) {
-            //refresh the authentication result and try again
-            refreshAuthenticationResult();
             try {
+                //refresh the authentication result and try again
+                lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
                 profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-            } catch(Throwable t) {
+            } catch(IOException t) {
                 logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
                 throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
             }
         }
 
         return profile;
-    }
-
-    private void refreshAuthenticationResult() {
-        try {
-            lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
-        } catch (IOException e) {
-            // refreshing failed, log exception
-            logger.warn("Refreshing access token failed", e);
-            lastDeploymentAuthenticationResult = null;
-        }
     }
 }
