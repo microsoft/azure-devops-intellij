@@ -111,6 +111,10 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
+    /**
+     * Gets the user profile, tries to refresh authentication result if first attempt fails.
+     * @return Profile userProfile of the authenticated user, null if user isn't authenticated
+     */
     public Profile getAuthenticatedUserProfile() {
         if(!isAuthenticated()) {
             return null;
@@ -119,8 +123,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         Profile profile = null;
         try {
             profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-        } catch(IOException ie) {
-            logger.warn("getAuthenticatedUserProfile", ie);
         } catch(Throwable t) {
             logger.warn("getAuthenticatedUserProfile", t);
         }
@@ -130,12 +132,9 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             refreshAuthenticationResult();
             try {
                 profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-            } catch(IOException ie) {
-                logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", ie);
-                throw new RuntimeException("Authentication expired, please 'Sign in...' and try again.");
             } catch(Throwable t) {
                 logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
-                throw new RuntimeException("Authentication expired, please 'Sign in...' and try again.");
+                throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
             }
         }
 

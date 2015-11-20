@@ -38,15 +38,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.92.0 <i>Preview</i>
+      v 0.92.1 <i>Preview</i>
       <br />
       This release includes several bug fixes.
       <br />
-      <ul>
-        <li>Added support for IntelliJ 15</li>
-        <li>Fixed dialog rendering issues on Mac OS</li>
-        <li>Fixed exceptions customers encountered when trying to bring up VCS-Git menu</li>
-      </ul>
     ]]>
     </change-notes>
 
