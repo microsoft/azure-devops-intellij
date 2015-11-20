@@ -6,18 +6,21 @@ package com.microsoft.alm.plugin.operations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class OperationExecutor {
     private static final Logger logger = LoggerFactory.getLogger(OperationExecutor.class);
-    final int MAX_THREADS = 2;
+    final int MAX_THREADS = 5;
     final int CORE_THREADS = MAX_THREADS;
     final int THREAD_RECOVERY_TIMEOUT_SECONDS = 5;
-    final BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>();
+    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(MAX_THREADS * 10);
     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(CORE_THREADS, MAX_THREADS, THREAD_RECOVERY_TIMEOUT_SECONDS, TimeUnit.SECONDS, queue);
 
     private static class Holder {
@@ -49,6 +52,20 @@ public class OperationExecutor {
             logger.warn("Operation failed", t);
             if (!operation.isFinished()) {
                 operation.terminate(t);
+            }
+        }
+    }
+
+    public Future submitOperationTask(Runnable task) {
+        return threadPoolExecutor.submit(task);
+    }
+
+    public void wait(List<Future> futures) throws ExecutionException {
+        for (Future f : futures) {
+            try {
+                f.get();
+            } catch (InterruptedException e) {
+                logger.warn("Thread interrupted", e);
             }
         }
     }

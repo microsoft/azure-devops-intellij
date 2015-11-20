@@ -6,17 +6,27 @@ package com.microsoft.alm.plugin.idea.ui.common.mocks;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MockServerContextLookupOperation extends ServerContextLookupOperation {
 
-    public MockServerContextLookupOperation(List<ServerContext> contextList, ContextScope resultScope) {
-        super(contextList, resultScope);
+    public class MockServerContextLookupResults extends ServerContextLookupResults {
+        private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
+
+        @Override
+        public List<ServerContext> getServerContexts() {
+            return Collections.unmodifiableList(serverContexts);
+        }
+
+        public MockServerContextLookupResults(List<ServerContext> contexts) {
+            serverContexts.addAll(contexts);
+        }
     }
 
-    @Override
-    public void lookupContextsAsync() {
-        // Do nothing
+    public MockServerContextLookupOperation(List<ServerContext> contextList, ContextScope resultScope) {
+        super(contextList, resultScope);
     }
 
     @Override
@@ -24,18 +34,18 @@ public class MockServerContextLookupOperation extends ServerContextLookupOperati
         super.onLookupStarted();
     }
 
-    @Override
     public void onLookupResults(List<ServerContext> results) {
+        MockServerContextLookupResults lookupResults = new MockServerContextLookupResults(results);
+        super.onLookupResults(lookupResults);
+    }
+
+    @Override
+    protected void onLookupResults(Results results) {
         super.onLookupResults(results);
     }
 
     @Override
     public void onLookupCompleted() {
         super.onLookupCompleted();
-    }
-
-    @Override
-    public void onLookupCanceled() {
-        super.onLookupCanceled();
     }
 }

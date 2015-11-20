@@ -28,7 +28,27 @@ public abstract class Operation {
 
         boolean hasError();
 
-        boolean isCanceled();
+        boolean isCancelled();
+    }
+
+    public static class ResultsImpl implements Results {
+        protected boolean isCancelled = false;
+        protected Throwable error = null;
+
+        @Override
+        public Throwable getError() {
+            return error;
+        }
+
+        @Override
+        public boolean hasError() {
+            return error != null;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return isCancelled;
+        }
     }
 
     public interface Inputs {
