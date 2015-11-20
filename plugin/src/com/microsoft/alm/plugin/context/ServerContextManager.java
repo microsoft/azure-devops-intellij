@@ -142,28 +142,33 @@ public class ServerContextManager {
      * Run this on a background thread.
      */
     public ServerContext getAuthenticatedContext(String gitRemoteUrl, String patDescription, boolean setAsActiveContext) {
-        // get context from builder, create PAT if needed, and store in active context
-        ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
-        if (context != null) {
-            if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
-                // Generate a PAT and get the new context
-                final ServerContext newContext = createVsoContext(context,
-                        VsoAuthenticationProvider.getInstance(),
-                        patDescription);
-                if (newContext != null) {
-                    context = newContext;
-                } else {
-                    logger.error("Unable to create PAT token");
+        try {
+            // get context from builder, create PAT if needed, and store in active context
+            ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
+            if (context != null) {
+                if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
+                    // Generate a PAT and get the new context
+                    final ServerContext newContext = createVsoContext(context,
+                            VsoAuthenticationProvider.getInstance(),
+                            patDescription);
+                    if (newContext != null) {
+                        context = newContext;
+                    } else {
+                        logger.error("Unable to create PAT token");
+                    }
+                }
+
+                if (setAsActiveContext) {
+                    // Set the active context for later use
+                    ServerContextManager.getInstance().setActiveContext(context);
                 }
             }
 
-            if (setAsActiveContext) {
-                // Set the active context for later use
-                ServerContextManager.getInstance().setActiveContext(context);
-            }
+            return context;
+        } catch(Throwable t) {
+            logger.warn("getAuthenticatedContext unexpected exception", t);
         }
-
-        return context;
+        return null;
     }
 
     /**
@@ -188,10 +193,9 @@ public class ServerContextManager {
         final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
 
         final String accountName = UrlHelper.getVSOAccountName(originalContext.getUri());
-        final Account account = AccountLookupOperation.getAccount(result, accountName);
+        final Account account = AccountLookupOperation.getAccount(authenticationProvider, accountName);
 
         if (account != null) {
-            //TODO: handle case where session token cannot be created
             SessionToken sessionToken = patFactory.createSessionToken(tokenDescription,
                     Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), account.getAccountId());
             //create a VSO context with session token (remove the original client and allow that to be recreated)

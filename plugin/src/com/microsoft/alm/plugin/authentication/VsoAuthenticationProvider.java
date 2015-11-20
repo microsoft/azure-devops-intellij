@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
+import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.slf4j.Logger;
@@ -73,10 +74,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         return lastDeploymentAuthenticationResult != null;
     }
 
-    public static void saveLastResult(AuthenticationResult lastResult) {
-        lastDeploymentAuthenticationResult = lastResult;
-    }
-
     @Override
     public void clearAuthenticationDetails() {
         lastDeploymentAuthenticationResult = null;
@@ -112,5 +109,35 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             clearAuthenticationDetails();
             AuthenticationListener.Helper.authenticated(listener, null, e);
         }
+    }
+
+    /**
+     * Gets the user profile, tries to refresh authentication result if first attempt fails.
+     * @return Profile userProfile of the authenticated user, null if user isn't authenticated
+     */
+    public Profile getAuthenticatedUserProfile() {
+        if(!isAuthenticated()) {
+            return null;
+        }
+
+        Profile profile = null;
+        try {
+            profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
+        } catch(IOException ie) {
+            logger.warn("getAuthenticatedUserProfile", ie);
+        }
+
+        if(profile == null) {
+            try {
+                //refresh the authentication result and try again
+                lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
+                profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
+            } catch(IOException t) {
+                logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
+                throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
+            }
+        }
+
+        return profile;
     }
 }
