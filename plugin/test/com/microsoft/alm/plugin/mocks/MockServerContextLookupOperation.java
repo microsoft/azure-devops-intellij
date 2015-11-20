@@ -34,47 +34,27 @@ public class MockServerContextLookupOperation extends ServerContextLookupOperati
     @Override
     protected void doLookup(final ServerContext context, final List<TeamProjectCollectionReference> collections) {
         for (final TeamProjectCollectionReference teamProjectCollectionReference : collections) {
-            final Runnable projectLookupRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    if (cancelWhenStarted) {
-                        cancel();
-                    }
+            if (cancelWhenStarted) {
+                cancel();
+            }
 
-                    addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
-                }
-            };
-            lookup.execute(projectLookupRunnable);
+            addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
         }
     }
 
     @Override
     protected void doRestCollectionLookup(final ServerContext context) {
-        final Runnable projectCollectionsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isCanceled()) {
-                    return;
-                }
-                doLookup(context, collections);
-
-            }
-        };
-        lookup.execute(projectCollectionsRunnable);
+        if (isCancelled()) {
+            return;
+        }
+        doLookup(context, collections);
     }
 
     @Override
     protected void doSoapCollectionLookup(final ServerContext context) {
-        final Runnable projectCollectionsRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isCanceled()) {
-                    return;
-                }
-                doLookup(context, collections);
-
-            }
-        };
-        lookup.execute(projectCollectionsRunnable);
+        if (isCancelled()) {
+            return;
+        }
+        doLookup(context, collections);
     }
 }

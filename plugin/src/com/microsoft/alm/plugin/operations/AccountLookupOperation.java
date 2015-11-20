@@ -26,28 +26,11 @@ import java.util.concurrent.Future;
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
 
-    public static class AccountLookupResults implements Results {
-        private boolean isCanceled = false;
-        private Throwable error = null;
+    public static class AccountLookupResults extends ResultsImpl {
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
 
         public List<ServerContext> getServerContexts() {
             return Collections.unmodifiableList(serverContexts);
-        }
-
-        @Override
-        public Throwable getError() {
-            return error;
-        }
-
-        @Override
-        public boolean hasError() {
-            return error != null;
-        }
-
-        @Override
-        public boolean isCanceled() {
-            return isCanceled;
         }
     }
 
@@ -115,7 +98,7 @@ public class AccountLookupOperation extends Operation {
         }
 
         final AccountLookupResults results = new AccountLookupResults();
-        results.isCanceled = true;
+        results.isCancelled = true;
         onLookupResults(results);
         onLookupCompleted();
     }

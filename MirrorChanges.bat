@@ -25,7 +25,7 @@ echo Delete local mirror directory
 IF EXIST %mirrorDirName% rd /S /Q %mirrorDirName%
 
 echo Clone master repository to mirror directory
-git clone --mirror %masterRepoUrl% %mirrorDirName% 
+git clone --no-checkout %masterRepoUrl% %mirrorDirName%
 IF NOT EXIST %mirrorDirName% GOTO ERROR
 IF NOT %ERRORLEVEL% EQU 0 GOTO ERROR
 
@@ -33,10 +33,6 @@ cd %mirrorDirName%
 
 echo Set remote push url to the mirror repository url
 git remote set-url --push origin %mirrorRepoURL%
-
-echo Fetch and prune refs from master repository
-git fetch -p origin
-IF NOT %ERRORLEVEL% EQU 0 GOTO ERROR
 
 echo Push to the mirror repository
 git push --mirror

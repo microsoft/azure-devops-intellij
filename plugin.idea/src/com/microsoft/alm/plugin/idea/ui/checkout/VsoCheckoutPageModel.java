@@ -115,7 +115,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                 final ModelValidationInfo validationInfo;
                 if (results.hasError()) {
                     validationInfo = ModelValidationInfo.createWithMessage(results.getError().getMessage());
-                } else if (results.isCanceled()) {
+                } else if (results.isCancelled()) {
                     validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED);
                 } else {
                     validationInfo = ModelValidationInfo.NO_ERRORS;

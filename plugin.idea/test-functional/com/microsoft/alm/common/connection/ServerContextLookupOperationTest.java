@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.ui.common.mocks.MockServerContext;
+import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 import org.apache.http.auth.NTCredentials;
 import org.junit.Assert;
@@ -34,7 +35,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
     // setup in #init
     private List<ServerContext> serverContextList;
 
-    private class MyListener implements ServerContextLookupOperation.Listener {
+    private class MyListener implements Operation.Listener {
         int startEvents = 0;
         int completeEvents = 0;
         int cancelEvents = 0;
@@ -76,26 +77,26 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         }
 
         @Override
-        public void notifyLookupCanceled() {
-            cancelEvents++;
-            if (debug) {
-                System.out.println("lookup Canceled (" + name + ")");
-            }
-        }
-
-        @Override
-        public void notifyLookupResults(List<ServerContext> serverContexts) {
-            long now = System.nanoTime();
-            for (ServerContext serverContext : serverContexts) {
-                ResultEvent resultEvent = new ResultEvent();
-                resultEvent.eventTime = now;
-                resultEvent.result = serverContext;
-                results.add(resultEvent);
-                Assert.assertNotNull(serverContext.getGitRepository());
-                Assert.assertNotNull(serverContext.getGitRepository().getRemoteUrl());
+        public void notifyLookupResults(Operation.Results operationResults) {
+            ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults)operationResults;
+            if (lookupResults.isCancelled()) {
+                cancelEvents++;
                 if (debug) {
-                    System.out.println(serverContext.getGitRepository().getRemoteUrl());
-                    System.out.println("lookedUp: " + serverContext);
+                    System.out.println("lookup Canceled (" + name + ")");
+                }
+            } else {
+                long now = System.nanoTime();
+                for (ServerContext serverContext : lookupResults.getServerContexts()) {
+                    ResultEvent resultEvent = new ResultEvent();
+                    resultEvent.eventTime = now;
+                    resultEvent.result = serverContext;
+                    results.add(resultEvent);
+                    Assert.assertNotNull(serverContext.getGitRepository());
+                    Assert.assertNotNull(serverContext.getGitRepository().getRemoteUrl());
+                    if (debug) {
+                        System.out.println(serverContext.getGitRepository().getRemoteUrl());
+                        System.out.println("lookedUp: " + serverContext);
+                    }
                 }
             }
         }
@@ -141,11 +142,24 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         ServerContextLookupOperation gitRepositoryLookupOperation = new ServerContextLookupOperation(serverContextList, ServerContextLookupOperation.ContextScope.REPOSITORY);
         MyListener myListener = new MyListener();
         gitRepositoryLookupOperation.addListener(myListener);
+        final List<ServerContext> syncResults = new ArrayList<ServerContext>();
 
-        gitRepositoryLookupOperation.lookupContextsSync();
-        Assert.assertTrue(gitRepositoryLookupOperation.isComplete());
+        gitRepositoryLookupOperation.addListener(new Operation.Listener() {
+            @Override
+            public void notifyLookupStarted() {}
 
-        List<ServerContext> syncResults = gitRepositoryLookupOperation.getResults();
+            @Override
+            public void notifyLookupCompleted() {
+            }
+
+            @Override
+            public void notifyLookupResults(Operation.Results results) {
+                ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults) results;
+                syncResults.addAll(lookupResults.getServerContexts());
+            }
+        });
+        gitRepositoryLookupOperation.doWork(Operation.EMPTY_INPUTS);
+        Assert.assertTrue(gitRepositoryLookupOperation.isFinished());
 
         verifyEventsMatchResults(myListener, syncResults);
     }
@@ -201,17 +215,34 @@ public class ServerContextLookupOperationTest extends AbstractTest {
         MyListener myListener = new MyListener();
         asyncGitRepositoryLookupOperation.addListener(myListener);
 
-        asyncGitRepositoryLookupOperation.lookupContextsAsync();
+        final List<ServerContext> asyncResults = new ArrayList<ServerContext>();
+
+        asyncGitRepositoryLookupOperation.addListener(new Operation.Listener() {
+            @Override
+            public void notifyLookupStarted() {}
+
+            @Override
+            public void notifyLookupCompleted() {
+            }
+
+            @Override
+            public void notifyLookupResults(Operation.Results results) {
+                ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults) results;
+                asyncResults.addAll(lookupResults.getServerContexts());
+            }
+        });
+
+        asyncGitRepositoryLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
 
         //TODO need some more robust multi threaded testing here
         //for now just make sure it doesn't finish right away but does finish later
         Assert.assertEquals(0, myListener.completeEvents);
         //and should not have any results
-        Assert.assertTrue(asyncGitRepositoryLookupOperation.getResults().isEmpty());
+        Assert.assertTrue(asyncResults.isEmpty());
 
         //wait for it to finish -- but time out if it is inordinately long
         long start = System.nanoTime();
-        while (asyncGitRepositoryLookupOperation.isRunning()) {
+        while (!asyncGitRepositoryLookupOperation.isFinished()) {
             long now = System.nanoTime();
             if (start + MAX_TIMEOUT_NANO < now) {
                 Assert.fail("timed out");
@@ -223,17 +254,32 @@ public class ServerContextLookupOperationTest extends AbstractTest {
                 }
             }
         }
-        Assert.assertTrue(asyncGitRepositoryLookupOperation.isComplete());
+        Assert.assertTrue(asyncGitRepositoryLookupOperation.isFinished());
 
         //ok, now that is done, verify
-        List<ServerContext> asyncResults = asyncGitRepositoryLookupOperation.getResults();
         verifyEventsMatchResults(myListener, asyncResults);
         // also compare against sync
         if (compareWithSync) {
             // run this test first in sync fashion, then compare results to async
             ServerContextLookupOperation syncGitRepositoryLookupOperation = new ServerContextLookupOperation(serverContextList, ServerContextLookupOperation.ContextScope.REPOSITORY);
-            syncGitRepositoryLookupOperation.lookupContextsSync();
-            List<ServerContext> syncResults = syncGitRepositoryLookupOperation.getResults();
+            final List<ServerContext> syncResults = new ArrayList<ServerContext>();
+
+            asyncGitRepositoryLookupOperation.addListener(new Operation.Listener() {
+                @Override
+                public void notifyLookupStarted() {}
+
+                @Override
+                public void notifyLookupCompleted() {
+                }
+
+                @Override
+                public void notifyLookupResults(Operation.Results results) {
+                    ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults) results;
+                    syncResults.addAll(lookupResults.getServerContexts());
+                }
+            });
+
+            syncGitRepositoryLookupOperation.doWork(Operation.EMPTY_INPUTS);
             verifyResultsMatch(syncResults, asyncResults);
         }
     }

@@ -96,7 +96,7 @@ public class ServerContextLookupOperationTest {
         setupListener(operation, startedCalled, completedCalled, canceledCalled, results);
 
         // do lookup
-        operation.lookupContextsSync();
+        operation.doWork(Operation.EMPTY_INPUTS);
 
         // Verify results
         List<ServerContext> newContexts = results.get();
@@ -154,7 +154,7 @@ public class ServerContextLookupOperationTest {
         setupListener(operation, startedCalled, completedCalled, canceledCalled, results);
 
         // do lookup
-        operation.lookupContextsAsync();
+        operation.doWorkAsync(Operation.EMPTY_INPUTS);
 
         // Verify results
         List<ServerContext> newContexts = results.get();
@@ -188,12 +188,12 @@ public class ServerContextLookupOperationTest {
         setupListener(operation, startedCalled, completedCalled, canceledCalled, results);
 
         // do lookup
-        operation.lookupContextsAsync();
+        operation.doWorkAsync(Operation.EMPTY_INPUTS);
 
         // Verify results
         Assert.assertTrue(startedCalled.get());
         Assert.assertTrue(canceledCalled.get());
-        Assert.assertFalse(completedCalled.isDone());
+        Assert.assertTrue(completedCalled.isDone());
         Assert.assertFalse(results.isDone());
 
         completedCalled.cancel(true);
@@ -201,7 +201,7 @@ public class ServerContextLookupOperationTest {
     }
 
     private void setupListener(MockServerContextLookupOperation operation, final SettableFuture<Boolean> startedCalled, final SettableFuture<Boolean> completedCalled, final SettableFuture<Boolean> canceledCalled, final SettableFuture<List<ServerContext>> results) {
-        operation.addListener(new ServerContextLookupOperation.Listener() {
+        operation.addListener(new Operation.Listener() {
             public void notifyLookupStarted() {
                 startedCalled.set(true);
             }
@@ -210,12 +210,13 @@ public class ServerContextLookupOperationTest {
                 completedCalled.set(true);
             }
 
-            public void notifyLookupCanceled() {
-                canceledCalled.set(true);
-            }
-
-            public void notifyLookupResults(List<ServerContext> serverContexts) {
-                results.set(serverContexts);
+            @Override
+            public void notifyLookupResults(Operation.Results lookupResults) {
+                if (lookupResults.isCancelled()) {
+                    canceledCalled.set(true);
+                } else {
+                    results.set(((ServerContextLookupOperation.ServerContextLookupResults) lookupResults).getServerContexts());
+                }
             }
         });
     }

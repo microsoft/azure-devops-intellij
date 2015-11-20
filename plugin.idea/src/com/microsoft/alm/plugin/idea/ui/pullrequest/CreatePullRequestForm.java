@@ -126,9 +126,13 @@ public class CreatePullRequestForm {
         return this.descriptionTextArea.getText();
     }
 
-    @SuppressWarnings("unchecked")
     public GitRemoteBranch getSelectedRemoteBranch() {
-        return (GitRemoteBranch) this.targetBranchDropdown.getSelectedItem();
+        Object o = this.targetBranchDropdown.getSelectedItem();
+        if (o instanceof GitRemoteBranch) {
+            return (GitRemoteBranch) this.targetBranchDropdown.getSelectedItem();
+        }
+
+        return null;
     }
 
     public void setSelectedTargetBranch(final GitRemoteBranch targetBranch) {
