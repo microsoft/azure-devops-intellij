@@ -44,19 +44,19 @@ public class OperationExecutor {
     }
 
     private synchronized void execute(final Operation operation, final Operation.Inputs inputs) {
-        try {
-            threadPoolExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
+        threadPoolExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
                     operation.doWork(inputs);
+                } catch(Throwable t) {
+                    logger.warn("Operation failed", t);
+                    if (!operation.isFinished()) {
+                        operation.terminate(t);
+                    }
                 }
-            });
-        } catch (Throwable t) {
-            logger.warn("Operation failed", t);
-            if (!operation.isFinished()) {
-                operation.terminate(t);
             }
-        }
+        });
     }
 
     public Future submitOperationTask(Runnable task) {

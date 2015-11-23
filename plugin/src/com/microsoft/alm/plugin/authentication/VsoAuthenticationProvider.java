@@ -40,7 +40,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     }
 
     /**
-     * @return
+     * @return AzureAuthenticator
      */
     public static AzureAuthenticator getAzureAuthenticator() {
         return AzureAuthenticatorHolder.INSTANCE;
@@ -123,16 +123,17 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         Profile profile = null;
         try {
             profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-        } catch(IOException ie) {
-            logger.warn("getAuthenticatedUserProfile", ie);
+        } catch(Throwable t) {
+            logger.warn("getAuthenticatedUserProfile", t);
         }
 
         if(profile == null) {
             try {
                 //refresh the authentication result and try again
                 lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
+                lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(VSO_ROOT, lastDeploymentAuthenticationResult);
                 profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-            } catch(IOException t) {
+            } catch(Throwable t) {
                 logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
                 throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
             }

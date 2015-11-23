@@ -72,13 +72,14 @@ public class ServerContextLookupOperation extends Operation {
                             } else { // VSO_DEPLOYMENT || VSO
                                 doRestCollectionLookup(context);
                             }
-                        } catch (RuntimeException re) {
-                            logger.error("Unable to do lookup on context: " + context.getUri().toString(), re);
+                        } catch (Throwable t) {
+                            logger.error("doWork: Unable to do lookup on context: " + context.getUri().toString());
+                            logger.warn("doWork: Exception", t);
 
                             // If there's only one context we need to bubble the exception out
                             // But if there's more than one let's just continue
                             if (throwOnError) {
-                                throw re;
+                                throw new RuntimeException(t);
                             }
                         }
                     }
