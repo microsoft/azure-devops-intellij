@@ -40,7 +40,6 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.vss.client.core.model.VssServiceException;
 import git4idea.DialogManager;
-import git4idea.GitLocalBranch;
 import git4idea.GitUtil;
 import git4idea.actions.GitInit;
 import git4idea.commands.Git;
