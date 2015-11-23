@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services (Preview)</name>
-    <version>0.92.0</version>
+    <version>0.92.1</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -40,7 +40,7 @@
     <change-notes><![CDATA[
       v 0.92.1 <i>Preview</i>
       <br />
-      This release includes several bug fixes.
+      This release includes several incremental feature updates and bug fixes.
       <br />
     ]]>
     </change-notes>

@@ -7,7 +7,7 @@ import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.ui.common.ValidationListener;
 
-import java.awt.Component;
+import javax.swing.JComponent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public class MockBaseDialog implements BaseDialog {
     }
 
     @Override
-    public void addTabPage(String text, Component component) {
+    public void addTabPage(String text, JComponent component) {
         tabNames.add(text);
     }
 

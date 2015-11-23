@@ -120,8 +120,10 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
     }
 
     @Override
-    public void addTabPage(final String text, final Component component) {
+    public void addTabPage(final String text, final JComponent component) {
         if (tabPanel != null) {
+            // Add some margin to the page
+            SwingHelper.setMargin(component, JBUI.scale(10));
             tabPanel.addTab(text, component);
         }
     }

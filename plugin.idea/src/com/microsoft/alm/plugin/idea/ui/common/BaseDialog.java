@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
-import java.awt.Component;
+import javax.swing.JComponent;
 import java.awt.event.ActionListener;
 
 public interface BaseDialog {
@@ -13,7 +13,7 @@ public interface BaseDialog {
 
     void displayError(String message);
 
-    void addTabPage(final String text, final Component component);
+    void addTabPage(final String text, final JComponent component);
 
     int getSelectedTabIndex();
 

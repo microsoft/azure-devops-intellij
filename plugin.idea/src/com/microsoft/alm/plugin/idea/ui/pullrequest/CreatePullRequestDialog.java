@@ -40,6 +40,11 @@ public class CreatePullRequestDialog extends BaseDialogImpl {
         return createPRForm;
     }
 
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return createPullRequestForm.getPreferredFocusedComponent();
+    }
+
     public void addActionListener(final ActionListener listener) {
         super.addActionListener(listener);
         this.createPullRequestForm.addActionListener(listener);

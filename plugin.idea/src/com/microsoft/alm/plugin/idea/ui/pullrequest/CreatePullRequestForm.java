@@ -12,6 +12,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
 import git4idea.GitBranch;
 import git4idea.GitRemoteBranch;
@@ -41,7 +42,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class CreatePullRequestForm {
+public class CreatePullRequestForm implements BasicForm {
     /* commands */
     public static final String CMD_TARGET_BRANCH_UPDATED = "cmdTargetBranchDropDownChanged";
 
@@ -63,6 +64,7 @@ public class CreatePullRequestForm {
 
     private boolean initialized = false;
 
+    @Override
     public JPanel getContentPanel() {
         ensureInitialized();
         return this.contentPanel;
@@ -88,12 +90,18 @@ public class CreatePullRequestForm {
             descriptionScrollPane.setMinimumSize(descriptionScrollPaneSize);
 
             // Make sure splitter is big enough in all DPIs
-            splitPane.setDividerSize(JBUI.scale(10));
+            splitPane.setDividerSize(JBUI.scale(7));
 
             this.initialized = true;
         }
     }
 
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return titleTextField;
+    }
+
+    @Override
     public void addActionListener(final ActionListener listener) {
         this.targetBranchDropdown.addActionListener(listener);
     }
