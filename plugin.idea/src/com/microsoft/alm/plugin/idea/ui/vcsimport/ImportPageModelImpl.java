@@ -40,7 +40,6 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.vss.client.core.model.VssServiceException;
 import git4idea.DialogManager;
-import git4idea.GitLocalBranch;
 import git4idea.GitUtil;
 import git4idea.actions.GitInit;
 import git4idea.commands.Git;
@@ -523,21 +522,19 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         localRepository.update();
         final String remoteGitUrl = remoteRepository.getRemoteUrl().replace(" ", "%20");
 
-        //push current branch to remote
+        //push all branches in local Git repo to remote
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_PUSH));
         final Git git = ServiceManager.getService(Git.class);
-        final GitLocalBranch currentBranch = localRepository.getCurrentBranch();
-        if (currentBranch != null) {
-            final GitCommandResult result = git.push(localRepository, REMOTE_ORIGIN, remoteGitUrl, currentBranch.getName(), true);
-            if (!result.success()) {
-                logger.error("pushChangesToRemoteRepo: push to remote: {} failed with error: {}, outuput: {}",
-                        remoteGitUrl, result.getErrorOutputAsJoinedString(), result.getOutputAsJoinedString());
-                notifyImportError(project,
-                        result.getErrorOutputAsJoinedString(),
-                        ACTION_NAME, localContext);
-                return false;
-            }
+        final GitCommandResult result = git.push(localRepository, REMOTE_ORIGIN, remoteGitUrl, "*", true);
+        if (!result.success()) {
+            logger.error("pushChangesToRemoteRepo: push to remote: {} failed with error: {}, outuput: {}",
+                    remoteGitUrl, result.getErrorOutputAsJoinedString(), result.getOutputAsJoinedString());
+            notifyImportError(project,
+                    result.getErrorOutputAsJoinedString(),
+                    ACTION_NAME, localContext);
+            return false;
         }
+
         return true;
     }
 
