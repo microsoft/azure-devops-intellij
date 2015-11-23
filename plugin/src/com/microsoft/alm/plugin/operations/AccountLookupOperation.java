@@ -137,8 +137,8 @@ public class AccountLookupOperation extends Operation {
                     }
                 }
             }
-        } catch (IOException e) {
-            logger.warn("Getting account failed", e);
+        } catch (Throwable t) {
+            logger.warn("Getting account failed", t);
         }
 
         return null;

@@ -55,6 +55,11 @@ public class SwingHelper {
         target.setMargin(insets);
     }
 
+    public static void setMargin(final JComponent component, final int eachSide) {
+        final Insets insets = new Insets(eachSide, eachSide, eachSide, eachSide);
+        setMargin(component, insets);
+    }
+
     public static void setMargin(final JComponent component, final Insets newMargin) {
         final Border currentBorder = component.getBorder();
         final Border empty = new EmptyBorder(newMargin.top, newMargin.left, newMargin.bottom, newMargin.right);
