@@ -83,7 +83,7 @@ public class TFSFileRevision implements VcsFileRevision {
   }
 
   public byte[] loadContent() throws IOException, VcsException {
-    return myContent = createContentRevision().doGetContent();
+    return myContent = createContentRevision().getContentAsBytes();
   }
 
   @Nullable

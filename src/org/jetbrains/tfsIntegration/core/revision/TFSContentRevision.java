@@ -20,7 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.ByteBackedContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.DeletedState;
 import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Item;
@@ -40,7 +40,7 @@ import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.Collection;
 
-public abstract class TFSContentRevision implements ContentRevision {
+public abstract class TFSContentRevision implements ByteBackedContentRevision {
 
   private final Project myProject;
 
@@ -179,11 +179,12 @@ public abstract class TFSContentRevision implements ContentRevision {
 
   @Nullable
   public String getContent() throws VcsException {
-    return new String(doGetContent(), getFile().getCharset(myProject));
+    return new String(getContentAsBytes(), getFile().getCharset(myProject));
   }
 
   @Nullable
-  public byte[] doGetContent() throws VcsException {
+  @Override
+  public byte[] getContentAsBytes() throws VcsException {
     if (myContent == null) {
       try {
         myContent = loadContent();
