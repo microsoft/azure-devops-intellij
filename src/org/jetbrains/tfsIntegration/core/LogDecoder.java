@@ -1,8 +1,8 @@
 package org.jetbrains.tfsIntegration.core;
 
-import com.sun.org.apache.xml.internal.serialize.OutputFormat;
-import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 import org.apache.commons.httpclient.ChunkedInputStream;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -16,52 +16,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+@SuppressWarnings("ALL")
 public class LogDecoder {
 
-  private LogDecoder() {
-  }
+  private LogDecoder() { }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     if (args.length != 2) {
       System.out.println("Usage: LogDecoder idea.log output.log");
       return;
     }
-    FileInputStream is = null;
-    OutputStreamWriter os = null;
+
+    FileInputStream is = new FileInputStream(args[0]);
     try {
-      is = new FileInputStream(args[0]);
-      os = new OutputStreamWriter(new FileOutputStream(args[1]));
-      List<Entry> entries = decode(is);
-      for (Entry entry : entries) {
-        os.write(entry.getText());
+      OutputStreamWriter os = new OutputStreamWriter(new FileOutputStream(args[1]));
+      try {
+        List<Entry> entries = decode(is);
+        for (Entry entry : entries) {
+          os.write(entry.getText());
+        }
       }
-    }
-    catch (FileNotFoundException e) {
-      e.printStackTrace();
-    }
-    catch (IOException e) {
-      e.printStackTrace();
+      finally {
+        os.close();
+      }
     }
     finally {
-      if (is != null) {
-        try {
-          is.close();
-        }
-        catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-      if (os != null) {
-        try {
-          os.close();
-        }
-        catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
+      is.close();
     }
   }
-
 
   public static List<Entry> decode(InputStream inputStream) throws IOException {
     List<Entry> result = new ArrayList<Entry>();
