@@ -117,6 +117,8 @@ subprojects {
         testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.6.3'
+        
+        compile files('resources/osx')
     }
 
     sourceSets {

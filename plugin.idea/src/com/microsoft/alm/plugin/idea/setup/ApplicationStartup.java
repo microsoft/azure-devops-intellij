@@ -48,8 +48,11 @@ public class ApplicationStartup implements ApplicationComponent {
         if (Platform.isWindows()) {
             logger.debug("Windows operating system detected");
             // WindowsStartup.startup(); TODO: comment back in once arguments are being passed
+        } else if (Platform.isMac()) {
+            logger.debug("Mac operating system detected");
+            MacStartup.startup();
         } else {
-            //TODO: Add mac and linux logic
+            //TODO: Add Linux logic
         }
     }
 }
