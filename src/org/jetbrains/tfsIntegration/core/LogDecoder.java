@@ -157,28 +157,6 @@ public class LogDecoder {
     }
   }
 
-  private static void write(byte[] bytes, String file) {
-    FileOutputStream f = null;
-    try {
-      f = new FileOutputStream(file);
-      f.write(bytes);
-    }
-    catch (IOException e) {
-      e.printStackTrace();
-    }
-    finally {
-      if (f != null) {
-        try {
-          f.close();
-        }
-        catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-  }
-
-
   private static String tryPrettyPrintXml(String xml) {
     try {
       DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
