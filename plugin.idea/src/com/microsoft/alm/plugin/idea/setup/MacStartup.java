@@ -40,6 +40,7 @@ public class MacStartup {
             final String appPath = getAppPath(MacStartup.class.getResource("/"));
             setAppletPermissions(new File(appPath + APPLET_PATH));
             final Process process = Runtime.getRuntime().exec(new String[]{OPEN_CMD, appPath});
+            process.waitFor();
             logger.debug("The return code for executing {} was {}", APP_NAME, process.exitValue());
         } catch (UnsupportedEncodingException e) {
             logger.warn("An UnsupportedEncodingException was caught while trying to execute {}: {}", APP_NAME, e.getMessage());
