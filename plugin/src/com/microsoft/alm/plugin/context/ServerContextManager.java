@@ -23,7 +23,6 @@ import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.impl.client.WinHttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,21 +36,10 @@ import java.util.List;
  * Singleton class used to manage ServerContext objects.
  */
 public class ServerContextManager {
-
     private static final Logger logger = LoggerFactory.getLogger(ServerContextManager.class);
 
-    private static final boolean NTLM_ENABLED;
     //TODO remove the concept of 1 active context and replace with a list of contexts that you retrieve by URI
     private ServerContext activeContext = null;
-
-    static {
-        final String propertyNtlmEnabled = System.getProperty("ntlmEnabled");
-        NTLM_ENABLED = propertyNtlmEnabled == null || Boolean.parseBoolean(propertyNtlmEnabled);
-    }
-
-    public static boolean isNtlmEnabled() {
-        return NTLM_ENABLED && WinHttpClients.isWinAuthAvailable();
-    }
 
     private static class ServerContextManagerHolder {
         private static final ServerContextManager INSTANCE = new ServerContextManager();
@@ -72,16 +60,6 @@ public class ServerContextManager {
 
     public synchronized ServerContext getActiveContext() {
         return activeContext;
-    }
-
-    //TODO this should go away when TFS Auth Provider works the same as VSO auth provider
-    public synchronized ServerContext getActiveTfsContext() {
-        final ServerContext currentContext = getActiveContext();
-        if (currentContext != ServerContext.NO_CONTEXT &&
-                currentContext.getType() == ServerContext.Type.TFS) {
-            return currentContext;
-        }
-        return null;
     }
 
     public synchronized void setActiveContext(final ServerContext context) {
@@ -132,8 +110,14 @@ public class ServerContextManager {
      * Called once from constructor restore the state from disk between sessions.
      */
     private synchronized void restoreFromSavedState() {
-        List<ServerContext> loaded = getStore().restoreServerContexts();
+        final List<ServerContext> loaded = getStore().restoreServerContexts();
         activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
+
+        // restore last used credentials for TFS
+        if (activeContext != ServerContext.NO_CONTEXT && activeContext.getType() == ServerContext.Type.TFS) {
+            TfsAuthenticationProvider.getInstance().setLastAuthenticationInfo(activeContext.getAuthenticationInfo());
+        }
+        // TODO do the same for VSO Auth Result when we start saving it
     }
 
     /**
@@ -165,7 +149,7 @@ public class ServerContextManager {
             }
 
             return context;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             logger.warn("getAuthenticatedContext unexpected exception", t);
         }
         return null;
@@ -173,9 +157,10 @@ public class ServerContextManager {
 
     /**
      * This method takes a VSO_DEPLOYMENT context and returns the VSO context that has the correct PAT
-     * @param originalContext the VSO_DEPLOYMENT context to use to generate the PAT
+     *
+     * @param originalContext        the VSO_DEPLOYMENT context to use to generate the PAT
      * @param authenticationProvider the provider used to create the original context
-     * @param tokenDescription the description to use for the generated PAT
+     * @param tokenDescription       the description to use for the generated PAT
      * @return a new VSO context object
      */
     public ServerContext createVsoContext(ServerContext originalContext, VsoAuthenticationProvider authenticationProvider, String tokenDescription) {
@@ -213,6 +198,7 @@ public class ServerContextManager {
     /**
      * Use this method to create a ServerContext from a remote git url.
      * Note that this will require server calls and should be done on a background thread.
+     *
      * @param gitRemoteUrl
      * @return
      */
@@ -241,6 +227,7 @@ public class ServerContextManager {
 
     /**
      * Use this method to get the appropriate AuthenticationProvider based on an url.
+     *
      * @param url
      * @return
      */
@@ -249,7 +236,7 @@ public class ServerContextManager {
             return VsoAuthenticationProvider.getInstance();
         }
 
-        return new TfsAuthenticationProvider();
+        return TfsAuthenticationProvider.getInstance();
     }
 
     private ServerContext createServerContext(String gitRemoteUrl, AuthenticationInfo authenticationInfo) {
@@ -297,6 +284,7 @@ public class ServerContextManager {
         /**
          * This method gets all the info we need from the server given the parse results.
          * If some call fails we simply return false and ignore the results.
+         *
          * @param parseResult
          * @return
          */

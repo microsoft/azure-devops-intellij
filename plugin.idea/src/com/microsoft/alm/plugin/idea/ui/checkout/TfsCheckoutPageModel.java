@@ -36,24 +36,17 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         setConnectionStatus(false);
         setAuthenticating(false);
 
-        // check to see if the activeContext is a TFS context, if so, use it
-        final ServerContext activeContext = ServerContextManager.getInstance().getActiveTfsContext();
-        if (ServerContext.NO_CONTEXT != activeContext) {
-            setServerNameInternal(activeContext.getUri().toString());
-            setAuthenticationProvider(new TfsAuthenticationProvider(activeContext.getAuthenticationInfo()));
+        // If we have authenticated before, just use that one
+        authenticationProvider = TfsAuthenticationProvider.getInstance();
+        if (authenticationProvider.isAuthenticated()) {
+            setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
             loadRepositories();
-        } else {
-            setAuthenticationProvider(new TfsAuthenticationProvider());
         }
     }
 
     @Override
     protected AuthenticationInfo getAuthenticationInfo() {
         return authenticationProvider.getAuthenticationInfo();
-    }
-
-    private void setAuthenticationProvider(TfsAuthenticationProvider authenticationProvider) {
-        this.authenticationProvider = authenticationProvider;
     }
 
     @Override
@@ -87,8 +80,14 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
             authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener() {
                 @Override
                 public void authenticating() {
-                    // We are starting to authenticate, so set the boolean
-                    setAuthenticating(true);
+                    // Push this event back onto the UI thread
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // We are starting to authenticate, so set the boolean
+                            setAuthenticating(true);
+                        }
+                    });
                 }
 
                 @Override

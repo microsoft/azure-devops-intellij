@@ -33,8 +33,8 @@ public class ServerContextManagerTest extends AbstractTest {
         Assert.assertEquals(context, manager.getActiveContext());
 
         // Check the Tfs method - it should return the same context
-        Assert.assertNotNull(manager.getActiveTfsContext());
-        Assert.assertEquals(context, manager.getActiveTfsContext());
+        Assert.assertNotNull(manager.getActiveContext());
+        Assert.assertEquals(context, manager.getActiveContext());
 
         manager.setActiveContext(ServerContext.NO_CONTEXT);
         Assert.assertNull(manager.getActiveContext());
@@ -46,9 +46,6 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).build();
         manager.setActiveContext(context);
         Assert.assertEquals(context, manager.getActiveContext());
-
-        // Check the Tfs method - it should return null
-        Assert.assertNull(manager.getActiveTfsContext());
 
         manager.setActiveContext(ServerContext.NO_CONTEXT);
         Assert.assertNull(manager.getActiveContext());
