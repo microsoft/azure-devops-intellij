@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
@@ -36,14 +35,11 @@ public class TfsImportPageModel extends ImportPageModelImpl {
         setConnectionStatus(false);
         setAuthenticating(false);
 
-        // check to see if the activeContext is a TFS context, if so, use it
-        final ServerContext activeContext = ServerContextManager.getInstance().getActiveTfsContext();
-        if (ServerContext.NO_CONTEXT != activeContext) {
-            setServerNameInternal(activeContext.getUri().toString());
-            setAuthenticationProvider(new TfsAuthenticationProvider(activeContext.getAuthenticationInfo()));
+        // If we have authenticated before, just use that one
+        authenticationProvider = TfsAuthenticationProvider.getInstance();
+        if (authenticationProvider.isAuthenticated()) {
+            setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
             loadTeamProjects();
-        } else {
-            setAuthenticationProvider(new TfsAuthenticationProvider());
         }
     }
 
@@ -87,8 +83,14 @@ public class TfsImportPageModel extends ImportPageModelImpl {
             authenticationProvider.authenticateAsync(getServerName(), new AuthenticationListener() {
                 @Override
                 public void authenticating() {
-                    // We are starting to authenticate, so set the boolean
-                    setAuthenticating(true);
+                    // Push this event back onto the UI thread
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // We are starting to authenticate, so set the boolean
+                            setAuthenticating(true);
+                        }
+                    });
                 }
 
                 @Override

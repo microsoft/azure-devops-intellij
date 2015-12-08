@@ -14,20 +14,6 @@ import java.util.concurrent.ExecutionException;
 
 public class TfsAuthenticationProviderTest extends AbstractTest {
     @Test
-    public void constructor() {
-        // Make sure basic ctor works
-        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider();
-
-        // Make sure that that null is not allowed
-        try {
-            final TfsAuthenticationProvider provider2 = new TfsAuthenticationProvider(null);
-            Assert.fail("constructor allows null info");
-        } catch (AssertionError error) {
-            // correct error thrown
-        }
-    }
-
-    @Test
     public void getAuthenticationInfo() {
         final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
         final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
