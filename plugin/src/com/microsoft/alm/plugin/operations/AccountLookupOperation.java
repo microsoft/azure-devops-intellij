@@ -60,7 +60,7 @@ public class AccountLookupOperation extends Operation {
             final ServerContext activeContext = ServerContextManager.getInstance().getActiveContext();
             if(activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
                 //active context will be a valid VSO context at this point
-                logger.error("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", activeContext);
+                logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", activeContext);
             }
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(activeContext.getClient(),

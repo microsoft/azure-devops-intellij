@@ -62,6 +62,7 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
         setAuthenticating(false);
         setConnected(false);
         setServerName("");
+        ServerContextManager.getInstance().setActiveContext(ServerContext.NO_CONTEXT);
     }
 
     @Override

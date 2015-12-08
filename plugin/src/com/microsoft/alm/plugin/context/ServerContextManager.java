@@ -118,14 +118,11 @@ public class ServerContextManager {
     public ServerContext getAuthenticatedContext(String gitRemoteUrl, boolean setAsActiveContext) {
         try {
             // get context from builder, create PAT if needed, and store in active context
-            ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
-            if (context != null) {
-                if (setAsActiveContext) {
-                    // Set the active context for later use
-                    ServerContextManager.getInstance().setActiveContext(context);
-                }
+            final ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
+            if (context != null && setAsActiveContext) {
+                // Set the active context for later use
+                ServerContextManager.getInstance().setActiveContext(context);
             }
-
             return context;
         } catch (Throwable t) {
             logger.warn("getAuthenticatedContext unexpected exception", t);
@@ -179,7 +176,7 @@ public class ServerContextManager {
 
     private ServerContext createServerContext(String gitRemoteUrl, AuthenticationInfo authenticationInfo) {
         ServerContext.Type type = UrlHelper.isVSO(UrlHelper.getBaseUri(gitRemoteUrl))
-                ? ServerContext.Type.VSO_DEPLOYMENT : ServerContext.Type.TFS;
+                ? ServerContext.Type.VSO : ServerContext.Type.TFS;
         final Client client = ServerContext.getClient(type, authenticationInfo);
         final Validator validator = new Validator(client);
         final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitRemoteUrl, validator);

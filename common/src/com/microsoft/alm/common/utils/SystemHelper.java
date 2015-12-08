@@ -11,10 +11,11 @@ import java.util.Date;
 
 public class SystemHelper {
     private static Logger logger = LoggerFactory.getLogger(SystemHelper.class);
+    private final static String COMPUTER_NAME = "computername";
 
     /**
      * Gets the computer name
-     * @return local host name if found, null otherwise
+     * @return local host name if found, falls back to computername env variable otherwise
      */
     public static String getComputerName() {
         try {
@@ -22,15 +23,15 @@ public class SystemHelper {
             return localMachine.getHostName();
         } catch (UnknownHostException e) {
             logger.warn("getComputerName failed", e);
+            return System.getenv(COMPUTER_NAME);
         }
-        return null;
     }
 
     /**
      * Get date time string
      * @return Friendly string representation of current date time
      */
-    public static String getCurrentDateTime() {
+    public static String getCurrentDateTimeString() {
         final Date date = new Date();
         final String friendlyDate = String.format("%tc", date);
         return friendlyDate;

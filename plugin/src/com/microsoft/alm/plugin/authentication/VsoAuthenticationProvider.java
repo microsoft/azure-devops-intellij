@@ -103,7 +103,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                     } else {
                         final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
                         final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                AuthHelper.getEmail(result), SystemHelper.getComputerName(),SystemHelper.getCurrentDateTime());
+                                AuthHelper.getEmail(result), SystemHelper.getComputerName(),SystemHelper.getCurrentDateTimeString());
                         final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
                                 Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
                         lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
