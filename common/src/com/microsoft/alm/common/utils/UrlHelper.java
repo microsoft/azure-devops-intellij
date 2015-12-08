@@ -53,6 +53,13 @@ public class UrlHelper {
         return null;
     }
 
+    public static String asString(final URI uri) {
+        if (uri != null) {
+            return uri.toString();
+        }
+
+        return null;
+    }
 
     public static boolean isVSO(final URI uri) {
         final String host = uri.getHost().toLowerCase();
