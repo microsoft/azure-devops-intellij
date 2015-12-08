@@ -53,6 +53,8 @@
     <!-- uncomment to enable plugin in all products
     <depends>com.intellij.modules.lang</depends>
     -->
+    <depends>com.intellij.modules.lang</depends>
+
     <depends>Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
