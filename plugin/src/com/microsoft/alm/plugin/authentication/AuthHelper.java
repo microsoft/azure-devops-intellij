@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
@@ -122,7 +123,7 @@ public class AuthHelper {
 
         String user = userName;
         String domain = "";
-        final String workstation = getWorkstation();
+        final String workstation = SystemHelper.getComputerName();
 
         // If the username has a backslash, then the domain is the first part and the username is the second part
         if (userName.contains("\\")) {
@@ -148,15 +149,6 @@ public class AuthHelper {
         }
 
         return new org.apache.http.auth.NTCredentials(user, password, workstation, domain);
-    }
-
-    private static String getWorkstation() {
-        try {
-            final java.net.InetAddress address = java.net.InetAddress.getLocalHost();
-            return address.getHostName();
-        } catch (UnknownHostException e) {
-            return System.getenv(COMPUTER_NAME);
-        }
     }
 
     private static String getUserId(final AuthenticationResult authenticationResult) {

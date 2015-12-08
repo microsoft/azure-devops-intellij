@@ -139,22 +139,26 @@ public class ServerContextSettings implements PersistentStateComponent<ServerCon
     // This method exists to make sure we can deserialize the collection reference.
     private TeamProjectCollectionReference restrict(final TeamProjectCollectionReference reference) {
         final TeamProjectCollectionReference newReference = new TeamProjectCollectionReference();
-        newReference.setName(reference.getName());
-        newReference.setId(reference.getId());
-        newReference.setUrl(reference.getUrl());
+        if(reference != null) {
+            newReference.setName(reference.getName());
+            newReference.setId(reference.getId());
+            newReference.setUrl(reference.getUrl());
+        }
         return newReference;
     }
 
     // This method exists to make sure we can deserialize the project reference.
     private TeamProjectReference restrict(final TeamProjectReference reference) {
         final TeamProjectReference newReference = new TeamProjectReference();
-        newReference.setName(reference.getName());
-        newReference.setId(reference.getId());
-        newReference.setUrl(reference.getUrl());
-        newReference.setAbbreviation(reference.getAbbreviation());
-        newReference.setDescription(reference.getDescription());
-        newReference.setRevision(reference.getRevision());
-        newReference.setState(reference.getState());
+        if(reference != null) {
+            newReference.setName(reference.getName());
+            newReference.setId(reference.getId());
+            newReference.setUrl(reference.getUrl());
+            newReference.setAbbreviation(reference.getAbbreviation());
+            newReference.setDescription(reference.getDescription());
+            newReference.setRevision(reference.getRevision());
+            newReference.setState(reference.getState());
+        }
         return newReference;
     }
 

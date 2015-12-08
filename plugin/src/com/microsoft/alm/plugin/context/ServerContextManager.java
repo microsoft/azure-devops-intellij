@@ -9,26 +9,18 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
-import com.microsoft.alm.plugin.operations.AccountLookupOperation;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollection;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
-import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
-import com.microsoft.tf.common.authentication.aad.TokenScope;
-import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
-import com.microsoft.visualstudio.services.account.webapi.model.Account;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,14 +57,7 @@ public class ServerContextManager {
     public synchronized void setActiveContext(final ServerContext context) {
         activeContext = context;
         if (context != ServerContext.NO_CONTEXT) {
-            switch (context.getType()) {
-                case TFS:
-                case VSO:
-                    getStore().saveServerContext(context);
-                    break;
-                case VSO_DEPLOYMENT:
-                    throw new IllegalArgumentException("ServerContext type not allowed: " + ServerContext.Type.VSO_DEPLOYMENT);
-            }
+            getStore().saveServerContext(context);
         }
     }
 
@@ -113,11 +98,16 @@ public class ServerContextManager {
         final List<ServerContext> loaded = getStore().restoreServerContexts();
         activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
 
-        // restore last used credentials for TFS
-        if (activeContext != ServerContext.NO_CONTEXT && activeContext.getType() == ServerContext.Type.TFS) {
-            TfsAuthenticationProvider.getInstance().setLastAuthenticationInfo(activeContext.getAuthenticationInfo());
+
+        if (activeContext != ServerContext.NO_CONTEXT) {
+            // restore last used credentials for TFS
+            if (activeContext.getType() == ServerContext.Type.TFS) {
+                TfsAuthenticationProvider.getInstance().setLastAuthenticationInfo(activeContext.getAuthenticationInfo());
+            } else {
+                //VSO or VSO_DEPLOYMENT
+                VsoAuthenticationProvider.getInstance().setAuthenticationInfo(activeContext.getAuthenticationInfo());
+            }
         }
-        // TODO do the same for VSO Auth Result when we start saving it
     }
 
     /**
@@ -125,73 +115,18 @@ public class ServerContextManager {
      * Note that if a context does not exist, one will be created and the user will be prompted if necessary.
      * Run this on a background thread.
      */
-    public ServerContext getAuthenticatedContext(String gitRemoteUrl, String patDescription, boolean setAsActiveContext) {
+    public ServerContext getAuthenticatedContext(String gitRemoteUrl, boolean setAsActiveContext) {
         try {
             // get context from builder, create PAT if needed, and store in active context
-            ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
-            if (context != null) {
-                if (context.getType() == ServerContext.Type.VSO_DEPLOYMENT) {
-                    // Generate a PAT and get the new context
-                    final ServerContext newContext = createVsoContext(context,
-                            VsoAuthenticationProvider.getInstance(),
-                            patDescription);
-                    if (newContext != null) {
-                        context = newContext;
-                    } else {
-                        logger.error("Unable to create PAT token");
-                    }
-                }
-
-                if (setAsActiveContext) {
-                    // Set the active context for later use
-                    ServerContextManager.getInstance().setActiveContext(context);
-                }
+            final ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
+            if (context != null && setAsActiveContext) {
+                // Set the active context for later use
+                ServerContextManager.getInstance().setActiveContext(context);
             }
-
             return context;
         } catch (Throwable t) {
             logger.warn("getAuthenticatedContext unexpected exception", t);
         }
-        return null;
-    }
-
-    /**
-     * This method takes a VSO_DEPLOYMENT context and returns the VSO context that has the correct PAT
-     *
-     * @param originalContext        the VSO_DEPLOYMENT context to use to generate the PAT
-     * @param authenticationProvider the provider used to create the original context
-     * @param tokenDescription       the description to use for the generated PAT
-     * @return a new VSO context object
-     */
-    public ServerContext createVsoContext(ServerContext originalContext, VsoAuthenticationProvider authenticationProvider, String tokenDescription) {
-        // If the context is a VSO_DEPLOYMENT, then we can generate the PAT and create a new context
-        // Otherwise, throw an exception
-        if (originalContext == null || originalContext.getType() != ServerContext.Type.VSO_DEPLOYMENT) {
-            throw new IllegalArgumentException("originalContext must be a VSO_DEPLOYMENT context");
-        }
-        if (authenticationProvider == null) {
-            throw new IllegalArgumentException("authenticationProvider must be set");
-        }
-
-        //generate PAT
-        final AuthenticationResult result = authenticationProvider.getAuthenticationResult();
-        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
-
-        final String accountName = UrlHelper.getVSOAccountName(originalContext.getUri());
-        final Account account = AccountLookupOperation.getAccount(authenticationProvider, accountName);
-
-        if (account != null) {
-            SessionToken sessionToken = patFactory.createSessionToken(tokenDescription,
-                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE), account.getAccountId());
-            //create a VSO context with session token (remove the original client and allow that to be recreated)
-            final AuthenticationInfo finalAuthenticationInfo = AuthHelper.createAuthenticationInfo(originalContext.getUri().toString(), result, sessionToken);
-            final ServerContext newContext =
-                    new ServerContextBuilder(originalContext).type(ServerContext.Type.VSO)
-                            .authentication(finalAuthenticationInfo).buildWithClient(null);
-            return newContext;
-        }
-
-        logger.debug("Account not found: " + accountName);
         return null;
     }
 
@@ -241,7 +176,7 @@ public class ServerContextManager {
 
     private ServerContext createServerContext(String gitRemoteUrl, AuthenticationInfo authenticationInfo) {
         ServerContext.Type type = UrlHelper.isVSO(UrlHelper.getBaseUri(gitRemoteUrl))
-                ? ServerContext.Type.VSO_DEPLOYMENT : ServerContext.Type.TFS;
+                ? ServerContext.Type.VSO : ServerContext.Type.TFS;
         final Client client = ServerContext.getClient(type, authenticationInfo);
         final Validator validator = new Validator(client);
         final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitRemoteUrl, validator);
