@@ -57,7 +57,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         if (authenticationProvider.isAuthenticated()) {
             loadReposFromAllAccounts();
         } else {
-            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener() {
+            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_AUTH_URL, new AuthenticationListener() {
                         @Override
                         public void authenticating() {
                             // We are starting to authenticate, so set the boolean

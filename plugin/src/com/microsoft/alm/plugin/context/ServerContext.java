@@ -27,8 +27,6 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -100,22 +98,9 @@ public class ServerContext {
     }
 
     public static Client getClient(final Type type, final AuthenticationInfo authenticationInfo) {
-        final Client localClient;
-        if (type == Type.VSO_DEPLOYMENT) {
-            localClient = ClientBuilder.newClient();
-            localClient.register(new ClientRequestFilter() {
-                @Override
-                public void filter(final ClientRequestContext requestContext) throws IOException {
-                    requestContext.getHeaders().putSingle("Authorization", "Bearer " + authenticationInfo.getPassword());
-                }
-            });
-        } else {
-            final ClientConfig clientConfig = getClientConfig(type, authenticationInfo,
-                    System.getProperty("proxySet") != null && System.getProperty("proxySet").equals("true"));
-
-            localClient = ClientBuilder.newClient(clientConfig);
-        }
-
+        final ClientConfig clientConfig = getClientConfig(type, authenticationInfo,
+                System.getProperty("proxySet") != null && System.getProperty("proxySet").equals("true"));
+        final Client localClient = ClientBuilder.newClient(clientConfig);
         return localClient;
     }
 

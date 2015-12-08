@@ -3,15 +3,25 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
+import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
+import com.microsoft.tf.common.authentication.aad.TokenScope;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
+import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
+import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
 import com.microsoft.visualstudio.services.account.webapi.model.Profile;
+import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
@@ -25,11 +35,10 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     private static final String MANAGEMENT_CORE_RESOURCE = "https://management.core.windows.net/";
     private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
     private static final String REDIRECT_URL = "https://xplatalm.com";
-
-    public static final String VSO_ROOT = "http://visualstudio.com";
-
-    private static AuthenticationResult lastDeploymentAuthenticationResult;
+    private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
     private static AuthenticationInfo lastDeploymentAuthenticationInfo;
+
+    public static final String VSO_AUTH_URL =  "https://app.vssps.visualstudio.com";
 
     private static class AzureAuthenticatorHolder {
         private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
@@ -60,23 +69,22 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         return VsoAuthenticationProviderHolder.INSTANCE;
     }
 
-    public AuthenticationResult getAuthenticationResult() {
-        return lastDeploymentAuthenticationResult;
-    }
-
     @Override
     public AuthenticationInfo getAuthenticationInfo() {
         return lastDeploymentAuthenticationInfo;
     }
 
+    public void setAuthenticationInfo(final AuthenticationInfo authenticationInfo) {
+        lastDeploymentAuthenticationInfo = authenticationInfo;
+    }
+
     @Override
     public boolean isAuthenticated() {
-        return lastDeploymentAuthenticationResult != null;
+        return lastDeploymentAuthenticationInfo != null;
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        lastDeploymentAuthenticationResult = null;
         lastDeploymentAuthenticationInfo = null;
     }
 
@@ -93,8 +101,12 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                         //User closed the browser window without signing in
                         clearAuthenticationDetails();
                     } else {
-                        lastDeploymentAuthenticationResult = result;
-                        lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, lastDeploymentAuthenticationResult);
+                        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
+                        final String tokenDescription = String.format(TOKEN_DESCRIPTION,
+                                AuthHelper.getEmail(result), SystemHelper.getComputerName(),SystemHelper.getCurrentDateTime());
+                        final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
+                                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
+                        lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
                     }
                     AuthenticationListener.Helper.authenticated(listener, lastDeploymentAuthenticationInfo, null);
                 }
@@ -112,33 +124,30 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     }
 
     /**
-     * Gets the user profile, tries to refresh authentication result if first attempt fails.
-     * @return Profile userProfile of the authenticated user, null if user isn't authenticated
+     * Retrieves user profile of signed in user, if successful, saves the current VSO_DEPLOYMENT context
+     * @return user profile if successfully authenticated, else throws an exception
      */
     public Profile getAuthenticatedUserProfile() {
-        if(!isAuthenticated()) {
-            return null;
-        }
-
-        Profile profile = null;
+        final ServerContext context = new ServerContextBuilder()
+                .type(ServerContext.Type.VSO_DEPLOYMENT)
+                .authentication(getAuthenticationInfo())
+                .uri(VSO_AUTH_URL)
+                .build();
+        final AccountHttpClient accountHttpClient = new AccountHttpClient(context.getClient(), context.getUri());
         try {
-            profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-        } catch(Throwable t) {
-            logger.warn("getAuthenticatedUserProfile", t);
-        }
-
-        if(profile == null) {
-            try {
-                //refresh the authentication result and try again
-                lastDeploymentAuthenticationResult = getAzureAuthenticator().refreshAadAccessToken(getAuthenticationResult());
-                lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(VSO_ROOT, lastDeploymentAuthenticationResult);
-                profile = getAzureAuthenticator().getUserProfile(getAuthenticationResult());
-            } catch(Throwable t) {
-                logger.warn("getAuthenticatedUserProfile - failed after refreshing authentication result", t);
-                throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
+            final Profile me = accountHttpClient.getMyProfile();
+            if(ServerContextManager.getInstance().getActiveContext() == ServerContext.NO_CONTEXT ||
+                    ServerContextManager.getInstance().getActiveContext().getType() == ServerContext.Type.TFS) {
+                //only overwrite this if there is no active VSO context
+                ServerContextManager.getInstance().setActiveContext(context);
             }
+            return me;
+        } catch (Throwable t) {
+            //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
+            logger.warn("getAuthenticatedUserProfile exception", t);
+            clearAuthenticationDetails();
+            ServerContextManager.getInstance().setActiveContext(ServerContext.NO_CONTEXT);
+            throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
         }
-
-        return profile;
     }
 }

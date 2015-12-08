@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.mocks.MockVsoAuthenticationProvider;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
@@ -102,42 +101,8 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext context = new ServerContext(ServerContext.Type.TFS, info, gitUri, null, collection, project, repo);
         manager.setActiveContext(context);
 
-        ServerContext testContext = manager.getAuthenticatedContext(gitUri.toString(), "new pat", true);
+        ServerContext testContext = manager.getAuthenticatedContext(gitUri.toString(), true);
         Assert.assertNotNull(testContext);
         Assert.assertEquals(gitUri, testContext.getUri());
-    }
-
-
-    @Test
-    public void createVsoContext_basics() {
-        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
-        final ServerContext vsoContext = new ServerContextBuilder().type(ServerContext.Type.VSO).build();
-        final ServerContext vsoDeploymentContext = new ServerContextBuilder()
-                .type(ServerContext.Type.VSO_DEPLOYMENT)
-                .uri("http://server.vs.com/path")
-                .build();
-
-        try {
-            manager.createVsoContext(null, null, null);
-            Assert.fail();
-        } catch (IllegalArgumentException ex) { /* correct */ }
-        try {
-            manager.createVsoContext(tfsContext, null, null);
-            Assert.fail();
-        } catch (IllegalArgumentException ex) { /* correct */ }
-        try {
-            manager.createVsoContext(vsoContext, null, null);
-            Assert.fail();
-        } catch (IllegalArgumentException ex) { /* correct */ }
-        try {
-            manager.createVsoContext(vsoDeploymentContext, null, null);
-            Assert.fail();
-        } catch (IllegalArgumentException ex) { /* correct */ }
-
-        // Make sure that createVsoContext doesn't throw in the case where we can't get the account
-        final AuthenticationInfo info = new AuthenticationInfo("", "", "", "");
-        final MockVsoAuthenticationProvider authProvider = new MockVsoAuthenticationProvider(info);
-        ServerContext context = manager.createVsoContext(vsoDeploymentContext, authProvider, null);
-        Assert.assertNull(context);
     }
 }

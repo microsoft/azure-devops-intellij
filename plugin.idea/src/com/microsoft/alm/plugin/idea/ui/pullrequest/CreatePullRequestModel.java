@@ -472,9 +472,9 @@ public class CreatePullRequestModel extends AbstractModel {
                 true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                // get context from manager, create PAT if needed, and store in active context
-                final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl,
-                            TfPluginBundle.message(TfPluginBundle.KEY_PAT_TOKEN_DESC), true);
+                // get context from manager, and store in active context
+                final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
+                        gitRemoteUrl, true);
 
                 if (context == null) {
                     notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));

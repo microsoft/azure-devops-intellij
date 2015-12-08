@@ -55,7 +55,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         if (authenticationProvider.isAuthenticated()) {
             loadProjectsFromAllAccounts();
         } else {
-            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_ROOT, new AuthenticationListener() {
+            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_AUTH_URL, new AuthenticationListener() {
                 @Override
                 public void authenticating() {
                     // We are starting to authenticate, so set the boolean
