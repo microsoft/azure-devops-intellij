@@ -57,8 +57,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
-        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.utils.ServerContextSettings"
-                            serviceImplementation="com.microsoft.alm.plugin.idea.utils.ServerContextSettings"/>
+        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"
+                            serviceImplementation="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"/>
     </extensions>
 
     <extensions defaultExtensionNs="Git4Idea">
