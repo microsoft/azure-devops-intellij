@@ -235,9 +235,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
         final ModelValidationInfo validationInfo = validate();
         if (validationInfo == null) {
             final ServerContext context = getSelectedContext();
-            // The url string obtained from the REST SDK is not encoded.
-            // Replace space which is the only known valid character in team project and repository name that is not a valid character in URI
-            final String gitRepositoryStr = context.getGitRepository().getRemoteUrl().replace(" ", "%20");
+            final String gitRepositoryStr = context.getUsableGitUrl();
 
             // The base LoginPageModel manages the context for us
             super.completeSignIn(context);

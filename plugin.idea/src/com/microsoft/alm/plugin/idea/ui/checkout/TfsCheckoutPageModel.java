@@ -129,10 +129,8 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
                         .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo()).build();
 
-        //successfully logged in and loading repositories, save this context if there is no active context
-        if (ServerContextManager.getInstance().getActiveContext() == ServerContext.NO_CONTEXT) {
-            ServerContextManager.getInstance().setActiveContext(context);
-        }
+        //successfully logged in and loading repositories, save this context if there is no active TFS context
+        ServerContextManager.getInstance().add(context, !ServerContextManager.getInstance().lastUsedContextIsTFS());
 
         getRepositoryProvider().loadContexts(Collections.singletonList(context),
                 ServerContextLookupOperation.ContextScope.REPOSITORY);

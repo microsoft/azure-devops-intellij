@@ -3,12 +3,14 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -36,9 +38,6 @@ import java.net.URI;
  * authentication details. Those must be provided to certain methods as needed.
  */
 public class ServerContext {
-    // constant to indicate there is no context.
-    public static final ServerContext NO_CONTEXT = null;
-
     public enum Type {VSO_DEPLOYMENT, VSO, TFS}
 
     private final Type type;
@@ -55,6 +54,29 @@ public class ServerContext {
     private final GitRepository gitRepository;
 
     private boolean disposed = false;
+
+    /**
+     * Use this static method to convert a server URI into an appropriate unique key for a serverContext object
+     */
+    public static String getKey(URI uri) {
+        // Ignore case, scheme, and any fragments or queries
+        final String key;
+        if (uri != null) {
+            key = uri.getSchemeSpecificPart().toLowerCase();
+        } else {
+            key = "";
+        }
+
+        return key;
+    }
+
+    /**
+     * Use this static method to convert a server uri string into an appropriate unique key for a serverContext object
+     */
+    public static String getKey(String uri) {
+        assert uri != null;
+        return getKey(URI.create(uri));
+    }
 
     /**
      * Use ServerContextBuilder to build a context. Only tests should call this constructor.
@@ -74,8 +96,21 @@ public class ServerContext {
         this.gitRepository = gitRepository;
     }
 
+    public String getKey() { return getKey(uri); }
+
     public URI getUri() {
         return uri;
+    }
+
+    // The url string obtained from the REST SDK is not encoded.
+    // Replace space which is the only known valid character in team project and repository name that is not a valid character in URI
+    public String getUsableGitUrl() {
+        GitRepository repo = getGitRepository();
+        if (repo != null && repo.getRemoteUrl() != null) {
+            return UrlHelper.getCmdLineFriendlyGitRemoteUrl(this.getGitRepository().getRemoteUrl());
+        }
+
+        return null;
     }
 
     public AuthenticationInfo getAuthenticationInfo() {
@@ -176,6 +211,30 @@ public class ServerContext {
             httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build();
         }
         return httpClient;
+    }
+
+    public synchronized GitHttpClient getGitHttpClient() {
+        if (teamProjectCollectionReference == null) {
+            // We don't have enough context to create a GitHttpClient
+            return null;
+        }
+
+        // Get the collection name. Find it in the uri. Use that as the collection URI.
+        final String collectionName = teamProjectCollectionReference.getName().toLowerCase();
+        final String uri = UrlHelper.asString(getUri()).toLowerCase();
+        final int index = uri.indexOf(UrlHelper.URL_SEPARATOR + collectionName);
+        if (index >= 0) {
+            // Get the index of the next char
+            final int endIndex = index + 1 + collectionName.length();
+            // Make sure the collection name is terminated by the end of the uri or a uri separator
+            if (endIndex == uri.length() || uri.charAt(endIndex) == UrlHelper.URL_SEPARATOR.charAt(0)) {
+                final String collectionUri = uri.substring(0, endIndex);
+                final GitHttpClient gitClient = new GitHttpClient(getClient(), URI.create(collectionUri));
+                return gitClient;
+            }
+        }
+
+        return null;
     }
 
     public synchronized SoapServices getSoapServices() {

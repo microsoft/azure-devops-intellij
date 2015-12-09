@@ -76,12 +76,15 @@ public class ServerContextLookupOperationTest {
         GitRepository repo1 = new GitRepository();
         repo1.setName(repoName1);
         repo1.setProjectReference(project1);
+        repo1.setRemoteUrl("http://server/_git/repo1");
         GitRepository repo2 = new GitRepository();
         repo2.setName(repoName2);
         repo2.setProjectReference(project2);
+        repo2.setRemoteUrl("http://server/_git/repo2");
         GitRepository repo3 = new GitRepository();
         repo3.setName(repoName3);
         repo3.setProjectReference(project1);
+        repo3.setRemoteUrl("http://server/_git/repo3");
 
         // add these repos to the Mock operation as our results
         operation.addRepository(repo1);
@@ -134,12 +137,15 @@ public class ServerContextLookupOperationTest {
         GitRepository repo1 = new GitRepository();
         repo1.setName(repoName1);
         repo1.setProjectReference(project1);
+        repo1.setRemoteUrl("http://server/_git/repo1");
         GitRepository repo2 = new GitRepository();
         repo2.setName(repoName2);
         repo2.setProjectReference(project2);
+        repo2.setRemoteUrl("http://server/_git/repo2");
         GitRepository repo3 = new GitRepository();
         repo3.setName(repoName3);
         repo3.setProjectReference(project1);
+        repo3.setRemoteUrl("http://server/_git/repo3");
 
         // add these repos to the Mock operation as our results
         operation.addRepository(repo1);

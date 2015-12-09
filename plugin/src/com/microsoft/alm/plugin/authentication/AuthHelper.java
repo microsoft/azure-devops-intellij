@@ -14,7 +14,6 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -56,7 +55,7 @@ public class AuthHelper {
     /**
      * This method wraps the normal Async call to authenticate and waits on the result.
      */
-    public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl){
+    public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl) {
         final SettableFuture<AuthenticationInfo> future = SettableFuture.create();
 
         provider.authenticateAsync(gitRemoteUrl, new AuthenticationListener() {
@@ -80,11 +79,11 @@ public class AuthHelper {
         Throwable t = null;
         try {
             return future.get(15, TimeUnit.MINUTES);
-        } catch(InterruptedException ie) {
+        } catch (InterruptedException ie) {
             t = ie;
-        } catch(ExecutionException ee) {
+        } catch (ExecutionException ee) {
             t = ee;
-        } catch(TimeoutException te) {
+        } catch (TimeoutException te) {
             t = te;
         } finally {
             if (t != null) {

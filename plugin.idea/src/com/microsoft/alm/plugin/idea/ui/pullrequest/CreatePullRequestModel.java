@@ -58,7 +58,6 @@ import org.slf4j.LoggerFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.event.HyperlinkEvent;
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -263,17 +262,17 @@ public class CreatePullRequestModel extends AbstractModel {
 
         // only show valid remote branches
         sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(),
-                new Predicate<GitRemoteBranch>() {
-                    @Override
-                    public boolean apply(final GitRemoteBranch remoteBranch) {
+                        new Predicate<GitRemoteBranch>() {
+                            @Override
+                            public boolean apply(final GitRemoteBranch remoteBranch) {
                         /* two conditions:
                          *   1. remote must be a vso/tfs remote
                          *   2. this isn't the remote tracking branch of current local branch
                          */
-                        return tfGitRemotes.contains(remoteBranch.getRemote())
-                                && !remoteBranch.equals(remoteTrackingBranch);
-                        }
-                    })
+                                return tfGitRemotes.contains(remoteBranch.getRemote())
+                                        && !remoteBranch.equals(remoteTrackingBranch);
+                            }
+                        })
         );
 
         sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems()));
@@ -390,7 +389,7 @@ public class CreatePullRequestModel extends AbstractModel {
                                     final GitRemoteBranch targetBranch = getTargetBranch();
 
                                     if (commits != null && sourceBranch.getName() != null
-                                            && targetBranch.getNameForRemoteOperations()!= null) {
+                                            && targetBranch.getNameForRemoteOperations() != null) {
                                         final String defaultTitle = pullRequestHelper.createDefaultTitle(commits,
                                                 sourceBranch.getName(),
                                                 targetBranch.getNameForRemoteOperations());
@@ -557,10 +556,7 @@ public class CreatePullRequestModel extends AbstractModel {
                                      @NotNull final String description,
                                      @NotNull final String branchNameOnRemoteServer,
                                      @NotNull final GitRemoteBranch targetBranch) {
-        //should this be a method on the serverContext object?
-        final URI collectionURI = URI.create(String.format("%s/%s", context.getUri().toString(),
-                context.getTeamProjectCollectionReference().getName()));
-        final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+        final GitHttpClient gitClient = context.getGitHttpClient();
 
         try {
             final UUID repositoryId = context.getGitRepository().getId();
@@ -602,7 +598,7 @@ public class CreatePullRequestModel extends AbstractModel {
         final GitRemoteBranch targetBranch = this.getTargetBranch();
         if (changesContainer.getTargetBranchName() != null && targetBranch != null) {
             if (!changesContainer.getTargetBranchName().equals(targetBranch.getName())) {
-               return  false;
+                return false;
             }
         }
 
@@ -610,7 +606,7 @@ public class CreatePullRequestModel extends AbstractModel {
         final GitLocalBranch sourceBranch = this.getSourceBranch();
         if (changesContainer.getSourceBranchName() != null && sourceBranch != null) {
             if (!changesContainer.getSourceBranchName().equals(sourceBranch.getName())) {
-               return false;
+                return false;
             }
         }
 

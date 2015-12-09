@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class ServerContextStoreImpl implements ServerContextStore {
     @Override
-    public void forgetServerContext(final Key key) {
+    public void forgetServerContext(final String key) {
         ServerContextSecrets.forget(key);
     }
 

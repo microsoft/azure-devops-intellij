@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.ui.checkout;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.vcs.CheckoutProvider;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialog;
@@ -110,8 +109,7 @@ public class CheckoutController implements Observer {
             }
         });
 
-        final ServerContext context = ServerContextManager.getInstance().getActiveContext();
-        if (context != ServerContext.NO_CONTEXT && context.getType() == ServerContext.Type.TFS) {
+        if (ServerContextManager.getInstance().lastUsedContextIsTFS()) {
             dialog.setSelectedTabIndex(TAB_TFS);
         }
 

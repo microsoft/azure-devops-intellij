@@ -136,17 +136,15 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         final AccountHttpClient accountHttpClient = new AccountHttpClient(context.getClient(), context.getUri());
         try {
             final Profile me = accountHttpClient.getMyProfile();
-            if(ServerContextManager.getInstance().getActiveContext() == ServerContext.NO_CONTEXT ||
-                    ServerContextManager.getInstance().getActiveContext().getType() == ServerContext.Type.TFS) {
-                //only overwrite this if there is no active VSO context
-                ServerContextManager.getInstance().setActiveContext(context);
-            }
+            // Only update the lastUsedContext if there is no active VSO context
+            ServerContextManager.getInstance().add(context,
+                    !ServerContextManager.getInstance().lastUsedContextIsVSO());
+
             return me;
         } catch (Throwable t) {
             //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
             logger.warn("getAuthenticatedUserProfile exception", t);
             clearAuthenticationDetails();
-            ServerContextManager.getInstance().setActiveContext(ServerContext.NO_CONTEXT);
             throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
         }
     }

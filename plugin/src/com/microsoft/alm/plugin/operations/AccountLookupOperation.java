@@ -52,13 +52,10 @@ public class AccountLookupOperation extends Operation {
             if (isCancelled()) {
                 return;
             }
-           if (isCancelled()) {
-                return;
-            }
 
             final Profile me = authenticationProvider.getAuthenticatedUserProfile();
-            final ServerContext activeContext = ServerContextManager.getInstance().getActiveContext();
-            if(activeContext == ServerContext.NO_CONTEXT || activeContext.getType() == ServerContext.Type.TFS) {
+            final ServerContext activeContext = ServerContextManager.getInstance().getLastUsedContext();
+            if (activeContext == null || activeContext.getType() == ServerContext.Type.TFS) {
                 //active context will be a valid VSO context at this point
                 logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", activeContext);
             }
