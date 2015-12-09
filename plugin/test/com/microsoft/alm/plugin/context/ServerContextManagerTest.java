@@ -9,78 +9,182 @@ import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionRefer
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.List;
+import java.util.Collection;
 
 public class ServerContextManagerTest extends AbstractTest {
-    // short hand
-    private ServerContextManager manager = ServerContextManager.getInstance();
+    @Test
+    public void testEmptyManager() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertEquals(0, manager.getAllServerContexts().size());
+        Assert.assertNull(manager.getLastUsedContext());
+        manager.clearLastUsedContext();
+        ServerContext context = manager.get("foo");
+        Assert.assertNull(context);
+        manager.remove("foo");
+    }
 
-    @Before
-    public void init() {
-        manager.setActiveContext(ServerContext.NO_CONTEXT);
+    @Test
+    public void testAdd() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertEquals(0, manager.getAllServerContexts().size());
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
+        manager.add(context);
+        Assert.assertEquals(context, manager.getLastUsedContext());
+        Assert.assertEquals(1, manager.getAllServerContexts().size());
+        ServerContext _context = manager.get(context.getUri().toString());
+        Assert.assertEquals(context, _context);
+
+        // add a second context
+        ServerContext context2 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server2/path2").build();
+        manager.add(context2);
+        Assert.assertEquals(context2, manager.getLastUsedContext());
+        Assert.assertEquals(2, manager.getAllServerContexts().size());
+        ServerContext _context2 = manager.get(context2.getUri().toString());
+        Assert.assertEquals(context2, _context2);
+
+        // add a third context that has a very similar URI
+        ServerContext context3 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server2/path2/3").build();
+        manager.add(context3);
+        Assert.assertEquals(context3, manager.getLastUsedContext());
+        Assert.assertEquals(3, manager.getAllServerContexts().size());
+        ServerContext _context3 = manager.get(context3.getUri().toString());
+        Assert.assertEquals(context3, _context3);
+    }
+
+    @Test
+    public void testAddDuplicate() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertEquals(0, manager.getAllServerContexts().size());
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
+        manager.add(context);
+        Assert.assertEquals(context, manager.getLastUsedContext());
+        Assert.assertEquals(1, manager.getAllServerContexts().size());
+        ServerContext _context = manager.get(context.getUri().toString());
+        Assert.assertEquals(context, _context);
+
+        // add a second context that has the SAME URI
+        ServerContext context2 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
+        manager.add(context2);
+        Assert.assertEquals(context2, manager.getLastUsedContext());
+        Assert.assertEquals(1, manager.getAllServerContexts().size());
+        ServerContext _context2 = manager.get(context2.getUri().toString());
+        Assert.assertEquals(context2, _context2);
+        Assert.assertNotEquals(context, _context2);
+
+        // add a third with upper case URI
+        ServerContext context3 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("HTTP://SERVER/PATH").build();
+        manager.add(context3);
+        Assert.assertEquals(context3, manager.getLastUsedContext());
+        Assert.assertEquals(1, manager.getAllServerContexts().size());
+        ServerContext _context3 = manager.get(context3.getUri().toString());
+        Assert.assertEquals(context3, _context3);
+        Assert.assertNotEquals(context, _context3);
+    }
+
+    @Test
+    public void testRemove() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertEquals(0, manager.getAllServerContexts().size());
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
+        manager.add(context);
+        ServerContext context2 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server2/path2").build();
+        manager.add(context2);
+        ServerContext context3 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server2/path2/3").build();
+        manager.add(context3);
+        Assert.assertEquals(context3, manager.getLastUsedContext());
+        Assert.assertEquals(3, manager.getAllServerContexts().size());
+
+        // Remove context2 and make sure 1 and 3 are left
+        manager.remove(context2.getUri().toString());
+        Assert.assertEquals(2, manager.getAllServerContexts().size());
+        ServerContext _context2 = manager.get(context2.getUri().toString());
+        Assert.assertNull(_context2);
+        ServerContext _context = manager.get(context.getUri().toString());
+        Assert.assertEquals(context, _context);
+        ServerContext _context3 = manager.get(context3.getUri().toString());
+        Assert.assertEquals(context3, _context3);
+        Assert.assertEquals(context3, manager.getLastUsedContext());
+
+        // Remove 3 and assure 1 is left
+        manager.remove(context3.getUri().toString());
+        Assert.assertEquals(1, manager.getAllServerContexts().size());
+        _context3 = manager.get(context3.getUri().toString());
+        Assert.assertNull(_context3);
+        _context = manager.get(context.getUri().toString());
+        Assert.assertEquals(context, _context);
+        Assert.assertNull(manager.getLastUsedContext());
+
+        // Remove the last one and make sure they are all gone
+        manager.remove(context.getUri().toString());
+        Assert.assertEquals(0, manager.getAllServerContexts().size());
+        _context = manager.get(context.getUri().toString());
+        Assert.assertNull(_context);
+        Assert.assertNull(manager.getLastUsedContext());
     }
 
     @Test
     public void activeTfsContext() {
-        Assert.assertNull(manager.getActiveContext());
-        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
-        manager.setActiveContext(context);
-        Assert.assertEquals(context, manager.getActiveContext());
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
+        manager.add(context);
+        Assert.assertEquals(context, manager.getLastUsedContext());
 
-        // Check the Tfs method - it should return the same context
-        Assert.assertNotNull(manager.getActiveContext());
-        Assert.assertEquals(context, manager.getActiveContext());
-
-        manager.setActiveContext(ServerContext.NO_CONTEXT);
-        Assert.assertNull(manager.getActiveContext());
+        manager.clearLastUsedContext();
+        Assert.assertNull(manager.getLastUsedContext());
     }
 
     @Test
     public void activeVsoContext() {
-        Assert.assertNull(manager.getActiveContext());
-        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).build();
-        manager.setActiveContext(context);
-        Assert.assertEquals(context, manager.getActiveContext());
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).uri("http://server/path").build();
+        manager.add(context);
+        Assert.assertEquals(context, manager.getLastUsedContext());
 
-        manager.setActiveContext(ServerContext.NO_CONTEXT);
-        Assert.assertNull(manager.getActiveContext());
+        manager.clearLastUsedContext();
+        Assert.assertNull(manager.getLastUsedContext());
 
         ServerContext context2 = new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT).build();
         try {
-            manager.setActiveContext(context2);
-        } catch (IllegalArgumentException ex) { /* correct */ }
+            manager.add(context2);
+        } catch (AssertionError ex) { /* correct */ }
     }
 
     @Test
     public void getServerContext() {
-        URI uri = URI.create("http://server/path");
-        Assert.assertNull(manager.getActiveContext());
+        ServerContextManager manager = new ServerContextManager();
+        String uri = "http://server/path";
+        Assert.assertNull(manager.getLastUsedContext());
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri(uri).build();
-        manager.setActiveContext(context);
+        manager.add(context);
 
-        ServerContext testContext = manager.getServerContext(uri);
+        ServerContext testContext = manager.get(uri);
         Assert.assertNotNull(testContext);
-        Assert.assertEquals(uri, testContext.getUri());
+        Assert.assertEquals(uri, testContext.getUri().toString().toLowerCase());
 
-        List<ServerContext> contexts = manager.getAllServerContexts();
+        Collection<ServerContext> contexts = manager.getAllServerContexts();
         Assert.assertEquals(1, contexts.size());
-        Assert.assertEquals(uri, contexts.get(0).getUri());
+        Assert.assertEquals(uri, contexts.iterator().next().getUri().toString().toLowerCase());
     }
 
     @Test
     public void clearServerContext() {
-        URI uri = URI.create("http://server/path");
-        Assert.assertNull(manager.getActiveContext());
+        ServerContextManager manager = new ServerContextManager();
+        String uri = "http://server/path";
+        Assert.assertNull(manager.getLastUsedContext());
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri(uri).build();
-        manager.setActiveContext(context);
+        manager.add(context);
 
-        manager.clearServerContext(uri);
-        Assert.assertNull(manager.getActiveContext());
-        ServerContext testContext = manager.getServerContext(uri);
+        manager.remove(uri);
+        Assert.assertNull(manager.getLastUsedContext());
+        ServerContext testContext = manager.get(uri);
         Assert.assertNull(testContext);
     }
 
@@ -90,7 +194,8 @@ public class ServerContextManagerTest extends AbstractTest {
      */
     @Test
     public void getAuthenticatedContext_simplest() {
-        Assert.assertNull(manager.getActiveContext());
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
 
         URI gitUri = URI.create("http://server/_git/repo1");
         AuthenticationInfo info = new AuthenticationInfo("", "", "", "");
@@ -99,7 +204,7 @@ public class ServerContextManagerTest extends AbstractTest {
         GitRepository repo = new GitRepository();
         repo.setRemoteUrl(gitUri.toString());
         ServerContext context = new ServerContext(ServerContext.Type.TFS, info, gitUri, null, collection, project, repo);
-        manager.setActiveContext(context);
+        manager.add(context);
 
         ServerContext testContext = manager.getAuthenticatedContext(gitUri.toString(), true);
         Assert.assertNotNull(testContext);

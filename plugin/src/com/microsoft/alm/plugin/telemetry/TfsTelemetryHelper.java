@@ -220,8 +220,8 @@ public class TfsTelemetryHelper {
         }
 
         public PropertyMapBuilder activeServerContext() {
-            if (ServerContextManager.getInstance().getActiveContext() != ServerContext.NO_CONTEXT) {
-                return serverContext(ServerContextManager.getInstance().getActiveContext());
+            if (ServerContextManager.getInstance().getLastUsedContext() != null) {
+                return serverContext(ServerContextManager.getInstance().getLastUsedContext());
             }
             return this;
         }

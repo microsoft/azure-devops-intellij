@@ -53,7 +53,7 @@ public class PropertyMapBuilderTest extends AbstractTest {
         // Set the active context
         final URI uri = URI.create("http://server/path");
         final ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri(uri).build();
-        ServerContextManager.getInstance().setActiveContext(context);
+        ServerContextManager.getInstance().add(context);
 
         // Add that to our property map
         final TfsTelemetryHelper.PropertyMapBuilder builder = new TfsTelemetryHelper.PropertyMapBuilder();
@@ -73,7 +73,7 @@ public class PropertyMapBuilderTest extends AbstractTest {
         final ServerContext context2 = new ServerContextBuilder().type(ServerContext.Type.TFS).uri(uri2).build();
 
         // set active context
-        ServerContextManager.getInstance().setActiveContext(context);
+        ServerContextManager.getInstance().add(context);
 
         // try to use active context
         final TfsTelemetryHelper.PropertyMapBuilder builder = new TfsTelemetryHelper.PropertyMapBuilder();

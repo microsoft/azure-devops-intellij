@@ -33,7 +33,7 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
      * @return
      */
     public ServerContext completeSignIn(final ServerContext context) {
-        ServerContextManager.getInstance().setActiveContext(context);
+        ServerContextManager.getInstance().add(context);
         return context;
     }
 
@@ -62,7 +62,7 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
         setAuthenticating(false);
         setConnected(false);
         setServerName("");
-        ServerContextManager.getInstance().setActiveContext(ServerContext.NO_CONTEXT);
+        ServerContextManager.getInstance().clearLastUsedContext();
     }
 
     @Override

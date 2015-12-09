@@ -5,9 +5,9 @@ package com.microsoft.alm.plugin.idea.settings;
 
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.services.ServerContextStore;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +17,11 @@ import java.io.IOException;
 public class ServerContextSecrets {
     private static final Logger logger = LoggerFactory.getLogger(ServerContextSecrets.class);
 
-    public static void forget(final ServerContextStore.Key key) {
+    public static void forget(final String key) {
         forgetPassword(key);
     }
 
-    public static AuthenticationInfo load(final ServerContextStore.Key key) throws IOException {
+    public static AuthenticationInfo load(final String key) throws IOException {
         final String authInfoSerialized = readPassword(key);
 
         AuthenticationInfo info = null;
@@ -38,34 +38,37 @@ public class ServerContextSecrets {
     }
 
     public static void save(final ServerContext context) {
-        final ServerContextStore.Key key = ServerContextStore.Key.create(context);
+        if (context == null) {
+            return;
+        }
 
+        final String key = UrlHelper.asString(context.getUri());
         final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
         final String stringValue = JsonHelper.write(authenticationInfo);
 
         writePassword(key, stringValue);
     }
 
-    public static void forgetPassword(final ServerContextStore.Key key) {
+    public static void forgetPassword(final String key) {
         try {
-            PasswordSafe.getInstance().removePassword(null, ServerContextSecrets.class, key.stringValue());
+            PasswordSafe.getInstance().removePassword(null, ServerContextSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to clear password store", e);
         }
     }
 
-    public static void writePassword(final ServerContextStore.Key key, final String value) {
+    public static void writePassword(final String key, final String value) {
         try {
-            PasswordSafe.getInstance().storePassword(null, ServerContextSecrets.class, key.stringValue(), value);
+            PasswordSafe.getInstance().storePassword(null, ServerContextSecrets.class, key, value);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to get password", e);
         }
     }
 
-    public static String readPassword(final ServerContextStore.Key key) {
+    public static String readPassword(final String key) {
         String password = null;
         try {
-            password = PasswordSafe.getInstance().getPassword(null, ServerContextSecrets.class, key.stringValue());
+            password = PasswordSafe.getInstance().getPassword(null, ServerContextSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to read password", e);
         }

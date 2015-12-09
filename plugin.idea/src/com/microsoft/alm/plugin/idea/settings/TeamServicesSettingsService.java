@@ -9,17 +9,15 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.services.ServerContextStore;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -59,7 +57,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
             return state;
         } else {
             final SettingsState saveState = new SettingsState();
-            final List<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+            final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
             final List<ServerContextState> contextStates = new ArrayList<ServerContextState>();
             for (ServerContext context : serverContexts) {
                 contextStates.add(new ServerContextState(context));
@@ -78,14 +76,13 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
         final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
         if (state != null && state.serverContexts != null) {
             for (final ServerContextState contextState : state.serverContexts) {
-                ServerContextStore.Key key = null;
+                String key = null;
                 try {
-                    final URI serverUri = UrlHelper.getBaseUri(contextState.uri);
-                    key = ServerContextStore.Key.create(serverUri);
+                    key = ServerContext.getKey(contextState.uri);
                     final AuthenticationInfo authenticationInfo = ServerContextSecrets.load(key);
                     if (authenticationInfo != null) {
                         serverContexts.add(contextState.createBuilder()
-                                .uri(serverUri)
+                                .uri(contextState.uri)
                                 .authentication(authenticationInfo)
                                 .build());
                     }

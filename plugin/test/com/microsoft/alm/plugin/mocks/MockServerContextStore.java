@@ -14,7 +14,7 @@ public class MockServerContextStore implements ServerContextStore {
     private ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT).build();
 
     @Override
-    public void forgetServerContext(Key key) {
+    public void forgetServerContext(String key) {
         context = null;
     }
 

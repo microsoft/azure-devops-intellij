@@ -167,6 +167,7 @@ public class ServerContextLookupOperation extends Operation {
             }
 
             final ServerContext gitServerContext = new ServerContextBuilder(context)
+                    .uri(gitRepository.getRemoteUrl())
                     .repository(gitRepository)
                     .teamProject(gitRepository.getProjectReference())
                     .collection(teamProjectCollectionReference)

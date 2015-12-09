@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.services;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -13,32 +12,7 @@ import java.util.List;
  */
 public interface ServerContextStore {
 
-    static class Key {
-        private final String host;
-
-        private Key(final String host) {
-            assert host != null;
-            this.host = host;
-        }
-
-        public static Key create(final URI uri) {
-            return new Key(uri.getHost());
-        }
-
-        public static Key create(final ServerContext context) {
-            return create(context.getUri());
-        }
-
-        public String stringValue() {
-            return host;
-        }
-
-        public String toString() {
-            return "host: " + host;
-        }
-    }
-
-    void forgetServerContext(final Key key);
+    void forgetServerContext(final String key);
 
     List<ServerContext> restoreServerContexts();
 

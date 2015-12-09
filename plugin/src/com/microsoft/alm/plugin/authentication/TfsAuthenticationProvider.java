@@ -48,7 +48,7 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
         return lastAuthenticationInfo;
     }
 
-    public void setLastAuthenticationInfo(AuthenticationInfo lastAuthenticationInfo) {
+    public void setAuthenticationInfo(AuthenticationInfo lastAuthenticationInfo) {
         this.lastAuthenticationInfo = lastAuthenticationInfo;
     }
 

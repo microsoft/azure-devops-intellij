@@ -24,6 +24,7 @@ import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -58,7 +59,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ListSelectionModel;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -230,7 +230,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     if (remoteRepository != null) {
                         //remote repo creation succeeded, save active context with the repository information
                         localContext = new ServerContextBuilder(localContext).repository(remoteRepository).build();
-                        ServerContextManager.getInstance().setActiveContext(localContext);
+                        ServerContextManager.getInstance().add(localContext);
                     } else {
                         logger.error("doImport: failed to create remote repository with name: {} on server: {}, collection: {}",
                                 repositoryName, localContext.getUri(), localContext.getTeamProjectCollectionReference().getName());
@@ -243,7 +243,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         return;
                     }
 
-                    if(!pushChangesToRemoteRepo(project, localRepository, remoteRepository, localContext, indicator)) {
+                    if (!pushChangesToRemoteRepo(project, localRepository, remoteRepository, localContext, indicator)) {
                         logger.error("doImport: failed to push changes to remote repository: {}", remoteRepository.getRemoteUrl());
                         return;
                     }
@@ -251,7 +251,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     //all steps completed successfully
                     remoteUrlForDisplay = remoteRepository.getRemoteUrl();
 
-                }catch (Throwable unexpectedError) {
+                } catch (Throwable unexpectedError) {
                     remoteUrlForDisplay = "";
                     logger.error("doImport: Unexpected error during import");
                     logger.warn("doImport", unexpectedError);
@@ -259,7 +259,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                             TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_FAILED), localContext);
 
                 } finally {
-                    if(StringUtils.isNotEmpty(remoteUrlForDisplay)) {
+                    if (StringUtils.isNotEmpty(remoteUrlForDisplay)) {
                         // Notify the user that we are done and provide a link to the repo
                         VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SUCCEEDED),
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SUCCEEDED_MESSAGE, project.getName(), remoteUrlForDisplay, repositoryName),
@@ -318,8 +318,8 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     private boolean doFirstCommitIfRequired(final Project project, final GitRepository localRepository,
-                                         final VirtualFile rootVirtualFile, final ServerContext localContext,
-                                         final ProgressIndicator indicator) {
+                                            final VirtualFile rootVirtualFile, final ServerContext localContext,
+                                            final ProgressIndicator indicator) {
         //Do first commit if there are no commits in the repository
         if (localRepository.isFresh()) {
             try {
@@ -406,12 +406,12 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         return true;
     }
 
-    private com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository createRemoteGitRepo( final Project project,
-        final ServerContext context, final ServerContext localContext, final ProgressIndicator indicator) {
+    private com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository createRemoteGitRepo(final Project project,
+                                                                                                      final ServerContext context, final ServerContext localContext, final ProgressIndicator indicator) {
         //create remote repository
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO));
-        final URI collectionURI = URI.create(localContext.getUri().toString() + "/" + localContext.getTeamProjectCollectionReference().getName());
-        final GitHttpClient gitClient = new GitHttpClient(localContext.getClient(), collectionURI);
+        final GitHttpClient gitClient = context.getGitHttpClient();
+        final String collectionUrl = gitClient.getBaseUrl().toString();
         final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository gitRepoToCreate =
                 new com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository();
         gitRepoToCreate.setName(repositoryName);
@@ -428,42 +428,42 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             t = otherEx;
         } finally {
             if (t != null) {
-                logger.error("doImport: Failed to create remote git repository name: {} collection: {}", repositoryName, collectionURI.toString());
+                logger.error("doImport: Failed to create remote git repository name: {} collection: {}", repositoryName, collectionUrl);
                 logger.warn("doImport", t);
                 final String errorMessage;
-                final String teamProjectUrl = collectionURI.toASCIIString() + "/" + localContext.getTeamProjectReference().getName(); //TODO: how can we reliably compute these URLs
+                final String teamProjectName = localContext.getTeamProjectReference().getName();
                 if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitRepositoryNameAlreadyExists")) {
                     //The REST SDK asserts for exceptions that are not handled, there could be a very large number of server exceptions to manually add code for
                     //Handling it here since we are not decided on what to do with exceptions on the REST SDK
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_ALREADY_EXISTS_ERROR,
                             repositoryName,
-                            teamProjectUrl);
+                            collectionUrl + "/" + teamProjectName);
                 } else {
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_UNEXPECTED_ERROR,
                             repositoryName,
-                            teamProjectUrl);
+                            collectionUrl + "/" + teamProjectName);
                 }
                 notifyImportError(project, errorMessage, ACTION_NAME, localContext);
             }
             if (remoteRepository == null) {
                 //We shouldn't get here if it is null, but logging just to be safe
-                logger.error("doImport: remoteRepository is null after trying to remote git repository name: {} collection: {}", repositoryName, collectionURI.toString());
+                logger.error("doImport: remoteRepository is null after trying to remote git repository name: {} collection: {}", repositoryName, collectionUrl);
             }
         }
         return remoteRepository;
     }
 
     private boolean setupRemoteOnLocalRepo(final Project project, final GitRepository localRepository,
-                                        final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
-                                        final ServerContext localContext, final ProgressIndicator indicator) {
+                                           final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
+                                           final ServerContext localContext, final ProgressIndicator indicator) {
         //get remotes on local repository
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE));
         final Collection<GitRemote> gitRemotes = localRepository.getRemotes();
         final List<String> remoteParams = new ArrayList<String>();
 
         if (!gitRemotes.isEmpty()) {
-            for(GitRemote remote : gitRemotes) {
-                if(StringUtils.equalsIgnoreCase(remote.getName(), REMOTE_ORIGIN)){
+            for (GitRemote remote : gitRemotes) {
+                if (StringUtils.equalsIgnoreCase(remote.getName(), REMOTE_ORIGIN)) {
                     //remote named origin exits, ask user if they want to overwrite it and proceed or cancel
                     IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
@@ -479,7 +479,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                             }
                         }
                     }, true, indicator.getModalityState());
-                    if(remoteParams.size() == 0) {
+                    if (remoteParams.size() == 0) {
                         //user chose to cancel import
                         logger.warn("setupRemoteOnLocalRepo: User chose to cancel import for project: {}, local repo: {}",
                                 project.getName(), localRepository.getGitDir().getUrl());
@@ -494,11 +494,11 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             }
         }
 
-        final String remoteGitUrl = remoteRepository.getRemoteUrl().replace(" ", "%20");
+        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyGitRemoteUrl(remoteRepository.getRemoteUrl());
         //update remotes on local repository
         final GitSimpleHandler hRemote = new GitSimpleHandler(project, localRepository.getRoot(), GitCommand.REMOTE);
         hRemote.setSilent(true);
-        if(remoteParams.size() == 1) {
+        if (remoteParams.size() == 1) {
             hRemote.addParameters(remoteParams.get(0), REMOTE_ORIGIN, remoteGitUrl);
         } else {
             hRemote.addParameters("add", REMOTE_ORIGIN, remoteGitUrl);
@@ -520,7 +520,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                             final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
                                             final ServerContext localContext, final ProgressIndicator indicator) {
         localRepository.update();
-        final String remoteGitUrl = remoteRepository.getRemoteUrl().replace(" ", "%20");
+        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyGitRemoteUrl(remoteRepository.getRemoteUrl());
 
         //push all branches in local Git repo to remote
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_PUSH));

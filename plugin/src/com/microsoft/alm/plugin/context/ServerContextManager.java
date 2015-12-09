@@ -21,8 +21,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Singleton class used to manage ServerContext objects.
@@ -30,14 +33,25 @@ import java.util.List;
 public class ServerContextManager {
     private static final Logger logger = LoggerFactory.getLogger(ServerContextManager.class);
 
-    //TODO remove the concept of 1 active context and replace with a list of contexts that you retrieve by URI
-    private ServerContext activeContext = null;
+    private Map<String, ServerContext> contextMap = new HashMap<String, ServerContext>();
+    private String lastUsedContextKey = null;
 
-    private static class ServerContextManagerHolder {
-        private static final ServerContextManager INSTANCE = new ServerContextManager();
+    private static class Holder {
+        private static final ServerContextManager INSTANCE = new ServerContextManager(true);
     }
 
-    private ServerContextManager() {
+    /**
+     * The constructor is protected for tests.
+     */
+    protected ServerContextManager() {
+        this(false);
+    }
+
+    private ServerContextManager(final boolean restore) {
+        if (!restore) {
+            return;
+        }
+
         try {
             restoreFromSavedState();
         } catch (Throwable t) {
@@ -47,44 +61,71 @@ public class ServerContextManager {
     }
 
     public static ServerContextManager getInstance() {
-        return ServerContextManagerHolder.INSTANCE;
+        return Holder.INSTANCE;
     }
 
-    public synchronized ServerContext getActiveContext() {
-        return activeContext;
+    public synchronized ServerContext getLastUsedContext() {
+        final ServerContext context = get(lastUsedContextKey);
+        return context;
     }
 
-    public synchronized void setActiveContext(final ServerContext context) {
-        activeContext = context;
-        if (context != ServerContext.NO_CONTEXT) {
+    public synchronized void clearLastUsedContext() {
+        lastUsedContextKey = null;
+    }
+
+    public synchronized boolean lastUsedContextIsVSO() {
+        final ServerContext lastUsed = getLastUsedContext();
+        return lastUsed != null && lastUsed.getType() != ServerContext.Type.TFS;
+    }
+
+    public synchronized boolean lastUsedContextIsTFS() {
+        final ServerContext lastUsed = getLastUsedContext();
+        return lastUsed != null && lastUsed.getType() == ServerContext.Type.TFS;
+    }
+
+    public synchronized void add(final ServerContext context) {
+        add(context, true);
+    }
+
+    public synchronized void add(final ServerContext context, boolean updateLastUsedContext) {
+        if (context != null) {
+            final String key = context.getKey();
+            contextMap.put(key, context);
             getStore().saveServerContext(context);
-        }
-    }
-
-    public synchronized void clearServerContext(final URI serverUri) {
-        final ServerContextStore.Key key = ServerContextStore.Key.create(serverUri);
-        getStore().forgetServerContext(key);
-        //TODO -- only one for now
-        if (activeContext != ServerContext.NO_CONTEXT) {
-            final ServerContextStore.Key activeKey = ServerContextStore.Key.create(activeContext);
-            if (activeKey.stringValue().equals(key.stringValue())) {
-                activeContext = null;
+            if (updateLastUsedContext) {
+                lastUsedContextKey = key;
             }
         }
     }
 
-    public synchronized ServerContext getServerContext(final URI uri) {
-        //TODO -- only one for now
-        if (activeContext != ServerContext.NO_CONTEXT &&
-                StringUtils.equalsIgnoreCase(activeContext.getUri().getHost(), uri.getHost())) {
-            return activeContext;
+    public synchronized ServerContext get(final String uri) {
+        if (!StringUtils.isEmpty(uri)) {
+            final ServerContext context = contextMap.get(ServerContext.getKey(uri));
+            return context;
         }
-        return ServerContext.NO_CONTEXT;
+
+        return null;
     }
 
-    public synchronized List<ServerContext> getAllServerContexts() {
-        //TODO -- only one for now
-        return activeContext == ServerContext.NO_CONTEXT ? Collections.<ServerContext>emptyList() : Collections.singletonList(activeContext);
+    public synchronized void remove(final String serverUri) {
+        if (StringUtils.isEmpty(serverUri)) {
+            return;
+        }
+
+        final String key = ServerContext.getKey(serverUri);
+        final ServerContext context = get(key);
+
+        if (context != null) {
+            getStore().forgetServerContext(key);
+            contextMap.remove(key);
+            if (StringUtils.equalsIgnoreCase(key, lastUsedContextKey)) {
+                clearLastUsedContext();
+            }
+        }
+    }
+
+    public synchronized Collection<ServerContext> getAllServerContexts() {
+        return Collections.unmodifiableCollection(contextMap.values());
     }
 
     private ServerContextStore getStore() {
@@ -95,17 +136,22 @@ public class ServerContextManager {
      * Called once from constructor restore the state from disk between sessions.
      */
     private synchronized void restoreFromSavedState() {
-        final List<ServerContext> loaded = getStore().restoreServerContexts();
-        activeContext = loaded.size() > 0 ? loaded.get(0) : ServerContext.NO_CONTEXT;
+        clearLastUsedContext();
+        final List<ServerContext> contexts = getStore().restoreServerContexts();
+        for (final ServerContext sc : contexts) {
+            add(sc, false);
+        }
 
+        //TODO restore lastUsedContextKey
 
-        if (activeContext != ServerContext.NO_CONTEXT) {
+        if (lastUsedContextKey != null) {
+            final ServerContext context = get(lastUsedContextKey);
             // restore last used credentials for TFS
-            if (activeContext.getType() == ServerContext.Type.TFS) {
-                TfsAuthenticationProvider.getInstance().setLastAuthenticationInfo(activeContext.getAuthenticationInfo());
+            if (context.getType() == ServerContext.Type.TFS) {
+                TfsAuthenticationProvider.getInstance().setAuthenticationInfo(context.getAuthenticationInfo());
             } else {
                 //VSO or VSO_DEPLOYMENT
-                VsoAuthenticationProvider.getInstance().setAuthenticationInfo(activeContext.getAuthenticationInfo());
+                VsoAuthenticationProvider.getInstance().setAuthenticationInfo(context.getAuthenticationInfo());
             }
         }
     }
@@ -115,13 +161,13 @@ public class ServerContextManager {
      * Note that if a context does not exist, one will be created and the user will be prompted if necessary.
      * Run this on a background thread.
      */
-    public ServerContext getAuthenticatedContext(String gitRemoteUrl, boolean setAsActiveContext) {
+    public ServerContext getAuthenticatedContext(final String gitRemoteUrl, final boolean setAsActiveContext) {
         try {
             // get context from builder, create PAT if needed, and store in active context
             final ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
             if (context != null && setAsActiveContext) {
-                // Set the active context for later use
-                ServerContextManager.getInstance().setActiveContext(context);
+                // Add the context to the manager
+                ServerContextManager.getInstance().add(context);
             }
             return context;
         } catch (Throwable t) {
@@ -141,16 +187,15 @@ public class ServerContextManager {
         assert !StringUtils.isEmpty(gitRemoteUrl);
 
         // Get matching context from manager
-        ServerContext context = getActiveContext();
-        if (context == ServerContext.NO_CONTEXT || context.getGitRepository() == null ||
-                !StringUtils.equalsIgnoreCase(context.getGitRepository().getRemoteUrl().replace(" ", "%20"), gitRemoteUrl)) {
+        ServerContext context = get(gitRemoteUrl);
+        if (context == null || context.getGitRepository() == null ||
+                !StringUtils.equalsIgnoreCase(context.getUsableGitUrl(), gitRemoteUrl)) {
             context = null;
         }
 
         if (context == null) {
-            // Manager didn't have a matching context, so create one
-            final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
-            final AuthenticationInfo authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
+            // Manager didn't have a matching context, so try to look up the auth info
+            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(gitRemoteUrl, true);
             if (authenticationInfo != null) {
                 // Create a new context object and store it back in the manager
                 context = createServerContext(gitRemoteUrl, authenticationInfo);
@@ -158,6 +203,30 @@ public class ServerContextManager {
         }
 
         return context;
+    }
+
+    /**
+     * This method tries to find existing authentication info for a given git url.
+     * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
+     */
+    public AuthenticationInfo getAuthenticationInfo(final String gitRemoteUrl, final boolean prompt) {
+        AuthenticationInfo authenticationInfo = null;
+
+        // For now I will just do a linear search for an appropriate context info to copy the auth info from
+        final URI remoteUri = URI.create(gitRemoteUrl);
+        for (final ServerContext context : getAllServerContexts()) {
+            if (StringUtils.equalsIgnoreCase(remoteUri.getAuthority(), context.getUri().getAuthority())) {
+                authenticationInfo = context.getAuthenticationInfo();
+            }
+        }
+
+        // If the auth info wasn't found and we are ok to prompt, then prompt
+        if (authenticationInfo == null && prompt) {
+            final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
+            authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
+        }
+
+        return authenticationInfo;
     }
 
     /**
@@ -174,8 +243,8 @@ public class ServerContextManager {
         return TfsAuthenticationProvider.getInstance();
     }
 
-    private ServerContext createServerContext(String gitRemoteUrl, AuthenticationInfo authenticationInfo) {
-        ServerContext.Type type = UrlHelper.isVSO(UrlHelper.getBaseUri(gitRemoteUrl))
+    private ServerContext createServerContext(final String gitRemoteUrl, final AuthenticationInfo authenticationInfo) {
+        final ServerContext.Type type = UrlHelper.isVSO(UrlHelper.getBaseUri(gitRemoteUrl))
                 ? ServerContext.Type.VSO : ServerContext.Type.TFS;
         final Client client = ServerContext.getClient(type, authenticationInfo);
         final Validator validator = new Validator(client);
@@ -188,11 +257,6 @@ public class ServerContextManager {
                     .teamProject(validator.getRepository().getProjectReference())
                     .repository(validator.getRepository())
                     .collection(validator.getCollection());
-
-            // Set the uri of the context to the server uri (TODO change context so that it can be any URI in the hierarchy)
-            final URI serverUri = URI.create(uriParseResult.getServerUrl());
-            builder.uri(serverUri);
-
             return builder.buildWithClient(client);
         }
 
@@ -224,7 +288,7 @@ public class ServerContextManager {
          * @return
          */
         @Override
-        public boolean validate(UrlHelper.ParseResult parseResult) {
+        public boolean validate(final UrlHelper.ParseResult parseResult) {
             try {
                 final URI collectionUri = URI.create(parseResult.getCollectionUrl());
                 final GitHttpClient gitClient = new GitHttpClient(client, collectionUri);
@@ -243,5 +307,4 @@ public class ServerContextManager {
             return true;
         }
     }
-
 }
