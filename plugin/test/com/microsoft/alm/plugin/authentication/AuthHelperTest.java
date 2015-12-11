@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
@@ -12,8 +13,6 @@ import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.UnknownHostException;
 
 public class AuthHelperTest {
     @Test
@@ -39,18 +38,15 @@ public class AuthHelperTest {
     }
 
     private void createAndVerifyNTCredentials(final String domain, final String name, final String domainName, final String pass) {
-        try {
-            final java.net.InetAddress address = java.net.InetAddress.getLocalHost();
-            final AuthenticationInfo info = new AuthenticationInfo(domainName, pass, "server", "display");
-            final Credentials credentials = AuthHelper.getCredentials(ServerContext.Type.TFS, info);
-            Assert.assertTrue(credentials instanceof NTCredentials);
-            Assert.assertEquals(name, ((NTCredentials) credentials).getUserName());
-            Assert.assertEquals(domain, ((NTCredentials) credentials).getDomain().toLowerCase());
-            Assert.assertEquals(address.getHostName().toLowerCase(), ((NTCredentials) credentials).getWorkstation().toLowerCase());
-            Assert.assertEquals(pass, credentials.getPassword());
-        } catch (UnknownHostException e) {
-            Assert.fail();
+        final AuthenticationInfo info = new AuthenticationInfo(domainName, pass, "server", "display");
+        final Credentials credentials = AuthHelper.getCredentials(ServerContext.Type.TFS, info);
+        Assert.assertTrue(credentials instanceof NTCredentials);
+        Assert.assertEquals(name, ((NTCredentials) credentials).getUserName());
+        Assert.assertEquals(domain, ((NTCredentials) credentials).getDomain().toLowerCase());
+        if(SystemHelper.getComputerName() != null) { //coming back null when running from command line on Mac, works inside IDE
+            Assert.assertEquals(SystemHelper.getComputerName().toLowerCase(), ((NTCredentials) credentials).getWorkstation().toLowerCase());
         }
+        Assert.assertEquals(pass, credentials.getPassword());
     }
 
     @Test

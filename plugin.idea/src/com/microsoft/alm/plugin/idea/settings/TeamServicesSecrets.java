@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public class ServerContextSecrets {
-    private static final Logger logger = LoggerFactory.getLogger(ServerContextSecrets.class);
+public class TeamServicesSecrets {
+    private static final Logger logger = LoggerFactory.getLogger(TeamServicesSecrets.class);
 
     public static void forget(final String key) {
         forgetPassword(key);
@@ -50,7 +50,7 @@ public class ServerContextSecrets {
 
     public static void forgetPassword(final String key) {
         try {
-            PasswordSafe.getInstance().removePassword(null, ServerContextSecrets.class, key);
+            PasswordSafe.getInstance().removePassword(null, TeamServicesSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to clear password store", e);
         }
@@ -58,7 +58,7 @@ public class ServerContextSecrets {
 
     public static void writePassword(final String key, final String value) {
         try {
-            PasswordSafe.getInstance().storePassword(null, ServerContextSecrets.class, key, value);
+            PasswordSafe.getInstance().storePassword(null, TeamServicesSecrets.class, key, value);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to get password", e);
         }
@@ -67,7 +67,7 @@ public class ServerContextSecrets {
     public static String readPassword(final String key) {
         String password = null;
         try {
-            password = PasswordSafe.getInstance().getPassword(null, ServerContextSecrets.class, key);
+            password = PasswordSafe.getInstance().getPassword(null, TeamServicesSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to read password", e);
         }

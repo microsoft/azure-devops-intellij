@@ -84,6 +84,14 @@ public class UrlHelper {
         return URI.create("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
     }
 
+    public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
+        if (remoteUrl1 != null && remoteUrl2 != null) {
+            return StringUtils.equalsIgnoreCase(remoteUrl1.getAuthority(), remoteUrl2.getAuthority());
+        }
+
+        return false;
+    }
+
     /**
      * This method returns the account name based on the VSO url provided.
      *

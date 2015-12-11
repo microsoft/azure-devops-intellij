@@ -79,7 +79,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
                 String key = null;
                 try {
                     key = ServerContext.getKey(contextState.uri);
-                    final AuthenticationInfo authenticationInfo = ServerContextSecrets.load(key);
+                    final AuthenticationInfo authenticationInfo = TeamServicesSecrets.load(key);
                     if (authenticationInfo != null) {
                         serverContexts.add(contextState.createBuilder()
                                 .uri(contextState.uri)
@@ -91,7 +91,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
                     // attempt to clean up left over data
                     if (key != null) {
                         try {
-                            ServerContextSecrets.forget(key);
+                            TeamServicesSecrets.forget(key);
                         } catch (final Throwable cleanupThrowable) {
                             logger.warn("Failed to cleanup invalid server context");
                         }

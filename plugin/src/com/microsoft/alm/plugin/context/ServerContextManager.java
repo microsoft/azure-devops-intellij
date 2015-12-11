@@ -219,8 +219,9 @@ public class ServerContextManager {
         // For now I will just do a linear search for an appropriate context info to copy the auth info from
         final URI remoteUri = URI.create(gitRemoteUrl);
         for (final ServerContext context : getAllServerContexts()) {
-            if (context.getUri() != null && StringUtils.equalsIgnoreCase(remoteUri.getAuthority(), context.getUri().getAuthority())) {
+            if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
                 authenticationInfo = context.getAuthenticationInfo();
+                break;
             }
         }
 
@@ -231,6 +232,37 @@ public class ServerContextManager {
         }
 
         return authenticationInfo;
+    }
+
+    /**
+     * Prompts the user for credentials and updates the authenticationInfo for all context's that match the remote URLs authority
+     *
+     * @param remoteUrl
+     */
+    public void updateAuthenticationInfo(final String remoteUrl) {
+        AuthenticationInfo newAuthenticationInfo = null;
+        final URI remoteUri = URI.create(remoteUrl);
+        //Linear search through all contexts to find the ones with same authority as remoteUrl
+        for (final ServerContext context : getAllServerContexts()) {
+            if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
+                //remove the context with old credentials
+                remove(context.getKey());
+
+                //get new credentials if needed
+                if (newAuthenticationInfo == null) {
+                    //prompt user
+                    final AuthenticationProvider authenticationProvider = getAuthenticationProvider(remoteUrl);
+                    newAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, remoteUrl);
+                }
+
+                if (newAuthenticationInfo != null) {
+                    //build a context with new authentication info and add
+                    final ServerContextBuilder builder = new ServerContextBuilder(context);
+                    builder.authentication(newAuthenticationInfo);
+                    add(builder.build(), false);
+                }
+            }
+        }
     }
 
     /**
