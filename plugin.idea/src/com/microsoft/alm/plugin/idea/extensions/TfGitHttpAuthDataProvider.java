@@ -6,8 +6,6 @@ package com.microsoft.alm.plugin.idea.extensions;
 import com.intellij.util.AuthData;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import git4idea.remote.GitHttpAuthDataProvider;
 
