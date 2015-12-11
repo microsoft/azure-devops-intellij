@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin;
 
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
+import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -33,7 +34,7 @@ public class AbstractTest {
             @Override
             public void initialize(TelemetryContext context) {
             }
-        }, false);
+        }, new MockPropertyService(), false);
     }
 
     public static void assertLogged(final String s) {

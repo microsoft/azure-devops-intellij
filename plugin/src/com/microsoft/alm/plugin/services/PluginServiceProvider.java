@@ -18,6 +18,7 @@ public class PluginServiceProvider {
     private ServerContextStore contextStore;
     private CredentialsPrompt credentialsPrompt;
     private ContextInitializer telemetryContextInitializer;
+    private PropertyService propertyService;
 
     private static class ProviderHolder {
         private static PluginServiceProvider INSTANCE = new PluginServiceProvider();
@@ -30,11 +31,13 @@ public class PluginServiceProvider {
     public void initialize(final ServerContextStore contextStore,
                            final CredentialsPrompt credentialsPrompt,
                            final ContextInitializer telemetryContextInitializer,
+                           final PropertyService propertyService,
                            final boolean insideIDE) {
         if (!initialized) {
             this.contextStore = contextStore;
             this.credentialsPrompt = credentialsPrompt;
             this.telemetryContextInitializer = telemetryContextInitializer;
+            this.propertyService = propertyService;
             this.insideIDE = insideIDE;
             initialized = true;
         }
@@ -67,5 +70,12 @@ public class PluginServiceProvider {
         assert telemetryContextInitializer != null;
 
         return telemetryContextInitializer;
+    }
+
+    public PropertyService getPropertyService() {
+        assert initialized;
+        assert propertyService != null;
+
+        return propertyService;
     }
 }

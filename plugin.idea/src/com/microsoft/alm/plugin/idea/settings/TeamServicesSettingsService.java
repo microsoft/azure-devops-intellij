@@ -12,13 +12,16 @@ import com.intellij.openapi.components.StoragePathMacros;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Stores a SettingsState object to file and handles writing and reading the objects
@@ -32,6 +35,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
     private static final Logger logger = LoggerFactory.getLogger(TeamServicesSettingsService.class);
     private SettingsState state = null;
     private boolean serverContextsRestored = false;
+    private boolean propertiesRestored = false;
 
     // This default instance is only returned in the case of tests or we are somehow running outside of IntelliJ
     private static TeamServicesSettingsService DEFAULT_INSTANCE = new TeamServicesSettingsService();
@@ -52,19 +56,10 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
     @Nullable
     @Override
     public SettingsState getState() {
-        if (!serverContextsRestored) {
-            // return the same state that we loaded
-            return state;
-        } else {
-            final SettingsState saveState = new SettingsState();
-            final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
-            final List<ServerContextState> contextStates = new ArrayList<ServerContextState>();
-            for (ServerContext context : serverContexts) {
-                contextStates.add(new ServerContextState(context));
-            }
-            saveState.serverContexts = contextStates.toArray(new ServerContextState[contextStates.size()]);
-            return saveState;
-        }
+        final SettingsState saveState = new SettingsState();
+        saveState.serverContexts = getServerContextStates();
+        saveState.properties = getPropertyStates();
+        return saveState;
     }
 
     @Override
@@ -105,5 +100,46 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
         return serverContexts;
     }
 
+    public Map<String, String> restoreProperties() {
+        Map<String, String> map = new HashMap<String, String>();
+        if (state != null && state.properties != null) {
+            for (final PropertyState ps : state.properties) {
+                map.put(ps.name, ps.value);
+            }
+        }
+
+        propertiesRestored = true;
+        return map;
+    }
+
+    private ServerContextState[] getServerContextStates() {
+        if (!serverContextsRestored) {
+            // return the same state that we loaded
+            return state.serverContexts;
+        } else {
+            final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+            final List<ServerContextState> contextStates = new ArrayList<ServerContextState>();
+            for (ServerContext context : serverContexts) {
+                contextStates.add(new ServerContextState(context));
+            }
+            return contextStates.toArray(new ServerContextState[contextStates.size()]);
+        }
+    }
+
+    private PropertyState[] getPropertyStates() {
+        if (!propertiesRestored) {
+            // return the same state that we loaded
+            return state.properties;
+        } else {
+            final Map<String, String> map = PropertyServiceImpl.getInstance().getProperties();
+            final PropertyState[] states = new PropertyState[map.size()];
+
+            int index = 0;
+            for (final Map.Entry<String, String> entry : map.entrySet()) {
+                states[index++] = new PropertyState(entry.getKey(), entry.getValue());
+            }
+            return states;
+        }
+    }
 }
 

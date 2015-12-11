@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.setup;
 
 import com.intellij.openapi.components.ApplicationComponent;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
+import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
@@ -28,6 +29,7 @@ public class ApplicationStartup implements ApplicationComponent {
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
                 new TelemetryContextInitializer(),
+                PropertyServiceImpl.getInstance(),
                 true);
 
         doOsSetup();

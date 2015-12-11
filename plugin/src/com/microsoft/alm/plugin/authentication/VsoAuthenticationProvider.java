@@ -140,9 +140,9 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         final AccountHttpClient accountHttpClient = new AccountHttpClient(context.getClient(), context.getUri());
         try {
             final Profile me = accountHttpClient.getMyProfile();
-            // Only update the lastUsedContext if there is no active VSO context
+            // Only update the lastUsedContext if there is no current lastUsedContext
             ServerContextManager.getInstance().add(context,
-                    !ServerContextManager.getInstance().lastUsedContextIsVSO());
+                    ServerContextManager.getInstance().lastUsedContextIsEmpty());
 
             return me;
         } catch (Throwable t) {
