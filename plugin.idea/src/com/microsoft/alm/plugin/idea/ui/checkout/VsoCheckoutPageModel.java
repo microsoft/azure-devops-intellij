@@ -98,7 +98,7 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         clearContexts();
 
-        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation(authenticationProvider);
+        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation();
         accountLookupOperation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {

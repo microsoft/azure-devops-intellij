@@ -36,7 +36,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
     private static final String REDIRECT_URL = "https://xplatalm.com";
     private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
-    private static AuthenticationInfo lastDeploymentAuthenticationInfo;
 
     public static final String VSO_AUTH_URL =  "https://app.vssps.visualstudio.com";
 
@@ -61,31 +60,27 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     protected VsoAuthenticationProvider() {
     }
 
-    private static class VsoAuthenticationProviderHolder {
+    private static class Holder {
         private static VsoAuthenticationProvider INSTANCE = new VsoAuthenticationProvider();
     }
 
     public static VsoAuthenticationProvider getInstance() {
-        return VsoAuthenticationProviderHolder.INSTANCE;
+        return Holder.INSTANCE;
     }
 
     @Override
     public AuthenticationInfo getAuthenticationInfo() {
-        return lastDeploymentAuthenticationInfo;
-    }
-
-    public void setAuthenticationInfo(final AuthenticationInfo authenticationInfo) {
-        lastDeploymentAuthenticationInfo = authenticationInfo;
+        return ServerContextManager.getInstance().getBestAuthenticationInfo(VSO_AUTH_URL, false);
     }
 
     @Override
     public boolean isAuthenticated() {
-        return lastDeploymentAuthenticationInfo != null;
+        return getAuthenticationInfo() != null;
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        lastDeploymentAuthenticationInfo = null;
+        ServerContextManager.getInstance().remove(VSO_AUTH_URL);
     }
 
     @Override
@@ -97,18 +92,27 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             getAzureAuthenticator().getAadAccessTokenAsync(new AuthenticationCallback() {
                 @Override
                 public void onSuccess(final AuthenticationResult result) {
+                    final AuthenticationInfo authenticationInfo;
+
                     if (result == null) {
                         //User closed the browser window without signing in
                         clearAuthenticationDetails();
+                        authenticationInfo = null;
                     } else {
                         final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
                         final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                AuthHelper.getEmail(result), SystemHelper.getComputerName(),SystemHelper.getCurrentDateTimeString());
+                                AuthHelper.getEmail(result), SystemHelper.getComputerName(), SystemHelper.getCurrentDateTimeString());
                         final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
                                 Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
-                        lastDeploymentAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
+                        authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
+                        ServerContextManager.getInstance().add(
+                                new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
+                                        .uri(VSO_AUTH_URL)
+                                        .authentication(authenticationInfo)
+                                        .build(),
+                                false);
                     }
-                    AuthenticationListener.Helper.authenticated(listener, lastDeploymentAuthenticationInfo, null);
+                    AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
                 }
 
                 @Override
