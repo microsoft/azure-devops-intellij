@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.settings;
 
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import org.apache.commons.lang.StringUtils;
@@ -42,7 +41,7 @@ public class ServerContextSecrets {
             return;
         }
 
-        final String key = UrlHelper.asString(context.getUri());
+        final String key = context.getKey();
         final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
         final String stringValue = JsonHelper.write(authenticationInfo);
 

@@ -3,6 +3,9 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.http.auth.Credentials;
@@ -22,8 +25,7 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     private static final Logger logger = LoggerFactory.getLogger(TfsAuthenticationProvider.class);
 
     private final static String USER_NAME = "user.name";
-
-    private AuthenticationInfo lastAuthenticationInfo;
+    public final static String TFS_LAST_USED_URL = "http://_TFS_LAST_USED_URL_";
 
     private static class Holder {
         private final static TfsAuthenticationProvider INSTANCE = new TfsAuthenticationProvider();
@@ -32,41 +34,30 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     private TfsAuthenticationProvider() {
     }
 
-    /**
-     * This constructor is for tests
-     */
-    protected TfsAuthenticationProvider(AuthenticationInfo authenticationInfo) {
-        this.lastAuthenticationInfo = authenticationInfo;
-    }
-
     public static TfsAuthenticationProvider getInstance() {
         return Holder.INSTANCE;
     }
 
     @Override
     public AuthenticationInfo getAuthenticationInfo() {
-        return lastAuthenticationInfo;
-    }
-
-    public void setAuthenticationInfo(AuthenticationInfo lastAuthenticationInfo) {
-        this.lastAuthenticationInfo = lastAuthenticationInfo;
+        return ServerContextManager.getInstance().getBestAuthenticationInfo(TFS_LAST_USED_URL, false);
     }
 
     @Override
     public void authenticateAsync(final String serverUrl, final AuthenticationListener listener) {
         logger.info("starting TfsAuthenticator");
-        TfsAuthenticator authenticator = new TfsAuthenticator(serverUrl, listener);
+        final TfsAuthenticator authenticator = new TfsAuthenticator(serverUrl, listener);
         authenticator.start();
     }
 
     @Override
     public void clearAuthenticationDetails() {
-        lastAuthenticationInfo = null;
+        ServerContextManager.getInstance().remove(TFS_LAST_USED_URL);
     }
 
     @Override
     public boolean isAuthenticated() {
-        return lastAuthenticationInfo != null;
+        return getAuthenticationInfo() != null;
     }
 
     private static class TfsAuthenticator extends Thread {
@@ -131,9 +122,20 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
                 TfsAuthenticationProvider.getInstance().clearAuthenticationDetails();
                 AuthenticationListener.Helper.authenticated(listener, null, error);
             } else {
-                // We have a valid authenticatedContext, remember it
-                TfsAuthenticationProvider.getInstance().lastAuthenticationInfo = newAuthenticationInfo;
-                AuthenticationListener.Helper.authenticated(listener, TfsAuthenticationProvider.getInstance().lastAuthenticationInfo, null);
+                // We have a valid authenticatedContext, remember it (with both URLs)
+                ServerContextManager.getInstance().add(
+                        new ServerContextBuilder().type(ServerContext.Type.TFS)
+                                .uri(newAuthenticationInfo.getServerUri())
+                                .authentication(newAuthenticationInfo)
+                                .build(),
+                        false);
+                ServerContextManager.getInstance().add(
+                        new ServerContextBuilder().type(ServerContext.Type.TFS)
+                                .uri(TFS_LAST_USED_URL)
+                                .authentication(newAuthenticationInfo)
+                                .build(),
+                        false);
+                AuthenticationListener.Helper.authenticated(listener, newAuthenticationInfo, null);
             }
         }
 

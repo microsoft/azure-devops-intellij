@@ -25,6 +25,8 @@ import java.util.concurrent.Future;
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
 
+    private Future innerOperation;
+
     public static class AccountLookupResults extends ResultsImpl {
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
 
@@ -33,12 +35,7 @@ public class AccountLookupOperation extends Operation {
         }
     }
 
-    private final VsoAuthenticationProvider authenticationProvider;
-    private Future innerOperation;
-
-    public AccountLookupOperation(final VsoAuthenticationProvider authenticationProvider) {
-        assert authenticationProvider != null;
-        this.authenticationProvider = authenticationProvider;
+    public AccountLookupOperation() {
     }
 
     public AccountLookupResults castResults(final Results results) {
@@ -53,21 +50,26 @@ public class AccountLookupOperation extends Operation {
                 return;
             }
 
-            final Profile me = authenticationProvider.getAuthenticatedUserProfile();
-            final ServerContext activeContext = ServerContextManager.getInstance().getLastUsedContext();
-            if (activeContext == null || activeContext.getType() == ServerContext.Type.TFS) {
-                //active context will be a valid VSO context at this point
-                logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", activeContext);
+            final Profile me = VsoAuthenticationProvider.getInstance().getAuthenticatedUserProfile();
+            final ServerContext vsoDeploymentContext = ServerContextManager.getInstance().get(VsoAuthenticationProvider.VSO_AUTH_URL);
+            if (!VsoAuthenticationProvider.getInstance().isAuthenticated() ||
+                    vsoDeploymentContext == null || vsoDeploymentContext.getType() == ServerContext.Type.TFS) {
+                // We aren't authenticated, or we couldn't find the VSO context
+                logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", vsoDeploymentContext);
+                //TODO localize
+                throw new Exception("Authentication failed for Visual Studio Team Services. Sign out and try again.");
             }
 
-            final AccountHttpClient accountHttpClient = new AccountHttpClient(activeContext.getClient(),
-                    UrlHelper.getBaseUri(authenticationProvider.VSO_AUTH_URL));
+            final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
+                    UrlHelper.getBaseUri(VsoAuthenticationProvider.VSO_AUTH_URL));
             List<Account> accounts = accountHttpClient.getAccounts(me.getId());
             final AccountLookupResults results = new AccountLookupResults();
             for (final Account a : accounts) {
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
-                                .accountUri(a).authentication(authenticationProvider.getAuthenticationInfo()).build();
+                                .accountUri(a)
+                                .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo())
+                                .build();
                 results.serverContexts.add(accountContext);
             }
             onLookupResults(results);

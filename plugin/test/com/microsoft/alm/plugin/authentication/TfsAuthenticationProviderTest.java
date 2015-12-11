@@ -4,6 +4,9 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.plugin.AbstractTest;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
@@ -16,7 +19,10 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
     @Test
     public void getAuthenticationInfo() {
         final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
-        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS)
+                .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
+        ServerContextManager.getInstance().add(tfsContext);
+        final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
         Assert.assertEquals(info, provider.getAuthenticationInfo());
         Assert.assertTrue(provider.isAuthenticated());
     }
@@ -24,7 +30,10 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
     @Test
     public void clearAuthenticationDetails() {
         final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");
-        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS)
+                .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
+        ServerContextManager.getInstance().add(tfsContext);
+        final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
         Assert.assertEquals(info, provider.getAuthenticationInfo());
         Assert.assertTrue(provider.isAuthenticated());
         provider.clearAuthenticationDetails();
@@ -37,7 +46,10 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
         final SettableFuture<Boolean> futureAuthenticatingCalled = SettableFuture.create();
         final SettableFuture<AuthenticationInfo> futureAuthenticated = SettableFuture.create();
         final AuthenticationInfo info = new AuthenticationInfo("userName0", "", "", "");
-        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS)
+                .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
+        ServerContextManager.getInstance().add(tfsContext);
+        final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
         provider.authenticateAsync("serverUrl", new AuthenticationListener() {
             @Override
             public void authenticating() {
@@ -73,7 +85,10 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
         final SettableFuture<Boolean> futureAuthenticatingCalled = SettableFuture.create();
         final SettableFuture<Throwable> futureAuthenticated = SettableFuture.create();
         final AuthenticationInfo info = new AuthenticationInfo("userName0", "", "", "");
-        final TfsAuthenticationProvider provider = new TfsAuthenticationProvider(info);
+        final ServerContext tfsContext = new ServerContextBuilder().type(ServerContext.Type.TFS)
+                .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
+        ServerContextManager.getInstance().add(tfsContext);
+        final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
         provider.authenticateAsync(serverUrl, new AuthenticationListener() {
             @Override
             public void authenticating() {

@@ -141,19 +141,6 @@ public class ServerContextManager {
         for (final ServerContext sc : contexts) {
             add(sc, false);
         }
-
-        //TODO restore lastUsedContextKey
-
-        if (lastUsedContextKey != null) {
-            final ServerContext context = get(lastUsedContextKey);
-            // restore last used credentials for TFS
-            if (context.getType() == ServerContext.Type.TFS) {
-                TfsAuthenticationProvider.getInstance().setAuthenticationInfo(context.getAuthenticationInfo());
-            } else {
-                //VSO or VSO_DEPLOYMENT
-                VsoAuthenticationProvider.getInstance().setAuthenticationInfo(context.getAuthenticationInfo());
-            }
-        }
     }
 
     /**
@@ -209,13 +196,30 @@ public class ServerContextManager {
      * This method tries to find existing authentication info for a given git url.
      * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
      */
+    public AuthenticationInfo getBestAuthenticationInfo(final String url, final boolean prompt) {
+        final ServerContext context = get(url);
+        final AuthenticationInfo info;
+        if (context != null) {
+            // return exact match
+            info = context.getAuthenticationInfo();
+        } else {
+            // look for a good enough match
+            info = getAuthenticationInfo(url, prompt);
+        }
+        return info;
+    }
+
+    /**
+     * This method tries to find existing authentication info for a given git url.
+     * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
+     */
     public AuthenticationInfo getAuthenticationInfo(final String gitRemoteUrl, final boolean prompt) {
         AuthenticationInfo authenticationInfo = null;
 
         // For now I will just do a linear search for an appropriate context info to copy the auth info from
         final URI remoteUri = URI.create(gitRemoteUrl);
         for (final ServerContext context : getAllServerContexts()) {
-            if (StringUtils.equalsIgnoreCase(remoteUri.getAuthority(), context.getUri().getAuthority())) {
+            if (context.getUri() != null && StringUtils.equalsIgnoreCase(remoteUri.getAuthority(), context.getUri().getAuthority())) {
                 authenticationInfo = context.getAuthenticationInfo();
             }
         }
