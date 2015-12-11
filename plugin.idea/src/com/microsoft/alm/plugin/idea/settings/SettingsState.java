@@ -5,4 +5,5 @@ package com.microsoft.alm.plugin.idea.settings;
 
 public class SettingsState {
     public ServerContextState[] serverContexts;
+    public PropertyState[] properties;
 }

@@ -15,6 +15,8 @@ import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextLookupListener;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextLookupPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import git4idea.commands.Git;
 import org.apache.commons.lang.StringUtils;
@@ -52,7 +54,10 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
         setupSelectionListener();
 
         // Default the parent directory
-        parentDirectory = DEFAULT_SOURCE_PATH;
+        parentDirectory = PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_REPO_ROOT);
+        if (StringUtils.isEmpty(parentDirectory)) {
+            parentDirectory = DEFAULT_SOURCE_PATH;
+        }
 
         // Create the default repository provider
         repositoryProvider = new ServerContextLookupListener(this);
@@ -249,6 +254,9 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
                     gitRepositoryStr,
                     getDirectoryName(),
                     getParentDirectory());
+
+            // Save parent directory for next time
+            PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_REPO_ROOT, getParentDirectory());
 
             // TODO: need a way to tell if/when the clone actually succeeded or failed
             // Add Telemetry for a successful clone

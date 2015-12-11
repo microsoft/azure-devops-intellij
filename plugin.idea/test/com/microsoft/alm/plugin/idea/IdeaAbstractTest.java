@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea;
 
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
+import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
@@ -18,6 +19,7 @@ public class IdeaAbstractTest extends AbstractTest {
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
                 new TelemetryContextInitializer(),
+                PropertyServiceImpl.getInstance(),
                 false);
     }
 }

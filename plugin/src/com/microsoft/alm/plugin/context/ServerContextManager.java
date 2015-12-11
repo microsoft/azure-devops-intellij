@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollection;
@@ -34,7 +35,6 @@ public class ServerContextManager {
     private static final Logger logger = LoggerFactory.getLogger(ServerContextManager.class);
 
     private Map<String, ServerContext> contextMap = new HashMap<String, ServerContext>();
-    private String lastUsedContextKey = null;
 
     private static class Holder {
         private static final ServerContextManager INSTANCE = new ServerContextManager(true);
@@ -65,17 +65,25 @@ public class ServerContextManager {
     }
 
     public synchronized ServerContext getLastUsedContext() {
-        final ServerContext context = get(lastUsedContextKey);
+        final ServerContext context = get(getLastUsedContextKey());
         return context;
     }
 
-    public synchronized void clearLastUsedContext() {
-        lastUsedContextKey = null;
+    private void setLastUsedContextKey(String key) {
+        PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_LAST_CONTEXT_KEY, key);
     }
 
-    public synchronized boolean lastUsedContextIsVSO() {
+    private String getLastUsedContextKey() {
+        return PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_LAST_CONTEXT_KEY);
+    }
+
+    public synchronized void clearLastUsedContext() {
+        setLastUsedContextKey(null);
+    }
+
+    public synchronized boolean lastUsedContextIsEmpty() {
         final ServerContext lastUsed = getLastUsedContext();
-        return lastUsed != null && lastUsed.getType() != ServerContext.Type.TFS;
+        return lastUsed == null;
     }
 
     public synchronized boolean lastUsedContextIsTFS() {
@@ -93,7 +101,7 @@ public class ServerContextManager {
             contextMap.put(key, context);
             getStore().saveServerContext(context);
             if (updateLastUsedContext) {
-                lastUsedContextKey = key;
+                setLastUsedContextKey(key);
             }
         }
     }
@@ -118,7 +126,7 @@ public class ServerContextManager {
         if (context != null) {
             getStore().forgetServerContext(key);
             contextMap.remove(key);
-            if (StringUtils.equalsIgnoreCase(key, lastUsedContextKey)) {
+            if (StringUtils.equalsIgnoreCase(key, getLastUsedContextKey())) {
                 clearLastUsedContext();
             }
         }
@@ -136,7 +144,6 @@ public class ServerContextManager {
      * Called once from constructor restore the state from disk between sessions.
      */
     private synchronized void restoreFromSavedState() {
-        clearLastUsedContext();
         final List<ServerContext> contexts = getStore().restoreServerContexts();
         for (final ServerContext sc : contexts) {
             add(sc, false);
