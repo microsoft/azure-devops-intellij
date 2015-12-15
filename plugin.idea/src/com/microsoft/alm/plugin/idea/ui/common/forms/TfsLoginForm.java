@@ -75,9 +75,11 @@ public class TfsLoginForm implements LoginForm {
         if (inProgress) {
             busySpinner.start(true);
             loginProgressLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_LOGIN_FORM_AUTHENTICATING_TFS));
+            signInLink.setEnabled(false);
         } else {
             busySpinner.stop(true);
             loginProgressLabel.setText("");
+            signInLink.setEnabled(true);
         }
     }
 
