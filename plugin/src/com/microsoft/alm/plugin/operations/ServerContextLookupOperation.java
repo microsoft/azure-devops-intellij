@@ -3,10 +3,10 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
-import com.microsoft.alm.plugin.services.LocalizationService;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
@@ -153,7 +153,7 @@ public class ServerContextLookupOperation extends Operation {
             } catch (VssResourceNotFoundException e) {
                 logger.warn("doLookup: exception querying for Git repos", e);
                 if (context.getType() == ServerContext.Type.TFS) {
-                    throw new RuntimeException(LocalizationService.ExceptionMessageKeys.KEY_TFS_UNSUPPORTED_VERSION);
+                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
                 } else {
                     throw new RuntimeException(e);
                 }

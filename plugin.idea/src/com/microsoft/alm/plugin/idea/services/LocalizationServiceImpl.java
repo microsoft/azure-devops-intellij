@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.services;
 
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.LocalizationService;
 
@@ -34,25 +35,28 @@ public class LocalizationServiceImpl implements LocalizationService {
     }
 
     /**
-     * Maps a exception message to a key and returns the localized string if key is known, message can't have arguments
+     * Gets the localized exception message
      *
-     * @param message
-     * @return localized message
+     * @param t
+     * @return localized string
      */
-    public String getServerExceptionMessage(final String message) {
-        if (keysMap.containsKey(message)) {
-            return getLocalizedMessage(keysMap.get(message));
-        } else {
-            return message;
+    public String getExceptionMessage(final Throwable t) {
+        if (t instanceof TeamServicesException) {
+            final String key = ((TeamServicesException) t).getMessageKey();
+            if (keysMap.containsKey(key)) {
+                return getLocalizedMessage(keysMap.get(key));
+            }
         }
+
+        return t.getLocalizedMessage();
     }
 
     private static final Map<String, String> keysMap = new HashMap<String, String>() {
         {
-            put(ExceptionMessageKeys.KEY_TFS_UNSUPPORTED_VERSION, "TFS.UnsupportedVersion");
-            put(ExceptionMessageKeys.KEY_VSO_AUTH_SESSION_EXPIRED, "VSO.Auth.SessionExpired");
-            put(ExceptionMessageKeys.KEY_VSO_AUTH_FAILED, "VSO.Auth.Failed");
-            put(ExceptionMessageKeys.KEY_TFS_AUTH_FAILED, "TFS.Auth.Failed");
+            put(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, "TFS.UnsupportedVersion");
+            put(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, "VSO.Auth.SessionExpired");
+            put(TeamServicesException.KEY_VSO_AUTH_FAILED, "VSO.Auth.Failed");
+            put(TeamServicesException.KEY_TFS_AUTH_FAILED, "TFS.Auth.Failed");
         }
     };
 

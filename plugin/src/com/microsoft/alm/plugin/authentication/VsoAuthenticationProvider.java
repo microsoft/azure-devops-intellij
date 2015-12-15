@@ -4,10 +4,10 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.services.LocalizationService;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
 import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
 import com.microsoft.tf.common.authentication.aad.TokenScope;
@@ -151,7 +151,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
             logger.warn("getAuthenticatedUserProfile exception", t);
             clearAuthenticationDetails();
-            throw new RuntimeException(LocalizationService.ExceptionMessageKeys.KEY_VSO_AUTH_SESSION_EXPIRED);
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED);
         }
     }
 }

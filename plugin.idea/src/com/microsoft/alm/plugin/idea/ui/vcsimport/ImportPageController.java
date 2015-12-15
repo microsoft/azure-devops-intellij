@@ -86,10 +86,10 @@ public class ImportPageController extends AbstractController {
             // User pressed Enter or clicked sign in on the login page
             // Asynchronously query for projects, will prompt for login if needed
             pageModel.loadTeamProjects();
+            super.requestFocus(page);
         } else if (ImportForm.CMD_REFRESH.equals(e.getActionCommand())) {
             // Reload the table (the refresh button shouldn't be visible if the query is currently running)
             pageModel.loadTeamProjects();
-            super.requestFocus(page);
         } else if (UserAccountPanel.CMD_SIGN_OUT.equals(e.getActionCommand())) {
             // Go back to a disconnected state
             pageModel.signOut();

@@ -4,8 +4,8 @@
 package com.microsoft.alm.plugin.context.soap;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.services.LocalizationService;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -77,7 +77,7 @@ public class CatalogServiceImpl implements CatalogService {
         //If auth fails, you can get here and catalogDataOrganizationRoot is null
         if (catalogDataOrganizationRoot == null) {
             logger.warn("getProjectCollections catalogDataOrganizationRoot is null");
-            throw new RuntimeException(LocalizationService.ExceptionMessageKeys.KEY_TFS_AUTH_FAILED);
+            throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
         }
 
         final CatalogResource organizationRoot = catalogDataOrganizationRoot.catalogResources.get(0);

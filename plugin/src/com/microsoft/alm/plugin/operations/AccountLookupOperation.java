@@ -4,11 +4,11 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.services.LocalizationService;
 import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
 import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import com.microsoft.visualstudio.services.account.webapi.model.Profile;
@@ -57,7 +57,7 @@ public class AccountLookupOperation extends Operation {
                     vsoDeploymentContext == null || vsoDeploymentContext.getType() == ServerContext.Type.TFS) {
                 // We aren't authenticated, or we couldn't find the VSO context
                 logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", vsoDeploymentContext);
-                throw new RuntimeException(LocalizationService.ExceptionMessageKeys.KEY_VSO_AUTH_FAILED);
+                throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
             }
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),

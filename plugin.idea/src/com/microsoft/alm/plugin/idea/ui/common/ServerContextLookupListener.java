@@ -73,9 +73,10 @@ public class ServerContextLookupListener implements Operation.Listener {
                 public void run() {
                     if (lookupResults.hasError()) {
                         pageModel.addError(ModelValidationInfo.createWithMessage(
-                                LocalizationServiceImpl.getInstance().getServerExceptionMessage(lookupResults.getError().getMessage())));
+                                LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError())));
+                    } else {
+                        pageModel.appendContexts(lookupResults.getServerContexts());
                     }
-                    pageModel.appendContexts(lookupResults.getServerContexts());
                 }
             });
         }
