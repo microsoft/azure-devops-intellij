@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -37,7 +38,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     private static final String REDIRECT_URL = "https://xplatalm.com";
     private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
 
-    public static final String VSO_AUTH_URL =  "https://app.vssps.visualstudio.com";
+    public static final String VSO_AUTH_URL = "https://app.vssps.visualstudio.com";
 
     private static class AzureAuthenticatorHolder {
         private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
@@ -129,6 +130,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     /**
      * Retrieves user profile of signed in user, if successful, saves the current VSO_DEPLOYMENT context
+     *
      * @return user profile if successfully authenticated, else throws an exception
      */
     public Profile getAuthenticatedUserProfile() {
@@ -149,7 +151,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
             logger.warn("getAuthenticatedUserProfile exception", t);
             clearAuthenticationDetails();
-            throw new RuntimeException("Your previous Team Services session has expired, please 'Sign in...' again."); //TODO: localize
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED);
         }
     }
 }

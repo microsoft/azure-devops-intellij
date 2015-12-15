@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -56,8 +57,7 @@ public class AccountLookupOperation extends Operation {
                     vsoDeploymentContext == null || vsoDeploymentContext.getType() == ServerContext.Type.TFS) {
                 // We aren't authenticated, or we couldn't find the VSO context
                 logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", vsoDeploymentContext);
-                //TODO localize
-                throw new Exception("Authentication failed for Visual Studio Team Services. Sign out and try again.");
+                throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
             }
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),

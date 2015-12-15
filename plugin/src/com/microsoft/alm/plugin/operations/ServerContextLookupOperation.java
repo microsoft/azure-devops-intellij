@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
@@ -10,6 +11,7 @@ import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.vss.client.core.model.VssResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +51,6 @@ public class ServerContextLookupOperation extends Operation {
         this.resultScope = resultScope;
     }
 
-    @Override
     public void doWork(final Inputs inputs) {
         onLookupStarted();
 
@@ -79,7 +80,7 @@ public class ServerContextLookupOperation extends Operation {
                             // If there's only one context we need to bubble the exception out
                             // But if there's more than one let's just continue
                             if (throwOnError) {
-                                throw new RuntimeException(t);
+                                terminate(t);
                             }
                         }
                     }
@@ -143,11 +144,20 @@ public class ServerContextLookupOperation extends Operation {
             //final List<TeamProjectReference> projects = client.getProjects();
             // -----------------------------------------------------
 
-            final URI collectionURI = URI.create(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
-            final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-            final List<GitRepository> gitRepositories = gitClient.getRepositories();
+            try {
+                final URI collectionURI = URI.create(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
+                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+                final List<GitRepository> gitRepositories = gitClient.getRepositories();
 
-            addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+            } catch (VssResourceNotFoundException e) {
+                logger.warn("doLookup: exception querying for Git repos", e);
+                if (context.getType() == ServerContext.Type.TFS) {
+                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
+                } else {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
@@ -179,5 +189,4 @@ public class ServerContextLookupOperation extends Operation {
         results.serverContexts.addAll(serverContexts);
         super.onLookupResults(results);
     }
-
 }

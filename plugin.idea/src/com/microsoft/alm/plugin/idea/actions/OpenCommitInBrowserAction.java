@@ -92,7 +92,7 @@ public class OpenCommitInBrowserAction extends InstrumentedAction {
         stringBuilder.append("/commit/");
         stringBuilder.append(commit.getId().asString());
         final String urlToBrowseTo = stringBuilder.toString();
-        if (UrlHelper.isValidServerUrl(urlToBrowseTo)) {
+        if (UrlHelper.isValidUrl(urlToBrowseTo)) {
             logger.info("Browsing to url " + urlToBrowseTo);
             BrowserUtil.browse(urlToBrowseTo);
         } else {

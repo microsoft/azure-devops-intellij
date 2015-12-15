@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.context.soap;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import org.apache.http.Header;
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -73,38 +73,37 @@ public class CatalogServiceImpl implements CatalogService {
 
         final QueryData queryForOrganizationRoot = new QueryData(SINGLE_RECURSE_STAR, QUERY_OPTIONS_NONE, ORGANIZATIONAL_ROOT);
         final CatalogData catalogDataOrganizationRoot = getCatalogDataFromServer(queryForOrganizationRoot);
+
         //If auth fails, you can get here and catalogDataOrganizationRoot is null
-        //TODO: can we get to null from our UI work flows, should we bubble up exception?
-        if (catalogDataOrganizationRoot != null) {
-            final CatalogResource organizationRoot = catalogDataOrganizationRoot.catalogResources.get(0);
-
-            final QueryData queryForFoundationServer = new QueryData(organizationRoot.nodeReferencePaths[0] + SINGLE_RECURSE_STAR, QUERY_OPTIONS_EXPAND_DEPENDENCIES, TEAM_FOUNDATION_SERVER_INSTANCE);
-            final CatalogData catalogDataFoundationServer = getCatalogDataFromServer(queryForFoundationServer);
-            final CatalogResource foundationServer = catalogDataFoundationServer.catalogResources.get(0);
-
-            final QueryData queryForProjectCollections = new QueryData(foundationServer.nodeReferencePaths[0] + SINGLE_RECURSE_STAR, QUERY_OPTIONS_EXPAND_DEPENDENCIES, PROJECT_COLLECTION);
-            final CatalogData catalogDataProjectCollections = getCatalogDataFromServer(queryForProjectCollections);
-
-            final List<TeamProjectCollectionReference> projectCollections = new ArrayList<TeamProjectCollectionReference>(catalogDataProjectCollections.catalogResources.size());
-            for (CatalogResource catalogResource : catalogDataProjectCollections.catalogResources) {
-                final TeamProjectCollectionReference collectionReference = new TeamProjectCollectionReference();
-
-                collectionReference.setId(UUID.fromString(catalogResource.instanceId));
-
-                collectionReference.setName(catalogResource.displayName);
-
-                final String collectionPath = "_apis/projectCollections/" + catalogResource.instanceId; //$NON-NLS-1$
-                final URI collectionUri = UrlHelper.resolveEndpointUri(context.getUri(), collectionPath);
-                collectionReference.setUrl(collectionUri.toString());
-
-                projectCollections.add(collectionReference);
-            }
-            return projectCollections;
-        } else {
-            //auth failed
+        if (catalogDataOrganizationRoot == null) {
             logger.warn("getProjectCollections catalogDataOrganizationRoot is null");
-            return Collections.emptyList();
+            throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
         }
+
+        final CatalogResource organizationRoot = catalogDataOrganizationRoot.catalogResources.get(0);
+
+        final QueryData queryForFoundationServer = new QueryData(organizationRoot.nodeReferencePaths[0] + SINGLE_RECURSE_STAR, QUERY_OPTIONS_EXPAND_DEPENDENCIES, TEAM_FOUNDATION_SERVER_INSTANCE);
+        final CatalogData catalogDataFoundationServer = getCatalogDataFromServer(queryForFoundationServer);
+        final CatalogResource foundationServer = catalogDataFoundationServer.catalogResources.get(0);
+
+        final QueryData queryForProjectCollections = new QueryData(foundationServer.nodeReferencePaths[0] + SINGLE_RECURSE_STAR, QUERY_OPTIONS_EXPAND_DEPENDENCIES, PROJECT_COLLECTION);
+        final CatalogData catalogDataProjectCollections = getCatalogDataFromServer(queryForProjectCollections);
+
+        final List<TeamProjectCollectionReference> projectCollections = new ArrayList<TeamProjectCollectionReference>(catalogDataProjectCollections.catalogResources.size());
+        for (CatalogResource catalogResource : catalogDataProjectCollections.catalogResources) {
+            final TeamProjectCollectionReference collectionReference = new TeamProjectCollectionReference();
+
+            collectionReference.setId(UUID.fromString(catalogResource.instanceId));
+
+            collectionReference.setName(catalogResource.displayName);
+
+            final String collectionPath = "_apis/projectCollections/" + catalogResource.instanceId; //$NON-NLS-1$
+            final URI collectionUri = UrlHelper.resolveEndpointUri(context.getUri(), collectionPath);
+            collectionReference.setUrl(collectionUri.toString());
+
+            projectCollections.add(collectionReference);
+        }
+        return projectCollections;
     }
 
     private class QueryData {

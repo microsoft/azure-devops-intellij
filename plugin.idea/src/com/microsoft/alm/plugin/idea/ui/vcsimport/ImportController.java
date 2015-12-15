@@ -10,7 +10,6 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialogImpl;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
-import com.microsoft.alm.plugin.idea.ui.common.PageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ValidationListener;
 import com.microsoft.alm.plugin.idea.ui.common.forms.TfsLoginForm;
 import com.microsoft.alm.plugin.idea.ui.common.forms.VsoLoginForm;
@@ -74,7 +73,7 @@ public class ImportController implements Observer {
             dialog.setSelectedTabIndex(model.isVsoSelected() ? TAB_VSO : TAB_TFS);
             //evaluate whether to enable/disable the "Import" button
             dialog.setOkEnabled(model.isImportEnabled());
-        } else if (PageModel.PROP_ERRORS.equals(arg)) {
+        } else if (ImportModel.PROP_ERRORS.equals(arg)) {
             if (model.hasErrors()) {
                 dialog.displayError(model.getErrors().get(0).getValidationMessage());
             } else {
