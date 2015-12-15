@@ -22,6 +22,7 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
     private String password;
     private boolean promptSuccess;
     private RuntimeException validationError;
+    private String authenticationUrl;
 
     @Override
     public boolean prompt(final String serverUrl, final String defaultUserName) {
@@ -62,9 +63,10 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
     }
 
     @Override
-    public void validateCredentials(final String serverUrl, final AuthenticationInfo authenticationInfo) {
+    public String validateCredentials(final String serverUrl, final AuthenticationInfo authenticationInfo) {
         // Test the authenticatedContext against the server
         validationError = null;
+        authenticationUrl = null;
         if (UrlHelper.isGitRemoteUrl(serverUrl)) {
             tryToParseDeploymentUrl(serverUrl, authenticationInfo);
             if (validationError != null) {
@@ -74,6 +76,9 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
             // Assume it is a deployment url
             tryDeploymentUrl(serverUrl, authenticationInfo, true);
         }
+
+        // validation succeeded, return the authenticated url that worked
+        return authenticationUrl;
     }
 
     private void tryToParseDeploymentUrl(final String gitRemoteUrl, final AuthenticationInfo authenticationInfo) {
@@ -93,6 +98,8 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
         try {
             //TODO we need to find a better REST endpoint to call, something light weight
             context.getSoapServices().getCatalogService().getProjectCollections();
+            // Save the authenticated url for later use
+            authenticationUrl = deploymentUrl;
             return true;
         } catch (RuntimeException ex) {
             validationError = ex;
