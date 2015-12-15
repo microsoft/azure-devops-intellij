@@ -30,9 +30,7 @@ public class UrlHelper {
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
 
-
-    //TODO: how much validation should we do, should we handle other exceptions here?
-    public static boolean isValidServerUrl(final String serverUrl) {
+    public static boolean isValidUrl(final String serverUrl) {
         try {
             new URL(serverUrl);
 
@@ -63,9 +61,7 @@ public class UrlHelper {
 
     public static boolean isVSO(final URI uri) {
         final String host = uri.getHost().toLowerCase();
-        if (host.endsWith(HOST_VSO)) {
-            return true;
-        } else if (host.endsWith(HOST_TFS_ALL_IN)) {
+        if (host.endsWith(HOST_VSO) || host.endsWith(HOST_TFS_ALL_IN)) {
             return true;
         } else {
             return false;
@@ -213,7 +209,7 @@ public class UrlHelper {
 
         private static ParseResult tryParse(final URI gitUri, final ParseResultValidator validator) {
             // not all valid uri is valid http url
-            if (!isValidServerUrl(gitUri.toString())) {
+            if (!isValidUrl(gitUri.toString())) {
                 return ParseResult.FAILED;
             }
 

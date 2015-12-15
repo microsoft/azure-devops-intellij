@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
@@ -114,7 +115,8 @@ class VsoCheckoutPageModel extends CheckoutPageModelImpl {
             public void notifyLookupResults(final Operation.Results results) {
                 final ModelValidationInfo validationInfo;
                 if (results.hasError()) {
-                    validationInfo = ModelValidationInfo.createWithMessage(results.getError().getMessage());
+                    validationInfo = ModelValidationInfo.createWithMessage(
+                            LocalizationServiceImpl.getInstance().getServerExceptionMessage(results.getError().getMessage()));
                 } else if (results.isCancelled()) {
                     validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED);
                 } else {

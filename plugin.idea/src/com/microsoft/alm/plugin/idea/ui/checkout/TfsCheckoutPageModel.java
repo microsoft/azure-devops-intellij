@@ -68,7 +68,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         }
 
         //verify server url is a valid url
-        if (!UrlHelper.isValidServerUrl(serverName)) {
+        if (!UrlHelper.isValidUrl(serverName)) {
             addError(ModelValidationInfo.createWithResource(PROP_SERVER_NAME, TfPluginBundle.KEY_LOGIN_FORM_TFS_ERRORS_INVALID_SERVER_URL, serverName));
             setConnectionStatus(false);
             return;

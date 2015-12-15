@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
@@ -58,7 +59,7 @@ public class ServerContextLookupListener implements Operation.Listener {
 
     @Override
     public void notifyLookupResults(final Operation.Results results) {
-        final ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults)results;
+        final ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults) results;
         if (lookupResults.isCancelled()) {
             operationDone();
             IdeaHelper.runOnUIThread(new Runnable() {
@@ -70,6 +71,10 @@ public class ServerContextLookupListener implements Operation.Listener {
         } else {
             IdeaHelper.runOnUIThread(new Runnable() {
                 public void run() {
+                    if (lookupResults.hasError()) {
+                        pageModel.addError(ModelValidationInfo.createWithMessage(
+                                LocalizationServiceImpl.getInstance().getServerExceptionMessage(lookupResults.getError().getMessage())));
+                    }
                     pageModel.appendContexts(lookupResults.getServerContexts());
                 }
             });

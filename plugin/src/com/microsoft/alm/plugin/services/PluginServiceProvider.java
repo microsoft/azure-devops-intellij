@@ -19,6 +19,7 @@ public class PluginServiceProvider {
     private CredentialsPrompt credentialsPrompt;
     private ContextInitializer telemetryContextInitializer;
     private PropertyService propertyService;
+    private LocalizationService localizationSerivce;
 
     private static class ProviderHolder {
         private static PluginServiceProvider INSTANCE = new PluginServiceProvider();
@@ -32,12 +33,14 @@ public class PluginServiceProvider {
                            final CredentialsPrompt credentialsPrompt,
                            final ContextInitializer telemetryContextInitializer,
                            final PropertyService propertyService,
+                           final LocalizationService localizationService,
                            final boolean insideIDE) {
         if (!initialized) {
             this.contextStore = contextStore;
             this.credentialsPrompt = credentialsPrompt;
             this.telemetryContextInitializer = telemetryContextInitializer;
             this.propertyService = propertyService;
+            this.localizationSerivce = localizationService;
             this.insideIDE = insideIDE;
             initialized = true;
         }
@@ -77,5 +80,12 @@ public class PluginServiceProvider {
         assert propertyService != null;
 
         return propertyService;
+    }
+
+    public LocalizationService getLocalizationService() {
+        assert initialized;
+        assert localizationSerivce != null;
+
+        return localizationSerivce;
     }
 }

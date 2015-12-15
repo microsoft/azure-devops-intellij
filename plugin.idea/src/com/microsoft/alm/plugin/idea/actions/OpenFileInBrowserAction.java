@@ -167,7 +167,7 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
         }
 
         final String urlToBrowseTo = stringBuilder.toString();
-        if (UrlHelper.isValidServerUrl(urlToBrowseTo)) {
+        if (UrlHelper.isValidUrl(urlToBrowseTo)) {
             logger.info("Browsing to url " + urlToBrowseTo);
             BrowserUtil.browse(urlToBrowseTo);
         } else {
