@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.common.utils;
 
+import junit.framework.Assert;
 import org.junit.Test;
 
 import java.net.URI;
@@ -167,5 +168,23 @@ public class UrlHelperTest {
 
         result = UrlHelper.tryParse("git@test.com:account/project.git", validator);
         assertFalse(result.isSuccess());
+    }
+
+    @Test
+    public void testTrim() {
+        assertEquals(null, UrlHelper.trimTrailingSeparators(null));
+        assertEquals("", UrlHelper.trimTrailingSeparators(""));
+        assertEquals("", UrlHelper.trimTrailingSeparators("/"));
+        assertEquals("", UrlHelper.trimTrailingSeparators("////"));
+        assertEquals("one", UrlHelper.trimTrailingSeparators("one"));
+        assertEquals("one", UrlHelper.trimTrailingSeparators("one/"));
+        assertEquals("one", UrlHelper.trimTrailingSeparators("one//"));
+        assertEquals("one/two", UrlHelper.trimTrailingSeparators("one/two"));
+        assertEquals("one/two", UrlHelper.trimTrailingSeparators("one/two/"));
+        assertEquals("one/two", UrlHelper.trimTrailingSeparators("one/two//"));
+        assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three"));
+        assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three/"));
+        assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three///"));
+        assertEquals("/one/two/three", UrlHelper.trimTrailingSeparators("/one/two/three/"));
     }
 }

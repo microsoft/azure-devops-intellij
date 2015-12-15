@@ -99,8 +99,9 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
                     // Test the authenticatedContext against the server
                     newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials);
                     final CredentialsPrompt prompt = PluginServiceProvider.getInstance().getCredentialsPrompt();
-                    prompt.validateCredentials(serverUrl, newAuthenticationInfo);
-
+                    final String authenticatedUrl = prompt.validateCredentials(serverUrl, newAuthenticationInfo);
+                    // recreate the auth info with the url that we validated against
+                    newAuthenticationInfo = AuthHelper.createAuthenticationInfo(authenticatedUrl, credentials);
                     result = true;
                     break;
                 } catch (RuntimeException ex) {

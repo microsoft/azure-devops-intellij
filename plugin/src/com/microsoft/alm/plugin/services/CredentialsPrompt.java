@@ -16,5 +16,5 @@ public interface CredentialsPrompt {
 
     String getPassword();
 
-    void validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo);
+    String validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo);
 }

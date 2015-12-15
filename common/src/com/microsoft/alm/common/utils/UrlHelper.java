@@ -59,6 +59,20 @@ public class UrlHelper {
         return null;
     }
 
+    public static String trimTrailingSeparators(final String uri) {
+        if (StringUtils.isNotEmpty(uri)) {
+            int lastIndex = uri.length();
+            while(lastIndex > 0 && uri.charAt(lastIndex-1) == URL_SEPARATOR.charAt(0)) {
+                lastIndex--;
+            }
+            if (lastIndex >= 0) {
+                return uri.substring(0, lastIndex);
+            }
+        }
+
+        return uri;
+    }
+
     public static boolean isVSO(final URI uri) {
         final String host = uri.getHost().toLowerCase();
         if (host.endsWith(HOST_VSO) || host.endsWith(HOST_TFS_ALL_IN)) {

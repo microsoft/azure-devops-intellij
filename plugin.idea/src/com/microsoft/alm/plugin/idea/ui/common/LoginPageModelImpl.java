@@ -117,7 +117,7 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
      * method changing it.
      */
     protected void setServerNameInternal(final String serverName) {
-        this.serverName = serverName;
+        this.serverName = UrlHelper.trimTrailingSeparators(serverName);
         setChangedAndNotify(PROP_SERVER_NAME);
     }
 

@@ -37,9 +37,11 @@ public class MockCredentialsPrompt implements CredentialsPrompt {
     }
 
     @Override
-    public void validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo) {
+    public String validateCredentials(String serverUrl, AuthenticationInfo authenticationInfo) {
         if (serverSuccessMap.containsKey(serverUrl) && !serverSuccessMap.get(serverUrl)) {
             throw new RuntimeException("Purposefully throwing a failure for testing.");
         }
+
+        return serverUrl;
     }
 }
