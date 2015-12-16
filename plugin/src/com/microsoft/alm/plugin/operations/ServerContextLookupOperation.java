@@ -153,7 +153,7 @@ public class ServerContextLookupOperation extends Operation {
             } catch (VssResourceNotFoundException e) {
                 logger.warn("doLookup: exception querying for Git repos", e);
                 if (context.getType() == ServerContext.Type.TFS) {
-                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
+                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, e);
                 } else {
                     throw new RuntimeException(e);
                 }

@@ -151,7 +151,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
             logger.warn("getAuthenticatedUserProfile exception", t);
             clearAuthenticationDetails();
-            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED);
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, t);
         }
     }
 }
