@@ -192,8 +192,8 @@ public class CreatePullRequestForm implements BasicForm {
         final GitRemoteBranch gitRemoteBranch = this.getSelectedRemoteBranch();
         final String currBranch = this.sourceBranch.getText();
 
-        if (gitRemoteBranch != null && gitRemoteBranch.getName().equals(targetBranchBeingCompared)
-                && StringUtils.isNotEmpty(currBranch) && currBranch.equals(sourceBranchBeingCompared)) {
+        if (gitRemoteBranch != null && StringUtils.equalsIgnoreCase(gitRemoteBranch.getName(), targetBranchBeingCompared)
+                && StringUtils.isNotEmpty(currBranch) && StringUtils.equalsIgnoreCase(currBranch, sourceBranchBeingCompared)) {
 
             this.quickDiffPane.removeAll();
 

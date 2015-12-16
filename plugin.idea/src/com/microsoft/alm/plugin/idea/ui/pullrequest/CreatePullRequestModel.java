@@ -407,16 +407,25 @@ public class CreatePullRequestModel extends AbstractModel {
                     });
                 }
 
-                public void onFailure(Throwable thrown) {
-                    final GitLocalBranch sourceBranch = getSourceBranch();
-                    final GitRemoteBranch targetBranch = getTargetBranch();
-                    final String sourceBranchName = sourceBranch != null ? sourceBranch.getName() : null;
-                    final String targetBranchName = targetBranch != null ? targetBranch.getName() : null;
-                    notifyDiffFailedError(getProject(),
-                            TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DIFF_FAILED_MSG,
-                                    sourceBranchName, targetBranchName));
+                public void onFailure(final Throwable thrown) {
+                    applicationProvider.invokeAndWaitWithAnyModality(new Runnable() {
+                        public void run() {
+                            final GitLocalBranch sourceBranch = getSourceBranch();
+                            final GitRemoteBranch targetBranch = getTargetBranch();
+                            final String sourceBranchName = sourceBranch != null ? sourceBranch.getName() : "";
+                            final String targetBranchName = targetBranch != null ? targetBranch.getName() : "";
+                            notifyDiffFailedError(getProject(),
+                                    TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DIFF_FAILED_MSG,
+                                            sourceBranchName, targetBranchName));
 
-                    logger.warn("onFailure in loadDiff", thrown);
+                            logger.warn("onFailure in loadDiff", thrown);
+
+                            setLoading(false);
+                            setLocalBranchChanges(GitChangesContainer.createChangesContainer(sourceBranchName, targetBranchName, null, null,
+                                    getDiffCompareInfoProvider().getEmptyDiff(gitRepository), gitRepository));
+
+                        }
+                    });
                 }
             });
         }
