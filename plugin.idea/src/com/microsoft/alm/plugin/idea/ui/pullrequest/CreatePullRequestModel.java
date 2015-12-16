@@ -412,8 +412,6 @@ public class CreatePullRequestModel extends AbstractModel {
 
                     applicationProvider.invokeAndWaitWithAnyModality(new Runnable() {
                         public void run() {
-                            setLoading(false);
-
                             final GitLocalBranch sourceBranch = getSourceBranch();
                             final GitRemoteBranch targetBranch = getTargetBranch();
                             final String sourceBranchName = sourceBranch != null ? sourceBranch.getName() : "";
@@ -425,6 +423,7 @@ public class CreatePullRequestModel extends AbstractModel {
                             final GitChangesContainer changesContainer = GitChangesContainer.createChangesContainer(sourceBranchName, targetBranchName, null, null,
                                     getDiffCompareInfoProvider().getEmptyDiff(gitRepository), gitRepository);
                             if (isChangesUpToDate(changesContainer)) {
+                                setLoading(false);
                                 setLocalBranchChanges(changesContainer);
                             }
 

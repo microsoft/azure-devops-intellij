@@ -138,6 +138,6 @@ public class VsoImportPageModel extends ImportPageModelImpl {
             }
         });
         // Start the operation
-        accountLookupOperation.doWork(Operation.EMPTY_INPUTS);
+        accountLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
     }
 }

@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.common.utils;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 import java.net.URI;
