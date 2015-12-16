@@ -408,8 +408,12 @@ public class CreatePullRequestModel extends AbstractModel {
                 }
 
                 public void onFailure(final Throwable thrown) {
+                    logger.warn("onFailure in loadDiff", thrown);
+
                     applicationProvider.invokeAndWaitWithAnyModality(new Runnable() {
                         public void run() {
+                            setLoading(false);
+
                             final GitLocalBranch sourceBranch = getSourceBranch();
                             final GitRemoteBranch targetBranch = getTargetBranch();
                             final String sourceBranchName = sourceBranch != null ? sourceBranch.getName() : "";
@@ -418,11 +422,11 @@ public class CreatePullRequestModel extends AbstractModel {
                                     TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ERRORS_DIFF_FAILED_MSG,
                                             sourceBranchName, targetBranchName));
 
-                            logger.warn("onFailure in loadDiff", thrown);
-
-                            setLoading(false);
-                            setLocalBranchChanges(GitChangesContainer.createChangesContainer(sourceBranchName, targetBranchName, null, null,
-                                    getDiffCompareInfoProvider().getEmptyDiff(gitRepository), gitRepository));
+                            final GitChangesContainer changesContainer = GitChangesContainer.createChangesContainer(sourceBranchName, targetBranchName, null, null,
+                                    getDiffCompareInfoProvider().getEmptyDiff(gitRepository), gitRepository);
+                            if (isChangesUpToDate(changesContainer)) {
+                                setLocalBranchChanges(changesContainer);
+                            }
 
                         }
                     });
