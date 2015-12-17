@@ -34,7 +34,6 @@
     <applicationService serviceInterface="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"
                         serviceImplementation="org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager"/>
 
-    <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
     <checkoutProvider implementation="org.jetbrains.tfsIntegration.core.TFSCheckoutProvider"/>
     <search.topHitProvider implementation="org.jetbrains.tfsIntegration.core.configuration.TFSOptionsTopHitProvider"/>
     <vcs name="TFS" vcsClass="org.jetbrains.tfsIntegration.core.TFSVcs" displayName="TFS"/>
