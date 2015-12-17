@@ -23,7 +23,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
         }
 
         //couldn't find authentication info from saved contexts
-        if (UrlHelper.isVSO(UrlHelper.getBaseUri(url))) {
+        if (UrlHelper.isVSO(UrlHelper.createUri(url))) {
             // We can't determine if the url is for a TFS on premise server but prompt for credentials if we know it is VSO
             final AuthenticationInfo vsoAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(VsoAuthenticationProvider.getInstance(), url);
             if (vsoAuthenticationInfo == null) {

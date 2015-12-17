@@ -128,7 +128,7 @@ public class TfsImportPageModel extends ImportPageModelImpl {
         clearContexts();
 
         // Create the tfs context and load repositories
-        final URI serverUrl = UrlHelper.getBaseUri(getServerName());
+        final URI serverUrl = UrlHelper.createUri(getServerName());
         final ServerContext context =
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
                         .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo()).build();

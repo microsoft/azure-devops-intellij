@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 public class UrlHelper {
@@ -30,6 +29,10 @@ public class UrlHelper {
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
 
+    public static URI createUri(final String url) {
+        return URI.create(getCmdLineFriendlyUrl(url));
+    }
+
     public static boolean isValidUrl(final String serverUrl) {
         try {
             new URL(serverUrl);
@@ -40,15 +43,6 @@ public class UrlHelper {
             logger.warn(serverUrl, e);
         }
         return false;
-    }
-
-    public static URI getBaseUri(final String uri) {
-        try {
-            return new URI(uri);
-        } catch (URISyntaxException e) {
-            logger.warn(uri, e);
-        }
-        return null;
     }
 
     public static String asString(final URI uri) {
@@ -91,7 +85,7 @@ public class UrlHelper {
     }
 
     public static URI getVSOAccountURI(final String accountName) {
-        return URI.create(getCmdLineFriendlyUrl("https://" + accountName + "." + HOST_VSO)); //TODO: how to get account url correctly?
+        return UrlHelper.createUri("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
@@ -116,7 +110,7 @@ public class UrlHelper {
 
     public static URI resolveEndpointUri(URI baseUri, String endpointPath) {
         if (!baseUri.getPath().endsWith("/")) {
-            baseUri = URI.create(baseUri.toString() + "/");
+            baseUri = createUri(baseUri.toString() + "/");
         }
 
         if (endpointPath.startsWith("/")) {
@@ -146,8 +140,11 @@ public class UrlHelper {
             return ParseResult.FAILED;
         }
 
-        final URI gitUri = getBaseUri(gitUrl);
-        if (gitUri == null) {
+        final URI gitUri;
+        try {
+            gitUri = createUri(gitUrl);
+        } catch (Throwable t) {
+            logger.warn("tryParse: creating Uri failed for Git url: {}", gitUrl, t);
             return ParseResult.FAILED;
         }
 
@@ -191,7 +188,7 @@ public class UrlHelper {
         }
 
         public boolean isVSO() {
-            return UrlHelper.isVSO(UrlHelper.getBaseUri(this.serverUrl));
+            return UrlHelper.isVSO(createUri(this.serverUrl));
         }
 
         public String getServerUrl() {

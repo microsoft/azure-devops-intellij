@@ -48,7 +48,7 @@ public class ServerContextBuilder {
     }
 
     public ServerContextBuilder uri(final String newUri) {
-        this.uri = URI.create(UrlHelper.getCmdLineFriendlyUrl(newUri));
+        this.uri = UrlHelper.createUri(newUri);
         return this;
     }
 

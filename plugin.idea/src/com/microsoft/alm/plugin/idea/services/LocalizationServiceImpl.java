@@ -42,21 +42,35 @@ public class LocalizationServiceImpl implements LocalizationService {
      * @return localized string
      */
     public String getExceptionMessage(final Throwable t) {
+
+        //get exception message
+        String message = t.getLocalizedMessage();
+
         if (t instanceof TeamServicesException) {
             final String key = ((TeamServicesException) t).getMessageKey();
             if (keysMap.containsKey(key)) {
-                return getLocalizedMessage(keysMap.get(key));
+                message = getLocalizedMessage(keysMap.get(key));
             }
         }
 
-        String message = t.getLocalizedMessage();
-        if (StringUtils.isEmpty(message)) {
-            if (t.getCause() != null && !StringUtils.isEmpty(t.getCause().getLocalizedMessage())) {
-                message = t.getCause().getLocalizedMessage();
+        //exception message is not set
+        //Use the message on the cause if there is one
+        if (StringUtils.isEmpty(message) && t.getCause() != null) {
+            if (t.getCause() instanceof TeamServicesException) {
+                final String key = ((TeamServicesException) t).getMessageKey();
+                if (keysMap.containsKey(key)) {
+                    message = getLocalizedMessage(keysMap.get(key));
+                }
             } else {
-                message = t.toString();
+                message = t.getCause().getLocalizedMessage();
             }
         }
+
+        //No message on the exception and the cause, just use description from toString
+        if (StringUtils.isEmpty(message)) {
+            message = t.toString();
+        }
+
         return message;
     }
 

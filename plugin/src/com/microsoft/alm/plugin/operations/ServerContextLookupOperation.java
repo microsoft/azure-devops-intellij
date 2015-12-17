@@ -146,7 +146,7 @@ public class ServerContextLookupOperation extends Operation {
             // -----------------------------------------------------
 
             try {
-                final URI collectionURI = URI.create(UrlHelper.getCmdLineFriendlyUrl(context.getUri().toString() + "/" + teamProjectCollectionReference.getName()));
+                final URI collectionURI = UrlHelper.createUri(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
                 final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
                 final List<GitRepository> gitRepositories = gitClient.getRepositories();
 
