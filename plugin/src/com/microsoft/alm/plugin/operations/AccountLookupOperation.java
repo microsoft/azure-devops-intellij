@@ -61,7 +61,7 @@ public class AccountLookupOperation extends Operation {
             }
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
-                    UrlHelper.getBaseUri(VsoAuthenticationProvider.VSO_AUTH_URL));
+                    UrlHelper.createUri(VsoAuthenticationProvider.VSO_AUTH_URL));
             List<Account> accounts = accountHttpClient.getAccounts(me.getId());
             final AccountLookupResults results = new AccountLookupResults();
             for (final Account a : accounts) {

@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.services;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.LocalizationService;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,14 +42,36 @@ public class LocalizationServiceImpl implements LocalizationService {
      * @return localized string
      */
     public String getExceptionMessage(final Throwable t) {
+
+        //get exception message
+        String message = t.getLocalizedMessage();
+
         if (t instanceof TeamServicesException) {
             final String key = ((TeamServicesException) t).getMessageKey();
             if (keysMap.containsKey(key)) {
-                return getLocalizedMessage(keysMap.get(key));
+                message = getLocalizedMessage(keysMap.get(key));
             }
         }
 
-        return t.getLocalizedMessage();
+        //exception message is not set
+        //Use the message on the cause if there is one
+        if (StringUtils.isEmpty(message) && t.getCause() != null) {
+            if (t.getCause() instanceof TeamServicesException) {
+                final String key = ((TeamServicesException) t).getMessageKey();
+                if (keysMap.containsKey(key)) {
+                    message = getLocalizedMessage(keysMap.get(key));
+                }
+            } else {
+                message = t.getCause().getLocalizedMessage();
+            }
+        }
+
+        //No message on the exception and the cause, just use description from toString
+        if (StringUtils.isEmpty(message)) {
+            message = t.toString();
+        }
+
+        return message;
     }
 
     private static final Map<String, String> keysMap = new HashMap<String, String>() {

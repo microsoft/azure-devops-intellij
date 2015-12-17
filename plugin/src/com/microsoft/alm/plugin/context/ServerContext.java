@@ -75,7 +75,7 @@ public class ServerContext {
      */
     public static String getKey(String uri) {
         assert uri != null;
-        return getKey(URI.create(uri));
+        return getKey(UrlHelper.createUri(uri));
     }
 
     /**
@@ -96,7 +96,9 @@ public class ServerContext {
         this.gitRepository = gitRepository;
     }
 
-    public String getKey() { return getKey(uri); }
+    public String getKey() {
+        return getKey(uri);
+    }
 
     public URI getUri() {
         return uri;
@@ -107,7 +109,7 @@ public class ServerContext {
     public String getUsableGitUrl() {
         GitRepository repo = getGitRepository();
         if (repo != null && repo.getRemoteUrl() != null) {
-            return UrlHelper.getCmdLineFriendlyGitRemoteUrl(this.getGitRepository().getRemoteUrl());
+            return UrlHelper.getCmdLineFriendlyUrl(this.getGitRepository().getRemoteUrl());
         }
 
         return null;
@@ -229,7 +231,7 @@ public class ServerContext {
             // Make sure the collection name is terminated by the end of the uri or a uri separator
             if (endIndex == uri.length() || uri.charAt(endIndex) == UrlHelper.URL_SEPARATOR.charAt(0)) {
                 final String collectionUri = uri.substring(0, endIndex);
-                final GitHttpClient gitClient = new GitHttpClient(getClient(), URI.create(collectionUri));
+                final GitHttpClient gitClient = new GitHttpClient(getClient(), UrlHelper.createUri(collectionUri));
                 return gitClient;
             }
         }

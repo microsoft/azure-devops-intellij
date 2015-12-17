@@ -124,7 +124,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         clearContexts();
 
-        final URI serverUrl = UrlHelper.getBaseUri(getServerName());
+        final URI serverUrl = UrlHelper.createUri(getServerName());
         final ServerContext context =
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
                         .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo()).build();
