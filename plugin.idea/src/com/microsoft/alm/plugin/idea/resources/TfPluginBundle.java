@@ -179,6 +179,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_IMPORT_CREATING_REMOTE_REPO_ALREADY_EXISTS_ERROR = "Import.Errors.CreatingRemoteRepo.AlreadyExistsError";
     @NonNls
+    public static final String KEY_IMPORT_CREATING_REMOTE_REPO_INVALID_NAME_ERROR = "Import.Errors.CreatingRemoteRepo.InvalidNameError";
+    @NonNls
     public static final String KEY_IMPORT_GIT_REMOTE = "Import.GitRemote";
     @NonNls
     public static final String KEY_IMPORT_GIT_REMOTE_ERROR = "Import.Errors.GitRemote";

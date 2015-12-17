@@ -438,6 +438,10 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_ALREADY_EXISTS_ERROR,
                             repositoryName,
                             collectionUrl + "/" + teamProjectName);
+                } else if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.InvalidGitRepositoryNameException")) {
+                    //name is not valid
+                    errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_INVALID_NAME_ERROR,
+                            repositoryName);
                 } else {
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_UNEXPECTED_ERROR,
                             repositoryName,
@@ -445,6 +449,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 }
                 notifyImportError(project, errorMessage, ACTION_NAME, localContext);
             }
+
             if (remoteRepository == null) {
                 //We shouldn't get here if it is null, but logging just to be safe
                 logger.error("doImport: remoteRepository is null after trying to remote git repository name: {} collection: {}", repositoryName, collectionUrl);
@@ -494,7 +499,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             }
         }
 
-        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyGitRemoteUrl(remoteRepository.getRemoteUrl());
+        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyUrl(remoteRepository.getRemoteUrl());
         //update remotes on local repository
         final GitSimpleHandler hRemote = new GitSimpleHandler(project, localRepository.getRoot(), GitCommand.REMOTE);
         hRemote.setSilent(true);
@@ -520,7 +525,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                             final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
                                             final ServerContext localContext, final ProgressIndicator indicator) {
         localRepository.update();
-        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyGitRemoteUrl(remoteRepository.getRemoteUrl());
+        final String remoteGitUrl = UrlHelper.getCmdLineFriendlyUrl(remoteRepository.getRemoteUrl());
 
         //push all branches in local Git repo to remote
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_PUSH));

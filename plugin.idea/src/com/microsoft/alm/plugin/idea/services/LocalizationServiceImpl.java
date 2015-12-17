@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.services;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.LocalizationService;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +49,15 @@ public class LocalizationServiceImpl implements LocalizationService {
             }
         }
 
-        return t.getLocalizedMessage();
+        String message = t.getLocalizedMessage();
+        if (StringUtils.isEmpty(message)) {
+            if (t.getCause() != null && !StringUtils.isEmpty(t.getCause().getLocalizedMessage())) {
+                message = t.getCause().getLocalizedMessage();
+            } else {
+                message = t.toString();
+            }
+        }
+        return message;
     }
 
     private static final Map<String, String> keysMap = new HashMap<String, String>() {

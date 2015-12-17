@@ -62,7 +62,7 @@ public class UrlHelper {
     public static String trimTrailingSeparators(final String uri) {
         if (StringUtils.isNotEmpty(uri)) {
             int lastIndex = uri.length();
-            while(lastIndex > 0 && uri.charAt(lastIndex-1) == URL_SEPARATOR.charAt(0)) {
+            while (lastIndex > 0 && uri.charAt(lastIndex - 1) == URL_SEPARATOR.charAt(0)) {
                 lastIndex--;
             }
             if (lastIndex >= 0) {
@@ -86,12 +86,12 @@ public class UrlHelper {
         return StringUtils.contains(gitRemoteUrl, "/_git/");
     }
 
-    public static String getCmdLineFriendlyGitRemoteUrl(final String gitRemoteUrl) {
-        return StringUtils.replace(gitRemoteUrl, " ", "%20");
+    public static String getCmdLineFriendlyUrl(final String url) {
+        return StringUtils.replace(url, " ", "%20");
     }
 
     public static URI getVSOAccountURI(final String accountName) {
-        return URI.create("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
+        return URI.create(getCmdLineFriendlyUrl("https://" + accountName + "." + HOST_VSO)); //TODO: how to get account url correctly?
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {

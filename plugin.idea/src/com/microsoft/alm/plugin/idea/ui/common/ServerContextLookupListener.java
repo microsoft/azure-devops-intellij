@@ -71,11 +71,11 @@ public class ServerContextLookupListener implements Operation.Listener {
         } else {
             IdeaHelper.runOnUIThread(new Runnable() {
                 public void run() {
+                    pageModel.appendContexts(lookupResults.getServerContexts());
+
                     if (lookupResults.hasError()) {
                         pageModel.addError(ModelValidationInfo.createWithMessage(
                                 LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError())));
-                    } else {
-                        pageModel.appendContexts(lookupResults.getServerContexts());
                     }
                 }
             });

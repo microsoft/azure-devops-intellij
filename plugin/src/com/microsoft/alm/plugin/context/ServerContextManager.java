@@ -224,7 +224,7 @@ public class ServerContextManager {
         AuthenticationInfo authenticationInfo = null;
 
         // For now I will just do a linear search for an appropriate context info to copy the auth info from
-        final URI remoteUri = URI.create(gitRemoteUrl);
+        final URI remoteUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(gitRemoteUrl));
         for (final ServerContext context : getAllServerContexts()) {
             if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
                 authenticationInfo = context.getAuthenticationInfo();
@@ -248,7 +248,7 @@ public class ServerContextManager {
      */
     public void updateAuthenticationInfo(final String remoteUrl) {
         AuthenticationInfo newAuthenticationInfo = null;
-        final URI remoteUri = URI.create(remoteUrl);
+        final URI remoteUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(remoteUrl));
         //Linear search through all contexts to find the ones with same authority as remoteUrl
         for (final ServerContext context : getAllServerContexts()) {
             if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
@@ -333,7 +333,7 @@ public class ServerContextManager {
         @Override
         public boolean validate(final UrlHelper.ParseResult parseResult) {
             try {
-                final URI collectionUri = URI.create(parseResult.getCollectionUrl());
+                final URI collectionUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(parseResult.getCollectionUrl()));
                 final GitHttpClient gitClient = new GitHttpClient(client, collectionUri);
                 // Get the repository object and team project
                 repository = gitClient.getRepository(parseResult.getProjectName(), parseResult.getRepoName());

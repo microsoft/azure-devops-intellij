@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -145,7 +146,7 @@ public class ServerContextLookupOperation extends Operation {
             // -----------------------------------------------------
 
             try {
-                final URI collectionURI = URI.create(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
+                final URI collectionURI = URI.create(UrlHelper.getCmdLineFriendlyUrl(context.getUri().toString() + "/" + teamProjectCollectionReference.getName()));
                 final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
                 final List<GitRepository> gitRepositories = gitClient.getRepositories();
 
