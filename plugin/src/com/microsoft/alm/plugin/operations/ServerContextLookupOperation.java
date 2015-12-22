@@ -57,6 +57,7 @@ public class ServerContextLookupOperation extends Operation {
 
         try {
             final boolean throwOnError = contextList.size() == 1;
+            final List<Throwable> operationExceptions = new ArrayList<Throwable>();
 
             final List<Future> tasks = new ArrayList<Future>();
             for (final ServerContext context : contextList) {
@@ -75,6 +76,7 @@ public class ServerContextLookupOperation extends Operation {
                                 doRestCollectionLookup(context);
                             }
                         } catch (Throwable t) {
+                            operationExceptions.add(t);
                             logger.error("doWork: Unable to do lookup on context: " + context.getUri().toString());
                             logger.warn("doWork: Exception", t);
 
@@ -91,9 +93,13 @@ public class ServerContextLookupOperation extends Operation {
             // wait for all tasks to complete
             OperationExecutor.getInstance().wait(tasks);
 
+            if (operationExceptions.size() > 0) {
+                terminate(new TeamServicesException(TeamServicesException.KEY_OPERATION_ERRORS));
+            }
+
             onLookupCompleted();
         } catch (Throwable ex) {
-            logger.error("ServerContextLookupOperation failed with an exception", ex);
+            logger.warn("ServerContextLookupOperation failed with an exception", ex);
             terminate(ex);
         }
     }
