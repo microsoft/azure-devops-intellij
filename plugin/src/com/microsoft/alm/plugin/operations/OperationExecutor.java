@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.plugin.TeamServicesException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class OperationExecutor {
     private static final Logger logger = LoggerFactory.getLogger(OperationExecutor.class);
@@ -22,6 +24,9 @@ public class OperationExecutor {
     final int MAX_THREADS = 5;
     // No need for Core threads and Max threads to be different
     final int CORE_THREADS = MAX_THREADS;
+    //timeout for each task
+    final long TASK_TIMEOUT_SECONDS = 120L;
+
     // The number of items that can be in the Queue needs to be bigger than the number of threads (10x is somewhat arbitrary)
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(MAX_THREADS * 10);
     final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(CORE_THREADS, MAX_THREADS, THREAD_RECOVERY_TIMEOUT_SECONDS, TimeUnit.SECONDS, queue);
@@ -49,7 +54,7 @@ public class OperationExecutor {
             public void run() {
                 try {
                     operation.doWork(inputs);
-                } catch(Throwable t) {
+                } catch (Throwable t) {
                     logger.warn("Operation failed", t);
                     if (!operation.isFinished()) {
                         operation.terminate(t);
@@ -63,13 +68,26 @@ public class OperationExecutor {
         return threadPoolExecutor.submit(task);
     }
 
-    public void wait(List<Future> futures) throws ExecutionException {
+    public void wait(List<Future> futures) {
+        //TODO: can we call get on the futures in parallel. If there are multiple ones that timeout, overall timeout might be long
+        Throwable t = null;
         for (Future f : futures) {
             try {
-                f.get();
+                f.get(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                logger.warn("Thread interrupted", e);
+                t = e;
+                logger.warn("wait: InterruptedException", e);
+            } catch (TimeoutException te) {
+                t = te;
+                logger.warn("wait: TimeoutException", te);
+            } catch (ExecutionException ee) {
+                logger.warn("wait: ExecutionException", ee);
+                t = ee;
             }
+        }
+
+        if (t != null) {
+            throw new TeamServicesException(TeamServicesException.KEY_OPERATION_ERRORS, t);
         }
     }
 }
