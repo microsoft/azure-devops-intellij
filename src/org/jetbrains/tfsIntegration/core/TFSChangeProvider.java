@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.tfsIntegration.core.tfs.*;
 import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
@@ -49,10 +50,10 @@ public class TFSChangeProvider implements ChangeProvider {
   public void doCleanup(final List<VirtualFile> files) {
   }
 
-  public void getChanges(final VcsDirtyScope dirtyScope,
-                         final ChangelistBuilder builder,
-                         final ProgressIndicator progress,
-                         final ChangeListManagerGate addGate) throws VcsException {
+  public void getChanges(@NotNull final VcsDirtyScope dirtyScope,
+                         @NotNull final ChangelistBuilder builder,
+                         @NotNull final ProgressIndicator progress,
+                         @NotNull final ChangeListManagerGate addGate) throws VcsException {
     if (myProject.isDisposed()) {
       return;
     }
