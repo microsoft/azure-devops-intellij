@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.common;
 import com.intellij.util.ui.JBUI;
 
 import javax.swing.JComponent;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.border.Border;
@@ -74,6 +75,12 @@ public class SwingHelper {
         }
     }
 
+    public static void scaleTableRowHeight(JTable table) {
+        if (table != null && table.getFont() != null) {
+            table.setRowHeight(table.getFontMetrics(table.getFont()).getHeight() + JBUI.scale(1));
+        }
+    }
+
     public static void setMaxCharLimit(final JTextArea textField, final int limit) {
         textField.setDocument(new MaxCharLimitDocument(limit));
     }
@@ -93,6 +100,5 @@ public class SwingHelper {
                 super.insertString(offset, str, attr);
             }
         }
-
     }
 }

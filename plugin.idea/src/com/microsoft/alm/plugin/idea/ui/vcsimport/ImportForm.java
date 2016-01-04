@@ -75,7 +75,7 @@ public class ImportForm implements BasicForm {
             refreshButton.setActionCommand(CMD_REFRESH);
 
             // Fix HiDPI scaling for table
-            teamProjectTable.setRowHeight(JBUI.scale(teamProjectTable.getRowHeight()));
+            SwingHelper.scaleTableRowHeight(teamProjectTable);
 
             // Fix tabbing in table
             SwingHelper.fixTabKeys(teamProjectTable);
@@ -122,6 +122,7 @@ public class ImportForm implements BasicForm {
             });
 
             teamProjectScrollPane.setMinimumSize(new Dimension(JBUI.scale(200), JBUI.scale(70)));
+            teamProjectTable.setRowHeight(teamProjectTable.getFontMetrics(teamProjectTable.getFont()).getHeight());
 
             initialized = true;
         }
