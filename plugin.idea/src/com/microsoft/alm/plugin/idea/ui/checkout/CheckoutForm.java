@@ -79,7 +79,7 @@ public class CheckoutForm implements BasicForm {
             refreshButton.setActionCommand(CMD_REFRESH);
 
             // Fix HiDPI scaling for table
-            repositoryTable.setRowHeight(JBUI.scale(repositoryTable.getRowHeight()));
+            SwingHelper.scaleTableRowHeight(repositoryTable);
 
             // Fix tabbing in table
             SwingHelper.fixTabKeys(repositoryTable);
