@@ -93,7 +93,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     @Override
     public void signOut() {
         super.signOut();
-        setConnectionStatus(false);
+        setConnected(false);
         setLoading(false);
         clearContexts();
     }
@@ -155,12 +155,15 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     public void setCloneEnabled(final boolean cloneEnabled) {
         if (this.cloneEnabled != cloneEnabled) {
             this.cloneEnabled = cloneEnabled;
-            getParentModel().updateCloneEnabled();
+            if (getParentModel() != null) {
+                getParentModel().updateCloneEnabled();
+            }
         }
     }
 
-    protected void setConnectionStatus(boolean connected) {
-        setConnected(connected);
+    @Override
+    public void setConnected(boolean connected) {
+        super.setConnected(connected);
         setCloneEnabled(connected);
     }
 

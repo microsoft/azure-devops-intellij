@@ -127,7 +127,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     @Override
     public void signOut() {
         super.signOut();
-        setConnectionStatus(false);
+        setConnected(false);
         setLoading(false);
         clearContexts();
     }
@@ -176,12 +176,15 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     public void setImportEnabled(final boolean importEnabled) {
         if (this.importEnabled != importEnabled) {
             this.importEnabled = importEnabled;
-            getParentModel().updateImportEnabled();
+            if (getParentModel() != null) {
+                getParentModel().updateImportEnabled();
+            }
         }
     }
 
-    protected void setConnectionStatus(final boolean connected) {
-        setConnected(connected);
+    @Override
+    public void setConnected(boolean connected) {
+        super.setConnected(connected);
         setImportEnabled(connected);
     }
 
