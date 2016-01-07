@@ -7,10 +7,8 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
-import com.microsoft.alm.plugin.idea.ui.simplecheckout.SimpleCheckoutModel;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.JComponent;
@@ -25,8 +23,6 @@ import java.awt.event.ActionListener;
  * This form is for a simple checkout where the repo url is given
  */
 public class SimpleCheckoutForm implements BasicForm {
-    private static final int DIALOG_HEIGHT = JBUI.scale(180);
-    private static final int DIALOG_WIDTH = JBUI.scale(600);
 
     private JTextField directoryName;
     private JPanel contentPanel;
@@ -40,13 +36,21 @@ public class SimpleCheckoutForm implements BasicForm {
 
     public JPanel getContentPanel() {
         ensureInitialized();
-        contentPanel.setPreferredSize(new Dimension(DIALOG_WIDTH, DIALOG_HEIGHT));
         return contentPanel;
     }
 
+    /**
+     * If there is no directory name or parent dir then put the focus on that text box otherwise it will default to the clone button
+     */
     @Override
     public JComponent getPreferredFocusedComponent() {
-        return null;
+        if (StringUtils.isEmpty(getParentDirectory())) {
+            return parentDirectory;
+        } else if (StringUtils.isEmpty(getDirectoryName())) {
+            return directoryName;
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -73,7 +77,7 @@ public class SimpleCheckoutForm implements BasicForm {
         return StringUtils.trim(parentDirectory.getText());
     }
 
-    public JComponent getParentDirectoryComponent() {
+    private JComponent getParentDirectoryComponent() {
         return parentDirectory.getTextField();
     }
 
@@ -85,7 +89,7 @@ public class SimpleCheckoutForm implements BasicForm {
         return StringUtils.trim(directoryName.getText());
     }
 
-    public JComponent getDirectoryNameComponent() {
+    private JComponent getDirectoryNameComponent() {
         return directoryName;
     }
 

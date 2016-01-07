@@ -48,10 +48,13 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
      */
     protected boolean checkArguments(String[] args) {
         if (args.length != 2) {
+            logger.error("VSTS checkout failed due to the incorrect number of arguments passed. Expected 2 but found {}.", args.length);
             return false;
         } else if (!CHECKOUT_COMMAND.equals(args[0])) {
+            logger.error("VSTS checkout failed due to the incorrect command being used. Expected \"vsts-checkout\" but found \"{}\".", args[0]);
             return false;
         } else if (!UrlHelper.isGitRemoteUrl(args[1])) {
+            logger.error("VSTS checkout failed due to an invalid Git Url being passed.");
             return false;
         } else {
             return true;
@@ -62,6 +65,7 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
     public void premain(String[] args) {
         if (!checkArguments(args)) {
             System.err.println(getUsageMessage());
+            // exit code IntelliJ uses checkArgs failure
             System.exit(1);
         }
     }
@@ -73,11 +77,15 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
             processCommand(args, null);
         } catch (Exception e) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, e.getMessage()));
+            // exit code IntelliJ uses for exceptions
             System.exit(1);
         } catch (Throwable t) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, t.getMessage()));
+            // exit code IntelliJ uses for throwables
             System.exit(2);
         } finally {
+            // Once the IDEA is closed (intentionally or due to error) all settings and documents will be saved so the user doesn't lose any work.
+            // In the case of an error the user will not have a chance to save anything before the IDEA closes so this will take care of it.
             saveAll();
         }
     }

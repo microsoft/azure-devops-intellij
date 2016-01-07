@@ -33,8 +33,9 @@ import java.io.IOException;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PluginServiceProvider.class, LocalFileSystem.class})
 public class SimpleCheckoutModelTest extends IdeaAbstractTest {
-    public static final String GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/TestProject";
-    public final String INVALID_GIT_URL = "https://account.visualstudio.com/TestProject";
+    public static final String REPO_NAME = "TestProject-" + System.currentTimeMillis();
+    public static final String GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/" + REPO_NAME;
+    public static final String INVALID_GIT_URL = "https://account.visualstudio.com/TestProject";
 
     @Mock
     public PluginServiceProvider pluginServiceProvider;
@@ -56,7 +57,7 @@ public class SimpleCheckoutModelTest extends IdeaAbstractTest {
     public void testConstructor_Happy() {
         SimpleCheckoutModel model = modelCreationAndMocking(SimpleCheckoutModel.DEFAULT_SOURCE_PATH, GIT_URL);
         Assert.assertEquals(SimpleCheckoutModel.DEFAULT_SOURCE_PATH, model.getParentDirectory());
-        Assert.assertEquals("TestProject", model.getDirectoryName());
+        Assert.assertEquals(REPO_NAME, model.getDirectoryName());
     }
 
     @Test

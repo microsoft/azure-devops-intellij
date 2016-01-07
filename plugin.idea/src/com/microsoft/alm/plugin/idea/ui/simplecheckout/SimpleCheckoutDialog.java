@@ -8,10 +8,8 @@ import com.microsoft.alm.plugin.idea.ui.common.BaseDialogImpl;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 import java.awt.event.ActionListener;
 
 /**
@@ -57,12 +55,6 @@ public class SimpleCheckoutDialog extends BaseDialogImpl {
     }
 
     public void setRepoUrl(final String repoName) { simpleCheckoutForm.setRepoUrl(repoName); }
-
-    @Nullable
-    @Override
-    protected String getDimensionServiceKey() {
-        return null;
-    }
 
     @Override
     public JComponent getPreferredFocusedComponent() {

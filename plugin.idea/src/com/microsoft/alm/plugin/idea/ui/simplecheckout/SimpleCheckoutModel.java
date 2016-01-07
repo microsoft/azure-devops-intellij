@@ -15,7 +15,6 @@ import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
@@ -31,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The model for the SimpleCheckout dialog UI
@@ -40,6 +41,7 @@ public class SimpleCheckoutModel extends AbstractModel {
     public final static String PROP_DIRECTORY_NAME = "directoryName";
     public final static String PROP_PARENT_DIR = "parentDirectory";
     public final static String COMMANDLINE_CLONE_ACTION = "commandline-clone";
+    public final static Pattern GIT_URL_PATTERN = Pattern.compile("/_git/(.*)");
 
     private final Project project;
     private final CheckoutProvider.Listener listener;
@@ -59,24 +61,17 @@ public class SimpleCheckoutModel extends AbstractModel {
             this.parentDirectory = DEFAULT_SOURCE_PATH;
         }
 
-        this.directoryName = UrlHelper.tryParse(gitUrl, new UrlHelper.ParseResultValidator() {
-            @Override
-            public boolean validate(final UrlHelper.ParseResult result) {
-                return result.isSuccess();
-            }
-        }).getRepoName();
-        // use empty string if no repo name is found
-        if (StringUtils.isEmpty(this.directoryName)) {
+        // try and parse for the repo name to use as the directory name
+        final Matcher matcher = GIT_URL_PATTERN.matcher(gitUrl);
+        if (matcher.find() && matcher.groupCount() == 1) {
+            this.directoryName = matcher.group(1);
+        } else {
             this.directoryName = StringUtils.EMPTY;
         }
     }
 
     public Project getProject() {
         return project;
-    }
-
-    public CheckoutProvider.Listener getListener() {
-        return listener;
     }
 
     public String getParentDirectory() {

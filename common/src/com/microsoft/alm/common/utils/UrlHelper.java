@@ -67,10 +67,6 @@ public class UrlHelper {
         return uri;
     }
 
-    public static boolean isVSO(final String uriString) {
-        return isVSO(URI.create(uriString));
-    }
-
     public static boolean isVSO(final URI uri) {
         final String host = uri.getHost().toLowerCase();
         if (host.endsWith(HOST_VSO) || host.endsWith(HOST_TFS_ALL_IN)) {
