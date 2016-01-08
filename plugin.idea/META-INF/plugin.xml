@@ -58,6 +58,7 @@
     <depends>Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <appStarter implementation="com.microsoft.alm.plugin.idea.starters.checkout.CheckoutApplication"/>
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"/>

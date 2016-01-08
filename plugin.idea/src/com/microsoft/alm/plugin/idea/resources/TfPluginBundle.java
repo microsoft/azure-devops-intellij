@@ -102,6 +102,8 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID = "CheckoutDialog.Errors.DirNameInvalid";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
+    @NonNls
+    public static final String KEY_CHECKOUT_ERRORS_AUTHENTICATION_FAILED_TITLE = "CheckoutDialog.Errors.AuthenticationFailed.Title";
 
     //User account panel
     @NonNls
