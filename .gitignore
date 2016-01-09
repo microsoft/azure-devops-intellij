@@ -1,3 +1,6 @@
 # Gradle stuff
+**/hs_err_pid*.log
 .gradle
 build
+**/.idea
+*.iml
