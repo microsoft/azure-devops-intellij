@@ -32,10 +32,11 @@ public final class WindowsStartup {
     public static void startup() {
         try {
             // get most up-to-date IntelliJ exe
-            final String intellijExe = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, INTELLIJ_KEY, "");
+            final String intellijExe = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, INTELLIJ_KEY, StringUtils.EMPTY);
+            final String command = createCommand(intellijExe);
 
-            if (!StringUtils.isEmpty(getValidExe(intellijExe)) && !checkIfKeysExistAndMatch(intellijExe)) {
-                final File regeditFile = createRegeditFile(intellijExe);
+            if (isValidExe(command) && !checkIfKeysExistAndMatch(command)) {
+                final File regeditFile = createRegeditFile(command);
                 launchElevatedCreation(regeditFile.getPath());
                 regeditFile.delete();
             }
@@ -56,7 +57,7 @@ public final class WindowsStartup {
      */
     protected static boolean checkIfKeysExistAndMatch(final String intellijExe) {
         if (Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY) &&
-                Advapi32Util.registryValueExists(WinReg.HKEY_CLASSES_ROOT,  VSOI_KEY, intellijExe)) {
+                Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY, StringUtils.EMPTY).equals(intellijExe)) {
             return true;
         } else {
             return false;
@@ -89,7 +90,6 @@ public final class WindowsStartup {
      * @throws IOException
      */
     protected static File createRegeditFile(final String intellijExe) throws IOException {
-        final String exePath = getValidExe(intellijExe); //TODO remove line once trimming arguments isn't needed
         final File script = File.createTempFile("CreateKeys", ".reg");
         final FileWriter fileWriter = new FileWriter(script);
         final BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
@@ -100,7 +100,7 @@ public final class WindowsStartup {
                             "[HKEY_CLASSES_ROOT\\vsoi]\r\n" +
                             "\"URL Protocol\"=\"\"\r\n\r\n" +
                             "[HKEY_CLASSES_ROOT\\vsoi\\Shell\\Open\\Command]\r\n" +
-                            "\"\"=\"" + exePath.replace("\\", "\\\\") + "\"");
+                            "\"\"=\"" + intellijExe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
         } finally {
             if (bufferedWriter != null) {
                 bufferedWriter.close();
@@ -110,19 +110,38 @@ public final class WindowsStartup {
     }
 
     /**
-     * Finds a valid exe path and removes the argument parameters after the exe path
-     * TODO change this to boolean return once arguments can be passed and not trimmed
+     * Finds if the exe path is valid
      *
      * @param path
-     * @return exe path only
+     * @return if exe exists
      */
-    protected static String getValidExe(final String path) {
+    protected static boolean isValidExe(final String path) {
         final Pattern exeExtension = Pattern.compile(".*.exe");
         final Matcher exePath = exeExtension.matcher(path);
         if (exePath.find() && new File(exePath.group(0)).isFile()) {
-            return exePath.group(0);
+            return true;
         } else {
-            return "";
+            return false;
+        }
+    }
+
+    /**
+     * Take the IntelliJ exe command and add the vsts command to it. Example:
+     * In: C:\Program Files\JetBRains\IntelliJ IDEA 14.1.4\bin\idea.exe "%1"
+     * Out: C:\Program Files\JetBRains\IntelliJ IDEA 14.1.4\bin\idea.exe vsts "%1"
+     *
+     * @param exePath
+     * @return IntelliJ command with vsts command added
+     */
+    protected static String createCommand(final String exePath) {
+        int index = exePath.indexOf(".exe ");
+        if (index != -1) {
+            // add 4 to index to account for .exe
+            index = index + 4;
+            return exePath.substring(0, index) + " vsts " + exePath.substring(index + 1);
+        } else {
+            // command could not be created because .exe file could not be found
+            return StringUtils.EMPTY;
         }
     }
 }
