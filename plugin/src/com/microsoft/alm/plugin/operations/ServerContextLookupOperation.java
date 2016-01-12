@@ -129,20 +129,21 @@ public class ServerContextLookupOperation extends Operation {
     protected void doRestCollectionLookup(final ServerContext context) {
         final CoreHttpClient rootClient = new CoreHttpClient(context.getClient(), context.getUri());
         final List<TeamProjectCollectionReference> collections = rootClient.getProjectCollections(null, null);
-        logger.debug("ServerContextLookupOperation.doSoapCollectionLookup: Found {} collections on account: {} ",  collections.size(), context.getUri().toString());
+        logger.debug("doRestCollectionLookup: Found {} collections on account: {}.",  collections.size(), context.getUri().toString());
         doLookup(context, collections);
     }
 
     protected void doSoapCollectionLookup(final ServerContext context) {
         final CatalogService catalogService = context.getSoapServices().getCatalogService();
         final List<TeamProjectCollectionReference> collections = catalogService.getProjectCollections();
-        logger.debug("ServerContextLookupOperation.doSoapCollectionLookup: Found {} collections on server: {} ", collections.size(), context.getUri().toString());
+        logger.debug("doSoapCollectionLookup: Found {} collections on server: {}.", collections.size(), context.getUri().toString());
         doLookup(context, collections);
     }
 
     protected void doLookup(final ServerContext context, final List<TeamProjectCollectionReference> collections) {
         for (final TeamProjectCollectionReference teamProjectCollectionReference : collections) {
             if (isCancelled()) {
+                logger.debug("doLookup: Lookup on collection {} on server {} was cancelled.", teamProjectCollectionReference.getName(), context.getUri().toString());
                 return;
             }
 
@@ -159,7 +160,7 @@ public class ServerContextLookupOperation extends Operation {
                 final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
                 final List<GitRepository> gitRepositories = gitClient.getRepositories();
 
-                logger.debug("ServerContextLookupOperation.doLookup: found {} git repositories in collection: {} on server: {}", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+                logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
                 addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
             } catch (VssResourceNotFoundException e) {
                 logger.warn("doLookup: exception querying for Git repos", e);
@@ -199,7 +200,8 @@ public class ServerContextLookupOperation extends Operation {
         final ServerContextLookupResults results = new ServerContextLookupResults();
         results.serverContexts.addAll(serverContexts);
 
-        logger.debug("ServerContextLookupOperation.addRepositoryResults: {} contexts were added to lookup results for {} git repositories found on the server", serverContexts.size(), gitRepositories.size());
+        logger.debug("addRepositoryResults: {} contexts were added to lookup results for {} Git repositories found on the server: {} with resultScope = {}.",
+                serverContexts.size(), gitRepositories.size(), context.getUri().toString(), resultScope.toString());
         super.onLookupResults(results);
     }
 }
