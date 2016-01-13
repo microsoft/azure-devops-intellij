@@ -308,7 +308,7 @@ public class ServerContextManager {
     }
 
     private static class Validator implements UrlHelper.ParseResultValidator {
-        private static String REPO_INFO_URL_PATH = "/vsts/info";
+        private final static String REPO_INFO_URL_PATH = "/vsts/info";
         private final Client client;
         private GitRepository repository;
         private TeamProjectCollection collection;
@@ -328,6 +328,7 @@ public class ServerContextManager {
         /**
          * This method queries the server with the given Git remote URL for repository, project and collection information
          * If unable to get the info, it parses the Git remote url and tries to verify it by querying the server again
+         *
          * @param gitRemoteUrl
          * @return true if server information is determined
          */
@@ -367,7 +368,7 @@ public class ServerContextManager {
 
             } catch (Throwable throwable) {
                 //failed to get VSTS information, endpoint may not be available on the server
-                logger.error("validate: failed for Git remote url: {}", gitRemoteUrl);
+                logger.warn("validate: failed for Git remote url: {}", gitRemoteUrl);
                 logger.warn("validate", throwable);
                 return false;
             }

@@ -17,6 +17,7 @@ public class VstsHttpClient {
 
     /**
      * Send a HTTP GET request to a URI and read JSON response as object of specified class
+     *
      * @param client
      * @param uri
      * @param resultClass
@@ -24,9 +25,9 @@ public class VstsHttpClient {
      * @return Object of type resultClass
      */
     public static <TResult> TResult sendRequest(final Client client, final String uri, final Class<TResult> resultClass) {
-        WebTarget t = client.target(uri);
-        Invocation.Builder b = t.request();
-        Response r = b.get();
+        final WebTarget t = client.target(uri);
+        final Invocation.Builder b = t.request();
+        final Response r = b.get();
         if (r.getStatus() == 200) {
             return r.readEntity(resultClass);
         } else {
