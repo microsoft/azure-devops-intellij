@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.setup;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.sun.jna.Platform;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -26,7 +25,6 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
     }
 
     @Test
-    @Ignore("TODO: ignoring test until creating keys is added back in")
     public void testWindowsOS() {
         setOsResponses(true, false, false);
         osSetup();

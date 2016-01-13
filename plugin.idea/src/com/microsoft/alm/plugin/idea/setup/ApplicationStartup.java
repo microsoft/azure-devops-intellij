@@ -51,7 +51,7 @@ public class ApplicationStartup implements ApplicationComponent {
     protected void doOsSetup() {
         if (Platform.isWindows()) {
             logger.debug("Windows operating system detected");
-            // WindowsStartup.startup(); TODO: comment back in once arguments are being passed
+            WindowsStartup.startup();
         } else if (Platform.isMac()) {
             logger.debug("Mac operating system detected");
             MacStartup.startup();
