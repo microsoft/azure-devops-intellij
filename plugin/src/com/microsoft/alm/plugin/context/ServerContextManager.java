@@ -325,6 +325,12 @@ public class ServerContextManager {
             return collection;
         }
 
+        /**
+         * This method queries the server with the given Git remote URL for repository, project and collection information
+         * If unable to get the info, it parses the Git remote url and tries to verify it by querying the server again
+         * @param gitRemoteUrl
+         * @return true if server information is determined
+         */
         public boolean validate(final String gitRemoteUrl) {
             //query the server endpoint for VSTS repo, project and collection info
             if (getVstsInfo(gitRemoteUrl)) {
