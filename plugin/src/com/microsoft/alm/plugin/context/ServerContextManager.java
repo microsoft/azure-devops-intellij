@@ -9,6 +9,8 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
+import com.microsoft.alm.plugin.context.rest.VstsInfo;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.services.ServerContextStore;
@@ -291,8 +293,7 @@ public class ServerContextManager {
                 ? ServerContext.Type.VSO : ServerContext.Type.TFS;
         final Client client = ServerContext.getClient(type, authenticationInfo);
         final Validator validator = new Validator(client);
-        final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitRemoteUrl, validator);
-        if (uriParseResult.isSuccess()) {
+        if (validator.validate(gitRemoteUrl)) {
             final ServerContextBuilder builder = new ServerContextBuilder()
                     .type(type)
                     .uri(gitRemoteUrl)
@@ -307,6 +308,7 @@ public class ServerContextManager {
     }
 
     private static class Validator implements UrlHelper.ParseResultValidator {
+        private final static String REPO_INFO_URL_PATH = "/vsts/info";
         private final Client client;
         private GitRepository repository;
         private TeamProjectCollection collection;
@@ -321,6 +323,55 @@ public class ServerContextManager {
 
         public TeamProjectCollection getCollection() {
             return collection;
+        }
+
+        /**
+         * This method queries the server with the given Git remote URL for repository, project and collection information
+         * If unable to get the info, it parses the Git remote url and tries to verify it by querying the server again
+         *
+         * @param gitRemoteUrl
+         * @return true if server information is determined
+         */
+        public boolean validate(final String gitRemoteUrl) {
+            //query the server endpoint for VSTS repo, project and collection info
+            if (getVstsInfo(gitRemoteUrl)) {
+                return true;
+            }
+            //server endpoint query was not successful, try to parse the url
+            final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitRemoteUrl, this);
+            if (uriParseResult.isSuccess()) {
+                return true;
+            }
+            //failed to get VSTS repo, project and collection info
+            return false;
+        }
+
+        private boolean getVstsInfo(final String gitRemoteUrl) {
+            try {
+                //Try to query the server endpoint gitRemoteUrl/vsts/info
+                final VstsInfo vstsInfo = VstsHttpClient.sendRequest(client, gitRemoteUrl.concat(REPO_INFO_URL_PATH), VstsInfo.class);
+                if (vstsInfo == null || vstsInfo.getCollectionReference() == null || vstsInfo.getProjectReference() == null) {
+                    //information received from the server is not sufficient
+                    return false;
+                }
+
+                collection = new TeamProjectCollection();
+                collection.setId(vstsInfo.getCollectionReference().getId());
+                collection.setName(vstsInfo.getCollectionReference().getName());
+                collection.setUrl(vstsInfo.getCollectionReference().getUrl());
+                repository = new GitRepository();
+                repository.setId(vstsInfo.getRepoId());
+                repository.setName(vstsInfo.getRepoName());
+                repository.setRemoteUrl(gitRemoteUrl);
+                repository.setProjectReference(vstsInfo.getProjectReference());
+                return true;
+
+            } catch (Throwable throwable) {
+                //failed to get VSTS information, endpoint may not be available on the server
+                logger.warn("validate: failed for Git remote url: {}", gitRemoteUrl);
+                logger.warn("validate", throwable);
+                return false;
+            }
         }
 
         /**
