@@ -187,9 +187,9 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_IMPORT_GIT_REMOTE_ERROR = "Import.Errors.GitRemote";
     @NonNls
-    public static final String KEY_IMPORT_ORIGIN_EXISTS= "Import.OriginExists";
+    public static final String KEY_IMPORT_ORIGIN_EXISTS = "Import.OriginExists";
     @NonNls
-    public static final String KEY_IMPORT_UPDATE_ORIGIN= "Import.UpdateOrigin";
+    public static final String KEY_IMPORT_UPDATE_ORIGIN = "Import.UpdateOrigin";
     @NonNls
     public static final String KEY_IMPORT_CANCEL = "Import.Cancel";
     @NonNls
@@ -258,4 +258,18 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_CREATE_PULL_REQUEST = "Actions.CreatePullRequest.Title";
     @NonNls
     public static final String KEY_ACTIONS_CREATE_PULL_REQUEST_MSG = "Actions.CreatePullRequest.Message";
+
+    //starters
+    @NonNls
+    public static final String STARTER_COMMAND_LINE_USAGE_MSG = "Starter.Usage.Message";
+    @NonNls
+    public static final String STARTER_ERRORS_SUB_COMMAND_NOT_RECOGNIZED = "Starter.Errors.SubCommandNotRecognized";
+    @NonNls
+    public static final String STARTER_ERRORS_MALFORMED_URI = "Starter.Errors.MalformedUri";
+    @NonNls
+    public static final String STARTER_ERRORS_INVALID_GIT_URL = "Starter.Errors.InvalidGitUrl";
+    @NonNls
+    public static final String STARTER_ERRORS_SIMPLECHECKOUT_INVALID_COMMAND_LINE_ARGS = "Starter.Errors.SimpleCheckout.InvalidCommandLineArgs";
+    @NonNls
+    public static final String STARTER_ERRORS_SIMPLECHECKOUT_URI_MISSING_GIT_URL = "Starter.Errors.SimpleCheckout.UriMissingGitUrl";
 }
