@@ -1,32 +1,52 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.starters.checkout;
+package com.microsoft.alm.plugin.idea.starters;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationStarterEx;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import org.jetbrains.annotations.Nullable;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
- * Create a new commandline argument to do VSTS checkouts. This will allow for a protocol handler to pass IntelliJ
- * the needed arguments to clone and open a project.
+ * Create a new commandline argument to do VSTS commands. This will allow for a protocol handler to pass IntelliJ
+ * the needed arguments to start a VSTS specific workflow.
  */
 public abstract class ApplicationStarterBase extends ApplicationStarterEx {
     private final Logger logger = LoggerFactory.getLogger(ApplicationStarterBase.class);
-    public final String CHECKOUT_COMMAND = "vsts-checkout";
+    public static final String VSTS_COMMAND = "vsts";
+    public final String URI_PREFIX = "vsoi://";
 
     public abstract String getUsageMessage();
 
-    protected abstract void processCommand(final String[] args, @Nullable String currentDirectory) throws Exception;
+    /**
+     * Take the given command-line arguments and process them to initiate the given workflow they are calling
+     *
+     * @param args
+     * @throws RuntimeException
+     */
+    protected abstract void processCommand(final List<String> args) throws RuntimeException;
+
+    /**
+     * Take the given URI and process the arguments passed inside of it to initiate the given workflow they are calling
+     *
+     * @param uri
+     * @throws RuntimeException
+     * @throws UnsupportedEncodingException
+     */
+    protected abstract void processUri(final String uri) throws RuntimeException, UnsupportedEncodingException;
 
     @Override
     public String getCommandName() {
-        return CHECKOUT_COMMAND;
+        return VSTS_COMMAND;
     }
 
     @Override
@@ -40,21 +60,19 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
     }
 
     /**
-     * Checking arguments passed. They should follow the form:
-     * "vsts-checkout git_url"
+     * Checking arguments passed. They should follow the forms:
+     * "vsts <command> <args>"
+     * "vsts <uri>
      *
      * @param args the command line args
      * @return whether the arguments given meet the requirements
      */
     protected boolean checkArguments(String[] args) {
-        if (args.length != 2) {
-            logger.error("VSTS checkout failed due to the incorrect number of arguments passed. Expected 2 but found {}.", args.length);
+        if (args.length < 2) {
+            logger.error("VSTS failed due to lack of commands. Please specify the command that you want VSTS to execute");
             return false;
-        } else if (!CHECKOUT_COMMAND.equals(args[0])) {
-            logger.error("VSTS checkout failed due to the incorrect command being used. Expected \"vsts-checkout\" but found \"{}\".", args[0]);
-            return false;
-        } else if (!UrlHelper.isGitRemoteUrl(args[1])) {
-            logger.error("VSTS checkout failed due to an invalid Git Url being passed.");
+        } else if (!StringUtils.equalsIgnoreCase(VSTS_COMMAND, args[0])) {
+            logger.error("VSTS checkout failed due to the incorrect command being used. Expected \"vsts\" but found \"{}\".", args[0]);
             return false;
         } else {
             return true;
@@ -72,9 +90,17 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
 
     @Override
     public void main(String[] args) {
+        logger.debug("Args passed to VSTS to process: {}", Arrays.toString(args));
         try {
-            logger.debug("Trying to checkout VSTS project via the commandline");
-            processCommand(args, null);
+            if (StringUtils.startsWithIgnoreCase(args[1], URI_PREFIX)) {
+                // pass the uri but after removing it's prefix since it isn't needed anymore
+                processUri(args[1].replaceFirst(URI_PREFIX, StringUtils.EMPTY));
+            } else {
+                List<String> argsList = new ArrayList<String>(Arrays.asList(args));
+                // remove first arg which is just the generic command "vsts" that got us to this point
+                argsList.remove(0);
+                processCommand(argsList);
+            }
         } catch (Exception e) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, e.getMessage()));
             // exit code IntelliJ uses for exceptions
