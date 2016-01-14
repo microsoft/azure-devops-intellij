@@ -350,7 +350,8 @@ public class ServerContextManager {
             try {
                 //Try to query the server endpoint gitRemoteUrl/vsts/info
                 final VstsInfo vstsInfo = VstsHttpClient.sendRequest(client, gitRemoteUrl.concat(REPO_INFO_URL_PATH), VstsInfo.class);
-                if (vstsInfo == null || vstsInfo.getCollectionReference() == null || vstsInfo.getProjectReference() == null) {
+                if (vstsInfo == null || vstsInfo.getCollectionReference() == null ||
+                        vstsInfo.getRepository() == null || vstsInfo.getRepository().getProjectReference() == null) {
                     //information received from the server is not sufficient
                     return false;
                 }
@@ -359,11 +360,7 @@ public class ServerContextManager {
                 collection.setId(vstsInfo.getCollectionReference().getId());
                 collection.setName(vstsInfo.getCollectionReference().getName());
                 collection.setUrl(vstsInfo.getCollectionReference().getUrl());
-                repository = new GitRepository();
-                repository.setId(vstsInfo.getRepoId());
-                repository.setName(vstsInfo.getRepoName());
-                repository.setRemoteUrl(gitRemoteUrl);
-                repository.setProjectReference(vstsInfo.getProjectReference());
+                repository = vstsInfo.getRepository();
                 return true;
 
             } catch (Throwable throwable) {
