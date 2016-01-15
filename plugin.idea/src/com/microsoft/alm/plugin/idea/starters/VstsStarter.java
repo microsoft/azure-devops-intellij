@@ -21,6 +21,8 @@ import java.util.Map;
  */
 public class VstsStarter extends ApplicationStarterBase {
     private final Logger logger = LoggerFactory.getLogger(VstsStarter.class);
+    private static final String IDE_TYPE_ATTRIBUTE = "IdeType";
+    private static final String IDE_EXE_ATTRIBUTE = "IdeExe";
 
     @Override
     public String getUsageMessage() {
@@ -82,6 +84,10 @@ public class VstsStarter extends ApplicationStarterBase {
                 attributes.put(key, value);
             }
         }
+
+        //remove the attributes that pertain to which IDE to launch since they have already been used
+        attributes.remove(IDE_TYPE_ATTRIBUTE);
+        attributes.remove(IDE_EXE_ATTRIBUTE);
 
         logger.debug("The URI attributes found are: " + attributes.entrySet().toString());
         return attributes;
