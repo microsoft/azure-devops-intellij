@@ -244,6 +244,20 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_CREATE_PR_NO_VALID_TARGET_WARNING_MESSAGE = "CreatePullRequestDialog.NoValidTargetWarning.Message";
 
+    //Vcs Pull Requests tab
+    @NonNls
+    public static final String KEY_VCS_PR_TITLE = "VcsPullRequestsTab.Title";
+    @NonNls
+    public static final String KEY_VCS_PR_REQUESTED_BY_ME = "VcsPullRequestsTab.RequestedByMe";
+    @NonNls
+    public static final String KEY_VCS_PR_ASSIGNED_TO_ME = "VcsPullRequestsTab.AssignedToMe";
+    @NonNls
+    public static final String KEY_VCS_PR_NOT_CONNECTED = "VcsPullRequestsTab.NotConnected";
+    @NonNls
+    public static final String KEY_VCS_PR_LOADING = "VcsPullRequestsTab.Loading";
+    @NonNls
+    public static final String KEY_VCS_PR_LAST_REFRESHED_AT = "VcsPullRequestsTab.LastRefreshedAt";
+
 
     //actions
     @NonNls

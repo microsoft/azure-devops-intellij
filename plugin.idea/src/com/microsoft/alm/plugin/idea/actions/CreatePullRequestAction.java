@@ -10,10 +10,7 @@ import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.pullrequest.CreatePullRequestController;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
-import git4idea.GitUtil;
 import git4idea.repo.GitRepository;
-
-import java.util.List;
 
 /**
  * This class adds a "Create Pull Request" menu item to git menu.
@@ -29,7 +26,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
     @Override
     public void doUpdate(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
-        final GitRepository gitRepository = getTfGitRepository(project);
+        final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 
         if (project == null || project.isDefault() || gitRepository == null) {
             anActionEvent.getPresentation().setVisible(false);
@@ -43,7 +40,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
     @Override
     public void doActionPerformed(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
-        final GitRepository gitRepository = getTfGitRepository(project);
+        final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 
         if (gitRepository != null) {
             CreatePullRequestController createPullRequestController
@@ -51,18 +48,4 @@ public class CreatePullRequestAction extends InstrumentedAction {
             createPullRequestController.showModalDialog();
         }
     }
-
-    private GitRepository getTfGitRepository(final Project project) {
-        if (project != null) {
-            final List<GitRepository> repositories = GitUtil.getRepositoryManager(project).getRepositories();
-            for (GitRepository repository : repositories) {
-                if (TfGitHelper.isTfGitRepository(repository)) {
-                    return repository;
-                }
-            }
-        }
-
-        return null;
-    }
-
 }

@@ -50,9 +50,7 @@
 
     <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
          on how to target different products -->
-    <!-- uncomment to enable plugin in all products
-    <depends>com.intellij.modules.lang</depends>
-    -->
+    <!-- enables plugin in all products -->
     <depends>com.intellij.modules.lang</depends>
 
     <depends>Git4Idea</depends>
@@ -60,6 +58,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <appStarter implementation="com.microsoft.alm.plugin.idea.starters.VstsStarter"/>
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
+        <!-- TODO: can tabName be localized ?-->
+        <changesViewContent className="com.microsoft.alm.plugin.idea.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"/>
     </extensions>

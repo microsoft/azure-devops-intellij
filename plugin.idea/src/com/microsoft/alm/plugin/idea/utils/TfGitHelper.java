@@ -5,11 +5,14 @@ package com.microsoft.alm.plugin.idea.utils;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.intellij.openapi.project.Project;
+import git4idea.GitUtil;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.List;
 
 public class TfGitHelper {
 
@@ -63,5 +66,18 @@ public class TfGitHelper {
                 return TfGitHelper.isTfGitRemote(remote);
             }
         });
+    }
+
+    public static GitRepository getTfGitRepository(@NotNull final Project project) {
+        if (project != null) {
+            final List<GitRepository> repositories = GitUtil.getRepositoryManager(project).getRepositories();
+            for (GitRepository repository : repositories) {
+                if (TfGitHelper.isTfGitRepository(repository)) {
+                    return repository;
+                }
+            }
+        }
+
+        return null;
     }
 }
