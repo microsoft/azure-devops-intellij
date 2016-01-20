@@ -198,7 +198,7 @@ public class LookupHelper {
                     // Take the list of accounts and use them to query the team projects
                     lookupListener.loadContexts(
                             accountLookupOperation.castResults(results).getServerContexts(),
-                            ServerContextLookupOperation.ContextScope.PROJECT);
+                            scope);
                 }
 
                 // If there was an error or cancellation message, send it back to the user
