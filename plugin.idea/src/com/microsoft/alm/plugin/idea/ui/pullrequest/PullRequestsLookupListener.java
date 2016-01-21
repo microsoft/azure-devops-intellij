@@ -25,7 +25,7 @@ public class PullRequestsLookupListener implements Operation.Listener {
         loadPullRequests(activeOperation);
     }
 
-    public void loadPullRequests(final PullRequestLookupOperation activeOperation) {
+    private void loadPullRequests(final PullRequestLookupOperation activeOperation) {
         assert activeOperation != null;
         this.activeOperation = activeOperation;
         this.activeOperation.addListener(this);
@@ -38,6 +38,7 @@ public class PullRequestsLookupListener implements Operation.Listener {
             @Override
             public void run() {
                 model.setLoading(true);
+                model.setLoadingErrors(false);
                 model.clearPullRequests();
             }
         });
@@ -66,6 +67,13 @@ public class PullRequestsLookupListener implements Operation.Listener {
                     model.setLoading(false);
                 }
             });
+        } else if (lookupResults.hasError()) {
+            IdeaHelper.runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    model.setLoadingErrors(true);
+                }
+            });
         } else {
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
@@ -77,8 +85,10 @@ public class PullRequestsLookupListener implements Operation.Listener {
     }
 
     private void operationDone() {
-        activeOperation.removeListener(this);
-        activeOperation = null;
+        if (activeOperation != null) {
+            activeOperation.removeListener(this);
+            activeOperation = null;
+        }
     }
 
     public void terminateActiveOperation() {

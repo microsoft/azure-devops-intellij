@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 /**
@@ -62,13 +63,15 @@ public class AccountLookupOperation extends Operation {
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
                     UrlHelper.createUri(VsoAuthenticationProvider.VSO_AUTH_URL));
-            List<Account> accounts = accountHttpClient.getAccounts(me.getId());
+            final UUID userId = me.getId();
+            List<Account> accounts = accountHttpClient.getAccounts(userId);
             final AccountLookupResults results = new AccountLookupResults();
             for (final Account a : accounts) {
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
                                 .accountUri(a)
                                 .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo())
+                                .userId(userId)
                                 .build();
                 results.serverContexts.add(accountContext);
             }

@@ -129,14 +129,16 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     }
 
     /**
-     * Retrieves user profile of signed in user, if successful, saves the current VSO_DEPLOYMENT context
+     * Returns user profile of user with provided authentication info
      *
-     * @return user profile if successfully authenticated, else throws an exception
+     * @param authenticationInfo
+     * @return
      */
-    public Profile getAuthenticatedUserProfile() {
+    public Profile getUserProfile(final AuthenticationInfo authenticationInfo) {
+        //TODO: how to do this for TFS? expose this on AuthenticationProvider interface
         final ServerContext context = new ServerContextBuilder()
                 .type(ServerContext.Type.VSO_DEPLOYMENT)
-                .authentication(getAuthenticationInfo())
+                .authentication(authenticationInfo)
                 .uri(VSO_AUTH_URL)
                 .build();
         final AccountHttpClient accountHttpClient = new AccountHttpClient(context.getClient(), context.getUri());
@@ -153,5 +155,14 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             clearAuthenticationDetails();
             throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, t);
         }
+    }
+
+    /**
+     * Retrieves user profile of signed in user, if successful, saves the current VSO_DEPLOYMENT context
+     *
+     * @return user profile if successfully authenticated, else throws an exception
+     */
+    public Profile getAuthenticatedUserProfile() {
+        return getUserProfile(getAuthenticationInfo());
     }
 }

@@ -50,6 +50,17 @@ public class VcsPullRequestsController implements Observer, ActionListener {
             model.createNewPullRequest();
         } else if (VcsPullRequestsForm.CMD_REFRESH.equals(e.getActionCommand())) {
             model.loadPullRequests();
+        } else if (VcsPullRequestsForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
+            if (!model.isConnected()) {
+                //import into team services git
+                model.importIntoTeamServicesGit();
+            } else if (!model.isAuthenticated()) {
+                //prompt for credentials and load pull requests
+                model.loadPullRequests();
+            } else {
+                //open current repository in web
+                model.openGitRepoLink();
+            }
         }
     }
 
@@ -59,14 +70,18 @@ public class VcsPullRequestsController implements Observer, ActionListener {
 
     @Override
     public void update(final Observable observable, final Object arg) {
-        if (arg == null || VcsPullRequestsModel.PROP_LOADING.equals(arg)) {
-            tab.setLoading(model.isLoading());
-        }
-        if (arg == null || VcsPullRequestsModel.PROP_CONNECTED.equals(arg)) {
-            tab.setConnected(model.isConnected());
+        if (arg == null
+                || VcsPullRequestsModel.PROP_CONNECTED.equals(arg)
+                || VcsPullRequestsModel.PROP_AUTHENTICATED.equals(arg)
+                || VcsPullRequestsModel.PROP_LOADING.equals(arg)
+                || VcsPullRequestsModel.PROP_AUTHENTICATING.equals(arg)) {
+            tab.setConnectionStatus(model.isConnected(), model.isAuthenticating(), model.isAuthenticated(), model.isLoading());
         }
         if (arg == null || VcsPullRequestsModel.PROP_LAST_REFRESHED.equals(arg)) {
             tab.setLastRefreshed(model.getLastRefreshed());
+        }
+        if (arg == null || VcsPullRequestsModel.PROP_LOADING_ERRORS.equals(arg)) {
+            tab.setLoadingErrors(model.hasLoadingErrors());
         }
         if (arg == null) {
             tab.setPullRequestsTree(model.getPullRequestsTreeModel());

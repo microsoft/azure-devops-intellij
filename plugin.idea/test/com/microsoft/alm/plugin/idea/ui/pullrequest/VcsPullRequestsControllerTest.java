@@ -13,6 +13,7 @@ import java.util.Date;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
@@ -46,34 +47,49 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     @Test
     public void testDefaultPropertyUpdates() {
         underTest.update(null, null);
-        verify(uiMock).setLoading(anyBoolean());
+        verify(uiMock).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
         verify(modelMock).isLoading();
-        verify(uiMock).setConnected(anyBoolean());
         verify(modelMock).isConnected();
+        verify(modelMock).isAuthenticated();
+        verify(modelMock).isAuthenticating();
         verify(uiMock).setLastRefreshed(any(Date.class));
         verify(modelMock).getLastRefreshed();
         verify(uiMock).setPullRequestsTree(any(PullRequestsTreeModel.class));
         verify(modelMock).getPullRequestsTreeModel();
-
-
+        verify(uiMock).setLoadingErrors(anyBoolean());
+        verify(modelMock).hasLoadingErrors();
     }
 
     @Test
     public void testPropertyUpdates() {
         //Loading or not
         underTest.update(null, VcsPullRequestsModel.PROP_LOADING);
-        verify(uiMock).setLoading(anyBoolean());
-        verify(modelMock).isLoading();
+        verify(uiMock, times(1)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+        verify(modelMock, times(1)).isLoading();
 
         //Connected or not
         underTest.update(null, VcsPullRequestsModel.PROP_CONNECTED);
-        verify(uiMock).setConnected(anyBoolean());
-        verify(modelMock).isConnected();
+        verify(uiMock, times(2)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+        verify(modelMock, times(2)).isConnected();
+
+        //Authenticating or not
+        underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATING);
+        verify(uiMock, times(3)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+        verify(modelMock, times(3)).isAuthenticating();
+
+        //Authenticated or not
+        underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATED);
+        verify(uiMock, times(4)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+        verify(modelMock, times(4)).isAuthenticated();
 
         //Last refreshed date
         underTest.update(null, VcsPullRequestsModel.PROP_LAST_REFRESHED);
         verify(uiMock).setLastRefreshed(any(Date.class));
         verify(modelMock).getLastRefreshed();
 
+        //Loading errors
+        underTest.update(null, VcsPullRequestsModel.PROP_LOADING_ERRORS);
+        verify(uiMock).setLoadingErrors(anyBoolean());
+        verify(modelMock).hasLoadingErrors();
     }
 }

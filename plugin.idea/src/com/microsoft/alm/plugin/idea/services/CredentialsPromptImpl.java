@@ -12,6 +12,11 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
+import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
+
+import java.net.URI;
+import java.util.List;
 
 /**
  * Credentials prompt implementation for the IntelliJ plugin.
@@ -95,19 +100,35 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
         final ServerContext context =
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
                         .uri(deploymentUrl).authentication(authenticationInfo).build();
+
+        final List<TeamProjectCollectionReference> collections;
         try {
             //TODO we need to find a better REST endpoint to call, something light weight
-            context.getSoapServices().getCatalogService().getProjectCollections();
+            collections = context.getSoapServices().getCatalogService().getProjectCollections();
             // Save the authenticated url for later use
             authenticationUrl = deploymentUrl;
-            return true;
         } catch (RuntimeException ex) {
             validationError = ex;
             if (throwOnFailure) {
                 throw ex;
             }
+            return false;
 
+        }
+
+        try {
+            if (collections != null && collections.size() > 0 && context.getType() == ServerContext.Type.TFS) {
+                final URI collectionURI = UrlHelper.createUri(context.getUri().toString() + "/" + collections.get(0).getName());
+                final GitHttpClient gitHttpClient = new GitHttpClient(context.getClient(), collectionURI);
+                gitHttpClient.getRepositories();
+            }
+        } catch (Throwable t) {
+            if (throwOnFailure) {
+                throw new RuntimeException("Unsupported TFS version");
+            }
             return false;
         }
+
+        return true;
     }
 }

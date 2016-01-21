@@ -83,8 +83,10 @@ public class ServerContextLookupListener implements Operation.Listener {
     }
 
     private void operationDone() {
-        activeOperation.removeListener(this);
-        activeOperation = null;
+        if (activeOperation != null) {
+            activeOperation.removeListener(this);
+            activeOperation = null;
+        }
     }
 
     public void terminateActiveOperation() {

@@ -9,8 +9,10 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class ServerContextState {
     public ServerContextState() {
@@ -20,6 +22,7 @@ public class ServerContextState {
         this();
         this.type = context.getType();
         this.uri = UrlHelper.asString(context.getUri());
+        this.userId = restrict(context.getUserId());
         this.teamProjectCollectionReference = JsonHelper.write(restrict(context.getTeamProjectCollectionReference()));
         this.teamProjectReference = JsonHelper.write(restrict(context.getTeamProjectReference()));
         this.gitRepository = JsonHelper.write(context.getGitRepository());
@@ -28,6 +31,7 @@ public class ServerContextState {
     public ServerContextBuilder createBuilder() throws IOException {
         return new ServerContextBuilder()
                 .type(this.type)
+                .userId(this.userId)
                 .collection(JsonHelper.read(this.teamProjectCollectionReference, TeamProjectCollectionReference.class))
                 .teamProject(JsonHelper.read(this.teamProjectReference, TeamProjectReference.class))
                 .repository(JsonHelper.read(this.gitRepository, GitRepository.class));
@@ -36,6 +40,7 @@ public class ServerContextState {
     //fields have to be public, so IntelliJ can write them to the persistent store
     public ServerContext.Type type = null;
     public String uri = null;
+    public String userId = null;
     public String teamProjectCollectionReference = null;
     public String teamProjectReference = null;
     public String gitRepository = null;
@@ -64,5 +69,14 @@ public class ServerContextState {
             newReference.setState(reference.getState());
         }
         return newReference;
+    }
+
+    // This method allows converting a UUID to String to help serialize
+    private String restrict(final UUID userId) {
+        if (userId != null) {
+            return userId.toString();
+        } else {
+            return StringUtils.EMPTY;
+        }
     }
 }

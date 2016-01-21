@@ -12,10 +12,12 @@ import com.microsoft.visualstudio.services.account.webapi.model.Account;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
+import java.util.UUID;
 
 public class ServerContextBuilder {
     private ServerContext.Type type;
     private AuthenticationInfo authenticationInfo;
+    private UUID userId;
     private URI uri;
     private TeamProjectCollectionReference teamProjectCollectionReference;
     private TeamProjectReference teamProjectReference;
@@ -34,6 +36,7 @@ public class ServerContextBuilder {
         this.teamProject(originalContext.getTeamProjectReference());
         this.gitRepository = originalContext.getGitRepository();
         this.authenticationInfo = originalContext.getAuthenticationInfo();
+        this.userId = originalContext.getUserId();
         this.client = originalContext.hasClient() ? originalContext.getClient() : null;
     }
 
@@ -62,6 +65,21 @@ public class ServerContextBuilder {
         return this;
     }
 
+    public ServerContextBuilder userId(final UUID userId) {
+        this.userId = userId;
+        return this;
+    }
+
+    public ServerContextBuilder userId(final String userId) {
+        try {
+            this.userId = UUID.fromString(userId);
+        } catch (Throwable t) {
+            //TODO: log
+            this.userId = null;
+        }
+        return this;
+    }
+
     public ServerContextBuilder collection(final TeamProjectCollectionReference teamProjectCollection) {
         this.teamProjectCollectionReference = teamProjectCollection;
         return this;
@@ -82,7 +100,7 @@ public class ServerContextBuilder {
     }
 
     public ServerContext buildWithClient(Client client) {
-        final ServerContext serverContext = new ServerContext(type, authenticationInfo, uri, client,
+        final ServerContext serverContext = new ServerContext(type, authenticationInfo, userId, uri, client,
                 teamProjectCollectionReference, teamProjectReference, gitRepository);
 
         return serverContext;

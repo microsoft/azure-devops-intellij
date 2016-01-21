@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Singleton class used to manage ServerContext objects.
@@ -196,6 +197,13 @@ public class ServerContextManager {
                 // Create a new context object and store it back in the manager
                 context = createServerContext(gitRemoteUrl, authenticationInfo);
             }
+        }
+
+        if (context != null && context.getUserId() == null) {
+            //set the user id
+            final UUID userId = VsoAuthenticationProvider.getInstance().getUserProfile(context.getAuthenticationInfo()).getId();
+            final ServerContextBuilder b = new ServerContextBuilder(context).userId(userId);
+            context = b.build();
         }
 
         return context;

@@ -257,6 +257,30 @@ public class TfPluginBundle {
     public static final String KEY_VCS_PR_LOADING = "VcsPullRequestsTab.Loading";
     @NonNls
     public static final String KEY_VCS_PR_LAST_REFRESHED_AT = "VcsPullRequestsTab.LastRefreshedAt";
+    @NonNls
+    public static final String KEY_VCS_PR_NOT_AUTHENTICATED = "VcsPullRequestsTab.NoAuthenticated";
+    @NonNls
+    public static final String KEY_VCS_PR_AUTHENTICATING = "VcsPullRequestsTab.Authenticating";
+    @NonNls
+    public static final String KEY_VCS_PR_SIGN_IN = "VcsPullRequestsTab.SignIn";
+    @NonNls
+    public static final String KEY_VCS_PR_OPEN_IN_BROWSER = "VcsPullRequestsTab.OpenInBrowser";
+    @NonNls
+    public static final String KEY_VCS_PR_LOADING_ERRORS = "VcsPullRequestsTab.LoadingErrors";
+    @NonNls
+    public static final String KEY_VCS_PR_RETRY = "VcsPullRequestsTab.Retry";
+    @NonNls
+    public static final String KEY_VCS_PR_MERGE_FAILED = "VcsPullRequestsTab.Merge.Failed";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_NO_RESPONSE = "VcsPullRequestsTab.Reviewer.NoResponse";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_WAITING = "VcsPullRequestsTab.Reviewer.Waiting";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_APPROVED = "VcsPullRequestsTab.Reviewer.Approved";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_APPROVED_SUGGESTIONS = "VcsPullRequestsTab.Reviewer.Approved.Suggestions";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_REJECTED = "VcsPullRequestsTab.Reviewer.Rejected";
 
 
     //actions

@@ -32,6 +32,7 @@ import javax.ws.rs.client.ClientBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * This class holds all information needed to contact a TFS/VSO server except for
@@ -42,6 +43,7 @@ public class ServerContext {
 
     private final Type type;
     private final AuthenticationInfo authenticationInfo;
+    private final UUID userId;
     private final URI uri;
 
     // lazily initialized
@@ -81,7 +83,7 @@ public class ServerContext {
     /**
      * Use ServerContextBuilder to build a context. Only tests should call this constructor.
      */
-    protected ServerContext(final Type type, final AuthenticationInfo authenticationInfo, final URI uri,
+    protected ServerContext(final Type type, final AuthenticationInfo authenticationInfo, final UUID userId, final URI uri,
                             final Client client, final TeamProjectCollectionReference teamProjectCollectionReference,
                             final TeamProjectReference teamProjectReference,
                             final GitRepository gitRepository) {
@@ -89,6 +91,7 @@ public class ServerContext {
 
         this.type = type;
         this.authenticationInfo = authenticationInfo;
+        this.userId = userId;
         this.uri = uri;
         this.client = client;
         this.teamProjectCollectionReference = teamProjectCollectionReference;
@@ -117,6 +120,10 @@ public class ServerContext {
 
     public AuthenticationInfo getAuthenticationInfo() {
         return authenticationInfo;
+    }
+
+    public UUID getUserId() {
+        return userId;
     }
 
     public Type getType() {

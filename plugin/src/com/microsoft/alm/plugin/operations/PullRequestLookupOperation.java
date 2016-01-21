@@ -81,20 +81,23 @@ public class PullRequestLookupOperation extends Operation {
 
     protected void doLookup(final ServerContext context, final PullRequestScope scope) {
         final GitHttpClient gitHttpClient = context.getGitHttpClient();
+        final PullRequestLookupResults results = scope == PullRequestScope.REQUESTED_BY_ME ? requestedByMeResults : assignedToMeResults;
+
+        //setup criteria for the query
         final GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria();
         criteria.setRepositoryId(context.getGitRepository().getId());
         criteria.setStatus(PullRequestStatus.ACTIVE);
         criteria.setIncludeLinks(false);
-
-        //TODO: update queries for getting pull requests correctly
-        if (scope == PullRequestScope.REQUESTED_BY_ME) {
-            final List<GitPullRequest> requestedByMe = gitHttpClient.getPullRequests(context.getGitRepository().getId(), criteria, 256, 0, 101);
-            requestedByMeResults.pullRequests.addAll(requestedByMe);
-            super.onLookupResults(requestedByMeResults);
-        } else if (scope == PullRequestScope.ASSIGNED_TO_ME) {
-            final List<GitPullRequest> assignedToMe = gitHttpClient.getPullRequests(context.getGitRepository().getId(), null, 256, 0, 101);
-            assignedToMeResults.pullRequests.addAll(assignedToMe);
-            super.onLookupResults(assignedToMeResults);
+        if(scope == PullRequestScope.REQUESTED_BY_ME) {
+            criteria.setCreatorId(context.getUserId());
+        } else {
+            criteria.setReviewerId(context.getUserId());
         }
+
+        //query server and add results
+        final List<GitPullRequest> pullRequests = gitHttpClient.getPullRequests(context.getGitRepository().getId(), criteria, 256, 0, 101);
+        results.pullRequests.addAll(pullRequests);
+        super.onLookupResults(results);
+
     }
 }

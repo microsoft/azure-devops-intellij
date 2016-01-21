@@ -40,12 +40,8 @@ public class VcsPullRequestsTab {
         form.addActionListener(listener);
     }
 
-    public void setLoading(final boolean loading) {
-        form.setLoading(loading);
-    }
-
-    public void setConnected(final boolean connected) {
-        form.setConnected(connected);
+    public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated, final boolean loading) {
+        form.setConnectionStatus(connected, authenticating, authenticated, loading);
     }
 
     public void setLastRefreshed(final Date lastRefreshed) {
@@ -54,5 +50,9 @@ public class VcsPullRequestsTab {
 
     public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {
         form.setPullRequestsTree(treeModel);
+    }
+
+    public void setLoadingErrors(final boolean loadingErrors) {
+        form.setLoadingErrors(loadingErrors);
     }
 }

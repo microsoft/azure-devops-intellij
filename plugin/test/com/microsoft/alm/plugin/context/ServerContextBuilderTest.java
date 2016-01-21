@@ -60,7 +60,7 @@ public class ServerContextBuilderTest {
         TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
         TeamProjectReference project = new TeamProjectReference();
         GitRepository repo = new GitRepository();
-        ServerContext originalContext = new ServerContext(ServerContext.Type.TFS, info, serverUri, null, collection, project, repo);
+        ServerContext originalContext = new ServerContext(ServerContext.Type.TFS, info, null, serverUri, null, collection, project, repo);
 
         ServerContextBuilder builder = new ServerContextBuilder(originalContext);
         ServerContext context = builder.build();
