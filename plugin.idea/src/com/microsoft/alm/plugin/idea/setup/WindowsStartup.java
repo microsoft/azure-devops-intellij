@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.setup;
 
+import com.google.common.collect.ImmutableMap;
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,16 +26,34 @@ import com.sun.jna.platform.win32.Win32Exception;
 public final class WindowsStartup {
     private static final Logger logger = LoggerFactory.getLogger(WindowsStartup.class);
     public static final String VSOI_KEY = "vsoi\\Shell\\Open\\Command";
-    private static final String INTELLIJ_KEY = "IntelliJIdeaProjectFile\\shell\\open\\command";
+
+    private static final String OS_ARCH = System.getProperty("os.arch");
+    private static final String BIT_64 = "64";
+    private static final String ANDROID_STUDIO_PRODUCT_NAME = "studio";
+    public static final String ANDROID_STUDIO_REGISTRY_KEY = "SOFTWARE\\Android Studio";
+    public static final String ANDROID_STUDIO_REGISTRY_VALUE = "Path";
+    public static final String ANDROID_STUDIO_EXE_PATH_64 = "\\bin\\studio64.exe \"%1\"";
+    public static final String ANDROID_STUDIO_EXE_PATH_32 = "\\bin\\studio32.exe \"%1\"";
+
+    // Maps an application's lowercase Product Name to it's Registry path which holds it's exe location.
+    // IDEA, PyCharm, and RubyMine have lowercase exe names but the others use camelcase. Android Studio
+    // is not included here because it uses an entirely different Registry setup.
+    private static final ImmutableMap<String, String> APP_REGISTRY_KEYS = ImmutableMap.<String, String>builder()
+            .put("idea", "Applications\\idea.exe\\shell\\open\\command")
+            .put("pycharm", "Applications\\pycharm.exe\\shell\\open\\command")
+            .put("phpstorm", "Applications\\PhpStorm.exe\\shell\\open\\command")
+            .put("webstorm", "Applications\\WebStorm.exe\\shell\\open\\command")
+            .put("rubymine", "Applications\\rubymine.exe\\shell\\open\\command")
+            .build();
 
     /**
      * Setup windows specific configurations upon plugin launch
      */
     public static void startup() {
         try {
-            // get most up-to-date IntelliJ exe
-            final String intellijExe = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, INTELLIJ_KEY, StringUtils.EMPTY);
-            final String command = createCommand(intellijExe);
+            final String productName = ApplicationNamesInfo.getInstance().getProductName();
+            final String appExe = findApplicationExe(productName);
+            final String command = createCommand(appExe);
 
             if (isValidExe(command) && !checkIfKeysExistAndMatch(command)) {
                 final File regeditFile = createRegeditFile(command);
@@ -50,14 +70,36 @@ public final class WindowsStartup {
     }
 
     /**
+     * Finds the application's exe path based on it's entry in the Registry. For most applications, a standard Registry location is used
+     * that contains the exe with an argument parameter. For Android Studio, there is no entry like that so the exe location is constructed
+     * by finding the application's directory and appending the correct 64/32 bit exe to it along with the argument parameter.
+     *
+     * @param productName application's product name
+     * @return path to application's exe along with argument parameter (i.e C:\Program Files\JetBRains\IntelliJ IDEA 14.1.4\bin\idea.exe "%1")
+     */
+    protected static String findApplicationExe(final String productName) {
+        if (StringUtils.equalsIgnoreCase(ANDROID_STUDIO_PRODUCT_NAME, productName)) {
+            // get the Android Studio directory location from the registry
+            final String androidExePath = Advapi32Util.registryGetStringValue(WinReg.HKEY_LOCAL_MACHINE,
+                    ANDROID_STUDIO_REGISTRY_KEY, ANDROID_STUDIO_REGISTRY_VALUE);
+            // if 64-bit JRE then return the path to the 64 bit exe else do the same but for the 32-bit exe
+            return OS_ARCH.contains(BIT_64) ? androidExePath + ANDROID_STUDIO_EXE_PATH_64 : androidExePath + ANDROID_STUDIO_EXE_PATH_32;
+        } else {
+            final String registryKey = APP_REGISTRY_KEYS.get(productName.toLowerCase());
+            // get most up-to-date app exe from the registry
+            return Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, registryKey, StringUtils.EMPTY);
+        }
+    }
+
+    /**
      * Check if vsoi registry keys exist already and matches current IntelliJ exe
      *
-     * @param intellijExe
+     * @param appExe
      * @return if keys exists or not
      */
-    protected static boolean checkIfKeysExistAndMatch(final String intellijExe) {
+    protected static boolean checkIfKeysExistAndMatch(final String appExe) {
         if (Advapi32Util.registryKeyExists(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY) &&
-                Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY, StringUtils.EMPTY).equals(intellijExe)) {
+                Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY, StringUtils.EMPTY).equals(appExe)) {
             return true;
         } else {
             return false;
@@ -85,11 +127,11 @@ public final class WindowsStartup {
     /**
      * Create VB script to run KeyCreator application as elevated
      *
-     * @param intellijExe
+     * @param appExe
      * @return script file
      * @throws IOException
      */
-    protected static File createRegeditFile(final String intellijExe) throws IOException {
+    protected static File createRegeditFile(final String appExe) throws IOException {
         final File script = File.createTempFile("CreateKeys", ".reg");
         final FileWriter fileWriter = new FileWriter(script);
         final BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
@@ -100,7 +142,7 @@ public final class WindowsStartup {
                             "[HKEY_CLASSES_ROOT\\vsoi]\r\n" +
                             "\"URL Protocol\"=\"\"\r\n\r\n" +
                             "[HKEY_CLASSES_ROOT\\vsoi\\Shell\\Open\\Command]\r\n" +
-                            "\"\"=\"" + intellijExe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
+                            "\"\"=\"" + appExe.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
         } finally {
             if (bufferedWriter != null) {
                 bufferedWriter.close();
