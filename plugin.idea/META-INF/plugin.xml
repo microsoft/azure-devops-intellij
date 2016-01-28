@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services (Preview)</name>
-    <version>0.94.1</version>
+    <version>0.95.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -29,16 +29,16 @@
       <br />
       <b>For More Information</b>
       <br />
-      See <a href="https://java.visualstudio.com/">Visual Studio Team Services – Java</a>
+      See <a href="https://java.visualstudio.com/Docs/tools/intelliJ">Visual Studio Team Services – Java</a>
       <br />
       <br />
       <i>Compiled with Java 1.6</i>
       <br />
-      <i>Compatible with IntelliJ IDEA 14 - 15 and Android Studio 1.2 - 1.4</i>
+      <i>Compatible with IntelliJ Ultimate and Community editions versions 14 and later and Android Studio 1.2 and later</i>
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.94.1 <i>Preview</i>
+      v 0.95.0 <i>Preview</i>
       <br />
       This release includes several incremental feature updates and bug fixes.
       <br />
