@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
@@ -64,7 +65,7 @@ public class ServerContextLookupListener implements Operation.Listener {
             operationDone();
             IdeaHelper.runOnUIThread(new Runnable() {
                 public void run() {
-                    pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED));
+                    pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_LOOKUP_CANCELED));
                     pageModel.setLoading(false);
                 }
             });
@@ -74,8 +75,12 @@ public class ServerContextLookupListener implements Operation.Listener {
                     pageModel.appendContexts(lookupResults.getServerContexts());
 
                     if (lookupResults.hasError()) {
-                        pageModel.addError(ModelValidationInfo.createWithMessage(
-                                LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError())));
+                        if (lookupResults.getError() instanceof TeamServicesException) {
+                            pageModel.addError(ModelValidationInfo.createWithMessage(
+                                    LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError())));
+                        } else {
+                            pageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_LOOKUP_ERRORS));
+                        }
                     }
                 }
             });

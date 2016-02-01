@@ -80,7 +80,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, "VSO.Auth.SessionExpired");
             put(TeamServicesException.KEY_VSO_AUTH_FAILED, "VSO.Auth.Failed");
             put(TeamServicesException.KEY_TFS_AUTH_FAILED, "TFS.Auth.Failed");
-            put(TeamServicesException.KEY_OPERATION_ERRORS, "Server.Operation.Errors");
+            put(TeamServicesException.KEY_OPERATION_ERRORS, "Operation.Lookup.Errors");
         }
     };
 

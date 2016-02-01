@@ -12,7 +12,6 @@ import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
-import com.microsoft.vss.client.core.model.VssResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,21 +154,12 @@ public class ServerContextLookupOperation extends Operation {
             //final List<TeamProjectReference> projects = client.getProjects();
             // -----------------------------------------------------
 
-            try {
-                final URI collectionURI = UrlHelper.createUri(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
-                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-                final List<GitRepository> gitRepositories = gitClient.getRepositories();
+            final URI collectionURI = UrlHelper.createUri(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
+            final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+            final List<GitRepository> gitRepositories = gitClient.getRepositories();
 
-                logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
-                addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
-            } catch (VssResourceNotFoundException e) {
-                logger.warn("doLookup: exception querying for Git repos", e);
-                if (context.getType() == ServerContext.Type.TFS) {
-                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, e);
-                } else {
-                    throw new RuntimeException(e);
-                }
-            }
+            logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+            addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
         }
     }
 

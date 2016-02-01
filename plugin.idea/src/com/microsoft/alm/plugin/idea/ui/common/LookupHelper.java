@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
@@ -27,10 +28,10 @@ public class LookupHelper {
     private static final Logger logger = LoggerFactory.getLogger(LookupHelper.class);
 
     public static void authenticateAndLoadTfsContexts(final LoginPageModel loginPageModel,
-                                               final ServerContextLookupPageModel lookupPageModel,
-                                               final AuthenticationProvider authenticationProvider,
-                                               final ServerContextLookupListener lookupListener,
-                                               final ServerContextLookupOperation.ContextScope scope) {
+                                                      final ServerContextLookupPageModel lookupPageModel,
+                                                      final AuthenticationProvider authenticationProvider,
+                                                      final ServerContextLookupListener lookupListener,
+                                                      final ServerContextLookupOperation.ContextScope scope) {
         loginPageModel.clearErrors();
 
         // Make sure we have a server url
@@ -78,9 +79,17 @@ public class LookupHelper {
                             // Log exception
                             if (throwable != null) {
                                 logger.warn("Connecting to TFS server failed", throwable);
+                                if (throwable instanceof TeamServicesException) {
+                                    loginPageModel.addError(ModelValidationInfo.createWithMessage(LocalizationServiceImpl.getInstance().getExceptionMessage(throwable)));
+                                } else {
+                                    loginPageModel.addError(ModelValidationInfo.createWithResource(LoginPageModel.PROP_SERVER_NAME,
+                                            TfPluginBundle.KEY_LOGIN_PAGE_ERRORS_TFS_CONNECT_FAILED, loginPageModel.getServerName()));
+                                }
+                                loginPageModel.signOut();
+                            } else {
+                                // Try to load the contexts
+                                loadTfsContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
                             }
-                            // Try to load the contexts
-                            loadTfsContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
                         }
                     });
                 }
@@ -89,10 +98,10 @@ public class LookupHelper {
     }
 
     public static void loadTfsContexts(final LoginPageModel loginPageModel,
-                                 final ServerContextLookupPageModel lookupPageModel,
-                                 final AuthenticationProvider authenticationProvider,
-                                 final ServerContextLookupListener lookupListener,
-                                 final ServerContextLookupOperation.ContextScope scope) {
+                                       final ServerContextLookupPageModel lookupPageModel,
+                                       final AuthenticationProvider authenticationProvider,
+                                       final ServerContextLookupListener lookupListener,
+                                       final ServerContextLookupOperation.ContextScope scope) {
         if (!authenticationProvider.isAuthenticated()) {
             loginPageModel.addError(ModelValidationInfo.createWithResource(LoginPageModel.PROP_SERVER_NAME,
                     TfPluginBundle.KEY_LOGIN_PAGE_ERRORS_TFS_CONNECT_FAILED, loginPageModel.getServerName()));
@@ -192,7 +201,7 @@ public class LookupHelper {
                     validationInfo = ModelValidationInfo.createWithMessage(
                             LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError()));
                 } else if (results.isCancelled()) {
-                    validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_ERRORS_LOOKUP_CANCELED);
+                    validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_LOOKUP_CANCELED);
                 } else {
                     validationInfo = ModelValidationInfo.NO_ERRORS;
                     // Take the list of accounts and use them to query the team projects

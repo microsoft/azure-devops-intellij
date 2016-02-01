@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.context.rest;
 
-import com.microsoft.vss.client.core.model.VssServiceResponseException;
+import com.microsoft.vss.client.core.model.VssException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
@@ -31,7 +31,20 @@ public class VstsHttpClient {
         if (r.getStatus() == 200) {
             return r.readEntity(resultClass);
         } else {
-            throw new VssServiceResponseException(r.getStatusInfo(), r.getStatusInfo().getReasonPhrase(), null);
+            throw new VstsHttpClientException(r.getStatus(), r.getStatusInfo().getReasonPhrase(), null);
+        }
+    }
+
+    public static class VstsHttpClientException extends VssException {
+        final int statusCode;
+
+        public VstsHttpClientException(final int statusCode, final String message, final Exception innerException) {
+            super(message, innerException);
+            this.statusCode = statusCode;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
         }
     }
 }

@@ -6,10 +6,10 @@ package com.microsoft.alm.plugin.authentication;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.http.auth.Credentials;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.auth.win.CurrentWindowsCredentials;
 import org.apache.http.impl.client.WinHttpClients;
 import org.slf4j.Logger;
@@ -105,8 +105,8 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
                     result = true;
                     break;
                 } catch (RuntimeException ex) {
-                    if (ex.getCause() != null && ex.getCause() instanceof HttpResponseException) {
-                        HttpResponseException responseException = (HttpResponseException) ex.getCause();
+                    if (ex.getCause() != null && ex.getCause() instanceof VstsHttpClient.VstsHttpClientException) {
+                        VstsHttpClient.VstsHttpClientException responseException = (VstsHttpClient.VstsHttpClientException) ex.getCause();
                         if (responseException.getStatusCode() == 401) {
                             continue;
                         }

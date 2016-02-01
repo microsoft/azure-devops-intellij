@@ -71,9 +71,10 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ERRORS_AUTH_NOT_SUCCESSFUL = "Errors.AuthNotSuccessful";
     @NonNls
-    public static final String KEY_OPERATION_ERRORS_LOOKUP_CANCELED = "Operation.Errors.LookupCanceled";
+    public static final String KEY_OPERATION_LOOKUP_CANCELED = "Operation.Lookup.Canceled";
     @NonNls
-    public static final String KEY_PAT_TOKEN_DESC = "PAT.TokenDesc";
+    public static final String KEY_OPERATION_LOOKUP_ERRORS = "Operation.Lookup.Errors";
+
 
     // Checkout dialog ui and models
     @NonNls

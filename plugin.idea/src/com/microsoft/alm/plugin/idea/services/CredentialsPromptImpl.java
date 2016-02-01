@@ -9,6 +9,7 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
@@ -96,8 +97,7 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
                         .uri(deploymentUrl).authentication(authenticationInfo).build();
         try {
-            //TODO we need to find a better REST endpoint to call, something light weight
-            context.getSoapServices().getCatalogService().getProjectCollections();
+            ServerContextManager.getInstance().validateServerConnection(context);
             // Save the authenticated url for later use
             authenticationUrl = deploymentUrl;
             return true;
@@ -110,4 +110,6 @@ public class CredentialsPromptImpl implements CredentialsPrompt {
             return false;
         }
     }
+
+
 }

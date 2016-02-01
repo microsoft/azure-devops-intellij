@@ -4,16 +4,20 @@
 package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.rest.ConnectionData;
+import com.microsoft.alm.plugin.context.rest.ServiceDefinition;
 import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
 import com.microsoft.alm.plugin.context.rest.VstsInfo;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.services.ServerContextStore;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollection;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
@@ -149,6 +153,78 @@ public class ServerContextManager {
         final List<ServerContext> contexts = getStore().restoreServerContexts();
         for (final ServerContext sc : contexts) {
             add(sc, false);
+        }
+    }
+
+    /**
+     * Validates a provided server context and if validation succeeds saves a server context with the user's team foundation Id
+     *
+     * @param context
+     */
+    public void validateServerConnection(final ServerContext context) {
+        if (context.getType() == ServerContext.Type.TFS) {
+            checkTfsVersionAndConnection(context);
+        } else {
+            //TODO: update for VSO when userId is added to the server context
+        }
+    }
+
+    private void checkTfsVersionAndConnection(final ServerContext context) throws TeamServicesException {
+        final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=IncludeServices&lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
+        final String TFS2015_NEW_SERVICE = "distributedtask";
+        final String TELEMETRY_CONNECTION_EVENT = "TfsConnection";
+        final String TELEMETRY_TFS_VERSION = "TFS.Version";
+        final String TELEMETRY_TFS2012_OR_OLDER = "TFS2012_or_older";
+        final String TELEMETRY_TFS2013 = "TFS2013";
+        final String TELEMETRY_TFS2015_OR_LATER = "TFS2015_or_later";
+
+        boolean supportedServerVersion = false;
+
+        //uri has to be the server uri
+        assert !UrlHelper.isGitRemoteUrl(context.getUri().toString());
+
+        try {
+            final ConnectionData data = VstsHttpClient.sendRequest(context.getClient(),
+                    context.getUri().toString().concat(CONNECTION_DATA_REST_API_PATH),
+                    ConnectionData.class);
+
+            if (data == null) {
+                throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
+            }
+
+            if (data.getLocationServiceData() != null && data.getLocationServiceData().getServiceDefinitions() != null) {
+                for (final ServiceDefinition s : data.getLocationServiceData().getServiceDefinitions()) {
+                    if (StringUtils.equalsIgnoreCase(s.getServiceType(), TFS2015_NEW_SERVICE)) {
+                        //TFS 2015 or higher
+                        supportedServerVersion = true;
+                        break;
+                    }
+                }
+
+                if (!supportedServerVersion) {
+                    //This is TFS 2013
+                    logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2013 server");
+                    TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                            new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2013).build());
+
+                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
+                }
+
+                //save the context - TODO: when we have user Id on server context, add userID before saving the context
+                TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                        new TfsTelemetryHelper.PropertyMapBuilder().success(true).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2015_OR_LATER).build());
+                ServerContextManager.getInstance().add(context);
+            }
+        } catch (com.microsoft.alm.plugin.context.rest.VstsHttpClient.VstsHttpClientException e) {
+            if (e.getStatusCode() == 404) {
+                //HTTP not found, so server does not have this endpoint i.e. TFS 2012 or older
+                logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2012 or older version server");
+                TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                        new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2012_OR_OLDER).build());
+                throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
