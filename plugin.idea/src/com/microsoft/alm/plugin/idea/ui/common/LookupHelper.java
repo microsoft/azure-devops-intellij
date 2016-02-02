@@ -22,7 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class LookupHelper {
     private static final Logger logger = LoggerFactory.getLogger(LookupHelper.class);
@@ -182,49 +184,63 @@ public class LookupHelper {
         loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         lookupPageModel.clearContexts();
 
-        final AccountLookupOperation accountLookupOperation = new AccountLookupOperation();
-        accountLookupOperation.addListener(new Operation.Listener() {
-            @Override
-            public void notifyLookupStarted() {
-                // nothing to do
-            }
-
-            @Override
-            public void notifyLookupCompleted() {
-                // nothing to do here, we are still loading contexts
-            }
-
-            @Override
-            public void notifyLookupResults(final Operation.Results results) {
-                final ModelValidationInfo validationInfo;
-                if (results.hasError()) {
-                    validationInfo = ModelValidationInfo.createWithMessage(
-                            LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError()));
-                } else if (results.isCancelled()) {
-                    validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_LOOKUP_CANCELED);
-                } else {
-                    validationInfo = ModelValidationInfo.NO_ERRORS;
-                    // Take the list of accounts and use them to query the team projects
-                    lookupListener.loadContexts(
-                            accountLookupOperation.castResults(results).getServerContexts(),
-                            scope);
+        if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
+                UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
+                UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName()))) {
+            //valid vso account url, only query for repos/projects in the specified account
+            final ServerContext vsoAccountContext = new ServerContextBuilder()
+                    .uri(loginPageModel.getServerName())
+                    .type(ServerContext.Type.VSO)
+                    .authentication(authenticationProvider.getAuthenticationInfo()).build();
+            final List<ServerContext> vsoContexts = new ArrayList<ServerContext>();
+            vsoContexts.add(vsoAccountContext);
+            lookupListener.loadContexts(vsoContexts, scope);
+        } else {
+            //lookup all accounts and query for repos/projects in all the accounts
+            final AccountLookupOperation accountLookupOperation = new AccountLookupOperation();
+            accountLookupOperation.addListener(new Operation.Listener() {
+                @Override
+                public void notifyLookupStarted() {
+                    // nothing to do
                 }
 
-                // If there was an error or cancellation message, send it back to the user
-                if (validationInfo != ModelValidationInfo.NO_ERRORS) {
-                    // Push this event back onto the UI thread
-                    IdeaHelper.runOnUIThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            loginPageModel.addError(validationInfo);
-                            loginPageModel.signOut();
-                        }
-                    });
+                @Override
+                public void notifyLookupCompleted() {
+                    // nothing to do here, we are still loading contexts
                 }
-            }
-        });
-        // Start the operation
-        accountLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
+
+                @Override
+                public void notifyLookupResults(final Operation.Results results) {
+                    final ModelValidationInfo validationInfo;
+                    if (results.hasError()) {
+                        validationInfo = ModelValidationInfo.createWithMessage(
+                                LocalizationServiceImpl.getInstance().getExceptionMessage(results.getError()));
+                    } else if (results.isCancelled()) {
+                        validationInfo = ModelValidationInfo.createWithResource(TfPluginBundle.KEY_OPERATION_LOOKUP_CANCELED);
+                    } else {
+                        validationInfo = ModelValidationInfo.NO_ERRORS;
+                        // Take the list of accounts and use them to query the team projects
+                        lookupListener.loadContexts(
+                                accountLookupOperation.castResults(results).getServerContexts(),
+                                scope);
+                    }
+
+                    // If there was an error or cancellation message, send it back to the user
+                    if (validationInfo != ModelValidationInfo.NO_ERRORS) {
+                        // Push this event back onto the UI thread
+                        IdeaHelper.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                loginPageModel.addError(validationInfo);
+                                loginPageModel.signOut();
+                            }
+                        });
+                    }
+                }
+            });
+            // Start the operation
+            accountLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
+        }
     }
 
 }
