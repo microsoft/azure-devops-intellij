@@ -3,8 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.ui.common.LookupHelper;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
@@ -15,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * This class implements the ImportPageModelImpl for Tfs
  */
 public class TfsImportPageModel extends ImportPageModelImpl {
-    private TfsAuthenticationProvider authenticationProvider;
+    private AuthenticationProvider authenticationProvider;
     private final static Logger logger = LoggerFactory.getLogger(TfsImportPageModel.class);
 
 
@@ -25,13 +28,22 @@ public class TfsImportPageModel extends ImportPageModelImpl {
         setConnected(false);
         setAuthenticating(false);
 
-        // If we have authenticated before, just use that one
-        authenticationProvider = TfsAuthenticationProvider.getInstance();
-        if (authenticationProvider.isAuthenticated()) {
-            setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
-            LookupHelper.loadTfsContexts(this, this,
-                    authenticationProvider, getTeamProjectProvider(),
-                    ServerContextLookupOperation.ContextScope.PROJECT);
+        if (!UrlHelper.isTeamServicesUrl(getServerName())) {
+            authenticationProvider = TfsAuthenticationProvider.getInstance();
+            if (authenticationProvider.isAuthenticated()) {
+                setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
+                LookupHelper.loadTfsContexts(this, this,
+                        authenticationProvider, getTeamProjectProvider(),
+                        ServerContextLookupOperation.ContextScope.PROJECT);
+            }
+        } else {
+            authenticationProvider = VsoAuthenticationProvider.getInstance();
+            if (authenticationProvider.isAuthenticated()) {
+                setServerNameInternal((authenticationProvider.getAuthenticationInfo().getServerUri()));
+                LookupHelper.loadVsoContexts(this, this,
+                        authenticationProvider, getTeamProjectProvider(),
+                        ServerContextLookupOperation.ContextScope.PROJECT);
+            }
         }
     }
 
@@ -48,8 +60,16 @@ public class TfsImportPageModel extends ImportPageModelImpl {
 
     @Override
     public void loadTeamProjects() {
-        LookupHelper.authenticateAndLoadTfsContexts(this, this,
-                authenticationProvider, getTeamProjectProvider(),
-                ServerContextLookupOperation.ContextScope.PROJECT);
+        if (!UrlHelper.isTeamServicesUrl(getServerName())) {
+            authenticationProvider = TfsAuthenticationProvider.getInstance();
+            LookupHelper.authenticateAndLoadTfsContexts(this, this,
+                    authenticationProvider, getTeamProjectProvider(),
+                    ServerContextLookupOperation.ContextScope.PROJECT);
+        } else {
+            authenticationProvider = VsoAuthenticationProvider.getInstance();
+            LookupHelper.authenticateAndLoadVsoContexts(this, this,
+                    authenticationProvider, getTeamProjectProvider(),
+                    ServerContextLookupOperation.ContextScope.PROJECT);
+        }
     }
 }

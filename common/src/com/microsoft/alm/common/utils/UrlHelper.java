@@ -68,12 +68,17 @@ public class UrlHelper {
     }
 
     public static boolean isVSO(final URI uri) {
-        final String host = uri.getHost().toLowerCase();
-        if (host.endsWith(HOST_VSO) || host.endsWith(HOST_TFS_ALL_IN)) {
-            return true;
-        } else {
-            return false;
+        if (uri != null && uri.getHost() != null) {
+            final String host = uri.getHost().toLowerCase();
+            if (StringUtils.endsWith(host, HOST_VSO) || StringUtils.endsWith(host, HOST_TFS_ALL_IN)) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    public static boolean isTeamServicesUrl(final String url) {
+        return UrlHelper.isVSO(UrlHelper.createUri(url));
     }
 
     public static boolean isGitRemoteUrl(final String gitRemoteUrl) {
