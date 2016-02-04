@@ -21,7 +21,10 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.*;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.annotations.MapAnnotation;
 import org.jetbrains.annotations.NotNull;
@@ -41,8 +44,7 @@ import java.util.Map;
 
 @State(
   name = "org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager",
-  storages = {@Storage(
-    file = StoragePathMacros.APP_CONFIG + "/tfs.xml")})
+  storages = {@Storage("tfs.xml")})
 public class TFSConfigurationManager implements PersistentStateComponent<TFSConfigurationManager.State> {
   private static final String TFS_NOTIFICATION_GROUP = "TFS";
 

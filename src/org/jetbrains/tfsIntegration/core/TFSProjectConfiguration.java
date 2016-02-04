@@ -26,7 +26,7 @@ import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-@State(name = "TFS", storages = @Storage(file = StoragePathMacros.WORKSPACE_FILE))
+@State(name = "TFS", storages = @Storage(StoragePathMacros.WORKSPACE_FILE))
 public class TFSProjectConfiguration implements PersistentStateComponent<TFSProjectConfiguration.ConfigurationBean> {
   private ConfigurationBean myConfigurationBean;
 
