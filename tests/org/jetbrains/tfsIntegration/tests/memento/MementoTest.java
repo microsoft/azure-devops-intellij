@@ -2,9 +2,9 @@ package org.jetbrains.tfsIntegration.tests.memento;
 
 import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.JDOMUtil;
-import com.intellij.openapi.util.JdomKt;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.util.JDOMCompare;
+import com.intellij.util.JdomKt;
 import junit.framework.TestCase;
 import org.jdom.Document;
 import org.jdom.Element;
