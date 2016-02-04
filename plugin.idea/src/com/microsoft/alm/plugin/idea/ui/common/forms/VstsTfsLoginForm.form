@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.microsoft.alm.plugin.idea.ui.common.forms.VstsTfsLoginForm">
+  <grid id="27dc6" binding="contentPanel" layout-manager="GridLayoutManager" row-count="11" column-count="9" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="706" height="439"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <vspacer id="96588">
+        <constraints>
+          <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+      <component id="b6470" class="com.microsoft.alm.plugin.idea.ui.controls.IconPanel" binding="iconPanel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="daa05" class="javax.swing.JLabel" binding="titleLabel">
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Checkout a Git repository"/>
+        </properties>
+      </component>
+      <hspacer id="cac89">
+        <constraints>
+          <grid row="0" column="3" row-span="1" col-span="6" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </hspacer>
+      <grid id="daf40" binding="browsePanel" layout-manager="GridLayoutManager" row-count="6" column-count="11" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="0" row-span="4" col-span="8" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="1" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title="Browse Visual Studio Team Services"/>
+        <children>
+          <component id="e78ba" class="com.microsoft.alm.plugin.idea.ui.controls.Hyperlink" binding="createAnAccountLink">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="8" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="VsoLoginForm.CreateAccount"/>
+            </properties>
+          </component>
+          <component id="e13a6" class="com.microsoft.alm.plugin.idea.ui.controls.WrappingLabel" binding="descriptionLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="11" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <enabled value="true"/>
+              <name value=""/>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="VsoLoginForm.Description"/>
+            </properties>
+          </component>
+          <vspacer id="77fdc">
+            <constraints>
+              <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
+          <vspacer id="77b9e">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
+          <component id="d3523" class="com.microsoft.alm.plugin.idea.ui.controls.Hyperlink" binding="signInLink">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="5" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="VsoLoginForm.SignIn"/>
+            </properties>
+          </component>
+          <component id="6745a" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value=""/>
+            </properties>
+          </component>
+          <component id="e4549" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value=""/>
+            </properties>
+          </component>
+          <component id="af0bd" class="com.microsoft.alm.plugin.idea.ui.controls.Hyperlink" binding="learnMoreLink">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="VsoLoginForm.LearnMore"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="229fa" binding="connectPanel" layout-manager="GridLayoutManager" row-count="7" column-count="8" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="5" column="0" row-span="5" col-span="8" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="1" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title="Connect to a Team Foundation Server or a Team Services Account"/>
+        <children>
+          <component id="a7c80" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Server URL or Account URL: "/>
+            </properties>
+          </component>
+          <component id="ca7a1" class="javax.swing.JTextField" binding="serverUrl">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="8" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="1" use-parent-layout="false">
+                <preferred-size width="149" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="575c8" class="javax.swing.JLabel" binding="exampleLabel">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="8" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Example: https://MyServer:8080/tfs or https://MyAccountName.visualstudio.com"/>
+            </properties>
+          </component>
+          <component id="3ae9a" class="com.microsoft.alm.plugin.idea.ui.controls.Hyperlink" binding="connectLink">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="8" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="TfsLoginForm.Connect"/>
+            </properties>
+          </component>
+          <vspacer id="2c639">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
+          <component id="3afbd" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value=""/>
+            </properties>
+          </component>
+          <component id="557f5" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value=""/>
+            </properties>
+          </component>
+          <component id="c9529" class="com.microsoft.alm.plugin.idea.ui.controls.Hyperlink">
+            <constraints>
+              <grid row="5" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Find my team services account URL..."/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

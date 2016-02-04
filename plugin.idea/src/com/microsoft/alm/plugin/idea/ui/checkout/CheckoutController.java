@@ -14,6 +14,7 @@ import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ValidationListener;
 import com.microsoft.alm.plugin.idea.ui.common.forms.TfsLoginForm;
 import com.microsoft.alm.plugin.idea.ui.common.forms.VsoLoginForm;
+import com.microsoft.alm.plugin.idea.ui.common.forms.VstsTfsLoginForm;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
@@ -38,7 +39,7 @@ public class CheckoutController implements Observer {
                         TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
                         TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_CLONE_BUTTON),
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
-                new CheckoutPageImpl(new VsoLoginForm(), new CheckoutForm(true)),
+                new CheckoutPageImpl(new VstsTfsLoginForm(), new CheckoutForm(true)),
                 new CheckoutPageImpl(new TfsLoginForm(), new CheckoutForm(false)),
                 new CheckoutModel(project, listener));
     }
@@ -84,8 +85,8 @@ public class CheckoutController implements Observer {
     private void setupDialog() {
         dialog.addTabPage(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_VSO_TAB),
                 vsoController.getPageAsPanel());
-        dialog.addTabPage(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TFS_TAB),
-                tfsController.getPageAsPanel());
+        /*dialog.addTabPage(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TFS_TAB),
+                tfsController.getPageAsPanel());*/
 
         dialog.addActionListener(new ActionListener() {
             @Override

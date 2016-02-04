@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Action;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -30,6 +31,7 @@ import java.util.Map;
  */
 public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
     private JTabbedPane tabPanel;
+    private JPanel panel;
     private ActionListenerContainer listenerContainer = new ActionListenerContainer();
     private ValidationListenerContainer validationListenerContainer = new ValidationListenerContainer();
     private final Project project;
@@ -81,15 +83,19 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
      */
     @Override
     protected JComponent createCenterPanel() {
-        tabPanel = new JTabbedPane();
-        tabPanel.setPreferredSize(new Dimension(JBUI.scale(500), JBUI.scale(600)));
+        //tabPanel = new JTabbedPane();
+        tabPanel = null;
+        panel = new JPanel();;
+        /*tabPanel.setPreferredSize(new Dimension(JBUI.scale(500), JBUI.scale(600)));
         tabPanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
                 doTabChangedAction();
             }
         });
-        return tabPanel;
+        return tabPanel;*/
+        panel.setPreferredSize(new Dimension(JBUI.scale(500), JBUI.scale(600)));
+        return panel;
     }
 
     @Nullable
@@ -126,6 +132,7 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
             SwingHelper.setMargin(component, JBUI.scale(10));
             tabPanel.addTab(text, component);
         }
+        panel.add(component);
     }
 
     @Override
@@ -133,7 +140,6 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
         if (tabPanel != null) {
             return tabPanel.getSelectedIndex();
         }
-
         return -1;
     }
 
