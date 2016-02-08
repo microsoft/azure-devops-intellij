@@ -112,7 +112,7 @@ public class TfsLoginForm {
         public void actionPerformed(ActionEvent e) {
           updateOnTypeChange();
           if (getCredentialsType() != Credentials.Type.NtlmNative) {
-            IdeFocusManager.findInstanceByComponent(myContentPane).requestFocus(myUsernameField, true);
+            IdeFocusManager.findInstanceByComponent(myContentPane).requestFocus(myUsernameField);
           }
         }
       });
