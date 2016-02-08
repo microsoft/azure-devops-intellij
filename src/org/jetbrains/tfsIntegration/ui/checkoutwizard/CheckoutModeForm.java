@@ -44,7 +44,7 @@ public class CheckoutModeForm {
     myAutoModeButton.addActionListener(new ActionListener() {
       public void actionPerformed(final ActionEvent e) {
         myEventDispatcher.getMulticaster().stateChanged(new ChangeEvent(this));
-        IdeFocusManager.findInstanceByComponent(myContentPanel).requestFocus(myWorkspaceNameField);
+        IdeFocusManager.findInstanceByComponent(myContentPanel).requestFocus(myWorkspaceNameField, true);
       }
     });
     myManualModeButton.addActionListener(new ActionListener() {
