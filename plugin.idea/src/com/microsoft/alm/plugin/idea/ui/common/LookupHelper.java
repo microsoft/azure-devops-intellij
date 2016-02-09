@@ -135,7 +135,18 @@ public class LookupHelper {
         if (authenticationProvider.isAuthenticated()) {
             loadVsoContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
         } else {
-            authenticationProvider.authenticateAsync(VsoAuthenticationProvider.VSO_AUTH_URL, new AuthenticationListener() {
+            final String vsoServerUrl;
+            //Check if the server name is a valid VSO account URL, user can get here by entering account URL on TFS tab
+            if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
+                    UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
+                    UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName()))) {
+                vsoServerUrl = loginPageModel.getServerName();
+            } else {
+                //User didn't type in account Url, so use the common auth URL for Team services
+                vsoServerUrl = VsoAuthenticationProvider.VSO_AUTH_URL;
+            }
+
+            authenticationProvider.authenticateAsync(vsoServerUrl, new AuthenticationListener() {
                 @Override
                 public void authenticating() {
                     IdeaHelper.runOnUIThread(new Runnable() {
@@ -184,10 +195,11 @@ public class LookupHelper {
         loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
         lookupPageModel.clearContexts();
 
+        //If the server name is a valid VSO account URL, only query for repositories/projects in the specified account
+        //user can get here by entering account URL on TFS tab
         if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
                 UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
                 UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName()))) {
-            //valid vso account url, only query for repos/projects in the specified account
             final ServerContext vsoAccountContext = new ServerContextBuilder()
                     .uri(loginPageModel.getServerName())
                     .type(ServerContext.Type.VSO)
@@ -196,7 +208,7 @@ public class LookupHelper {
             vsoContexts.add(vsoAccountContext);
             lookupListener.loadContexts(vsoContexts, scope);
         } else {
-            //lookup all accounts and query for repos/projects in all the accounts
+            //lookup all accounts and query for repositories/projects in all the accounts
             final AccountLookupOperation accountLookupOperation = new AccountLookupOperation();
             accountLookupOperation.addListener(new Operation.Listener() {
                 @Override

@@ -10,10 +10,11 @@ import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 
 import java.net.URI;
+import java.util.UUID;
 
 public class MockServerContext extends ServerContext {
 
     public MockServerContext(Type type, final AuthenticationInfo authenticationInfo, final URI serverUri, final TeamProjectCollectionReference collection, final TeamProjectReference project, final GitRepository repo) {
-        super(type, authenticationInfo, serverUri, null, collection, project, repo);
+        super(type, authenticationInfo, UUID.randomUUID(), serverUri, serverUri, null, collection, project, repo);
     }
 }

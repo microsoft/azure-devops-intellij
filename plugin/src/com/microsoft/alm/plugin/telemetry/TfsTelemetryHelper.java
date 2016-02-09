@@ -281,8 +281,12 @@ public class TfsTelemetryHelper {
         }
 
         private void add(final String key, final String value) {
-            // remove any newlines from the value field. Newlines currently cause the event to be lost in AppInsights
-            properties.put(key, value.replace("\r", "").replace("\n", " "));
+            if (value != null) {
+                // remove any newlines from the value field. Newlines currently cause the event to be lost in AppInsights
+                properties.put(key, value.replace("\r", "").replace("\n", " "));
+            } else {
+                properties.put(key, ""); //null values cause exceptions
+            }
         }
 
         @Override

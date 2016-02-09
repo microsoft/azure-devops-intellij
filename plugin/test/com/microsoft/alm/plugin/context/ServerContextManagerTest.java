@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.UUID;
 
 public class ServerContextManagerTest extends AbstractTest {
     @Test
@@ -203,7 +204,7 @@ public class ServerContextManagerTest extends AbstractTest {
         TeamProjectReference project = new TeamProjectReference();
         GitRepository repo = new GitRepository();
         repo.setRemoteUrl(gitUri.toString());
-        ServerContext context = new ServerContext(ServerContext.Type.TFS, info, gitUri, null, collection, project, repo);
+        ServerContext context = new ServerContext(ServerContext.Type.TFS, info, UUID.randomUUID(), gitUri, gitUri, null, collection, project, repo);
         manager.add(context);
 
         ServerContext testContext = manager.getAuthenticatedContext(gitUri.toString(), true);

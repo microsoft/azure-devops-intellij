@@ -245,6 +245,48 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_CREATE_PR_NO_VALID_TARGET_WARNING_MESSAGE = "CreatePullRequestDialog.NoValidTargetWarning.Message";
 
+    //Vcs Pull Requests tab
+    @NonNls
+    public static final String KEY_VCS_PR_TITLE = "VcsPullRequestsTab.Title";
+    @NonNls
+    public static final String KEY_VCS_PR_REQUESTED_BY_ME = "VcsPullRequestsTab.RequestedByMe";
+    @NonNls
+    public static final String KEY_VCS_PR_ASSIGNED_TO_ME = "VcsPullRequestsTab.AssignedToMe";
+    @NonNls
+    public static final String KEY_VCS_PR_NOT_CONNECTED = "VcsPullRequestsTab.NotConnected";
+    @NonNls
+    public static final String KEY_VCS_PR_LOADING = "VcsPullRequestsTab.Loading";
+    @NonNls
+    public static final String KEY_VCS_PR_LAST_REFRESHED_AT = "VcsPullRequestsTab.LastRefreshedAt";
+    @NonNls
+    public static final String KEY_VCS_PR_NOT_AUTHENTICATED = "VcsPullRequestsTab.NoAuthenticated";
+    @NonNls
+    public static final String KEY_VCS_PR_AUTHENTICATING = "VcsPullRequestsTab.Authenticating";
+    @NonNls
+    public static final String KEY_VCS_PR_SIGN_IN = "VcsPullRequestsTab.SignIn";
+    @NonNls
+    public static final String KEY_VCS_PR_OPEN_IN_BROWSER = "VcsPullRequestsTab.OpenInBrowser";
+    @NonNls
+    public static final String KEY_VCS_PR_LOADING_ERRORS = "VcsPullRequestsTab.LoadingErrors";
+    @NonNls
+    public static final String KEY_VCS_PR_MERGE_FAILED = "VcsPullRequestsTab.Merge.Failed";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_NO_RESPONSE = "VcsPullRequestsTab.Reviewer.NoResponse";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_WAITING = "VcsPullRequestsTab.Reviewer.Waiting";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_APPROVED = "VcsPullRequestsTab.Reviewer.Approved";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_APPROVED_SUGGESTIONS = "VcsPullRequestsTab.Reviewer.Approved.Suggestions";
+    @NonNls
+    public static final String KEY_VCS_PR_REVIEWER_REJECTED = "VcsPullRequestsTab.Reviewer.Rejected";
+    @NonNls
+    public static final String KEY_VCS_PR_SUMMARY = "VcsPullRequestsTab.PR.Summary";
+    @NonNls
+    public static final String KEY_VCS_PR_UNEXPECTED_ERRORS = "VcsPullRequestsTab.Unexpected.Errors";
+    @NonNls
+    public static final String KEY_VCS_PR_VIEW_DETAILS = "VcsPullRequestsTab.View.Details";
+
 
     //actions
     @NonNls

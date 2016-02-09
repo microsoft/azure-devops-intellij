@@ -33,8 +33,14 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
      * @return
      */
     public ServerContext completeSignIn(final ServerContext context) {
-        ServerContextManager.getInstance().add(context);
-        return context;
+        if (context.getType() == ServerContext.Type.TFS) {
+            //get authenticated user for the collection since user Id is different when authenticated to server vs collection
+            return ServerContextManager.getInstance().validateServerConnection(context);
+        } else {
+            //TODO: generate account level PAT for VSO
+            ServerContextManager.getInstance().add(context);
+            return context;
+        }
     }
 
     @Override

@@ -161,15 +161,61 @@ public class ServerContextManager {
      *
      * @param context
      */
-    public void validateServerConnection(final ServerContext context) {
+    public ServerContext validateServerConnection(final ServerContext context) {
+        ServerContext contextToValidate = context;
+
+        //If context.uri is remote git repo url, try to parse it if needed
+        if (UrlHelper.isGitRemoteUrl(context.getUri().toString()) && (
+                context.getServerUri() == null ||
+                        context.getTeamProjectCollectionReference() == null ||
+                        context.getGitRepository() == null)) {
+            //parse url
+            Validator validator = new Validator(context.getClient());
+            if (validator.validate(context.getUri().toString())) {
+                contextToValidate = new ServerContextBuilder(context)
+                        .serverUri(validator.getServerUrl())
+                        .collection(validator.getCollection())
+                        .repository(validator.getRepository())
+                        .build();
+            } else {
+                //failed to parse
+                contextToValidate = null;
+            }
+        }
+
         if (context.getType() == ServerContext.Type.TFS) {
-            checkTfsVersionAndConnection(context);
+            return checkTfsVersionAndConnection(contextToValidate);
         } else {
-            //TODO: update for VSO when userId is added to the server context
+            return checkVstsConnection(contextToValidate);
         }
     }
 
-    private void checkTfsVersionAndConnection(final ServerContext context) throws TeamServicesException {
+
+    private ServerContext checkVstsConnection(final ServerContext context) throws TeamServicesException {
+        final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
+
+        if (context == null || context.getServerUri() == null) {
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
+        }
+
+        final ConnectionData data = VstsHttpClient.sendRequest(context.getClient(),
+                context.getServerUri().toString().concat(CONNECTION_DATA_REST_API_PATH),
+                ConnectionData.class);
+
+        if (data == null || data.getAuthenticatedUser() == null) {
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
+        }
+
+        //connection is verified, save the context
+        final ServerContext contextWithUserId = new ServerContextBuilder(context)
+                .userId(data.getAuthenticatedUser().getId())
+                .build();
+        add(contextWithUserId);
+
+        return contextWithUserId;
+    }
+
+    private ServerContext checkTfsVersionAndConnection(final ServerContext context) throws TeamServicesException {
         final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=IncludeServices&lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
         final String TFS2015_NEW_SERVICE = "distributedtask";
         final String TELEMETRY_CONNECTION_EVENT = "TfsConnection";
@@ -178,42 +224,51 @@ public class ServerContextManager {
         final String TELEMETRY_TFS2013 = "TFS2013";
         final String TELEMETRY_TFS2015_OR_LATER = "TFS2015_or_later";
 
-        boolean supportedServerVersion = false;
-
-        //uri has to be the server uri
-        assert !UrlHelper.isGitRemoteUrl(context.getUri().toString());
+        if (context == null || context.getServerUri() == null) {
+            throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
+        }
 
         try {
+            final String urlForConnectionData;
+            if (context.getTeamProjectCollectionReference() != null) {
+                urlForConnectionData = UrlHelper.getCollectionURI(context.getServerUri(),
+                        context.getTeamProjectCollectionReference().getName()).toString();
+            } else {
+                urlForConnectionData = context.getServerUri().toString();
+            }
             final ConnectionData data = VstsHttpClient.sendRequest(context.getClient(),
-                    context.getUri().toString().concat(CONNECTION_DATA_REST_API_PATH),
+                    urlForConnectionData.concat(UrlHelper.URL_SEPARATOR).concat(CONNECTION_DATA_REST_API_PATH),
                     ConnectionData.class);
 
-            if (data == null) {
+            if (data == null || data.getAuthenticatedUser() == null) {
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
             }
 
             if (data.getLocationServiceData() != null && data.getLocationServiceData().getServiceDefinitions() != null) {
                 for (final ServiceDefinition s : data.getLocationServiceData().getServiceDefinitions()) {
                     if (StringUtils.equalsIgnoreCase(s.getServiceType(), TFS2015_NEW_SERVICE)) {
-                        //TFS 2015 or higher
-                        supportedServerVersion = true;
-                        break;
+                        //TFS 2015 or higher, save the context with userId
+                        final ServerContext contextWithUserId = new ServerContextBuilder(context)
+                                .userId(data.getAuthenticatedUser().getId())
+                                .build();
+                        add(contextWithUserId);
+                        final ServerContext lastUsedTfsContext = new ServerContextBuilder(contextWithUserId)
+                                .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).build();
+                        add(lastUsedTfsContext);
+
+                        TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                                new TfsTelemetryHelper.PropertyMapBuilder().success(true).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2015_OR_LATER).build());
+
+                        return contextWithUserId;
                     }
                 }
 
-                if (!supportedServerVersion) {
-                    //This is TFS 2013
-                    logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2013 server");
-                    TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
-                            new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2013).build());
-
-                    throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
-                }
-
-                //save the context - TODO: when we have user Id on server context, add userID before saving the context
+                //This is TFS 2013
+                logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2013 server");
                 TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
-                        new TfsTelemetryHelper.PropertyMapBuilder().success(true).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2015_OR_LATER).build());
-                ServerContextManager.getInstance().add(context);
+                        new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2013).build());
+
+                throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
             }
         } catch (com.microsoft.alm.plugin.context.rest.VstsHttpClient.VstsHttpClientException e) {
             if (e.getStatusCode() == 404) {
@@ -226,12 +281,16 @@ public class ServerContextManager {
                 throw new RuntimeException(e);
             }
         }
+
+        //unexpected case
+        logger.warn("checkTfsVersionAndConnection: Didn't match TFS 2015 or later, TFS 2013 or TFS 2012 or older server check: {}", context.getUri());
+        throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
     }
 
     /**
      * Get a fully authenticated context from the provided git remote url.
      * Note that if a context does not exist, one will be created and the user will be prompted if necessary.
-     * Run this on a background thread.
+     * Run this on a background thread, will hang if run on the UI thread
      */
     public ServerContext getAuthenticatedContext(final String gitRemoteUrl, final boolean setAsActiveContext) {
         try {
@@ -260,7 +319,9 @@ public class ServerContextManager {
 
         // Get matching context from manager
         ServerContext context = get(gitRemoteUrl);
-        if (context == null || context.getGitRepository() == null ||
+        if (context == null ||
+                context.getGitRepository() == null ||
+                context.getServerUri() == null ||
                 !StringUtils.equalsIgnoreCase(context.getUsableGitUrl(), gitRemoteUrl)) {
             context = null;
         }
@@ -269,9 +330,16 @@ public class ServerContextManager {
             // Manager didn't have a matching context, so try to look up the auth info
             final AuthenticationInfo authenticationInfo = getAuthenticationInfo(gitRemoteUrl, true);
             if (authenticationInfo != null) {
-                // Create a new context object and store it back in the manager
-                context = createServerContext(gitRemoteUrl, authenticationInfo);
+                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(gitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
+                final ServerContext contextToValidate = new ServerContextBuilder()
+                        .type(type).uri(gitRemoteUrl).authentication(authenticationInfo).build();
+                context = validateServerConnection(contextToValidate);
             }
+        }
+
+        if (context != null && context.getUserId() == null) {
+            //validate the context and save it with userId
+            context = validateServerConnection(context);
         }
 
         return context;
@@ -364,33 +432,19 @@ public class ServerContextManager {
         return TfsAuthenticationProvider.getInstance();
     }
 
-    private ServerContext createServerContext(final String gitRemoteUrl, final AuthenticationInfo authenticationInfo) {
-        final ServerContext.Type type = UrlHelper.isVSO(UrlHelper.createUri(gitRemoteUrl))
-                ? ServerContext.Type.VSO : ServerContext.Type.TFS;
-        final Client client = ServerContext.getClient(type, authenticationInfo);
-        final Validator validator = new Validator(client);
-        if (validator.validate(gitRemoteUrl)) {
-            final ServerContextBuilder builder = new ServerContextBuilder()
-                    .type(type)
-                    .uri(gitRemoteUrl)
-                    .authentication(authenticationInfo)
-                    .teamProject(validator.getRepository().getProjectReference())
-                    .repository(validator.getRepository())
-                    .collection(validator.getCollection());
-            return builder.buildWithClient(client);
-        }
-
-        return null;
-    }
-
     private static class Validator implements UrlHelper.ParseResultValidator {
         private final static String REPO_INFO_URL_PATH = "/vsts/info";
+        private String serverUrl;
         private final Client client;
         private GitRepository repository;
         private TeamProjectCollection collection;
 
         public Validator(final Client client) {
             this.client = client;
+        }
+
+        public String getServerUrl() {
+            return serverUrl;
         }
 
         public GitRepository getRepository() {
@@ -432,6 +486,8 @@ public class ServerContextManager {
                     return false;
                 }
 
+                serverUrl = vstsInfo.getServerUrl();
+
                 collection = new TeamProjectCollection();
                 collection.setId(vstsInfo.getCollectionReference().getId());
                 collection.setName(vstsInfo.getCollectionReference().getName());
@@ -457,6 +513,7 @@ public class ServerContextManager {
         @Override
         public boolean validate(final UrlHelper.ParseResult parseResult) {
             try {
+                serverUrl = parseResult.getServerUrl();
                 final URI collectionUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(parseResult.getCollectionUrl()));
                 final GitHttpClient gitClient = new GitHttpClient(client, collectionUri);
                 // Get the repository object and team project

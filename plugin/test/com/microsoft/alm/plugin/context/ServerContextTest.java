@@ -27,7 +27,7 @@ import java.util.Map;
 public class ServerContextTest extends AbstractTest {
     @Test
     public void constructor() {
-        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null);
+        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null, null, null);
         Assert.assertEquals(ServerContext.Type.TFS, context.getType());
         Assert.assertNull(context.getAuthenticationInfo());
         Assert.assertNull(context.getUri());
@@ -42,7 +42,7 @@ public class ServerContextTest extends AbstractTest {
         TeamProjectCollectionReference collection = new TeamProjectCollectionReference();
         TeamProjectReference project = new TeamProjectReference();
         GitRepository repo = new GitRepository();
-        ServerContext context2 = new ServerContext(ServerContext.Type.TFS, info, serverUri, null, collection, project, repo);
+        ServerContext context2 = new ServerContext(ServerContext.Type.TFS, info, null, serverUri, serverUri, null, collection, project, repo);
         Assert.assertEquals(ServerContext.Type.TFS, context.getType());
         Assert.assertEquals(info, context2.getAuthenticationInfo());
         Assert.assertEquals(serverUri, context2.getUri());
@@ -55,7 +55,7 @@ public class ServerContextTest extends AbstractTest {
 
     @Test
     public void isDisposed() {
-        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null);
+        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null, null, null);
         Assert.assertFalse(context.isDisposed());
 
         // make sure checkDisposed does not throw here
@@ -78,7 +78,7 @@ public class ServerContextTest extends AbstractTest {
 
     @Test
     public void clientMethods() {
-        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null);
+        ServerContext context = new ServerContext(ServerContext.Type.TFS, null, null, null, null, null, null, null, null);
         // getHttpClient should return null because there is no AuthInfo
         final HttpClient httpClient = context.getHttpClient();
         Assert.assertNull(httpClient);

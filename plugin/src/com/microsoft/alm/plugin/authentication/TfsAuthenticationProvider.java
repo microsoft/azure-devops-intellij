@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.authentication;
 
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
 import com.microsoft.alm.plugin.services.CredentialsPrompt;
@@ -123,19 +121,6 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
                 TfsAuthenticationProvider.getInstance().clearAuthenticationDetails();
                 AuthenticationListener.Helper.authenticated(listener, null, error);
             } else {
-                // We have a valid authenticatedContext, remember it (with both URLs)
-                ServerContextManager.getInstance().add(
-                        new ServerContextBuilder().type(ServerContext.Type.TFS)
-                                .uri(newAuthenticationInfo.getServerUri())
-                                .authentication(newAuthenticationInfo)
-                                .build(),
-                        false);
-                ServerContextManager.getInstance().add(
-                        new ServerContextBuilder().type(ServerContext.Type.TFS)
-                                .uri(TFS_LAST_USED_URL)
-                                .authentication(newAuthenticationInfo)
-                                .build(),
-                        false);
                 AuthenticationListener.Helper.authenticated(listener, newAuthenticationInfo, null);
             }
         }

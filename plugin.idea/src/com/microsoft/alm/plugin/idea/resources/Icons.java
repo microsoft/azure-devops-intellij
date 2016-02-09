@@ -20,4 +20,9 @@ public class Icons {
     public static final Icon WindowsAccount = load("/icons/windows-account.png");
     public static final Icon VsoAccount = load("/icons/vso-account.png");
 
+    //pull requests tab
+    public static final Icon PR_STATUS_SUCCEEDED = load("/icons/pr-status-succeeded.png");
+    public static final Icon PR_STATUS_FAILED = load("/icons/pr-status-failed.png");
+    public static final Icon PR_STATUS_NO_RESPONSE = load("/icons/pr-status-noresponse.png");
+    public static final Icon PR_STATUS_WAITING = load("/icons/pr-status-waiting.png");
 }

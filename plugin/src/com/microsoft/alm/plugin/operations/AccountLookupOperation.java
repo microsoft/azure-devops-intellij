@@ -11,7 +11,6 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
 import com.microsoft.visualstudio.services.account.webapi.model.Account;
-import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +50,6 @@ public class AccountLookupOperation extends Operation {
                 return;
             }
 
-            final Profile me = VsoAuthenticationProvider.getInstance().getAuthenticatedUserProfile();
             final ServerContext vsoDeploymentContext = ServerContextManager.getInstance().get(VsoAuthenticationProvider.VSO_AUTH_URL);
             if (!VsoAuthenticationProvider.getInstance().isAuthenticated() ||
                     vsoDeploymentContext == null || vsoDeploymentContext.getType() == ServerContext.Type.TFS) {
@@ -62,13 +60,14 @@ public class AccountLookupOperation extends Operation {
 
             final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
                     UrlHelper.createUri(VsoAuthenticationProvider.VSO_AUTH_URL));
-            List<Account> accounts = accountHttpClient.getAccounts(me.getId());
+            List<Account> accounts = accountHttpClient.getAccounts(vsoDeploymentContext.getUserId());
             final AccountLookupResults results = new AccountLookupResults();
             for (final Account a : accounts) {
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
                                 .accountUri(a)
                                 .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo())
+                                .userId(vsoDeploymentContext.getUserId())
                                 .build();
                 results.serverContexts.add(accountContext);
             }

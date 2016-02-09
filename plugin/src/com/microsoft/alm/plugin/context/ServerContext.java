@@ -32,6 +32,7 @@ import javax.ws.rs.client.ClientBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 
 /**
  * This class holds all information needed to contact a TFS/VSO server except for
@@ -42,7 +43,9 @@ public class ServerContext {
 
     private final Type type;
     private final AuthenticationInfo authenticationInfo;
+    private final UUID userId;
     private final URI uri;
+    private final URI serverUri;
 
     // lazily initialized
     private CloseableHttpClient httpClient;
@@ -81,15 +84,17 @@ public class ServerContext {
     /**
      * Use ServerContextBuilder to build a context. Only tests should call this constructor.
      */
-    protected ServerContext(final Type type, final AuthenticationInfo authenticationInfo, final URI uri,
-                            final Client client, final TeamProjectCollectionReference teamProjectCollectionReference,
+    protected ServerContext(final Type type, final AuthenticationInfo authenticationInfo, final UUID userId, final URI uri,
+                            final URI serverUri, final Client client, final TeamProjectCollectionReference teamProjectCollectionReference,
                             final TeamProjectReference teamProjectReference,
                             final GitRepository gitRepository) {
         assert type != null;
 
         this.type = type;
         this.authenticationInfo = authenticationInfo;
+        this.userId = userId;
         this.uri = uri;
+        this.serverUri = serverUri;
         this.client = client;
         this.teamProjectCollectionReference = teamProjectCollectionReference;
         this.teamProjectReference = teamProjectReference;
@@ -102,6 +107,10 @@ public class ServerContext {
 
     public URI getUri() {
         return uri;
+    }
+
+    public URI getServerUri() {
+        return serverUri;
     }
 
     // The url string obtained from the REST SDK is not encoded.
@@ -117,6 +126,10 @@ public class ServerContext {
 
     public AuthenticationInfo getAuthenticationInfo() {
         return authenticationInfo;
+    }
+
+    public UUID getUserId() {
+        return userId;
     }
 
     public Type getType() {
@@ -216,26 +229,12 @@ public class ServerContext {
     }
 
     public synchronized GitHttpClient getGitHttpClient() {
-        if (teamProjectCollectionReference == null) {
-            // We don't have enough context to create a GitHttpClient
-            return null;
+        if (teamProjectCollectionReference != null) {
+            final URI collectionUri = UrlHelper.getCollectionURI(serverUri, teamProjectCollectionReference.getName());
+            final GitHttpClient gitClient = new GitHttpClient(getClient(), collectionUri);
+            return gitClient;
         }
-
-        // Get the collection name. Find it in the uri. Use that as the collection URI.
-        final String collectionName = teamProjectCollectionReference.getName().toLowerCase();
-        final String uri = UrlHelper.asString(getUri()).toLowerCase();
-        final int index = uri.indexOf(UrlHelper.URL_SEPARATOR + collectionName);
-        if (index >= 0) {
-            // Get the index of the next char
-            final int endIndex = index + 1 + collectionName.length();
-            // Make sure the collection name is terminated by the end of the uri or a uri separator
-            if (endIndex == uri.length() || uri.charAt(endIndex) == UrlHelper.URL_SEPARATOR.charAt(0)) {
-                final String collectionUri = uri.substring(0, endIndex);
-                final GitHttpClient gitClient = new GitHttpClient(getClient(), UrlHelper.createUri(collectionUri));
-                return gitClient;
-            }
-        }
-
+        // We don't have enough context to create a GitHttpClient
         return null;
     }
 

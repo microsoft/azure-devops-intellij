@@ -685,7 +685,11 @@ public class CreatePullRequestModel extends AbstractModel {
     }
 
     private void notifyError(final Project project, final String title, final String message) {
-        VcsNotifier.getInstance(project).notifyError(title, message);
+        if (message != null) {
+            VcsNotifier.getInstance(project).notifyError(title, message);
+        } else {
+            VcsNotifier.getInstance(project).notifyError(title, "");
+        }
     }
 
     private void notifySuccess(final Project project, final String title, final String message) {

@@ -93,6 +93,10 @@ public class UrlHelper {
         return UrlHelper.createUri("https://" + accountName + "." + HOST_VSO); //TODO: how to get account url correctly?
     }
 
+    public static URI getCollectionURI(final URI serverUri, final String collectionName) {
+        return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName));
+    }
+
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
         if (remoteUrl1 != null && remoteUrl2 != null) {
             return StringUtils.equalsIgnoreCase(remoteUrl1.getAuthority(), remoteUrl2.getAuthority());

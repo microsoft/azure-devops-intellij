@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.common.utils.SystemHelper;
-import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -13,11 +12,10 @@ import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
 import com.microsoft.tf.common.authentication.aad.TokenScope;
 import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
 import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
-import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
-import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationCallback;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,23 +95,42 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
                     if (result == null) {
                         //User closed the browser window without signing in
-                        clearAuthenticationDetails();
                         authenticationInfo = null;
+                        clearAuthenticationDetails();
+                        AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
                     } else {
-                        final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
-                        final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                AuthHelper.getEmail(result), SystemHelper.getComputerName(), SystemHelper.getCurrentDateTimeString());
-                        final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
-                                Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
-                        authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
-                        ServerContextManager.getInstance().add(
-                                new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
-                                        .uri(VSO_AUTH_URL)
-                                        .authentication(authenticationInfo)
-                                        .build(),
-                                false);
+                        try {
+                            final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
+                            final String tokenDescription = String.format(TOKEN_DESCRIPTION,
+                                    AuthHelper.getEmail(result), SystemHelper.getComputerName(), SystemHelper.getCurrentDateTimeString());
+                            final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
+                                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
+                            authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
+
+                            //save for VSO_Deployment
+                            ServerContextManager.getInstance().validateServerConnection(
+                                    new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
+                                            .uri(VSO_AUTH_URL)
+                                            .authentication(authenticationInfo)
+                                            .build());
+
+                            if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
+                                //save for the specific server url
+                                ServerContextManager.getInstance().validateServerConnection(
+                                        new ServerContextBuilder().type(ServerContext.Type.VSO)
+                                                .uri(serverUri)
+                                                .authentication(authenticationInfo)
+                                                .build());
+                            }
+
+                            //success
+                            AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
+                        } catch (Throwable t) {
+                            logger.warn("authenticateAsync.onSuccess: Failed to setup PAT after authenticating", t);
+                            clearAuthenticationDetails();
+                            AuthenticationListener.Helper.authenticated(listener, null, t);
+                        }
                     }
-                    AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
                 }
 
                 @Override
@@ -125,33 +142,6 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         } catch (IOException e) {
             clearAuthenticationDetails();
             AuthenticationListener.Helper.authenticated(listener, null, e);
-        }
-    }
-
-    /**
-     * Retrieves user profile of signed in user, if successful, saves the current VSO_DEPLOYMENT context
-     *
-     * @return user profile if successfully authenticated, else throws an exception
-     */
-    public Profile getAuthenticatedUserProfile() {
-        final ServerContext context = new ServerContextBuilder()
-                .type(ServerContext.Type.VSO_DEPLOYMENT)
-                .authentication(getAuthenticationInfo())
-                .uri(VSO_AUTH_URL)
-                .build();
-        final AccountHttpClient accountHttpClient = new AccountHttpClient(context.getClient(), context.getUri());
-        try {
-            final Profile me = accountHttpClient.getMyProfile();
-            // Only update the lastUsedContext if there is no current lastUsedContext
-            ServerContextManager.getInstance().add(context,
-                    ServerContextManager.getInstance().lastUsedContextIsEmpty());
-
-            return me;
-        } catch (Throwable t) {
-            //failed to retrieve user profile, auth data is invalid, possible that token was revoked or expired
-            logger.warn("getAuthenticatedUserProfile exception", t);
-            clearAuthenticationDetails();
-            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, t);
         }
     }
 }

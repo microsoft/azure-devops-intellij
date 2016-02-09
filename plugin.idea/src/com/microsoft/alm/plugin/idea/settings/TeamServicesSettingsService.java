@@ -77,10 +77,10 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
                     final AuthenticationInfo authenticationInfo = TeamServicesSecrets.load(key);
                     if (authenticationInfo != null) {
                         serverContexts.add(contextState.createBuilder()
-                                .uri(contextState.uri)
                                 .authentication(authenticationInfo)
                                 .build());
                     }
+
                 } catch (final Throwable restoreThrowable) {
                     logger.warn("Failed to restore server context", restoreThrowable);
                     // attempt to clean up left over data
