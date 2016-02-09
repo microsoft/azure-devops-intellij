@@ -97,7 +97,7 @@ subprojects {
     dependencies {
         ideaSdkLibs fileTree(dir: "$ideaSdk", include: '*.jar')
         git4ideaLibs fileTree(dir: "$git4idea", include: '*.jar')
-        codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
+        codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.1'
 
         compile group: 'com.microsoft.vss.sdk.httpclient', name: 'vss-http-client', version: '0.4.2-SNAPSHOT'
         compile group: 'com.microsoft.tf', name: 'aad-pat-generator', version: '1.0.1'
@@ -228,6 +228,6 @@ subprojects {
      * Static code analysis tools
      */
     findbugs {
-      toolVersion = "2.0.3"
+      toolVersion = "3.0.1"
     }
 }
