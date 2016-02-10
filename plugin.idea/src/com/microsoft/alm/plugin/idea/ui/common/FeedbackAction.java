@@ -22,10 +22,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class FeedbackAction extends AbstractAction {
+    public static final String CMD_SEND_SMILE = "sendSmile";
+    public static final String CMD_SEND_FROWN = "sendFrown";
+
     private final Project project;
     private final String feedbackContextInfo;
-    private static final String CMD_SEND_SMILE = "sendSmile";
-    private static final String CMD_SEND_FROWN = "sendFrown";
     private static final String URL_PRIVACY_POLICY = "http://go.microsoft.com/fwlink/?LinkID=277167"; // This is the same URL used by Visual Studio Send a Smile
 
     public FeedbackAction(final Project project, final String feedbackContextInfo) {
@@ -47,6 +48,36 @@ public class FeedbackAction extends AbstractAction {
         }
     }
 
+    public void sendFeedback(final boolean smile) {
+        final FeedbackDialog dialog = new FeedbackDialog(project, smile);
+
+        dialog.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (FeedbackForm.CMD_GOTO_PRIVACY.equalsIgnoreCase(e.getActionCommand())) {
+                    BrowserUtil.browse(URL_PRIVACY_POLICY);
+                }
+            }
+        });
+
+        if (dialog.showAndGet()) {
+            // Get comment and email and add telemetry entry
+            final String comment = dialog.getComment();
+            final String email = dialog.getEmail();
+            final String eventName = smile ? CMD_SEND_SMILE : CMD_SEND_FROWN;
+            TfsTelemetryHelper.getInstance().sendEvent(eventName,
+                    new TfsTelemetryHelper.PropertyMapBuilder()
+                            .activeServerContext()
+                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_COMMENT, comment)
+                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_EMAIL, email)
+                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_CONTEXT, feedbackContextInfo)
+                            .build());
+            VcsNotifier.getInstance(project).notifySuccess(
+                    TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE),
+                    TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_NOTIFICATION));
+        }
+    }
+
     private JMenuItem createMenuItem(final String resourceKey, final Icon icon, final String actionCommand) {
         final String text = TfPluginBundle.message(resourceKey);
         final JMenuItem menuItem = new JMenuItem(text, icon);
@@ -63,32 +94,6 @@ public class FeedbackAction extends AbstractAction {
 
     private void menuItemAction(final ActionEvent e) {
         final boolean smile = CMD_SEND_SMILE.equalsIgnoreCase(e.getActionCommand());
-        final FeedbackDialog dialog = new FeedbackDialog(project, smile);
-
-        dialog.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (FeedbackForm.CMD_GOTO_PRIVACY.equalsIgnoreCase(e.getActionCommand())) {
-                    BrowserUtil.browse(URL_PRIVACY_POLICY);
-                }
-            }
-        });
-
-        if (dialog.showAndGet()) {
-            // Get comment and email and add telemetry entry
-            final String comment = dialog.getComment();
-            final String email = dialog.getEmail();
-            final String eventName = e.getActionCommand();
-            TfsTelemetryHelper.getInstance().sendEvent(eventName,
-                    new TfsTelemetryHelper.PropertyMapBuilder()
-                            .activeServerContext()
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_COMMENT, comment)
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_EMAIL, email)
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_CONTEXT, feedbackContextInfo)
-                            .build());
-            VcsNotifier.getInstance(project).notifySuccess(
-                    TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE),
-                    TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_NOTIFICATION));
-        }
+        sendFeedback(smile);
     }
 }

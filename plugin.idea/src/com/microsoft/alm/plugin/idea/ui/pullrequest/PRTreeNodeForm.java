@@ -3,10 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.intellij.ui.JBColor;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 
@@ -22,26 +23,18 @@ public class PRTreeNodeForm {
     private JPanel panel;
     private JLabel summaryLabel;
 
-    public PRTreeNodeForm(final boolean selected) {
+    public PRTreeNodeForm(final boolean selected, final boolean hasFocus) {
         SwingHelper.setMargin(panel, JBUI.scale(5));
+        panel.setBackground(selected ?
+                (hasFocus ? UIUtil.getTreeSelectionBackground() : UIUtil.getTreeUnfocusedSelectionBackground())
+                : UIUtil.getTreeBackground());
 
-        if (selected) {
-            summaryLabel.setForeground(JBColor.white);
-            titleLabel.setForeground(JBColor.WHITE);
-            panel.setBackground(JBColor.blue);
-        } else {
-            summaryLabel.setForeground(JBColor.GRAY);
-            titleLabel.setForeground(JBColor.BLACK);
-            panel.setBackground(JBColor.WHITE);
-        }
+        titleLabel.setForeground(selected && hasFocus ? UIUtil.getTreeSelectionForeground() : UIUtil.getTreeTextForeground());
+        summaryLabel.setForeground(selected && hasFocus ? UIUtil.getTreeSelectionForeground() : SimpleTextAttributes.GRAY_ATTRIBUTES.getFgColor());
     }
 
     public JComponent getPanel() {
         return panel;
-    }
-
-    public void setPRTitle(final String title) {
-        titleLabel.setText(title);
     }
 
     public void setStatus(final String title, final String statusText, final Icon statusIcon) {

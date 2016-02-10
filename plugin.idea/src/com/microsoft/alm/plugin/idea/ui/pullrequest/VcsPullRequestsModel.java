@@ -14,6 +14,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
+import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
@@ -190,6 +191,11 @@ public class VcsPullRequestsModel extends AbstractModel {
                         .concat(UrlHelper.URL_SEPARATOR).concat("pullrequests"));
             }
         }
+    }
+
+    public void sendFeedback(final boolean smile) {
+        final FeedbackAction action = new FeedbackAction(project, TfPluginBundle.KEY_VCS_PR_TITLE);
+        action.sendFeedback(smile);
     }
 
     public void appendPullRequests(final List<GitPullRequest> pullRequests, final PullRequestLookupOperation.PullRequestScope scope) {

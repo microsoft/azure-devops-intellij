@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -61,6 +62,10 @@ public class VcsPullRequestsController implements Observer, ActionListener {
                 //open current repository in web
                 model.openGitRepoLink();
             }
+        } else if (FeedbackAction.CMD_SEND_SMILE.equals(e.getActionCommand())) {
+            model.sendFeedback(true);
+        } else if (FeedbackAction.CMD_SEND_FROWN.equals(e.getActionCommand())) {
+            model.sendFeedback(false);
         }
     }
 

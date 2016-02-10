@@ -4,9 +4,12 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ui.treeStructure.Tree;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 
 import javax.swing.ImageIcon;
@@ -16,8 +19,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
-import javax.swing.JTree;
-import javax.swing.tree.TreeSelectionModel;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
@@ -27,12 +28,14 @@ import java.util.ResourceBundle;
 public class VcsPullRequestsForm {
     //controls
     private JPanel tabPanel;
-    private JTree pullRequestsTree;
+    private Tree pullRequestsTree;
     private JToolBar actionsToolbar;
     private JLabel statusLabel;
     private JButton addButton;
     private JButton refreshButton;
     private Hyperlink statusLink;
+    private JButton frownButton;
+    private JButton smileButton;
 
     //commands
     public static final String CMD_REFRESH = "refresh";
@@ -51,13 +54,15 @@ public class VcsPullRequestsForm {
     private void ensureInitialized() {
         if (!initialized) {
             pullRequestsTree.setCellRenderer(new PRTreeCellRenderer());
+            pullRequestsTree.setShowsRootHandles(true);
             pullRequestsTree.setRootVisible(false);
             pullRequestsTree.setRowHeight(0); //dynamically have row height computed for each row
-            pullRequestsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
             addButton.setActionCommand(CMD_CREATE_NEW_PULL_REQUEST);
             refreshButton.setActionCommand(CMD_REFRESH);
             statusLink.setActionCommand(CMD_STATUS_LINK);
+            smileButton.setActionCommand(FeedbackAction.CMD_SEND_SMILE);
+            frownButton.setActionCommand(FeedbackAction.CMD_SEND_FROWN);
 
             this.initialized = true;
         }
@@ -140,6 +145,8 @@ public class VcsPullRequestsForm {
         addButton.addActionListener(listener);
         refreshButton.addActionListener(listener);
         statusLink.addActionListener(listener);
+        smileButton.addActionListener(listener);
+        frownButton.addActionListener(listener);
     }
 
     //for unit testing
@@ -184,12 +191,26 @@ public class VcsPullRequestsForm {
         refreshButton.setText("");
         refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CheckoutDialog.RefreshButton.ToolTip"));
         actionsToolbar.add(refreshButton);
+        final Spacer spacer1 = new Spacer();
+        actionsToolbar.add(spacer1);
+        smileButton = new JButton();
+        smileButton.setBorderPainted(false);
+        smileButton.setIcon(new ImageIcon(getClass().getResource("/icons/smile.png")));
+        smileButton.setText("");
+        smileButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Feedback.Dialog.OkButtonText.Smile"));
+        actionsToolbar.add(smileButton);
+        frownButton = new JButton();
+        frownButton.setBorderPainted(false);
+        frownButton.setIcon(new ImageIcon(getClass().getResource("/icons/frown.png")));
+        frownButton.setText("");
+        frownButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Feedback.Dialog.OkButtonText.Frown"));
+        actionsToolbar.add(frownButton);
         statusLabel = new JLabel();
         statusLabel.setText("Label");
         tabPanel.add(statusLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         tabPanel.add(scrollPane1, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        pullRequestsTree = new JTree();
+        pullRequestsTree = new Tree();
         scrollPane1.setViewportView(pullRequestsTree);
         statusLink = new Hyperlink();
         statusLink.setText("");

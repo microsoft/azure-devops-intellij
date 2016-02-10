@@ -7,7 +7,6 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.List;
 
@@ -48,37 +47,5 @@ public class PullRequestsTreeModel extends DefaultTreeModel {
         reload(requestedByMeRoot);
         assignedToMeRoot.removeAllChildren();
         reload(assignedToMeRoot);
-    }
-
-    /**
-     * Tree Node to represent a GitPullRequest, or one of the parent nodes
-     */
-    public class PRTreeNode extends DefaultMutableTreeNode {
-        private final String name;
-        private final GitPullRequest gitPullRequest;
-
-        public PRTreeNode(final GitPullRequest gitPullRequest) {
-            super(gitPullRequest, false);
-            this.gitPullRequest = gitPullRequest;
-            this.name = gitPullRequest.getTitle();
-        }
-
-        public PRTreeNode(final String name) {
-            super(name, true);
-            this.name = name;
-            this.gitPullRequest = null;
-        }
-
-        public String toString() {
-            if (gitPullRequest == null) {
-                return TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_VIEW_DETAILS, name, getChildCount());
-            } else {
-                return name;
-            }
-        }
-
-        public GitPullRequest getGitPullRequest() {
-            return gitPullRequest;
-        }
     }
 }

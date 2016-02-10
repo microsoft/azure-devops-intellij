@@ -4,8 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 
-import com.intellij.icons.AllIcons;
-import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
@@ -16,7 +14,6 @@ import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.Component;
-import java.awt.Dimension;
 
 /**
  * Custom rendering of Pull Requests
@@ -30,61 +27,32 @@ public class PRTreeCellRenderer extends DefaultTreeCellRenderer {
     private final static short REVIEWER_VOTE_REJECTED = -10;
 
     private PRTreeNodeForm prViewForm;
-    private int rowHeight;
 
     public PRTreeCellRenderer() {
 
     }
 
     @Override
-    public Component getTreeCellRendererComponent(final JTree tree, final Object value, final boolean sel,
+    public Component getTreeCellRendererComponent(final JTree tree, final Object value, final boolean selected,
                                                   final boolean expanded, final boolean leaf,
                                                   final int row, final boolean hasFocus) {
-        super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+        super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+        setIcon(null);
+        if (value instanceof PRTreeNode && ((PRTreeNode) value).getGitPullRequest() != null) {
+            final GitPullRequest pullRequest = ((PRTreeNode) value).getGitPullRequest();
+            prViewForm = new PRTreeNodeForm(selected, hasFocus);
+            prViewForm.setSummary(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SUMMARY,
+                    pullRequest.getCreatedBy().getDisplayName(),
+                    pullRequest.getPullRequestId(),
+                    pullRequest.getCreationDate().toString(),
+                    pullRequest.getSourceRefName().replace(GIT_REFS_HEADS, ""),
+                    pullRequest.getTargetRefName().replace(GIT_REFS_HEADS, "")));
+            setStatus(prViewForm, pullRequest);
 
-        if (value instanceof PullRequestsTreeModel.PRTreeNode) {
-            //TODO: how to make background cover entire tree row
-            final GitPullRequest pullRequest = ((PullRequestsTreeModel.PRTreeNode) value).getGitPullRequest();
-            if (pullRequest != null) {
-                prViewForm = new PRTreeNodeForm(sel);
-                prViewForm.setPRTitle(pullRequest.getTitle());
-                prViewForm.setSummary(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SUMMARY,
-                        pullRequest.getCreatedBy().getDisplayName(),
-                        pullRequest.getPullRequestId(),
-                        pullRequest.getCreationDate().toString(),
-                        pullRequest.getSourceRefName().replace(GIT_REFS_HEADS, ""),
-                        pullRequest.getTargetRefName().replace(GIT_REFS_HEADS, "")));
-                setStatus(prViewForm, pullRequest);
-                setImage(prViewForm, pullRequest);
-
-                final Component component = prViewForm.getPanel();
-                rowHeight = (int) component.getPreferredSize().getHeight();
-                rowHeight = JBUI.scale(rowHeight);
-
-                return component;
-            } else {
-                if (expanded) {
-                    setIcon(AllIcons.General.ComboArrowDown);
-                } else {
-                    setIcon(AllIcons.General.ComboArrowRight);
-                }
-            }
+            final Component component = prViewForm.getPanel();
+            return component;
         }
-        rowHeight = this.getHeight();
         return this;
-    }
-
-    @Override
-    public Dimension getPreferredSize() {
-        Dimension d = super.getPreferredSize();
-        if (rowHeight > 0) {
-            d.height = rowHeight;
-        }
-        return d;
-    }
-
-    private void setImage(final PRTreeNodeForm prViewForm, final GitPullRequest pullRequest) {
-        //TODO
     }
 
     //TODO: create a model for the rendering view logic

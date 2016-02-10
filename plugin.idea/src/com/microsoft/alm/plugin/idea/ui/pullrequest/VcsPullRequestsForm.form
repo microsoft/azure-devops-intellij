@@ -38,6 +38,27 @@
               <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="CheckoutDialog.RefreshButton.ToolTip"/>
             </properties>
           </component>
+          <hspacer id="c310f">
+            <constraints/>
+          </hspacer>
+          <component id="5be2b" class="javax.swing.JButton" binding="smileButton">
+            <constraints/>
+            <properties>
+              <borderPainted value="false"/>
+              <icon value="icons/smile.png"/>
+              <text value=""/>
+              <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Feedback.Dialog.OkButtonText.Smile"/>
+            </properties>
+          </component>
+          <component id="2bd88" class="javax.swing.JButton" binding="frownButton">
+            <constraints/>
+            <properties>
+              <borderPainted value="false"/>
+              <icon value="icons/frown.png"/>
+              <text value=""/>
+              <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Feedback.Dialog.OkButtonText.Frown"/>
+            </properties>
+          </component>
         </children>
       </toolbar>
       <component id="9ecd5" class="javax.swing.JLabel" binding="statusLabel">
@@ -55,7 +76,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="dc064" class="javax.swing.JTree" binding="pullRequestsTree">
+          <component id="f4bee" class="com.intellij.ui.treeStructure.Tree" binding="pullRequestsTree">
             <constraints/>
             <properties/>
           </component>
