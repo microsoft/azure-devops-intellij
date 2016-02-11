@@ -193,6 +193,20 @@ public class VcsPullRequestsModel extends AbstractModel {
         }
     }
 
+    public void openSelectedPullRequestLink() {
+        if (context != null && context.getGitRepository() != null) {
+            if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
+                final GitPullRequest pullRequest = treeModel.getSelectedPullRequest();
+                if (pullRequest != null) {
+                    BrowserUtil.browse(context.getGitRepository().getRemoteUrl()
+                            .concat(UrlHelper.URL_SEPARATOR).concat("pullrequest")
+                            .concat(UrlHelper.URL_SEPARATOR + pullRequest.getPullRequestId())
+                            .concat("?view=discussion"));
+                }
+            }
+        }
+    }
+
     public void sendFeedback(final boolean smile) {
         final FeedbackAction action = new FeedbackAction(project, TfPluginBundle.KEY_VCS_PR_TITLE);
         action.sendFeedback(smile);

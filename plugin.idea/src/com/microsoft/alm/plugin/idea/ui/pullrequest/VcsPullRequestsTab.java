@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.util.Date;
 
 /**
@@ -38,6 +39,10 @@ public class VcsPullRequestsTab {
 
     public void addActionListener(final ActionListener listener) {
         form.addActionListener(listener);
+    }
+
+    public void addMouseListener(final MouseListener listener) {
+        form.addMouseListener(listener);
     }
 
     public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,

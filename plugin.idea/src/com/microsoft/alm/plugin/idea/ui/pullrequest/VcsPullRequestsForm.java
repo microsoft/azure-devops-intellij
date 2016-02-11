@@ -22,6 +22,7 @@ import javax.swing.JToolBar;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -139,6 +140,7 @@ public class VcsPullRequestsForm {
     public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {
         this.pullRequestsTreeModel = treeModel;
         pullRequestsTree.setModel(treeModel);
+        pullRequestsTree.setSelectionModel(treeModel.getSelectionModel());
     }
 
     public void addActionListener(final ActionListener listener) {
@@ -147,6 +149,10 @@ public class VcsPullRequestsForm {
         statusLink.addActionListener(listener);
         smileButton.addActionListener(listener);
         frownButton.addActionListener(listener);
+    }
+
+    public void addMouseListener(final MouseListener listener) {
+        pullRequestsTree.addMouseListener(listener);
     }
 
     //for unit testing

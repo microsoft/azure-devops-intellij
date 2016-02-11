@@ -10,13 +10,15 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Observable;
 import java.util.Observer;
 
 /**
  * Controller for the Version Control Pull Requests Tab
  */
-public class VcsPullRequestsController implements Observer, ActionListener {
+public class VcsPullRequestsController extends MouseAdapter implements Observer, ActionListener {
 
     private VcsPullRequestsTab tab;
     private VcsPullRequestsModel model;
@@ -44,6 +46,7 @@ public class VcsPullRequestsController implements Observer, ActionListener {
 
     private void setupTab() {
         tab.addActionListener(this);
+        tab.addMouseListener(this);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -104,5 +107,14 @@ public class VcsPullRequestsController implements Observer, ActionListener {
 
     void setView(final VcsPullRequestsTab tab) {
         this.tab = tab;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent mouseEvent) {
+        super.mouseClicked(mouseEvent);
+        //double click
+        if (mouseEvent.getClickCount() == 2) {
+            model.openSelectedPullRequestLink();
+        }
     }
 }

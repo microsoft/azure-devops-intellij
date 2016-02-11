@@ -8,12 +8,15 @@ import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.TreeSelectionModel;
 import java.util.List;
 
 public class PullRequestsTreeModel extends DefaultTreeModel {
     private final PRTreeNode root;
     private final PRTreeNode requestedByMeRoot;
     private final PRTreeNode assignedToMeRoot;
+    private TreeSelectionModel selectionModel;
 
     public PullRequestsTreeModel() {
         super(null);
@@ -24,6 +27,9 @@ public class PullRequestsTreeModel extends DefaultTreeModel {
         root.insert(requestedByMeRoot, 0);
         this.assignedToMeRoot = new PRTreeNode(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ASSIGNED_TO_ME));
         root.insert(assignedToMeRoot, 1);
+
+        selectionModel = new DefaultTreeSelectionModel();
+        selectionModel.setSelectionMode(DefaultTreeSelectionModel.SINGLE_TREE_SELECTION);
     }
 
     public PRTreeNode getRequestedByMeRoot() {
@@ -47,5 +53,14 @@ public class PullRequestsTreeModel extends DefaultTreeModel {
         reload(requestedByMeRoot);
         assignedToMeRoot.removeAllChildren();
         reload(assignedToMeRoot);
+    }
+
+    public TreeSelectionModel getSelectionModel() {
+        return selectionModel;
+    }
+
+
+    public GitPullRequest getSelectedPullRequest() {
+        return ((PRTreeNode) selectionModel.getSelectionPath().getLastPathComponent()).getGitPullRequest();
     }
 }
