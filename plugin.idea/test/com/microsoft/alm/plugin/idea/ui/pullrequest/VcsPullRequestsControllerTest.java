@@ -9,12 +9,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.swing.JPanel;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import java.util.Date;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     VcsPullRequestsController underTest;
@@ -51,8 +55,33 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testRefresh() {
+    public void testActionListener() {
+        //click on status link
+        when(modelMock.isConnected()).thenReturn(true);
+        when(modelMock.isAuthenticated()).thenReturn(true);
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_STATUS_LINK));
+        verify(modelMock).isConnected();
+        verify(modelMock).isAuthenticated();
+        verify(modelMock).openGitRepoLink();
 
+        //pop up menu - open in browser
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER));
+        verify(modelMock).openSelectedPullRequestLink();
+
+        //pop up menu - abandon pr
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR));
+        verify(modelMock).abandonSelectedPullRequest();
+
+        //pop up menu - complete pr
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR));
+        verify(modelMock).completeSelectedPullRequest();
+    }
+
+    @Test
+    public void testMouseListener() {
+        //double click pr
+        underTest.mouseClicked(new MouseEvent(new JPanel(), 0, 0, 0, 0, 0, 2, false, 2));
+        verify(modelMock).openSelectedPullRequestLink();
     }
 
     @Test

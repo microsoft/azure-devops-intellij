@@ -64,6 +64,15 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
                 //open current repository in web
                 model.openGitRepoLink();
             }
+        } else if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(e.getActionCommand())) {
+            //pop up menu - open PR link in web
+            model.openSelectedPullRequestLink();
+        } else if (VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR.equals(e.getActionCommand())) {
+            //pop up menu - abandon PR
+            model.abandonSelectedPullRequest();
+        } else if (VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR.equals(e.getActionCommand())) {
+            //pop up  menu - complete PR
+            model.completeSelectedPullRequest();
         }
     }
 
