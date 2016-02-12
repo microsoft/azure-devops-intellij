@@ -57,7 +57,7 @@ public class PRTreeCellRenderer extends DefaultTreeCellRenderer {
             final PRTreeNode rootNode = ((PRTreeNode) value);
             final SimpleColoredComponent component = new SimpleColoredComponent();
             component.append(rootNode.toString(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
-            component.appendTextPadding(5);
+            component.append(" ");
             component.append(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_VIEW_DETAILS_COUNT, rootNode.getChildCount()),
                     SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
             return component;

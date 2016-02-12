@@ -25,6 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.Date;
@@ -48,6 +49,8 @@ public class VcsPullRequestsForm extends Observable {
     public static final String CMD_OPEN_SELECTED_PR_IN_BROWSER = "openSelectedPullRequest";
     public static final String CMD_ABANDON_SELECTED_PR = "abandonSelectedPullRequest";
     public static final String CMD_COMPLETE_SELECTED_PR = "completeSelectedPullRequest";
+    public static final String CMD_SEND_FEEDBACK = "sendFeedback";
+    public static final String TOOLBAR_LOCATION = "Vcs.PullRequests";
 
     private boolean initialized = false;
     private Date lastRefreshed;
@@ -119,7 +122,7 @@ public class VcsPullRequestsForm extends Observable {
             }
         };
         final DefaultActionGroup prActions = new DefaultActionGroup(createPullRequestAction, refreshAction);
-        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("PullRequests", prActions, false);
+        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_LOCATION, prActions, false);
         toolbar.setOrientation(SwingConstants.HORIZONTAL);
         toolbar.setTargetComponent(scrollPanel);
         return toolbar;
@@ -127,23 +130,19 @@ public class VcsPullRequestsForm extends Observable {
 
     private ActionToolbar createFeedbackActionsToolbar() {
         //feedback actions toolbar
-        final AnAction sendSmileAction = new AnAction("",
-                TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE), Icons.Smile) {
+        final AnAction sendFeedback = new AnAction("",
+                TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE), Icons.Smile) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(FeedbackAction.CMD_SEND_SMILE);
+                final FeedbackAction action = new FeedbackAction(anActionEvent.getProject(),
+                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE));
+                action.actionPerformed(new ActionEvent(anActionEvent.getInputEvent().getSource(),
+                        anActionEvent.getInputEvent().getID(), CMD_SEND_FEEDBACK));
             }
         };
 
-        final AnAction sendFrownAction = new AnAction("",
-                TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN), Icons.Frown) {
-            @Override
-            public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(FeedbackAction.CMD_SEND_FROWN);
-            }
-        };
-        final DefaultActionGroup feedbackActions = new DefaultActionGroup(sendSmileAction, sendFrownAction);
-        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar("PullRequests", feedbackActions, true);
+        final DefaultActionGroup feedbackActions = new DefaultActionGroup(sendFeedback);
+        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_LOCATION, feedbackActions, false);
         toolbar.setOrientation(SwingConstants.HORIZONTAL);
         toolbar.setTargetComponent(scrollPanel);
         return toolbar;

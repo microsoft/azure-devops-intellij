@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -44,14 +43,6 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //Refresh
         underTest.update(null, VcsPullRequestsForm.CMD_REFRESH);
         verify(modelMock).loadPullRequests();
-
-        //Send smile
-        underTest.update(null, FeedbackAction.CMD_SEND_SMILE);
-        verify(modelMock).sendFeedback(true);
-
-        //Send frown
-        underTest.update(null, FeedbackAction.CMD_SEND_FROWN);
-        verify(modelMock).sendFeedback(false);
     }
 
     @Test

@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -104,12 +103,6 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
         }
         if (VcsPullRequestsForm.CMD_REFRESH.equals(arg)) {
             model.loadPullRequests();
-        }
-        if (FeedbackAction.CMD_SEND_SMILE.equals(arg)) {
-            model.sendFeedback(true);
-        }
-        if (FeedbackAction.CMD_SEND_FROWN.equals(arg)) {
-            model.sendFeedback(false);
         }
     }
 

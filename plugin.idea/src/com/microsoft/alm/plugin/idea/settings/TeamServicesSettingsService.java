@@ -113,33 +113,43 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
     }
 
     private ServerContextState[] getServerContextStates() {
-        if (!serverContextsRestored) {
-            // return the same state that we loaded
-            return state.serverContexts;
-        } else {
-            final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
-            final List<ServerContextState> contextStates = new ArrayList<ServerContextState>();
-            for (ServerContext context : serverContexts) {
-                contextStates.add(new ServerContextState(context));
+        try {
+            if (!serverContextsRestored && state != null) {
+                // return the same state that we loaded
+                return state.serverContexts;
+            } else {
+                final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+                final List<ServerContextState> contextStates = new ArrayList<ServerContextState>();
+                for (ServerContext context : serverContexts) {
+                    contextStates.add(new ServerContextState(context));
+                }
+                return contextStates.toArray(new ServerContextState[contextStates.size()]);
             }
-            return contextStates.toArray(new ServerContextState[contextStates.size()]);
+        } catch (Throwable t) {
+            logger.warn("getServerContextStates: Unexpected exception", t);
         }
+        return null;
     }
 
     private PropertyState[] getPropertyStates() {
-        if (!propertiesRestored && state != null) {
-            // return the same state that we loaded
-            return state.properties;
-        } else {
-            final Map<String, String> map = PropertyServiceImpl.getInstance().getProperties();
-            final PropertyState[] states = new PropertyState[map.size()];
+        try {
+            if (!propertiesRestored && state != null) {
+                // return the same state that we loaded
+                return state.properties;
+            } else {
+                final Map<String, String> map = PropertyServiceImpl.getInstance().getProperties();
+                final PropertyState[] states = new PropertyState[map.size()];
 
-            int index = 0;
-            for (final Map.Entry<String, String> entry : map.entrySet()) {
-                states[index++] = new PropertyState(entry.getKey(), entry.getValue());
+                int index = 0;
+                for (final Map.Entry<String, String> entry : map.entrySet()) {
+                    states[index++] = new PropertyState(entry.getKey(), entry.getValue());
+                }
+                return states;
             }
-            return states;
+        } catch (Throwable t) {
+            logger.warn("getPropertyStates: Unexpected exception", t);
         }
+        return null;
     }
 }
 

@@ -5,6 +5,8 @@ package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.JBMenuItem;
+import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.util.PlatformIcons;
 import com.microsoft.alm.plugin.idea.resources.Icons;
@@ -15,8 +17,6 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -41,7 +41,7 @@ public class FeedbackAction extends AbstractAction {
 
         if (e.getSource() instanceof Component) {
             final Component buttonSource = (Component) e.getSource();
-            final JPopupMenu popupMenu = new JPopupMenu();
+            final JBPopupMenu popupMenu = new JBPopupMenu();
             popupMenu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE, Icons.Smile, CMD_SEND_SMILE));
             popupMenu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN, Icons.Frown, CMD_SEND_FROWN));
             popupMenu.show(buttonSource, 0, buttonSource.getHeight());
@@ -78,9 +78,9 @@ public class FeedbackAction extends AbstractAction {
         }
     }
 
-    private JMenuItem createMenuItem(final String resourceKey, final Icon icon, final String actionCommand) {
+    private JBMenuItem createMenuItem(final String resourceKey, final Icon icon, final String actionCommand) {
         final String text = TfPluginBundle.message(resourceKey);
-        final JMenuItem menuItem = new JMenuItem(text, icon);
+        final JBMenuItem menuItem = new JBMenuItem(text, icon);
         menuItem.setActionCommand(actionCommand);
         menuItem.addActionListener(new ActionListener() {
             @Override
