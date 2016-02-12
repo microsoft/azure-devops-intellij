@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Observable;
@@ -65,6 +66,12 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
                 //open current repository in web
                 model.openGitRepoLink();
             }
+        } else if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(e.getActionCommand())) {
+            model.openSelectedPullRequestLink();
+        } else if (VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR.equals(e.getActionCommand())) {
+            model.abandonSelectedPullRequest();
+        } else if (VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR.equals(e.getActionCommand())) {
+            model.completeSelectedPullRequest();
         } else if (FeedbackAction.CMD_SEND_SMILE.equals(e.getActionCommand())) {
             model.sendFeedback(true);
         } else if (FeedbackAction.CMD_SEND_FROWN.equals(e.getActionCommand())) {
@@ -115,6 +122,9 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
         //double click
         if (mouseEvent.getClickCount() == 2) {
             model.openSelectedPullRequestLink();
+        } else if (mouseEvent.isPopupTrigger() || ((mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)) {
+            //right click, show pop up
+            tab.showPopupMenu(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY(), this);
         }
     }
 }

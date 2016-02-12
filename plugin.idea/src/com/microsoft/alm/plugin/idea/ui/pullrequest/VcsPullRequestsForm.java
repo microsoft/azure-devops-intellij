@@ -42,6 +42,9 @@ public class VcsPullRequestsForm {
     public static final String CMD_REFRESH = "refresh";
     public static final String CMD_CREATE_NEW_PULL_REQUEST = "createNewPullRequest";
     public static final String CMD_STATUS_LINK = "statusLink";
+    public static final String CMD_OPEN_SELECTED_PR_IN_BROWSER = "openSelectedPullRequest";
+    public static final String CMD_ABANDON_SELECTED_PR = "abandonSelectedPullRequest";
+    public static final String CMD_COMPLETE_SELECTED_PR = "completeSelectedPullRequest";
 
     private boolean initialized = false;
     private Date lastRefreshed;

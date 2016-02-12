@@ -6,9 +6,11 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -19,6 +21,8 @@ import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestAsyncStatus;
+import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
 import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -194,16 +198,136 @@ public class VcsPullRequestsModel extends AbstractModel {
     }
 
     public void openSelectedPullRequestLink() {
-        if (context != null && context.getGitRepository() != null) {
-            if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
-                final GitPullRequest pullRequest = treeModel.getSelectedPullRequest();
+        final GitPullRequest pullRequest = getSelectedPullRequest();
+        if (pullRequest != null) {
+            BrowserUtil.browse(getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
+                    pullRequest.getPullRequestId()));
+        }
+    }
+
+    private String getPullRequestWebLink(final String gitRemoteUrl, final int pullRequestId) {
+        return gitRemoteUrl.concat(UrlHelper.URL_SEPARATOR)
+                .concat("pullrequest").concat(UrlHelper.URL_SEPARATOR + pullRequestId);
+    }
+
+    /**
+     * Gets the selected pull request and tries to set its state to ABANDONED
+     * Runs on a background thread and notifies user upon completion
+     */
+    public void abandonSelectedPullRequest() {
+        final Task.Backgroundable abandonPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE)) {
+            @Override
+            public void run(final ProgressIndicator indicator) {
+                final GitPullRequest pullRequest = getSelectedPullRequest();
                 if (pullRequest != null) {
-                    BrowserUtil.browse(context.getGitRepository().getRemoteUrl()
-                            .concat(UrlHelper.URL_SEPARATOR).concat("pullrequest")
-                            .concat(UrlHelper.URL_SEPARATOR + pullRequest.getPullRequestId())
-                            .concat("?view=discussion"));
+                    final String prLink = getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
+                            pullRequest.getPullRequestId());
+                    final int prId = pullRequest.getPullRequestId();
+
+                    try {
+                        final GitPullRequest pullRequestToUpdate = new GitPullRequest();
+                        pullRequestToUpdate.setStatus(PullRequestStatus.ABANDONED);
+                        final GitPullRequest pr = context.getGitHttpClient().updatePullRequest(pullRequestToUpdate,
+                                pullRequest.getRepository().getId(), pullRequest.getPullRequestId());
+
+                        if (pr != null && pr.getStatus() == PullRequestStatus.ABANDONED) {
+                            //success
+                            notifyOperationStatus(true,
+                                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_SUCCEEDED, prLink, prId));
+                        } else {
+                            logger.warn("abandonSelectedPullRequest: pull request status not ABANDONED as expected. Actual status = {}",
+                                    pr != null ? pr.getStatus() : "null");
+                            notifyOperationStatus(false,
+                                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED, prLink, prId));
+                        }
+                    } catch (Throwable t) {
+                        logger.warn("abandonSelectedPullRequest: Unexpected exception", t);
+                        notifyOperationStatus(false,
+                                TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED, prLink, prId));
+                    }
+                } else {
+                    //couldn't find selected pull request
+                    notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED));
                 }
             }
+        };
+        abandonPullRequestTask.queue();
+    }
+
+    /**
+     * Gets the selected pull request and tries to set its state to COMPLETED
+     * Runs on a background thread and notifies user upon completion or status of merge
+     */
+    public void completeSelectedPullRequest() {
+        final Task.Backgroundable completePullRequestTask = new Task.Backgroundable(project,
+                TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE)) {
+            @Override
+            public void run(final ProgressIndicator indicator) {
+                final GitPullRequest pullRequest = getSelectedPullRequest();
+                if (pullRequest != null) {
+                    final String prLink = getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
+                            pullRequest.getPullRequestId());
+                    final int prId = pullRequest.getPullRequestId();
+
+                    try {
+                        GitPullRequest pullRequestToUpdate = new GitPullRequest();
+                        pullRequestToUpdate.setStatus(PullRequestStatus.COMPLETED);
+                        pullRequestToUpdate.setLastMergeSourceCommit(pullRequest.getLastMergeSourceCommit());
+                        final GitPullRequest pr = context.getGitHttpClient().updatePullRequest(pullRequestToUpdate,
+                                pullRequest.getRepository().getId(), pullRequest.getPullRequestId());
+                        if (pr != null) {
+                            if (pr.getStatus() == PullRequestStatus.COMPLETED) {
+                                //success
+                                notifyOperationStatus(true,
+                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_SUCCEEDED, prLink, prId));
+                                return;
+                            } else if (pr.getMergeStatus() == PullRequestAsyncStatus.QUEUED) {
+                                // in progress
+                                //success
+                                notifyOperationStatus(true,
+                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_MERGE_IN_PROGRESS, prLink, prId));
+                                return;
+                            } else if (pr.getMergeStatus() == PullRequestAsyncStatus.CONFLICTS ||
+                                    pr.getMergeStatus() == PullRequestAsyncStatus.FAILURE ||
+                                    pr.getMergeStatus() == PullRequestAsyncStatus.REJECTED_BY_POLICY) {
+                                //merge failed
+                                notifyOperationStatus(false,
+                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_MERGE_FAILED, prLink, prId));
+                                return;
+                            }
+                        }
+                        //failed
+                        notifyOperationStatus(false,
+                                TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_FAILED, prLink, prId));
+                    } catch (Throwable t) {
+                        logger.warn("abandonSelectedPullRequest: Unexpected exception", t);
+                        notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_FAILED, prLink, prId));
+                    }
+                } else {
+                    //couldn't find selected pull request
+                    notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_COMPLETE_FAILED_UNEXPECTED));
+                }
+            }
+        };
+        completePullRequestTask.queue();
+    }
+
+    private GitPullRequest getSelectedPullRequest() {
+        if (context != null && context.getGitRepository() != null) {
+            if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
+                return treeModel.getSelectedPullRequest();
+            }
+        }
+        return null;
+    }
+
+    private void notifyOperationStatus(final boolean success, final String message) {
+        if (success) {
+            VcsNotifier.getInstance(project).notifySuccess(
+                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE), message, NotificationListener.URL_OPENING_LISTENER);
+        } else {
+            VcsNotifier.getInstance(project).notifyError(
+                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE), message, NotificationListener.URL_OPENING_LISTENER);
         }
     }
 
