@@ -4,6 +4,8 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
@@ -50,6 +52,14 @@ public class PRTreeCellRenderer extends DefaultTreeCellRenderer {
             setStatus(prViewForm, pullRequest);
 
             final Component component = prViewForm.getPanel();
+            return component;
+        } else if (value instanceof PRTreeNode && ((PRTreeNode) value).getGitPullRequest() == null) {
+            final PRTreeNode rootNode = ((PRTreeNode) value);
+            final SimpleColoredComponent component = new SimpleColoredComponent();
+            component.append(rootNode.toString(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+            component.appendTextPadding(5);
+            component.append(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_VIEW_DETAILS_COUNT, rootNode.getChildCount()),
+                    SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
             return component;
         }
         return this;

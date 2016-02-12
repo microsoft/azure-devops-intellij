@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -28,11 +27,7 @@ public class PRTreeNode extends DefaultMutableTreeNode {
     }
 
     public String toString() {
-        if (gitPullRequest == null) {
-            return TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_VIEW_DETAILS, name, getChildCount());
-        } else {
-            return name;
-        }
+        return name;
     }
 
     public GitPullRequest getGitPullRequest() {

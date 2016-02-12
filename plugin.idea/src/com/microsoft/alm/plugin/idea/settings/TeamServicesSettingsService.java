@@ -127,7 +127,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
     }
 
     private PropertyState[] getPropertyStates() {
-        if (!propertiesRestored) {
+        if (!propertiesRestored && state != null) {
             // return the same state that we loaded
             return state.properties;
         } else {

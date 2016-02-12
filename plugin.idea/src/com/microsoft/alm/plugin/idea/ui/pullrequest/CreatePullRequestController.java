@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -143,11 +144,12 @@ public class CreatePullRequestController implements Observer, ActionListener {
         this.createModel.setDescription(this.createDialog.getDescription());
     }
 
-    /* setter for unit test */
+    @VisibleForTesting
     void setCreateDialog(CreatePullRequestDialog createDialog) {
         this.createDialog = createDialog;
     }
 
+    @VisibleForTesting
     void setCreateModel(CreatePullRequestModel createModel) {
         this.createModel = createModel;
     }

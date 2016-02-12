@@ -17,6 +17,7 @@ import java.awt.Component;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.Date;
+import java.util.Observer;
 
 /**
  * UI class for Version Control pull requests tab
@@ -44,6 +45,10 @@ public class VcsPullRequestsTab {
 
     public void addActionListener(final ActionListener listener) {
         form.addActionListener(listener);
+    }
+
+    public void addObserver(final Observer observer) {
+        form.addObserver(observer);
     }
 
     public void addMouseListener(final MouseListener listener) {

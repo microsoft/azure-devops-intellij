@@ -4,11 +4,11 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.awt.event.ActionEvent;
 import java.util.Date;
 
 import static org.mockito.Matchers.any;
@@ -32,16 +32,27 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testActionPerformed() {
+    public void testObservableActions() {
         //Add action on toolbar = create pull request
-        final ActionEvent e1 = new ActionEvent(this, 1, VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST);
-        underTest.actionPerformed(e1);
+        underTest.update(null, VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST);
         verify(modelMock).createNewPullRequest();
 
         //Refresh
-        final ActionEvent e2 = new ActionEvent(this, 1, VcsPullRequestsForm.CMD_REFRESH);
-        underTest.actionPerformed(e2);
+        underTest.update(null, VcsPullRequestsForm.CMD_REFRESH);
         verify(modelMock).loadPullRequests();
+
+        //Send smile
+        underTest.update(null, FeedbackAction.CMD_SEND_SMILE);
+        verify(modelMock).sendFeedback(true);
+
+        //Send frown
+        underTest.update(null, FeedbackAction.CMD_SEND_FROWN);
+        verify(modelMock).sendFeedback(false);
+    }
+
+    @Test
+    public void testRefresh() {
+
     }
 
     @Test
