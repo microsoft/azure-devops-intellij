@@ -3,8 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -47,15 +47,12 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
 
     private void setupTab() {
         tab.addActionListener(this);
+        tab.addObserver(this);
         tab.addMouseListener(this);
     }
 
     public void actionPerformed(final ActionEvent e) {
-        if (VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST.equals(e.getActionCommand())) {
-            model.createNewPullRequest();
-        } else if (VcsPullRequestsForm.CMD_REFRESH.equals(e.getActionCommand())) {
-            model.loadPullRequests();
-        } else if (VcsPullRequestsForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
+        if (VcsPullRequestsForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
             if (!model.isConnected()) {
                 //import into team services git
                 model.importIntoTeamServicesGit();
@@ -67,15 +64,14 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
                 model.openGitRepoLink();
             }
         } else if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(e.getActionCommand())) {
+            //pop up menu - open PR link in web
             model.openSelectedPullRequestLink();
         } else if (VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR.equals(e.getActionCommand())) {
+            //pop up menu - abandon PR
             model.abandonSelectedPullRequest();
         } else if (VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR.equals(e.getActionCommand())) {
+            //pop up  menu - complete PR
             model.completeSelectedPullRequest();
-        } else if (FeedbackAction.CMD_SEND_SMILE.equals(e.getActionCommand())) {
-            model.sendFeedback(true);
-        } else if (FeedbackAction.CMD_SEND_FROWN.equals(e.getActionCommand())) {
-            model.sendFeedback(false);
         }
     }
 
@@ -100,18 +96,26 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
         if (arg == null) {
             tab.setPullRequestsTree(model.getPullRequestsTreeModel());
         }
+
+        //actions from the form
+        if (VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST.equals(arg)) {
+            model.createNewPullRequest();
+        }
+        if (VcsPullRequestsForm.CMD_REFRESH.equals(arg)) {
+            model.loadPullRequests();
+        }
     }
 
     public void dispose() {
         model.dispose();
     }
 
-    //setters for unit tests
-
+    @VisibleForTesting
     void setModel(final VcsPullRequestsModel model) {
         this.model = model;
     }
 
+    @VisibleForTesting
     void setView(final VcsPullRequestsTab tab) {
         this.tab = tab;
     }

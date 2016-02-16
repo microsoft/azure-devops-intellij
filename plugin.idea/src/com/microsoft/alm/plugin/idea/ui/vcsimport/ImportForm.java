@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
@@ -208,16 +209,12 @@ public class ImportForm implements BasicForm {
         timer.setRepeats(false);
     }
 
-    /**
-     * Getter for unit tests
-     */
+    @VisibleForTesting
     BusySpinnerPanel getBusySpinner() {
         return this.busySpinner;
     }
 
-    /**
-     * Getter for unit tests
-     */
+    @VisibleForTesting
     UserAccountPanel getUserAccountPanel() {
         return this.userAccountPanel;
     }

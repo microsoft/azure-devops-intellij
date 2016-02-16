@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -230,12 +231,12 @@ public class CheckoutForm implements BasicForm {
         timer.setRepeats(false);
     }
 
-    /* getter for unit test */
+    @VisibleForTesting
     UserAccountPanel getUserAccountPanel() {
         return this.userAccountPanel;
     }
 
-    /* getter for unit test */
+    @VisibleForTesting
     BusySpinnerPanel getBusySpinner() {
         return this.busySpinner;
     }

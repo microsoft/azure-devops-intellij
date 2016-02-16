@@ -3,40 +3,44 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JToolBar;
-import java.awt.Dimension;
-import java.awt.Insets;
+import javax.swing.SwingConstants;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.Date;
-import java.util.ResourceBundle;
+import java.util.Observable;
 
-public class VcsPullRequestsForm {
-    //controls
+public class VcsPullRequestsForm extends Observable {
     private JPanel tabPanel;
+    private JPanel toolBarPanel;
+    private ActionToolbar prActionsToolbar;
+    private ActionToolbar feedbackActionsToolbar;
+    private JScrollPane scrollPanel;
     private Tree pullRequestsTree;
-    private JToolBar actionsToolbar;
+    private JPanel statusPanel;
     private JLabel statusLabel;
-    private JButton addButton;
-    private JButton refreshButton;
     private Hyperlink statusLink;
-    private JButton frownButton;
-    private JButton smileButton;
 
     //commands
     public static final String CMD_REFRESH = "refresh";
@@ -45,10 +49,16 @@ public class VcsPullRequestsForm {
     public static final String CMD_OPEN_SELECTED_PR_IN_BROWSER = "openSelectedPullRequest";
     public static final String CMD_ABANDON_SELECTED_PR = "abandonSelectedPullRequest";
     public static final String CMD_COMPLETE_SELECTED_PR = "completeSelectedPullRequest";
+    public static final String CMD_SEND_FEEDBACK = "sendFeedback";
+    public static final String TOOLBAR_LOCATION = "Vcs.PullRequests";
 
     private boolean initialized = false;
     private Date lastRefreshed;
     private PullRequestsTreeModel pullRequestsTreeModel;
+
+    public VcsPullRequestsForm() {
+        ensureInitialized();
+    }
 
     public JComponent getPanel() {
         ensureInitialized();
@@ -57,19 +67,85 @@ public class VcsPullRequestsForm {
 
     private void ensureInitialized() {
         if (!initialized) {
+            //Tree in a scroll panel
+            pullRequestsTree = new Tree();
             pullRequestsTree.setCellRenderer(new PRTreeCellRenderer());
             pullRequestsTree.setShowsRootHandles(true);
             pullRequestsTree.setRootVisible(false);
             pullRequestsTree.setRowHeight(0); //dynamically have row height computed for each row
+            scrollPanel = new JBScrollPane(pullRequestsTree);
 
-            addButton.setActionCommand(CMD_CREATE_NEW_PULL_REQUEST);
-            refreshButton.setActionCommand(CMD_REFRESH);
+            //toolbars
+            if (ApplicationManager.getApplication() != null) {
+                prActionsToolbar = createPullRequestActionsToolbar();
+                feedbackActionsToolbar = createFeedbackActionsToolbar();
+                toolBarPanel = new JPanel(new BorderLayout());
+                toolBarPanel.add(prActionsToolbar.getComponent(), BorderLayout.LINE_START);
+                toolBarPanel.add(feedbackActionsToolbar.getComponent(), BorderLayout.LINE_END);
+            } else {
+                //skip setup when called from unit tests
+                toolBarPanel = new JPanel();
+            }
+
+            //status panel with label and link
+            statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            statusLabel = new JLabel();
+            statusLink = new Hyperlink();
             statusLink.setActionCommand(CMD_STATUS_LINK);
-            smileButton.setActionCommand(FeedbackAction.CMD_SEND_SMILE);
-            frownButton.setActionCommand(FeedbackAction.CMD_SEND_FROWN);
+            statusPanel.add(statusLabel);
+            statusPanel.add(statusLink);
+
+            //tabPanel
+            tabPanel = new JPanel(new BorderLayout());
+            tabPanel.add(toolBarPanel, BorderLayout.PAGE_START);
+            tabPanel.add(scrollPanel, BorderLayout.CENTER);
+            tabPanel.add(statusPanel, BorderLayout.PAGE_END);
 
             this.initialized = true;
         }
+    }
+
+    private ActionToolbar createPullRequestActionsToolbar() {
+        final AnAction createPullRequestAction = new AnAction("",
+                TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_DIALOG_TITLE),
+                AllIcons.ToolbarDecorator.Add) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                setChangedAndNotify(CMD_CREATE_NEW_PULL_REQUEST);
+            }
+        };
+        final AnAction refreshAction = new AnAction("",
+                TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_REFRESH_TOOLTIP), AllIcons.Actions.Refresh) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                setChangedAndNotify(CMD_REFRESH);
+            }
+        };
+        final DefaultActionGroup prActions = new DefaultActionGroup(createPullRequestAction, refreshAction);
+        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_LOCATION, prActions, false);
+        toolbar.setOrientation(SwingConstants.HORIZONTAL);
+        toolbar.setTargetComponent(scrollPanel);
+        return toolbar;
+    }
+
+    private ActionToolbar createFeedbackActionsToolbar() {
+        //feedback actions toolbar
+        final AnAction sendFeedback = new AnAction("",
+                TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE), Icons.Smile) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                final FeedbackAction action = new FeedbackAction(anActionEvent.getProject(),
+                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE));
+                action.actionPerformed(new ActionEvent(anActionEvent.getInputEvent().getSource(),
+                        anActionEvent.getInputEvent().getID(), CMD_SEND_FEEDBACK));
+            }
+        };
+
+        final DefaultActionGroup feedbackActions = new DefaultActionGroup(sendFeedback);
+        final ActionToolbar toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_LOCATION, feedbackActions, false);
+        toolbar.setOrientation(SwingConstants.HORIZONTAL);
+        toolbar.setTargetComponent(scrollPanel);
+        return toolbar;
     }
 
     public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,
@@ -147,89 +223,26 @@ public class VcsPullRequestsForm {
     }
 
     public void addActionListener(final ActionListener listener) {
-        addButton.addActionListener(listener);
-        refreshButton.addActionListener(listener);
         statusLink.addActionListener(listener);
-        smileButton.addActionListener(listener);
-        frownButton.addActionListener(listener);
     }
 
     public void addMouseListener(final MouseListener listener) {
         pullRequestsTree.addMouseListener(listener);
     }
 
-    //for unit testing
+    protected void setChangedAndNotify(final String propertyName) {
+        super.setChanged();
+        super.notifyObservers(propertyName);
+    }
+
+    @VisibleForTesting
     String getStatusText() {
         return statusLabel.getText();
     }
 
+    @VisibleForTesting
     String getStatusLinkText() {
         return statusLink.getText();
     }
 
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// >>> IMPORTANT!! <<<
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
-    }
-
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * >>> IMPORTANT!! <<<
-     * DO NOT edit this method OR call it in your code!
-     *
-     * @noinspection ALL
-     */
-    private void $$$setupUI$$$() {
-        tabPanel = new JPanel();
-        tabPanel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
-        actionsToolbar = new JToolBar();
-        actionsToolbar.setFloatable(false);
-        tabPanel.add(actionsToolbar, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(-1, 20), null, 0, false));
-        addButton = new JButton();
-        addButton.setBorderPainted(false);
-        addButton.setIcon(new ImageIcon(getClass().getResource("/general/add.png")));
-        addButton.setText("");
-        addButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Actions.CreatePullRequest.Message"));
-        actionsToolbar.add(addButton);
-        refreshButton = new JButton();
-        refreshButton.setBorderPainted(false);
-        refreshButton.setIcon(new ImageIcon(getClass().getResource("/actions/refresh.png")));
-        refreshButton.setOpaque(false);
-        refreshButton.setText("");
-        refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CheckoutDialog.RefreshButton.ToolTip"));
-        actionsToolbar.add(refreshButton);
-        final Spacer spacer1 = new Spacer();
-        actionsToolbar.add(spacer1);
-        smileButton = new JButton();
-        smileButton.setBorderPainted(false);
-        smileButton.setIcon(new ImageIcon(getClass().getResource("/icons/smile.png")));
-        smileButton.setText("");
-        smileButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Feedback.Dialog.OkButtonText.Smile"));
-        actionsToolbar.add(smileButton);
-        frownButton = new JButton();
-        frownButton.setBorderPainted(false);
-        frownButton.setIcon(new ImageIcon(getClass().getResource("/icons/frown.png")));
-        frownButton.setText("");
-        frownButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Feedback.Dialog.OkButtonText.Frown"));
-        actionsToolbar.add(frownButton);
-        statusLabel = new JLabel();
-        statusLabel.setText("Label");
-        tabPanel.add(statusLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        tabPanel.add(scrollPane1, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        pullRequestsTree = new Tree();
-        scrollPane1.setViewportView(pullRequestsTree);
-        statusLink = new Hyperlink();
-        statusLink.setText("");
-        tabPanel.add(statusLink, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    public JComponent $$$getRootComponent$$$() {
-        return tabPanel;
-    }
 }

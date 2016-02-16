@@ -249,6 +249,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_TITLE = "VcsPullRequestsTab.Title";
     @NonNls
+    public static final String KEY_VCS_PR_REFRESH_TOOLTIP = "VcsPullRequestsTab.Refresh.Tooltip";
+    @NonNls
     public static final String KEY_VCS_PR_REQUESTED_BY_ME = "VcsPullRequestsTab.RequestedByMe";
     @NonNls
     public static final String KEY_VCS_PR_ASSIGNED_TO_ME = "VcsPullRequestsTab.AssignedToMe";
@@ -306,6 +308,8 @@ public class TfPluginBundle {
     public static final String KEY_VCS_PR_UNEXPECTED_ERRORS = "VcsPullRequestsTab.Unexpected.Errors";
     @NonNls
     public static final String KEY_VCS_PR_VIEW_DETAILS = "VcsPullRequestsTab.View.Details";
+    @NonNls
+    public static final String KEY_VCS_PR_VIEW_DETAILS_COUNT = "VcsPullRequestsTab.View.Details.Count";
 
 
     //actions

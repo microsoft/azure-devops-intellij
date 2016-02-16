@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.forms;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -119,9 +120,7 @@ public class VsoLoginForm implements LoginForm {
         return signInLink;
     }
 
-    /**
-     * Getter for unit test
-     */
+    @VisibleForTesting
     BusySpinnerPanel getBusySpinner() {
         return this.busySpinnerPanel;
     }
