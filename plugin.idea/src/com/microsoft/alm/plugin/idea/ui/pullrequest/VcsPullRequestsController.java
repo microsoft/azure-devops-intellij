@@ -10,16 +10,13 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.Observable;
 import java.util.Observer;
 
 /**
  * Controller for the Version Control Pull Requests Tab
  */
-public class VcsPullRequestsController extends MouseAdapter implements Observer, ActionListener {
+public class VcsPullRequestsController implements Observer, ActionListener {
 
     private VcsPullRequestsTab tab;
     private VcsPullRequestsModel model;
@@ -48,7 +45,6 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
     private void setupTab() {
         tab.addActionListener(this);
         tab.addObserver(this);
-        tab.addMouseListener(this);
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -104,6 +100,9 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
         if (VcsPullRequestsForm.CMD_REFRESH.equals(arg)) {
             model.loadPullRequests();
         }
+        if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(arg)) {
+            model.openSelectedPullRequestLink();
+        }
     }
 
     public void dispose() {
@@ -118,17 +117,5 @@ public class VcsPullRequestsController extends MouseAdapter implements Observer,
     @VisibleForTesting
     void setView(final VcsPullRequestsTab tab) {
         this.tab = tab;
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent mouseEvent) {
-        super.mouseClicked(mouseEvent);
-        //double click
-        if (mouseEvent.getClickCount() == 2) {
-            model.openSelectedPullRequestLink();
-        } else if (mouseEvent.isPopupTrigger() || ((mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)) {
-            //right click, show pop up
-            tab.showPopupMenu(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY(), this);
-        }
     }
 }

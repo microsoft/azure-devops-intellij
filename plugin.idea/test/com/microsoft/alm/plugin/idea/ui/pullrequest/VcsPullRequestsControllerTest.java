@@ -8,9 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
 import java.util.Date;
 
 import static org.mockito.Matchers.any;
@@ -43,6 +41,10 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //Refresh
         underTest.update(null, VcsPullRequestsForm.CMD_REFRESH);
         verify(modelMock).loadPullRequests();
+
+        //open selected pr
+        underTest.update(null, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER);
+        verify(modelMock).openSelectedPullRequestLink();
     }
 
     @Test
@@ -66,13 +68,6 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //pop up menu - complete pr
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR));
         verify(modelMock).completeSelectedPullRequest();
-    }
-
-    @Test
-    public void testMouseListener() {
-        //double click pr
-        underTest.mouseClicked(new MouseEvent(new JPanel(), 0, 0, 0, 0, 0, 2, false, 2));
-        verify(modelMock).openSelectedPullRequestLink();
     }
 
     @Test
