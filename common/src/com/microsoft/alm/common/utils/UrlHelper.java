@@ -19,8 +19,8 @@ public class UrlHelper {
     // this formatter assumes the entire text is a hyperlink, works for short messages
     public static final String SHORT_HTTP_LINK_FORMATTER = "<html><body><a href=\"%s\">%s</a></body></html>";
 
-    private static final String HOST_VSO = "visualstudio.com";
-    private static final String HOST_TFS_ALL_IN = "tfsallin.com";
+    public static final String HOST_VSO = "visualstudio.com";
+    public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
