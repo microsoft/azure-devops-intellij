@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.setup;
 
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,17 +11,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
 
 /**
  * This class runs a Mac application bundle that will install the protocol handler on a Mac
  */
 public class MacStartup {
     private static final Logger logger = LoggerFactory.getLogger(MacStartup.class);
-    protected static final String APP_NAME = "vsoi.app";
-    protected static final String OS_X_DIR = "/osx/";
-    private static final String ENCODING_SCHEME = "utf-8";
+    protected static final String APP_NAME = "vsoi.app/";
+    protected static final String OS_X_DIR = "osx";
     private static final String APPLET_PATH = "Contents/MacOS/applet";
     private static final String OPEN_CMD = "open";
 
@@ -37,7 +35,7 @@ public class MacStartup {
     protected static void setupProtocolHandlerUri() {
         try {
             // setup protocol handler URI by running vsoi.app
-            final String appPath = getAppPath(MacStartup.class.getResource("/"));
+            final String appPath = IdeaHelper.getResourcePath(MacStartup.class.getResource("/"), APP_NAME, OS_X_DIR);
             setAppletPermissions(new File(appPath + APPLET_PATH));
             final Process process = Runtime.getRuntime().exec(new String[]{OPEN_CMD, appPath});
             process.waitFor();
@@ -51,26 +49,6 @@ public class MacStartup {
         } catch (Exception e) {
             logger.warn("An Exception was caught while trying to find and execute {}: {}", APP_NAME, e.getMessage());
         }
-    }
-
-    /**
-     * Find the path to the app whether it's installed for the idea or being run inside the idea
-     *
-     * @param appUrl the URL for vsoi.app
-     * @return the path to the app
-     * @throws UnsupportedEncodingException
-     */
-    protected static String getAppPath(final URL appUrl) throws UnsupportedEncodingException {
-        // find location of the app
-        String appPath = appUrl.getPath();
-        appPath = URLDecoder.decode(appPath, ENCODING_SCHEME);
-
-        // when running the plugin inside of the idea, the path to the app needs to be
-        // manipulated to look in a different location than where the zip would find it
-        if (appPath != null && !appPath.endsWith(APP_NAME + "/")) {
-            appPath = appPath + OS_X_DIR + APP_NAME;
-        }
-        return appPath;
     }
 
     /**

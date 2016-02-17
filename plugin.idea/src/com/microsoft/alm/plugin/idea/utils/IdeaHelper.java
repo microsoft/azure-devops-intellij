@@ -10,11 +10,19 @@ import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.Icon;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
 
 public class IdeaHelper {
+    private static final String CHARSET_UTF8 = "utf-8";
+    public static final String TEST_RESOURCES_SUB_PATH = "/externals/platform/";
+    private static final String PROD_RESOURCES_SUB_PATH = "platform";
+
     public IdeaHelper() {
     }
 
@@ -64,6 +72,7 @@ public class IdeaHelper {
 
     /**
      * Shows a dialog with OK and cancel actions to prompt for confirmation from user
+     *
      * @return true if user clicks on ok action and false if user clicks on cancel action
      */
     public static boolean showConfirmationDialog(@NotNull final Project project, final String message, final String title,
@@ -71,5 +80,31 @@ public class IdeaHelper {
 
         final int result = Messages.showYesNoDialog(project, message, title, okActionMessage, cancelActionMessage, logo);
         return result == 0 ? true : false;
+    }
+
+    /**
+     * Finds the full path to a resource whether it's installed by the idea or being run inside the idea
+     *
+     * @param resourceUrl  the URL for the resource
+     * @param resourceName name of the resource
+     * @param directory    the directory under the idea.plugin/resource directory to for the resource
+     * @return the path to the resource
+     * @throws UnsupportedEncodingException
+     */
+    public static String getResourcePath(final URL resourceUrl, final String resourceName, final String directory) throws UnsupportedEncodingException {
+        // find location of the resource
+        String resourcePath = resourceUrl.getPath();
+        resourcePath = URLDecoder.decode(resourcePath, CHARSET_UTF8);
+        resourcePath = StringUtils.chomp(resourcePath, "/");
+
+        // When running the plugin inside of the idea for test, the path to the app needs to be
+        // manipulated to look in a different location than where the resource resides in production.
+        // For prod the url is .../../.IdeaIC15/config/plugins/com.microsoft.alm/lib but for test
+        // the url is ../.IdeaIC15/system/plugins-sandbox/plugins/com.microsoft.alm.plugin.idea/classes
+        if (resourcePath != null && resourcePath.endsWith(PROD_RESOURCES_SUB_PATH)) {
+            return resourcePath + "/" + directory + "/" + resourceName;
+        } else {
+            return resourcePath + TEST_RESOURCES_SUB_PATH + directory + "/" + resourceName;
+        }
     }
 }
