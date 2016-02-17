@@ -65,9 +65,6 @@ public class VcsPullRequestsController implements Observer, ActionListener {
         } else if (VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR.equals(e.getActionCommand())) {
             //pop up menu - abandon PR
             model.abandonSelectedPullRequest();
-        } else if (VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR.equals(e.getActionCommand())) {
-            //pop up  menu - complete PR
-            model.completeSelectedPullRequest();
         }
     }
 

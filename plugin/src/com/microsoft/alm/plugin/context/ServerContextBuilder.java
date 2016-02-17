@@ -118,6 +118,10 @@ public class ServerContextBuilder {
 
     public ServerContextBuilder repository(final GitRepository repository) {
         this.gitRepository = repository;
+        if (this.gitRepository != null && this.teamProjectReference == null) {
+            //set team project reference from the Git repository if it is not set
+            this.teamProjectReference = this.gitRepository.getProjectReference();
+        }
         return this;
     }
 

@@ -53,7 +53,6 @@ public class VcsPullRequestsForm extends Observable {
     public static final String CMD_STATUS_LINK = "statusLink";
     public static final String CMD_OPEN_SELECTED_PR_IN_BROWSER = "openSelectedPullRequest";
     public static final String CMD_ABANDON_SELECTED_PR = "abandonSelectedPullRequest";
-    public static final String CMD_COMPLETE_SELECTED_PR = "completeSelectedPullRequest";
     public static final String CMD_SEND_FEEDBACK = "sendFeedback";
     public static final String TOOLBAR_LOCATION = "Vcs.PullRequests";
 
@@ -280,9 +279,6 @@ public class VcsPullRequestsForm extends Observable {
         menu.add(openMenuItem);
         final JBMenuItem abandonMenuItem = createMenuItem(TfPluginBundle.KEY_VCS_PR_ABANDON, null, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR, listener);
         menu.add(abandonMenuItem);
-        final JBMenuItem completeMenuItem = createMenuItem(TfPluginBundle.KEY_VCS_PR_COMPLETE, null, VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR, listener);
-        menu.add(completeMenuItem);
-
         menu.show(component, x, y);
     }
 

@@ -277,23 +277,13 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_ABANDON = "VcsPullRequestsTab.Abandon";
     @NonNls
+    public static final String KEY_VCS_PR_ABANDON_CONFIRMATION = "VcsPullRequestsTab.Abandon.Confirmation";
+    @NonNls
     public static final String KEY_VCS_PR_ABANDON_SUCCEEDED = "VcsPullRequestsTab.Abandon.Succeeded";
     @NonNls
     public static final String KEY_VCS_PR_ABANDON_FAILED = "VcsPullRequestsTab.Abandon.Failed";
     @NonNls
     public static final String KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED = "VcsPullRequestsTab.Abandon.Failed.Unexpected";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE = "VcsPullRequestsTab.Complete";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE_SUCCEEDED = "VcsPullRequestsTab.Complete.Succeeded";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE_MERGE_IN_PROGRESS = "VcsPullRequestsTab.Complete.MergeInProgress";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE_MERGE_FAILED = "VcsPullRequestsTab.Complete.MergeFailed";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE_FAILED = "VcsPullRequestsTab.Complete.Failed";
-    @NonNls
-    public static final String KEY_VCS_PR_COMPLETE_FAILED_UNEXPECTED = "VcsPullRequestsTab.Complete.Failed.Unexpected";
     @NonNls
     public static final String KEY_VCS_PR_LOADING_ERRORS = "VcsPullRequestsTab.LoadingErrors";
     @NonNls

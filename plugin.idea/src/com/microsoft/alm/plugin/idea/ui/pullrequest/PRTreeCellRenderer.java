@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 
+import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.microsoft.alm.plugin.idea.resources.Icons;
@@ -56,10 +57,16 @@ public class PRTreeCellRenderer extends DefaultTreeCellRenderer {
         } else if (value instanceof PRTreeNode && ((PRTreeNode) value).getGitPullRequest() == null) {
             final PRTreeNode rootNode = ((PRTreeNode) value);
             final SimpleColoredComponent component = new SimpleColoredComponent();
-            component.append(rootNode.toString(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+            final SimpleTextAttributes regularTextAttributes = selected && hasFocus ?
+                    new SimpleTextAttributes(SimpleTextAttributes.STYLE_BOLD, JBColor.WHITE)
+                    : SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
+            component.append(rootNode.toString(), regularTextAttributes);
             component.append(" ");
+            final SimpleTextAttributes italicTextAttributes = selected && hasFocus ?
+                    new SimpleTextAttributes(SimpleTextAttributes.STYLE_ITALIC, JBColor.WHITE) :
+                    SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES;
             component.append(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_VIEW_DETAILS_COUNT, rootNode.getChildCount()),
-                    SimpleTextAttributes.GRAY_ITALIC_ATTRIBUTES);
+                    italicTextAttributes);
             return component;
         }
         return this;

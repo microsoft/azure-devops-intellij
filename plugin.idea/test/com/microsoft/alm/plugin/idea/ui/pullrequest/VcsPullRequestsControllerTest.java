@@ -64,10 +64,6 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //pop up menu - abandon pr
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR));
         verify(modelMock).abandonSelectedPullRequest();
-
-        //pop up menu - complete pr
-        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_COMPLETE_SELECTED_PR));
-        verify(modelMock).completeSelectedPullRequest();
     }
 
     @Test
