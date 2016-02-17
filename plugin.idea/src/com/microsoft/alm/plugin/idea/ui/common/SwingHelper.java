@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.common;
 import com.intellij.util.ui.JBUI;
 
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
@@ -16,7 +17,9 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import java.awt.AWTKeyStroke;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.util.HashSet;
@@ -80,6 +83,31 @@ public class SwingHelper {
             table.setRowHeight(table.getFontMetrics(table.getFont()).getHeight() + JBUI.scale(1));
         }
     }
+
+    public static void addToGridBag(final JPanel panel, final Component component, final int x, final int y) {
+        addToGridBag(panel, component, x, y, 1, 1, -1, -1);
+    }
+
+    public static void addToGridBag(final JPanel panel, final Component component, final int x, final int y, final int spanX, final int spanY) {
+        addToGridBag(panel, component, x, y, spanX, spanY, -1, -1);
+    }
+
+    public static void addToGridBag(final JPanel panel, final Component component, final int x, final int y, final int spanX, final int spanY, final int topMargin, final int rightMargin) {
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = x;
+        c.gridy = y;
+        c.gridwidth = spanX;
+        c.gridheight = spanY;
+        if (rightMargin >= 0) {
+            c.insets.right = rightMargin;
+        }
+        if (topMargin != 0) {
+            c.insets.top = topMargin;
+        }
+        c.anchor = GridBagConstraints.WEST;
+        panel.add(component, c);
+    }
+
 
     public static void setMaxCharLimit(final JTextArea textField, final int limit) {
         textField.setDocument(new MaxCharLimitDocument(limit));

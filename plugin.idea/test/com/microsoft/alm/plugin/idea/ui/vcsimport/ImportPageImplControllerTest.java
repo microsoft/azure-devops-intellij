@@ -19,7 +19,7 @@ public class ImportPageImplControllerTest extends IdeaAbstractTest {
     public void testActionPerformed() {
         final MockImportPageModel pageModel = new MockImportPageModel(null, true);
         final MockImportPage page = new MockImportPage();
-        final ImportPageController pageController = new ImportPageController(pageModel, page);
+        final ImportPageController pageController = new ImportPageController(null, pageModel, page);
 
         //trigger connect
         pageController.actionPerformed(new ActionEvent(this, 1, LoginForm.CMD_SIGN_IN));

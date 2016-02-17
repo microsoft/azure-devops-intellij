@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.checkout;
 
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractController;
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
@@ -20,8 +21,10 @@ import java.util.Observable;
 class CheckoutPageController extends AbstractController {
     private final CheckoutPage page;
     private final CheckoutPageModel model;
+    private final CheckoutController parentController;
 
-    public CheckoutPageController(final CheckoutPageModel model, final CheckoutPage page) {
+    public CheckoutPageController(final CheckoutController parentController, final CheckoutPageModel model, final CheckoutPage page) {
+        this.parentController = parentController;
         this.model = model;
         this.model.addObserver(this);
         this.page = page;
@@ -99,6 +102,10 @@ class CheckoutPageController extends AbstractController {
             model.gotoLink(CheckoutPageModel.URL_CREATE_ACCOUNT);
         } else if (LoginForm.CMD_LEARN_MORE.equals(e.getActionCommand())) {
             model.gotoLink(CheckoutPageModel.URL_VSO_JAVA);
+        } else if (CheckoutForm.CMD_GOTO_TFS.equals(e.getActionCommand())) {
+            parentController.gotoEnterVsoURL();
+        } else if (CheckoutForm.CMD_GOTO_SPS_PROFILE.equals(e.getActionCommand())) {
+            model.gotoLink(VsoAuthenticationProvider.VSO_AUTH_URL);
         }
     }
 

@@ -9,12 +9,14 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
+import com.microsoft.alm.plugin.idea.ui.controls.HelpPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.UserAccountPanel;
 import org.apache.commons.lang.StringUtils;
@@ -53,6 +55,7 @@ public class CheckoutForm implements BasicForm {
     private JButton refreshButton;
     private BusySpinnerPanel busySpinner;
     private JScrollPane repositoryTableScrollPane;
+    private HelpPanel helpPanel;
     private boolean initialized = false;
     private Timer timer;
 
@@ -60,6 +63,10 @@ public class CheckoutForm implements BasicForm {
     public static final String CMD_REPO_FILTER_CHANGED = "repositoryFilterChanged";
     @NonNls
     public static final String CMD_REFRESH = "refresh";
+    @NonNls
+    public static final String CMD_GOTO_TFS = "gotoTFS";
+    @NonNls
+    public static final String CMD_GOTO_SPS_PROFILE = "gotoSPSProfile";
 
     public CheckoutForm(final boolean vsoSelected) {
         // The following call is required to initialize the controls on the form
@@ -84,6 +91,11 @@ public class CheckoutForm implements BasicForm {
 
             // Fix tabbing in table
             SwingHelper.fixTabKeys(repositoryTable);
+
+            // Set help text and popup text
+            helpPanel.addPopupCommand(TfPluginBundle.message(TfPluginBundle.KEY_VSO_LOOKUP_HELP_ENTER_URL), CMD_GOTO_TFS);
+            helpPanel.addPopupCommand(TfPluginBundle.message(TfPluginBundle.KEY_VSO_LOOKUP_HELP_VIEW_ACCOUNTS), CMD_GOTO_SPS_PROFILE);
+            helpPanel.setVisible(false); // Don't show this help panel until we know if it's vs.com
 
             // Set hint text
             repositoryFilter.setUI(new HintTextFieldUI(
@@ -143,6 +155,7 @@ public class CheckoutForm implements BasicForm {
         userAccountPanel.addActionListener(listener);
         timer.addActionListener(listener);
         refreshButton.addActionListener(listener);
+        helpPanel.addActionListener(listener);
     }
 
     public void setRepositoryFilter(final String filter) {
@@ -208,6 +221,13 @@ public class CheckoutForm implements BasicForm {
 
     public void setServerName(final String name) {
         userAccountPanel.setServerName(name);
+
+        // show the helpPanel if the server is a VSO server
+        if (!userAccountPanel.isWindowsAccount() || UrlHelper.isTeamServicesUrl(name)) {
+            helpPanel.setVisible(true);
+        } else {
+            helpPanel.setVisible(false);
+        }
     }
 
     public void setLoading(final boolean loading) {
@@ -252,7 +272,7 @@ public class CheckoutForm implements BasicForm {
     private void $$$setupUI$$$() {
         createUIComponents();
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), -1, -1));
         contentPanel.setName("");
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoCheckoutForm.SelectRepository"));
@@ -262,13 +282,13 @@ public class CheckoutForm implements BasicForm {
         contentPanel.add(repositoryFilter, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoCheckoutForm.ParentDirectory"));
-        contentPanel.add(label2, new GridConstraints(4, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        contentPanel.add(label2, new GridConstraints(5, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoCheckoutForm.DirectoryName"));
-        contentPanel.add(label3, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        contentPanel.add(label3, new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         directoryName = new JTextField();
         directoryName.setName("");
-        contentPanel.add(directoryName, new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        contentPanel.add(directoryName, new GridConstraints(8, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         contentPanel.add(userAccountPanel, new GridConstraints(0, 0, 1, 3, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         repositoryTableScrollPane = new JScrollPane();
         contentPanel.add(repositoryTableScrollPane, new GridConstraints(3, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
@@ -279,7 +299,7 @@ public class CheckoutForm implements BasicForm {
         repositoryTable.setShowVerticalLines(false);
         repositoryTableScrollPane.setViewportView(repositoryTable);
         parentDirectory = new TextFieldWithBrowseButton();
-        contentPanel.add(parentDirectory, new GridConstraints(5, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        contentPanel.add(parentDirectory, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         refreshButton = new JButton();
         refreshButton.setIcon(new ImageIcon(getClass().getResource("/actions/refresh.png")));
         refreshButton.setText("");
@@ -287,6 +307,10 @@ public class CheckoutForm implements BasicForm {
         contentPanel.add(refreshButton, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         busySpinner = new BusySpinnerPanel();
         contentPanel.add(busySpinner, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        helpPanel = new HelpPanel();
+        helpPanel.setHelpText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.helpText"));
+        helpPanel.setPopupText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.Instructions"));
+        contentPanel.add(helpPanel, new GridConstraints(4, 0, 1, 3, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     }
 
     /**

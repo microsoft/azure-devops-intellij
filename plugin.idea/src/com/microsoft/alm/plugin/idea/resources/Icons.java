@@ -13,6 +13,7 @@ public class Icons {
         return IconLoader.getIcon(path);
     }
 
+    public static final Icon Help = load("/icons/help.png");
     public static final Icon Frown = load("/icons/frown.png");
     public static final Icon Smile = load("/icons/smile.png");
     public static final Icon VSLogo = load("/icons/vs-logo.png");

@@ -74,6 +74,12 @@ public class TfPluginBundle {
     public static final String KEY_OPERATION_LOOKUP_CANCELED = "Operation.Lookup.Canceled";
     @NonNls
     public static final String KEY_OPERATION_LOOKUP_ERRORS = "Operation.Lookup.Errors";
+    @NonNls
+    public static final String KEY_VSO_LOOKUP_HELP_INSTRUCTIONS = "VsoLookupHelp.Instructions";
+    @NonNls
+    public static final String KEY_VSO_LOOKUP_HELP_ENTER_URL = "VsoLookupHelp.EnterUrl";
+    @NonNls
+    public static final String KEY_VSO_LOOKUP_HELP_VIEW_ACCOUNTS = "VsoLookupHelp.ViewAccounts";
 
 
     // Checkout dialog ui and models

@@ -5,12 +5,11 @@ package com.microsoft.alm.plugin.idea.ui.controls;
 
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionListener;
 
@@ -37,10 +36,10 @@ public class UserAccountPanel extends JPanel {
 
         // Layout controls
         setLayout(new GridBagLayout());
-        addToGrid(iconPanel, 0, 0, 1, 2, 0);
-        addToGrid(serverLabel, 1, 0, 1, 1, 0);
-        addToGrid(accountLabel, 1, 1, 1, 1, 0);
-        addToGrid(hyperlink, 1, 2, 1, 1, 5);
+        SwingHelper.addToGridBag(this, iconPanel, 0, 0, 1, 2, 0, 4);
+        SwingHelper.addToGridBag(this, serverLabel, 1, 0, 1, 1, 0, 4);
+        SwingHelper.addToGridBag(this, accountLabel, 1, 1, 1, 1, 0, 4);
+        SwingHelper.addToGridBag(this, hyperlink, 1, 2, 1, 1, 5, 4);
 
         setWindowsAccount(windowsAccount);
         setPreferredSize(new Dimension(64, 32));
@@ -57,20 +56,6 @@ public class UserAccountPanel extends JPanel {
                 TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_SIGN_OUT);
         hyperlink.setText(signOutText);
         iconPanel.setIcon(windowsAccount ? Icons.WindowsAccount : Icons.VsoAccount);
-    }
-
-    private void addToGrid(final Component component, final int x, final int y, final int spanX, final int spanY, final int topMargin) {
-        GridBagConstraints c = new GridBagConstraints();
-        c.gridx = x;
-        c.gridy = y;
-        c.gridwidth = spanX;
-        c.gridheight = spanY;
-        c.insets.right = 4;
-        if (topMargin != 0) {
-            c.insets.top = topMargin;
-        }
-        c.anchor = GridBagConstraints.WEST;
-        add(component, c);
     }
 
     public void addActionListener(final ActionListener listener) {

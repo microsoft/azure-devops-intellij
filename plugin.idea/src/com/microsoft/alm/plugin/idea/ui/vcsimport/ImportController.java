@@ -51,14 +51,25 @@ public class ImportController implements Observer {
                             final ImportModel importModel) {
         this.dialog = importDialog;
         this.model = importModel;
-        this.vsoPageController = new ImportPageController(model.getVsoImportPageModel(), vsoImportPage);
-        this.tfsPageController = new ImportPageController(model.getTfsImportPageModel(), tfsImportPage);
+        this.vsoPageController = new ImportPageController(this, model.getVsoImportPageModel(), vsoImportPage);
+        this.tfsPageController = new ImportPageController(this, model.getTfsImportPageModel(), tfsImportPage);
         setupDialog();
         importModel.addObserver(this);
     }
 
     public ImportModel getModel() {
         return model;
+    }
+
+    /**
+     * This method is specifically here for the case where the user is on the VSO tab, but needs
+     * to switch to the TFS tab in order to enter the URL directly.
+     * - We need to sign out on the TFS tab
+     * - And then take the user to that tab
+     */
+    public void gotoEnterVsoURL() {
+        model.getTfsImportPageModel().signOut();
+        model.setVsoSelected(false);
     }
 
     public boolean showModalDialog() {

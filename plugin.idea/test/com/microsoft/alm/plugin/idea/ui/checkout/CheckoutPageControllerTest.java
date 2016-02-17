@@ -25,7 +25,7 @@ public class CheckoutPageControllerTest extends IdeaAbstractTest {
     public void testActionPerformed() {
         MockCheckoutPageModel tfsModel = new MockCheckoutPageModel(null, ServerContextTableModel.VSO_REPO_COLUMNS);
         MockCheckoutPage tfsPage = new MockCheckoutPage();
-        CheckoutPageController tcc = new CheckoutPageController(tfsModel, tfsPage);
+        CheckoutPageController tcc = new CheckoutPageController(null, tfsModel, tfsPage);
 
         // Trigger the controller to do connect
         tcc.actionPerformed(new ActionEvent(this, 1, LoginForm.CMD_SIGN_IN));

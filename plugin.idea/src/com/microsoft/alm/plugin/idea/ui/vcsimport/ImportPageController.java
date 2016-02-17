@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.vcsimport;
 
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractController;
 import com.microsoft.alm.plugin.idea.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.forms.LoginForm;
@@ -20,8 +21,10 @@ import java.util.Observable;
 public class ImportPageController extends AbstractController {
     private final ImportPage page;
     private final ImportPageModel pageModel;
+    private final ImportController parentController;
 
-    public ImportPageController(final ImportPageModel pageModel, final ImportPage page) {
+    public ImportPageController(final ImportController parentController, final ImportPageModel pageModel, final ImportPage page) {
+        this.parentController = parentController;
         this.pageModel = pageModel;
         this.pageModel.addObserver(this);
         this.page = page;
@@ -96,6 +99,10 @@ public class ImportPageController extends AbstractController {
             super.requestFocus(page);
         } else if (ImportForm.CMD_PROJECT_FILTER_CHANGED.equals(e.getActionCommand())) {
             // No action needed here. We updated the pageModel above which should filter the list automatically.
+        } else if (ImportForm.CMD_GOTO_TFS.equals(e.getActionCommand())) {
+            parentController.gotoEnterVsoURL();
+        } else if (ImportForm.CMD_GOTO_SPS_PROFILE.equals(e.getActionCommand())) {
+            pageModel.gotoLink(VsoAuthenticationProvider.VSO_AUTH_URL);
         }
     }
 

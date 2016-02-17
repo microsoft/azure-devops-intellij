@@ -18,7 +18,7 @@ public class ImportPageControllerTest extends IdeaAbstractTest {
     public void testActionPerformed() {
         final MockImportPageModel pageModel = new MockImportPageModel(null, false);
         final MockImportPage page = new MockImportPage();
-        final ImportPageController pageController = new ImportPageController(pageModel, page);
+        final ImportPageController pageController = new ImportPageController(null, pageModel, page);
 
         //trigger create new account
         pageController.actionPerformed(new ActionEvent(this, 1, LoginForm.CMD_CREATE_ACCOUNT));

@@ -50,14 +50,25 @@ public class CheckoutController implements Observer {
                               final CheckoutModel checkoutModel) {
         this.model = checkoutModel;
         this.dialog = dialog;
-        this.vsoController = new CheckoutPageController(model.getVsoModel(), vsoCheckoutPage);
-        this.tfsController = new CheckoutPageController(model.getTfsModel(), tfsCheckoutPage);
+        this.vsoController = new CheckoutPageController(this, model.getVsoModel(), vsoCheckoutPage);
+        this.tfsController = new CheckoutPageController(this, model.getTfsModel(), tfsCheckoutPage);
         setupDialog();
         model.addObserver(this);
     }
 
     public CheckoutModel getModel() {
         return model;
+    }
+
+    /**
+     * This method is specifically here for the case where the user is on the VSO tab, but needs
+     * to switch to the TFS tab in order to enter the URL directly.
+     * - We need to sign out on the TFS tab
+     * - And then take the user to that tab
+     */
+    public void gotoEnterVsoURL() {
+        model.getTfsModel().signOut();
+        model.setVsoSelected(false);
     }
 
     public boolean showModalDialog() {
@@ -79,6 +90,10 @@ public class CheckoutController implements Observer {
                 dialog.displayError(null);
             }
         }
+    }
+
+    public void gotoTab(int tabId) {
+        model.setVsoSelected(tabId == TAB_VSO);
     }
 
     private void setupDialog() {
