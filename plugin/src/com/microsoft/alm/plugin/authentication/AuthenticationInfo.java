@@ -7,6 +7,10 @@ package com.microsoft.alm.plugin.authentication;
  * Immutable
  */
 public class AuthenticationInfo {
+    // If we all use this constant, it provides future type safely if we ever decided to change NONE to a
+    // typed variable instead of 'null'
+    public static AuthenticationInfo NONE = null;
+
     private final String userName;
     private final String password;
     private final String serverUri;

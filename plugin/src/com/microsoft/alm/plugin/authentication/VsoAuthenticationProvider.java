@@ -3,25 +3,15 @@
 
 package com.microsoft.alm.plugin.authentication;
 
-import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoCallback;
+import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoProvider;
+import com.microsoft.alm.plugin.authentication.facades.VsoSwtAuthInfoProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
-import com.microsoft.tf.common.authentication.aad.PersonalAccessTokenFactory;
-import com.microsoft.tf.common.authentication.aad.TokenScope;
-import com.microsoft.tf.common.authentication.aad.impl.AzureAuthenticatorImpl;
-import com.microsoft.tf.common.authentication.aad.impl.PersonalAccessTokenFactoryImpl;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationCallback;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
@@ -29,29 +19,14 @@ import java.util.Date;
 public class VsoAuthenticationProvider implements AuthenticationProvider {
     private static final Logger logger = LoggerFactory.getLogger(VsoAuthenticationProvider.class);
 
-    //azure connection strings
-    private static final String LOGIN_WINDOWS_NET_AUTHORITY = "login.windows.net";
-    private static final String COMMON_TENANT = "common";
-    private static final String MANAGEMENT_CORE_RESOURCE = "https://management.core.windows.net/";
-    private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
-    private static final String REDIRECT_URL = "https://xplatalm.com";
-    private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
-
     public static final String VSO_AUTH_URL = "https://app.vssps.visualstudio.com";
 
-    private static class AzureAuthenticatorHolder {
-        private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
-                COMMON_TENANT,
-                MANAGEMENT_CORE_RESOURCE,
-                CLIENT_ID,
-                REDIRECT_URL);
+    private static class SwtBackedAuthInfoProviderHolder {
+        private static VsoSwtAuthInfoProvider INSTANCE = new VsoSwtAuthInfoProvider();
     }
 
-    /**
-     * @return AzureAuthenticator
-     */
-    public static AzureAuthenticator getAzureAuthenticator() {
-        return AzureAuthenticatorHolder.INSTANCE;
+    private AuthenticationInfoProvider getAuthenticationInfoProvider() {
+        return SwtBackedAuthInfoProviderHolder.INSTANCE;
     }
 
     /**
@@ -87,62 +62,34 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     public void authenticateAsync(final String serverUri, final AuthenticationListener listener) {
         AuthenticationListener.Helper.authenticating(listener);
 
-        //invoke AAD authentication library to get an account access token
-        try {
-            getAzureAuthenticator().getAadAccessTokenAsync(new AuthenticationCallback() {
-                @Override
-                public void onSuccess(final AuthenticationResult result) {
-                    final AuthenticationInfo authenticationInfo;
+        getAuthenticationInfoProvider().getAuthenticationInfoAsync(serverUri, new AuthenticationInfoCallback() {
+            @Override
+            public void onSuccess(final AuthenticationInfo authenticationInfo) {
+                //save for VSO_Deployment
+                ServerContextManager.getInstance().validateServerConnection(
+                        new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
+                                .uri(VSO_AUTH_URL)
+                                .authentication(authenticationInfo)
+                                .build());
 
-                    if (result == null) {
-                        //User closed the browser window without signing in
-                        authenticationInfo = null;
-                        clearAuthenticationDetails();
-                        AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
-                    } else {
-                        try {
-                            final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
-                            final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                    AuthHelper.getEmail(result), SystemHelper.getComputerName(), new Date().toString());
-                            final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
-                                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
-                            authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
-
-                            //save for VSO_Deployment
-                            ServerContextManager.getInstance().validateServerConnection(
-                                    new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
-                                            .uri(VSO_AUTH_URL)
-                                            .authentication(authenticationInfo)
-                                            .build());
-
-                            if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
-                                //save for the specific server url
-                                ServerContextManager.getInstance().validateServerConnection(
-                                        new ServerContextBuilder().type(ServerContext.Type.VSO)
-                                                .uri(serverUri)
-                                                .authentication(authenticationInfo)
-                                                .build());
-                            }
-
-                            //success
-                            AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
-                        } catch (Throwable t) {
-                            logger.warn("authenticateAsync.onSuccess: Failed to setup PAT after authenticating", t);
-                            clearAuthenticationDetails();
-                            AuthenticationListener.Helper.authenticated(listener, null, t);
-                        }
-                    }
+                if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
+                    //save for the specific server url
+                    ServerContextManager.getInstance().validateServerConnection(
+                            new ServerContextBuilder().type(ServerContext.Type.VSO)
+                                    .uri(serverUri)
+                                    .authentication(authenticationInfo)
+                                    .build());
                 }
 
-                @Override
-                public void onFailure(final Throwable throwable) {
-                    clearAuthenticationDetails();
-                    AuthenticationListener.Helper.authenticated(listener, null, throwable);
-                }
-            });
-        } catch (IOException e) {
-            clearAuthenticationDetails();
-            AuthenticationListener.Helper.authenticated(listener, null, e);
-        }
+                //success
+                AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                clearAuthenticationDetails();
+                AuthenticationListener.Helper.authenticated(listener, AuthenticationInfo.NONE, t);
+            }
+        });
     }
 }
