@@ -49,25 +49,116 @@ if "%ide%"=="studio" (
 
 for /F "usebackq tokens=2*" %%a in (`REG QUERY "%KEY%" /v %VALUE% 2^>nul`) do set exePath=%%b
 
-:: TODO: check if a path is found and if not look in the Program Files directories
+:: Check if a path is found and if not look in the Program Files directories
+if "%exePath%"=="" GOTO searchPath
 
 :: ----------------------------
 ::  Special path configurations
 :: ----------------------------
 if "%ide%"=="studio" (
-    :: default to 32-bit exe
-    set "exePath=%exePath%\bin\studio32.exe"
-    if /I %Processor_Architecture%==AMD64 set "exePath=%exePath%\bin\studio64.exe"
-    if /I "%PROCESSOR_ARCHITEW6432%"=="AMD64" set "exePath=%exePath%\bin\studio64.exe"
+    GOTO setAndroidExe
 ) else (
     :: Remove the extra parameter wildcard at the end of registry entry
-    set exePath=!exePath:~0,-5!
+    set exePath="!exePath:~0,-5!"
 )
+GOTO launch
 
 :: ----------------------------
-::  Launch Ide with parameters
+::  Search for IDE parent directory
 :: ----------------------------
-start "" "%exePath%" vsts %1
+:searchPath
+if "%ide%"=="studio" (
+    set directory=Android
+) else (
+    set directory=JetBrains
+)
+
+:: Check parent directory in %PROGRAMFILES%, %PROGRAMFILES(x86)%, Program Files, and Program Files (x86)
+:: This is done because Firefox doesn't resolve the env variables like expected
+if exist "%PROGRAMFILES%\%directory%" (
+    set exePath="%PROGRAMFILES%\%directory%"
+    GOTO findIdeDirectory
+)
+if exist "%PROGRAMFILES(x86)%\%directory%" (
+     set exePath="%PROGRAMFILES(x86)%\%directory%"
+     GOTO findIdeDirectory
+ )
+if exist "%SYSTEMDRIVE%\Program Files\%directory%" (
+    set exePath="%SYSTEMDRIVE%\Program Files\%directory%"
+    GOTO findIdeDirectory
+)
+if exist "%SYSTEMDRIVE%\Program Files (x86)\%directory%" (
+    set exePath="%SYSTEMDRIVE%\Program Files ^(x86^)\%directory%"
+    GOTO findIdeDirectory
+)
+:: IDE directory was found. Can't find exe to run
+:: TODO: adding logging and user msg here
+GOTO end
+
+:: ----------------------------
+::  Find IDE directory
+:: ----------------------------
+:findIdeDirectory
+if "%ide%"=="studio" (
+    set exePath="%exePath:~1,-1%\Android Studio"
+    GOTO setAndroidExe
+)
+
+call:getType
+set literalPath=%exePath:~1,-1%
+for /d %%d in ("%literalPath%\%type%*") do set "exePath=%%~sfd"
+set exePath=%exePath%\bin\%ide%
+
+:: RubyMine does not have a 64bit exe
+if %type%==RubyMine (
+    set exePath=%exePath%.exe
+    GOTO launch
+)
+
+:: Get 64bit exe name for other IDEs if appropriate
+call:is64
+if %is64% == 1 set exePath=%exePath%64
+set exePath=%exePath%.exe
+GOTO launch
+
+:: ----------------------------
+::  Sets correct Android exe then launches
+:: ----------------------------
+:setAndroidExe
+set exe=studio32.exe
+call:is64
+if %is64% == 1 set exe=studio64.exe
+set exePath="%exePath:~1,-1%\bin\%exe%"
+GOTO launch
+
+:: ----------------------------
+::  Launch IDE with parameters
+:: ----------------------------
+:launch
+start "" %exePath% vsts %1
+GOTO end
+
+:: ----------------------------
+::  Checks if the machine is 64 bit or not
+:: ----------------------------
+:is64
+set is64=0
+if /I %Processor_Architecture%==AMD64 set is64=1
+if /I "%PROCESSOR_ARCHITEW6432%"=="AMD64" set is64=1
+GOTO:eof
+
+:: ----------------------------
+::  Finds IDE type from params
+:: ----------------------------
+:getType
+:: Default the IDE to IntelliJ
+set type=IntelliJ
+if x%uri:IdeType=%==x%uri% GOTO:eof
+set "type=%uri:*IdeType=%"
+set "type=%type:"=%"
+for /F "usebackq delims=^&^ tokens=1" %%a in ('%type%') do set type=%%a
+for /F "tokens=* delims= " %%a in ('echo %type%') do set type=%%a
+GOTO:eof
 
 :end
 @endlocal & exit
