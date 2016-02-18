@@ -229,11 +229,12 @@ public class ServerContext {
     }
 
     public synchronized GitHttpClient getGitHttpClient() {
-        if (teamProjectCollectionReference != null) {
-            final URI collectionUri = UrlHelper.getCollectionURI(serverUri, teamProjectCollectionReference.getName());
+        final URI collectionUri = getCollectionURI();
+        if (collectionUri != null) {
             final GitHttpClient gitClient = new GitHttpClient(getClient(), collectionUri);
             return gitClient;
         }
+
         // We don't have enough context to create a GitHttpClient
         return null;
     }
@@ -256,6 +257,16 @@ public class ServerContext {
 
     public GitRepository getGitRepository() {
         return gitRepository;
+    }
+
+    public URI getCollectionURI() {
+        if (teamProjectCollectionReference != null) {
+            final URI collectionURI = UrlHelper.getCollectionURI(serverUri, teamProjectCollectionReference.getName());
+            return collectionURI;
+        }
+
+        //We don't have enough context to create collection URL
+        return null;
     }
 
     private void checkDisposed() {

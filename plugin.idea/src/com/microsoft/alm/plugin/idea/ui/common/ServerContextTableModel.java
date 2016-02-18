@@ -7,6 +7,7 @@ package com.microsoft.alm.plugin.idea.ui.common;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 import jersey.repackaged.com.google.common.base.Predicate;
 import jersey.repackaged.com.google.common.collect.Collections2;
@@ -176,8 +177,8 @@ public class ServerContextTableModel extends AbstractTableModel {
                 return repository != null ? repository.getName() : "";
             }
             case PROJECT: {
-                final GitRepository repository = serverContext.getGitRepository();
-                return (repository != null && repository.getProjectReference() != null) ? repository.getProjectReference().getName() : "";
+                final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
+                return (teamProject != null) ? teamProject.getName() : "";
             }
             case COLLECTION: {
                 final TeamProjectCollectionReference collection = serverContext.getTeamProjectCollectionReference();

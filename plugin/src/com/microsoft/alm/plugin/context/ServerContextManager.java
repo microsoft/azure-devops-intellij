@@ -230,9 +230,8 @@ public class ServerContextManager {
 
         try {
             final String urlForConnectionData;
-            if (context.getTeamProjectCollectionReference() != null) {
-                urlForConnectionData = UrlHelper.getCollectionURI(context.getServerUri(),
-                        context.getTeamProjectCollectionReference().getName()).toString();
+            if (context.getCollectionURI() != null) {
+                urlForConnectionData = context.getCollectionURI().toString();
             } else {
                 urlForConnectionData = context.getServerUri().toString();
             }

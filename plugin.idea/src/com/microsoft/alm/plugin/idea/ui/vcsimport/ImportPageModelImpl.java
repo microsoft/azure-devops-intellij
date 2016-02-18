@@ -38,6 +38,8 @@ import com.microsoft.alm.plugin.idea.ui.common.ServerContextLookupPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
+import com.microsoft.teamfoundation.core.webapi.model.TeamProject;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.vss.client.core.model.VssServiceException;
 import git4idea.DialogManager;
@@ -62,6 +64,7 @@ import javax.swing.ListSelectionModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -82,6 +85,9 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
     private final static String ACTION_NAME = "import";
     private final static String REMOTE_ORIGIN = "origin";
+    private final static String PROJECT_CAPABILITY_VC = "versioncontrol";
+    private final static String PROJECT_CAPABILITY_VC_TYPE = "sourceControlType";
+    private final static String PROJECT_CAPABILITY_VC_GIT = "Git";
 
     public ImportPageModelImpl(final ImportModel importModel, final ServerContextTableModel.Column[] columns) {
         super(importModel);
@@ -213,6 +219,14 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 String remoteUrlForDisplay = "";
 
                 try {
+                    if (!projectSupportsGitRepos(project, context, indicator)) {
+                        logger.error("doImport: the team project {} on collection {} , " +
+                                        "server {} does not support Git repositories or is not a hybrid project",
+                                localContext.getTeamProjectReference().getName(),
+                                localContext.getTeamProjectCollectionReference().getName(), localContext.getUri());
+                        return;
+                    }
+
                     final GitRepository repo = getRepositoryForProject(project);
                     final VirtualFile rootVirtualFile = repo != null ? repo.getRoot() : project.getBaseDir();
 
@@ -318,6 +332,65 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         GitInit.refreshAndConfigureVcsMappings(project, rootVirtualFile, rootVirtualFile.getPath());
         final GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
         return repositoryManager.getRepositoryForRoot(rootVirtualFile);
+    }
+
+    private boolean projectSupportsGitRepos(final Project project, final ServerContext localContext,
+                                            final ProgressIndicator indicator) {
+        if (localContext.getType() != ServerContext.Type.TFS) {
+            return true; //VSO - team services supports hybrid projects, so git and tfvc are both supported
+        }
+
+        //TFS on premise server
+        final CoreHttpClient client = new CoreHttpClient(localContext.getClient(), localContext.getCollectionURI());
+        final TeamProject tp = client.getProject(localContext.getTeamProjectReference().getId().toString(), true);
+        HashMap<String, HashMap<String, String>> capabilities = tp.getCapabilities();
+
+        //TODO: make the containsKey and get case insensitive
+        if (capabilities != null && capabilities.containsKey(PROJECT_CAPABILITY_VC)) {
+            final HashMap<String, String> vcCapabilities = capabilities.get(PROJECT_CAPABILITY_VC);
+            if (vcCapabilities != null && vcCapabilities.containsKey(PROJECT_CAPABILITY_VC_TYPE)) {
+                final String sourceControlType = vcCapabilities.get(PROJECT_CAPABILITY_VC_TYPE);
+                if (StringUtils.equalsIgnoreCase(sourceControlType, PROJECT_CAPABILITY_VC_GIT)) {
+                    //sourceControlType=git, so git is supported
+                    return true;
+                }
+            }
+        }
+
+        // Capability sourceControlType=TFvc, we are not sure if hybrid projects are supported or not on this server
+        // Hybrid projects were introduced in TFS 2015 Update1
+        // They are not officially supported by TFS 2015 RTM, creating repo will succeed but web access does not show the git repos
+        // warn user to verify their project is a hybrid project
+        final List<String> proceed = new ArrayList<String>();
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                final boolean response = IdeaHelper.showConfirmationDialog(project,
+                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_TEAM_PROJECT_GIT_SUPPORT, tp.getName()),
+                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE), Icons.VSLogo,
+                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_PROCEED),
+                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCEL)
+                );
+
+                if (response) {
+                    proceed.add("true");
+                }
+
+            }
+        }, true, indicator.getModalityState());
+
+        if (proceed.size() == 0) {
+            //user chose to cancel import
+            logger.warn("projectSupportsGitRepos: User chose to cancel import into team project: {}",
+                    localContext.getTeamProjectReference().getName());
+            notifyImportError(project,
+                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED),
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_IMPORT),
+                    localContext);
+            return false;
+        }
+
+        return true;
     }
 
     private boolean doFirstCommitIfRequired(final Project project, final GitRepository localRepository,

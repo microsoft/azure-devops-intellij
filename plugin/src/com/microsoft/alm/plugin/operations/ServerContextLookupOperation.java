@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 import org.slf4j.Logger;
@@ -18,10 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 
@@ -128,7 +126,7 @@ public class ServerContextLookupOperation extends Operation {
     protected void doRestCollectionLookup(final ServerContext context) {
         final CoreHttpClient rootClient = new CoreHttpClient(context.getClient(), context.getUri());
         final List<TeamProjectCollectionReference> collections = rootClient.getProjectCollections(null, null);
-        logger.debug("doRestCollectionLookup: Found {} collections on account: {}.",  collections.size(), context.getUri().toString());
+        logger.debug("doRestCollectionLookup: Found {} collections on account: {}.", collections.size(), context.getUri().toString());
         doLookup(context, collections);
     }
 
@@ -146,38 +144,40 @@ public class ServerContextLookupOperation extends Operation {
                 return;
             }
 
-            // --------- resultScope == ContextScope.PROJECT -------
-            // Ideally, we would be using the following client to get the list of projects
-            // But getProjects doesn't allow us to filter to just Git Team Projects, so we get the list of repos and filter to unique projects
-            // -----------------------------------------------------
-            //final CoreHttpClient client = new CoreHttpClient(context.getClient(), collectionURI);
-            //final List<TeamProjectReference> projects = client.getProjects();
-            // -----------------------------------------------------
+            final URI collectionURI = UrlHelper.getCollectionURI(context.getUri(), teamProjectCollectionReference.getName());
 
-            final URI collectionURI = UrlHelper.createUri(context.getUri().toString() + "/" + teamProjectCollectionReference.getName());
-            final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-            final List<GitRepository> gitRepositories = gitClient.getRepositories();
+            if (resultScope == ContextScope.PROJECT) {
+                final CoreHttpClient client = new CoreHttpClient(context.getClient(), collectionURI);
+                final List<TeamProjectReference> projects = client.getProjects();
 
-            logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
-            addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                addTeamProjectResults(projects, context, teamProjectCollectionReference);
+            } else {
+                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
+                final List<GitRepository> gitRepositories = gitClient.getRepositories();
+
+                logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+                addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+            }
         }
+    }
+
+    protected void addTeamProjectResults(final List<TeamProjectReference> projects, final ServerContext context, final TeamProjectCollectionReference teamProjectCollectionReference) {
+        final List<ServerContext> serverContexts = new ArrayList<ServerContext>(projects.size());
+
+        for (final TeamProjectReference project : projects) {
+            final ServerContext projectServerContext = new ServerContextBuilder(context)
+                    .teamProject(project).collection(teamProjectCollectionReference).build();
+            serverContexts.add(projectServerContext);
+        }
+
+        final ServerContextLookupResults results = new ServerContextLookupResults();
+        results.serverContexts.addAll(serverContexts);
+        super.onLookupResults(results);
     }
 
     protected void addRepositoryResults(final List<GitRepository> gitRepositories, final ServerContext context, final TeamProjectCollectionReference teamProjectCollectionReference) {
         final List<ServerContext> serverContexts = new ArrayList<ServerContext>(gitRepositories.size());
-        final Set<UUID> includedContexts = new HashSet<UUID>(gitRepositories.size());
-
         for (final GitRepository gitRepository : gitRepositories) {
-            // If we are just looking for projects, only get the unique ones
-            if (resultScope == ContextScope.PROJECT) {
-                final UUID key = gitRepository.getProjectReference().getId();
-                if (includedContexts.contains(key)) {
-                    continue;
-                } else {
-                    includedContexts.add(key);
-                }
-            }
-
             final ServerContext gitServerContext = new ServerContextBuilder(context)
                     .uri(gitRepository.getRemoteUrl())
                     .repository(gitRepository)

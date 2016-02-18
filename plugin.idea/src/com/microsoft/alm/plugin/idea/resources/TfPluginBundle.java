@@ -200,6 +200,10 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_IMPORT_CANCEL = "Import.Cancel";
     @NonNls
+    public static final String KEY_IMPORT_PROCEED = "Import.Proceed";
+    @NonNls
+    public static final String KEY_IMPORT_TEAM_PROJECT_GIT_SUPPORT = "Import.TeamProject.GitSupport";
+    @NonNls
     public static final String KEY_IMPORT_GIT_PUSH = "Import.GitPush";
     @NonNls
     public static final String KEY_IMPORT_ERRORS_UNEXPECTED = "Import.Errors.Unexpected";
