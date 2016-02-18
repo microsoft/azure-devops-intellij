@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * Use this AuthenticationProvider to authenticate with VSO.
@@ -102,7 +103,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                         try {
                             final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
                             final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                    AuthHelper.getEmail(result), SystemHelper.getComputerName(), SystemHelper.getCurrentDateTimeString());
+                                    AuthHelper.getEmail(result), SystemHelper.getComputerName(), new Date().toString());
                             final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
                                     Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
                             authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);

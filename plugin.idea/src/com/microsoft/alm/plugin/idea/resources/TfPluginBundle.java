@@ -306,7 +306,20 @@ public class TfPluginBundle {
     public static final String KEY_VCS_PR_VIEW_DETAILS = "VcsPullRequestsTab.View.Details";
     @NonNls
     public static final String KEY_VCS_PR_VIEW_DETAILS_COUNT = "VcsPullRequestsTab.View.Details.Count";
-
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_LESS_THAN_A_MINUTE_AGO = "VcsPullRequestsTab.Date.LessThanAMinuteAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_ONE_MINUTE_AGO = "VcsPullRequestsTab.Date.OneMinuteAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_MINUTES_AGO = "VcsPullRequestsTab.Date.MinutesAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_ONE_HOUR_AGO = "VcsPullRequestsTab.Date.OneHourAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_HOURS_AGO = "VcsPullRequestsTab.Date.HoursAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_YESTERDAY = "VcsPullRequestsTab.Date.Yesterday";
+    @NonNls
+    public static final String KEY_VCS_PR_DATE_DAYS_AGO = "VcsPullRequestsTab.Date.DaysAgo";
 
     //actions
     @NonNls
