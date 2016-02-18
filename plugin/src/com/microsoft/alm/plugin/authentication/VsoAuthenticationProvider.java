@@ -21,12 +21,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     public static final String VSO_AUTH_URL = "https://app.vssps.visualstudio.com";
 
-    private static class SwtBackedAuthInfoProviderHolder {
-        private static VsoSwtAuthInfoProvider INSTANCE = new VsoSwtAuthInfoProvider();
-    }
-
     private AuthenticationInfoProvider getAuthenticationInfoProvider() {
-        return SwtBackedAuthInfoProviderHolder.INSTANCE;
+        return VsoSwtAuthInfoProvider.getProvider();
     }
 
     /**
