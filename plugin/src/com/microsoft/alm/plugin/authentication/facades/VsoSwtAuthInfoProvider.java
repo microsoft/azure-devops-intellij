@@ -36,19 +36,23 @@ public class VsoSwtAuthInfoProvider implements AuthenticationInfoProvider{
     private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
     private static final String REDIRECT_URL = "https://xplatalm.com";
 
-    private static class AzureAuthenticatorHolder {
-        private static AzureAuthenticator INSTANCE = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
+    final AzureAuthenticator azureAuthenticator;
+
+    // singleton
+    private VsoSwtAuthInfoProvider() {
+        azureAuthenticator = new AzureAuthenticatorImpl(LOGIN_WINDOWS_NET_AUTHORITY,
                 COMMON_TENANT,
                 MANAGEMENT_CORE_RESOURCE,
                 CLIENT_ID,
                 REDIRECT_URL);
     }
 
-    /**
-     * @return AzureAuthenticator
-     */
-    private static AzureAuthenticator getAzureAuthenticator() {
-        return AzureAuthenticatorHolder.INSTANCE;
+    private static class VsoSwtAuthInfoProviderHolder {
+        final static VsoSwtAuthInfoProvider INSTANCE = new VsoSwtAuthInfoProvider();
+    }
+
+    public static VsoSwtAuthInfoProvider getProvider() {
+        return VsoSwtAuthInfoProviderHolder.INSTANCE;
     }
 
     @Override
@@ -56,7 +60,7 @@ public class VsoSwtAuthInfoProvider implements AuthenticationInfoProvider{
         final SettableFuture<AuthenticationInfo> authenticationInfoFuture = SettableFuture.<AuthenticationInfo>create();
         //invoke AAD authentication library to get an account access token
         try {
-            getAzureAuthenticator().getAadAccessTokenAsync(new AuthenticationCallback() {
+            this.azureAuthenticator.getAadAccessTokenAsync(new AuthenticationCallback() {
                 @Override
                 public void onSuccess(final AuthenticationResult result) {
                     final AuthenticationInfo authenticationInfo;
