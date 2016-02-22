@@ -101,6 +101,8 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         // "file://jarpath.jar!classname"
         final String userAgentJarPath = jarPath.substring(5, jarPath.lastIndexOf("!"));
 
-        System.setProperty("java.class.path", classpath + ":" + userAgentJarPath);
+        String pathSeparator = System.getProperty("path.separator");
+
+        System.setProperty("java.class.path", classpath + pathSeparator + userAgentJarPath);
     }
 }
