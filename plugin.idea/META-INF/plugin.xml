@@ -22,7 +22,7 @@
         <li>Supports authenticating with Visual Studio Team Services and Team Foundation Server 2015 to work with source code in Git repositories.</li>
         <li>Checkout code from Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
         <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
-        <li>Create pull requests.</li>
+        <li>Create pull requests and view your active pull requests.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
       </ul>
       <br />
@@ -40,7 +40,7 @@
     <change-notes><![CDATA[
       v 0.96.0 <i>Preview</i>
       <br />
-      This release includes several incremental feature updates and bug fixes.
+      This release includes support for pull requests in addition to incremental feature updates and bug fixes.
       <br />
     ]]>
     </change-notes>
