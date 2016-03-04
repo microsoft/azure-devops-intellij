@@ -11,8 +11,7 @@ import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
 import com.microsoft.alm.auth.secret.Token;
 import com.microsoft.alm.auth.secret.TokenPair;
 import com.microsoft.alm.auth.secret.VsoTokenScope;
-import com.microsoft.alm.common.utils.SystemHelper;
-import com.microsoft.alm.oauth2.useragent.JavaFx;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.provider.JaxrsClientProvider;
 import com.microsoft.alm.storage.InsecureInMemoryStore;
@@ -22,11 +21,8 @@ import com.microsoft.visualstudio.services.account.Profile;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
-import java.util.Date;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
-
-    private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
 
     private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
     private static final String REDIRECT_URL = "https://xplatalm.com";
@@ -62,9 +58,6 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         final SettableFuture<AuthenticationInfo> authenticationInfoFuture = SettableFuture.<AuthenticationInfo>create();
 
         try {
-            //TODO: This is probably not a good idea
-            hackJavaFxProviderClassPath();
-
             final Client client = jaxrsClientProvider.getVstsGlobalClient();
 
             //TODO: this is a dependency on the aad-pat-generator jar which is going away.  When we update to consume
@@ -75,8 +68,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
             final Profile me = accountHttpClient.getMyProfile();
             final String emailAddress = me.getCoreAttributes().getEmailAddress().getValue();
 
-            final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                    emailAddress, SystemHelper.getComputerName(), new Date().toString());
+            final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
             final Token token = vstsPatAuthenticator.getVstsGlobalPat(VsoTokenScope.CodeAll,
                     tokenDescription, PromptBehavior.AUTO);
@@ -93,16 +85,4 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         Futures.addCallback(authenticationInfoFuture, callback);
     }
 
-    private void hackJavaFxProviderClassPath() {
-        // Hack around this issue:
-        // https://github.com/Microsoft/oauth2-useragent/issues/9
-        final String classpath = System.getProperty("java.class.path");
-        String jarPath = JavaFx.class.getResource("/com/microsoft/alm/oauth2/useragent/JavaFx.class").getPath();
-        // "file://jarpath.jar!classname"
-        final String userAgentJarPath = jarPath.substring(5, jarPath.lastIndexOf("!"));
-
-        String pathSeparator = System.getProperty("path.separator");
-
-        System.setProperty("java.class.path", classpath + pathSeparator + userAgentJarPath);
-    }
 }
