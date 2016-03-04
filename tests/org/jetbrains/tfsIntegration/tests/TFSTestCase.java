@@ -328,6 +328,7 @@ public abstract class TFSTestCase extends AbstractJunitVcsTestCase  {
       public void setWarning(String s) {
       }
 
+      @NotNull
       @Override
       public String getCommitMessage() {
         return "test";
