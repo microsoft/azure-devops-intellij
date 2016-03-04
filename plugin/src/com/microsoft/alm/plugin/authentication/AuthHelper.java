@@ -14,6 +14,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -24,6 +25,12 @@ import java.util.concurrent.TimeoutException;
 public class AuthHelper {
     private final static Logger logger = LoggerFactory.getLogger(AuthHelper.class);
     private final static String COMPUTER_NAME = "computername";
+
+
+    /**
+     * Personal Access Token description string formatter
+     */
+    private static final String TOKEN_DESCRIPTION_FORMATTER = "VSTS IntelliJ Plugin: %s from: %s on: %s";
 
     public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final Credentials credentials) {
         return new AuthenticationInfo(
@@ -167,5 +174,12 @@ public class AuthHelper {
             email = authenticationResult.getUserInfo().getUniqueName().substring(identityProvider.length() + 1);
         }
         return email;
+    }
+
+    public static String getTokenDescription(final String emailAddress) {
+        final String tokenDescription = String.format(TOKEN_DESCRIPTION_FORMATTER,
+                emailAddress, SystemHelper.getComputerName(), new Date().toString());
+
+        return tokenDescription;
     }
 }

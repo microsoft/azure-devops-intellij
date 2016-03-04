@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.authentication.facades;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.SettableFuture;
-import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.tf.common.authentication.aad.AzureAuthenticator;
@@ -21,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 
 public class VsoSwtAuthInfoProvider implements AuthenticationInfoProvider{
 
@@ -71,8 +69,10 @@ public class VsoSwtAuthInfoProvider implements AuthenticationInfoProvider{
                     } else {
                         try {
                             final PersonalAccessTokenFactory patFactory = new PersonalAccessTokenFactoryImpl(result);
-                            final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                                    AuthHelper.getEmail(result), SystemHelper.getComputerName(), new Date().toString());
+
+                            final String emailAddress = AuthHelper.getEmail(result);
+                            final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
+
                             final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
                                     Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
 

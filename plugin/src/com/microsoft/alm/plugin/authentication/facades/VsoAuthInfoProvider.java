@@ -11,7 +11,7 @@ import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
 import com.microsoft.alm.auth.secret.Token;
 import com.microsoft.alm.auth.secret.TokenPair;
 import com.microsoft.alm.auth.secret.VsoTokenScope;
-import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.provider.JaxrsClientProvider;
 import com.microsoft.alm.storage.InsecureInMemoryStore;
@@ -21,11 +21,8 @@ import com.microsoft.visualstudio.services.account.Profile;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
-import java.util.Date;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
-
-    private static final String TOKEN_DESCRIPTION = "VSTS IntelliJ Plugin: %s from: %s on: %s";
 
     private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
     private static final String REDIRECT_URL = "https://xplatalm.com";
@@ -71,8 +68,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
             final Profile me = accountHttpClient.getMyProfile();
             final String emailAddress = me.getCoreAttributes().getEmailAddress().getValue();
 
-            final String tokenDescription = String.format(TOKEN_DESCRIPTION,
-                    emailAddress, SystemHelper.getComputerName(), new Date().toString());
+            final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
             final Token token = vstsPatAuthenticator.getVstsGlobalPat(VsoTokenScope.CodeAll,
                     tokenDescription, PromptBehavior.AUTO);
