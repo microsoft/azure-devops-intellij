@@ -52,6 +52,7 @@
         <s:attribute name="DefaultAccessMappingMoniker" type="s:string" />
         <s:attribute name="LastChangeId" type="s:int" use="required" />
         <s:attribute name="ClientCacheFresh" type="s:boolean" use="required" />
+        <s:attribute default="3600" name="ClientCacheTimeToLive" type="s:int"/>
         <s:attribute name="AccessPointsDoNotIncludeWebAppRelativeDirectory" type="s:boolean" use="required" />
       </s:complexType>
       <s:complexType name="ArrayOfAccessMapping">
@@ -63,6 +64,7 @@
         <s:attribute name="DisplayName" type="s:string" />
         <s:attribute name="Moniker" type="s:string" />
         <s:attribute name="AccessPoint" type="s:string" />
+        <s:attribute name="VirtualDirectory" type="s:string"/>
       </s:complexType>
       <s:element name="RemoveServiceDefinitions">
         <s:complexType>
@@ -182,6 +184,7 @@
         <!--[IntelliJ] removed use="required" -->
         <s:attribute name="ServerCapabilities" type="s:int" />
         <!--[IntelliJ] ******************* -->
+        <s:attribute name="ServerVersion" type="s:string"/>
       </s:complexType>
       <s:complexType name="TeamFoundationIdentity">
         <s:sequence>
@@ -191,6 +194,8 @@
           <s:element minOccurs="0" maxOccurs="1" name="LocalProperties" type="tns:ArrayOfPropertyValue" />
           <s:element minOccurs="0" maxOccurs="1" name="Members" type="tns:ArrayOfIdentityDescriptor" />
           <s:element minOccurs="0" maxOccurs="1" name="MemberOf" type="tns:ArrayOfIdentityDescriptor" />
+          <s:element minOccurs="0" maxOccurs="1" name="ProviderDisplayName" type="s:string"/>
+          <s:element minOccurs="0" maxOccurs="1" name="CustomDisplayName" type="s:string"/>
         </s:sequence>
         <s:attribute name="DisplayName" type="s:string" />
         <s:attribute name="IsContainer" type="s:boolean" use="required" />
