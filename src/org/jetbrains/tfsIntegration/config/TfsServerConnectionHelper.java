@@ -318,6 +318,8 @@ public class TfsServerConnectionHelper {
       });
     }
     catch (RemoteException e) {
+      LOG.info("Failed to connect to " + uri + ". Trying to use legacy Registration service.", e);
+
       connectResponse = null;
       // if failed, try to connect to legacy Registration service
       ThrowableConvertor<URI, FrameworkRegistrationEntry[], RemoteException> c =
