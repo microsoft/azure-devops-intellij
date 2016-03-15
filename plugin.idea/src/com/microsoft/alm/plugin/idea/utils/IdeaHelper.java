@@ -83,6 +83,14 @@ public class IdeaHelper {
     }
 
     /**
+     * Shows an error dialog
+     */
+    public static void showErrorDialog(@NotNull final Project project, Throwable throwable) {
+        //TODO Localize
+        Messages.showErrorDialog(project, throwable.getMessage(), "VSTS Error");
+    }
+
+    /**
      * Finds the full path to a resource whether it's installed by the idea or being run inside the idea
      *
      * @param resourceUrl  the URL for the resource

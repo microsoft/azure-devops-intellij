@@ -94,6 +94,9 @@
         <action id="VSO.Create.Pull.Request" class="com.microsoft.alm.plugin.idea.actions.CreatePullRequestAction">
             <add-to-group group-id="Git.Menu" />
         </action>
+        <action id="VSO.Select.Work.Items" class="com.microsoft.alm.plugin.idea.actions.SelectWorkItemsAction">
+            <add-to-group group-id="Vcs.MessageActionGroup" />
+        </action>
     </actions>
 
 </idea-plugin>

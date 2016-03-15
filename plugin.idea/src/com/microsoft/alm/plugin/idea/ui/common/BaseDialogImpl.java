@@ -60,6 +60,10 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
                         .build());
     }
 
+    protected Project getProject() {
+        return project;
+    }
+
     protected Object getProperty(final String name) {
         return properties.get(name);
     }

@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
-import com.intellij.ide.BrowserUtil;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -40,13 +39,6 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
             //TODO: generate account level PAT for VSO
             ServerContextManager.getInstance().add(context);
             return context;
-        }
-    }
-
-    @Override
-    public void gotoLink(final String url) {
-        if (StringUtils.isNotEmpty(url)) {
-            BrowserUtil.browse(url);
         }
     }
 

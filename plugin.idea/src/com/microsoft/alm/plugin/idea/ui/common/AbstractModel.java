@@ -3,6 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
+import com.intellij.ide.BrowserUtil;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.Observable;
 
 /**
@@ -16,4 +19,9 @@ public class AbstractModel extends Observable {
         super.notifyObservers(propertyName);
     }
 
+    public void gotoLink(final String url) {
+        if (StringUtils.isNotEmpty(url)) {
+            BrowserUtil.browse(url);
+        }
+    }
 }

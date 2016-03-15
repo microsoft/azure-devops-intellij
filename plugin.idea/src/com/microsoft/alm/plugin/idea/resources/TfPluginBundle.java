@@ -140,6 +140,30 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_FEEDBACK_NOTIFICATION = "Feedback.Notification";
 
+    // Select work items dialog
+    @NonNls
+    public static final String KEY_WIT_SELECT_DIALOG_TITLE = "WitSelectDialog.Title";
+    @NonNls
+    public static final String KEY_WIT_SELECT_DIALOG_SELECT_BUTTON = "WitSelectDialog.SelectButton";
+    @NonNls
+    public static final String KEY_WIT_SELECT_DIALOG_ERRORS_WORK_ITEM_NOT_SELECTED = "WitSelectDialog.Errors.WorkItemNotSelected";
+    @NonNls
+    public static final String KEY_WIT_SELECT_DIALOG_FILTER_HINT_TEXT = "WitSelectDialog.FilterHintText";
+    @NonNls
+    public static final String KEY_WIT_SELECT_DIALOG_COMMIT_MESSAGE_FORMAT = "WitSelectDialog.CommitMessageFormat";
+
+    // Work item fields
+    @NonNls
+    public static final String KEY_WIT_FIELD_ASSIGNED_TO = "WitField.AssignedTo";
+    @NonNls
+    public static final String KEY_WIT_FIELD_ID = "WitField.ID";
+    @NonNls
+    public static final String KEY_WIT_FIELD_STATE = "WitField.State";
+    @NonNls
+    public static final String KEY_WIT_FIELD_TITLE = "WitField.Title";
+    @NonNls
+    public static final String KEY_WIT_FIELD_WORK_ITEM_TYPE = "WitField.WorkItemType";
+
     //Import dialog ui and models
     @NonNls
     public static final String KEY_IMPORT_DIALOG_TITLE = "ImportDialog.Title";
@@ -338,6 +362,10 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_CREATE_PULL_REQUEST = "Actions.CreatePullRequest.Title";
     @NonNls
     public static final String KEY_ACTIONS_CREATE_PULL_REQUEST_MSG = "Actions.CreatePullRequest.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_TITLE = "Actions.SelectWorkItems.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_MSG = "Actions.SelectWorkItems.Message";
 
     //starters
     @NonNls

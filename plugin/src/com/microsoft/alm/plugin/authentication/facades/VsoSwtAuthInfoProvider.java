@@ -74,7 +74,7 @@ public class VsoSwtAuthInfoProvider implements AuthenticationInfoProvider{
                             final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
                             final SessionToken sessionToken = patFactory.createGlobalSessionToken(tokenDescription,
-                                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE));
+                                    Arrays.asList(TokenScope.CODE_READ, TokenScope.CODE_WRITE, TokenScope.CODE_MANAGE, TokenScope.WORK_READ));
 
                             authenticationInfo = AuthHelper.createAuthenticationInfo(serverUri, result, sessionToken);
 

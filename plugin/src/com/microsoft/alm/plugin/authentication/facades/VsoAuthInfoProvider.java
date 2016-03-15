@@ -70,7 +70,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
             final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
-            final Token token = vstsPatAuthenticator.getVstsGlobalPat(VsoTokenScope.CodeAll,
+            final Token token = vstsPatAuthenticator.getVstsGlobalPat(VsoTokenScope.or(VsoTokenScope.CodeAll, VsoTokenScope.WorkRead),
                     tokenDescription, PromptBehavior.AUTO);
 
             final AuthenticationInfo authenticationInfo = new AuthenticationInfo(me.getId().toString(),

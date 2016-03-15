@@ -12,6 +12,7 @@ import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionRefer
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.teamfoundation.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.CredentialsProvider;
@@ -239,6 +240,17 @@ public class ServerContext {
         return null;
     }
 
+    public synchronized WorkItemTrackingHttpClient getWitHttpClient() {
+        final URI collectionUri = getCollectionURI();
+        if (collectionUri != null) {
+            final WorkItemTrackingHttpClient witClient = new WorkItemTrackingHttpClient(getClient(), collectionUri);
+            return witClient;
+        }
+
+        // We don't have enough context to create a WorkItemTrackingHttpClient
+        return null;
+    }
+
     public synchronized SoapServices getSoapServices() {
         checkDisposed();
         if (soapServices == null) {
@@ -266,6 +278,16 @@ public class ServerContext {
         }
 
         //We don't have enough context to create collection URL
+        return null;
+    }
+
+    public URI getTeamProjectURI() {
+        if (teamProjectCollectionReference != null && teamProjectReference != null) {
+            final URI teamProjectURI = UrlHelper.getTeamProjectURI(serverUri, teamProjectCollectionReference.getName(), teamProjectReference.getName());
+            return teamProjectURI;
+        }
+
+        //We don't have enough context to create project URL
         return null;
     }
 

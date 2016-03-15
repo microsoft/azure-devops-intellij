@@ -97,6 +97,15 @@ public class UrlHelper {
         return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName));
     }
 
+    public static URI getTeamProjectURI(final URI serverUri, final String collectionName, final String teamProjectName) {
+        return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName).concat(URL_SEPARATOR).concat(teamProjectName));
+    }
+
+    public static URI getCreateWorkItemURI(final URI projectUri) {
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat("_workitems"));
+    }
+
+
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
         if (remoteUrl1 != null && remoteUrl2 != null) {
             return StringUtils.equalsIgnoreCase(remoteUrl1.getAuthority(), remoteUrl2.getAuthority());
