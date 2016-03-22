@@ -79,6 +79,13 @@ public class SelectWorkItemsForm {
             // Fix tabbing in table
             SwingHelper.fixTabKeys(workItemTable);
 
+            // Give decent widths to the columns
+            workItemTable.getColumnModel().getColumn(0).setPreferredWidth(JBUI.scale(50));
+            workItemTable.getColumnModel().getColumn(1).setPreferredWidth(JBUI.scale(100));
+            workItemTable.getColumnModel().getColumn(2).setPreferredWidth(JBUI.scale(100));
+            workItemTable.getColumnModel().getColumn(3).setPreferredWidth(JBUI.scale(400));
+            workItemTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+
             // Set hint text
             filter.setUI(new HintTextFieldUI(TfPluginBundle.message(TfPluginBundle.KEY_WIT_SELECT_DIALOG_FILTER_HINT_TEXT)));
 
@@ -119,7 +126,7 @@ public class SelectWorkItemsForm {
                 }
             });
 
-            scrollPane.setMinimumSize(new Dimension(JBUI.scale(400), JBUI.scale(400)));
+            scrollPane.setMinimumSize(new Dimension(JBUI.scale(600), JBUI.scale(400)));
 
             initialized = true;
         }

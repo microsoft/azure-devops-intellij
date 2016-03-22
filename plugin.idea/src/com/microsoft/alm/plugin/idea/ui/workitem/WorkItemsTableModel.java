@@ -27,7 +27,7 @@ public class WorkItemsTableModel extends AbstractTableModel {
     public enum Column {ID, TYPE, TITLE, ASSIGNED_TO, STATE}
 
     public static final Column[] ALL_COLUMNS = new Column[] {Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO};
-    public static final Column[] DEFAULT_COLUMNS = new Column[] {Column.ID, Column.TYPE, Column.TITLE, Column.STATE};
+    public static final Column[] DEFAULT_COLUMNS = new Column[] {Column.ID, Column.TYPE, Column.STATE, Column.TITLE};
 
     /**
      * The default converter simply returns the index given.
@@ -215,6 +215,8 @@ public class WorkItemsTableModel extends AbstractTableModel {
                 return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_WORK_ITEM_TYPE);
             case TITLE:
                 return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_TITLE);
+            case STATE:
+                return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_STATE);
             case ASSIGNED_TO:
                 return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_ASSIGNED_TO);
             default:

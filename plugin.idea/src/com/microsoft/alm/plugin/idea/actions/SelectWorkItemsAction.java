@@ -23,7 +23,7 @@ public class SelectWorkItemsAction extends InstrumentedAction{
     public SelectWorkItemsAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_SELECT_WORK_ITEMS_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_SELECT_WORK_ITEMS_MSG),
-                Icons.VSLogoSmall);
+                Icons.WIT_ADD);
     }
 
 

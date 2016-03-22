@@ -26,4 +26,7 @@ public class Icons {
     public static final Icon PR_STATUS_FAILED = load("/icons/pr-status-failed.png");
     public static final Icon PR_STATUS_NO_RESPONSE = load("/icons/pr-status-noresponse.png");
     public static final Icon PR_STATUS_WAITING = load("/icons/pr-status-waiting.png");
+
+    //wit icons
+    public static final Icon WIT_ADD = load("/icons/wit-add.png");
 }
