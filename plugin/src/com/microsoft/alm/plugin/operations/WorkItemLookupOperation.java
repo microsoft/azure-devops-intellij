@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.client.utils.StringUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.teamfoundation.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.Wiql;

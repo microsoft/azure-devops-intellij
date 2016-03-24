@@ -69,7 +69,7 @@ and run `./gradlew copyDependencies` from the root directory of the IntelliJ rep
 
 1. Add git4idea.jar lib to `com.microsoft.alm.plugin.idea` module if it doesn't already exist.
   * File -> Project Structure -> Project Settings -> Libraries -> Add new Java library
-  * Select <IntelliJ community edition location on disk>/plugins/git4idea/lib/git4idea.jar, name it `git4idea`
+  * Select `<IntelliJ community edition location on disk>/plugins/git4idea/lib/git4idea.jar`, name it `git4idea`
   * Add this git4idea lib to the `com.microsoft.alm.plugin.idea` module
     * If there is an existing git4idea dependency that is missing (shown in red), remove it from the list
   * IMPORTANT: you ***must*** make sure the scope for `git4idea` is changed from `Compile` to `Provided`
