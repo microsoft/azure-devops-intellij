@@ -1,5 +1,5 @@
+#!/usr/bin/env bash
 # Shell script that parses the protocol handler url and launches the correct JetBrains IDE with vsts args
-#!/bin/sh
 LOCATION_FILE=$HOME/.vsts/locations.csv
 
 # Example arg: vsoi://checkout/?url=https://mseng.visualstudio.com/VSOnline/_git/Java.VSCode&EncFormat=UTF8&IdeType=IntelliJ&IdeExe=idea
@@ -13,7 +13,8 @@ ideExe=${ideExe%&*}
 while read line;
 do
     exe=${line%,*}
-    if [ "$exe" == "$ideExe" ]
+
+    if [ "$ideExe" != "${ideExe%*$exe}" ]
     then
         location=${line#*,}
 
