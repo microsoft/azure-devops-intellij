@@ -186,4 +186,28 @@ public class UrlHelperTest {
         assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three///"));
         assertEquals("/one/two/three", UrlHelper.trimTrailingSeparators("/one/two/three/"));
     }
+
+    @Test
+    public void testCollectionInDomainUrl() {
+        //vsts account
+        final URI accountUri = URI.create("https://myaccount.visualstudio.com");
+
+        //collection not in domain
+        final URI defaultCollectionUri = UrlHelper.getCollectionURI(accountUri, "DefaultCollection");
+        assertEquals(URI.create("https://myaccount.visualstudio.com/DefaultCollection"), defaultCollectionUri);
+
+        //collection in domain
+        final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myaccount");
+        assertEquals(accountUri, inDomainCollectionUri);
+
+        //onprem server
+        final URI serverUri = URI.create("http://myserver:8080/tfs");
+
+        final URI collectionUri1 = UrlHelper.getCollectionURI(serverUri, "FabrikamCollection");
+        assertEquals(URI.create("http://myserver:8080/tfs/FabrikamCollection"), collectionUri1);
+
+        final URI collectionUri2 = UrlHelper.getCollectionURI(serverUri, "myserver");
+        assertEquals(URI.create("http://myserver:8080/tfs/myserver"), collectionUri2);
+
+    }
 }

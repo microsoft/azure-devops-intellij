@@ -94,6 +94,10 @@ public class UrlHelper {
     }
 
     public static URI getCollectionURI(final URI serverUri, final String collectionName) {
+        if(isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
+            //collection in the domain case on VSTS
+            return serverUri;
+        }
         return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName));
     }
 

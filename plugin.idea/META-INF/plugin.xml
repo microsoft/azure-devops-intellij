@@ -38,10 +38,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.96.0 <i>Preview</i>
-      <br />
-      This release includes support for pull requests in addition to incremental feature updates and bug fixes.
-      <br />
+      v 0.98.0 <i>Preview</i>
     ]]>
     </change-notes>
 
