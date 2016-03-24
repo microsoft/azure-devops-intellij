@@ -56,7 +56,7 @@ public class ApplicationStartup implements ApplicationComponent {
             logger.debug("Mac operating system detected");
             MacStartup.startup();
         } else {
-            logger.debug("Linux operating system detected");
+            logger.debug("Linux operating system detected ");
             LinuxStartup.startup();
         }
     }
