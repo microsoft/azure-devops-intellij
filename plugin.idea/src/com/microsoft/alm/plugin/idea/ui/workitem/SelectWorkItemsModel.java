@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.ProjectManager;
-import com.microsoft.alm.client.utils.StringUtil;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -56,7 +55,7 @@ public class SelectWorkItemsModel extends AbstractModel {
         if (latestServerContext != null) {
             return latestServerContext.getServerUri().toString();
         }
-        return StringUtil.EMPTY;
+        return StringUtils.EMPTY;
     }
 
     public void loadWorkItems() {
