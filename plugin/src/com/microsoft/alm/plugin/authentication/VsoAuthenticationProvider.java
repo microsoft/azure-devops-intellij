@@ -6,12 +6,9 @@ package com.microsoft.alm.plugin.authentication;
 import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoCallback;
 import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoProvider;
 import com.microsoft.alm.plugin.authentication.facades.VsoAuthInfoProvider;
-import com.microsoft.alm.plugin.authentication.facades.VsoSwtAuthInfoProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +22,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     public static final String VSO_AUTH_URL = "https://app.vssps.visualstudio.com";
 
     private AuthenticationInfoProvider getAuthenticationInfoProvider() {
-        final PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
-        if ("true".equalsIgnoreCase(System.getProperty(PropertyService.PROP_USE_JAVAFX_AUTH_LIBRARY))
-               || "true".equalsIgnoreCase(propertyService.getProperty(PropertyService.PROP_USE_JAVAFX_AUTH_LIBRARY))) {
-            return VsoAuthInfoProvider.getProvider();
-        }
-
-        return VsoSwtAuthInfoProvider.getProvider();
+        return VsoAuthInfoProvider.getProvider();
     }
 
     /**
