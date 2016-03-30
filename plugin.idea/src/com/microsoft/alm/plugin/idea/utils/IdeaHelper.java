@@ -14,6 +14,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.Icon;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -113,6 +115,24 @@ public class IdeaHelper {
             return resourcePath + "/" + directory + "/" + resourceName;
         } else {
             return resourcePath + TEST_RESOURCES_SUB_PATH + directory + "/" + resourceName;
+        }
+    }
+
+    /**
+     * Check if a file is executable and if not sets it to be executable. When the plugin is unzipped,
+     * the permissions of a file is not persisted so that is why a check is needed.
+     *
+     * @param executable executable file for application
+     * @throws FileNotFoundException
+     */
+    public static void setExecutablePermissions(final File executable) throws FileNotFoundException {
+        if (!executable.exists()) {
+            throw new FileNotFoundException(executable.getPath() + " not found while trying to set permissions.");
+        }
+
+        // set the executable to execute for all users
+        if (!executable.canExecute()) {
+            executable.setExecutable(true, false);
         }
     }
 }
