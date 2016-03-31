@@ -106,9 +106,14 @@ public class UrlHelper {
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
+        //TODO: this url isn't exactly correct because we don't know the WI Type to create
         return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat("_workitems"));
     }
 
+    public static URI getMyWorkItemsURI(final URI projectUri) {
+        // The default query when you navigate to the work items section is the "Assigned to me" query results
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat("_workitems"));
+    }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
         if (remoteUrl1 != null && remoteUrl2 != null) {

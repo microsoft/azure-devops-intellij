@@ -42,6 +42,8 @@ public class SelectWorkItemsController extends AbstractController {
     public void update(final Observable o, final Object arg) {
         if (arg == null || arg.equals(SelectWorkItemsModel.PROP_LOADING)) {
             form.setLoading(model.isLoading());
+            // if we finished loading and we got back the max number of items, show the help panel
+            form.setShowHelpPanel(!model.isLoading() && model.isMaxItemsReached());
         }
         if (arg == null || arg.equals(SelectWorkItemsModel.PROP_FILTER)) {
             form.setFilter(model.getFilter());
@@ -65,6 +67,8 @@ public class SelectWorkItemsController extends AbstractController {
             // No action needed here. We updated the model above which should filter the list automatically.
         } else if (SelectWorkItemsForm.CMD_NEW_WORK_ITEM.equals(e.getActionCommand())) {
             model.createWorkItem();
+        } else if (SelectWorkItemsForm.CMD_GOTO_VIEW_MY_WORK_ITEMS.equals(e.getActionCommand())) {
+            model.gotoMyWorkItems();
         }
     }
 

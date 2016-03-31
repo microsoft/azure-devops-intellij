@@ -21,10 +21,10 @@ public class WorkItemHelper {
     public static final String FIELD_WORK_ITEM_TYPE = "System.WorkItemType";
 
     public static String getAssignedToMeQuery() {
-        return "select system.id, system.workitemtype, system.title, system.assignedto, system.state " +
+        return "select system.id, system.workitemtype, system.title, system.assignedto, system.state, system.changeddate " +
                 "from workitems " +
-                "where system.assignedto = @me " +
-                "order by system.workitemtype, system.id";
+                "where system.assignedto = @me and system.teamproject = @project " +
+                "order by system.changeddate desc, system.id desc";
     }
 
     public static List<String> getDefaultFields() {

@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 import com.intellij.openapi.project.ProjectManager;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
@@ -34,6 +33,8 @@ public class SelectWorkItemsModel extends AbstractModel {
     private String filter;
     private ServerContext latestServerContext;
 
+    private boolean maxItemsReached = false;
+
     public SelectWorkItemsModel(final GitRepository gitRepository) {
         this.gitRepository = gitRepository;
         tableModel = new WorkItemsTableModel(WorkItemsTableModel.DEFAULT_COLUMNS);
@@ -50,6 +51,10 @@ public class SelectWorkItemsModel extends AbstractModel {
         }
     }
 
+    public boolean isMaxItemsReached() {
+        return maxItemsReached;
+    }
+
     //TODO replace server label on form with UserAccountControl
     public String getServerName() {
         if (latestServerContext != null) {
@@ -63,11 +68,8 @@ public class SelectWorkItemsModel extends AbstractModel {
         tableModel.clearRows();
 
         final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-        latestServerContext = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, true);
-        // Notify observers that the server name changed
-        setChangedAndNotify(PROP_SERVER_NAME);
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(latestServerContext);
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(gitRemoteUrl);
         operation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {
@@ -91,6 +93,7 @@ public class SelectWorkItemsModel extends AbstractModel {
             @Override
             public void notifyLookupResults(final Operation.Results results) {
                 final WorkItemLookupOperation.WitResults wiResults = (WorkItemLookupOperation.WitResults) results;
+                maxItemsReached = wiResults.maxItemsReached();
 
                 if (wiResults.isCancelled()) {
                     // Do nothing
@@ -102,6 +105,14 @@ public class SelectWorkItemsModel extends AbstractModel {
                             if (wiResults.hasError()) {
                                 IdeaHelper.showErrorDialog(ProjectManager.getInstance().getDefaultProject(), wiResults.getError());
                             }
+
+                            if (wiResults.getContext() != null) {
+                                // Set the latestServerContext
+                                latestServerContext = wiResults.getContext();
+                                // Notify observers that the server name changed
+                                setChangedAndNotify(PROP_SERVER_NAME);
+                            }
+
                             tableModel.addWorkItems(wiResults.getWorkItems());
                         }
                     });
@@ -116,7 +127,18 @@ public class SelectWorkItemsModel extends AbstractModel {
 
     public void createWorkItem() {
         if (latestServerContext != null && latestServerContext.getTeamProjectURI() != null) {
-            URI teamProjectURI = latestServerContext.getTeamProjectURI();
+            final URI teamProjectURI = latestServerContext.getTeamProjectURI();
+            if (teamProjectURI != null) {
+                super.gotoLink(UrlHelper.getCreateWorkItemURI(teamProjectURI).toString());
+            } else {
+                logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
+            }
+        }
+    }
+
+    public void gotoMyWorkItems() {
+        if (latestServerContext != null && latestServerContext.getTeamProjectURI() != null) {
+            final URI teamProjectURI = latestServerContext.getTeamProjectURI();
             if (teamProjectURI != null) {
                 super.gotoLink(UrlHelper.getCreateWorkItemURI(teamProjectURI).toString());
             } else {

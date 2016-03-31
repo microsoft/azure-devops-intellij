@@ -15,8 +15,6 @@ import javax.swing.DefaultListSelectionModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -26,8 +24,8 @@ import java.util.List;
 public class WorkItemsTableModel extends AbstractTableModel {
     public enum Column {ID, TYPE, TITLE, ASSIGNED_TO, STATE}
 
-    public static final Column[] ALL_COLUMNS = new Column[] {Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO};
-    public static final Column[] DEFAULT_COLUMNS = new Column[] {Column.ID, Column.TYPE, Column.STATE, Column.TITLE};
+    public static final Column[] ALL_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO};
+    public static final Column[] DEFAULT_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.STATE, Column.TITLE};
 
     /**
      * The default converter simply returns the index given.
@@ -76,16 +74,8 @@ public class WorkItemsTableModel extends AbstractTableModel {
         //final List<WorkItem> selectedItems = getSelectedWorkItems();
 
         // Add the new rows to the existing list
+        // Note: We don't need to sort them because the server does that
         rows.addAll(workItems);
-        // Sort the rows by the first column
-        Collections.sort(rows, new Comparator<WorkItem>() {
-            @Override
-            public int compare(WorkItem w1, WorkItem w2) {
-                final String name1 = getValueFor(w1, 0);
-                final String name2 = getValueFor(w2, 0);
-                return String.CASE_INSENSITIVE_ORDER.compare(name1, name2);
-            }
-        });
 
         if (hasFilter()) {
             // re-apply the filter, this will fire its own event
@@ -113,7 +103,7 @@ public class WorkItemsTableModel extends AbstractTableModel {
 
     public List<WorkItem> getSelectedWorkItems() {
         final List<WorkItem> items = new ArrayList<WorkItem>(this.getRowCount());
-        for(int i = 0; i < this.getRowCount(); i++) {
+        for (int i = 0; i < this.getRowCount(); i++) {
             if (getSelectionModel().isSelectedIndex(i)) {
                 items.add(getWorkItem(i));
             }

@@ -151,6 +151,8 @@ public class TfPluginBundle {
     public static final String KEY_WIT_SELECT_DIALOG_FILTER_HINT_TEXT = "WitSelectDialog.FilterHintText";
     @NonNls
     public static final String KEY_WIT_SELECT_DIALOG_COMMIT_MESSAGE_FORMAT = "WitSelectDialog.CommitMessageFormat";
+    @NonNls
+    public static final String KEY_VIEW_MY_WORK_ITEMS = "WitSelectDialog.Help.ViewMyWorkItems";
 
     // Work item fields
     @NonNls
