@@ -36,7 +36,7 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
     @Before
     public void localSetup() {
-        Mockito.when(mockApplicationNamesInfo.getScriptName()).thenReturn(IDEA_NAME);
+        Mockito.when(mockApplicationNamesInfo.getProductName()).thenReturn(IDEA_NAME);
         PowerMockito.mockStatic(Platform.class);
         PowerMockito.mockStatic(WindowsStartup.class);
         PowerMockito.mockStatic(MacStartup.class);

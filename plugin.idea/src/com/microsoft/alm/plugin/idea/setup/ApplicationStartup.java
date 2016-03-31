@@ -110,6 +110,7 @@ public class ApplicationStartup implements ApplicationComponent {
     protected void cacheIdeLocation(final File vstsDirectory, final String currentLocation) {
         final Map<String, String> locationEntries = new HashMap<String, String>();
         final File locationsFile = new File(vstsDirectory, LOCATION_FILE);
+        final String ideName = ApplicationNamesInfo.getInstance().getProductName().toLowerCase();
         BufferedReader bufferedReader = null;
         BufferedWriter bufferedWriter = null;
         String currentEntry = StringUtil.EMPTY;
@@ -125,7 +126,7 @@ public class ApplicationStartup implements ApplicationComponent {
                     final String[] entry = line.split(CSV_COMMA);
                     if (entry.length == 2) {
                         // find existing IDE entry if there is one
-                        if (ApplicationNamesInfo.getInstance().getScriptName().equals(entry[0])) {
+                        if (ideName.equals(entry[0])) {
                             currentEntry = entry[1];
                         }
                         locationEntries.put(entry[0], entry[1]);
@@ -137,11 +138,11 @@ public class ApplicationStartup implements ApplicationComponent {
             if (!currentEntry.equals(currentLocation) && !currentLocation.isEmpty()) {
                 // delete current entry if it exists
                 if (!currentEntry.isEmpty()) {
-                    locationEntries.remove(ApplicationNamesInfo.getInstance().getScriptName());
+                    locationEntries.remove(ideName);
                 }
 
                 // add current entry
-                locationEntries.put(ApplicationNamesInfo.getInstance().getScriptName(), currentLocation);
+                locationEntries.put(ideName, currentLocation);
 
                 // rewrite file with new entry
                 bufferedWriter = new BufferedWriter(new FileWriter(locationsFile.getPath()));

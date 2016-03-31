@@ -14,8 +14,8 @@ while read line;
 do
     exe=${line%,*}
 
-    # Not all ideExe names match exe names perfectly so just check if the IdeExe contains exe
-    if [ "$ideExe" != "${ideExe%*$exe}" ]
+    # Find ideExe name match and use that to find exe path
+    if [ "$ideExe" == "$exe" ]
     then
         location=${line#*,}
 
