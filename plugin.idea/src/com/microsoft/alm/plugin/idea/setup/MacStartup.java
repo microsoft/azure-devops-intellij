@@ -36,7 +36,7 @@ public class MacStartup {
         try {
             // setup protocol handler URI by running vsoi.app
             final String appPath = IdeaHelper.getResourcePath(MacStartup.class.getResource("/"), APP_NAME, OS_X_DIR);
-            setAppletPermissions(new File(appPath + APPLET_PATH));
+            IdeaHelper.setExecutablePermissions(new File(appPath + APPLET_PATH));
             final Process process = Runtime.getRuntime().exec(new String[]{OPEN_CMD, appPath});
             process.waitFor();
             logger.debug("The return code for executing {} was {}", APP_NAME, process.exitValue());
@@ -48,24 +48,6 @@ public class MacStartup {
             logger.warn("An IOException was caught while trying to execute {}: {}", APP_NAME, e.getMessage());
         } catch (Exception e) {
             logger.warn("An Exception was caught while trying to find and execute {}: {}", APP_NAME, e.getMessage());
-        }
-    }
-
-    /**
-     * Check if the applet file is executable and if not sets it to be executable. When the plugin is unzipped,
-     * the permissions of the file is not persisted so that is why a check is needed.
-     *
-     * @param applet applet file for application
-     * @throws FileNotFoundException
-     */
-    protected static void setAppletPermissions(final File applet) throws FileNotFoundException {
-        if (!applet.exists()) {
-            throw new FileNotFoundException(applet.getPath() + " not found while trying to set permissions.");
-        }
-
-        // set the applet to execute for all users
-        if (!applet.canExecute()) {
-            applet.setExecutable(true, false);
         }
     }
 }
