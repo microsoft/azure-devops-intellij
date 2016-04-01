@@ -7,7 +7,6 @@ import com.intellij.idea.Main;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.util.containers.HashMap;
-import com.microsoft.alm.client.utils.StringUtil;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
@@ -15,6 +14,7 @@ import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.sun.jna.Platform;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +97,7 @@ public class ApplicationStartup implements ApplicationComponent {
         }
 
         // if the IDE could not be found an empty string is returned
-        return StringUtil.EMPTY;
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -113,7 +113,7 @@ public class ApplicationStartup implements ApplicationComponent {
         final String ideName = ApplicationNamesInfo.getInstance().getProductName().toLowerCase();
         BufferedReader bufferedReader = null;
         BufferedWriter bufferedWriter = null;
-        String currentEntry = StringUtil.EMPTY;
+        String currentEntry = StringUtils.EMPTY;
 
         try {
             // if file doesn't exist create it else read the entries in it
