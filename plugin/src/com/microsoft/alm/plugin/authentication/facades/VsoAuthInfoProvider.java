@@ -8,19 +8,18 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.auth.PromptBehavior;
 import com.microsoft.alm.auth.oauth.OAuth2Authenticator;
 import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
-import com.microsoft.alm.auth.secret.Token;
-import com.microsoft.alm.auth.secret.TokenPair;
-import com.microsoft.alm.auth.secret.VsoTokenScope;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.provider.JaxrsClientProvider;
+import com.microsoft.alm.secret.Token;
+import com.microsoft.alm.secret.TokenPair;
+import com.microsoft.alm.secret.VsoTokenScope;
 import com.microsoft.alm.storage.InsecureInMemoryStore;
 import com.microsoft.alm.storage.SecretStore;
-import com.microsoft.visualstudio.services.account.AccountHttpClient;
-import com.microsoft.visualstudio.services.account.Profile;
+import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
+import com.microsoft.visualstudio.services.account.webapi.model.Profile;
 
 import javax.ws.rs.client.Client;
-import java.net.URI;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
@@ -36,8 +35,8 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         accessTokenStore = new InsecureInMemoryStore<TokenPair>();
         tokenStore = new InsecureInMemoryStore<Token>();
 
-        final OAuth2Authenticator oAuth2Authenticator = new OAuth2Authenticator(OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE,
-                CLIENT_ID, URI.create(REDIRECT_URL), accessTokenStore);
+        final OAuth2Authenticator oAuth2Authenticator = OAuth2Authenticator.getAuthenticator(
+                CLIENT_ID, REDIRECT_URL, accessTokenStore);
         jaxrsClientProvider = new JaxrsClientProvider(oAuth2Authenticator);
 
         vstsPatAuthenticator = new VstsPatAuthenticator(CLIENT_ID, REDIRECT_URL, accessTokenStore, tokenStore);
@@ -58,10 +57,15 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         final SettableFuture<AuthenticationInfo> authenticationInfoFuture = SettableFuture.<AuthenticationInfo>create();
 
         try {
-            final Client client = jaxrsClientProvider.getVstsGlobalClient();
+            final Client client = jaxrsClientProvider.getClient();
 
             //TODO: this is a dependency on the aad-pat-generator jar which is going away.  When we update to consume
             //v0.4.3 Rest client, we can get rid of this one
+
+            //Or we could reconsider the name of the token.  Now we call Profile endpoint just to get the email address
+            //which is used in token description, but do we need it?  User can only view PATs after they login, and
+            //at that time user knows which account/email they are logged in under already.  So the email provides
+            //no additional value.
             final AccountHttpClient accountHttpClient
                     = new AccountHttpClient(client, OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO);
 
@@ -70,8 +74,10 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
             final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
-            final Token token = vstsPatAuthenticator.getVstsGlobalPat(VsoTokenScope.or(VsoTokenScope.CodeAll, VsoTokenScope.WorkRead),
-                    tokenDescription, PromptBehavior.AUTO);
+            final Token token = vstsPatAuthenticator.getPersonalAccessToken(
+                    VsoTokenScope.or(VsoTokenScope.CodeAll, VsoTokenScope.WorkRead),
+                    tokenDescription,
+                    PromptBehavior.AUTO);
 
             final AuthenticationInfo authenticationInfo = new AuthenticationInfo(me.getId().toString(),
                     token.Value, serverUri,  emailAddress);
