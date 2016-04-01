@@ -7,4 +7,5 @@ public interface AuthenticationInfoProvider {
 
     void getAuthenticationInfoAsync(final String serverUri, final AuthenticationInfoCallback callback);
 
+    void clearAuthenticationInfo(final String serverUri);
 }
