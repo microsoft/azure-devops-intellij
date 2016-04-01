@@ -462,15 +462,30 @@ public class ServerContextManager {
          * @return true if server information is determined
          */
         public boolean validate(final String gitRemoteUrl) {
-            //query the server endpoint for VSTS repo, project and collection info
-            if (getVstsInfo(gitRemoteUrl)) {
-                return true;
+            try {
+                final String gitUrlToParse;
+
+                //handle SSH Git urls
+                if (UrlHelper.isSshGitRemoteUrl(gitRemoteUrl)) {
+                    gitUrlToParse = UrlHelper.getHttpsGitUrlFromSshUrl(gitRemoteUrl);
+                } else {
+                    gitUrlToParse = gitRemoteUrl;
+                }
+
+                //query the server endpoint for VSTS repo, project and collection info
+                if (getVstsInfo(gitUrlToParse)) {
+                    return true;
+                }
+                //server endpoint query was not successful, try to parse the url
+                final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitUrlToParse, this);
+                if (uriParseResult.isSuccess()) {
+                    return true;
+                }
+            } catch (Throwable t) {
+                logger.warn("validate: {} of git remote url failed", gitRemoteUrl);
+                logger.warn("validate: unexpected exception ", t);
             }
-            //server endpoint query was not successful, try to parse the url
-            final UrlHelper.ParseResult uriParseResult = UrlHelper.tryParse(gitRemoteUrl, this);
-            if (uriParseResult.isSuccess()) {
-                return true;
-            }
+
             //failed to get VSTS repo, project and collection info
             return false;
         }

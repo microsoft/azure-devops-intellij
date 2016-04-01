@@ -78,11 +78,54 @@ public class UrlHelper {
     }
 
     public static boolean isTeamServicesUrl(final String url) {
-        return UrlHelper.isVSO(UrlHelper.createUri(url));
+        if (StringUtils.containsIgnoreCase(url, HOST_VSO) || StringUtils.containsIgnoreCase(url, HOST_TFS_ALL_IN)) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean isGitRemoteUrl(final String gitRemoteUrl) {
         return StringUtils.contains(gitRemoteUrl, "/_git/");
+    }
+
+    public static boolean isSshGitRemoteUrl(final String gitRemoteUrl) {
+        if (isGitRemoteUrl(gitRemoteUrl) && isTeamServicesUrl(gitRemoteUrl)) {
+            if (StringUtils.startsWithIgnoreCase(gitRemoteUrl, "https://") ||
+                    StringUtils.startsWithIgnoreCase(gitRemoteUrl, "http://")) {
+                return false;
+            }
+
+            if (StringUtils.startsWithIgnoreCase(gitRemoteUrl, "ssh://")) {
+                return true;
+            }
+
+            // check for @ in url - team project name, repo name, collection name and account name don't allow @
+            // E.g of valid url formats:
+            // ssh://account@account.visualstudio.com:22/Collection/_git/Repo
+            // account@account.visualstudio.com:22/Collection/_git/Repo
+            if (StringUtils.contains(gitRemoteUrl, "@")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String getHttpsGitUrlFromSshUrl(final String sshGitRemoteUrl) {
+
+        if (isSshGitRemoteUrl(sshGitRemoteUrl)) {
+            final URI sshUrl;
+            if (!StringUtils.startsWithIgnoreCase(sshGitRemoteUrl, "ssh://")) {
+                sshUrl = UrlHelper.createUri("ssh://" + sshGitRemoteUrl);
+            } else {
+                sshUrl = UrlHelper.createUri(sshGitRemoteUrl);
+            }
+            final String host = sshUrl.getHost();
+            final String path = sshUrl.getPath();
+            final URI httpsUrl = UrlHelper.createUri("https://" + host + path);
+            return httpsUrl.toString();
+        }
+
+        return null;
     }
 
     public static String getCmdLineFriendlyUrl(final String url) {
@@ -94,7 +137,7 @@ public class UrlHelper {
     }
 
     public static URI getCollectionURI(final URI serverUri, final String collectionName) {
-        if(isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
+        if (isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
             //collection in the domain case on VSTS
             return serverUri;
         }

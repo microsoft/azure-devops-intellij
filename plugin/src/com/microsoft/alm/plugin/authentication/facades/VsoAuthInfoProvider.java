@@ -79,7 +79,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
                     PromptBehavior.AUTO);
 
             final AuthenticationInfo authenticationInfo = new AuthenticationInfo(me.getId().toString(),
-                    token.Value, serverUri,  emailAddress);
+                    token.Value, serverUri, emailAddress);
 
             authenticationInfoFuture.set(authenticationInfo);
 

@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.net.URI;
 
+import static junit.framework.Assert.assertNull;
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -208,6 +209,20 @@ public class UrlHelperTest {
 
         final URI collectionUri2 = UrlHelper.getCollectionURI(serverUri, "myserver");
         assertEquals(URI.create("http://myserver:8080/tfs/myserver"), collectionUri2);
+
+    }
+
+    @Test
+    public void testSshGitUrls() {
+        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("ssh://myaccount@myaccount.visualstudio.com:22/myCollection/_git/My.Repo"));
+
+        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("myaccount@myaccount.visualstudio.com:22/myCollection/_git/My.Repo"));
+
+        assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("ssh://git@github.com:Microsoft/vso-agent-tasks.git"));
+
+        assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("git@github.com:Microsoft/vso-agent-tasks.git"));
 
     }
 }

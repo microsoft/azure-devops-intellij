@@ -62,24 +62,29 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         getAuthenticationInfoProvider().getAuthenticationInfoAsync(serverUri, new AuthenticationInfoCallback() {
             @Override
             public void onSuccess(final AuthenticationInfo authenticationInfo) {
-                //save for VSO_Deployment
-                ServerContextManager.getInstance().validateServerConnection(
-                        new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
-                                .uri(VSO_AUTH_URL)
-                                .authentication(authenticationInfo)
-                                .build());
-
-                if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
-                    //save for the specific server url
+                try {
+                    //save for VSO_Deployment
                     ServerContextManager.getInstance().validateServerConnection(
-                            new ServerContextBuilder().type(ServerContext.Type.VSO)
-                                    .uri(serverUri)
+                            new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
+                                    .uri(VSO_AUTH_URL)
                                     .authentication(authenticationInfo)
                                     .build());
-                }
 
-                //success
-                AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
+                    if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
+                        //save for the specific server url
+                        ServerContextManager.getInstance().validateServerConnection(
+                                new ServerContextBuilder().type(ServerContext.Type.VSO)
+                                        .uri(serverUri)
+                                        .authentication(authenticationInfo)
+                                        .build());
+                    }
+
+                    //success
+                    AuthenticationListener.Helper.authenticated(listener, authenticationInfo, null);
+                } catch (Throwable t) {
+                    //validate server connection can fail if we are unable to parse the Url
+                    AuthenticationListener.Helper.authenticated(listener, AuthenticationInfo.NONE, t);
+                }
             }
 
             @Override
