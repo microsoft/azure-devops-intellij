@@ -52,6 +52,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     @Override
     public void clearAuthenticationDetails() {
         ServerContextManager.getInstance().remove(VSO_AUTH_URL);
+        getAuthenticationInfoProvider().clearAuthenticationInfo(VSO_AUTH_URL);
     }
 
     @Override

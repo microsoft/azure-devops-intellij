@@ -51,7 +51,6 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         return VsoJavaFxExperimentalAuthInfoProviderHolder.INSTANCE;
     }
 
-
     @Override
     public void getAuthenticationInfoAsync(final String serverUri, final AuthenticationInfoCallback callback) {
         final SettableFuture<AuthenticationInfo> authenticationInfoFuture = SettableFuture.<AuthenticationInfo>create();
@@ -89,6 +88,12 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         }
 
         Futures.addCallback(authenticationInfoFuture, callback);
+    }
+
+    @Override
+    public void clearAuthenticationInfo(final String serverUri) {
+        // Only generates global PAT currently, so ignore serverUri and clear global PAT only
+        this.vstsPatAuthenticator.signOut();
     }
 
 }
