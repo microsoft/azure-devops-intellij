@@ -40,6 +40,7 @@ public class ApplicationStartup implements ApplicationComponent {
     private static final String VSTS_DIR = ".vsts";
     private static final String LOCATION_FILE = "locations.csv";
     private static final String LINUX_EXE_DIR = "bin";
+    private static final String MAC_EXE_DIR = "MacOS";
     private static final String CSV_COMMA = ",";
 
     public ApplicationStartup() {
@@ -182,6 +183,7 @@ public class ApplicationStartup implements ApplicationComponent {
             WindowsStartup.startup();
         } else if (Platform.isMac()) {
             logger.debug("Mac operating system detected");
+            cacheIdeLocation(vstsDirectory, ideLocation + MAC_EXE_DIR);
             MacStartup.startup();
         } else {
             logger.debug("Linux operating system detected ");
