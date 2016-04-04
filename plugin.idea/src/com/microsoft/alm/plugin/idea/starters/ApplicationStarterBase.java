@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationStarterEx;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
     private final Logger logger = LoggerFactory.getLogger(ApplicationStarterBase.class);
     public static final String VSTS_COMMAND = "vsts";
     public final String URI_PREFIX = "vsoi://";
+    private static final String ACTION_NAME = "ProtocolHandler";
 
     public abstract String getUsageMessage();
 
@@ -103,17 +105,33 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
             }
         } catch (Exception e) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, e.getMessage()));
+            logMetrics(false, e.getClass().getSimpleName());
+            saveAll();
+
             // exit code IntelliJ uses for exceptions
             System.exit(1);
         } catch (Throwable t) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, t.getMessage()));
+            logMetrics(false, t.getClass().getSimpleName());
+            saveAll();
+
             // exit code IntelliJ uses for throwables
             System.exit(2);
-        } finally {
-            // Once the IDEA is closed (intentionally or due to error) all settings and documents will be saved so the user doesn't lose any work.
-            // In the case of an error the user will not have a chance to save anything before the IDEA closes so this will take care of it.
-            saveAll();
         }
+
+        // log metrics and save settings before IDE closes
+        logMetrics(true, null);
+        saveAll();
+    }
+
+    private static void logMetrics(final boolean isSuccess, final String errorName) {
+        TfsTelemetryHelper.getInstance().sendEvent(ACTION_NAME,
+                new TfsTelemetryHelper.PropertyMapBuilder()
+                        .activeServerContext()
+                        .actionName(ACTION_NAME)
+                        .success(isSuccess)
+                        .message(errorName)
+                        .build());
     }
 
     @Override
