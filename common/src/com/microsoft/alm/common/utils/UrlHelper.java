@@ -145,7 +145,7 @@ public class UrlHelper {
     }
 
     public static URI getTeamProjectURI(final URI serverUri, final String collectionName, final String teamProjectName) {
-        return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName).concat(URL_SEPARATOR).concat(teamProjectName));
+        return UrlHelper.createUri(getCollectionURI(serverUri, collectionName).toString().concat(URL_SEPARATOR).concat(teamProjectName));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
