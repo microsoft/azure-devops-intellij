@@ -33,7 +33,7 @@ public class VcsPullRequestsFormTest extends IdeaAbstractTest {
     @Test
     public void testAuthenticating() {
         underTest.setConnectionStatus(true /*connected*/, true /*authenticating*/, false /*authenticated*/, false /*loading*/, false /*loadingErrors*/);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_AUTHENTICATING), underTest.getStatusText());
+        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_AUTH_MSG_AUTHENTICATING), underTest.getStatusText());
         assertEquals("", underTest.getStatusLinkText());
     }
 

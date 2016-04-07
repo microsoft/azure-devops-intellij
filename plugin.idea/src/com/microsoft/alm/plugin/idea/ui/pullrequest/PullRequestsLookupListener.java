@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
+import com.intellij.openapi.project.ProjectManager;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
@@ -11,6 +12,7 @@ import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 public class PullRequestsLookupListener implements Operation.Listener {
 
     private final VcsPullRequestsModel model;
+    private ServerContext context;
     private PullRequestLookupOperation activeOperation;
 
     public PullRequestsLookupListener(final VcsPullRequestsModel model) {
@@ -19,6 +21,7 @@ public class PullRequestsLookupListener implements Operation.Listener {
     }
 
     public void loadPullRequests(final ServerContext context) {
+        this.context = context;
         final PullRequestLookupOperation activeOperation = new PullRequestLookupOperation(context);
         loadPullRequests(activeOperation);
     }
@@ -54,7 +57,7 @@ public class PullRequestsLookupListener implements Operation.Listener {
     }
 
     @Override
-    public void notifyLookupResults(Operation.Results results) {
+    public void notifyLookupResults(final Operation.Results results) {
         final PullRequestLookupOperation.PullRequestLookupResults lookupResults = (PullRequestLookupOperation.PullRequestLookupResults) results;
         if (lookupResults.isCancelled()) {
             operationDone();
@@ -68,7 +71,11 @@ public class PullRequestsLookupListener implements Operation.Listener {
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
-                    model.setLoadingErrors(true);
+                    if (IdeaHelper.notifyOnAuthorizationError(context.getUri().toString(), ProjectManager.getInstance().getDefaultProject(), lookupResults.getError())) {
+                        model.setAuthenticated(false);
+                    } else {
+                        model.setLoadingErrors(true);
+                    }
                 }
             });
         } else {

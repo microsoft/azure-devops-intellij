@@ -172,7 +172,7 @@ public class VcsPullRequestsForm extends Observable {
         }
 
         if (authenticating) {
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_AUTHENTICATING));
+            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_AUTH_MSG_AUTHENTICATING));
             statusLabel.setIcon(AllIcons.General.Information);
             statusLink.setText("");
             statusLink.setVisible(false);

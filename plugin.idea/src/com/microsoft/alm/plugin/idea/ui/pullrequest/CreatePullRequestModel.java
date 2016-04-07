@@ -35,6 +35,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
@@ -585,16 +586,18 @@ public class CreatePullRequestModel extends AbstractModel {
                     pullRequestHelper.getHtmlMsg(repositoryRemoteUrl, gitPullRequest.getPullRequestId()));
 
         } catch (Throwable t) {
-            // catch everything so we don't bubble up to Intellij
-            final Pair<PRCreateStatus, String> parsed
-                    = pullRequestHelper.parseException(t, branchNameOnRemoteServer, targetBranch, context, gitClient);
+            if (!IdeaHelper.notifyOnAuthorizationError(context.getGitRepository().getRemoteUrl(), project, t)) {
+                // catch everything so we don't bubble up to Intellij
+                final Pair<PRCreateStatus, String> parsed
+                        = pullRequestHelper.parseException(t, branchNameOnRemoteServer, targetBranch, context, gitClient);
 
-            if (parsed.getFirst() == PRCreateStatus.DUPLICATE) {
-                notifySuccess(project,
-                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ALREADY_EXISTS_TITLE), parsed.getSecond());
-            } else {
-                notifyCreateFailedError(project, parsed.getSecond());
-                logger.warn("Create pull request failed", t);
+                if (parsed.getFirst() == PRCreateStatus.DUPLICATE) {
+                    notifySuccess(project,
+                            TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_ALREADY_EXISTS_TITLE), parsed.getSecond());
+                } else {
+                    notifyCreateFailedError(project, parsed.getSecond());
+                    logger.warn("Create pull request failed", t);
+                }
             }
         }
     }

@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.teamfoundation.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.Wiql;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
@@ -29,7 +28,6 @@ public class WorkItemLookupOperation extends Operation {
     public static final int MAX_WORK_ITEM_COUNT = 200;
 
     private final ServerContext context;
-    private final String gitRemoteUrl;
 
     public static class WitInputs implements Inputs {
         private final String query;
@@ -70,13 +68,6 @@ public class WorkItemLookupOperation extends Operation {
     public WorkItemLookupOperation(final ServerContext context) {
         assert context != null;
         this.context = context;
-        this.gitRemoteUrl = null;
-    }
-
-    public WorkItemLookupOperation(final String gitRemoteUrl) {
-        assert gitRemoteUrl != null;
-        this.gitRemoteUrl = gitRemoteUrl;
-        this.context = null;
     }
 
     public void doWork(final Inputs inputs) {
@@ -90,11 +81,7 @@ public class WorkItemLookupOperation extends Operation {
                 @Override
                 public void run() {
                     ServerContext latestServerContext = context;
-                    // If the caller didn't provide a context, then we must have a gitRemoteUrl.
-                    // Let's use that to create a context.
-                    if (context == null) {
-                        latestServerContext = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, true);
-                    }
+
                     // Send results with the new context (no work items)
                     onLookupResults(new WitResults(latestServerContext, new ArrayList<WorkItem>()));
 

@@ -69,32 +69,4 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
         underTest.clearPullRequests();
         assertEquals(0, underTest.getPullRequestsTreeModel().getRequestedByMeRoot().getChildCount());
     }
-
-    /* Test is not verifying anything
-    @Test
-    public void testLoadPullRequests() {
-        underTest = new VcsPullRequestsModel(projectMock);
-
-        //setup Git repository mock
-        final GitRepository gitRepositoryMock = Mockito.mock(GitRepository.class);
-        final GitRemote tfsRemote = new GitRemote("origin", Arrays.asList("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
-                Arrays.asList("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
-        when(gitRepositoryMock.getRemotes()).thenReturn(Collections.singletonList(tfsRemote));
-
-        //setup Git repository provider mock
-        final VcsPullRequestsModel.GitRepositoryProvider gitRepositoryProviderMock = Mockito.mock(VcsPullRequestsModel.GitRepositoryProvider.class);
-        underTest.setGitRepositoryProvider(gitRepositoryProviderMock);
-        when(gitRepositoryProviderMock.getGitRepository(projectMock)).thenReturn(gitRepositoryMock);
-
-        //Setup server context mock
-        final ServerContext serverContextMock = Mockito.mock(ServerContext.class);
-
-        //Setup server context provider mock
-        final VcsPullRequestsModel.ServerContextProvider contextProviderMock = Mockito.mock(VcsPullRequestsModel.ServerContextProvider.class);
-        underTest.setServerContextProvider(contextProviderMock);
-        when(contextProviderMock.getAuthenticatedServerContext(gitRepositoryMock)).thenReturn(serverContextMock);
-
-        //call loadPullRequests() and verify state
-        underTest.loadPullRequests();
-    }*/
 }

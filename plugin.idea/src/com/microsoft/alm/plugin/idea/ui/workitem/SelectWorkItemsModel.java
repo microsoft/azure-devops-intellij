@@ -3,11 +3,13 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
-import com.intellij.openapi.project.ProjectManager;
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.utils.Providers;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -68,8 +70,14 @@ public class SelectWorkItemsModel extends AbstractModel {
         tableModel.clearRows();
 
         final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
+        final ServerContext context = new Providers.ServerContextProvider().getAuthenticatedServerContext(gitRepository.getProject(), gitRepository);
+        if (context == null) {
+            logger.warn("loadWorkItems: failed to get authenticated server context for git repository: {}", gitRemoteUrl);
+            setLoading(false);
+            return;
+        }
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(gitRemoteUrl);
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(context);
         operation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {
@@ -103,9 +111,16 @@ public class SelectWorkItemsModel extends AbstractModel {
                         @Override
                         public void run() {
                             if (wiResults.hasError()) {
-                                IdeaHelper.showErrorDialog(ProjectManager.getInstance().getDefaultProject(), wiResults.getError());
+                                if (AuthHelper.isNotAuthorizedError(wiResults.getError())) {
+                                    //401 or 403 - token is not valid, prompt user for credentials and retry
+                                    ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
+                                    loadWorkItems();
+                                } else {
+                                    IdeaHelper.showErrorDialog(gitRepository.getProject(), wiResults.getError());
+                                }
                             }
 
+                            //update the server label
                             if (wiResults.getContext() != null) {
                                 // Set the latestServerContext
                                 latestServerContext = wiResults.getContext();

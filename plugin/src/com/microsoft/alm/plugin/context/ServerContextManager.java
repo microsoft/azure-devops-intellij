@@ -391,20 +391,23 @@ public class ServerContextManager {
      *
      * @param remoteUrl
      */
-    public void updateAuthenticationInfo(final String remoteUrl) {
+    public synchronized void updateAuthenticationInfo(final String remoteUrl) {
         AuthenticationInfo newAuthenticationInfo = null;
+        boolean promptUser = true;
         final URI remoteUri = UrlHelper.createUri(remoteUrl);
+
         //Linear search through all contexts to find the ones with same authority as remoteUrl
         for (final ServerContext context : getAllServerContexts()) {
             if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
                 //remove the context with old credentials
                 remove(context.getKey());
 
-                //get new credentials if needed
-                if (newAuthenticationInfo == null) {
+                //get new credentials by prompting the user one time only
+                if (promptUser) {
                     //prompt user
                     final AuthenticationProvider authenticationProvider = getAuthenticationProvider(remoteUrl);
                     newAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, remoteUrl);
+                    promptUser = false;
                 }
 
                 if (newAuthenticationInfo != null) {
@@ -424,7 +427,7 @@ public class ServerContextManager {
      * @return
      */
     public AuthenticationProvider getAuthenticationProvider(final String url) {
-        if (UrlHelper.isVSO(UrlHelper.createUri(url))) {
+        if (UrlHelper.isTeamServicesUrl(url)) {
             return VsoAuthenticationProvider.getInstance();
         }
 

@@ -57,6 +57,9 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public void authenticateAsync(final String serverUri, final AuthenticationListener listener) {
+        //clear in memory cache, otherwise user is not prompted, TOOD: handle in auth library since it can be an issue for TFS also
+        getAuthenticationInfoProvider().clearAuthenticationInfo(VSO_AUTH_URL);
+
         AuthenticationListener.Helper.authenticating(listener);
 
         getAuthenticationInfoProvider().getAuthenticationInfoAsync(serverUri, new AuthenticationInfoCallback() {

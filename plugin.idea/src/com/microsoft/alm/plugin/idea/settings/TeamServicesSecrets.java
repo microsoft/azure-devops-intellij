@@ -53,6 +53,8 @@ public class TeamServicesSecrets {
             PasswordSafe.getInstance().removePassword(null, TeamServicesSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to clear password store", e);
+        } catch (Throwable t) {
+            logger.warn("Failed to clear password store", t);
         }
     }
 
@@ -60,7 +62,9 @@ public class TeamServicesSecrets {
         try {
             PasswordSafe.getInstance().storePassword(null, TeamServicesSecrets.class, key, value);
         } catch (PasswordSafeException e) {
-            logger.warn("Failed to get password", e);
+            logger.warn("Failed to write password", e);
+        } catch (Throwable t) {
+            logger.warn("Failed to write password", t);
         }
     }
 
@@ -70,6 +74,8 @@ public class TeamServicesSecrets {
             password = PasswordSafe.getInstance().getPassword(null, TeamServicesSecrets.class, key);
         } catch (PasswordSafeException e) {
             logger.warn("Failed to read password", e);
+        } catch (Throwable t) {
+            logger.warn("Failed to read password", t);
         }
         return password;
     }

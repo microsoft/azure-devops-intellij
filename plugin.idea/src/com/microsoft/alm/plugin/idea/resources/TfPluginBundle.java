@@ -75,11 +75,15 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_OPERATION_LOOKUP_ERRORS = "Operation.Lookup.Errors";
     @NonNls
-    public static final String KEY_VSO_LOOKUP_HELP_INSTRUCTIONS = "VsoLookupHelp.Instructions";
-    @NonNls
     public static final String KEY_VSO_LOOKUP_HELP_ENTER_URL = "VsoLookupHelp.EnterUrl";
     @NonNls
     public static final String KEY_VSO_LOOKUP_HELP_VIEW_ACCOUNTS = "VsoLookupHelp.ViewAccounts";
+    @NonNls
+    public static final String KEY_AUTH_FAILED_REFRESH_NOTIFICATION = "Auth.Failed.Refresh.Notification";
+    @NonNls
+    public static final String KEY_TITLE_TEAM_SERVICES_ERROR = "Title.TeamServices.Error";
+    @NonNls
+    public static final String KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR = "Message.TeamServices.Unexpected.Error";
 
 
     // Checkout dialog ui and models
@@ -299,7 +303,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_NOT_AUTHENTICATED = "VcsPullRequestsTab.NoAuthenticated";
     @NonNls
-    public static final String KEY_VCS_PR_AUTHENTICATING = "VcsPullRequestsTab.Authenticating";
+    public static final String KEY_AUTH_MSG_AUTHENTICATING = "Auth.Msg.Authenticating";
     @NonNls
     public static final String KEY_VCS_PR_SIGN_IN = "VcsPullRequestsTab.SignIn";
     @NonNls

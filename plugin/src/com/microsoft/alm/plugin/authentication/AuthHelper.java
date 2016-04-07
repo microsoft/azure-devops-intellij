@@ -7,13 +7,16 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
+import com.microsoft.vss.client.core.model.VssServiceResponseException;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotAuthorizedException;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -24,8 +27,6 @@ import java.util.concurrent.TimeoutException;
  */
 public class AuthHelper {
     private final static Logger logger = LoggerFactory.getLogger(AuthHelper.class);
-    private final static String COMPUTER_NAME = "computername";
-
 
     /**
      * Personal Access Token description string formatter
@@ -181,5 +182,24 @@ public class AuthHelper {
                 emailAddress, SystemHelper.getComputerName(), new Date().toString());
 
         return tokenDescription;
+    }
+
+    public static boolean isNotAuthorizedError(final Throwable throwable) {
+        //We get VssServiceResponseException when token is valid but does not have the required scopes
+        //statusCode on VssServiceResponseException is set to 401 but that is not accessible, so we have to check the message
+        //If the message gets localized, we won't detect the auth error
+        if (throwable != null && (throwable instanceof NotAuthorizedException ||
+                (throwable instanceof VssServiceResponseException &&
+                        StringUtils.containsIgnoreCase(throwable.getMessage(), "unauthorized")))) {
+            return true;
+        }
+
+        if (throwable != null && throwable.getCause() != null && (throwable.getCause() instanceof NotAuthorizedException ||
+                (throwable.getCause() instanceof VssServiceResponseException &&
+                        (StringUtils.containsIgnoreCase(throwable.getMessage(), "unauthorized"))))) {
+            return true;
+        }
+
+        return false;
     }
 }

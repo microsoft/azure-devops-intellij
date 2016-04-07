@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -14,25 +12,22 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
+import com.microsoft.alm.plugin.idea.utils.Providers;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
 import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class VcsPullRequestsModel extends AbstractModel {
     private static final Logger logger = LoggerFactory.getLogger(VcsPullRequestsModel.class);
@@ -42,10 +37,7 @@ public class VcsPullRequestsModel extends AbstractModel {
     private final PullRequestsTreeModel treeModel;
     private final PullRequestsLookupListener treeDataProvider;
 
-    private GitRepositoryProvider gitRepositoryProvider;
     private GitRepository gitRepository;
-
-    private ServerContextProvider serverContextProvider;
     private ServerContext context;
 
     private boolean connected = false;
@@ -63,9 +55,6 @@ public class VcsPullRequestsModel extends AbstractModel {
 
     public VcsPullRequestsModel(@NotNull Project project) {
         this.project = project;
-
-        gitRepositoryProvider = new GitRepositoryProvider();
-        serverContextProvider = new ServerContextProvider();
 
         treeModel = new PullRequestsTreeModel();
         treeDataProvider = new PullRequestsLookupListener(this);
@@ -136,7 +125,7 @@ public class VcsPullRequestsModel extends AbstractModel {
             return true;
         }
 
-        gitRepository = gitRepositoryProvider.getGitRepository(project);
+        gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
         if (gitRepository == null) {
             setConnected(false);
             logger.debug("connectionSetup: Failed to get Git repo for current project");
@@ -145,7 +134,7 @@ public class VcsPullRequestsModel extends AbstractModel {
         setConnected(true);
 
         setAuthenticating(true);
-        context = serverContextProvider.getAuthenticatedServerContext(project, gitRepository);
+        context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
         setAuthenticating(false);
 
         if (context == null) {
@@ -297,48 +286,5 @@ public class VcsPullRequestsModel extends AbstractModel {
 
     public void dispose() {
         treeDataProvider.terminateActiveOperation();
-    }
-
-    static class GitRepositoryProvider {
-        public GitRepository getGitRepository(@NotNull final Project project) {
-            return TfGitHelper.getTfGitRepository(project);
-        }
-    }
-
-    @VisibleForTesting
-    void setGitRepositoryProvider(final GitRepositoryProvider gitRepositoryProvider) {
-        this.gitRepositoryProvider = gitRepositoryProvider;
-    }
-
-    static class ServerContextProvider {
-        public ServerContext getAuthenticatedServerContext(@Nullable final Project project, @NotNull final GitRepository gitRepository) {
-            final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-            final SettableFuture<ServerContext> future = SettableFuture.create();
-
-            final Task.Backgroundable authenticationTask = new Task.Backgroundable(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_AUTHENTICATING),
-                    false) {
-                @Override
-                public void run(@NotNull ProgressIndicator progressIndicator) {
-                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, true);
-                    future.set(context);
-                }
-            };
-            authenticationTask.queue();
-
-            // Don't wait any longer than 15 minutes for the user to authenticate
-            try {
-                return future.get(15, TimeUnit.MINUTES);
-            } catch (Throwable t) {
-                logger.warn("getAuthenticatedServerContext: Authentication not complete after waiting for 15 minutes", t);
-            }
-            return null;
-        }
-
-    }
-
-    @VisibleForTesting
-    void setServerContextProvider(final ServerContextProvider serverContextProvider) {
-        this.serverContextProvider = serverContextProvider;
     }
 }
