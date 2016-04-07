@@ -122,6 +122,10 @@ public class WorkItemLookupOperation extends Operation {
             int count = 0;
             final List<WorkItemReference> itemRefs = result.getWorkItems();
             final int maxCount = Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT);
+            if (maxCount == 0) {
+                return; //no workitem ids matched the wiql
+            }
+
             final List<Integer> ids = new IDList(maxCount);
             final Map<Integer, Integer> workItemOrderMap = new HashMap<Integer, Integer>(maxCount);
             for (WorkItemReference itemRef : itemRefs) {
