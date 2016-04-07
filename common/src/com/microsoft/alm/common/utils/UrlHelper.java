@@ -23,8 +23,10 @@ public class UrlHelper {
     public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
+    private static final String URL_WIT_PATH_SEGMENT = "_workitems";
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
+    private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -150,12 +152,16 @@ public class UrlHelper {
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
         //TODO: this url isn't exactly correct because we don't know the WI Type to create
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat("_workitems"));
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT));
+    }
+
+    public static URI getSpecificWorkItemURI(final URI projectUri, final int workItemId) {
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT).concat(String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
     }
 
     public static URI getMyWorkItemsURI(final URI projectUri) {
         // The default query when you navigate to the work items section is the "Assigned to me" query results
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat("_workitems"));
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT));
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
