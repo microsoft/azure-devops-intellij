@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Date;
 import java.util.Observer;
 
 /**
@@ -48,10 +47,6 @@ public class VcsPullRequestsTab {
     public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,
                                     final boolean loading, final boolean loadingErrors) {
         form.setConnectionStatus(connected, authenticating, authenticated, loading, loadingErrors);
-    }
-
-    public void setLastRefreshed(final Date lastRefreshed) {
-        form.setLastRefreshed(lastRefreshed);
     }
 
     public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {

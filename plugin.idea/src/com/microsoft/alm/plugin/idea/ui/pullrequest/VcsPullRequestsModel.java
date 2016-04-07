@@ -31,7 +31,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -54,14 +53,12 @@ public class VcsPullRequestsModel extends AbstractModel {
     private boolean authenticating = false;
     private boolean loading = false;
     private boolean loadingErrors = false;
-    private Date lastRefreshed;
 
     public static final String PROP_CONNECTED = "connected";
     public static final String PROP_AUTHENTICATED = "authenticated";
     public static final String PROP_AUTHENTICATING = "authenticating";
     public static final String PROP_LOADING = "loading";
     public static final String PROP_LOADING_ERRORS = "loadingErrors";
-    public static final String PROP_LAST_REFRESHED = "lastRefreshed";
 
 
     public VcsPullRequestsModel(@NotNull Project project) {
@@ -127,17 +124,6 @@ public class VcsPullRequestsModel extends AbstractModel {
             this.loadingErrors = loadingErrors;
             setChangedAndNotify(PROP_LOADING_ERRORS);
         }
-    }
-
-    public void setLastRefreshed(final Date lastRefreshed) {
-        if (this.lastRefreshed != lastRefreshed) {
-            this.lastRefreshed = lastRefreshed;
-            setChangedAndNotify(PROP_LAST_REFRESHED);
-        }
-    }
-
-    public Date getLastRefreshed() {
-        return lastRefreshed;
     }
 
     public PullRequestsTreeModel getPullRequestsTreeModel() {

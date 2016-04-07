@@ -10,8 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Date;
-
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
@@ -40,7 +38,6 @@ public class PullRequestLookupListenerTest extends IdeaAbstractTest {
     public void testNotifyLookupCompleted() {
         underTest.notifyLookupCompleted();
         verify(modelMock).setLoading(false);
-        verify(modelMock).setLastRefreshed(any(Date.class));
     }
 
     @Test

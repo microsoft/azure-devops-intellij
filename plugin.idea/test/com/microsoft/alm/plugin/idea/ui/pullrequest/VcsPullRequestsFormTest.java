@@ -8,9 +8,8 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Date;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class VcsPullRequestsFormTest extends IdeaAbstractTest {
     VcsPullRequestsForm underTest;
@@ -58,10 +57,8 @@ public class VcsPullRequestsFormTest extends IdeaAbstractTest {
 
     @Test
     public void loadingComplete() {
-        final Date loadingTime = new Date();
-        underTest.setLastRefreshed(loadingTime);
         underTest.setConnectionStatus(true, false, true, false, false);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, loadingTime.toString()), underTest.getStatusText());
+        assertTrue(underTest.getStatusText().startsWith(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, "")));
         assertEquals(TfPluginBundle.message((TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER)), underTest.getStatusLinkText());
     }
 

@@ -12,7 +12,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Observer;
 
@@ -52,12 +51,6 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
         verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_LOADING);
         underTest.setLoading(!underTest.isLoading());
         verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_LOADING);
-
-        underTest.setLastRefreshed(underTest.getLastRefreshed());
-        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_LAST_REFRESHED);
-        underTest.setLastRefreshed(new Date());
-        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_LAST_REFRESHED);
-
     }
 
     @Test

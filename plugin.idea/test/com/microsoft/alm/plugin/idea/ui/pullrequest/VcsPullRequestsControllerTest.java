@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.awt.event.ActionEvent;
-import java.util.Date;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -75,8 +74,6 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         verify(modelMock).isAuthenticated();
         verify(modelMock).isAuthenticating();
         verify(modelMock).hasLoadingErrors();
-        verify(uiMock).setLastRefreshed(any(Date.class));
-        verify(modelMock).getLastRefreshed();
         verify(uiMock).setPullRequestsTree(any(PullRequestsTreeModel.class));
         verify(modelMock).getPullRequestsTreeModel();
     }
@@ -107,10 +104,5 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         underTest.update(null, VcsPullRequestsModel.PROP_LOADING_ERRORS);
         verify(uiMock, times(5)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
         verify(modelMock, times(5)).hasLoadingErrors();
-
-        //Last refreshed date
-        underTest.update(null, VcsPullRequestsModel.PROP_LAST_REFRESHED);
-        verify(uiMock).setLastRefreshed(any(Date.class));
-        verify(modelMock).getLastRefreshed();
     }
 }

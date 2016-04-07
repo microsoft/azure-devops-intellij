@@ -83,9 +83,6 @@ public class VcsPullRequestsController implements Observer, ActionListener {
             tab.setConnectionStatus(model.isConnected(), model.isAuthenticating(), model.isAuthenticated(),
                     model.isLoading(), model.hasLoadingErrors());
         }
-        if (arg == null || VcsPullRequestsModel.PROP_LAST_REFRESHED.equals(arg)) {
-            tab.setLastRefreshed(model.getLastRefreshed());
-        }
         if (arg == null) {
             tab.setPullRequestsTree(model.getPullRequestsTreeModel());
         }

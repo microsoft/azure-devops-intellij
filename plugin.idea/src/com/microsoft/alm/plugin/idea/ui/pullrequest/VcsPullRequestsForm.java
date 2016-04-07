@@ -57,7 +57,6 @@ public class VcsPullRequestsForm extends Observable {
     public static final String TOOLBAR_LOCATION = "Vcs.PullRequests";
 
     private boolean initialized = false;
-    private Date lastRefreshed;
     private PullRequestsTreeModel pullRequestsTreeModel;
 
     public VcsPullRequestsForm() {
@@ -206,10 +205,7 @@ public class VcsPullRequestsForm extends Observable {
         }
 
         //loading complete
-        if (lastRefreshed == null) {
-            lastRefreshed = new Date();
-        }
-        statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, lastRefreshed.toString()));
+        statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, new Date().toString()));
         statusLabel.setIcon(AllIcons.General.Information);
         statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER));
         statusLink.setVisible(true);
@@ -219,10 +215,6 @@ public class VcsPullRequestsForm extends Observable {
             pullRequestsTree.expandRow(0);
             pullRequestsTree.expandRow(pullRequestsTreeModel.getRequestedByMeRoot().getChildCount() + 1);
         }
-    }
-
-    public void setLastRefreshed(final Date lastRefreshed) {
-        this.lastRefreshed = lastRefreshed;
     }
 
     public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {

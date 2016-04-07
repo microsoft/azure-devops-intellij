@@ -8,8 +8,6 @@ import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 
-import java.util.Date;
-
 public class PullRequestsLookupListener implements Operation.Listener {
 
     private final VcsPullRequestsModel model;
@@ -51,7 +49,6 @@ public class PullRequestsLookupListener implements Operation.Listener {
             @Override
             public void run() {
                 model.setLoading(false);
-                model.setLastRefreshed(new Date());
             }
         });
     }
