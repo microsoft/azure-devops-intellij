@@ -88,6 +88,7 @@ public class ServerContextBuilder {
 
     public ServerContextBuilder authentication(final AuthenticationInfo authenticationInfo) {
         this.authenticationInfo = authenticationInfo;
+        this.client = null; //clear the client when setting new authentication info so cached client with old credentials is not used
         return this;
     }
 
