@@ -387,13 +387,23 @@ public class ServerContextManager {
     }
 
     /**
-     * Prompts the user for credentials and updates the authenticationInfo for all context's that match the remote URLs authority
+     * Prompts user for credentials and updates all contexts with matching authority in URI with new authentication info
      *
      * @param remoteUrl
      */
     public synchronized void updateAuthenticationInfo(final String remoteUrl) {
-        AuthenticationInfo newAuthenticationInfo = null;
-        boolean promptUser = true;
+        updateAuthenticationInfo(remoteUrl, null);
+    }
+
+    /**
+     * Updates all contexts with matching authority in URI with new authentication info, will prompt the user if input authenticationInfo = null
+     *
+     * @param remoteUrl
+     * @param authenticationInfo
+     */
+    public synchronized void updateAuthenticationInfo(final String remoteUrl, final AuthenticationInfo authenticationInfo) {
+        AuthenticationInfo newAuthenticationInfo = authenticationInfo;
+        boolean promptUser = newAuthenticationInfo == null ? true : false;
         final URI remoteUri = UrlHelper.createUri(remoteUrl);
 
         //Linear search through all contexts to find the ones with same authority as remoteUrl
