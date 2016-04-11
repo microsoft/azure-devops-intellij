@@ -110,12 +110,8 @@ public class TFSConfigurationManager implements PersistentStateComponent<TFSConf
       });
     serverConfiguration.setAuthCanceledNotification(notification);
 
-    ApplicationManager.getApplication().invokeLater(new Runnable() {
-      public void run() {
-        // notification should be application-wide not to be hidden on project close
-        Notifications.Bus.notify(notification, null);
-      }
-    });
+    // notification should be application-wide not to be hidden on project close
+    Notifications.Bus.notify(notification, null);
   }
 
   @Nullable
