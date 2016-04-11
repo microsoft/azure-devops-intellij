@@ -48,7 +48,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="21b35" class="javax.swing.JTable" binding="workItemTable">
+          <component id="ccf5" class="com.microsoft.alm.plugin.idea.ui.common.FormattedTable" binding="workItemTable" custom-create="true">
             <constraints/>
             <properties>
               <fillsViewportHeight value="true"/>
