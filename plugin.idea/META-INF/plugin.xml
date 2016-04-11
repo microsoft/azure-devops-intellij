@@ -57,6 +57,7 @@
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
         <!-- TODO: can tabName be localized ?-->
         <changesViewContent className="com.microsoft.alm.plugin.idea.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
+        <changesViewContent className="com.microsoft.alm.plugin.idea.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"/>
     </extensions>

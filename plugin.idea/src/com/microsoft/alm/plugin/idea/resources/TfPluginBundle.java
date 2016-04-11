@@ -353,6 +353,32 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_DATE_DAYS_AGO = "VcsPullRequestsTab.Date.DaysAgo";
 
+    //Vcs Work Item tab
+    @NonNls
+    public static final String KEY_VCS_WIT_TITLE = "VcsWorkItemsTab.Title";
+    @NonNls
+    public static final String KEY_VCS_WIT_CREATE_WIT = "VcsWorkItemsTab.Create.WorkItem";
+    @NonNls
+    public static final String KEY_VCS_WIT_REFRESH_TOOLTIP = "VcsWorkItemsTab.Refresh.Tooltip";
+    @NonNls
+    public static final String KEY_VCS_WIT_NOT_CONNECTED = "VcsWorkItemsTab.NotConnected";
+    @NonNls
+    public static final String KEY_VCS_WIT_LOADING = "VcsWorkItemsTab.Loading";
+    @NonNls
+    public static final String KEY_VCS_WIT_LAST_REFRESHED_AT = "VcsWorkItemsTab.LastRefreshedAt";
+    @NonNls
+    public static final String KEY_VCS_WIT_NOT_AUTHENTICATED = "VcsWorkItemsTab.NoAuthenticated";
+    @NonNls
+    public static final String KEY_VCS_WIT_AUTHENTICATING = "VcsWorkItemsTab.Authenticating";
+    @NonNls
+    public static final String KEY_VCS_WIT_SIGN_IN = "VcsWorkItemsTab.SignIn";
+    @NonNls
+    public static final String KEY_VCS_WIT_OPEN_IN_BROWSER = "VcsWorkItemsTab.OpenInBrowser";
+    @NonNls
+    public static final String KEY_VCS_WIT_LOADING_ERRORS = "VcsWorkItemsTab.LoadingErrors";
+    @NonNls
+    public static final String KEY_VCS_WIT_UNEXPECTED_ERRORS = "VcsWorkItemsTab.Unexpected.Errors";
+
     //actions
     @NonNls
     public static final String KEY_ACTIONS_OPEN_BROWSER = "Actions.OpenInBrowser.Title";
