@@ -484,7 +484,10 @@ public class CreatePullRequestModel extends AbstractModel {
                 true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
-                // get context from manager, and store in active context
+                ListenableFuture<Pair<String, GitCommandResult>> pushResult
+                        = doPushCommits(gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
+
+                // get context from manager after push since credentials might have been updated by Git push
                 final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
                         gitRemoteUrl, true);
 
@@ -492,9 +495,6 @@ public class CreatePullRequestModel extends AbstractModel {
                     notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));
                     return;
                 }
-
-                ListenableFuture<Pair<String, GitCommandResult>> pushResult
-                        = doPushCommits(gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
 
                 Futures.addCallback(pushResult, new FutureCallback<Pair<String, GitCommandResult>>() {
                     @Override

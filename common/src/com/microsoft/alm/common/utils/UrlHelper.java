@@ -112,6 +112,21 @@ public class UrlHelper {
         return false;
     }
 
+    public static String getHttpsUrlFromHttpUrl(final String httpUrl) {
+        final URI uri = createUri(httpUrl);
+        String httpsUrl = httpUrl;
+        if (uri != null && StringUtils.equalsIgnoreCase(uri.getScheme(), "http")) {
+            final URI httpsUri = createUri("https://" + uri.getAuthority() + uri.getPath());
+            httpsUrl = httpsUri.toString();
+        }
+
+        if (StringUtils.startsWithIgnoreCase(httpsUrl, "https://")) {
+            return httpsUrl;
+        } else {
+            return null;
+        }
+    }
+
     public static String getHttpsGitUrlFromSshUrl(final String sshGitRemoteUrl) {
 
         if (isSshGitRemoteUrl(sshGitRemoteUrl)) {
