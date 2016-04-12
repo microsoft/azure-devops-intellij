@@ -3,8 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
-import com.intellij.openapi.project.ProjectManager;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -72,17 +73,23 @@ public class WorkItemsLookupListener implements Operation.Listener {
                     model.setLoading(false);
                 }
             });
-        } else if (witResults.hasError()) {
-            IdeaHelper.runOnUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (IdeaHelper.notifyOnAuthorizationError(context.getUri().toString(), ProjectManager.getInstance().getDefaultProject(), witResults.getError())) {
-                        model.setAuthenticated(false);
+        } else if (witResults.hasError()) {            IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
+                    model.setAuthenticated(false);
+                    final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
+                    if (newContext != null) {
+                        //try reloading the work items with new context and authentication info
+                        model.loadWorkItems(newContext);
                     } else {
-                        model.setLoadingErrors(true);
+                        //user cancelled login, don't retry
                     }
+                } else {
+                    model.setLoadingErrors(true);
                 }
-            });
+            }
+        });
         } else {
             // Update table model on UI thread
             IdeaHelper.runOnUIThread(new Runnable() {
