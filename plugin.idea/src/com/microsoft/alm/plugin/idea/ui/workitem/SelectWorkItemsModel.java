@@ -113,8 +113,13 @@ public class SelectWorkItemsModel extends AbstractModel {
                             if (wiResults.hasError()) {
                                 if (AuthHelper.isNotAuthorizedError(wiResults.getError())) {
                                     //401 or 403 - token is not valid, prompt user for credentials and retry
-                                    ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
-                                    loadWorkItems();
+                                    final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
+                                    if (context != null) {
+                                        //retry loading workitems with new context and authentication info
+                                        loadWorkItems();
+                                    } else {
+                                        //user cancelled login, don't retry
+                                    }
                                 } else {
                                     IdeaHelper.showErrorDialog(gitRepository.getProject(), wiResults.getError());
                                 }

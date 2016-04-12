@@ -69,7 +69,7 @@ public class TeamServicesSecrets {
     }
 
     public static String readPassword(final String key) {
-        String password = null;
+        String password = StringUtils.EMPTY;
         try {
             password = PasswordSafe.getInstance().getPassword(null, TeamServicesSecrets.class, key);
         } catch (PasswordSafeException e) {

@@ -3,16 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.utils;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.VcsNotifier;
-import com.microsoft.alm.plugin.authentication.AuthHelper;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
@@ -20,7 +14,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.Icon;
-import javax.swing.event.HyperlinkEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
@@ -107,24 +100,6 @@ public class IdeaHelper {
                     TfPluginBundle.message(TfPluginBundle.KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR),
                     TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR));
         }
-    }
-
-    public static boolean notifyOnAuthorizationError(@NotNull final String url, @NotNull final Project project, @NotNull final Throwable throwable) {
-        //check for NotAuthorized 401 errors
-        if (AuthHelper.isNotAuthorizedError(throwable)) {
-            ServerContextManager.getInstance().remove(url);
-            VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR),
-                    TfPluginBundle.message(TfPluginBundle.KEY_AUTH_FAILED_REFRESH_NOTIFICATION), new NotificationListener() {
-                        @Override
-                        public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
-                            final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(url, true);
-                            ServerContextManager.getInstance().updateAuthenticationInfo(url, context.getAuthenticationInfo());
-                            n.expire();
-                        }
-                    });
-            return true;
-        }
-        return false;
     }
 
     /**

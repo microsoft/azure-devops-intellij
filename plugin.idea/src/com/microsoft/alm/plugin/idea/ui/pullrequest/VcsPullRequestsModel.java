@@ -157,6 +157,12 @@ public class VcsPullRequestsModel extends AbstractModel {
         treeDataProvider.loadPullRequests(context);
     }
 
+    public void loadPullRequests(final ServerContext context) {
+        this.context = context;
+        this.authenticated = true;
+        loadPullRequests();
+    }
+
     public void importIntoTeamServicesGit() {
         final ImportController controller = new ImportController(project);
         controller.showModalDialog();

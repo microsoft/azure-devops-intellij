@@ -79,8 +79,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VSO_LOOKUP_HELP_VIEW_ACCOUNTS = "VsoLookupHelp.ViewAccounts";
     @NonNls
-    public static final String KEY_AUTH_FAILED_REFRESH_NOTIFICATION = "Auth.Failed.Refresh.Notification";
-    @NonNls
     public static final String KEY_TITLE_TEAM_SERVICES_ERROR = "Title.TeamServices.Error";
     @NonNls
     public static final String KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR = "Message.TeamServices.Unexpected.Error";

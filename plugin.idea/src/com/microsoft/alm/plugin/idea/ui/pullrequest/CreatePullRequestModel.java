@@ -30,12 +30,12 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
-import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
@@ -586,7 +586,15 @@ public class CreatePullRequestModel extends AbstractModel {
                     pullRequestHelper.getHtmlMsg(repositoryRemoteUrl, gitPullRequest.getPullRequestId()));
 
         } catch (Throwable t) {
-            if (!IdeaHelper.notifyOnAuthorizationError(context.getGitRepository().getRemoteUrl(), project, t)) {
+            if (AuthHelper.isNotAuthorizedError(t)) {
+                final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getGitRepository().getRemoteUrl());
+                if (newContext != null) {
+                    //retry creating the pull request with new context and authentication info
+                    doCreatePullRequest(project, newContext, title, description, branchNameOnRemoteServer, targetBranch);
+                } else {
+                    //user cancelled login, don't retry
+                }
+            } else {
                 // catch everything so we don't bubble up to Intellij
                 final Pair<PRCreateStatus, String> parsed
                         = pullRequestHelper.parseException(t, branchNameOnRemoteServer, targetBranch, context, gitClient);

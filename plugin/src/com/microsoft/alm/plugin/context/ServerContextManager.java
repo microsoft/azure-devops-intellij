@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -139,7 +140,8 @@ public class ServerContextManager {
     }
 
     public synchronized Collection<ServerContext> getAllServerContexts() {
-        return Collections.unmodifiableCollection(contextMap.values());
+        //copy values from HashMap to a new List make sure the list is immutable
+        return Collections.unmodifiableCollection(new ArrayList<ServerContext>(contextMap.values()));
     }
 
     private ServerContextStore getStore() {
@@ -296,8 +298,8 @@ public class ServerContextManager {
             // get context from builder, create PAT if needed, and store in active context
             final ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
             if (context != null && setAsActiveContext) {
-                // Add the context to the manager
-                ServerContextManager.getInstance().add(context);
+                //nothing to do
+                //context is already added to the manager if it is valid
             }
             return context;
         } catch (Throwable t) {
@@ -387,24 +389,15 @@ public class ServerContextManager {
     }
 
     /**
-     * Prompts user for credentials and updates all contexts with matching authority in URI with new authentication info
+     * Updates all contexts with matching authority in URI with new authentication info, will prompt the user
      *
      * @param remoteUrl
      */
-    public synchronized void updateAuthenticationInfo(final String remoteUrl) {
-        updateAuthenticationInfo(remoteUrl, null);
-    }
-
-    /**
-     * Updates all contexts with matching authority in URI with new authentication info, will prompt the user if input authenticationInfo = null
-     *
-     * @param remoteUrl
-     * @param authenticationInfo
-     */
-    public synchronized void updateAuthenticationInfo(final String remoteUrl, final AuthenticationInfo authenticationInfo) {
-        AuthenticationInfo newAuthenticationInfo = authenticationInfo;
-        boolean promptUser = newAuthenticationInfo == null ? true : false;
+    public synchronized ServerContext updateAuthenticationInfo(final String remoteUrl) {
+        AuthenticationInfo newAuthenticationInfo = null;
+        boolean promptUser = true;
         final URI remoteUri = UrlHelper.createUri(remoteUrl);
+        ServerContext matchingContext = null;
 
         //Linear search through all contexts to find the ones with same authority as remoteUrl
         for (final ServerContext context : getAllServerContexts()) {
@@ -424,10 +417,17 @@ public class ServerContextManager {
                     //build a context with new authentication info and add
                     final ServerContextBuilder builder = new ServerContextBuilder(context);
                     builder.authentication(newAuthenticationInfo);
-                    add(builder.build(), false);
+                    final ServerContext newContext = builder.build();
+                    if (StringUtils.equalsIgnoreCase(context.getUri().toString(), remoteUrl)) {
+                        add(newContext, true);
+                        matchingContext = newContext;
+                    } else {
+                        add(newContext, false);
+                    }
                 }
             }
         }
+        return matchingContext;
     }
 
     /**
@@ -497,6 +497,12 @@ public class ServerContextManager {
             } catch (Throwable t) {
                 logger.warn("validate: {} of git remote url failed", gitRemoteUrl);
                 logger.warn("validate: unexpected exception ", t);
+                if (AuthHelper.isNotAuthorizedError(t)) {
+                    final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
+                    if (context != null) {
+                        validate(gitRemoteUrl);
+                    }
+                }
             }
 
             //failed to get VSTS repo, project and collection info
@@ -526,6 +532,9 @@ public class ServerContextManager {
                 //failed to get VSTS information, endpoint may not be available on the server
                 logger.warn("validate: failed for Git remote url: {}", gitRemoteUrl);
                 logger.warn("validate", throwable);
+                if (AuthHelper.isNotAuthorizedError(throwable)) {
+                    throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED, throwable);
+                }
                 return false;
             }
         }
@@ -552,6 +561,9 @@ public class ServerContextManager {
             } catch (Throwable throwable) {
                 logger.error("validate: failed");
                 logger.warn("validate", throwable);
+                if (AuthHelper.isNotAuthorizedError(throwable)) {
+                    throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED, throwable);
+                }
                 return false;
             }
 

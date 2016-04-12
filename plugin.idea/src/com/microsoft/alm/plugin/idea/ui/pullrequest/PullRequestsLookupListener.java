@@ -3,8 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.intellij.openapi.project.ProjectManager;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
@@ -71,8 +72,15 @@ public class PullRequestsLookupListener implements Operation.Listener {
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (IdeaHelper.notifyOnAuthorizationError(context.getUri().toString(), ProjectManager.getInstance().getDefaultProject(), lookupResults.getError())) {
+                    if (AuthHelper.isNotAuthorizedError(lookupResults.getError())) {
                         model.setAuthenticated(false);
+                        final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
+                        if (newContext != null) {
+                            //try reloading the pull requests with new context and authentication info
+                            model.loadPullRequests(newContext);
+                        } else {
+                            //user cancelled login, don't retry
+                        }
                     } else {
                         model.setLoadingErrors(true);
                     }

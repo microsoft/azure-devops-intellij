@@ -8,10 +8,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.settings.TeamServicesSecrets;
 import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,23 +26,27 @@ public class Providers {
     public static class ServerContextProvider {
 
         public ServerContext getAuthenticatedServerContext(@Nullable final Project project, @NotNull final GitRepository gitRepository) {
+            //force intelliJ password dialogs to show up on the UI thread before staring the background thread to lookup/create context
+            //otherwise adding the server context will try to save the password, that might require the dialog to show up on the UI thread
+            //In that case the UI will hang since UI thread is waiting on getting the authenticated context
+            TeamServicesSecrets.writePassword("intelliJPasswordDialog", "intelliJPasswordDialog");
+            TeamServicesSecrets.readPassword("intelliJPasswordDialog");
 
             if (ApplicationManager.getApplication() != null && ApplicationManager.getApplication().isDispatchThread()) {
                 final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-
-                //Get auth info to force the intelliJ password store dialog to show up on the UI thread
-                final AuthenticationInfo authInfo = ServerContextManager.getInstance().getBestAuthenticationInfo(gitRemoteUrl, false);
-                logger.debug("getAuthenticatedServerContext: Auth info = {} for url = {}", authInfo, gitRemoteUrl);
-
-                final SettableFuture<ServerContext> future = SettableFuture.create();
+                final SettableFuture<ServerContext> future = SettableFuture.<ServerContext>create();
 
                 final Task.Backgroundable authenticationTask = new Task.Backgroundable(project,
                         TfPluginBundle.message(TfPluginBundle.KEY_AUTH_MSG_AUTHENTICATING),
-                        false) {
+                        true /*cancellable*/) {
                     @Override
                     public void run(@NotNull ProgressIndicator progressIndicator) {
-                        final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, true);
-                        future.set(context);
+                        try {
+                            final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, true);
+                            future.set(context);
+                        } catch (Throwable t) {
+                            future.setException(t);
+                        }
                     }
                 };
                 authenticationTask.queue();
