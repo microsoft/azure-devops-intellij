@@ -42,6 +42,8 @@ public class VcsWorkItemsController implements Observer, ActionListener {
     }
 
     public void actionPerformed(final ActionEvent e) {
+        updateModel();
+
         if (VcsWorkItemsForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
             if (!model.isConnected()) {
                 //import into team services git
@@ -77,6 +79,9 @@ public class VcsWorkItemsController implements Observer, ActionListener {
         if (arg == null) {
             tab.setWorkItemsTable(model.getTableModel());
         }
+        if (arg == null || arg.equals(SelectWorkItemsModel.PROP_FILTER)) {
+            tab.setFilter(model.getFilter());
+        }
 
         //actions from the form
         if (VcsWorkItemsForm.CMD_CREATE_NEW_WORK_ITEM.equals(arg)) {
@@ -88,6 +93,10 @@ public class VcsWorkItemsController implements Observer, ActionListener {
         if (VcsWorkItemsForm.CMD_OPEN_SELECTED_WIT_IN_BROWSER.equals(arg)) {
             model.openSelectedWorkItemsLink();
         }
+    }
+
+    protected void updateModel() {
+        model.setFilter(tab.getFilter());
     }
 
     public void dispose() {

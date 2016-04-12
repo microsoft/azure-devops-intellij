@@ -14,12 +14,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.common.FormattedTable;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
+import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -29,6 +31,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.BorderLayout;
@@ -50,9 +55,11 @@ public class VcsWorkItemsForm extends Observable {
     private FormattedTable workItemsTable;
     private JLabel statusLabel;
     private Hyperlink statusLink;
+    private SearchFilter searchFilter;
 
     //commands
     public static final String CMD_REFRESH = "refresh";
+    public static final String CMD_FILTER_CHANGED = "filter";
     public static final String CMD_CREATE_NEW_WORK_ITEM = "createNewWorkItemLink";
     public static final String CMD_STATUS_LINK = "statusLink";
     public static final String CMD_OPEN_SELECTED_WIT_IN_BROWSER = "openSelectedWorkItem";
@@ -60,6 +67,7 @@ public class VcsWorkItemsForm extends Observable {
     public static final String TOOLBAR_LOCATION = "Vcs.WorkItems";
 
     private boolean initialized = false;
+    private Timer timer;
 
     public VcsWorkItemsForm() {
         ensureInitialized();
@@ -72,17 +80,32 @@ public class VcsWorkItemsForm extends Observable {
 
     private void ensureInitialized() {
         if (!initialized) {
+            // Create timer for filtering the list
+            timer = new Timer(400, null);
+            timer.setInitialDelay(400);
+            timer.setActionCommand(CMD_FILTER_CHANGED);
+            timer.setRepeats(false);
+
             workItemsTable = new FormattedTable(WorkItemsTableModel.Column.TITLE.toString());
             workItemsTable.customizeHeader();
             scrollPanel = new JBScrollPane(workItemsTable);
+            searchFilter = new SearchFilter();
 
             //toolbars
             final JPanel toolBarPanel;
             if (ApplicationManager.getApplication() != null) {
                 final ActionToolbar witActionsToolbar = createWorkItemActionsToolbar();
                 final ActionToolbar feedbackActionsToolbar = createFeedbackActionsToolbar();
+
+                // left panel of the top toolbar
+                final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, JBUI.scale(3)); // give vertical padding
+                final JPanel toolBarPanelLeft = new JPanel(flowLayout);
+                toolBarPanelLeft.add(witActionsToolbar.getComponent());
+                toolBarPanelLeft.add(searchFilter);
+
+                //entire top toolbar
                 toolBarPanel = new JPanel(new BorderLayout());
-                toolBarPanel.add(witActionsToolbar.getComponent(), BorderLayout.LINE_START);
+                toolBarPanel.add(toolBarPanelLeft, BorderLayout.LINE_START);
                 toolBarPanel.add(feedbackActionsToolbar.getComponent(), BorderLayout.LINE_END);
             } else {
                 //skip setup when called from unit tests
@@ -213,6 +236,30 @@ public class VcsWorkItemsForm extends Observable {
         workItemsTable.setModel(tableModel);
         workItemsTable.setSelectionModel(tableModel.getSelectionModel());
         workItemsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+        searchFilter.addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(final DocumentEvent e) {
+                onFilterChanged();
+            }
+
+            @Override
+            public void removeUpdate(final DocumentEvent e) {
+                onFilterChanged();
+            }
+
+            @Override
+            public void changedUpdate(final DocumentEvent e) {
+                onFilterChanged();
+            }
+
+            private void onFilterChanged() {
+                if (timer.isRunning()) {
+                    timer.restart();
+                } else {
+                    timer.start();
+                }
+            }
+        });
 
         // Setup table sorter
         RowSorter<TableModel> sorter = new TableRowSorter<TableModel>(tableModel);
@@ -232,6 +279,7 @@ public class VcsWorkItemsForm extends Observable {
     }
 
     public void addActionListener(final ActionListener listener) {
+        timer.addActionListener(listener);
         statusLink.addActionListener(listener);
         addTableEventListeners(listener);
     }
@@ -286,6 +334,14 @@ public class VcsWorkItemsForm extends Observable {
         menuItem.setActionCommand(actionCommand);
         menuItem.addActionListener(listener);
         return menuItem;
+    }
+
+    public void setFilter(final String filterString) {
+        searchFilter.setFilterText(filterString);
+    }
+
+    public String getFilter() {
+        return searchFilter.getFilterText();
     }
 
     protected void setChangedAndNotify(final String propertyName) {

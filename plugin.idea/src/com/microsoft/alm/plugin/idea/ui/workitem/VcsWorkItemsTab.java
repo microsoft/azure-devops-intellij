@@ -37,6 +37,14 @@ public class VcsWorkItemsTab {
         form.addActionListener(listener);
     }
 
+    public void setFilter(final String filterString) {
+        form.setFilter(filterString);
+    }
+
+    public String getFilter() {
+        return form.getFilter();
+    }
+
     public void addObserver(final Observer observer) {
         form.addObserver(observer);
     }

@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.Providers;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
 import git4idea.repo.GitRepository;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ public class VcsWorkItemsModel extends AbstractModel {
     private final WorkItemsLookupListener treeDataProvider;
     private GitRepository gitRepository;
     private ServerContext context;
+    private String filter;
 
     private boolean connected = false;
     private boolean authenticated = false;
@@ -40,6 +42,7 @@ public class VcsWorkItemsModel extends AbstractModel {
     public static final String PROP_LOADING = "loading";
     public static final String PROP_LOADING_ERRORS = "loadingErrors";
     public final static String PROP_SERVER_NAME = "serverName";
+    public final static String PROP_FILTER = "filter";
 
 
     public VcsWorkItemsModel(final @NotNull Project project) {
@@ -182,6 +185,18 @@ public class VcsWorkItemsModel extends AbstractModel {
                 logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
             }
         }
+    }
+
+    public void setFilter(final String filter) {
+        if (!StringUtils.equals(this.filter, filter)) {
+            this.filter = filter;
+            setChangedAndNotify(PROP_FILTER);
+            tableModel.setFilter(filter);
+        }
+    }
+
+    public String getFilter() {
+        return filter;
     }
 
     public void dispose() {

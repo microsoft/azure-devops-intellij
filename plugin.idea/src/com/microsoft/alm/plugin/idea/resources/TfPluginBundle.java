@@ -83,7 +83,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR = "Message.TeamServices.Unexpected.Error";
 
-
+    
     // Checkout dialog ui and models
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TFS_TAB = "CheckoutDialog.TfsTab";
@@ -378,6 +378,10 @@ public class TfPluginBundle {
     public static final String KEY_VCS_WIT_LOADING_ERRORS = "VcsWorkItemsTab.LoadingErrors";
     @NonNls
     public static final String KEY_VCS_WIT_UNEXPECTED_ERRORS = "VcsWorkItemsTab.Unexpected.Errors";
+
+    //toolbar
+    @NonNls
+    public static final String KEY_TOOLBAR_FILTER_TITLE = "Toolbar.Filter.Title";
 
     //actions
     @NonNls
