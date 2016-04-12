@@ -487,15 +487,6 @@ public class CreatePullRequestModel extends AbstractModel {
                 ListenableFuture<Pair<String, GitCommandResult>> pushResult
                         = doPushCommits(gitRepository, sourceBranch, targetBranch.getRemote(), progressIndicator);
 
-                // get context from manager after push since credentials might have been updated by Git push
-                final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
-                        gitRemoteUrl, true);
-
-                if (context == null) {
-                    notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));
-                    return;
-                }
-
                 Futures.addCallback(pushResult, new FutureCallback<Pair<String, GitCommandResult>>() {
                     @Override
                     public void onSuccess(@Nullable Pair<String, GitCommandResult> result) {
@@ -503,6 +494,15 @@ public class CreatePullRequestModel extends AbstractModel {
                             final String title = createModel.getTitle();
                             final String description = createModel.getDescription();
                             final String branchNameOnRemoteServer = result.getFirst();
+
+                            // get context from manager, we want to do this after push completes since credentials could have changed during the Git push
+                            final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
+                                    gitRemoteUrl, true);
+
+                            if (context == null) {
+                                notifyCreateFailedError(project, TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));
+                                return;
+                            }
 
                             doCreatePullRequest(project, context, title, description, branchNameOnRemoteServer, targetBranch);
                         } else {
