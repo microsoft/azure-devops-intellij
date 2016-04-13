@@ -72,7 +72,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         verify(modelMock).isLoading();
         verify(modelMock).isConnected();
         verify(modelMock).isAuthenticated();
-        verify(modelMock).isAuthenticating();
+        //verify(modelMock).isAuthenticating();
         verify(modelMock).hasLoadingErrors();
         verify(uiMock).setPullRequestsTree(any(PullRequestsTreeModel.class));
         verify(modelMock).getPullRequestsTreeModel();
@@ -93,7 +93,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //Authenticating or not
         underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATING);
         verify(uiMock, times(3)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(3)).isAuthenticating();
+        //verify(modelMock, times(3)).isAuthenticating();
 
         //Authenticated or not
         underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATED);

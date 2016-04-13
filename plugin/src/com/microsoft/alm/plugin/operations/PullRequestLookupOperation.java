@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
@@ -11,6 +12,7 @@ import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +27,7 @@ public class PullRequestLookupOperation extends Operation {
         ALL
     }
 
-    private final ServerContext context;
+    private final String gitRemoteUrl;
     private final PullRequestLookupResults requestedByMeResults = new PullRequestLookupResults(PullRequestScope.REQUESTED_BY_ME);
     private final PullRequestLookupResults assignedToMeResults = new PullRequestLookupResults(PullRequestScope.ASSIGNED_TO_ME);
 
@@ -46,9 +48,9 @@ public class PullRequestLookupOperation extends Operation {
         }
     }
 
-    public PullRequestLookupOperation(final ServerContext context) {
-        assert context != null;
-        this.context = context;
+    public PullRequestLookupOperation(final String gitRemoteUrl) {
+        assert gitRemoteUrl != null;
+        this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
@@ -60,13 +62,13 @@ public class PullRequestLookupOperation extends Operation {
             tasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
                 public void run() {
-                    doLookup(context, PullRequestScope.REQUESTED_BY_ME);
+                    doLookup(gitRemoteUrl, PullRequestScope.REQUESTED_BY_ME);
                 }
             }));
             tasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
                 public void run() {
-                    doLookup(context, PullRequestScope.ASSIGNED_TO_ME);
+                    doLookup(gitRemoteUrl, PullRequestScope.ASSIGNED_TO_ME);
                 }
             }));
             OperationExecutor.getInstance().wait(tasks);
@@ -78,27 +80,33 @@ public class PullRequestLookupOperation extends Operation {
 
     }
 
-    protected void doLookup(final ServerContext context, final PullRequestScope scope) {
+    protected void doLookup(final String gitRemoteUrl, final PullRequestScope scope) {
         try {
-            final GitHttpClient gitHttpClient = context.getGitHttpClient();
-            final PullRequestLookupResults results = scope == PullRequestScope.REQUESTED_BY_ME ? requestedByMeResults : assignedToMeResults;
+            final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, false);
+            if (context != null) {
+                final GitHttpClient gitHttpClient = context.getGitHttpClient();
+                final PullRequestLookupResults results = scope == PullRequestScope.REQUESTED_BY_ME ? requestedByMeResults : assignedToMeResults;
 
-            //setup criteria for the query
-            final GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria();
-            criteria.setRepositoryId(context.getGitRepository().getId());
-            criteria.setStatus(PullRequestStatus.ACTIVE);
-            criteria.setIncludeLinks(false);
-            if (scope == PullRequestScope.REQUESTED_BY_ME) {
-                criteria.setCreatorId(context.getUserId());
+                //setup criteria for the query
+                final GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria();
+                criteria.setRepositoryId(context.getGitRepository().getId());
+                criteria.setStatus(PullRequestStatus.ACTIVE);
+                criteria.setIncludeLinks(false);
+                if (scope == PullRequestScope.REQUESTED_BY_ME) {
+                    criteria.setCreatorId(context.getUserId());
+                } else {
+                    criteria.setReviewerId(context.getUserId());
+                }
+
+                //query server and add results
+                final List<GitPullRequest> pullRequests = gitHttpClient.getPullRequests(context.getGitRepository().getId(), criteria, 256, 0, 101);
+                logger.debug("doLookup: Found {} pull requests {} on repo {}", pullRequests.size(), scope.toString(), context.getGitRepository().getRemoteUrl());
+                results.pullRequests.addAll(pullRequests);
+                super.onLookupResults(results);
             } else {
-                criteria.setReviewerId(context.getUserId());
+                //could not find authenticated context, user might have cancelled login
+                terminate(new NotAuthorizedException(gitRemoteUrl));
             }
-
-            //query server and add results
-            final List<GitPullRequest> pullRequests = gitHttpClient.getPullRequests(context.getGitRepository().getId(), criteria, 256, 0, 101);
-            logger.debug("doLookup: Found {} pull requests {} on repo {}", pullRequests.size(), scope.toString(), context.getGitRepository().getRemoteUrl());
-            results.pullRequests.addAll(pullRequests);
-            super.onLookupResults(results);
         } catch (Throwable t) {
             logger.warn("doLookup: failed with an exception", t);
             terminate(t);

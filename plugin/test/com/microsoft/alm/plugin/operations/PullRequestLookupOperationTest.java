@@ -4,14 +4,13 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.context.ServerContext;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 public class PullRequestLookupOperationTest extends AbstractTest {
 
     PullRequestLookupOperation underTest;
+
     @Test
     public void tesConstructor() {
         try {
@@ -22,7 +21,6 @@ public class PullRequestLookupOperationTest extends AbstractTest {
         }
 
         //construct correctly
-        final ServerContext serverContextMock = Mockito.mock(ServerContext.class);
-        underTest = new PullRequestLookupOperation(serverContextMock);
+        underTest = new PullRequestLookupOperation("gitRepoUrl");
     }
 }

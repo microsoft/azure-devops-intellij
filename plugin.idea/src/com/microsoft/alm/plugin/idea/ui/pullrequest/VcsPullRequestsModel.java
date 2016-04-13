@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.Providers;
+import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
@@ -120,31 +121,14 @@ public class VcsPullRequestsModel extends AbstractModel {
     }
 
     private boolean connectionSetup() {
-        //always load latest saved context and repo information since it might be changed outside of pull requests tab
+        //check if project is in a TF git repository
         gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
-
-        setAuthenticating(true);
-        context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
-        setAuthenticating(false);
-
-        if (connected && gitRepository != null && authenticated && context != null) {
-            logger.debug("connectionSetup: connection is good");
-            return true;
-        }
-
         if (gitRepository == null) {
             setConnected(false);
             logger.debug("connectionSetup: Failed to get Git repo for current project");
             return false;
         }
         setConnected(true);
-
-        if (context == null) {
-            setAuthenticated(false);
-            logger.debug("connectionSetup: failed to get authenticated context for current repo");
-            return false;
-        }
-        setAuthenticated(true);
 
         //connection setup successfully
         return true;
@@ -156,13 +140,7 @@ public class VcsPullRequestsModel extends AbstractModel {
         }
 
         clearPullRequests();
-        treeDataProvider.loadPullRequests(context);
-    }
-
-    public void loadPullRequests(final ServerContext context) {
-        this.context = context;
-        this.authenticated = true;
-        loadPullRequests();
+        treeDataProvider.loadPullRequests(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl());
     }
 
     public void importIntoTeamServicesGit() {
