@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import org.junit.Before;
@@ -37,20 +38,10 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
         final Observer observerMock = Mockito.mock(Observer.class);
         underTest.addObserver(observerMock);
 
-        underTest.setConnected(underTest.isConnected());
-        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_CONNECTED);
-        underTest.setConnected(!underTest.isConnected());
-        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_CONNECTED);
-
-        underTest.setAuthenticated(underTest.isAuthenticated());
-        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_AUTHENTICATED);
-        underTest.setAuthenticated(!underTest.isAuthenticated());
-        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_AUTHENTICATED);
-
-        underTest.setLoading(underTest.isLoading());
-        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_LOADING);
-        underTest.setLoading(!underTest.isLoading());
-        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_LOADING);
+        underTest.setTabStatus(underTest.getTabStatus());
+        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_PR_TAB_STATUS);
+        underTest.setTabStatus(VcsTabStatus.LOADING_COMPLETED);
+        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_PR_TAB_STATUS);
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.intellij.ui.treeStructure.Tree;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 
 import javax.swing.Icon;
@@ -156,64 +157,50 @@ public class VcsPullRequestsForm extends Observable {
         return toolbar;
     }
 
-    public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,
-                                    final boolean loading, final boolean loadingErrors) {
-        updateStatusText(connected, authenticating, authenticated, loading, loadingErrors);
-    }
+    public void setStatus(final VcsTabStatus status) {
+        switch (status) {
+            case NOT_TF_GIT_REPO:
+                //Git repository remote is not on TFS or VSTS
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_CONNECTED));
+                statusLabel.setIcon(AllIcons.General.Error);
+                statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
+                statusLink.setVisible(true);
+                break;
+            case NO_AUTH_INFO:
+                //Couldn't find authentication info
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_AUTHENTICATED));
+                statusLabel.setIcon(AllIcons.General.Error);
+                statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SIGN_IN));
+                statusLink.setVisible(true);
+                break;
+            case LOADING_IN_PROGRESS:
+                //Loading in progress
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING));
+                statusLabel.setIcon(AllIcons.General.Information);
+                statusLink.setText("");
+                statusLink.setVisible(false);
+                break;
+            case LOADING_COMPLETED_ERRORS:
+                //unexpected errors during loading
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING_ERRORS));
+                statusLabel.setIcon(AllIcons.General.Warning);
+                statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER));
+                statusLink.setVisible(true);
+                break;
+            case LOADING_COMPLETED:
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, new Date().toString()));
+                statusLabel.setIcon(AllIcons.General.Information);
+                statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER));
+                statusLink.setVisible(true);
 
-    private void updateStatusText(final boolean connected, final boolean authenticating, final boolean authenticated,
-                                  final boolean loading, final boolean loadingErrors) {
-        if (!connected) {
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_CONNECTED));
-            statusLabel.setIcon(AllIcons.General.Error);
-            statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
-            statusLink.setVisible(true);
-            return;
-        }
-
-        if (authenticating) {
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_AUTH_MSG_AUTHENTICATING));
-            statusLabel.setIcon(AllIcons.General.Information);
-            statusLink.setText("");
-            statusLink.setVisible(false);
-            return;
-        }
-
-        if (!authenticated) {
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_AUTHENTICATED));
-            statusLabel.setIcon(AllIcons.General.Error);
-            statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SIGN_IN));
-            statusLink.setVisible(true);
-            return;
-        }
-
-        if (loading) {
-            //Loading in progress
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING));
-            statusLabel.setIcon(AllIcons.General.Information);
-            statusLink.setText("");
-            statusLink.setVisible(false);
-            return;
-        }
-
-        if (loadingErrors) {
-            statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING_ERRORS));
-            statusLabel.setIcon(AllIcons.General.Warning);
-            statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER));
-            statusLink.setVisible(true);
-            return;
-        }
-
-        //loading complete
-        statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, new Date().toString()));
-        statusLabel.setIcon(AllIcons.General.Information);
-        statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER));
-        statusLink.setVisible(true);
-
-        //expand the tree
-        if (pullRequestsTreeModel != null) {
-            pullRequestsTree.expandRow(0);
-            pullRequestsTree.expandRow(pullRequestsTreeModel.getRequestedByMeRoot().getChildCount() + 1);
+                //expand the tree
+                if (pullRequestsTreeModel != null) {
+                    pullRequestsTree.expandRow(0);
+                    pullRequestsTree.expandRow(pullRequestsTreeModel.getRequestedByMeRoot().getChildCount() + 1);
+                }
+                break;
+            default:
+                //we should never get here, no action
         }
     }
 

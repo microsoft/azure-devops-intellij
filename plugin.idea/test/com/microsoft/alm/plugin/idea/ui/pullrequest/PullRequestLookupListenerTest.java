@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +31,14 @@ public class PullRequestLookupListenerTest extends IdeaAbstractTest {
     @Test
     public void testNotifyLookupStarted() {
         underTest.notifyLookupStarted();
-        verify(modelMock).setLoading(true);
-        verify(modelMock).clearPullRequests();
+        verify(modelMock).setTabStatus(VcsTabStatus.LOADING_IN_PROGRESS);
     }
 
     @Test
     public void testNotifyLookupCompleted() {
+        when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.LOADING_IN_PROGRESS);
         underTest.notifyLookupCompleted();
-        verify(modelMock).setLoading(false);
+        verify(modelMock).setTabStatus(VcsTabStatus.LOADING_COMPLETED);
     }
 
     @Test
@@ -56,6 +57,6 @@ public class PullRequestLookupListenerTest extends IdeaAbstractTest {
         when(resultsMock.isCancelled()).thenReturn(true);
         underTest.notifyLookupResults(resultsMock);
         verify(resultsMock).isCancelled();
-        verify(modelMock).setLoading(false);
+        verify(modelMock).setTabStatus(VcsTabStatus.LOADING_COMPLETED);
     }
 }

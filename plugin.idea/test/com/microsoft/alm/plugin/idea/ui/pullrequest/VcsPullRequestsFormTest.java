@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,50 +22,35 @@ public class VcsPullRequestsFormTest extends IdeaAbstractTest {
 
     @Test
     public void testNotConnected() {
-        underTest.setConnectionStatus(false /*connected*/, false /*authenticating*/, false /*authenticated*/, false /*loading*/, false /*loadingErrors*/);
+        underTest.setStatus(VcsTabStatus.NOT_TF_GIT_REPO);
         assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_CONNECTED), underTest.getStatusText());
         assertEquals(underTest.getStatusLinkText(), TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
-
-        underTest.setConnectionStatus(false, true, true, true, false);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_CONNECTED), underTest.getStatusText());
-        assertEquals(underTest.getStatusLinkText(), TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
-    }
-
-    @Test
-    public void testAuthenticating() {
-        underTest.setConnectionStatus(true /*connected*/, true /*authenticating*/, false /*authenticated*/, false /*loading*/, false /*loadingErrors*/);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_AUTH_MSG_AUTHENTICATING), underTest.getStatusText());
-        assertEquals("", underTest.getStatusLinkText());
     }
 
     @Test
     public void testNotAuthenticated() {
-        underTest.setConnectionStatus(true /*connected*/, false /*authenticating*/, false /*authenticated*/, false /*loading*/, false /*loadingErrors*/);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_AUTHENTICATED), underTest.getStatusText());
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SIGN_IN), underTest.getStatusLinkText());
-
-        underTest.setConnectionStatus(true /*connected*/, false /*authenticating*/, false /*authenticated*/, true /*loading*/, false /*loadingErrors*/);
+        underTest.setStatus(VcsTabStatus.NO_AUTH_INFO);
         assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_NOT_AUTHENTICATED), underTest.getStatusText());
         assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SIGN_IN), underTest.getStatusLinkText());
     }
 
     @Test
     public void pullRequestsLoading() {
-        underTest.setConnectionStatus(true /*connected*/, false /*authenticating*/, true /*authenticated*/, true /*loading*/, false /*loadingErrors*/);
+        underTest.setStatus(VcsTabStatus.LOADING_IN_PROGRESS);
         assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING), underTest.getStatusText());
         assertEquals("", underTest.getStatusLinkText());
     }
 
     @Test
     public void loadingComplete() {
-        underTest.setConnectionStatus(true, false, true, false, false);
+        underTest.setStatus(VcsTabStatus.LOADING_COMPLETED);
         assertTrue(underTest.getStatusText().startsWith(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LAST_REFRESHED_AT, "")));
         assertEquals(TfPluginBundle.message((TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER)), underTest.getStatusLinkText());
     }
 
     @Test
     public void loadingErrors() {
-        underTest.setConnectionStatus(true, false, true, false, true);
+        underTest.setStatus(VcsTabStatus.LOADING_COMPLETED_ERRORS);
         assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_LOADING_ERRORS), underTest.getStatusText());
         assertEquals(TfPluginBundle.message((TfPluginBundle.KEY_VCS_PR_OPEN_IN_BROWSER)), underTest.getStatusLinkText());
     }

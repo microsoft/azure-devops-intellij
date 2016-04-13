@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
@@ -16,11 +17,9 @@ import java.util.Observer;
  * UI class for Version Control pull requests tab
  */
 public class VcsPullRequestsTab {
-    private final Project project;
     private VcsPullRequestsForm form;
 
     public VcsPullRequestsTab(@NotNull final Project project) {
-        this.project = project;
         form = new VcsPullRequestsForm();
 
         // Make a telemetry entry for this UI tab opening
@@ -44,9 +43,8 @@ public class VcsPullRequestsTab {
         form.addObserver(observer);
     }
 
-    public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,
-                                    final boolean loading, final boolean loadingErrors) {
-        form.setConnectionStatus(connected, authenticating, authenticated, loading, loadingErrors);
+    public void setStatus(final VcsTabStatus status) {
+        form.setStatus(status);
     }
 
     public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {

@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.Providers;
@@ -40,17 +41,9 @@ public class VcsPullRequestsModel extends AbstractModel {
     private GitRepository gitRepository;
     private ServerContext context;
 
-    private boolean connected = false;
-    private boolean authenticated = false;
-    private boolean authenticating = false;
-    private boolean loading = false;
-    private boolean loadingErrors = false;
+    private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
-    public static final String PROP_CONNECTED = "connected";
-    public static final String PROP_AUTHENTICATED = "authenticated";
-    public static final String PROP_AUTHENTICATING = "authenticating";
-    public static final String PROP_LOADING = "loading";
-    public static final String PROP_LOADING_ERRORS = "loadingErrors";
+    public static final String PROP_PR_TAB_STATUS = "prTabStatus";
 
 
     public VcsPullRequestsModel(@NotNull Project project) {
@@ -60,58 +53,14 @@ public class VcsPullRequestsModel extends AbstractModel {
         treeDataProvider = new PullRequestsLookupListener(this);
     }
 
-    public boolean isLoading() {
-        return loading;
+    public VcsTabStatus getTabStatus() {
+        return tabStatus;
     }
 
-    public void setLoading(final boolean loading) {
-        if (this.loading != loading) {
-            this.loading = loading;
-            setChangedAndNotify(PROP_LOADING);
-        }
-    }
-
-    public boolean isConnected() {
-        return connected;
-    }
-
-    public void setConnected(final boolean connected) {
-        if (this.connected != connected) {
-            this.connected = connected;
-            setChangedAndNotify(PROP_CONNECTED);
-        }
-    }
-
-    public boolean isAuthenticated() {
-        return authenticated;
-    }
-
-    public void setAuthenticated(final boolean authenticated) {
-        if (this.authenticated != authenticated) {
-            this.authenticated = authenticated;
-            setChangedAndNotify(PROP_AUTHENTICATED);
-        }
-    }
-
-    public boolean isAuthenticating() {
-        return authenticating;
-    }
-
-    public void setAuthenticating(final boolean authenticating) {
-        if (this.authenticating != authenticating) {
-            this.authenticating = authenticating;
-            setChangedAndNotify(PROP_AUTHENTICATING);
-        }
-    }
-
-    public boolean hasLoadingErrors() {
-        return loadingErrors;
-    }
-
-    public void setLoadingErrors(final boolean loadingErrors) {
-        if (this.loadingErrors != loadingErrors) {
-            this.loadingErrors = loadingErrors;
-            setChangedAndNotify(PROP_LOADING_ERRORS);
+    public void setTabStatus(final VcsTabStatus status) {
+        if (this.tabStatus != status) {
+            this.tabStatus = status;
+            setChangedAndNotify(PROP_PR_TAB_STATUS);
         }
     }
 
@@ -123,27 +72,23 @@ public class VcsPullRequestsModel extends AbstractModel {
         //always load latest saved context and repo information since it might be changed outside of pull requests tab
         gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
         if (gitRepository == null) {
-            setConnected(false);
+            setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);
             logger.debug("connectionSetup: Failed to get Git repo for current project");
             return false;
         }
-        setConnected(true);
 
-        setAuthenticating(true);
         context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
-        setAuthenticating(false);
 
-        if (connected && gitRepository != null && authenticated && context != null) {
+        if (context != null) {
             logger.debug("connectionSetup: connection is good");
             return true;
         }
 
         if (context == null) {
-            setAuthenticated(false);
+            setTabStatus(VcsTabStatus.NO_AUTH_INFO);
             logger.debug("connectionSetup: failed to get authenticated context for current repo");
             return false;
         }
-        setAuthenticated(true);
 
         //connection setup successfully
         return true;
@@ -160,7 +105,6 @@ public class VcsPullRequestsModel extends AbstractModel {
 
     public void loadPullRequests(final ServerContext context) {
         this.context = context;
-        this.authenticated = true;
         loadPullRequests();
     }
 

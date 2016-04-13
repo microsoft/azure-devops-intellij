@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -11,7 +12,6 @@ import org.mockito.Mockito;
 import java.awt.event.ActionEvent;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,12 +49,21 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     @Test
     public void testActionListener() {
         //click on status link
-        when(modelMock.isConnected()).thenReturn(true);
-        when(modelMock.isAuthenticated()).thenReturn(true);
+
+        //PR tab has completed loading
+        when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_STATUS_LINK));
-        verify(modelMock).isConnected();
-        verify(modelMock).isAuthenticated();
         verify(modelMock).openGitRepoLink();
+
+        //need credentials
+        when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.NO_AUTH_INFO);
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_STATUS_LINK));
+        verify(modelMock).loadPullRequests();
+
+        //not a tf git repo
+        when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.NOT_TF_GIT_REPO);
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_STATUS_LINK));
+        verify(modelMock).importIntoTeamServicesGit();
 
         //pop up menu - open in browser
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER));
@@ -68,41 +77,17 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     @Test
     public void testDefaultPropertyUpdates() {
         underTest.update(null, null);
-        verify(uiMock).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock).isLoading();
-        verify(modelMock).isConnected();
-        verify(modelMock).isAuthenticated();
-        verify(modelMock).isAuthenticating();
-        verify(modelMock).hasLoadingErrors();
+        verify(uiMock).setStatus(any(VcsTabStatus.class));
+        verify(modelMock).getTabStatus();
         verify(uiMock).setPullRequestsTree(any(PullRequestsTreeModel.class));
         verify(modelMock).getPullRequestsTreeModel();
     }
 
     @Test
     public void testPropertyUpdates() {
-        //Loading or not
-        underTest.update(null, VcsPullRequestsModel.PROP_LOADING);
-        verify(uiMock, times(1)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(1)).isLoading();
-
-        //Connected or not
-        underTest.update(null, VcsPullRequestsModel.PROP_CONNECTED);
-        verify(uiMock, times(2)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(2)).isConnected();
-
-        //Authenticating or not
-        underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATING);
-        verify(uiMock, times(3)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(3)).isAuthenticating();
-
-        //Authenticated or not
-        underTest.update(null, VcsPullRequestsModel.PROP_AUTHENTICATED);
-        verify(uiMock, times(4)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(4)).isAuthenticated();
-
-        //loading errors or not
-        underTest.update(null, VcsPullRequestsModel.PROP_LOADING_ERRORS);
-        verify(uiMock, times(5)).setConnectionStatus(anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
-        verify(modelMock, times(5)).hasLoadingErrors();
+        //Tab status updates
+        underTest.update(null, VcsPullRequestsModel.PROP_PR_TAB_STATUS);
+        verify(uiMock, times(1)).setStatus(any(VcsTabStatus.class));
+        verify(modelMock, times(1)).getTabStatus();
     }
 }
