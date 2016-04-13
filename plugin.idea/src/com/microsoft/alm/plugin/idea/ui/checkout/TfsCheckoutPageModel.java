@@ -8,6 +8,8 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.ui.common.LookupHelper;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
@@ -33,10 +35,14 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
             authenticationProvider = TfsAuthenticationProvider.getInstance();
             // If we have authenticated before, just use that one
             if (authenticationProvider.isAuthenticated()) {
-                setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
-                LookupHelper.loadTfsContexts(this, this,
-                        authenticationProvider, getRepositoryProvider(),
-                        ServerContextLookupOperation.ContextScope.REPOSITORY);
+                final ServerContext authenticatedContext = ServerContextManager.getInstance().getAuthenticatedContext(
+                        authenticationProvider.getAuthenticationInfo().getServerUri().toString(), false);
+                if (authenticatedContext != null) {
+                    setServerNameInternal(authenticatedContext.getServerUri().toString());
+                    LookupHelper.loadTfsContexts(this, this,
+                            authenticationProvider, getRepositoryProvider(),
+                            ServerContextLookupOperation.ContextScope.REPOSITORY);
+                }
             }
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
