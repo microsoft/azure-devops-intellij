@@ -122,6 +122,12 @@ public class VcsPullRequestsModel extends AbstractModel {
     private boolean connectionSetup() {
         //always load latest saved context and repo information since it might be changed outside of pull requests tab
         gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
+        if (gitRepository == null) {
+            setConnected(false);
+            logger.debug("connectionSetup: Failed to get Git repo for current project");
+            return false;
+        }
+        setConnected(true);
 
         setAuthenticating(true);
         context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
@@ -131,13 +137,6 @@ public class VcsPullRequestsModel extends AbstractModel {
             logger.debug("connectionSetup: connection is good");
             return true;
         }
-
-        if (gitRepository == null) {
-            setConnected(false);
-            logger.debug("connectionSetup: Failed to get Git repo for current project");
-            return false;
-        }
-        setConnected(true);
 
         if (context == null) {
             setAuthenticated(false);
