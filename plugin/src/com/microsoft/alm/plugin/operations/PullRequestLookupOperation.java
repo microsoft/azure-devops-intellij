@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
@@ -11,6 +12,7 @@ import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +27,7 @@ public class PullRequestLookupOperation extends Operation {
         ALL
     }
 
-    private final ServerContext context;
+    private final String gitRemoteUrl;
     private final PullRequestLookupResults requestedByMeResults = new PullRequestLookupResults(PullRequestScope.REQUESTED_BY_ME);
     private final PullRequestLookupResults assignedToMeResults = new PullRequestLookupResults(PullRequestScope.ASSIGNED_TO_ME);
 
@@ -46,30 +48,56 @@ public class PullRequestLookupOperation extends Operation {
         }
     }
 
-    public PullRequestLookupOperation(final ServerContext context) {
-        assert context != null;
-        this.context = context;
+    public PullRequestLookupOperation(final String gitRemoteUrl) {
+        assert gitRemoteUrl != null;
+        this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
         onLookupStarted();
 
-        final List<Future> tasks = new ArrayList<Future>();
-
+        final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+        final List<Future> authTasks = new ArrayList<Future>();
         try {
-            tasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+            authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                @Override
+                public void run() {
+                    // Get the authenticated context for the gitRemoteUrl
+                    // This should be done on a background thread so as not to block UI or hang the IDE
+                    // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, false);
+                    if (context != null) {
+                        authenticatedContexts.add(context);
+                    }
+                }
+            }));
+            OperationExecutor.getInstance().wait(authTasks);
+        } catch (Throwable t) {
+            logger.warn("doWork: failed to get authenticated server context", t);
+            terminate(new NotAuthorizedException(gitRemoteUrl));
+        }
+
+        if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
+            //no context was found, user might have cancelled
+            terminate(new NotAuthorizedException(gitRemoteUrl));
+        }
+
+        final ServerContext context = authenticatedContexts.get(0);
+        final List<Future> lookupTasks = new ArrayList<Future>();
+        try {
+            lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
                 public void run() {
                     doLookup(context, PullRequestScope.REQUESTED_BY_ME);
                 }
             }));
-            tasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+            lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
                 public void run() {
                     doLookup(context, PullRequestScope.ASSIGNED_TO_ME);
                 }
             }));
-            OperationExecutor.getInstance().wait(tasks);
+            OperationExecutor.getInstance().wait(lookupTasks);
             onLookupCompleted();
         } catch (Throwable t) {
             logger.warn("doWork: failed with an exception", t);
@@ -99,6 +127,7 @@ public class PullRequestLookupOperation extends Operation {
             logger.debug("doLookup: Found {} pull requests {} on repo {}", pullRequests.size(), scope.toString(), context.getGitRepository().getRemoteUrl());
             results.pullRequests.addAll(pullRequests);
             super.onLookupResults(results);
+
         } catch (Throwable t) {
             logger.warn("doLookup: failed with an exception", t);
             terminate(t);

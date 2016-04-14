@@ -18,7 +18,7 @@ import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.utils.Providers;
+import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
@@ -68,44 +68,22 @@ public class VcsPullRequestsModel extends AbstractModel {
         return treeModel;
     }
 
-    private boolean connectionSetup() {
-        //always load latest saved context and repo information since it might be changed outside of pull requests tab
-        gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
+    private boolean isTfGitRepository() {
+        gitRepository = TfGitHelper.getTfGitRepository(project);
         if (gitRepository == null) {
             setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);
-            logger.debug("connectionSetup: Failed to get Git repo for current project");
+            logger.debug("isTfGitRepository: Failed to get Git repo for current project");
             return false;
-        }
-
-        context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
-
-        if (context != null) {
-            logger.debug("connectionSetup: connection is good");
+        } else {
             return true;
         }
-
-        if (context == null) {
-            setTabStatus(VcsTabStatus.NO_AUTH_INFO);
-            logger.debug("connectionSetup: failed to get authenticated context for current repo");
-            return false;
-        }
-
-        //connection setup successfully
-        return true;
     }
 
     public void loadPullRequests() {
-        if (!connectionSetup()) {
-            return;
+        if (isTfGitRepository()) {
+            clearPullRequests();
+            treeDataProvider.loadPullRequests(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl());
         }
-
-        clearPullRequests();
-        treeDataProvider.loadPullRequests(context);
-    }
-
-    public void loadPullRequests(final ServerContext context) {
-        this.context = context;
-        loadPullRequests();
     }
 
     public void importIntoTeamServicesGit() {
@@ -225,7 +203,7 @@ public class VcsPullRequestsModel extends AbstractModel {
     }
 
     public void createNewPullRequest() {
-        if (!connectionSetup()) {
+        if (!isTfGitRepository()) {
             return;
         }
 
