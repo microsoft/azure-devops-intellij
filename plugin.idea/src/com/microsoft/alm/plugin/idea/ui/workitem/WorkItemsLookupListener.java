@@ -15,7 +15,7 @@ public class WorkItemsLookupListener implements Operation.Listener {
     private final VcsWorkItemsModel model;
     private final WorkItemsTableModel tableModel;
     private WorkItemLookupOperation activeOperation;
-    private ServerContext context;
+    private String gitRemoteUrl;
 
     public WorkItemsLookupListener(final VcsWorkItemsModel model, final WorkItemsTableModel tableModel) {
         assert model != null;
@@ -23,9 +23,9 @@ public class WorkItemsLookupListener implements Operation.Listener {
         this.tableModel = tableModel;
     }
 
-    public void loadWorkItems(final ServerContext context) {
-        this.context = context;
-        WorkItemLookupOperation activeOperation = new WorkItemLookupOperation(context);
+    public void loadWorkItems(final String gitRemoteUrl) {
+        this.gitRemoteUrl = gitRemoteUrl;
+        WorkItemLookupOperation activeOperation = new WorkItemLookupOperation(gitRemoteUrl);
         loadWorkItems(activeOperation);
     }
 
@@ -73,23 +73,24 @@ public class WorkItemsLookupListener implements Operation.Listener {
                     model.setLoading(false);
                 }
             });
-        } else if (witResults.hasError()) {            IdeaHelper.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
-                    model.setAuthenticated(false);
-                    final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
-                    if (newContext != null) {
-                        //try reloading the work items with new context and authentication info
-                        model.loadWorkItems(newContext);
+        } else if (witResults.hasError()) {
+            IdeaHelper.runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
+                        model.setAuthenticated(false);
+                        final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
+                        if (newContext != null) {
+                            //try reloading the work items with new context and authentication info
+                            model.loadWorkItems(newContext);
+                        } else {
+                            //user cancelled login, don't retry
+                        }
                     } else {
-                        //user cancelled login, don't retry
+                        model.setLoadingErrors(true);
                     }
-                } else {
-                    model.setLoadingErrors(true);
                 }
-            }
-        });
+            });
         } else {
             // Update table model on UI thread
             IdeaHelper.runOnUIThread(new Runnable() {

@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.utils.Providers;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -70,14 +69,7 @@ public class SelectWorkItemsModel extends AbstractModel {
         tableModel.clearRows();
 
         final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-        final ServerContext context = new Providers.ServerContextProvider().getAuthenticatedServerContext(gitRepository.getProject(), gitRepository);
-        if (context == null) {
-            logger.warn("loadWorkItems: failed to get authenticated server context for git repository: {}", gitRemoteUrl);
-            setLoading(false);
-            return;
-        }
-
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(context);
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(gitRemoteUrl);
         operation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {

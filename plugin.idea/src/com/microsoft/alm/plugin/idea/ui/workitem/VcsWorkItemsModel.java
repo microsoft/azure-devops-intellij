@@ -147,7 +147,7 @@ public class VcsWorkItemsModel extends AbstractModel {
         }
         setLoading(true);
         tableModel.clearRows();
-        treeDataProvider.loadWorkItems(context);
+        treeDataProvider.loadWorkItems(context.getGitRepository().getRemoteUrl());
     }
 
     public void loadWorkItems(final ServerContext context) {

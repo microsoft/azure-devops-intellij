@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.teamfoundation.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.Wiql;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
@@ -13,6 +14,7 @@ import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemRefer
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,7 +29,7 @@ public class WorkItemLookupOperation extends Operation {
     // The WIT REST API restricts us to getting 200 work items at a time.
     public static final int MAX_WORK_ITEM_COUNT = 200;
 
-    private final ServerContext context;
+    private final String gitRemoteUrl;
 
     public static class WitInputs implements Inputs {
         private final String query;
@@ -65,23 +67,48 @@ public class WorkItemLookupOperation extends Operation {
         }
     }
 
-    public WorkItemLookupOperation(final ServerContext context) {
-        assert context != null;
-        this.context = context;
+    public WorkItemLookupOperation(final String gitRemoteUrl) {
+        assert gitRemoteUrl != null;
+        this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
         onLookupStarted();
 
-        final List<Future> tasks = new ArrayList<Future>();
+        final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+        final List<Future> authTasks = new ArrayList<Future>();
+        try {
+            authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                @Override
+                public void run() {
+                    // Get the authenticated context for the gitRemoteUrl
+                    // This should be done on a background thread so as not to block UI or hang the IDE
+                    // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, false);
+                    if (context != null) {
+                        authenticatedContexts.add(context);
+                    }
+                }
+            }));
+            OperationExecutor.getInstance().wait(authTasks);
+        } catch (Throwable t) {
+            logger.warn("doWork: failed to get authenticated server context", t);
+            terminate(new NotAuthorizedException(gitRemoteUrl));
+        }
+
+        if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
+            //no context was found, user might have cancelled
+            terminate(new NotAuthorizedException(gitRemoteUrl));
+        }
+
+        final ServerContext latestServerContext = authenticatedContexts.get(0);
+        final List<Future> lookupTasks = new ArrayList<Future>();
         final WitInputs witInputs = (WitInputs) inputs;
 
         try {
-            tasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+            lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
                 public void run() {
-                    ServerContext latestServerContext = context;
-
                     // Send results with the new context (no work items)
                     onLookupResults(new WitResults(latestServerContext, new ArrayList<WorkItem>()));
 
@@ -89,7 +116,7 @@ public class WorkItemLookupOperation extends Operation {
                     doLookup(latestServerContext, witInputs);
                 }
             }));
-            OperationExecutor.getInstance().wait(tasks);
+            OperationExecutor.getInstance().wait(lookupTasks);
             onLookupCompleted();
         } catch (Throwable t) {
             logger.warn("doWork: failed with an exception", t);
@@ -158,7 +185,7 @@ public class WorkItemLookupOperation extends Operation {
     protected void terminate(final Throwable t) {
         super.terminate(t);
 
-        final WitResults results = new WitResults(context, new ArrayList<WorkItem>());
+        final WitResults results = new WitResults(null, new ArrayList<WorkItem>());
         results.error = t;
         onLookupResults(results);
         onLookupCompleted();
