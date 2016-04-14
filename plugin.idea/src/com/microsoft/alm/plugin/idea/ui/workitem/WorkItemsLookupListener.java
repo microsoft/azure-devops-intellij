@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -43,9 +44,7 @@ public class WorkItemsLookupListener implements Operation.Listener {
         IdeaHelper.runOnUIThread(new Runnable() {
             @Override
             public void run() {
-                model.setLoading(true);
-                model.setLoadingErrors(false);
-                model.clearWorkItems();
+                model.setTabStatus(VcsTabStatus.LOADING_IN_PROGRESS);
             }
         });
     }
@@ -56,7 +55,10 @@ public class WorkItemsLookupListener implements Operation.Listener {
         IdeaHelper.runOnUIThread(new Runnable() {
             @Override
             public void run() {
-                model.setLoading(false);
+                //set status to complete if it is still in-progress and not updated by notifyLookupResults
+                if (model.getTabStatus() == VcsTabStatus.LOADING_IN_PROGRESS) {
+                    model.setTabStatus(VcsTabStatus.LOADING_COMPLETED);
+                }
             }
         });
     }
@@ -70,7 +72,7 @@ public class WorkItemsLookupListener implements Operation.Listener {
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
-                    model.setLoading(false);
+                    model.setTabStatus(VcsTabStatus.LOADING_COMPLETED);
                 }
             });
         } else if (witResults.hasError()) {
@@ -78,16 +80,16 @@ public class WorkItemsLookupListener implements Operation.Listener {
                 @Override
                 public void run() {
                     if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
-                        model.setAuthenticated(false);
                         final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
                         if (newContext != null) {
                             //try reloading the work items with new context and authentication info
-                            model.loadWorkItems(newContext);
+                            model.loadWorkItems();
                         } else {
                             //user cancelled login, don't retry
+                            model.setTabStatus(VcsTabStatus.NO_AUTH_INFO);
                         }
                     } else {
-                        model.setLoadingErrors(true);
+                        model.setTabStatus(VcsTabStatus.LOADING_COMPLETED_ERRORS);
                     }
                 }
             });

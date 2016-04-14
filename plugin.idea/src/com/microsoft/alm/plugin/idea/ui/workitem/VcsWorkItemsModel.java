@@ -7,8 +7,9 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
-import com.microsoft.alm.plugin.idea.utils.Providers;
+import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
 import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
@@ -29,18 +30,10 @@ public class VcsWorkItemsModel extends AbstractModel {
     private GitRepository gitRepository;
     private ServerContext context;
     private String filter;
+    private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
-    private boolean connected = false;
-    private boolean authenticated = false;
-    private boolean authenticating = false;
-    private boolean loading = false;
-    private boolean loadingErrors = false;
 
-    public static final String PROP_CONNECTED = "connected";
-    public static final String PROP_AUTHENTICATED = "authenticated";
-    public static final String PROP_AUTHENTICATING = "authenticating";
-    public static final String PROP_LOADING = "loading";
-    public static final String PROP_LOADING_ERRORS = "loadingErrors";
+    public final static String PROP_PR_WI_STATUS = "wiTabStatus";
     public final static String PROP_SERVER_NAME = "serverName";
     public final static String PROP_FILTER = "filter";
 
@@ -52,58 +45,14 @@ public class VcsWorkItemsModel extends AbstractModel {
         treeDataProvider = new WorkItemsLookupListener(this, tableModel);
     }
 
-    public boolean isLoading() {
-        return loading;
+    public VcsTabStatus getTabStatus() {
+        return tabStatus;
     }
 
-    public void setLoading(final boolean loading) {
-        if (this.loading != loading) {
-            this.loading = loading;
-            setChangedAndNotify(PROP_LOADING);
-        }
-    }
-
-    public boolean isConnected() {
-        return connected;
-    }
-
-    public void setConnected(final boolean connected) {
-        if (this.connected != connected) {
-            this.connected = connected;
-            setChangedAndNotify(PROP_CONNECTED);
-        }
-    }
-
-    public boolean isAuthenticated() {
-        return authenticated;
-    }
-
-    public void setAuthenticated(final boolean authenticated) {
-        if (this.authenticated != authenticated) {
-            this.authenticated = authenticated;
-            setChangedAndNotify(PROP_AUTHENTICATED);
-        }
-    }
-
-    public boolean isAuthenticating() {
-        return authenticating;
-    }
-
-    public void setAuthenticating(final boolean authenticating) {
-        if (this.authenticating != authenticating) {
-            this.authenticating = authenticating;
-            setChangedAndNotify(PROP_AUTHENTICATING);
-        }
-    }
-
-    public boolean hasLoadingErrors() {
-        return loadingErrors;
-    }
-
-    public void setLoadingErrors(final boolean loadingErrors) {
-        if (this.loadingErrors != loadingErrors) {
-            this.loadingErrors = loadingErrors;
-            setChangedAndNotify(PROP_LOADING_ERRORS);
+    public void setTabStatus(final VcsTabStatus status) {
+        if (this.tabStatus != status) {
+            this.tabStatus = status;
+            setChangedAndNotify(PROP_PR_WI_STATUS);
         }
     }
 
@@ -111,49 +60,22 @@ public class VcsWorkItemsModel extends AbstractModel {
         return tableModel;
     }
 
-    private boolean connectionSetup() {
-        //always load latest saved context and repo information since it might be changed outside of pull requests tab
-        gitRepository = new Providers.GitRepositoryProvider().getGitRepository(project);
+    private boolean isTfGitRepository() {
+        gitRepository = TfGitHelper.getTfGitRepository(project);
         if (gitRepository == null) {
-            setConnected(false);
-            logger.debug("connectionSetup: Failed to get Git repo for current project");
+            setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);
+            logger.debug("isTfGitRepository: Failed to get Git repo for current project");
             return false;
-        }
-        setConnected(true);
-
-        setAuthenticating(true);
-        context = new Providers.ServerContextProvider().getAuthenticatedServerContext(project, gitRepository);
-        setAuthenticating(false);
-
-        if (connected && gitRepository != null && authenticated && context != null) {
-            logger.debug("connectionSetup: connection is good");
+        } else {
             return true;
         }
-
-        if (context == null) {
-            setAuthenticated(false);
-            logger.debug("connectionSetup: failed to get authenticated context for current repo");
-            return false;
-        }
-        setAuthenticated(true);
-
-        //connection setup successfully
-        return true;
     }
 
     public void loadWorkItems() {
-        if (!connectionSetup()) {
-            return;
+        if (isTfGitRepository()) {
+            clearWorkItems();
+            treeDataProvider.loadWorkItems(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl());
         }
-        setLoading(true);
-        tableModel.clearRows();
-        treeDataProvider.loadWorkItems(context.getGitRepository().getRemoteUrl());
-    }
-
-    public void loadWorkItems(final ServerContext context) {
-        this.context = context;
-        this.authenticated = true;
-        loadWorkItems();
     }
 
     public void importIntoTeamServicesGit() {
@@ -181,7 +103,7 @@ public class VcsWorkItemsModel extends AbstractModel {
     }
 
     public void createNewWorkItemLink() {
-        if (!connectionSetup()) {
+        if (!isTfGitRepository()) {
             return;
         }
         if (context != null && context.getTeamProjectURI() != null) {

@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -45,10 +46,10 @@ public class VcsWorkItemsController implements Observer, ActionListener {
         updateModel();
 
         if (VcsWorkItemsForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
-            if (!model.isConnected()) {
+            if (model.getTabStatus() == VcsTabStatus.NOT_TF_GIT_REPO) {
                 //import into team services git
                 model.importIntoTeamServicesGit();
-            } else if (!model.isAuthenticated()) {
+            } else if (model.getTabStatus() == VcsTabStatus.NO_AUTH_INFO) {
                 //prompt for credentials and load work items
                 model.loadWorkItems();
             } else {
@@ -68,13 +69,8 @@ public class VcsWorkItemsController implements Observer, ActionListener {
     @Override
     public void update(final Observable observable, final Object arg) {
         if (arg == null
-                || VcsWorkItemsModel.PROP_CONNECTED.equals(arg)
-                || VcsWorkItemsModel.PROP_AUTHENTICATED.equals(arg)
-                || VcsWorkItemsModel.PROP_LOADING.equals(arg)
-                || VcsWorkItemsModel.PROP_AUTHENTICATING.equals(arg)
-                || VcsWorkItemsModel.PROP_LOADING_ERRORS.equals(arg)) {
-            tab.setConnectionStatus(model.isConnected(), model.isAuthenticating(), model.isAuthenticated(),
-                    model.isLoading(), model.hasLoadingErrors());
+                || VcsWorkItemsModel.PROP_PR_WI_STATUS.equals(arg)) {
+            tab.setStatus(model.getTabStatus());
         }
         if (arg == null) {
             tab.setWorkItemsTable(model.getTableModel());

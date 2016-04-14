@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
@@ -49,9 +50,8 @@ public class VcsWorkItemsTab {
         form.addObserver(observer);
     }
 
-    public void setConnectionStatus(final boolean connected, final boolean authenticating, final boolean authenticated,
-                                    final boolean loading, final boolean loadingErrors) {
-        form.setConnectionStatus(connected, authenticating, authenticated, loading, loadingErrors);
+    public void setStatus(final VcsTabStatus status) {
+        form.setStatus(status);
     }
 
     public void setWorkItemsTable(final WorkItemsTableModel tableModel) {
