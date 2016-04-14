@@ -559,7 +559,7 @@ public class ServerContextManager {
                 final CoreHttpClient coreClient = new CoreHttpClient(client, serverUri);
                 collection = coreClient.getProjectCollection(parseResult.getCollectionName());
             } catch (Throwable throwable) {
-                logger.error("validate: failed");
+                logger.error("validate: failed for parseResult " + parseResult.toString());
                 logger.warn("validate", throwable);
                 if (AuthHelper.isNotAuthorizedError(throwable)) {
                     throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED, throwable);

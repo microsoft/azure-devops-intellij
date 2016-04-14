@@ -246,7 +246,7 @@ public class UrlHelper {
                 return HttpGitUrlParser.tryParse(gitUri, validator);
             }
         } catch (Throwable t) {
-            logger.error("tryParse: unexpected error");
+            logger.error("tryParse: unexpected error for gitUrl = " + gitUrl);
             logger.warn("tryParse", t);
         }
 
@@ -304,6 +304,16 @@ public class UrlHelper {
 
         public String getAccountName() {
             return accountName;
+        }
+
+        @Override
+        public String toString() {
+            return "ServerUrl = " + serverUrl + " " +
+                    "CollectionUrl = " + collectionUrl + " " +
+                    "CollectionName = " + collectionName + " " +
+                    "ProjectName = " + projectName + " " +
+                    "RepoName = " + repoName + " " +
+                    "AccountName = " + accountName;
         }
     }
 
