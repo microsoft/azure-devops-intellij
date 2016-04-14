@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="test-lib">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/test-lib/com.cdesg.util.jar!/" />
+      <root url="jar://$PROJECT_DIR$/test-lib/com.teamprise.core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
