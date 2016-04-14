@@ -39,8 +39,6 @@ public class VcsPullRequestsModel extends AbstractModel {
     private final PullRequestsLookupListener treeDataProvider;
 
     private GitRepository gitRepository;
-    private ServerContext context;
-
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
     public static final String PROP_PR_TAB_STATUS = "prTabStatus";
@@ -82,7 +80,7 @@ public class VcsPullRequestsModel extends AbstractModel {
     public void loadPullRequests() {
         if (isTfGitRepository()) {
             clearPullRequests();
-            treeDataProvider.loadPullRequests(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl());
+            treeDataProvider.loadPullRequests(TfGitHelper.getTfGitRemoteUrl(gitRepository));
         }
     }
 
@@ -94,19 +92,25 @@ public class VcsPullRequestsModel extends AbstractModel {
     }
 
     public void openGitRepoLink() {
-        if (context != null && context.getGitRepository() != null) {
-            if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
-                BrowserUtil.browse(context.getGitRepository().getRemoteUrl()
-                        .concat(UrlHelper.URL_SEPARATOR).concat("pullrequests"));
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+            if (context != null && context.getGitRepository() != null) {
+                if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
+                    BrowserUtil.browse(context.getGitRepository().getRemoteUrl()
+                            .concat(UrlHelper.URL_SEPARATOR).concat("pullrequests"));
+                }
             }
         }
     }
 
     public void openSelectedPullRequestLink() {
-        final GitPullRequest pullRequest = getSelectedPullRequest();
-        if (pullRequest != null) {
-            BrowserUtil.browse(getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
-                    pullRequest.getPullRequestId()));
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+            final GitPullRequest pullRequest = getSelectedPullRequest();
+            if (context != null && pullRequest != null) {
+                BrowserUtil.browse(getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
+                        pullRequest.getPullRequestId()));
+            }
         }
     }
 
@@ -120,65 +124,75 @@ public class VcsPullRequestsModel extends AbstractModel {
      * Runs on a background thread and notifies user upon completion
      */
     public void abandonSelectedPullRequest() {
-        final Task.Backgroundable abandonPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE)) {
-            boolean abandonPR;
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
 
-            @Override
-            public void run(final ProgressIndicator indicator) {
-                final GitPullRequest pullRequest = getSelectedPullRequest();
-                if (pullRequest != null) {
-                    final String prLink = getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
-                            pullRequest.getPullRequestId());
-                    final int prId = pullRequest.getPullRequestId();
+            final Task.Backgroundable abandonPullRequestTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE)) {
+                boolean abandonPR;
 
-                    //prompt user for confirmation
-                    IdeaHelper.runOnUIThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            abandonPR = IdeaHelper.showConfirmationDialog(project,
-                                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_CONFIRMATION, prId),
-                                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE),
-                                    Icons.VSLogo, Messages.YES_BUTTON, Messages.NO_BUTTON);
-                        }
-                    }, true, indicator.getModalityState());
+                @Override
+                public void run(final ProgressIndicator indicator) {
+                    final GitPullRequest pullRequest = getSelectedPullRequest();
+                    if (pullRequest != null) {
+                        final String prLink = getPullRequestWebLink(context.getGitRepository().getRemoteUrl(),
+                                pullRequest.getPullRequestId());
+                        final int prId = pullRequest.getPullRequestId();
 
-                    if (abandonPR) {
-                        try {
-                            final GitPullRequest pullRequestToUpdate = new GitPullRequest();
-                            pullRequestToUpdate.setStatus(PullRequestStatus.ABANDONED);
-                            final GitPullRequest pr = context.getGitHttpClient().updatePullRequest(pullRequestToUpdate,
-                                    pullRequest.getRepository().getId(), pullRequest.getPullRequestId());
+                        //prompt user for confirmation
+                        IdeaHelper.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                abandonPR = IdeaHelper.showConfirmationDialog(project,
+                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_CONFIRMATION, prId),
+                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE),
+                                        Icons.VSLogo, Messages.YES_BUTTON, Messages.NO_BUTTON);
+                            }
+                        }, true, indicator.getModalityState());
 
-                            if (pr != null && pr.getStatus() == PullRequestStatus.ABANDONED) {
-                                //success
-                                notifyOperationStatus(true,
-                                        TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_SUCCEEDED, prLink, prId));
-                            } else {
-                                logger.warn("abandonSelectedPullRequest: pull request status not ABANDONED as expected. Actual status = {}",
-                                        pr != null ? pr.getStatus() : "null");
+                        if (abandonPR) {
+                            try {
+                                final GitPullRequest pullRequestToUpdate = new GitPullRequest();
+                                pullRequestToUpdate.setStatus(PullRequestStatus.ABANDONED);
+                                final GitPullRequest pr = context.getGitHttpClient().updatePullRequest(pullRequestToUpdate,
+                                        pullRequest.getRepository().getId(), pullRequest.getPullRequestId());
+
+                                if (pr != null && pr.getStatus() == PullRequestStatus.ABANDONED) {
+                                    //success
+                                    notifyOperationStatus(true,
+                                            TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_SUCCEEDED, prLink, prId));
+                                } else {
+                                    logger.warn("abandonSelectedPullRequest: pull request status not ABANDONED as expected. Actual status = {}",
+                                            pr != null ? pr.getStatus() : "null");
+                                    notifyOperationStatus(false,
+                                            TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED, prLink, prId));
+                                }
+                            } catch (Throwable t) {
+                                logger.warn("abandonSelectedPullRequest: Unexpected exception", t);
                                 notifyOperationStatus(false,
                                         TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED, prLink, prId));
                             }
-                        } catch (Throwable t) {
-                            logger.warn("abandonSelectedPullRequest: Unexpected exception", t);
-                            notifyOperationStatus(false,
-                                    TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED, prLink, prId));
                         }
+                    } else {
+                        //couldn't find selected pull request
+                        notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED));
                     }
-                } else {
-                    //couldn't find selected pull request
-                    notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED));
                 }
-            }
-        };
+            };
 
-        abandonPullRequestTask.queue();
+            if (context != null) {
+                abandonPullRequestTask.queue();
+            }
+        }
     }
 
     private GitPullRequest getSelectedPullRequest() {
-        if (context != null && context.getGitRepository() != null) {
-            if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
-                return treeModel.getSelectedPullRequest();
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+
+            if (context != null && context.getGitRepository() != null) {
+                if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
+                    return treeModel.getSelectedPullRequest();
+                }
             }
         }
         return null;

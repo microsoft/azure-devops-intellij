@@ -28,7 +28,6 @@ public class VcsWorkItemsModel extends AbstractModel {
     private final WorkItemsTableModel tableModel;
     private final WorkItemsLookupListener treeDataProvider;
     private GitRepository gitRepository;
-    private ServerContext context;
     private String filter;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
@@ -74,7 +73,7 @@ public class VcsWorkItemsModel extends AbstractModel {
     public void loadWorkItems() {
         if (isTfGitRepository()) {
             clearWorkItems();
-            treeDataProvider.loadWorkItems(TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl());
+            treeDataProvider.loadWorkItems(TfGitHelper.getTfGitRemoteUrl(gitRepository));
         }
     }
 
@@ -84,16 +83,19 @@ public class VcsWorkItemsModel extends AbstractModel {
     }
 
     public void openSelectedWorkItemsLink() {
-        final List<WorkItem> workItems = tableModel.getSelectedWorkItems();
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
 
-        if (context != null && context.getTeamProjectURI() != null) {
-            final URI teamProjectURI = context.getTeamProjectURI();
-            if (teamProjectURI != null) {
-                for (WorkItem item : workItems) {
-                    super.gotoLink(UrlHelper.getSpecificWorkItemURI(teamProjectURI, item.getId()).toString());
+            if (context != null && context.getTeamProjectURI() != null) {
+                final List<WorkItem> workItems = tableModel.getSelectedWorkItems();
+                final URI teamProjectURI = context.getTeamProjectURI();
+                if (teamProjectURI != null) {
+                    for (WorkItem item : workItems) {
+                        super.gotoLink(UrlHelper.getSpecificWorkItemURI(teamProjectURI, item.getId()).toString());
+                    }
+                } else {
+                    logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
                 }
-            } else {
-                logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
             }
         }
     }
@@ -103,15 +105,16 @@ public class VcsWorkItemsModel extends AbstractModel {
     }
 
     public void createNewWorkItemLink() {
-        if (!isTfGitRepository()) {
-            return;
-        }
-        if (context != null && context.getTeamProjectURI() != null) {
-            final URI teamProjectURI = context.getTeamProjectURI();
-            if (teamProjectURI != null) {
-                super.gotoLink(UrlHelper.getCreateWorkItemURI(teamProjectURI).toString());
-            } else {
-                logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+
+            if (context != null && context.getTeamProjectURI() != null) {
+                final URI teamProjectURI = context.getTeamProjectURI();
+                if (teamProjectURI != null) {
+                    super.gotoLink(UrlHelper.getCreateWorkItemURI(teamProjectURI).toString());
+                } else {
+                    logger.warn("Can't goto 'create work item' link: Unable to get team project URI from server context.");
+                }
             }
         }
     }

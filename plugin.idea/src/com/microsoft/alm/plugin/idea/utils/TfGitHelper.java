@@ -6,6 +6,8 @@ package com.microsoft.alm.plugin.idea.utils;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import git4idea.GitUtil;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
@@ -22,11 +24,19 @@ public class TfGitHelper {
      * @param gitRepository must not be <code>null</code>
      * @return
      */
-    public static boolean isTfGitRepository(final GitRepository gitRepository) {
+    public static boolean isTfGitRepository(@NotNull final GitRepository gitRepository) {
         return getTfGitRemote(gitRepository) != null;
     }
 
-    public static GitRemote getTfGitRemote(final GitRepository gitRepository) {
+    public static String getTfGitRemoteUrl(@NotNull final GitRepository gitRepository) {
+        final GitRemote gitRemote = getTfGitRemote(gitRepository);
+        if (gitRemote != null) {
+            return gitRemote.getFirstUrl();
+        }
+        return null;
+    }
+
+    public static GitRemote getTfGitRemote(@NotNull final GitRepository gitRepository) {
         if (gitRepository == null) {
             throw new IllegalArgumentException();
         }
@@ -79,5 +89,18 @@ public class TfGitHelper {
         }
 
         return null;
+    }
+
+    /**
+     * Returns the server context for the gitRepository if it already exists
+     * Will not try to prompt the user and create the server context
+     *
+     * @param gitRepository
+     * @return
+     */
+    public static ServerContext getSavedServerContext(@NotNull final GitRepository gitRepository) {
+        //get saved server context, we don't want to prompt for credentials or handle expired credentials on the UI thread
+        final ServerContext context = ServerContextManager.getInstance().get(getTfGitRemoteUrl(gitRepository));
+        return context;
     }
 }
