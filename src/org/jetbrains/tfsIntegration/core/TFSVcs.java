@@ -30,8 +30,6 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ultimate.PluginVerifier;
-import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
@@ -74,10 +72,8 @@ public class TFSVcs extends AbstractVcs {
   private final List<RevisionChangedListener> myRevisionChangedListeners = ContainerUtil.createLockFreeCopyOnWriteList();
   private final CheckinData myCheckinData = new CheckinData();
 
-  public TFSVcs(@NotNull Project project, UltimateVerifier verifier) {
+  public TFSVcs(@NotNull Project project) {
     super(project, TFS_NAME);
-    PluginVerifier.verifyUltimatePlugin(verifier);
-
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
     myDeleteConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.REMOVE, this);
