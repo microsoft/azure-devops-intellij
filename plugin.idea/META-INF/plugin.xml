@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services (Preview)</name>
-    <version>0.98.0</version>
+    <version>0.98.1</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -39,7 +39,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.98.0 <i>Preview</i>
+      v 0.98.1 <i>Preview</i>
       <br />
       This release adds work item integration (view and associate work items with your commits) in addition to incremental fixes and updates.
       <br />
