@@ -166,6 +166,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_WIT_FIELD_TITLE = "WitField.Title";
     @NonNls
+    public static final String KEY_WIT_FIELD_BRANCH = "WitField.Branch";
+    @NonNls
     public static final String KEY_WIT_FIELD_WORK_ITEM_TYPE = "WitField.WorkItemType";
 
     //Import dialog ui and models

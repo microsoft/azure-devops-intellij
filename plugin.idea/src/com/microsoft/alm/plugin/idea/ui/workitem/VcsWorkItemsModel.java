@@ -40,7 +40,7 @@ public class VcsWorkItemsModel extends AbstractModel {
     public VcsWorkItemsModel(final @NotNull Project project) {
         this.project = project;
 
-        tableModel = new WorkItemsTableModel(WorkItemsTableModel.DEFAULT_COLUMNS);
+        tableModel = new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH);
         treeDataProvider = new WorkItemsLookupListener(this, tableModel);
     }
 

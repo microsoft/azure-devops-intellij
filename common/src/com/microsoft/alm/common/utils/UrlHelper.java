@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.common.utils;
 
+import com.microsoft.alm.common.artifact.GitRefArtifactID;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,6 +186,21 @@ public class UrlHelper {
         }
 
         return false;
+    }
+
+    /**
+     * Parse URI for branch name
+     *
+     * @param uri ex: vstfs:///Git/Ref/ProjectId%2FRepoId%2FGB<BranchName>
+     * @return branch name
+     */
+    public static String parseUriForBranch(final String uri) {
+        if (!StringUtils.isEmpty(uri)) {
+            GitRefArtifactID artifactID = new GitRefArtifactID(uri);
+            return artifactID.getRefName();
+        } else {
+            return StringUtils.EMPTY;
+        }
     }
 
     /**

@@ -22,10 +22,11 @@ import java.util.List;
  * TODO refactor this and the other TableModel classes into a generic class (most of the code is the same)
  */
 public class WorkItemsTableModel extends AbstractTableModel {
-    public enum Column {ID, TYPE, TITLE, ASSIGNED_TO, STATE}
+    public enum Column {ID, TYPE, TITLE, ASSIGNED_TO, STATE, BRANCH}
 
-    public static final Column[] ALL_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO};
+    public static final Column[] ALL_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO, Column.BRANCH};
     public static final Column[] DEFAULT_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.STATE, Column.TITLE};
+    public static final Column[] COLUMNS_PLUS_BRANCH = new Column[]{Column.ID, Column.TYPE, Column.STATE, Column.BRANCH, Column.TITLE};
 
     /**
      * The default converter simply returns the index given.
@@ -188,6 +189,9 @@ public class WorkItemsTableModel extends AbstractTableModel {
             case ASSIGNED_TO:
                 return WorkItemHelper.getFieldValue(item, WorkItemHelper.FIELD_ASSIGNED_TO);
 
+            case BRANCH:
+                return WorkItemHelper.getBranchName(item);
+
             default:
                 return "";
         }
@@ -209,6 +213,8 @@ public class WorkItemsTableModel extends AbstractTableModel {
                 return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_STATE);
             case ASSIGNED_TO:
                 return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.FIELD_ASSIGNED_TO);
+            case BRANCH:
+                return WorkItemHelper.getLocalizedFieldName(WorkItemHelper.BRANCH_ATTRIBUTE_VALUE);
             default:
                 return "";
         }

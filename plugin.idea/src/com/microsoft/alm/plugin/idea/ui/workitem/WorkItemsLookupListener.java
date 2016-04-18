@@ -35,8 +35,7 @@ public class WorkItemsLookupListener implements Operation.Listener {
         this.activeOperation = activeOperation;
         this.activeOperation.addListener(this);
         this.activeOperation.doWorkAsync(new WorkItemLookupOperation.WitInputs(
-                WorkItemHelper.getAssignedToMeQuery(),
-                WorkItemHelper.getDefaultFields()));
+                WorkItemHelper.getAssignedToMeQuery()));
     }
 
     @Override

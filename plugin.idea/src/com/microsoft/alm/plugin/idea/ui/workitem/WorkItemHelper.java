@@ -3,8 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemRelation;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +21,9 @@ public class WorkItemHelper {
     public static final String FIELD_STATE = "System.State";
     public static final String FIELD_TITLE = "System.Title";
     public static final String FIELD_WORK_ITEM_TYPE = "System.WorkItemType";
+
+    public static final String BRANCH_ATTRIBUTE_NAME = "name";
+    public static final String BRANCH_ATTRIBUTE_VALUE = "branch";
 
     public static String getAssignedToMeQuery() {
         return "select system.id, system.workitemtype, system.title, system.assignedto, system.state, system.changeddate " +
@@ -60,6 +65,19 @@ public class WorkItemHelper {
         return StringUtils.EMPTY;
     }
 
+    public static String getRelationUrl(@NotNull final WorkItem item, @NotNull final String attributeName, @NotNull final String attributeValue) {
+        final List<WorkItemRelation> relationsList = item.getRelations();
+        if (relationsList != null) {
+            for (WorkItemRelation relation : relationsList) {
+                final Map<String, Object> attributes = relation.getAttributes();
+                if (attributes != null && attributes.containsKey(attributeName) && attributeValue.equalsIgnoreCase(attributes.get(attributeName).toString())) {
+                    return relation.getUrl();
+                }
+            }
+        }
+        return StringUtils.EMPTY;
+    }
+
     public static String getLocalizedFieldName(final String wellKnownFieldName) {
         if (FIELD_ASSIGNED_TO.equalsIgnoreCase(wellKnownFieldName)) {
             return TfPluginBundle.message(TfPluginBundle.KEY_WIT_FIELD_ASSIGNED_TO);
@@ -69,6 +87,8 @@ public class WorkItemHelper {
             return TfPluginBundle.message(TfPluginBundle.KEY_WIT_FIELD_STATE);
         } else if (FIELD_TITLE.equalsIgnoreCase(wellKnownFieldName)) {
             return TfPluginBundle.message(TfPluginBundle.KEY_WIT_FIELD_TITLE);
+        } else if (BRANCH_ATTRIBUTE_VALUE.equalsIgnoreCase(wellKnownFieldName)) {
+            return TfPluginBundle.message(TfPluginBundle.KEY_WIT_FIELD_BRANCH);
         } else if (FIELD_WORK_ITEM_TYPE.equalsIgnoreCase(wellKnownFieldName)) {
             return TfPluginBundle.message(TfPluginBundle.KEY_WIT_FIELD_WORK_ITEM_TYPE);
         }
@@ -81,5 +101,9 @@ public class WorkItemHelper {
         final String type = getFieldValue(item, FIELD_WORK_ITEM_TYPE);
         final String title = getFieldValue(item, FIELD_TITLE);
         return TfPluginBundle.message(TfPluginBundle.KEY_WIT_SELECT_DIALOG_COMMIT_MESSAGE_FORMAT, type, num, title);
+    }
+
+    public static String getBranchName(final WorkItem item) {
+        return UrlHelper.parseUriForBranch(getRelationUrl(item, BRANCH_ATTRIBUTE_NAME, BRANCH_ATTRIBUTE_VALUE));
     }
 }

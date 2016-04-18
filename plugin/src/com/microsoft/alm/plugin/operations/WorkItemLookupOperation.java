@@ -33,13 +33,34 @@ public class WorkItemLookupOperation extends Operation {
 
     public static class WitInputs implements Inputs {
         private final String query;
-        private final FieldList fields = new FieldList();
+        private final FieldList fields;
+        private final WorkItemExpand expand;
 
+        /**
+         * Constructor for WitInputs with a field's parameter to only return the specified fields of the work item
+         *
+         * @param query
+         * @param fields
+         */
         public WitInputs(String query, List<String> fields) {
             assert query != null;
             assert fields != null;
             this.query = query;
+            this.fields = new FieldList();
             this.fields.addAll(fields);
+            this.expand = WorkItemExpand.NONE;
+        }
+
+        /**
+         * Constructor for WitInputs that will return all information of the work item
+         *
+         * @param query
+         */
+        public WitInputs(String query) {
+            assert query != null;
+            this.query = query;
+            this.fields = null;
+            this.expand = WorkItemExpand.ALL;
         }
     }
 
@@ -151,7 +172,7 @@ public class WorkItemLookupOperation extends Operation {
                 }
             }
 
-            final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, result.getAsOf(), WorkItemExpand.NONE);
+            final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, result.getAsOf(), witInputs.expand);
             logger.debug("doLookup: Found {} work items on repo {}", items.size(), context.getGitRepository().getRemoteUrl());
 
             // Correct the order of the work items. The second call here to get the work items,

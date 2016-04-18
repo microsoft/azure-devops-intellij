@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.common.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
 import java.net.URI;
@@ -225,4 +226,18 @@ public class UrlHelperTest {
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("git@github.com:Microsoft/vso-agent-tasks.git"));
 
     }
+
+    @Test
+    public void testParseUriForBranch_Happy() {
+        String uri = "vstfs:///Git/Ref/00000000-0000-0000-0000-000000000000%2F11111111-1111-1111-1111-111111111111%2FGBMy%2FBranch%2FName";
+        assertEquals("My/Branch/Name", UrlHelper.parseUriForBranch(uri));
+    }
+
+    @Test
+    public void testParseUriForBranch_Empty() {
+        assertEquals(StringUtils.EMPTY, UrlHelper.parseUriForBranch(null));
+
+        assertEquals(StringUtils.EMPTY, UrlHelper.parseUriForBranch(StringUtils.EMPTY));
+    }
+
 }
