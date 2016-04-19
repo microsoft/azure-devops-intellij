@@ -98,15 +98,20 @@ public class SelectWorkItemsModel extends AbstractModel {
                 if (wiResults.isCancelled()) {
                     // Do nothing
                 } else {
+                    final ServerContext newContext;
+                    if (wiResults.hasError() && AuthHelper.isNotAuthorizedError(wiResults.getError())) {
+                        //401 or 403 - token is not valid, prompt user for credentials and retry
+                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+                    } else {
+                        newContext = null;
+                    }
                     // Update table model on UI thread
                     IdeaHelper.runOnUIThread(new Runnable() {
                         @Override
                         public void run() {
                             if (wiResults.hasError()) {
                                 if (AuthHelper.isNotAuthorizedError(wiResults.getError())) {
-                                    //401 or 403 - token is not valid, prompt user for credentials and retry
-                                    final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
-                                    if (context != null) {
+                                    if (newContext != null) {
                                         //retry loading workitems with new context and authentication info
                                         loadWorkItems();
                                     } else {

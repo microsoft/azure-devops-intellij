@@ -390,6 +390,7 @@ public class ServerContextManager {
 
     /**
      * Updates all contexts with matching authority in URI with new authentication info, will prompt the user
+     * Has to be called on a background thread, will hang if called on UI thread
      *
      * @param remoteUrl
      */
@@ -497,12 +498,6 @@ public class ServerContextManager {
             } catch (Throwable t) {
                 logger.warn("validate: {} of git remote url failed", gitRemoteUrl);
                 logger.warn("validate: unexpected exception ", t);
-                if (AuthHelper.isNotAuthorizedError(t)) {
-                    final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
-                    if (context != null) {
-                        validate(gitRemoteUrl);
-                    }
-                }
             }
 
             //failed to get VSTS repo, project and collection info
@@ -561,9 +556,6 @@ public class ServerContextManager {
             } catch (Throwable throwable) {
                 logger.error("validate: failed for parseResult " + parseResult.toString());
                 logger.warn("validate", throwable);
-                if (AuthHelper.isNotAuthorizedError(throwable)) {
-                    throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED, throwable);
-                }
                 return false;
             }
 

@@ -75,11 +75,16 @@ public class WorkItemsLookupListener implements Operation.Listener {
                 }
             });
         } else if (witResults.hasError()) {
+            final ServerContext newContext;
+            if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
+                newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+            } else {
+                newContext = null;
+            }
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
                     if (AuthHelper.isNotAuthorizedError(witResults.getError())) {
-                        final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
                         if (newContext != null) {
                             //try reloading the work items with new context and authentication info
                             model.loadWorkItems();

@@ -71,11 +71,16 @@ public class PullRequestsLookupListener implements Operation.Listener {
                 }
             });
         } else if (lookupResults.hasError()) {
+            final ServerContext newContext;
+            if (AuthHelper.isNotAuthorizedError(lookupResults.getError())) {
+                newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+            } else {
+                newContext = null;
+            }
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
                     if (AuthHelper.isNotAuthorizedError(lookupResults.getError())) {
-                        final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
                         if (newContext != null) {
                             //try reloading the pull requests with new context and authentication info
                             model.loadPullRequests();
