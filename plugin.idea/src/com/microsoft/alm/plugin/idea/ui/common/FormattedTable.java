@@ -95,7 +95,12 @@ public class FormattedTable extends JBTable {
             if (defaultLongColumn != null && defaultLongColumn.toLowerCase().equals(column.getHeaderValue().toString().toLowerCase())) {
                 column.setPreferredWidth(Short.MAX_VALUE);
             } else {
-                int maxWidth = 0;
+
+                // set min column width to the column header
+                final TableCellRenderer headerRenderer = column.getHeaderRenderer() != null ? column.getHeaderRenderer() : getTableHeader().getDefaultRenderer();
+                final Component headerComponent = headerRenderer.getTableCellRendererComponent(this, column.getHeaderValue(), false, false, -1, column.getModelIndex());
+                int maxWidth = headerComponent.getPreferredSize().width + JBUI.scale(20); // added some padding so not hugging the text
+
                 // don't check the width of every row to save time if there are many items
                 final int maxRowsToCheck = Math.min(MAX_ROWS_CHECKED, getRowCount());
                 for (int row = 0; row < maxRowsToCheck; row++) {
