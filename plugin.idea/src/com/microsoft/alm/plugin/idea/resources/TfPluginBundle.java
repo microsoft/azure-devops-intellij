@@ -295,20 +295,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_ASSIGNED_TO_ME = "VcsPullRequestsTab.AssignedToMe";
     @NonNls
-    public static final String KEY_VCS_PR_NOT_CONNECTED = "VcsPullRequestsTab.NotConnected";
-    @NonNls
-    public static final String KEY_VCS_PR_LOADING = "VcsPullRequestsTab.Loading";
-    @NonNls
-    public static final String KEY_VCS_PR_LAST_REFRESHED_AT = "VcsPullRequestsTab.LastRefreshedAt";
-    @NonNls
-    public static final String KEY_VCS_PR_NOT_AUTHENTICATED = "VcsPullRequestsTab.NoAuthenticated";
-    @NonNls
-    public static final String KEY_AUTH_MSG_AUTHENTICATING = "Auth.Msg.Authenticating";
-    @NonNls
-    public static final String KEY_VCS_PR_SIGN_IN = "VcsPullRequestsTab.SignIn";
-    @NonNls
-    public static final String KEY_VCS_PR_OPEN_IN_BROWSER = "VcsPullRequestsTab.OpenInBrowser";
-    @NonNls
     public static final String KEY_VCS_PR_ABANDON = "VcsPullRequestsTab.Abandon";
     @NonNls
     public static final String KEY_VCS_PR_ABANDON_CONFIRMATION = "VcsPullRequestsTab.Abandon.Confirmation";
@@ -318,8 +304,6 @@ public class TfPluginBundle {
     public static final String KEY_VCS_PR_ABANDON_FAILED = "VcsPullRequestsTab.Abandon.Failed";
     @NonNls
     public static final String KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED = "VcsPullRequestsTab.Abandon.Failed.Unexpected";
-    @NonNls
-    public static final String KEY_VCS_PR_LOADING_ERRORS = "VcsPullRequestsTab.LoadingErrors";
     @NonNls
     public static final String KEY_VCS_PR_MERGE_FAILED = "VcsPullRequestsTab.Merge.Failed";
     @NonNls
@@ -363,27 +347,25 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_WIT_REFRESH_TOOLTIP = "VcsWorkItemsTab.Refresh.Tooltip";
     @NonNls
-    public static final String KEY_VCS_WIT_NOT_CONNECTED = "VcsWorkItemsTab.NotConnected";
-    @NonNls
-    public static final String KEY_VCS_WIT_LOADING = "VcsWorkItemsTab.Loading";
-    @NonNls
-    public static final String KEY_VCS_WIT_LAST_REFRESHED_AT = "VcsWorkItemsTab.LastRefreshedAt";
-    @NonNls
-    public static final String KEY_VCS_WIT_NOT_AUTHENTICATED = "VcsWorkItemsTab.NoAuthenticated";
-    @NonNls
-    public static final String KEY_VCS_WIT_AUTHENTICATING = "VcsWorkItemsTab.Authenticating";
-    @NonNls
-    public static final String KEY_VCS_WIT_SIGN_IN = "VcsWorkItemsTab.SignIn";
-    @NonNls
-    public static final String KEY_VCS_WIT_OPEN_IN_BROWSER = "VcsWorkItemsTab.OpenInBrowser";
-    @NonNls
-    public static final String KEY_VCS_WIT_LOADING_ERRORS = "VcsWorkItemsTab.LoadingErrors";
-    @NonNls
     public static final String KEY_VCS_WIT_UNEXPECTED_ERRORS = "VcsWorkItemsTab.Unexpected.Errors";
 
-    //toolbar
+    //common toolbar
     @NonNls
     public static final String KEY_TOOLBAR_FILTER_TITLE = "Toolbar.Filter.Title";
+    @NonNls
+    public static final String KEY_VCS_NOT_AUTHENTICATED = "VcsTab.NoAuthenticated";
+    @NonNls
+    public static final String KEY_VCS_SIGN_IN = "VcsTab.SignIn";
+    @NonNls
+    public static final String KEY_VCS_OPEN_IN_BROWSER = "VcsTab.OpenInBrowser";
+    @NonNls
+    public static final String KEY_VCS_LOADING = "VcsTab.Loading";
+    @NonNls
+    public static final String KEY_VCS_LAST_REFRESHED_AT = "VcsTab.LastRefreshedAt";
+    @NonNls
+    public static final String KEY_VCS_NOT_CONNECTED = "VcsTab.NotConnected";
+    @NonNls
+    public static final String KEY_VCS_LOADING_ERRORS = "VcsTab.LoadingErrors";
 
     //actions
     @NonNls
