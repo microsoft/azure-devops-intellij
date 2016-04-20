@@ -60,6 +60,11 @@ public class TabFormImplTest extends IdeaAbstractTest {
             protected List<JBMenuItem> getMenuItems(ActionListener listener) {
                 return null;
             }
+
+            @Override
+            public void setModelForView(Object modelView) {
+
+            }
         });
         underTest.statusLabel = new JLabel();
         underTest.statusLink = new Hyperlink();

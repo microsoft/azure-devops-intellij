@@ -41,7 +41,7 @@ import java.util.Observable;
 /**
  * Common functionality for all tab views
  */
-public abstract class TabFormImpl extends Observable implements TabForm {
+public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
     private final String tabTitle;
     private final String createDialogTitle;
     private final String cmdRequest;
@@ -79,6 +79,13 @@ public abstract class TabFormImpl extends Observable implements TabForm {
      * Create the custom view for the tab (i.e. tree, table, etc.)
      */
     protected abstract void createCustomView();
+
+    /**
+     * Sets the view model that is used for the tab
+     *
+     * @param modelView
+     */
+    public abstract void setModelForView(final T modelView);
 
     /**
      * Create the tab view if not already done

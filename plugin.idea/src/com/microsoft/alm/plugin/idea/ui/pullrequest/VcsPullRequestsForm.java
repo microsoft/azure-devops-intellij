@@ -21,7 +21,7 @@ import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.List;
 
-public class VcsPullRequestsForm extends TabFormImpl {
+public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
     private Tree pullRequestsTree;
 
     //commands
@@ -60,7 +60,7 @@ public class VcsPullRequestsForm extends TabFormImpl {
         }
     }
 
-    public void setPullRequestsTree(final PullRequestsTreeModel treeModel) {
+    public void setModelForView(final PullRequestsTreeModel treeModel) {
         this.pullRequestsTreeModel = treeModel;
         pullRequestsTree.setModel(treeModel);
         pullRequestsTree.setSelectionModel(treeModel.getSelectionModel());

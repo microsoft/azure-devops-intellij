@@ -1,33 +1,32 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.ui.workitem;
+package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
 import java.util.Observer;
 
 /**
- * UI class for Version Control work items tab
+ * Tab class to setup common functionality such as metrics and getters/setters
  */
-public class VcsWorkItemsTab {
-    private static final String EVENT_NAME = "Work Items";
-    private VcsWorkItemsForm form;
+public class TabImpl<T> implements Tab<T> {
+    protected TabForm form;
 
-    public VcsWorkItemsTab() {
-        form = new VcsWorkItemsForm();
+    public TabImpl(@NotNull final TabForm form, final String eventName) {
+        this.form = form;
 
         // Make a telemetry entry for this UI tab opening
         TfsTelemetryHelper.getInstance().sendDialogOpened(this.getClass().getName(),
                 new TfsTelemetryHelper.PropertyMapBuilder()
                         .activeServerContext()
-                        .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, EVENT_NAME)
+                        .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, eventName)
                         .build());
-
     }
 
     public JComponent getPanel() {
@@ -38,14 +37,6 @@ public class VcsWorkItemsTab {
         form.addActionListener(listener);
     }
 
-    public void setFilter(final String filterString) {
-        form.setFilter(filterString);
-    }
-
-    public String getFilter() {
-        return form.getFilter();
-    }
-
     public void addObserver(final Observer observer) {
         form.addObserver(observer);
     }
@@ -54,7 +45,15 @@ public class VcsWorkItemsTab {
         form.setStatus(status);
     }
 
-    public void setWorkItemsTable(final WorkItemsTableModel tableModel) {
-        form.setWorkItemsTable(tableModel);
+    public void setFilter(final String filterString) {
+        form.setFilter(filterString);
+    }
+
+    public String getFilter() {
+        return form.getFilter();
+    }
+
+    public void setViewModel(final T modelView) {
+        form.setModelForView(modelView);
     }
 }

@@ -5,6 +5,8 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.Tab;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -17,12 +19,14 @@ import java.util.Observer;
  * Controller for the WorkItems VC tab
  */
 public class VcsWorkItemsController implements Observer, ActionListener {
-    private final VcsWorkItemsTab tab;
+    private static final String EVENT_NAME = "Work Items";
+
+    private final Tab tab;
     private final VcsWorkItemsModel model;
 
     public VcsWorkItemsController(final @NotNull Project project) {
         model = new VcsWorkItemsModel(project);
-        tab = new VcsWorkItemsTab();
+        tab = new TabImpl(new VcsWorkItemsForm(), EVENT_NAME);
 
         setupTab();
 
@@ -73,7 +77,7 @@ public class VcsWorkItemsController implements Observer, ActionListener {
             tab.setStatus(model.getTabStatus());
         }
         if (arg == null) {
-            tab.setWorkItemsTable(model.getTableModel());
+            tab.setViewModel(model.getTableModel());
         }
         if (arg == null || arg.equals(SelectWorkItemsModel.PROP_FILTER)) {
             tab.setFilter(model.getFilter());

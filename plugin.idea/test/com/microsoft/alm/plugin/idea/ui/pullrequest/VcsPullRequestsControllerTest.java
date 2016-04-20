@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -19,12 +20,12 @@ import static org.mockito.Mockito.when;
 public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     VcsPullRequestsController underTest;
     VcsPullRequestsModel modelMock;
-    VcsPullRequestsTab uiMock;
+    TabImpl uiMock;
 
     @Before
     public void setUp() {
         modelMock = Mockito.mock(VcsPullRequestsModel.class);
-        uiMock = Mockito.mock(VcsPullRequestsTab.class);
+        uiMock = Mockito.mock(TabImpl.class);
 
         underTest = new VcsPullRequestsController();
         underTest.setModel(modelMock);
@@ -79,7 +80,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         underTest.update(null, null);
         verify(uiMock).setStatus(any(VcsTabStatus.class));
         verify(modelMock).getTabStatus();
-        verify(uiMock).setPullRequestsTree(any(PullRequestsTreeModel.class));
+        verify(uiMock).setViewModel(any(PullRequestsTreeModel.class));
         verify(modelMock).getPullRequestsTreeModel();
     }
 

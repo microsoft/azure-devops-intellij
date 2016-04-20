@@ -26,7 +26,7 @@ import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.List;
 
-public class VcsWorkItemsForm extends TabFormImpl {
+public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     private FormattedTable workItemsTable;
 
     //commands
@@ -54,7 +54,7 @@ public class VcsWorkItemsForm extends TabFormImpl {
         // nothing custom needs to be done at this time
     }
 
-    public void setWorkItemsTable(final WorkItemsTableModel tableModel) {
+    public void setModelForView(final WorkItemsTableModel tableModel) {
         workItemsTable.setModel(tableModel);
         workItemsTable.setSelectionModel(tableModel.getSelectionModel());
         workItemsTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);

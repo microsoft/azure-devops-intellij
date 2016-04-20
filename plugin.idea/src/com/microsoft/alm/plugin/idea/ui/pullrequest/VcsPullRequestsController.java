@@ -6,6 +6,8 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.Tab;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -18,8 +20,9 @@ import java.util.Observer;
  * Controller for the Version Control Pull Requests Tab
  */
 public class VcsPullRequestsController implements Observer, ActionListener {
+    private static final String EVENT_NAME = "Pull Requests";
 
-    private VcsPullRequestsTab tab;
+    private Tab tab;
     private VcsPullRequestsModel model;
 
     // Default constructor for testing
@@ -28,7 +31,7 @@ public class VcsPullRequestsController implements Observer, ActionListener {
 
     public VcsPullRequestsController(final @NotNull Project project) {
         model = new VcsPullRequestsModel(project);
-        tab = new VcsPullRequestsTab(project);
+        tab = new TabImpl(new VcsPullRequestsForm(), EVENT_NAME);
 
         setupTab();
 
@@ -80,7 +83,7 @@ public class VcsPullRequestsController implements Observer, ActionListener {
             tab.setStatus(model.getTabStatus());
         }
         if (arg == null) {
-            tab.setPullRequestsTree(model.getPullRequestsTreeModel());
+            tab.setViewModel(model.getPullRequestsTreeModel());
         }
 
         //actions from the form
@@ -105,7 +108,7 @@ public class VcsPullRequestsController implements Observer, ActionListener {
     }
 
     @VisibleForTesting
-    void setView(final VcsPullRequestsTab tab) {
+    void setView(final TabImpl tab) {
         this.tab = tab;
     }
 }

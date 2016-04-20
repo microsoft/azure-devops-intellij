@@ -10,26 +10,21 @@ import java.awt.event.ActionListener;
 import java.util.Observer;
 
 /**
- * Interface for IntelliJ tab views
+ * Tab interface for IntelliJ
  */
-public interface TabForm<T> {
-    // tab commands
-    String CMD_REFRESH = "refresh";
-    String CMD_FILTER_CHANGED = "filter";
-    String CMD_STATUS_LINK = "statusLink";
-    String CMD_SEND_FEEDBACK = "sendFeedback";
+public interface Tab<T> {
 
     JComponent getPanel();
 
-    void setStatus(final VcsTabStatus status);
-
     void addActionListener(final ActionListener listener);
+
+    void addObserver(final Observer observer);
+
+    void setStatus(final VcsTabStatus status);
 
     void setFilter(final String filterString);
 
     String getFilter();
 
-    void addObserver(final Observer observer);
-
-    void setModelForView(final T viewModel);
+    void setViewModel(final T modelView);
 }
