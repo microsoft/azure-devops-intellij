@@ -38,7 +38,7 @@ public class VcsWorkItemsController implements Observer, ActionListener {
         model.addObserver(this);
 
         //load the work items
-        model.loadWorkItems();
+        model.loadData();
     }
 
     private void setupTab() {
@@ -55,14 +55,14 @@ public class VcsWorkItemsController implements Observer, ActionListener {
                 model.importIntoTeamServicesGit();
             } else if (model.getTabStatus() == VcsTabStatus.NO_AUTH_INFO) {
                 //prompt for credentials and load work items
-                model.loadWorkItems();
+                model.loadData();
             } else {
                 //open current repository in web
-                model.createNewWorkItemLink();
+                model.createNewItem();
             }
         } else if (VcsWorkItemsForm.CMD_OPEN_SELECTED_WIT_IN_BROWSER.equals(e.getActionCommand())) {
             //pop up menu - open WIT link in web
-            model.openSelectedWorkItemsLink();
+            model.openSelectedItemsLink();
         }
     }
 
@@ -77,7 +77,7 @@ public class VcsWorkItemsController implements Observer, ActionListener {
             tab.setStatus(model.getTabStatus());
         }
         if (arg == null) {
-            tab.setViewModel(model.getTableModel());
+            tab.setViewModel(model.getModelForView());
         }
         if (arg == null || arg.equals(SelectWorkItemsModel.PROP_FILTER)) {
             tab.setFilter(model.getFilter());
@@ -85,13 +85,13 @@ public class VcsWorkItemsController implements Observer, ActionListener {
 
         //actions from the form
         if (VcsWorkItemsForm.CMD_CREATE_NEW_WORK_ITEM.equals(arg)) {
-            model.createNewWorkItemLink();
+            model.createNewItem();
         }
         if (VcsWorkItemsForm.CMD_REFRESH.equals(arg)) {
-            model.loadWorkItems();
+            model.loadData();
         }
         if (VcsWorkItemsForm.CMD_OPEN_SELECTED_WIT_IN_BROWSER.equals(arg)) {
-            model.openSelectedWorkItemsLink();
+            model.openSelectedItemsLink();
         }
     }
 

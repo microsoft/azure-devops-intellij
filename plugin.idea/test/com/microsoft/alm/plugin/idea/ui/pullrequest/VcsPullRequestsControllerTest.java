@@ -36,15 +36,15 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
     public void testObservableActions() {
         //Add action on toolbar = create pull request
         underTest.update(null, VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST);
-        verify(modelMock).createNewPullRequest();
+        verify(modelMock).createNewItem();
 
         //Refresh
         underTest.update(null, VcsPullRequestsForm.CMD_REFRESH);
-        verify(modelMock).loadPullRequests();
+        verify(modelMock).loadData();
 
         //open selected pr
         underTest.update(null, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER);
-        verify(modelMock).openSelectedPullRequestLink();
+        verify(modelMock).openSelectedItemsLink();
     }
 
     @Test
@@ -59,7 +59,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         //need credentials
         when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.NO_AUTH_INFO);
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_STATUS_LINK));
-        verify(modelMock).loadPullRequests();
+        verify(modelMock).loadData();
 
         //not a tf git repo
         when(modelMock.getTabStatus()).thenReturn(VcsTabStatus.NOT_TF_GIT_REPO);
@@ -68,7 +68,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
 
         //pop up menu - open in browser
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER));
-        verify(modelMock).openSelectedPullRequestLink();
+        verify(modelMock).openSelectedItemsLink();
 
         //pop up menu - abandon pr
         underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR));
@@ -81,7 +81,7 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
         verify(uiMock).setStatus(any(VcsTabStatus.class));
         verify(modelMock).getTabStatus();
         verify(uiMock).setViewModel(any(PullRequestsTreeModel.class));
-        verify(modelMock).getPullRequestsTreeModel();
+        verify(modelMock).getModelForView();
     }
 
     @Test

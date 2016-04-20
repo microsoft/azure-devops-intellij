@@ -14,81 +14,28 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
-import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
-import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModelImpl;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
+import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
-import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-public class VcsPullRequestsModel extends AbstractModel {
+public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsPullRequestsModel.class);
-
-    private final Project project;
-
-    private final PullRequestsTreeModel treeModel;
-    private final PullRequestsLookupListener treeDataProvider;
-
-    private GitRepository gitRepository;
-    private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
-
     public static final String PROP_PR_TAB_STATUS = "prTabStatus";
 
-
     public VcsPullRequestsModel(@NotNull Project project) {
-        this.project = project;
-
-        treeModel = new PullRequestsTreeModel();
-        treeDataProvider = new PullRequestsLookupListener(this);
+        super(project, new PullRequestsTreeModel(), PROP_PR_TAB_STATUS);
     }
 
-    public VcsTabStatus getTabStatus() {
-        return tabStatus;
-    }
-
-    public void setTabStatus(final VcsTabStatus status) {
-        if (this.tabStatus != status) {
-            this.tabStatus = status;
-            setChangedAndNotify(PROP_PR_TAB_STATUS);
-        }
-    }
-
-    public PullRequestsTreeModel getPullRequestsTreeModel() {
-        return treeModel;
-    }
-
-    private boolean isTfGitRepository() {
-        gitRepository = TfGitHelper.getTfGitRepository(project);
-        if (gitRepository == null) {
-            setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);
-            logger.debug("isTfGitRepository: Failed to get Git repo for current project");
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public void loadPullRequests() {
-        if (isTfGitRepository()) {
-            clearPullRequests();
-            treeDataProvider.loadPullRequests(TfGitHelper.getTfGitRemoteUrl(gitRepository));
-        }
-    }
-
-    public void importIntoTeamServicesGit() {
-        final ImportController controller = new ImportController(project);
-        controller.showModalDialog();
-
-        //TODO: how do we know this is done to load pull requests?
+    protected void createDataProvider() {
+        dataProvider = new PullRequestsLookupListener(this);
     }
 
     public void openGitRepoLink() {
@@ -103,7 +50,7 @@ public class VcsPullRequestsModel extends AbstractModel {
         }
     }
 
-    public void openSelectedPullRequestLink() {
+    public void openSelectedItemsLink() {
         if (isTfGitRepository()) {
             final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
             final GitPullRequest pullRequest = getSelectedPullRequest();
@@ -191,7 +138,7 @@ public class VcsPullRequestsModel extends AbstractModel {
 
             if (context != null && context.getGitRepository() != null) {
                 if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
-                    return treeModel.getSelectedPullRequest();
+                    return viewForModel.getSelectedPullRequest();
                 }
             }
         }
@@ -208,15 +155,16 @@ public class VcsPullRequestsModel extends AbstractModel {
         }
     }
 
-    public void appendPullRequests(final List<GitPullRequest> pullRequests, final PullRequestLookupOperation.PullRequestScope scope) {
-        treeModel.appendPullRequests(pullRequests, scope);
+    public void appendData(final Operation.Results results) {
+        final PullRequestLookupOperation.PullRequestLookupResults lookupResults = (PullRequestLookupOperation.PullRequestLookupResults) results;
+        viewForModel.appendPullRequests(lookupResults.getPullRequests(), lookupResults.getScope());
     }
 
-    public void clearPullRequests() {
-        treeModel.clearPullRequests();
+    public void clearData() {
+        viewForModel.clearPullRequests();
     }
 
-    public void createNewPullRequest() {
+    public void createNewItem() {
         if (!isTfGitRepository()) {
             return;
         }
@@ -225,9 +173,5 @@ public class VcsPullRequestsModel extends AbstractModel {
         createPullRequestController.showModalDialog();
 
         //TODO: how do we know this is done to refresh the tree?
-    }
-
-    public void dispose() {
-        treeDataProvider.terminateActiveOperation();
     }
 }

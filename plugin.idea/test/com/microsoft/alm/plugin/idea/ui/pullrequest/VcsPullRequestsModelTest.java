@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.Observer;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class VcsPullRequestsModelTest extends IdeaAbstractTest {
     VcsPullRequestsModel underTest;
@@ -46,18 +48,25 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
 
     @Test
     public void testPullRequestsTreeModel() {
+        PullRequestLookupOperation.PullRequestLookupResults results = mock(PullRequestLookupOperation.PullRequestLookupResults.class);
+
         underTest = new VcsPullRequestsModel(projectMock);
-        assertEquals(0, underTest.getPullRequestsTreeModel().getRequestedByMeRoot().getChildCount());
+        assertEquals(0, underTest.getModelForView().getRequestedByMeRoot().getChildCount());
 
         final List<GitPullRequest> myPullRequests = new ArrayList<GitPullRequest>();
         myPullRequests.add(new GitPullRequest());
-        underTest.appendPullRequests(myPullRequests, PullRequestLookupOperation.PullRequestScope.REQUESTED_BY_ME);
-        assertEquals(1, underTest.getPullRequestsTreeModel().getRequestedByMeRoot().getChildCount());
 
-        underTest.appendPullRequests(myPullRequests, PullRequestLookupOperation.PullRequestScope.ASSIGNED_TO_ME);
-        assertEquals(1, underTest.getPullRequestsTreeModel().getAssignedToMeRoot().getChildCount());
+        when(results.getPullRequests()).thenReturn(myPullRequests);
+        when(results.getScope()).thenReturn(PullRequestLookupOperation.PullRequestScope.REQUESTED_BY_ME);
+        underTest.appendData(results);
+        assertEquals(1, underTest.getModelForView().getRequestedByMeRoot().getChildCount());
 
-        underTest.clearPullRequests();
-        assertEquals(0, underTest.getPullRequestsTreeModel().getRequestedByMeRoot().getChildCount());
+        when(results.getPullRequests()).thenReturn(myPullRequests);
+        when(results.getScope()).thenReturn(PullRequestLookupOperation.PullRequestScope.ASSIGNED_TO_ME);
+        underTest.appendData(results);
+        assertEquals(1, underTest.getModelForView().getAssignedToMeRoot().getChildCount());
+
+        underTest.clearData();
+        assertEquals(0, underTest.getModelForView().getRequestedByMeRoot().getChildCount());
     }
 }

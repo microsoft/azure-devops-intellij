@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
 import jersey.repackaged.com.google.common.base.Predicate;
@@ -21,7 +22,7 @@ import java.util.List;
  * This table model manages a list of workitems. It has a built-in selectionModel as well.
  * TODO refactor this and the other TableModel classes into a generic class (most of the code is the same)
  */
-public class WorkItemsTableModel extends AbstractTableModel {
+public class WorkItemsTableModel extends AbstractTableModel implements FilteredModel {
     public enum Column {ID, TYPE, TITLE, ASSIGNED_TO, STATE, BRANCH}
 
     public static final Column[] ALL_COLUMNS = new Column[]{Column.ID, Column.TYPE, Column.TITLE, Column.STATE, Column.ASSIGNED_TO, Column.BRANCH};

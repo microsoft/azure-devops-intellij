@@ -11,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,9 +44,8 @@ public class PullRequestLookupListenerTest extends IdeaAbstractTest {
         PullRequestLookupOperation.PullRequestLookupResults resultsMock = Mockito.mock(PullRequestLookupOperation.PullRequestLookupResults.class);
         underTest.notifyLookupResults(resultsMock);
         verify(resultsMock).isCancelled();
-        verify(resultsMock).getPullRequests();
-        verify(resultsMock).getScope();
-        verify(modelMock).appendPullRequests(anyList(), any(PullRequestLookupOperation.PullRequestScope.class));
+        verify(resultsMock).hasError();
+        verify(modelMock).appendData(resultsMock);
     }
 
     @Test

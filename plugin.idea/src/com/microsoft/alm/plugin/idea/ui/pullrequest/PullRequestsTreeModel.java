@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 
@@ -12,11 +13,12 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.util.List;
 
-public class PullRequestsTreeModel extends DefaultTreeModel {
+public class PullRequestsTreeModel extends DefaultTreeModel implements FilteredModel {
     private final PRTreeNode root;
     private final PRTreeNode requestedByMeRoot;
     private final PRTreeNode assignedToMeRoot;
     private TreeSelectionModel selectionModel;
+    private String filter;
 
     public PullRequestsTreeModel() {
         super(null);
@@ -62,5 +64,14 @@ public class PullRequestsTreeModel extends DefaultTreeModel {
 
     public GitPullRequest getSelectedPullRequest() {
         return ((PRTreeNode) selectionModel.getSelectionPath().getLastPathComponent()).getGitPullRequest();
+    }
+
+    public void setFilter(final String filter) {
+        this.filter = filter;
+        applyFilter();
+    }
+
+    private void applyFilter() {
+        // TODO: add filtering logic
     }
 }

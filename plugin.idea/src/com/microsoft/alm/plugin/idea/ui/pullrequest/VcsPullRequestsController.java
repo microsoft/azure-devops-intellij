@@ -43,7 +43,7 @@ public class VcsPullRequestsController implements Observer, ActionListener {
         model.addObserver(this);
 
         //load the pull requests
-        model.loadPullRequests();
+        model.loadData();
     }
 
     private void setupTab() {
@@ -58,14 +58,14 @@ public class VcsPullRequestsController implements Observer, ActionListener {
                 model.importIntoTeamServicesGit();
             } else if (model.getTabStatus() == VcsTabStatus.NO_AUTH_INFO) {
                 //prompt for credentials and load pull requests
-                model.loadPullRequests();
+                model.loadData();
             } else {
                 //open current repository in web
                 model.openGitRepoLink();
             }
         } else if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(e.getActionCommand())) {
             //pop up menu - open PR link in web
-            model.openSelectedPullRequestLink();
+            model.openSelectedItemsLink();
         } else if (VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR.equals(e.getActionCommand())) {
             //pop up menu - abandon PR
             model.abandonSelectedPullRequest();
@@ -83,18 +83,18 @@ public class VcsPullRequestsController implements Observer, ActionListener {
             tab.setStatus(model.getTabStatus());
         }
         if (arg == null) {
-            tab.setViewModel(model.getPullRequestsTreeModel());
+            tab.setViewModel(model.getModelForView());
         }
 
         //actions from the form
         if (VcsPullRequestsForm.CMD_CREATE_NEW_PULL_REQUEST.equals(arg)) {
-            model.createNewPullRequest();
+            model.createNewItem();
         }
         if (VcsPullRequestsForm.CMD_REFRESH.equals(arg)) {
-            model.loadPullRequests();
+            model.loadData();
         }
         if (VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER.equals(arg)) {
-            model.openSelectedPullRequestLink();
+            model.openSelectedItemsLink();
         }
     }
 
