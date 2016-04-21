@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModel;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
 import org.junit.Before;
@@ -41,9 +42,9 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
         underTest.addObserver(observerMock);
 
         underTest.setTabStatus(underTest.getTabStatus());
-        verify(observerMock, never()).update(underTest, VcsPullRequestsModel.PROP_PR_TAB_STATUS);
+        verify(observerMock, never()).update(underTest, TabModel.PROP_TAB_STATUS);
         underTest.setTabStatus(VcsTabStatus.LOADING_COMPLETED);
-        verify(observerMock, times(1)).update(underTest, VcsPullRequestsModel.PROP_PR_TAB_STATUS);
+        verify(observerMock, times(1)).update(underTest, TabModel.PROP_TAB_STATUS);
     }
 
     @Test

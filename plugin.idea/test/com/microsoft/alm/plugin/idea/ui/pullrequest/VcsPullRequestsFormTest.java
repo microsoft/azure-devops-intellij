@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.ui.JBMenuItem;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabForm;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,7 +32,7 @@ public class VcsPullRequestsFormTest extends IdeaAbstractTest {
     public void testGetMenuItems() {
         List<JBMenuItem> menuItemList = underTest.getMenuItems(null);
         assertEquals(2, menuItemList.size());
-        assertEquals(VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER, menuItemList.get(0).getActionCommand());
+        assertEquals(TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER, menuItemList.get(0).getActionCommand());
         assertEquals(VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR, menuItemList.get(1).getActionCommand());
     }
 }

@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.ui.JBMenuItem;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabForm;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,6 +31,6 @@ public class VcsWorkItemsFormTest {
     public void testGetMenuItems() {
         List<JBMenuItem> menuItemList = underTest.getMenuItems(null);
         assertEquals(1, menuItemList.size());
-        assertEquals(VcsWorkItemsForm.CMD_OPEN_SELECTED_WIT_IN_BROWSER, menuItemList.get(0).getActionCommand());
+        assertEquals(TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER, menuItemList.get(0).getActionCommand());
     }
 }

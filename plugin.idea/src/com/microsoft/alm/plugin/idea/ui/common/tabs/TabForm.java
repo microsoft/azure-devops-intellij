@@ -18,6 +18,8 @@ public interface TabForm<T> {
     String CMD_FILTER_CHANGED = "filter";
     String CMD_STATUS_LINK = "statusLink";
     String CMD_SEND_FEEDBACK = "sendFeedback";
+    String CMD_CREATE_NEW_ITEM = "createNewItemLink";
+    String CMD_OPEN_SELECTED_ITEM_IN_BROWSER = "openSelectedItem";
 
     JComponent getPanel();
 

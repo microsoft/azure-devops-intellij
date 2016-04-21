@@ -21,14 +21,17 @@ import java.util.List;
 public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsWorkItemsModel.class);
 
-    public final static String PROP_PR_WI_STATUS = "wiTabStatus";
-
     public VcsWorkItemsModel(final @NotNull Project project) {
-        super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH), PROP_PR_WI_STATUS);
+        super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH));
     }
 
     protected void createDataProvider() {
         dataProvider = new WorkItemsLookupListener(this);
+    }
+
+    public void openGitRepoLink() {
+        // create a new work item and open WIT takes you to the same place at the moment
+        createNewItem();
     }
 
     public void openSelectedItemsLink() {

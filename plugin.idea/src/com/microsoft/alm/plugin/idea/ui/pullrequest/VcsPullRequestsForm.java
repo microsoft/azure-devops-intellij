@@ -25,8 +25,6 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
     private Tree pullRequestsTree;
 
     //commands
-    public static final String CMD_CREATE_NEW_PULL_REQUEST = "createNewPullRequest";
-    public static final String CMD_OPEN_SELECTED_PR_IN_BROWSER = "openSelectedPullRequest";
     public static final String CMD_ABANDON_SELECTED_PR = "abandonSelectedPullRequest";
     public static final String TOOLBAR_LOCATION = "Vcs.PullRequests";
 
@@ -35,7 +33,6 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
     public VcsPullRequestsForm() {
         super(TfPluginBundle.KEY_VCS_PR_TITLE,
                 TfPluginBundle.KEY_CREATE_PR_DIALOG_TITLE,
-                CMD_CREATE_NEW_PULL_REQUEST,
                 TfPluginBundle.KEY_VCS_PR_REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION);
 
@@ -103,7 +100,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
                 super.mouseClicked(mouseEvent);
                 //double click
                 if (mouseEvent.getClickCount() == 2) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_PR_IN_BROWSER);
+                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 } else if (mouseEvent.isPopupTrigger() || ((mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)) {
                     //right click, show pop up
                     showPopupMenu(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY(), listener);
@@ -121,7 +118,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
             @Override
             public void keyPressed(KeyEvent keyEvent) {
                 if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_PR_IN_BROWSER);
+                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 }
             }
 
@@ -134,7 +131,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
 
     protected List<JBMenuItem> getMenuItems(final ActionListener listener) {
         return Arrays.asList(
-                createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, VcsPullRequestsForm.CMD_OPEN_SELECTED_PR_IN_BROWSER, listener),
+                createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener),
                 createMenuItem(TfPluginBundle.KEY_VCS_PR_ABANDON, null, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR, listener));
     }
 

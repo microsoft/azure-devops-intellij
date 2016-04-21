@@ -30,14 +30,11 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     private FormattedTable workItemsTable;
 
     //commands
-    public static final String CMD_CREATE_NEW_WORK_ITEM = "createNewWorkItemLink";
-    public static final String CMD_OPEN_SELECTED_WIT_IN_BROWSER = "openSelectedWorkItem";
     public static final String TOOLBAR_LOCATION = "Vcs.WorkItems";
 
     public VcsWorkItemsForm() {
         super(TfPluginBundle.KEY_VCS_WIT_TITLE,
                 TfPluginBundle.KEY_VCS_WIT_CREATE_WIT,
-                CMD_CREATE_NEW_WORK_ITEM,
                 TfPluginBundle.KEY_VCS_WIT_REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION);
 
@@ -113,7 +110,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
                 super.mouseClicked(mouseEvent);
                 //double click
                 if (mouseEvent.getClickCount() == 2) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_WIT_IN_BROWSER);
+                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 } else if (mouseEvent.isPopupTrigger() || ((mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)) {
                     //right click, show pop up
                     showPopupMenu(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY(), listener);
@@ -131,7 +128,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
             @Override
             public void keyPressed(KeyEvent keyEvent) {
                 if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_WIT_IN_BROWSER);
+                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 }
             }
 
@@ -143,7 +140,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     }
 
     protected List<JBMenuItem> getMenuItems(final ActionListener listener) {
-        return Arrays.asList(createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, VcsWorkItemsForm.CMD_OPEN_SELECTED_WIT_IN_BROWSER, listener));
+        return Arrays.asList(createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener));
     }
 
     @VisibleForTesting

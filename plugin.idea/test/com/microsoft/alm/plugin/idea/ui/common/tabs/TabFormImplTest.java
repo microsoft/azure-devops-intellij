@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 public class TabFormImplTest extends IdeaAbstractTest {
     private final String TAB_TITLE = TfPluginBundle.KEY_VCS_WIT_TITLE;
     private final String CREATE_DIALOG_TITLE = TfPluginBundle.KEY_VCS_WIT_CREATE_WIT;
-    private final String CMD_REQUEST = "cmdRequest";
     private final String REFRESH_TOOLTIP = TfPluginBundle.KEY_VCS_WIT_REFRESH_TOOLTIP;
     private final String TOOLBAR_LOCATION = "toolbarLocation";
 
@@ -44,7 +43,6 @@ public class TabFormImplTest extends IdeaAbstractTest {
     public void setUp() {
         underTest = Mockito.spy(new TabFormImpl(TAB_TITLE,
                 CREATE_DIALOG_TITLE,
-                CMD_REQUEST,
                 REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION) {
             @Override

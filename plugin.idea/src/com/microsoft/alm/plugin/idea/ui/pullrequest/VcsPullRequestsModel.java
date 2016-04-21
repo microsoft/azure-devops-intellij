@@ -28,10 +28,9 @@ import org.slf4j.LoggerFactory;
 
 public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsPullRequestsModel.class);
-    public static final String PROP_PR_TAB_STATUS = "prTabStatus";
 
     public VcsPullRequestsModel(@NotNull Project project) {
-        super(project, new PullRequestsTreeModel(), PROP_PR_TAB_STATUS);
+        super(project, new PullRequestsTreeModel());
     }
 
     protected void createDataProvider() {

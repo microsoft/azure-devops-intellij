@@ -25,13 +25,11 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     protected LookupListenerImpl dataProvider;
     protected GitRepository gitRepository;
     private String filter;
-    private String propStatus;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
-    public TabModelImpl(@NotNull final Project project, @NotNull T viewModel, @NotNull final String propStatus) {
+    public TabModelImpl(@NotNull final Project project, @NotNull T viewModel) {
         this.project = project;
         this.viewForModel = viewModel;
-        this.propStatus = propStatus;
 
         // need to create data provider after calling parent class since it passes the class to the provider
         createDataProvider();
@@ -42,6 +40,8 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
      */
     protected abstract void createDataProvider();
 
+    public abstract void openGitRepoLink();
+
     public VcsTabStatus getTabStatus() {
         return tabStatus;
     }
@@ -49,7 +49,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     public void setTabStatus(final VcsTabStatus status) {
         if (this.tabStatus != status) {
             this.tabStatus = status;
-            setChangedAndNotify(propStatus);
+            setChangedAndNotify(PROP_TAB_STATUS);
         }
     }
 

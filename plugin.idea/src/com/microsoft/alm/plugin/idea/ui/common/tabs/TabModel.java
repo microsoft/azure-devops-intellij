@@ -13,10 +13,13 @@ import java.util.Observer;
  */
 public interface TabModel<T> {
     String PROP_FILTER = "filter";
+    String PROP_TAB_STATUS = "tabStatus";
 
     VcsTabStatus getTabStatus();
 
     void setTabStatus(final VcsTabStatus status);
+
+    void openGitRepoLink();
 
     T getModelForView();
 

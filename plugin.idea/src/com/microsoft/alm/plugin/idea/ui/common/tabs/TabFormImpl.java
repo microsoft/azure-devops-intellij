@@ -44,7 +44,6 @@ import java.util.Observable;
 public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
     private final String tabTitle;
     private final String createDialogTitle;
-    private final String cmdRequest;
     private final String refreshTooltip;
     private final String toolbarLocation;
 
@@ -57,10 +56,9 @@ public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
     private boolean initialized = false;
     protected Timer timer;
 
-    public TabFormImpl(final String tabTitle, final String createDialogTitle, final String cmdRequest, final String refreshTooltip, final String toolbarLocation) {
+    public TabFormImpl(final String tabTitle, final String createDialogTitle, final String refreshTooltip, final String toolbarLocation) {
         this.tabTitle = tabTitle;
         this.createDialogTitle = createDialogTitle;
-        this.cmdRequest = cmdRequest;
         this.refreshTooltip = refreshTooltip;
         this.toolbarLocation = toolbarLocation;
     }
@@ -157,7 +155,7 @@ public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
                 AllIcons.ToolbarDecorator.Add) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(cmdRequest);
+                setChangedAndNotify(CMD_CREATE_NEW_ITEM);
             }
         };
         createAction.registerCustomShortcutSet(CommonShortcuts.getNew(), scrollPanel); //Ctrl+N on windows or Cmd+M on Mac

@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.ui.pullrequest;
+package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.ui.common.tabs.TabForm;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,15 +19,15 @@ import java.awt.event.ActionEvent;
 import static org.mockito.Mockito.verify;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(VcsPullRequestsController.class)
-public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
+@PrepareForTest(VcsWorkItemsController.class)
+public class VcsWorkItemsControllerTest extends IdeaAbstractTest {
 
-    VcsPullRequestsController underTest;
+    VcsWorkItemsController underTest;
 
     @Mock
-    VcsPullRequestsModel modelMock;
+    VcsWorkItemsModel modelMock;
     @Mock
-    VcsPullRequestsForm mockForm;
+    VcsWorkItemsForm mockForm;
     @Mock
     Project mockProject;
     @Mock
@@ -36,22 +35,16 @@ public class VcsPullRequestsControllerTest extends IdeaAbstractTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.whenNew(VcsPullRequestsForm.class).withNoArguments().thenReturn(mockForm);
-        PowerMockito.whenNew(VcsPullRequestsModel.class).withArguments(mockProject).thenReturn(modelMock);
+        PowerMockito.whenNew(VcsWorkItemsForm.class).withNoArguments().thenReturn(mockForm);
+        PowerMockito.whenNew(VcsWorkItemsModel.class).withArguments(mockProject).thenReturn(modelMock);
         PowerMockito.whenNew(TabImpl.class).withAnyArguments().thenReturn(mockTab);
 
-        underTest = new VcsPullRequestsController(mockProject);
+        underTest = new VcsWorkItemsController(mockProject);
     }
 
     @Test
     public void testActionListener_OpenBrowser() throws Exception {
-        underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER));
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsWorkItemsForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER));
         verify(modelMock).openSelectedItemsLink();
-    }
-
-    @Test
-    public void testActionListener_AbandonPR() throws Exception {
-        underTest.actionPerformed(new ActionEvent(this, 0, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR));
-        verify(modelMock).abandonSelectedPullRequest();
     }
 }
