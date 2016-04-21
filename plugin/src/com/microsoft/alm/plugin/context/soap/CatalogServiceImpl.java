@@ -7,6 +7,8 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.vss.client.core.model.VssServiceException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -65,7 +67,7 @@ public class CatalogServiceImpl implements CatalogService {
         assert context != null;
         this.context = context;
 
-        final URI baseURI = context.getUri();
+        final URI baseURI = context.getServerUri();
         endpointUri = UrlHelper.resolveEndpointUri(baseURI, ENDPOINT_PATH);
     }
 
@@ -104,6 +106,16 @@ public class CatalogServiceImpl implements CatalogService {
             projectCollections.add(collectionReference);
         }
         return projectCollections;
+    }
+
+    public TeamProjectCollectionReference getProjectCollection(final String collectionName) {
+        final List<TeamProjectCollectionReference> collections = getProjectCollections();
+        for(final TeamProjectCollectionReference collection : collections) {
+            if(StringUtils.equalsIgnoreCase(collection.getName(), collectionName)) {
+                return collection;
+            }
+        }
+        throw new VssServiceException(TeamServicesException.KEY_OPERATION_ERRORS);
     }
 
     private class QueryData {

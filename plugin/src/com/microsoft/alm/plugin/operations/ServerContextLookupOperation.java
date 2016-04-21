@@ -5,8 +5,10 @@ package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
@@ -77,6 +79,9 @@ public class ServerContextLookupOperation extends Operation {
                             operationExceptions.add(t);
                             logger.error("doWork: Unable to do lookup on context: " + context.getUri().toString());
                             logger.warn("doWork: Exception", t);
+                            if (AuthHelper.isNotAuthorizedError(t)) {
+                                ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
+                            }
 
                             // If there's only one context we need to bubble the exception out
                             // But if there's more than one let's just continue

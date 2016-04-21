@@ -10,4 +10,6 @@ import java.util.List;
 public interface CatalogService {
 
     List<TeamProjectCollectionReference> getProjectCollections();
+
+    TeamProjectCollectionReference getProjectCollection(final String collectionName);
 }

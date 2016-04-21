@@ -20,13 +20,13 @@ import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
 import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollection;
+import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,7 +172,7 @@ public class ServerContextManager {
                         context.getTeamProjectCollectionReference() == null ||
                         context.getGitRepository() == null)) {
             //parse url
-            Validator validator = new Validator(context.getClient());
+            Validator validator = new Validator(context);
             if (validator.validate(context.getUri().toString())) {
                 contextToValidate = new ServerContextBuilder(context)
                         .serverUri(validator.getServerUrl())
@@ -448,12 +448,12 @@ public class ServerContextManager {
     private static class Validator implements UrlHelper.ParseResultValidator {
         private final static String REPO_INFO_URL_PATH = "/vsts/info";
         private String serverUrl;
-        private final Client client;
+        private final ServerContext context;
         private GitRepository repository;
         private TeamProjectCollection collection;
 
-        public Validator(final Client client) {
-            this.client = client;
+        public Validator(final ServerContext context) {
+            this.context = context;
         }
 
         public String getServerUrl() {
@@ -507,7 +507,7 @@ public class ServerContextManager {
         private boolean getVstsInfo(final String gitRemoteUrl) {
             try {
                 //Try to query the server endpoint gitRemoteUrl/vsts/info
-                final VstsInfo vstsInfo = VstsHttpClient.sendRequest(client, gitRemoteUrl.concat(REPO_INFO_URL_PATH), VstsInfo.class);
+                final VstsInfo vstsInfo = VstsHttpClient.sendRequest(context.getClient(), gitRemoteUrl.concat(REPO_INFO_URL_PATH), VstsInfo.class);
                 if (vstsInfo == null || vstsInfo.getCollectionReference() == null ||
                         vstsInfo.getRepository() == null || vstsInfo.getRepository().getProjectReference() == null) {
                     //information received from the server is not sufficient
@@ -546,13 +546,22 @@ public class ServerContextManager {
             try {
                 serverUrl = parseResult.getServerUrl();
                 final URI collectionUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(parseResult.getCollectionUrl()));
-                final GitHttpClient gitClient = new GitHttpClient(client, collectionUri);
+                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionUri);
                 // Get the repository object and team project
                 repository = gitClient.getRepository(parseResult.getProjectName(), parseResult.getRepoName());
                 // Get the collection object
                 final URI serverUri = URI.create(parseResult.getServerUrl());
-                final CoreHttpClient coreClient = new CoreHttpClient(client, serverUri);
-                collection = coreClient.getProjectCollection(parseResult.getCollectionName());
+                if (UrlHelper.isTeamServicesUrl(parseResult.getServerUrl())) {
+                    final CoreHttpClient coreClient = new CoreHttpClient(context.getClient(), serverUri);
+                    collection = coreClient.getProjectCollection(parseResult.getCollectionName());
+                } else {
+                    final ServerContext contextToValidate = new ServerContextBuilder(context).serverUri(serverUrl).build();
+                    final TeamProjectCollectionReference ref = contextToValidate.getSoapServices().getCatalogService().getProjectCollection(parseResult.getCollectionName());
+                    collection = new TeamProjectCollection();
+                    collection.setId(ref.getId());
+                    collection.setName(ref.getName());
+                    collection.setUrl(ref.getUrl());
+                }
             } catch (Throwable throwable) {
                 logger.error("validate: failed for parseResult " + parseResult.toString());
                 logger.warn("validate", throwable);
