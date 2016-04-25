@@ -47,6 +47,7 @@ public class WorkspaceForm {
   private JLabel myComputerField;
   private JTextArea myCommentField;
   private JPanel myContentPane;
+  private JPanel myTableWrapper;
   private ValidatingTableEditor<WorkingFolderInfo> myTable;
   private JLabel myMessageLabel;
   private JLabel myWorkingFoldrersLabel;
@@ -188,6 +189,9 @@ public class WorkspaceForm {
     };
     myTable.hideMessageLabel();
     myTable.setColumnReorderingAllowed(false);
+
+    myTableWrapper = new JPanel(new BorderLayout());
+    myTableWrapper.add(myTable.getContentPane());
   }
 
   private void setupLocations() {
