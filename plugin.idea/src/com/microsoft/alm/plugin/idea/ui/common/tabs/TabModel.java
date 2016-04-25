@@ -31,6 +31,8 @@ public interface TabModel<T> {
 
     void appendData(final Operation.Results results);
 
+    void clearData();
+
     void createNewItem();
 
     void setFilter(final String filter);

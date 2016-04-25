@@ -35,15 +35,19 @@ public abstract class LookupListenerImpl implements Operation.Listener {
     public abstract void loadData(final String gitRemoteUrl);
 
     /**
-     * Load data asynchronously based on the given operation
+     * Load data asynchronously based on the given operation.
+     * Only do this if another operation is not in progress though.
      *
      * @param activeOperation
      */
     protected void loadData(final Operation activeOperation) {
         assert activeOperation != null;
-        this.activeOperation = activeOperation;
-        this.activeOperation.addListener(this);
-        this.activeOperation.doWorkAsync(inputs);
+        if (model.getTabStatus() != VcsTabStatus.LOADING_IN_PROGRESS) {
+            this.model.clearData();
+            this.activeOperation = activeOperation;
+            this.activeOperation.addListener(this);
+            this.activeOperation.doWorkAsync(inputs);
+        }
     }
 
     @Override

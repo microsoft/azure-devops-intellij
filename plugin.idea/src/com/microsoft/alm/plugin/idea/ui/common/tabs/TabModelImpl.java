@@ -70,7 +70,6 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     public void loadData() {
         if (isTfGitRepository()) {
-            clearData();
             dataProvider.loadData(TfGitHelper.getTfGitRemoteUrl(gitRepository));
         }
     }
@@ -84,7 +83,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     public abstract void appendData(final Operation.Results results);
 
-    protected abstract void clearData();
+    public abstract void clearData();
 
     public abstract void createNewItem();
 
