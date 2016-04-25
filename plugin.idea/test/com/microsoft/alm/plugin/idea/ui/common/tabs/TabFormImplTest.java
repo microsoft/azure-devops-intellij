@@ -51,10 +51,6 @@ public class TabFormImplTest extends IdeaAbstractTest {
             }
 
             @Override
-            protected void updateViewOnLoad() {
-            }
-
-            @Override
             protected List<JBMenuItem> getMenuItems(ActionListener listener) {
                 return null;
             }

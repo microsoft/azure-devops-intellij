@@ -47,10 +47,6 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
         scrollPanel = new JBScrollPane(workItemsTable);
     }
 
-    protected void updateViewOnLoad() {
-        // nothing custom needs to be done at this time
-    }
-
     public void setModelForView(final WorkItemsTableModel tableModel) {
         workItemsTable.setModel(tableModel);
         workItemsTable.setSelectionModel(tableModel.getSelectionModel());

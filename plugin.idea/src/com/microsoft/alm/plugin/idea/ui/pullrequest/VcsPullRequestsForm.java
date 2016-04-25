@@ -12,6 +12,8 @@ import com.microsoft.alm.plugin.idea.ui.common.tabs.TabFormImpl;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -49,15 +51,33 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
         scrollPanel = new JBScrollPane(pullRequestsTree);
     }
 
-    protected void updateViewOnLoad() {
-        //expand the tree
-        if (pullRequestsTreeModel != null) {
-            pullRequestsTree.expandRow(0);
-            pullRequestsTree.expandRow(pullRequestsTreeModel.getRequestedByMeRoot().getChildCount() + 1);
-        }
-    }
-
     public void setModelForView(final PullRequestsTreeModel treeModel) {
+        treeModel.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent treeModelEvent) {
+                // do nothing
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent treeModelEvent) {
+                // do nothing
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent treeModelEvent) {
+                // do nothing
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent treeModelEvent) {
+                //expand the tree
+                if (pullRequestsTreeModel != null) {
+                    pullRequestsTree.expandRow(0);
+                    pullRequestsTree.expandRow(pullRequestsTreeModel.getRequestedByMeRoot().getChildCount() + 1);
+                }
+            }
+        });
+
         this.pullRequestsTreeModel = treeModel;
         pullRequestsTree.setModel(treeModel);
         pullRequestsTree.setSelectionModel(treeModel.getSelectionModel());

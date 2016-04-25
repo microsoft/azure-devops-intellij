@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
-import com.microsoft.alm.plugin.idea.ui.workitem.SelectWorkItemsModel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -80,7 +79,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
         if (arg == null) {
             tab.setViewModel(model.getModelForView());
         }
-        if (arg == null || arg.equals(SelectWorkItemsModel.PROP_FILTER)) {
+        if (arg == null || arg.equals(TabModel.PROP_FILTER)) {
             tab.setFilter(model.getFilter());
         }
 

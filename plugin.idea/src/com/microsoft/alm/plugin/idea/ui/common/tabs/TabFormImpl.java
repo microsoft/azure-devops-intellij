@@ -244,17 +244,12 @@ public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
                 statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER));
                 statusLink.setVisible(true);
 
-                // update view on load if needed
-                updateViewOnLoad();
-
                 break;
             default:
                 //we shouldn't get here, nothing to do
                 break;
         }
     }
-
-    protected abstract void updateViewOnLoad();
 
     public void addActionListener(final ActionListener listener) {
         timer.addActionListener(listener);
