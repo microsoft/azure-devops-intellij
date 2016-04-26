@@ -2,7 +2,7 @@
   <id>TFS</id>
   <name>TFS Integration</name>
   <version>999.999</version>
-  <idea-version since-build="142.2080"/>
+  <idea-version since-build="146.1512"/>
   <description>
       <![CDATA[
       <a href="http://msdn.microsoft.com/en-us/vstudio/ff637362.aspx">Team Foundation Server</a> provides
