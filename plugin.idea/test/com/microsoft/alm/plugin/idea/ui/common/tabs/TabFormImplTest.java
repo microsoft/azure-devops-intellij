@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
+import com.microsoft.alm.plugin.idea.ui.workitem.WorkItemsTableModel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,8 +41,9 @@ public class TabFormImplTest extends IdeaAbstractTest {
     TabFormImpl underTest;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() {
-        underTest = Mockito.spy(new TabFormImpl(TAB_TITLE,
+        underTest = Mockito.spy(new TabFormImpl<WorkItemsTableModel>(TAB_TITLE,
                 CREATE_DIALOG_TITLE,
                 REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION) {
@@ -56,7 +58,7 @@ public class TabFormImplTest extends IdeaAbstractTest {
             }
 
             @Override
-            public void setModelForView(Object modelView) {
+            public void setModelForView(WorkItemsTableModel modelView) {
 
             }
         });

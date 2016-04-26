@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 
 import javax.swing.JComponent;
@@ -12,7 +13,7 @@ import java.util.Observer;
 /**
  * Interface for IntelliJ tab views
  */
-public interface TabForm<T> {
+public interface TabForm<T extends FilteredModel> {
     // tab commands
     String CMD_REFRESH = "refresh";
     String CMD_FILTER_CHANGED = "filter";

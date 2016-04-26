@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -15,7 +16,7 @@ import java.util.Observer;
 /**
  * Tab class to setup common functionality such as metrics and getters/setters
  */
-public class TabImpl<T> implements Tab<T> {
+public class TabImpl<T extends FilteredModel> implements Tab<T> {
     protected TabForm form;
 
     public TabImpl(@NotNull final TabForm form, final String eventName) {

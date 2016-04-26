@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.operations.Operation;
 
@@ -11,7 +12,7 @@ import java.util.Observer;
 /**
  * Interface for Tab models
  */
-public interface TabModel<T> {
+public interface TabModel<T extends FilteredModel> {
     String PROP_FILTER = "filter";
     String PROP_TAB_STATUS = "tabStatus";
 

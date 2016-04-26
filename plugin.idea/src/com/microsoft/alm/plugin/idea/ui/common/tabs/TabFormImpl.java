@@ -18,6 +18,7 @@ import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
@@ -41,7 +42,7 @@ import java.util.Observable;
 /**
  * Common functionality for all tab views
  */
-public abstract class TabFormImpl<T> extends Observable implements TabForm<T> {
+public abstract class TabFormImpl<T extends FilteredModel> extends Observable implements TabForm<T> {
     private final String tabTitle;
     private final String createDialogTitle;
     private final String refreshTooltip;

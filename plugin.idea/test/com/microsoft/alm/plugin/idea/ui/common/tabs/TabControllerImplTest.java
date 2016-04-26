@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +31,7 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     private TabImpl mockTab;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() {
         underTest = new TabControllerImpl(mockTab, mockModel) {{
         }};
@@ -77,11 +79,12 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDefaultPropertyUpdates() {
         underTest.update(null, null);
         verify(mockTab).setStatus(any(VcsTabStatus.class));
         verify(mockModel).getTabStatus();
-        verify(mockTab).setViewModel(any(TabModel.class));
+        verify(mockTab).setViewModel(any(FilteredModel.class));
         verify(mockModel).getModelForView();
     }
 

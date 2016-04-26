@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
+import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 
 import javax.swing.JComponent;
@@ -12,7 +13,7 @@ import java.util.Observer;
 /**
  * Tab interface for IntelliJ
  */
-public interface Tab<T> {
+public interface Tab<T extends FilteredModel> {
 
     JComponent getPanel();
 
