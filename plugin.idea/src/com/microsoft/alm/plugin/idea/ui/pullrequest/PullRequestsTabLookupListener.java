@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.microsoft.alm.plugin.idea.ui.common.LookupListenerImpl;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabLookupListenerImpl;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import org.jetbrains.annotations.NotNull;
@@ -11,9 +11,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Listener for pull request lookup operations
  */
-public class PullRequestsLookupListener extends LookupListenerImpl {
+public class PullRequestsTabLookupListener extends TabLookupListenerImpl {
 
-    public PullRequestsLookupListener(@NotNull final VcsPullRequestsModel model) {
+    public PullRequestsTabLookupListener(@NotNull final VcsPullRequestsModel model) {
         super(model, Operation.EMPTY_INPUTS);
     }
 

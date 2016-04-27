@@ -3,15 +3,15 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
-import com.microsoft.alm.plugin.idea.ui.common.LookupListenerImpl;
+import com.microsoft.alm.plugin.idea.ui.common.tabs.TabLookupListenerImpl;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
 
 /**
  * Listener for work item lookup operations
  */
-public class WorkItemsLookupListener extends LookupListenerImpl {
+public class WorkItemsTabLookupListener extends TabLookupListenerImpl {
 
-    public WorkItemsLookupListener(final VcsWorkItemsModel model) {
+    public WorkItemsTabLookupListener(final VcsWorkItemsModel model) {
         super(model, new WorkItemLookupOperation.WitInputs(
                 WorkItemHelper.getAssignedToMeQuery()));
     }

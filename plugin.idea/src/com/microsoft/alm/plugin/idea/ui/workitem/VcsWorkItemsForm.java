@@ -7,7 +7,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.ui.components.JBScrollPane;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.ui.common.FormattedTable;
+import com.microsoft.alm.plugin.idea.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabFormImpl;
 

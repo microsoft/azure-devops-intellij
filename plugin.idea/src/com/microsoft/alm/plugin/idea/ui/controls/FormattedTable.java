@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.ui.common;
+package com.microsoft.alm.plugin.idea.ui.controls;
 
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;

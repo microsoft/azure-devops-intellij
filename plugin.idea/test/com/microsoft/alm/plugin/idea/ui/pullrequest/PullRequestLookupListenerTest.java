@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class PullRequestLookupListenerTest extends IdeaAbstractTest {
-    PullRequestsLookupListener underTest;
+    PullRequestsTabLookupListener underTest;
     VcsPullRequestsModel modelMock;
     ServerContext contextMock;
 
@@ -23,7 +23,7 @@ public class PullRequestLookupListenerTest extends IdeaAbstractTest {
     public void setUp() {
         modelMock = Mockito.mock(VcsPullRequestsModel.class);
         contextMock = Mockito.mock(ServerContext.class);
-        underTest = new PullRequestsLookupListener(modelMock);
+        underTest = new PullRequestsTabLookupListener(modelMock);
     }
 
     @Test

@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.ui.common.tabs;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
-import com.microsoft.alm.plugin.idea.ui.common.LookupListenerImpl;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.vcsimport.ImportController;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
@@ -22,7 +21,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     protected final Project project;
     protected final T viewForModel;
-    protected LookupListenerImpl dataProvider;
+    protected TabLookupListenerImpl dataProvider;
     protected GitRepository gitRepository;
     private String filter;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;

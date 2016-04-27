@@ -8,7 +8,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.ui.common.FormattedTable;
+import com.microsoft.alm.plugin.idea.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;

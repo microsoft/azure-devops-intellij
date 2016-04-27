@@ -34,7 +34,7 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     }
 
     protected void createDataProvider() {
-        dataProvider = new PullRequestsLookupListener(this);
+        dataProvider = new PullRequestsTabLookupListener(this);
     }
 
     public void openGitRepoLink() {

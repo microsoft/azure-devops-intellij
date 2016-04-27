@@ -48,7 +48,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="ccf5" class="com.microsoft.alm.plugin.idea.ui.common.FormattedTable" binding="workItemTable" custom-create="true">
+          <component id="ccf5" class="com.microsoft.alm.plugin.idea.ui.controls.FormattedTable" binding="workItemTable" custom-create="true">
             <constraints/>
             <properties>
               <fillsViewportHeight value="true"/>

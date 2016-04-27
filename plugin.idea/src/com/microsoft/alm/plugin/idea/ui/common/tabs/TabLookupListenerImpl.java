@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.ui.common;
+package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModel;
+import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import org.jetbrains.annotations.NotNull;
@@ -14,14 +14,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Listener for lookup operations
  */
-public abstract class LookupListenerImpl implements Operation.Listener {
+public abstract class TabLookupListenerImpl implements Operation.Listener {
 
     private final TabModel model;
     private final Operation.Inputs inputs;
     private Operation activeOperation;
     protected String gitRemoteUrl;
 
-    public LookupListenerImpl(@NotNull final TabModel model, final Operation.Inputs inputs) {
+    public TabLookupListenerImpl(@NotNull final TabModel model, final Operation.Inputs inputs) {
         assert model != null;
         this.model = model;
         this.inputs = inputs;

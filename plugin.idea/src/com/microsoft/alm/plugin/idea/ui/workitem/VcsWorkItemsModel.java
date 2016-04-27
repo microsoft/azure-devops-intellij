@@ -26,7 +26,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     }
 
     protected void createDataProvider() {
-        dataProvider = new WorkItemsLookupListener(this);
+        dataProvider = new WorkItemsTabLookupListener(this);
     }
 
     public void openGitRepoLink() {
