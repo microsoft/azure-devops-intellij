@@ -36,6 +36,9 @@ public class SelectWorkItemsAction extends InstrumentedAction {
         final Project project = CommonDataKeys.PROJECT.getData(anActionEvent.getDataContext());
         if ((TfGitHelper.getTfGitRepository(project) == null)) {
             anActionEvent.getPresentation().setEnabled(false);
+            // change hover text to explain why button is disabled
+            anActionEvent.getPresentation().setText(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_NOT_TFS_REPO,
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION)));
         } else {
             anActionEvent.getPresentation().setEnabled(true);
         }

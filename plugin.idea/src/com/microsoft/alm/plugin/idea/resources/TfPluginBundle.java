@@ -82,6 +82,8 @@ public class TfPluginBundle {
     public static final String KEY_TITLE_TEAM_SERVICES_ERROR = "Title.TeamServices.Error";
     @NonNls
     public static final String KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR = "Message.TeamServices.Unexpected.Error";
+    @NonNls
+    public static final String KEY_ERRORS_NOT_TFS_REPO = "Errors.NotTfsRepo";
 
     
     // Checkout dialog ui and models
@@ -363,8 +365,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_LAST_REFRESHED_AT = "VcsTab.LastRefreshedAt";
     @NonNls
-    public static final String KEY_VCS_NOT_CONNECTED = "VcsTab.NotConnected";
-    @NonNls
     public static final String KEY_VCS_LOADING_ERRORS = "VcsTab.LoadingErrors";
 
     //actions
@@ -384,6 +384,8 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_TITLE = "Actions.SelectWorkItems.Title";
     @NonNls
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_MSG = "Actions.SelectWorkItems.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION = "Actions.SelectWorkItems.Action";
 
     //starters
     @NonNls

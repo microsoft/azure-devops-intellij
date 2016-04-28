@@ -96,7 +96,7 @@ public class TabFormImplTest extends IdeaAbstractTest {
     @Test
     public void testNotConnected() {
         underTest.setStatus(VcsTabStatus.NOT_TF_GIT_REPO);
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_VCS_NOT_CONNECTED, TfPluginBundle.message(TAB_TITLE).toLowerCase()), underTest.getStatusText());
+        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_NOT_TFS_REPO, TfPluginBundle.message(TAB_TITLE).toLowerCase()), underTest.getStatusText());
         assertEquals(underTest.getStatusLinkText(), TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
     }
 

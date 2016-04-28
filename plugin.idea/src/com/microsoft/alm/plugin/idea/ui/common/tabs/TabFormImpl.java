@@ -214,7 +214,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
     public void setStatus(final VcsTabStatus status) {
         switch (status) {
             case NOT_TF_GIT_REPO:
-                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_VCS_NOT_CONNECTED, TfPluginBundle.message(tabTitle).toLowerCase()));
+                statusLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_NOT_TFS_REPO, TfPluginBundle.message(tabTitle).toLowerCase()));
                 statusLabel.setIcon(AllIcons.General.Error);
                 statusLink.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_TITLE));
                 statusLink.setVisible(true);
