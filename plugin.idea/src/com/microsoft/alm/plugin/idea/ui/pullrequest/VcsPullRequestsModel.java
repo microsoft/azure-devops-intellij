@@ -119,8 +119,8 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
                             }
                         }
                     } else {
-                        //couldn't find selected pull request
-                        notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED));
+                        //no pull request selected
+                        notifyOperationStatus(false, TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_ABANDON_FAILED_NO_SELECTION));
                     }
                 }
             };

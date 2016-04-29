@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +89,8 @@ public class PullRequestsTreeModel extends DefaultTreeModel implements FilteredM
 
 
     public GitPullRequest getSelectedPullRequest() {
-        return ((PRTreeNode) selectionModel.getSelectionPath().getLastPathComponent()).getGitPullRequest();
+        final TreePath treeModel = selectionModel.getLeadSelectionPath();
+        return treeModel == null ? null : ((PRTreeNode) treeModel.getLastPathComponent()).getGitPullRequest();
     }
 
     public void setFilter(final String filter) {

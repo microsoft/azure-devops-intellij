@@ -305,7 +305,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_PR_ABANDON_FAILED = "VcsPullRequestsTab.Abandon.Failed";
     @NonNls
-    public static final String KEY_VCS_PR_ABANDON_FAILED_UNEXPECTED = "VcsPullRequestsTab.Abandon.Failed.Unexpected";
+    public static final String KEY_VCS_PR_ABANDON_FAILED_NO_SELECTION = "VcsPullRequestsTab.Abandon.Failed.NoSelection";
     @NonNls
     public static final String KEY_VCS_PR_MERGE_FAILED = "VcsPullRequestsTab.Merge.Failed";
     @NonNls
