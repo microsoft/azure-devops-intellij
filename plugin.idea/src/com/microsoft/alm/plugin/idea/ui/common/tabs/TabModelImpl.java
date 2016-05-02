@@ -23,7 +23,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     protected final T viewForModel;
     protected TabLookupListenerImpl dataProvider;
     protected GitRepository gitRepository;
-    private String filter;
+    private String filter = StringUtils.EMPTY;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
 
     public TabModelImpl(@NotNull final Project project, @NotNull T viewModel) {

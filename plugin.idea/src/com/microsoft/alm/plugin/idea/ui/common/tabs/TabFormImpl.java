@@ -22,6 +22,7 @@ import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -204,6 +205,8 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
         timer.setRepeats(false);
 
         searchFilter = new SearchFilter();
+        //initialize to empty string
+        searchFilter.setFilterText(StringUtils.EMPTY);
     }
 
     /**
