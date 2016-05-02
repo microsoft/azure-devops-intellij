@@ -246,7 +246,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                             createRemoteGitRepo(project, context, localContext, indicator);
                     if (remoteRepository != null) {
                         //remote repo creation succeeded, save active context with the repository information
-                        localContext = new ServerContextBuilder(localContext).repository(remoteRepository).build();
+                        localContext = new ServerContextBuilder(localContext).uri(remoteRepository.getRemoteUrl()).repository(remoteRepository).build();
                         ServerContextManager.getInstance().add(localContext);
                     } else {
                         logger.error("doImport: failed to create remote repository with name: {} on server: {}, collection: {}",

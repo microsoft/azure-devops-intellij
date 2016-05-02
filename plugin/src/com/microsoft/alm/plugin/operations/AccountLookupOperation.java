@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -74,7 +75,17 @@ public class AccountLookupOperation extends Operation {
             onLookupResults(results);
             onLookupCompleted();
         } catch (Throwable ex) {
-            terminate(ex);
+            if (AuthHelper.isNotAuthorizedError(ex)) {
+                final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(VsoAuthenticationProvider.VSO_AUTH_URL);
+                if (context == null) {
+                    //user might have canceled login dialog
+                    terminate(ex);
+                } else {
+                    doWork(inputs);
+                }
+            } else {
+                terminate(ex);
+            }
         }
     }
 
