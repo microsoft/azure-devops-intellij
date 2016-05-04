@@ -6,9 +6,9 @@ package com.microsoft.alm.plugin.idea.settings;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;

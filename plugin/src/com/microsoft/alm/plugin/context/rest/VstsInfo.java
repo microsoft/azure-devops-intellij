@@ -4,8 +4,8 @@
 package com.microsoft.alm.plugin.context.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 
 /**
  * Wrapper class for JSON response from RemoteGitURL/vsts/info

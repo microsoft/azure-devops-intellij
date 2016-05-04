@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.context.soap;
 
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 
 import java.util.List;
 

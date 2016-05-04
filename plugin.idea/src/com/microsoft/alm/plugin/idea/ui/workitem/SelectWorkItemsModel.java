@@ -12,7 +12,7 @@ import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

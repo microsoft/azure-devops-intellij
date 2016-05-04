@@ -10,9 +10,9 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.utils.DateHelper;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.IdentityRefWithVote;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestAsyncStatus;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.sourcecontrol.webapi.model.IdentityRefWithVote;
+import com.microsoft.alm.sourcecontrol.webapi.model.PullRequestAsyncStatus;
 
 import javax.swing.Icon;
 import javax.swing.JTree;

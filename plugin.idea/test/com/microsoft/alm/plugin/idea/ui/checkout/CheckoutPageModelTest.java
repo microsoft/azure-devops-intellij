@@ -11,9 +11,9 @@ import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.ui.common.mocks.MockServerContext;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -5,8 +5,8 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemRelation;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItemRelation;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 

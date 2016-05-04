@@ -38,9 +38,9 @@ import com.microsoft.alm.plugin.idea.ui.common.ServerContextLookupPageModel;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProject;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
+import com.microsoft.alm.core.webapi.CoreHttpClient;
+import com.microsoft.alm.core.webapi.model.TeamProject;
+import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.vss.client.core.model.VssServiceException;
 import git4idea.DialogManager;
 import git4idea.GitUtil;
@@ -242,7 +242,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         return;
                     }
 
-                    final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository =
+                    final com.microsoft.alm.sourcecontrol.webapi.model.GitRepository remoteRepository =
                             createRemoteGitRepo(project, context, localContext, indicator);
                     if (remoteRepository != null) {
                         //remote repo creation succeeded, save active context with the repository information
@@ -482,17 +482,17 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         return true;
     }
 
-    private com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository createRemoteGitRepo(final Project project,
+    private com.microsoft.alm.sourcecontrol.webapi.model.GitRepository createRemoteGitRepo(final Project project,
                                                                                                       final ServerContext context, final ServerContext localContext, final ProgressIndicator indicator) {
         //create remote repository
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO));
         final GitHttpClient gitClient = context.getGitHttpClient();
         final String collectionUrl = gitClient.getBaseUrl().toString();
-        final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository gitRepoToCreate =
-                new com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository();
+        final com.microsoft.alm.sourcecontrol.webapi.model.GitRepository gitRepoToCreate =
+                new com.microsoft.alm.sourcecontrol.webapi.model.GitRepository();
         gitRepoToCreate.setName(repositoryName);
         gitRepoToCreate.setProjectReference(localContext.getTeamProjectReference());
-        com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository = null;
+        com.microsoft.alm.sourcecontrol.webapi.model.GitRepository remoteRepository = null;
         Throwable t = null;
         try {
             remoteRepository = gitClient.createRepository(gitRepoToCreate, context.getTeamProjectReference().getId());
@@ -535,7 +535,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     private boolean setupRemoteOnLocalRepo(final Project project, final GitRepository localRepository,
-                                           final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
+                                           final com.microsoft.alm.sourcecontrol.webapi.model.GitRepository remoteRepository,
                                            final ServerContext localContext, final ProgressIndicator indicator) {
         //get remotes on local repository
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE));
@@ -598,7 +598,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     private boolean pushChangesToRemoteRepo(final Project project, final GitRepository localRepository,
-                                            final com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository remoteRepository,
+                                            final com.microsoft.alm.sourcecontrol.webapi.model.GitRepository remoteRepository,
                                             final ServerContext localContext, final ProgressIndicator indicator) {
         localRepository.update();
         final String remoteGitUrl = UrlHelper.getCmdLineFriendlyUrl(remoteRepository.getRemoteUrl());

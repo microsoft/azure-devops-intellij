@@ -5,8 +5,8 @@ package com.microsoft.alm.plugin.mocks;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -10,11 +10,11 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
-import com.microsoft.teamfoundation.core.webapi.CoreHttpClient;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.CoreHttpClient;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

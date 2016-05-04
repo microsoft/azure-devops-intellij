@@ -6,7 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import jersey.repackaged.com.google.common.base.Predicate;
 import jersey.repackaged.com.google.common.collect.Collections2;
 import jersey.repackaged.com.google.common.collect.Lists;

@@ -6,7 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

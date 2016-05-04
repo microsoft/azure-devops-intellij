@@ -5,12 +5,12 @@ package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.teamfoundation.workitemtracking.webapi.WorkItemTrackingHttpClient;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.Wiql;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemExpand;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemQueryResult;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItemReference;
+import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
+import com.microsoft.alm.workitemtracking.webapi.models.Wiql;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItemExpand;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItemQueryResult;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItemReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

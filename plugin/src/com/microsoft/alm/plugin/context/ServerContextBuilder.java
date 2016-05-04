@@ -5,9 +5,9 @@ package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.teamfoundation.core.webapi.model.TeamProjectReference;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitRepository;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.visualstudio.services.account.webapi.model.Account;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

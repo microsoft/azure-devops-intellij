@@ -10,7 +10,7 @@ import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModelImpl;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
-import com.microsoft.teamfoundation.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

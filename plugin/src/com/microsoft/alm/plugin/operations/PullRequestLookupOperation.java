@@ -5,10 +5,10 @@ package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.GitHttpClient;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.PullRequestStatus;
+import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
+import com.microsoft.alm.sourcecontrol.webapi.model.PullRequestStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

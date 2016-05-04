@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 

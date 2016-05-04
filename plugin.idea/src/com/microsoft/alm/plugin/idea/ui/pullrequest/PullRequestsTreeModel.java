@@ -7,7 +7,7 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.utils.DateHelper;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
-import com.microsoft.teamfoundation.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.tree.DefaultTreeModel;
