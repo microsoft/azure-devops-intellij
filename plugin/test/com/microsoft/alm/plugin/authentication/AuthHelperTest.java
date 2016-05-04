@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.visualstudio.services.authentication.DelegatedAuthorization.webapi.model.SessionToken;
+import com.microsoft.visualstudio.services.delegatedauthorization.SessionToken;
 import com.microsoftopentechnologies.auth.AuthenticationResult;
 import com.microsoftopentechnologies.auth.UserInfo;
 import org.apache.http.auth.Credentials;
