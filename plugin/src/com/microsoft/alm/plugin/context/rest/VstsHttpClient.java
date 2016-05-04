@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.context.rest;
 
-import com.microsoft.vss.client.core.model.VssException;
+import com.microsoft.alm.client.model.VssException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;

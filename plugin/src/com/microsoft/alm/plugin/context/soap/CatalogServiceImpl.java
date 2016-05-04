@@ -3,11 +3,11 @@
 
 package com.microsoft.alm.plugin.context.soap;
 
+import com.microsoft.alm.client.model.VssServiceException;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.vss.client.core.model.VssServiceException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;

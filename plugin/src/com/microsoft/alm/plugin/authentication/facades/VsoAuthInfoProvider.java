@@ -17,8 +17,8 @@ import com.microsoft.alm.secret.TokenPair;
 import com.microsoft.alm.secret.VsoTokenScope;
 import com.microsoft.alm.storage.InsecureInMemoryStore;
 import com.microsoft.alm.storage.SecretStore;
-import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
-import com.microsoft.visualstudio.services.account.webapi.model.Profile;
+import com.microsoft.visualstudio.services.account.AccountHttpClient;
+import com.microsoft.visualstudio.services.account.Profile;
 
 import javax.ws.rs.client.Client;
 
@@ -62,9 +62,6 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
             final Client client = jaxrsClientProvider.getClient();
 
             if (client != null) {
-                //TODO: this is a dependency on the aad-pat-generator jar which is going away.  When we update to consume
-                //v0.4.3 Rest client, we can get rid of this one
-
                 //Or we could reconsider the name of the token.  Now we call Profile endpoint just to get the email address
                 //which is used in token description, but do we need it?  User can only view PATs after they login, and
                 //at that time user knows which account/email they are logged in under already.  So the email provides

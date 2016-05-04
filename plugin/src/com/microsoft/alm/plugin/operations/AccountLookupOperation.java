@@ -10,8 +10,8 @@ import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.visualstudio.services.account.webapi.AccountHttpClient;
-import com.microsoft.visualstudio.services.account.webapi.model.Account;
+import com.microsoft.visualstudio.services.account.Account;
+import com.microsoft.visualstudio.services.account.AccountHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
