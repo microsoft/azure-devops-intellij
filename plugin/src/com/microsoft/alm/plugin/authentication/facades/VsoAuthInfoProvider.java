@@ -23,8 +23,8 @@ import javax.ws.rs.client.Client;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
-    private static final String CLIENT_ID = "502ea21d-e545-4c66-9129-c352ec902969";
-    private static final String REDIRECT_URL = "https://xplatalm.com";
+    private static final String CLIENT_ID = "97877f11-0fc6-4aee-b1ff-febb0519dd00";
+    private static final String REDIRECT_URL = "https://java.visualstudio.com";
 
     final SecretStore<TokenPair> accessTokenStore;
     final SecretStore<Token> tokenStore;
