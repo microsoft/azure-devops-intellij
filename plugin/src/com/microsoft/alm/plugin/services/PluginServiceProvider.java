@@ -17,6 +17,7 @@ public class PluginServiceProvider {
     private boolean insideIDE = false;
     private ServerContextStore contextStore;
     private CredentialsPrompt credentialsPrompt;
+    private DeviceFlowResponsePrompt deviceFlowResponsePrompt;
     private ContextInitializer telemetryContextInitializer;
     private PropertyService propertyService;
     private LocalizationService localizationSerivce;
@@ -31,6 +32,7 @@ public class PluginServiceProvider {
 
     public void initialize(final ServerContextStore contextStore,
                            final CredentialsPrompt credentialsPrompt,
+                           final DeviceFlowResponsePrompt deviceFlowResponsePrompt,
                            final ContextInitializer telemetryContextInitializer,
                            final PropertyService propertyService,
                            final LocalizationService localizationService,
@@ -38,6 +40,7 @@ public class PluginServiceProvider {
         if (!initialized) {
             this.contextStore = contextStore;
             this.credentialsPrompt = credentialsPrompt;
+            this.deviceFlowResponsePrompt = deviceFlowResponsePrompt;
             this.telemetryContextInitializer = telemetryContextInitializer;
             this.propertyService = propertyService;
             this.localizationSerivce = localizationService;
@@ -87,5 +90,12 @@ public class PluginServiceProvider {
         assert localizationSerivce != null;
 
         return localizationSerivce;
+    }
+
+    public DeviceFlowResponsePrompt getDeviceFlowResponsePrompt() {
+        assert initialized;
+        assert deviceFlowResponsePrompt != null;
+
+        return deviceFlowResponsePrompt;
     }
 }

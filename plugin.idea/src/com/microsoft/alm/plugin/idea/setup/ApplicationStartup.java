@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.util.containers.HashMap;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
+import com.microsoft.alm.plugin.idea.services.DeviceFlowResponsePromptImpl;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
@@ -51,6 +52,7 @@ public class ApplicationStartup implements ApplicationComponent {
         PluginServiceProvider.getInstance().initialize(
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
+                new DeviceFlowResponsePromptImpl(),
                 new TelemetryContextInitializer(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),

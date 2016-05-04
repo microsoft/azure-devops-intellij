@@ -31,7 +31,7 @@ public class AbstractTest {
         logger.addAppender(appender);
 
         // Attach appropriate test services
-        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), new ContextInitializer() {
+        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null, new ContextInitializer() {
             @Override
             public void initialize(TelemetryContext context) {
             }
