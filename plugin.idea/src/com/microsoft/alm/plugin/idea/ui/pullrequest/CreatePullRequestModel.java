@@ -27,6 +27,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
@@ -341,8 +342,12 @@ public class CreatePullRequestModel extends AbstractModel {
                     getDiffCompareInfoProvider().getEmptyDiff(this.gitRepository), this.gitRepository);
         }
 
-        final String remoteBranchHash = selectedRemoteBranch.getHash().asString();
-        final String currBranchHash = currBranch.getHash().asString();
+        // get commit hash of each branch
+        final String remoteBranchHash = diffCompareInfoProvider.getUtilWrapper().getCurrentRevision(project,
+                new LocalFilePath(gitRepository.getRoot().getPath(), true), selectedRemoteBranch.getName()).asString();
+
+        final String currBranchHash = diffCompareInfoProvider.getUtilWrapper().getCurrentRevision(project,
+                new LocalFilePath(gitRepository.getRoot().getPath(), true), currBranch.getName()).asString();
 
         try {
             GitCommitCompareInfo changes

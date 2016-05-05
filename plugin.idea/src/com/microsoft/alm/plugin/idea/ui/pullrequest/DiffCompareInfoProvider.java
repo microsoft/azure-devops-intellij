@@ -5,8 +5,10 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import git4idea.GitCommit;
 import git4idea.GitRevisionNumber;
@@ -99,6 +101,11 @@ public class DiffCompareInfoProvider {
                                           String target, String source)
                 throws VcsException {
             return GitChangeUtils.getDiff(project, root, target, source, null);
+        }
+
+        public VcsRevisionNumber getCurrentRevision(final Project project, final FilePath filepath, final String branch)
+            throws VcsException {
+            return GitHistoryUtils.getCurrentRevision(project, filepath, branch);
         }
     }
 

@@ -4,7 +4,10 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import git4idea.GitRemoteBranch;
@@ -12,6 +15,7 @@ import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
 import git4idea.util.GitCommitCompareInfo;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -147,15 +151,32 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     @Test
     public void cacheShouldOnlyBeHitOnce() throws Exception {
+        final String currentBranchCommit = "935b168d0601bd05d57489fae04d5c6ec439cfea";
+        final String remoteBranchCommit = "9afa081effdaeafdff089b2aa3543415f6cdb1fb";
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
         when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(master));
+
+        VirtualFile virtualFileMock = Mockito.mock(VirtualFile.class);
+        when(virtualFileMock.getPath()).thenReturn(StringUtils.EMPTY);
+        when(gitRepositoryMock.getRoot()).thenReturn(virtualFileMock);
+
+        VcsRevisionNumber revNumberRemote = Mockito.mock(VcsRevisionNumber.class);
+        when(revNumberRemote.asString()).thenReturn(remoteBranchCommit);
+        VcsRevisionNumber revNumberCurrent = Mockito.mock(VcsRevisionNumber.class);
+        when(revNumberCurrent.asString()).thenReturn(currentBranchCommit);
+
+        DiffCompareInfoProvider.GitUtilWrapper gitUtilWrapperMock = Mockito.mock(DiffCompareInfoProvider.GitUtilWrapper.class);
+        when(gitUtilWrapperMock.getCurrentRevision(Mockito.eq(projectMock), Mockito.any(FilePath.class), Mockito.eq("origin/master"))).thenReturn(revNumberRemote);
+        when(gitUtilWrapperMock.getCurrentRevision(Mockito.eq(projectMock), Mockito.any(FilePath.class), Mockito.eq("local"))).thenReturn(revNumberCurrent);
+        when(diffProviderMock.getUtilWrapper()).thenReturn(gitUtilWrapperMock);
+
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
         underTest.setDiffCompareInfoProvider(diffProviderMock);
         underTest.setApplicationProvider(applicationProviderMock);
 
         GitCommitCompareInfo compareInfo = new GitCommitCompareInfo();
         when(diffProviderMock.getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb"))
+                currentBranchCommit, remoteBranchCommit))
                 .thenReturn(compareInfo);
 
         GitChangesContainer branchChangesContainer = underTest.getMyChangesCompareInfo();
@@ -163,7 +184,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // verify diff loader is called once
         verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb");
+                currentBranchCommit, remoteBranchCommit);
 
         underTest.getMyChangesCompareInfo();
         underTest.getMyChangesCompareInfo();
@@ -171,7 +192,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // diff loader should still only being called once since we hit cache
         verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb");
+                currentBranchCommit, remoteBranchCommit);
 
     }
 
@@ -256,5 +277,4 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         return model;
     }
-
 }
