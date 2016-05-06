@@ -13,11 +13,17 @@ import com.microsoft.alm.plugin.services.DeviceFlowResponsePrompt;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+ * Implements DeviceFlowResponsePrompt which creates a dialog to to show user
+ * relevant information from the device flow response.
+ */
 public class DeviceFlowResponsePromptImpl implements DeviceFlowResponsePrompt {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Action<DeviceFlowResponse> getCallback(final Action<String> cancellationCallback) {
-
 
         return new Action<DeviceFlowResponse>() {
             @Override

@@ -6,6 +6,10 @@ package com.microsoft.alm.plugin.services;
 import com.microsoft.alm.auth.oauth.DeviceFlowResponse;
 import com.microsoft.alm.helpers.Action;
 
+/**
+ * Shows a prompt to the end user with relevant information from a device flow response.
+ * Should inform user what to do with the information and how to complete login process.
+ */
 public interface DeviceFlowResponsePrompt {
 
     /**
