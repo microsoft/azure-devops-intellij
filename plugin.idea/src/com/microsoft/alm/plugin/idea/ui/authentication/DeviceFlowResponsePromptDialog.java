@@ -15,13 +15,15 @@ import java.util.Collections;
 
 public class DeviceFlowResponsePromptDialog extends BaseDialogImpl {
 
+    public static final String DEVICE_FLOW_PROMPT_DIALOG_CONTEXT = "DeviceFlowLogin";
+
     private DeviceFlowResponsePromptForm deviceFlowResponsePromptForm;
 
     public DeviceFlowResponsePromptDialog(){
         super(null,
                 TfPluginBundle.message(TfPluginBundle.KEY_DEVICE_FLOW_PROMPT_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_DEVICE_FLOW_PROMPT_CONTINUE_BUTTON),
-                "DeviceFlowLogin", //feedback context
+                DEVICE_FLOW_PROMPT_DIALOG_CONTEXT, //feedback context
                 false, Collections.<String, Object>emptyMap());
     }
 
