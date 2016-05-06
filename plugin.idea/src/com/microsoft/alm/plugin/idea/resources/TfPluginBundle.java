@@ -400,4 +400,10 @@ public class TfPluginBundle {
     public static final String STARTER_ERRORS_SIMPLECHECKOUT_INVALID_COMMAND_LINE_ARGS = "Starter.Errors.SimpleCheckout.InvalidCommandLineArgs";
     @NonNls
     public static final String STARTER_ERRORS_SIMPLECHECKOUT_URI_MISSING_GIT_URL = "Starter.Errors.SimpleCheckout.UriMissingGitUrl";
+
+    //Device flow
+    @NonNls
+    public static final String KEY_DEVICE_FLOW_PROMPT_TITLE = "Authentication.DeviceFlowPromptTitle";
+    @NonNls
+    public static final String KEY_DEVICE_FLOW_PROMPT_CONTINUE_BUTTON = "Authentication.DeviceFlowPromptContinueButton";
 }

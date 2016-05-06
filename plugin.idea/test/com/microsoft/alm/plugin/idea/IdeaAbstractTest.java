@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea;
 
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
+import com.microsoft.alm.plugin.idea.services.DeviceFlowResponsePromptImpl;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
@@ -19,6 +20,7 @@ public class IdeaAbstractTest extends AbstractTest {
         PluginServiceProvider.getInstance().initialize(
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
+                new DeviceFlowResponsePromptImpl(),
                 new TelemetryContextInitializer(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
