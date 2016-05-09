@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.utils.GeneralGitHelper;
+import git4idea.GitLocalBranch;
 import git4idea.GitRemoteBranch;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepoInfo;
@@ -14,7 +16,11 @@ import git4idea.repo.GitRepository;
 import git4idea.util.GitCommitCompareInfo;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +35,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(GeneralGitHelper.class)
 public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     CreatePullRequestModel underTest;
@@ -40,6 +48,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
     DiffCompareInfoProvider diffProviderMock;
     CreatePullRequestModel.ApplicationProvider applicationProviderMock;
     Observer observerMock;
+    GitLocalBranch currentBranch;
 
     @Before
     public void setUp() throws Exception {
@@ -49,6 +58,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         diffProviderMock = Mockito.mock(DiffCompareInfoProvider.class);
         observerMock = Mockito.mock(Observer.class);
         applicationProviderMock = Mockito.mock(CreatePullRequestModel.ApplicationProvider.class);
+        currentBranch = PRGitObjectMockHelper.createLocalBranch("local");
 
         tfsRemote = new GitRemote("origin", Arrays.asList("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
                 Arrays.asList("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
@@ -56,7 +66,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         when(diffProviderMock.getEmptyDiff(gitRepositoryMock)).thenCallRealMethod();
         when(gitRepositoryMock.getInfo()).thenReturn(gitRepoInfoMock);
         when(gitRepositoryMock.getRemotes()).thenReturn(Collections.singletonList(tfsRemote));
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(PRGitObjectMockHelper.createLocalBranch("local"));
+        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(currentBranch);
     }
 
     /* Testing behavior about setting default target branch */
@@ -147,15 +157,22 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     @Test
     public void cacheShouldOnlyBeHitOnce() throws Exception {
+        final String currentBranchCommitHash = "935b168d0601bd05d57489fae04d5c6ec439cfea";
+        final String remoteBranchCommitHash = "9afa081effdaeafdff089b2aa3543415f6cdb1fb";
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
         when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(master));
+
+        PowerMockito.mockStatic(GeneralGitHelper.class);
+        when(GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, currentBranch)).thenReturn(currentBranchCommitHash);
+        when(GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, master)).thenReturn(remoteBranchCommitHash);
+
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
         underTest.setDiffCompareInfoProvider(diffProviderMock);
         underTest.setApplicationProvider(applicationProviderMock);
 
         GitCommitCompareInfo compareInfo = new GitCommitCompareInfo();
         when(diffProviderMock.getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb"))
+                currentBranchCommitHash, remoteBranchCommitHash))
                 .thenReturn(compareInfo);
 
         GitChangesContainer branchChangesContainer = underTest.getMyChangesCompareInfo();
@@ -163,7 +180,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // verify diff loader is called once
         verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb");
+                currentBranchCommitHash, remoteBranchCommitHash);
 
         underTest.getMyChangesCompareInfo();
         underTest.getMyChangesCompareInfo();
@@ -171,7 +188,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // diff loader should still only being called once since we hit cache
         verify(diffProviderMock, times(1)).getBranchCompareInfo(projectMock, gitRepositoryMock,
-                "935b168d0601bd05d57489fae04d5c6ec439cfea", "9afa081effdaeafdff089b2aa3543415f6cdb1fb");
+                currentBranchCommitHash, remoteBranchCommitHash);
 
     }
 
@@ -256,5 +273,4 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         return model;
     }
-
 }

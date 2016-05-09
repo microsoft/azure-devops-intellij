@@ -77,10 +77,15 @@ public class PRGitObjectMockHelper {
 
     public static GitCommit getCommit(final Project project, final VirtualFile root,
                                       final String subject, final String message) {
+        return getCommit(project, root, subject, message, "935b168d0601bd05d57489fae04d5c6ec439cfea");
+    }
+
+    public static GitCommit getCommit(final Project project, final VirtualFile root,
+                                      final String subject, final String message, final String hash) {
         long date = new Date().getTime();
         VcsUser user = Mockito.mock(VcsUser.class);
         return new GitCommit(project,
-                HashImpl.build("935b168d0601bd05d57489fae04d5c6ec439cfea"),
+                HashImpl.build(hash),
                 Arrays.asList(HashImpl.build("9afa081effdaeafdff089b2aa3543415f6cdb1fb")),
                 date,
                 root,

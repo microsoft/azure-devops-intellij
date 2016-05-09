@@ -85,6 +85,9 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ERRORS_NOT_TFS_REPO = "Errors.NotTfsRepo";
 
+    // Common Git
+    @NonNls
+    public static final String KEY_GIT_HISTORY_ERRORS_NO_HISTORY_FOUND = "Git.History.Errors.NoHistoryFound";
     
     // Checkout dialog ui and models
     @NonNls

@@ -36,6 +36,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
@@ -341,8 +342,9 @@ public class CreatePullRequestModel extends AbstractModel {
                     getDiffCompareInfoProvider().getEmptyDiff(this.gitRepository), this.gitRepository);
         }
 
-        final String remoteBranchHash = selectedRemoteBranch.getHash().asString();
-        final String currBranchHash = currBranch.getHash().asString();
+        // get hash of last commit for each branch
+        final String remoteBranchHash = GeneralGitHelper.getLastCommitHash(project, gitRepository, selectedRemoteBranch);
+        final String currBranchHash = GeneralGitHelper.getLastCommitHash(project, gitRepository, currBranch);
 
         try {
             GitCommitCompareInfo changes
