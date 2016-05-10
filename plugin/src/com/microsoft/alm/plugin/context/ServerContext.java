@@ -13,6 +13,7 @@ import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.CredentialsProvider;
@@ -28,9 +29,9 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.RequestEntityProcessing;
 import org.glassfish.jersey.client.spi.ConnectorProvider;
 
+import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
@@ -169,7 +170,7 @@ public class ServerContext {
         clientConfig.property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true);
         clientConfig.property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED);
 
-        //Define fiddler as a local HTTP proxy
+        //Define a local HTTP proxy
         if (includeProxySettings) {
             final String proxyHost;
             if (System.getProperty("proxyHost") != null) {
@@ -188,31 +189,66 @@ public class ServerContext {
             final String proxyUrl = String.format("http://%s:%s", proxyHost, proxyPort);
 
             clientConfig.property(ClientProperties.PROXY_URI, proxyUrl);
+        }
+
+        // if this is a onPrem server and the uri starts with https, we need to setup ssl
+        if (isSSLEnabled(type, authenticationInfo.getServerUri())) {
             clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
         }
+
         return clientConfig;
     }
 
+    private static boolean isSSLEnabled(final Type type, final String serverUri) {
+        return type == Type.TFS && serverUri.startsWith("https://");
+    }
+
     private static SslConfigurator getSslConfigurator() {
-        final String trustStore;
-        if (System.getProperty("javax.net.ssl.trustStore") != null) {
-            trustStore = System.getProperty("javax.net.ssl.trustStore");
-        } else {
-            trustStore = "C:" + File.separator + "FiddlerKeystore.jks";
+        /**
+         * Set up trust store and key store for the https connection.
+         *
+         * http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
+         * See table 6.
+         *
+         * Trust stores are used to store CA certificates. It is used to trust the server connection.
+         * Key stores are used to store client certificates.  It is used to authenticate the client.
+         */
+        final SslConfigurator sslConfigurator = SslConfigurator.newInstance();
+
+        // Create trust store from .cer
+        // keytool.exe  -import -trustcacerts -alias root -file cacert.cer -keystore truststore.jks
+        final String trustStore = System.getProperty("javax.net.ssl.trustStore");
+        final String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword", StringUtils.EMPTY);
+
+        if (trustStore != null) {
+            sslConfigurator
+                    .trustStoreFile(trustStore)
+                    .trustStorePassword(trustStorePassword);
+
+            setupTrustStore(sslConfigurator);
         }
 
-        final String trustStorePassword;
-        if (System.getProperty("javax.net.ssl.trustStorePassword") != null) {
-            trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
-        } else {
-            trustStorePassword = "TfIntelliJPlugin";
+        // Create keystore from pkx:
+        // keytool -importkeystore -srckeystore mycert.pfx -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS
+        final String keyStore = System.getProperty("javax.net.ssl.keyStore");
+        final String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", StringUtils.EMPTY);
+
+        if (keyStore != null) {
+            sslConfigurator
+                    .keyStoreFile(keyStore)
+                    .keyStorePassword(keyStorePassword);
         }
 
-        final SslConfigurator sslConfigurator = SslConfigurator.newInstance()
-                .trustStoreFile(trustStore)
-                .trustStorePassword(trustStorePassword)
-                .trustStoreType("JKS")
-                .trustManagerFactoryAlgorithm("PKIX")
+        return sslConfigurator;
+    }
+
+    private static SslConfigurator setupTrustStore(final SslConfigurator sslConfigurator) {
+        final String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", "JKS");
+        final String trustManagerFactoryAlgorithm = System.getProperty("ssl.TrustManagerFactory.algorithm", "PKIX");
+
+        sslConfigurator
+                .trustStoreType(trustStoreType)
+                .trustManagerFactoryAlgorithm(trustManagerFactoryAlgorithm)
                 .securityProtocol("SSL");
 
         return sslConfigurator;
@@ -224,7 +260,15 @@ public class ServerContext {
             final Credentials credentials = AuthHelper.getCredentials(type, authenticationInfo);
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(AuthScope.ANY, credentials);
-            httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(credentialsProvider).build();
+            final HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+            if (isSSLEnabled(Type.TFS, authenticationInfo.getServerUri())) {
+                final SslConfigurator sslConfigurator = getSslConfigurator();
+                final SSLContext sslContext = sslConfigurator.createSSLContext();
+
+                httpClientBuilder.setSslcontext(sslContext);
+            }
+
+            httpClient = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider).build();
         }
         return httpClient;
     }
