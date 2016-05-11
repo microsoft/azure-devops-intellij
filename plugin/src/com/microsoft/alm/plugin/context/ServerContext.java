@@ -192,15 +192,15 @@ public class ServerContext {
         }
 
         // if this is a onPrem server and the uri starts with https, we need to setup ssl
-        if (isSSLEnabled(type, authenticationInfo.getServerUri())) {
+        if (isSSLEnabledOnPrem(type, authenticationInfo.getServerUri())) {
             clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
         }
 
         return clientConfig;
     }
 
-    private static boolean isSSLEnabled(final Type type, final String serverUri) {
-        return type == Type.TFS && serverUri.startsWith("https://");
+    private static boolean isSSLEnabledOnPrem(final Type type, final String serverUri) {
+        return type == Type.TFS && serverUri.toLowerCase().startsWith("https://");
     }
 
     private static SslConfigurator getSslConfigurator() {
@@ -209,25 +209,40 @@ public class ServerContext {
          *
          * http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
          * See table 6.
-         *
-         * Trust stores are used to store CA certificates. It is used to trust the server connection.
-         * Key stores are used to store client certificates.  It is used to authenticate the client.
          */
         final SslConfigurator sslConfigurator = SslConfigurator.newInstance();
 
+        // Trust stores are used to store CA certificates. It is used to trust the server connection.
+        setupTrustStore(sslConfigurator);
+
+        // Key stores are used to store client certificates.  It is used to authenticate the client.
+        setupKeyStore(sslConfigurator);
+
+        return sslConfigurator;
+    }
+
+    private static SslConfigurator setupTrustStore(final SslConfigurator sslConfigurator) {
         // Create trust store from .cer
         // keytool.exe  -import -trustcacerts -alias root -file cacert.cer -keystore truststore.jks
         final String trustStore = System.getProperty("javax.net.ssl.trustStore");
         final String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword", StringUtils.EMPTY);
 
+        final String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", "JKS");
+        final String trustManagerFactoryAlgorithm = System.getProperty("ssl.TrustManagerFactory.algorithm", "PKIX");
+
         if (trustStore != null) {
             sslConfigurator
                     .trustStoreFile(trustStore)
-                    .trustStorePassword(trustStorePassword);
-
-            setupTrustStore(sslConfigurator);
+                    .trustStorePassword(trustStorePassword)
+                    .trustStoreType(trustStoreType)
+                    .trustManagerFactoryAlgorithm(trustManagerFactoryAlgorithm)
+                    .securityProtocol("SSL");
         }
 
+        return sslConfigurator;
+    }
+
+    private static SslConfigurator setupKeyStore(final SslConfigurator sslConfigurator) {
         // Create keystore from pkx:
         // keytool -importkeystore -srckeystore mycert.pfx -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS
         final String keyStore = System.getProperty("javax.net.ssl.keyStore");
@@ -242,18 +257,6 @@ public class ServerContext {
         return sslConfigurator;
     }
 
-    private static SslConfigurator setupTrustStore(final SslConfigurator sslConfigurator) {
-        final String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", "JKS");
-        final String trustManagerFactoryAlgorithm = System.getProperty("ssl.TrustManagerFactory.algorithm", "PKIX");
-
-        sslConfigurator
-                .trustStoreType(trustStoreType)
-                .trustManagerFactoryAlgorithm(trustManagerFactoryAlgorithm)
-                .securityProtocol("SSL");
-
-        return sslConfigurator;
-    }
-
     public synchronized HttpClient getHttpClient() {
         checkDisposed();
         if (httpClient == null && authenticationInfo != null) {
@@ -261,7 +264,8 @@ public class ServerContext {
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(AuthScope.ANY, credentials);
             final HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-            if (isSSLEnabled(Type.TFS, authenticationInfo.getServerUri())) {
+
+            if (isSSLEnabledOnPrem(Type.TFS, authenticationInfo.getServerUri())) {
                 final SslConfigurator sslConfigurator = getSslConfigurator();
                 final SSLContext sslContext = sslConfigurator.createSSLContext();
 
