@@ -108,9 +108,17 @@ public class ServerContextTest extends AbstractTest {
         // Make sure Fiddler properties get set if property is on
         final ClientConfig config2 = ServerContext.getClientConfig(ServerContext.Type.TFS, info, true);
         final Map<String, Object> properties2 = config2.getProperties();
-        Assert.assertEquals(5, properties2.size());
+        //proxy setting doesn't automatically mean we need to setup ssl trust store anymore
+        Assert.assertEquals(4, properties2.size());
         Assert.assertNotNull(properties2.get(ClientProperties.PROXY_URI));
-        Assert.assertNotNull(properties2.get(ApacheClientProperties.SSL_CONFIG));
+        Assert.assertNull(properties2.get(ApacheClientProperties.SSL_CONFIG));
+
+        info = new AuthenticationInfo("users1", "pass", "https://tfsonprem.test", "4display");
+        final ClientConfig config3 = ServerContext.getClientConfig(ServerContext.Type.TFS, info, false);
+        final Map<String, Object> properties3 = config3.getProperties();
+        Assert.assertEquals(4, properties3.size());
+        Assert.assertNull(properties3.get(ClientProperties.PROXY_URI));
+        Assert.assertNotNull(properties3.get(ApacheClientProperties.SSL_CONFIG));
     }
 
 }
