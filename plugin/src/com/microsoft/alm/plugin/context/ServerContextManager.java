@@ -394,7 +394,7 @@ public class ServerContextManager {
      *
      * @param remoteUrl
      */
-    public synchronized ServerContext updateAuthenticationInfo(final String remoteUrl) {
+    public ServerContext updateAuthenticationInfo(final String remoteUrl) {
         AuthenticationInfo newAuthenticationInfo = null;
         boolean promptUser = true;
         final URI remoteUri = UrlHelper.createUri(remoteUrl);
