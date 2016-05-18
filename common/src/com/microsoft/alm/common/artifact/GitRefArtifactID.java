@@ -14,6 +14,10 @@ import org.apache.commons.lang.StringUtils;
  * ex: vstfs:///tool/artifact-type/tool-specific-identifier
  */
 public class GitRefArtifactID extends ArtifactID {
+    private static final String GIT_TOOL = "Git";
+    private static final String REF_ARTIFACT_TYPE = "Ref";
+    private static final String GIT_BRANCH_IDENTIFIER = "GB";
+
     private String projectId;
     private String repoId;
     private String refName;
@@ -21,6 +25,13 @@ public class GitRefArtifactID extends ArtifactID {
     public GitRefArtifactID(final String uri) {
         super(uri);
         decodeGitRefToolSpecifiedId(toolSpecificId);
+    }
+
+    public GitRefArtifactID(final String projectId, final String repoId, final String refName) {
+        super(GIT_TOOL, REF_ARTIFACT_TYPE, projectId + URI_SEPARATOR + repoId + URI_SEPARATOR + GIT_BRANCH_IDENTIFIER + refName);
+        this.projectId = projectId;
+        this.repoId = repoId;
+        this.refName = refName;
     }
 
     /**
