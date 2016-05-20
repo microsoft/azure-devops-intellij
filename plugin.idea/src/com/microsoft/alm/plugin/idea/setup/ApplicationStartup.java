@@ -13,6 +13,7 @@ import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
+import com.microsoft.alm.plugin.idea.statusBar.StatusBarManager;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.sun.jna.Platform;
 import org.apache.commons.lang.StringUtils;
@@ -61,6 +62,9 @@ public class ApplicationStartup implements ApplicationComponent {
         final File vstsDirectory = setupPreferenceDir(USER_HOME_DIR);
         final String ideLocation = getIdeLocation();
         doOsSetup(vstsDirectory, ideLocation);
+
+        // Setup status bar
+        StatusBarManager.setupStatusBar();
     }
 
     public void disposeComponent() {

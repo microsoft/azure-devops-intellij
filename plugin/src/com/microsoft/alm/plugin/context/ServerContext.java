@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.build.webapi.BuildHttpClient;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
@@ -296,6 +297,17 @@ public class ServerContext {
         }
 
         // We don't have enough context to create a WorkItemTrackingHttpClient
+        return null;
+    }
+
+    public synchronized BuildHttpClient getBuildHttpClient() {
+        final URI collectionUri = getCollectionURI();
+        if (collectionUri != null) {
+            final BuildHttpClient buildClient = new BuildHttpClient(getClient(), collectionUri);
+            return buildClient;
+        }
+
+        // We don't have enough context to create a BuildHttpClient
         return null;
     }
 

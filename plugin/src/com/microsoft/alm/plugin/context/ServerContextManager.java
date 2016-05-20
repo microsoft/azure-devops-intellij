@@ -316,6 +316,10 @@ public class ServerContextManager {
      * @return
      */
     public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl) {
+        return createContextFromRemoteUrl(gitRemoteUrl, true);
+    }
+
+    public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
         assert !StringUtils.isEmpty(gitRemoteUrl);
 
         // Get matching context from manager
@@ -329,7 +333,7 @@ public class ServerContextManager {
 
         if (context == null) {
             // Manager didn't have a matching context, so try to look up the auth info
-            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(gitRemoteUrl, true);
+            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(gitRemoteUrl, prompt);
             if (authenticationInfo != null) {
                 final ServerContext.Type type = UrlHelper.isTeamServicesUrl(gitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
                 final ServerContext contextToValidate = new ServerContextBuilder()

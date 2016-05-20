@@ -370,6 +370,18 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_LOADING_ERRORS = "VcsTab.LoadingErrors";
 
+    //status bar
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_ERROR = "StatusBar.Build.Error";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_UNKNOWN_STATUS = "StatusBar.Build.UnknownStatus";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_NO_BUILDS_FOUND = "StatusBar.Build.NoBuildsFound";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_SUCCEEDED = "StatusBar.Build.BuildSucceeded";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_FAILED = "StatusBar.Build.BuildFailed";
+
     //actions
     @NonNls
     public static final String KEY_ACTIONS_OPEN_BROWSER = "Actions.OpenInBrowser.Title";
