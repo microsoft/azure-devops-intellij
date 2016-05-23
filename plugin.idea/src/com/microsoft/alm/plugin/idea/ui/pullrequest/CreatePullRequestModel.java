@@ -26,7 +26,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
@@ -59,9 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.event.HyperlinkEvent;
-import java.io.Serializable;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -255,15 +252,11 @@ public class CreatePullRequestModel extends AbstractModel {
 
     private ComboBoxModel createRemoteBranchDropdownModel() {
         final SortedComboBoxModel<GitRemoteBranch> sortedRemoteBranches
-                = new SortedComboBoxModel<GitRemoteBranch>(new BranchComparator());
-
-        final GitRepoInfo gitRepoInfo = this.getInfo();
-
-        assert gitRepoInfo != null;
+                = new SortedComboBoxModel<GitRemoteBranch>(new TfGitHelper.BranchComparator());
         final GitRemoteBranch remoteTrackingBranch = this.getRemoteTrackingBranch();
 
         // only show valid remote branches
-        sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(),
+        sortedRemoteBranches.addAll(Collections2.filter(getInfo().getRemoteBranches(),
                         new Predicate<GitRemoteBranch>() {
                             @Override
                             public boolean apply(final GitRemoteBranch remoteBranch) {
@@ -276,8 +269,7 @@ public class CreatePullRequestModel extends AbstractModel {
                             }
                         })
         );
-
-        sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems()));
+        sortedRemoteBranches.setSelectedItem(TfGitHelper.getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
 
         return sortedRemoteBranches;
     }
@@ -288,32 +280,6 @@ public class CreatePullRequestModel extends AbstractModel {
 
         return localBranch != null && this.gitRepository != null
                 ? localBranch.findTrackedBranch(this.gitRepository) : null;
-    }
-
-    /**
-     * This method for now assumes the default branch name is master
-     * <p/>
-     * If there is no master, return the first branch on the list or null for empty list
-     * <p/>
-     * We should get the default branch from TF if necessary, but that's a server call
-     */
-    @Nullable
-    private GitRemoteBranch getDefaultBranch(@NotNull final List<GitRemoteBranch> remoteBranches) {
-        assert remoteBranches != null;
-        if (remoteBranches.isEmpty() || this.tfGitRemotes.isEmpty()) {
-            return null;
-        }
-
-        final GitRemote firstTfRemote = this.tfGitRemotes.iterator().next();
-
-        final String masterBranchName = String.format("%s/master", firstTfRemote.getName());
-        for (GitRemoteBranch remoteBranch : remoteBranches) {
-            if (remoteBranch.getName().equals(masterBranchName)) {
-                return remoteBranch;
-            }
-        }
-
-        return remoteBranches.get(0);
     }
 
     /**
@@ -674,15 +640,6 @@ public class CreatePullRequestModel extends AbstractModel {
 
     private GitRepoInfo getInfo() {
         return this.gitRepository.getInfo();
-    }
-
-    private static class BranchComparator implements Comparator<GitRemoteBranch>, Serializable {
-        private static final long serialVersionUID = 2526372195429182934L;
-
-        @Override
-        public int compare(GitRemoteBranch branch1, GitRemoteBranch branch2) {
-            return StringUtil.naturalCompare(branch1.getFullName(), branch2.getFullName());
-        }
     }
 
     private void notifyDiffFailedError(final Project project, final String message) {

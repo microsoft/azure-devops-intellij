@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.branch;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -68,14 +69,21 @@ public class CreateBranchModel extends AbstractModel {
 
     private SortedComboBoxModel<GitRemoteBranch> createRemoteBranchDropdownModel() {
         logger.info("CreateBranchModel.createRemoteBranchDropdownModel");
-        // TODO: add option to retrieve more branches in case the branch they are looking for is missing locally
-        return TfGitHelper.createRemoteBranchDropdownModel(tfGitRemotes, gitRepository.getInfo(), new Predicate<GitRemoteBranch>() {
-            @Override
-            public boolean apply(final GitRemoteBranch remoteBranch) {
-                //  condition: remote must be a vso/tfs remote
-                return tfGitRemotes.contains(remoteBranch.getRemote());
-            }
-        });
+        final SortedComboBoxModel<GitRemoteBranch> sortedRemoteBranches
+                = new SortedComboBoxModel<GitRemoteBranch>(new TfGitHelper.BranchComparator());
+
+        // TODO: add option to retrieve more branches in case the branch they are looking for is missing local
+        // only show valid remote branches
+        sortedRemoteBranches.addAll(Collections2.filter(gitRepository.getInfo().getRemoteBranches(), new Predicate<GitRemoteBranch>() {
+                    @Override
+                    public boolean apply(final GitRemoteBranch remoteBranch) {
+                        //  condition: remote must be a vso/tfs remote
+                        return tfGitRemotes.contains(remoteBranch.getRemote());
+                    }
+                })
+        );
+        sortedRemoteBranches.setSelectedItem(TfGitHelper.getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
+        return sortedRemoteBranches;
     }
 
     public ComboBoxModel getRemoteBranchDropdownModel() {

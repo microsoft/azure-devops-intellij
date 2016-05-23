@@ -7,13 +7,11 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.ui.SortedComboBoxModel;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import git4idea.GitRemoteBranch;
 import git4idea.GitUtil;
 import git4idea.repo.GitRemote;
-import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,18 +110,6 @@ public class TfGitHelper {
         return context;
     }
 
-    public static SortedComboBoxModel<GitRemoteBranch> createRemoteBranchDropdownModel(@NotNull final Collection<GitRemote> tfGitRemotes,
-                                                                @NotNull GitRepoInfo gitRepoInfo, @NotNull Predicate<GitRemoteBranch> predicate) {
-        final SortedComboBoxModel<GitRemoteBranch> sortedRemoteBranches
-                = new SortedComboBoxModel<GitRemoteBranch>(new BranchComparator());
-
-        // only show valid remote branches
-        sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(), predicate));
-        sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
-
-        return sortedRemoteBranches;
-    }
-
     /**
      * This method for now assumes the default branch name is master
      * <p/>
@@ -149,7 +135,7 @@ public class TfGitHelper {
         return remoteBranches.get(0);
     }
 
-    private static class BranchComparator implements Comparator<GitRemoteBranch>, Serializable {
+    public static class BranchComparator implements Comparator<GitRemoteBranch>, Serializable {
         private static final long serialVersionUID = 2526372195429182934L;
 
         @Override
