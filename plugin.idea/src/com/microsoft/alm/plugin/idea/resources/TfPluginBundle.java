@@ -350,9 +350,33 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VCS_WIT_CREATE_WIT = "VcsWorkItemsTab.Create.WorkItem";
     @NonNls
+    public static final String KEY_VCS_WIT_CREATE_BRANCH = "VcsWorkItemsTab.Create.Branch";
+    @NonNls
     public static final String KEY_VCS_WIT_REFRESH_TOOLTIP = "VcsWorkItemsTab.Refresh.Tooltip";
     @NonNls
     public static final String KEY_VCS_WIT_UNEXPECTED_ERRORS = "VcsWorkItemsTab.Unexpected.Errors";
+
+    //Branch Creation Dialog
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_CREATE_BUTTON = "CreateBranchDialog.CreateButton";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_TITLE = "CreateBranchDialog.Title";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE = "CreateBranchDialog.Successful.Title";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION = "CreateBranchDialog.Successful.Description";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE = "CreateBranchDialog.Failed.Title";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EMPTY = "CreateBranchDialog.Errors.BranchNameEmpty";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EXISTS = "CreateBranchDialog.Errors.BranchNameExists";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_ERRORS_AUTHENTICATION_FAILED_TITLE = "CreateBranchDialog.Errors.AuthenticationFailed.Title";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_ERRORS_UNEXPECTED_SERVER_ERROR = "CreateBranchDialog.Errors.UnexpectedServerError";
+    @NonNls
+    public static final String KEY_CREATE_BRANCH_ERRORS_BRANCH_CREATE_FAILED = "CreateBranchDialog.Errors.BranchCreateFailed";
 
     //common toolbar
     @NonNls

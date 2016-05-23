@@ -6,17 +6,25 @@ package com.microsoft.alm.plugin.idea.utils;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.SortedComboBoxModel;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import git4idea.GitRemoteBranch;
 import git4idea.GitUtil;
 import git4idea.repo.GitRemote;
+import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 public class TfGitHelper {
+    private static final String MASTER_BRANCH_PATTERN = "%s/master";
 
     /**
      * Returns <code>true</code> if the specified GitRepository is a TF GitRepository (VSO or OnPrem).
@@ -102,5 +110,51 @@ public class TfGitHelper {
         //get saved server context, we don't want to prompt for credentials or handle expired credentials on the UI thread
         final ServerContext context = ServerContextManager.getInstance().get(getTfGitRemoteUrl(gitRepository));
         return context;
+    }
+
+    public static SortedComboBoxModel<GitRemoteBranch> createRemoteBranchDropdownModel(@NotNull final Collection<GitRemote> tfGitRemotes,
+                                                                @NotNull GitRepoInfo gitRepoInfo, @NotNull Predicate<GitRemoteBranch> predicate) {
+        final SortedComboBoxModel<GitRemoteBranch> sortedRemoteBranches
+                = new SortedComboBoxModel<GitRemoteBranch>(new BranchComparator());
+
+        // only show valid remote branches
+        sortedRemoteBranches.addAll(Collections2.filter(gitRepoInfo.getRemoteBranches(), predicate));
+        sortedRemoteBranches.setSelectedItem(getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
+
+        return sortedRemoteBranches;
+    }
+
+    /**
+     * This method for now assumes the default branch name is master
+     * <p/>
+     * If there is no master, return the first branch on the list or null for empty list
+     * <p/>
+     * We should get the default branch from TF if necessary, but that's a server call
+     */
+    @Nullable
+    public static GitRemoteBranch getDefaultBranch(@NotNull final List<GitRemoteBranch> remoteBranches, @NotNull final Collection<GitRemote> tfGitRemotes) {
+        if (remoteBranches.isEmpty() || tfGitRemotes.isEmpty()) {
+            return null;
+        }
+
+        final GitRemote firstTfRemote = tfGitRemotes.iterator().next();
+
+        final String masterBranchName = String.format(MASTER_BRANCH_PATTERN, firstTfRemote.getName());
+        for (GitRemoteBranch remoteBranch : remoteBranches) {
+            if (remoteBranch.getName().equals(masterBranchName)) {
+                return remoteBranch;
+            }
+        }
+
+        return remoteBranches.get(0);
+    }
+
+    private static class BranchComparator implements Comparator<GitRemoteBranch>, Serializable {
+        private static final long serialVersionUID = 2526372195429182934L;
+
+        @Override
+        public int compare(GitRemoteBranch branch1, GitRemoteBranch branch2) {
+            return StringUtil.naturalCompare(branch1.getFullName(), branch2.getFullName());
+        }
     }
 }
