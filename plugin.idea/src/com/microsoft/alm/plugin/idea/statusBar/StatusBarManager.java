@@ -48,7 +48,7 @@ public class StatusBarManager {
 
     private static void updateStatusBar() {
         final Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-        for (Project p : openProjects) {
+        for (final Project p : openProjects) {
             updateStatusBar(p, false);
         }
     }

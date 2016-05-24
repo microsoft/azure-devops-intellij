@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.utils.DateHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.util.Date;
@@ -23,7 +24,7 @@ public class BuildStatusModel extends AbstractModel {
     private final BuildStatusLookupOperation.BuildStatusResults operationResults;
 
     // This static method converts the results returned by the Operation into a model that the UI can use
-    public static BuildStatusModel create(final Project project, final BuildStatusLookupOperation.BuildStatusResults results) {
+    public static BuildStatusModel create(@NotNull final Project project, @NotNull final BuildStatusLookupOperation.BuildStatusResults results) {
         final BuildStatusModel model;
         final boolean signedIn = results.getContext() != null;
         if (results.hasError()) {

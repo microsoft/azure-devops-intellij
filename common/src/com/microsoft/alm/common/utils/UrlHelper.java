@@ -31,8 +31,6 @@ public class UrlHelper {
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
 
-
-
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
 

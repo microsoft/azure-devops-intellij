@@ -15,7 +15,7 @@ import java.awt.event.ActionListener;
 import java.net.URI;
 
 public class BuildPopup extends JBPopupMenu {
-    private BuildStatusModel model;
+    private final BuildStatusModel model;
 
     public BuildPopup(final BuildStatusModel model) {
         if (model == null) throw new IllegalArgumentException("model");
@@ -41,8 +41,13 @@ public class BuildPopup extends JBPopupMenu {
                 });
                 this.add(item);
             }
+
+            // Add a separator if there were builds added
+            if (getComponentCount() > 0) {
+                this.addSeparator();
+            }
+
             // Add the refresh menu
-            if (getComponentCount() > 0) this.addSeparator();
             final JMenuItem refreshItem = new JMenuItem(
                     TfPluginBundle.message(TfPluginBundle.KEY_STATUSBAR_BUILD_POPUP_REFRESH));
             refreshItem.addActionListener(new ActionListener() {
