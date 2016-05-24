@@ -17,6 +17,7 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
+import javax.swing.JMenu;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,6 +34,13 @@ public class FeedbackAction extends AbstractAction {
         super(TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE), PlatformIcons.COMBOBOX_ARROW_ICON);
         this.project = project;
         this.feedbackContextInfo = feedbackContextInfo;
+    }
+
+    public JMenu getSubMenu() {
+        JMenu menu = new JMenu("Feedback");
+        menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE, Icons.Smile, CMD_SEND_SMILE));
+        menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN, Icons.Frown, CMD_SEND_FROWN));
+        return menu;
     }
 
     @Override

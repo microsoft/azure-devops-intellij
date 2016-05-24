@@ -23,7 +23,8 @@ import java.awt.event.ActionListener;
 public class StatusBarManager {
     private static ProjectEventListener listener;
     private static Timer timer;
-    private static final int TIMER_DELAY = 5 * 60 * 1000; // TODO eventually get from settings
+    private static final int NORMAL_TIMER_DELAY = 5 * 60 * 1000; // TODO eventually get from settings
+    private static final int MIN_TIMER_DELAY = 5 * 1000;
 
     public static void setupStatusBar() {
         if (listener == null) {
@@ -32,7 +33,7 @@ public class StatusBarManager {
         }
         // TODO: pull out the polling logic into a common class that the VCS tabs can use as well
         if (timer == null) {
-            timer = new Timer(TIMER_DELAY, new ActionListener() {
+            timer = new Timer(NORMAL_TIMER_DELAY, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     timer.stop();
@@ -40,27 +41,26 @@ public class StatusBarManager {
                 }
             });
             timer.setRepeats(false);
-            timer.setInitialDelay(1000);
+            timer.setInitialDelay(MIN_TIMER_DELAY); // The very first time we want to try quickly, after that we back off to TIMER_DELAY
             timer.start();
         }
     }
 
     private static void updateStatusBar() {
         final Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-        if (openProjects.length > 0) {
-            //TODO when is there more than one project open (need to test)
-            updateStatusBar(openProjects[0]);
+        for (Project p : openProjects) {
+            updateStatusBar(p, false);
         }
     }
 
-    private static void updateStatusBar(final Project project) {
+    public static void updateStatusBar(final Project project, final boolean allowPrompt) {
         final StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
         if (statusBar != null) {
-            updateWidgets(statusBar, project);
+            updateWidgets(statusBar, project, allowPrompt);
         }
     }
 
-    private static void updateWidgets(final StatusBar statusBar, final Project project) {
+    private static void updateWidgets(final StatusBar statusBar, final Project project, final boolean allowPrompt) {
         // Update the build widget
         BuildWidget buildWidget = (BuildWidget) statusBar.getWidget(BuildWidget.getID());
         if (buildWidget == null) {
@@ -78,7 +78,7 @@ public class StatusBarManager {
                 final String branch = "refs/heads/" + GitBranchUtil.getDisplayableBranchText(repository);
 
                 // Create the operation and start the background work to get the latest build information
-                final BuildStatusLookupOperation op = new BuildStatusLookupOperation(repoUrl, branch);
+                final BuildStatusLookupOperation op = new BuildStatusLookupOperation(repoUrl, branch, allowPrompt);
                 op.addListener(new Operation.Listener() {
                     @Override
                     public void notifyLookupStarted() { /* do nothing */ }
@@ -88,34 +88,21 @@ public class StatusBarManager {
 
                     @Override
                     public void notifyLookupResults(final Operation.Results results) {
-                        updateBuildWidget(statusBar, widget, (BuildStatusLookupOperation.BuildStatusResults) results);
+                        updateBuildWidget(project, statusBar, widget, (BuildStatusLookupOperation.BuildStatusResults) results);
                     }
                 });
                 op.doWorkAsync(null);
             }
         } else {
+            // The repository hasn't been opened yet, so try again quickly
+            timer.setInitialDelay(MIN_TIMER_DELAY);
             timer.restart();
         }
     }
 
-    private static void updateBuildWidget(final StatusBar statusBar, final BuildWidget widget, final BuildStatusLookupOperation.BuildStatusResults results) {
+    private static void updateBuildWidget(final Project project, final StatusBar statusBar, final BuildWidget widget, final BuildStatusLookupOperation.BuildStatusResults results) {
         final BuildStatusLookupOperation.BuildStatusResults r = results;
-        final BuildStatusModel model;
-        final boolean signedIn = r.getContext() != null;
-        if (r.hasError()) {
-            // TODO: we need to handle the 401 case and give the user the option to sign in
-            // If there's an error we want to show the error to the user
-            model = new BuildStatusModel(signedIn, r.getError().getMessage());
-        } else {
-            if (r.isBuildFound()) {
-                // We have a build so show the status details of the build
-                model = new BuildStatusModel(r.isSuccessful(), r.getBuildName(), r.getFinishTime());
-            } else {
-                // We couldn't find a build, so show the appropriate message (no builds or not signed in)
-                model = new BuildStatusModel(signedIn, null);
-            }
-        }
-        // Now that we have the model, update the widget
+        final BuildStatusModel model = BuildStatusModel.create(project, results);
         widget.update(model);
 
         // Tell the UI to update and restart the timer
@@ -124,6 +111,8 @@ public class StatusBarManager {
             @Override
             public void run() {
                 statusBar.updateWidget(BuildWidget.getID());
+                // Update again based on the Normal delay
+                timer.setInitialDelay(NORMAL_TIMER_DELAY);
                 timer.restart();
             }
         });
@@ -142,7 +131,7 @@ public class StatusBarManager {
     private static class ProjectEventListener implements ProjectManagerListener {
         @Override
         public void projectOpened(final Project project) {
-            updateStatusBar(project);
+            updateStatusBar(project, false);
         }
 
         @Override

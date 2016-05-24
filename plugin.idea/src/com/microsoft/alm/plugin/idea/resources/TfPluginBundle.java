@@ -405,6 +405,12 @@ public class TfPluginBundle {
     public static final String KEY_STATUSBAR_BUILD_SUCCEEDED = "StatusBar.Build.BuildSucceeded";
     @NonNls
     public static final String KEY_STATUSBAR_BUILD_FAILED = "StatusBar.Build.BuildFailed";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_POPUP_SIGN_IN = "StatusBar.Build.Popup.SignIn";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_POPUP_VIEW_DETAILS = "StatusBar.Build.Popup.ViewDetails";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_POPUP_REFRESH = "StatusBar.Build.Popup.Refresh";
 
     //actions
     @NonNls

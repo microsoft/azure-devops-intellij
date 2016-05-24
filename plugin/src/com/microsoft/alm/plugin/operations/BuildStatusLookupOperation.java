@@ -16,6 +16,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -24,38 +26,33 @@ public class BuildStatusLookupOperation extends Operation {
 
     private final String gitRemoteUrl;
     private final String branch;
+    private final boolean allowPrompt;
 
-    public class BuildStatusResults extends ResultsImpl {
-        private final ServerContext context;
-        private final boolean buildFound;
+    public static class BuildStatusRecord {
+        private final String branch;
         private final boolean successful;
+        private final int buildId;
         private final String buildName;
         private final Date finishTime;
 
-        public BuildStatusResults(final ServerContext context, final boolean buildFound, final boolean successful, final String buildName, final Date finishTime) {
-            logger.info("Creating build status results.");
-            logger.info("   buildFound = " + buildFound);
-            logger.info("   successful = " + successful);
-            logger.info("   buildName = " + buildName);
-            logger.info("   finishTime = " + finishTime);
-
-            this.context = context;
-            this.buildFound = buildFound;
+        public BuildStatusRecord(final String branch, final boolean successful, final int buildId, final String buildName, final Date finishTime) {
+            this.branch = branch;
             this.successful = successful;
+            this.buildId = buildId;
             this.buildName = buildName;
             this.finishTime = finishTime;
         }
 
-        public ServerContext getContext() {
-            return context;
-        }
-
-        public boolean isBuildFound() {
-            return buildFound;
+        public String getBranch() {
+            return branch;
         }
 
         public boolean isSuccessful() {
             return successful;
+        }
+
+        public int getBuildId() {
+            return buildId;
         }
 
         public String getBuildName() {
@@ -65,14 +62,63 @@ public class BuildStatusLookupOperation extends Operation {
         public Date getFinishTime() {
             return finishTime;
         }
+
     }
 
-    public BuildStatusLookupOperation(final String gitRemoteUrl, final String branch) {
+    public static class BuildStatusResults extends ResultsImpl {
+        private final ServerContext context;
+        private final List<BuildStatusRecord> builds;
+
+        public BuildStatusResults(final ServerContext context, final List<BuildStatusRecord> builds) {
+            logger.info("Creating build status results.");
+            logger.info("   builds = " + builds);
+
+            this.context = context;
+            this.builds = builds;
+        }
+
+        public ServerContext getContext() {
+            return context;
+        }
+
+        public boolean isBuildFound() {
+            return builds != null && builds.size() > 0;
+        }
+
+        public List<BuildStatusRecord> getBuilds() {
+            return Collections.unmodifiableList(builds);
+        }
+
+        // This method gets the build that should be displayed on the status bar.
+        // If more than one build was found for the branch, this is the most specific one available.
+        public BuildStatusRecord getBuildForDisplay() {
+            // The last build in the list should be the one to return
+            if (builds.size() > 0) {
+                return builds.get(builds.size() - 1);
+            }
+
+            return null;
+        }
+
+        // This method gets the build that contains the repository status.
+        // If more than one build was found for the branch, this is the least specific one available.
+        public BuildStatusRecord getRepositoryStatus() {
+            // The first build in the list should be the one to return
+            if (builds.size() > 0) {
+                return builds.get(0);
+            }
+
+            return null;
+        }
+    }
+
+    public BuildStatusLookupOperation(final String gitRemoteUrl, final String branch, final boolean allowPrompt) {
         logger.info("BuildStatusLookupOperation created.");
         if (StringUtil.isNullOrEmpty(gitRemoteUrl)) throw new IllegalArgumentException("gitRemoteUrl");
         if (StringUtil.isNullOrEmpty(branch)) throw new IllegalArgumentException("branch");
         this.gitRemoteUrl = gitRemoteUrl;
         this.branch = branch;
+        this.allowPrompt = allowPrompt;
     }
 
     @Override
@@ -81,13 +127,14 @@ public class BuildStatusLookupOperation extends Operation {
         onLookupStarted();
 
         // Create a default result to return if something goes wrong
-        BuildStatusResults results = new BuildStatusResults(null, false, false, null, null);
+        final List<BuildStatusRecord> buildStatusRecords = new ArrayList<BuildStatusRecord>(2);
+        final BuildStatusResults results;
         Build latestBuildForRepository = null;
         Build matchingBuild = null;
 
         // Lookup the context that goes with this remoteUrl
         // If no match exists simply return the default results
-        final ServerContext context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, false);
+        final ServerContext context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, allowPrompt);
         if (context != null && context.getGitRepository() != null) {
             // Using the build REST client we will get the last 100 builds for this team project.
             // We will go through those builds and try to find one that matches our repo and branch.
@@ -102,32 +149,53 @@ public class BuildStatusLookupOperation extends Operation {
                     // Get the repo and branch for the build and compare them to ours
                     final BuildRepository repo = b.getRepository();
                     if (repo != null && StringUtils.equalsIgnoreCase(context.getGitRepository().getId().toString(), repo.getId())) {
-                        // save off this build since the repo matches
-                        // TODO: Get the constant refs/heads/master from someplace common
-                        if (latestBuildForRepository == null && StringUtils.equals(b.getSourceBranch(), "refs/heads/master")) {
-                            logger.info("Latest build found for repo for the master branch.");
-                            latestBuildForRepository = b;
+                        // TODO: Get the constant refs/heads/master from someplace common or query for the default branch from the server
+                        // Branch names are case sensitive
+                        if (StringUtils.equals(b.getSourceBranch(), "refs/heads/master")) {
+                            if (latestBuildForRepository == null) {
+                                // Found the master branch for the repo, so save that off
+                                logger.info("Latest build found for repo for the master branch.");
+                                latestBuildForRepository = b;
+                            }
+                        } else if (StringUtils.equals(b.getSourceBranch(), branch)) {
+                            if (matchingBuild == null) {
+                                // The repo and branch match the build exactly, so save that off
+                                logger.info("Matching build found for repo and branch.");
+                                matchingBuild = b;
+                            }
                         }
 
-                        // Branch names are case sensitive
-                        if (StringUtils.equals(b.getSourceBranch(), branch)) {
-                            // The repo and branch match the build exactly
-                            logger.info("Matching build found for repo and branch.");
-                            matchingBuild = b;
+                        if (latestBuildForRepository != null && matchingBuild != null) {
+                            // We found both builds
                             break;
                         }
                     }
                 }
-                // Create the results from the
-                final Build buildToReturn = matchingBuild != null ? matchingBuild : latestBuildForRepository;
-                if (buildToReturn != null) {
-                    results = new BuildStatusResults(context, true, buildToReturn.getResult() == BuildResult.SUCCEEDED,
-                            buildToReturn.getBuildNumber(), buildToReturn.getFinishTime());
+
+                // Create the results
+                if (latestBuildForRepository != null) {
+                    // Add the repository build to the status records list first
+                    buildStatusRecords.add(new BuildStatusRecord(latestBuildForRepository.getSourceBranch(),
+                            latestBuildForRepository.getResult() == BuildResult.SUCCEEDED,
+                            latestBuildForRepository.getId(),
+                            latestBuildForRepository.getBuildNumber(),
+                            latestBuildForRepository.getFinishTime()));
                 }
+                if (matchingBuild != null) {
+                    // Add the matching build to the status records list last
+                    buildStatusRecords.add(new BuildStatusRecord(matchingBuild.getSourceBranch(),
+                            matchingBuild.getResult() == BuildResult.SUCCEEDED,
+                            matchingBuild.getId(),
+                            matchingBuild.getBuildNumber(),
+                            matchingBuild.getFinishTime()));
+                }
+                results = new BuildStatusResults(context, buildStatusRecords);
             } else {
                 // No builds were found for this project
-                results = new BuildStatusResults(context, false, false, null, null);
+                results = new BuildStatusResults(context, null);
             }
+        } else {
+            results = new BuildStatusResults(null, null);
         }
 
         logger.info("Returning results.");
@@ -140,7 +208,7 @@ public class BuildStatusLookupOperation extends Operation {
         logger.error(t.getMessage(), t);
         super.terminate(t);
 
-        final BuildStatusResults results = new BuildStatusResults(null, false, false, null, null);
+        final BuildStatusResults results = new BuildStatusResults(null, null);
         results.error = t;
         onLookupResults(results);
         onLookupCompleted();

@@ -24,10 +24,14 @@ public class UrlHelper {
     public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
+    private static final String URL_BUILD_PATH_SEGMENT = "_build";
+    private static final String URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT = "?buildid=%d&_a=summary";
     private static final String URL_WIT_PATH_SEGMENT = "_workitems";
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
+
+
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -164,6 +168,10 @@ public class UrlHelper {
 
     public static URI getTeamProjectURI(final URI serverUri, final String collectionName, final String teamProjectName) {
         return UrlHelper.createUri(getCollectionURI(serverUri, collectionName).toString().concat(URL_SEPARATOR).concat(teamProjectName));
+    }
+
+    public static URI getBuildURI(final URI projectUri, final int buildId) {
+        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT).concat(String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
