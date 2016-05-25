@@ -115,4 +115,18 @@ public class BuildStatusModel extends AbstractModel {
 
         return null;
     }
+
+    public URI getQueueBuildURI(final int index) {
+        if (operationResults.getContext() != null
+            && operationResults.getContext().getTeamProjectCollectionReference() != null
+            && operationResults.getContext().getTeamProjectReference() != null) {
+            return UrlHelper.getQueueBuildURI(operationResults.getContext().getServerUri(),
+                    operationResults.getContext().getTeamProjectCollectionReference().getId().toString(),
+                    operationResults.getContext().getTeamProjectReference().getName(),
+                    operationResults.getBuilds().get(index).getDefinitionId());
+        }
+
+        return null;
+    }
+
 }

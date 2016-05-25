@@ -32,15 +32,17 @@ public class BuildStatusLookupOperation extends Operation {
         private final String branch;
         private final boolean successful;
         private final int buildId;
+        private final int definitionId;
         private final String buildName;
         private final Date finishTime;
 
-        public BuildStatusRecord(final String branch, final boolean successful, final int buildId, final String buildName, final Date finishTime) {
-            this.branch = branch;
-            this.successful = successful;
-            this.buildId = buildId;
-            this.buildName = buildName;
-            this.finishTime = finishTime;
+        public BuildStatusRecord(final Build build) {
+            this.branch = build.getSourceBranch();
+            this.successful = build.getResult() == BuildResult.SUCCEEDED;
+            this.buildId = build.getId();
+            this.definitionId = build.getDefinition().getId();
+            this.buildName = build.getBuildNumber();
+            this.finishTime = build.getFinishTime();
         }
 
         public String getBranch() {
@@ -57,6 +59,10 @@ public class BuildStatusLookupOperation extends Operation {
 
         public String getBuildName() {
             return buildName;
+        }
+
+        public int getDefinitionId() {
+            return definitionId;
         }
 
         public Date getFinishTime() {
@@ -181,19 +187,11 @@ public class BuildStatusLookupOperation extends Operation {
                 // Create the results
                 if (latestBuildForRepository != null) {
                     // Add the repository build to the status records list first
-                    buildStatusRecords.add(new BuildStatusRecord(latestBuildForRepository.getSourceBranch(),
-                            latestBuildForRepository.getResult() == BuildResult.SUCCEEDED,
-                            latestBuildForRepository.getId(),
-                            latestBuildForRepository.getBuildNumber(),
-                            latestBuildForRepository.getFinishTime()));
+                    buildStatusRecords.add(new BuildStatusRecord(latestBuildForRepository));
                 }
                 if (matchingBuild != null) {
                     // Add the matching build to the status records list last
-                    buildStatusRecords.add(new BuildStatusRecord(matchingBuild.getSourceBranch(),
-                            matchingBuild.getResult() == BuildResult.SUCCEEDED,
-                            matchingBuild.getId(),
-                            matchingBuild.getBuildNumber(),
-                            matchingBuild.getFinishTime()));
+                    buildStatusRecords.add(new BuildStatusRecord(matchingBuild));
                 }
                 results = new BuildStatusResults(context, buildStatusRecords);
             } else {
