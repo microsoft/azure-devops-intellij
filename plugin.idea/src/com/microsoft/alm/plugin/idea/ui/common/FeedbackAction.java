@@ -37,7 +37,7 @@ public class FeedbackAction extends AbstractAction {
     }
 
     public JMenu getSubMenu() {
-        JMenu menu = new JMenu("Feedback");
+        final JMenu menu = new JMenu("Feedback");
         menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE, Icons.Smile, CMD_SEND_SMILE));
         menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN, Icons.Frown, CMD_SEND_FROWN));
         return menu;
@@ -61,7 +61,7 @@ public class FeedbackAction extends AbstractAction {
 
         dialog.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(final ActionEvent e) {
                 if (FeedbackForm.CMD_GOTO_PRIVACY.equalsIgnoreCase(e.getActionCommand())) {
                     BrowserUtil.browse(URL_PRIVACY_POLICY);
                 }

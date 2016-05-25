@@ -398,6 +398,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_STATUSBAR_BUILD_ERROR = "StatusBar.Build.Error";
     @NonNls
+    public static final String KEY_STATUSBAR_BUILD_ERROR_AUTH = "StatusBar.Build.Error.Auth";
+    @NonNls
     public static final String KEY_STATUSBAR_BUILD_UNKNOWN_STATUS = "StatusBar.Build.UnknownStatus";
     @NonNls
     public static final String KEY_STATUSBAR_BUILD_NO_BUILDS_FOUND = "StatusBar.Build.NoBuildsFound";

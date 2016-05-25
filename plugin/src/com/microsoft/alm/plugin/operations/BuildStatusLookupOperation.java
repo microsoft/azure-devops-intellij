@@ -26,7 +26,7 @@ public class BuildStatusLookupOperation extends Operation {
 
     private final String gitRemoteUrl;
     private final String branch;
-    private final boolean allowPrompt;
+    private final boolean forcePrompt;
 
     public static class BuildStatusRecord {
         private final String branch;
@@ -112,13 +112,13 @@ public class BuildStatusLookupOperation extends Operation {
         }
     }
 
-    public BuildStatusLookupOperation(final String gitRemoteUrl, final String branch, final boolean allowPrompt) {
+    public BuildStatusLookupOperation(final String gitRemoteUrl, final String branch, final boolean forcePrompt) {
         logger.info("BuildStatusLookupOperation created.");
         if (StringUtil.isNullOrEmpty(gitRemoteUrl)) throw new IllegalArgumentException("gitRemoteUrl");
         if (StringUtil.isNullOrEmpty(branch)) throw new IllegalArgumentException("branch");
         this.gitRemoteUrl = gitRemoteUrl;
         this.branch = branch;
-        this.allowPrompt = allowPrompt;
+        this.forcePrompt = forcePrompt;
     }
 
     @Override
@@ -132,9 +132,15 @@ public class BuildStatusLookupOperation extends Operation {
         Build latestBuildForRepository = null;
         Build matchingBuild = null;
 
+        // Check to see if we should remove the context from the manager
+        if (ServerContextManager.getInstance().get(gitRemoteUrl) != null && forcePrompt) {
+            // The context already exists, but the user has requested to "Sign In", so we need to update the auth info
+            ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
+        }
+
         // Lookup the context that goes with this remoteUrl
         // If no match exists simply return the default results
-        final ServerContext context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, allowPrompt);
+        final ServerContext context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, forcePrompt);
         if (context != null && context.getGitRepository() != null) {
             // Using the build REST client we will get the last 100 builds for this team project.
             // We will go through those builds and try to find one that matches our repo and branch.
@@ -205,7 +211,6 @@ public class BuildStatusLookupOperation extends Operation {
 
     @Override
     protected void terminate(final Throwable t) {
-        logger.error(t.getMessage(), t);
         super.terminate(t);
 
         final BuildStatusResults results = new BuildStatusResults(null, null);

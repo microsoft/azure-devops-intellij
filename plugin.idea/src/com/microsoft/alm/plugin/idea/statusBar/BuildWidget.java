@@ -8,6 +8,8 @@ import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.util.Consumer;
 import com.microsoft.alm.client.utils.StringUtil;
 import com.microsoft.alm.plugin.idea.resources.Icons;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,6 +83,14 @@ public class BuildWidget implements StatusBarWidget, StatusBarWidget.IconPresent
     @Override
     public void consume(final MouseEvent mouseEvent) {
         if (model != null) {
+
+            // Make a telemetry entry for this Click
+            final String eventName = String.format(TfsTelemetryConstants.PLUGIN_ACTION_EVENT_NAME_FORMAT, "BuildStatusBarClick");
+            TfsTelemetryHelper.getInstance().sendEvent(eventName,
+                    new TfsTelemetryHelper.PropertyMapBuilder()
+                            .activeServerContext()
+                            .build());
+
             final BuildPopup popup = new BuildPopup(model);
             final Component c = mouseEvent.getComponent();
             if (c != null) {
