@@ -172,7 +172,7 @@ public class WorkItemLookupOperation extends Operation {
                 }
             }
 
-            final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, result.getAsOf(), witInputs.expand);
+            final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, null, witInputs.expand);
             logger.debug("doLookup: Found {} work items on repo {}", items.size(), context.getGitRepository().getRemoteUrl());
 
             // Correct the order of the work items. The second call here to get the work items,
