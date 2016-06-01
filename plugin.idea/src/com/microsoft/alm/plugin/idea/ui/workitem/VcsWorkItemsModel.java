@@ -3,6 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
+import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.common.artifact.GitRefArtifactID;
@@ -27,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.event.HyperlinkEvent;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -101,8 +105,16 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                         }
 
                         logger.info("Work item association " + (wasWorkItemAssociated ? "succeeded" : "failed"));
+                        final String notificationMsg = TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION,
+                                UrlHelper.getSpecificWorkItemURI(context.getTeamProjectURI(), workItem.getId()), workItem.getId(), UrlHelper.getBranchURI(context.getUri(), branchName), branchName);
+
                         VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_TITLE),
-                                TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION, workItem.getId(), branchName));
+                                notificationMsg, new NotificationListener() {
+                                    @Override
+                                    public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                        BrowserUtil.browse(hyperlinkEvent.getURL());
+                                    }
+                                });
 
                         TfsTelemetryHelper.getInstance().sendEvent(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                                 .currentOrActiveContext(context)

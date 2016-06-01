@@ -5,12 +5,16 @@ package com.microsoft.alm.plugin.idea.ui.branch;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -31,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.ComboBoxModel;
+import javax.swing.event.HyperlinkEvent;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -209,8 +214,16 @@ public class CreateBranchModel extends AbstractModel {
             if (StringUtils.isEmpty(errorMessage)) {
                 logger.info("Create branch succeeded");
                 setBranchWasCreated(true);
+
+                // create user notification
+                final String branchLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getBranchURI(context.getUri(), getBranchName()), getBranchName());
                 VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE),
-                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION, getBranchName()));
+                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION, branchLink), new NotificationListener() {
+                            @Override
+                            public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                BrowserUtil.browse(hyperlinkEvent.getURL());
+                            }
+                        });
             } else {
                 logger.warn("Create branch failed", errorMessage);
                 VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE),

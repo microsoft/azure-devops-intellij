@@ -36,6 +36,7 @@ public class UrlHelper {
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
+    private static final String URL_BRANCH_SEGMENT = "?path=%2F&_a=contents&version=GB";
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -205,6 +206,10 @@ public class UrlHelper {
     public static URI getMyWorkItemsURI(final URI projectUri) {
         // The default query when you navigate to the work items section is the "Assigned to me" query results
         return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT));
+    }
+
+    public static URI getBranchURI(final URI repoUri, final String branchName) {
+        return UrlHelper.createUri(repoUri.toString().concat(URL_BRANCH_SEGMENT).concat(encode(branchName)));
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
