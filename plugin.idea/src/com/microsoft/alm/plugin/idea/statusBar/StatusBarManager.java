@@ -23,8 +23,8 @@ import java.awt.event.ActionListener;
 public class StatusBarManager {
     private static ProjectEventListener listener;
     private static Timer timer;
-    private static final int NORMAL_TIMER_DELAY = 5 * 60 * 1000; // TODO eventually get from settings
-    private static final int MIN_TIMER_DELAY = 5 * 1000;
+    private static final int NORMAL_TIMER_DELAY = 10000; //5 * 60 * 1000; // TODO eventually get from settings
+    private static final int MIN_TIMER_DELAY = 1 * 1000; //TODO change to 5 seconds?
 
     public static void setupStatusBar() {
         if (listener == null) {

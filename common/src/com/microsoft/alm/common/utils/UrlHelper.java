@@ -8,9 +8,11 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 
 public class UrlHelper {
     private static final Logger logger = LoggerFactory.getLogger(UrlHelper.class);
@@ -26,6 +28,10 @@ public class UrlHelper {
     private static final String URL_GIT_PATH_SEGMENT = "_git";
     private static final String URL_BUILD_PATH_SEGMENT = "_build";
     private static final String URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT = "?buildid=%d&_a=summary";
+    private static final String URL_BUILD_ASPX_SEGMENT = "web/build.aspx?pcguid=%s";
+    private static final String URL_BUILD_TEAM_PROJECT_SEGMENT = "&projectname=%s";
+    private static final String URL_BUILD_DEFINITION_ID_SEGMENT = "&definitionid=%d";
+    private static final String URL_BUILD_QUEUE_ACTION = "&action=queuebuild";
     private static final String URL_WIT_PATH_SEGMENT = "_workitems";
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
@@ -168,8 +174,23 @@ public class UrlHelper {
         return UrlHelper.createUri(getCollectionURI(serverUri, collectionName).toString().concat(URL_SEPARATOR).concat(teamProjectName));
     }
 
+    public static URI getBuildsPageURI(final URI projectUri) {
+        return UrlHelper.createUri(projectUri.toString()
+                .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT));
+    }
+
     public static URI getBuildURI(final URI projectUri, final int buildId) {
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT).concat(String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
+        return UrlHelper.createUri(projectUri.toString()
+                .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT)
+                .concat(String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
+    }
+
+    public static URI getQueueBuildURI(final URI serverUri, final String collectionId, final String projectName, final int buildDefinitionId) {
+        return UrlHelper.createUri(serverUri.toString()
+                .concat(URL_SEPARATOR).concat(String.format(URL_BUILD_ASPX_SEGMENT, collectionId))
+                .concat(String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)))
+                .concat(String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId))
+                .concat(URL_BUILD_QUEUE_ACTION));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
@@ -192,6 +213,19 @@ public class UrlHelper {
         }
 
         return false;
+    }
+
+    public static String encode(String urlParameter) {
+        try {
+            return URLEncoder.encode(urlParameter, "UTF-8");
+        } catch (final UnsupportedEncodingException ex) {
+            /*
+             * we should never get here (UTF-8 URL encoding is the recommended
+             * encoding and should be supported on all platforms), so convert
+             * into a runtime exception and throw
+             */
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
