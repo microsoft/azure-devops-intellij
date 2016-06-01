@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.branch;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
@@ -61,14 +62,22 @@ public class CreateBranchController implements Observer, ActionListener {
         return dialog.showModalDialog();
     }
 
+    public String getBranchName() {
+        return model.getBranchName();
+    }
+
+    public boolean createBranch(ServerContext context) {
+        model.doBranchCreate(context);
+        return model.getBranchWasCreated();
+    }
+
     @Override
     public void actionPerformed(final ActionEvent e) {
         // Update model before action is initiated on it
         updateModel();
 
         if (BaseDialog.CMD_OK.equals(e.getActionCommand())) {
-            logger.info("CreateBranchController create action taken");
-            model.createBranch();
+            logger.info("CreateBranchController create action completed so valid branch name was input");
         }
     }
 

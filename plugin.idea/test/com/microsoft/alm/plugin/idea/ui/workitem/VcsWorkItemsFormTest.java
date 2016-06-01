@@ -30,7 +30,8 @@ public class VcsWorkItemsFormTest {
     @Test
     public void testGetMenuItems() {
         List<JBMenuItem> menuItemList = underTest.getMenuItems(null);
-        assertEquals(1, menuItemList.size());
+        assertEquals(2, menuItemList.size());
         assertEquals(TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER, menuItemList.get(0).getActionCommand());
+        assertEquals(VcsWorkItemsForm.CMD_CREATE_BRANCH, menuItemList.get(1).getActionCommand());
     }
 }

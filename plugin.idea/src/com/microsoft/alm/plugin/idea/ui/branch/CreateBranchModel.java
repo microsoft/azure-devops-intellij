@@ -56,6 +56,7 @@ public class CreateBranchModel extends AbstractModel {
     private String branchName;
     private GitRemoteBranch selectedRemoteBranch;
     private SortedComboBoxModel<GitRemoteBranch> remoteBranchComboModel;
+    private boolean branchWasCreated = false;
 
     protected CreateBranchModel(final Project project, final String defaultBranchName, final GitRepository gitRepository) {
         super();
@@ -110,6 +111,14 @@ public class CreateBranchModel extends AbstractModel {
         }
     }
 
+    private void setBranchWasCreated(final boolean branchWasCreated) {
+        this.branchWasCreated = branchWasCreated;
+    }
+
+    public boolean getBranchWasCreated() {
+        return branchWasCreated;
+    }
+
     public ModelValidationInfo validate() {
         final String branchName = getBranchName();
         if (branchName == null || branchName.isEmpty()) {
@@ -129,6 +138,7 @@ public class CreateBranchModel extends AbstractModel {
 
     /**
      * Creates a new branch on the server from an existing branch on the server
+     * TODO: remove method if not needed for other create branch flows
      */
     public void createBranch() {
         logger.info("CreateBranchModel.createBranch");
@@ -158,7 +168,7 @@ public class CreateBranchModel extends AbstractModel {
         }
     }
 
-    private boolean doBranchCreate(@NotNull final ServerContext context) {
+    public boolean doBranchCreate(@NotNull final ServerContext context) {
         logger.info("CreateBranchModel.doBranchCreate");
         // call server to create branch
         boolean hasNotifiedUser = false; //keep track of notifications because of recursive call
@@ -198,6 +208,7 @@ public class CreateBranchModel extends AbstractModel {
             // alert user to success or error in creating the branch
             if (StringUtils.isEmpty(errorMessage)) {
                 logger.info("Create branch succeeded");
+                setBranchWasCreated(true);
                 VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE),
                         TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION, getBranchName()));
             } else {

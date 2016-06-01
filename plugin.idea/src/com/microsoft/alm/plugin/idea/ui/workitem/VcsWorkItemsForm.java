@@ -30,6 +30,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     private FormattedTable workItemsTable;
 
     //commands
+    public static final String CMD_CREATE_BRANCH = "createBranch";
     public static final String TOOLBAR_LOCATION = "Vcs.WorkItems";
 
     public VcsWorkItemsForm() {
@@ -136,7 +137,9 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     }
 
     protected List<JBMenuItem> getMenuItems(final ActionListener listener) {
-        return Arrays.asList(createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener));
+        return Arrays.asList(
+                createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener),
+                createMenuItem(TfPluginBundle.KEY_VCS_WIT_CREATE_BRANCH, null, CMD_CREATE_BRANCH, listener));
     }
 
     @VisibleForTesting

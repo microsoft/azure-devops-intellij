@@ -108,7 +108,11 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
                         final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
 
                         final Token token = vstsPatAuthenticator.getPersonalAccessToken(
-                                VsoTokenScope.or(VsoTokenScope.CodeAll, VsoTokenScope.WorkRead, VsoTokenScope.BuildAccess, VsoTokenScope.BuildExecute),
+                                VsoTokenScope.or(VsoTokenScope.CodeAll,
+                                        VsoTokenScope.WorkRead,
+                                        VsoTokenScope.WorkWrite,
+                                        VsoTokenScope.BuildAccess,
+                                        VsoTokenScope.BuildExecute),
                                 tokenDescription,
                                 PromptBehavior.AUTO);
 

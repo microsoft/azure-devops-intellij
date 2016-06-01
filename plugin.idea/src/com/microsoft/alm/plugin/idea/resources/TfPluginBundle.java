@@ -175,6 +175,16 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_WIT_FIELD_WORK_ITEM_TYPE = "WitField.WorkItemType";
 
+    // Work item association meesages
+    @NonNls
+    public static final String KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE = "WitAssociation.Successful.Title";
+    @NonNls
+    public static final String KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION = "WitAssociation.Successful.Description";
+    @NonNls
+    public static final String KEY_WIT_ASSOCIATION_FAILED_TITLE = "WitAssociation.Failed.Title";
+    @NonNls
+    public static final String KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION = "WitAssociation.Failed.Description";
+
     //Import dialog ui and models
     @NonNls
     public static final String KEY_IMPORT_DIALOG_TITLE = "ImportDialog.Title";

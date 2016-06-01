@@ -4,22 +4,42 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsNotifier;
+import com.microsoft.alm.common.artifact.GitRefArtifactID;
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.branch.CreateBranchController;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModelImpl;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
+import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import com.microsoft.alm.workitemtracking.webapi.models.Link;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
+import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchDocument;
+import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchOperation;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 
 public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsWorkItemsModel.class);
+
+    private static final String DEFAULT_BRANCH_NAME_PATTERN = "workitem%s";
+    private static final String LINK_NAME_KEY = "name";
+    private static final String LINK_NAME_VALUE = "Branch";
+    private static final String ARTIFACT_LINK_RELATION = "ArtifactLink";
+    private static final String RELATIONS_PATH = "/relations/-";
+    public static final String ASSOCIATE_WORK_ITEM_ACTION = "associate-work-item";
 
     public VcsWorkItemsModel(final @NotNull Project project) {
         super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH));
@@ -50,6 +70,107 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                 }
             }
         }
+    }
+
+    public void createBranch() {
+        if (!isTfGitRepository()) {
+            logger.debug("createBranch: cannot associate a work item with a branch in a non-TF repo");
+            return;
+        }
+
+        final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+        final WorkItem workItem = getSelectedWorkItems().get(0); // TODO: associate multiple work items with a branch
+
+        // call the Create Branch dialog and get the branch name from the user
+        final CreateBranchController controller = new CreateBranchController(project,
+                String.format(DEFAULT_BRANCH_NAME_PATTERN, workItem.getId()), gitRepository);
+
+        if (controller.showModalDialog()) {
+            final String branchName = controller.getBranchName();
+            try {
+                OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        // do branch creation
+                        final boolean wasBranchCreated = controller.createBranch(context);
+
+                        // check if branch creation succeeded before associating the work item to it
+                        boolean wasWorkItemAssociated = false;
+                        if (wasBranchCreated) {
+                            wasWorkItemAssociated = createWorkItemBranchAssociation(context, branchName, workItem.getId());
+                        }
+
+                        logger.info("Work item association " + (wasWorkItemAssociated ? "succeeded" : "failed"));
+                        VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_TITLE),
+                                TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION, workItem.getId(), branchName));
+
+                        TfsTelemetryHelper.getInstance().sendEvent(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
+                                .currentOrActiveContext(context)
+                                .actionName(ASSOCIATE_WORK_ITEM_ACTION)
+                                .success(wasWorkItemAssociated).build());
+                    }
+                });
+            } catch (Exception e) {
+                logger.error("Failed to create a branch and associate it with a work item", e);
+            }
+        }
+    }
+
+    private boolean createWorkItemBranchAssociation(final ServerContext context, final String branchName, final int workItemId) {
+        final GitRefArtifactID gitRefArtifactID = new GitRefArtifactID(context.getTeamProjectReference().getId().toString(),
+                context.getGitRepository().getId().toString(), branchName);
+
+        // attributes specify the link type
+        final HashMap<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(LINK_NAME_KEY, LINK_NAME_VALUE);
+
+        // create link object to add to the work item
+        final Link link = new Link();
+        link.setUrl(gitRefArtifactID.encodeURI());
+        link.setTitle(StringUtils.EMPTY);
+        link.setRel(ARTIFACT_LINK_RELATION);
+        link.setAttributes(attributes);
+
+        // create the operation that will add the link to the work item
+        final JsonPatchOperation operation = new JsonPatchOperation();
+        operation.setOp(com.microsoft.visualstudio.services.webapi.patch.Operation.ADD);
+        operation.setPath(RELATIONS_PATH);
+        operation.setValue(link);
+
+        final JsonPatchDocument doc = new JsonPatchDocument();
+        doc.add(operation);
+
+        try {
+            context.getWitHttpClient().updateWorkItem(doc, workItemId, false, false);
+            return true;
+        } catch (Throwable t) {
+            if (AuthHelper.isNotAuthorizedError(t)) {
+                final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getGitRepository().getRemoteUrl());
+                if (newContext != null) {
+                    //retry creating the branch with new context and authentication info
+                    return createWorkItemBranchAssociation(newContext, branchName, workItemId);
+                } else {
+                    logger.error("createWorkItemBranchAssociation isNotAuthorizedError and failed to create a new context to use");
+                    return false;
+                }
+            } else {
+                logger.error("createWorkItemBranchAssociation experienced an exception while associating a work item and branch", t);
+                return false;
+            }
+        }
+    }
+
+    private List<WorkItem> getSelectedWorkItems() {
+        if (isTfGitRepository()) {
+            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+
+            if (context != null && context.getGitRepository() != null) {
+                if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
+                    return viewForModel.getSelectedWorkItems();
+                }
+            }
+        }
+        return null;
     }
 
     public void appendData(final Operation.Results results) {
