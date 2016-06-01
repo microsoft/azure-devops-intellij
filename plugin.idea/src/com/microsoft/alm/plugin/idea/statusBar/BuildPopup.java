@@ -24,7 +24,7 @@ public class BuildPopup extends JBPopupMenu {
     }
 
     private void addBuildMenus() {
-        if (model.hasStatusInformation()) {
+        if (model.isSignedIn()) {
             addBuildItems();
             addQueueBuildItem();
             addRefreshItem();
@@ -91,19 +91,27 @@ public class BuildPopup extends JBPopupMenu {
     }
 
     private void addQueueBuildItem() {
-        // Add the queue build menu item
-        // Use the last build that was found for the repo (this should be the most specific)
-        final URI url = model.getQueueBuildURI(model.getBuildCount() - 1);
-        final JMenuItem queueBuildItem = new JMenuItem("Queue build...");
+        final URI url;
+        final String menuText;
+
+        if (model.getBuildCount() > 0) {
+            // Add the queue build menu item
+            // Use the last build that was found for the repo (this should be the most specific)
+            url = model.getQueueBuildURI(model.getBuildCount() - 1);
+            menuText = TfPluginBundle.message(TfPluginBundle.KEY_STATUSBAR_BUILD_POPUP_QUEUE_BUILD);
+        } else {
+            // There are no builds, so add a menu item to take the user to builds landing page to setup a definition
+            url = model.getBuildsPageURI();
+            menuText = TfPluginBundle.message(TfPluginBundle.KEY_STATUSBAR_BUILD_POPUP_VIEW_BUILDS_PAGE);
+        }
+
+        final JMenuItem queueBuildItem = new JMenuItem(menuText);
         queueBuildItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                // Updating the entire status bar for this project
                 model.gotoLink(url.toString());
             }
         });
         this.add(queueBuildItem);
     }
-
-
 }

@@ -423,6 +423,10 @@ public class TfPluginBundle {
     public static final String KEY_STATUSBAR_BUILD_POPUP_VIEW_DETAILS = "StatusBar.Build.Popup.ViewDetails";
     @NonNls
     public static final String KEY_STATUSBAR_BUILD_POPUP_REFRESH = "StatusBar.Build.Popup.Refresh";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_POPUP_QUEUE_BUILD = "StatusBar.Build.Popup.QueueBuild";
+    @NonNls
+    public static final String KEY_STATUSBAR_BUILD_POPUP_VIEW_BUILDS_PAGE = "StatusBar.Build.Popup.ViewBuildsPage";
 
     //actions
     @NonNls

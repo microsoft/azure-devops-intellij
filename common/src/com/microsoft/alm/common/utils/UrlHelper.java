@@ -174,6 +174,11 @@ public class UrlHelper {
         return UrlHelper.createUri(getCollectionURI(serverUri, collectionName).toString().concat(URL_SEPARATOR).concat(teamProjectName));
     }
 
+    public static URI getBuildsPageURI(final URI projectUri) {
+        return UrlHelper.createUri(projectUri.toString()
+                .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT));
+    }
+
     public static URI getBuildURI(final URI projectUri, final int buildId) {
         return UrlHelper.createUri(projectUri.toString()
                 .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT)

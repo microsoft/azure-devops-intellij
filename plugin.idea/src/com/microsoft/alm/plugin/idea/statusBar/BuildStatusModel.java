@@ -87,6 +87,10 @@ public class BuildStatusModel extends AbstractModel {
         return this.signedIn && this.hasBuilds;
     }
 
+    public boolean isSignedIn() {
+        return signedIn;
+    }
+
     public boolean isSuccessful() {
         return successful;
     }
@@ -124,6 +128,14 @@ public class BuildStatusModel extends AbstractModel {
                     operationResults.getContext().getTeamProjectCollectionReference().getId().toString(),
                     operationResults.getContext().getTeamProjectReference().getName(),
                     operationResults.getBuilds().get(index).getDefinitionId());
+        }
+
+        return null;
+    }
+
+    public URI getBuildsPageURI() {
+        if (operationResults.getContext() != null && operationResults.getContext().getTeamProjectURI() != null) {
+            return UrlHelper.getBuildsPageURI(operationResults.getContext().getTeamProjectURI());
         }
 
         return null;
