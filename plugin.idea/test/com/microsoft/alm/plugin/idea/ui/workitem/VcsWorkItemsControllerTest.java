@@ -47,4 +47,10 @@ public class VcsWorkItemsControllerTest extends IdeaAbstractTest {
         underTest.actionPerformed(new ActionEvent(this, 0, VcsWorkItemsForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER));
         verify(modelMock).openSelectedItemsLink();
     }
+
+    @Test
+    public void testActionListener_CreateBranch() throws Exception {
+        underTest.actionPerformed(new ActionEvent(this, 0, VcsWorkItemsForm.CMD_CREATE_BRANCH));
+        verify(modelMock).createBranch();
+    }
 }

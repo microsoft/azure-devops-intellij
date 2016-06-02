@@ -134,7 +134,7 @@ public class CreateBranchModel extends AbstractModel {
         for (GitRemoteBranch ref : remoteBranchComboModel.getItems()) {
             if (StringUtils.equals(ref.getName().replace(ORIGIN_PREFIX, StringUtils.EMPTY), getBranchName())) {
                 return ModelValidationInfo.createWithResource(PROP_BRANCH_NAME,
-                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EXISTS, getBranchName()));
+                        TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EXISTS);
             }
         }
 

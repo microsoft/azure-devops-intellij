@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
@@ -49,6 +50,11 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
         super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH));
     }
 
+    @VisibleForTesting
+    protected VcsWorkItemsModel(final @NotNull Project project, final @NotNull WorkItemsTableModel tableModel) {
+        super(project, tableModel);
+    }
+
     protected void createDataProvider() {
         dataProvider = new WorkItemsTabLookupListener(this);
     }
@@ -83,7 +89,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
         }
 
         final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
-        final WorkItem workItem = getSelectedWorkItems().get(0); // TODO: associate multiple work items with a branch
+        final WorkItem workItem = viewForModel.getSelectedWorkItems().get(0); // TODO: associate multiple work items with a branch
 
         // call the Create Branch dialog and get the branch name from the user
         final CreateBranchController controller = new CreateBranchController(project,
@@ -128,7 +134,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
         }
     }
 
-    private boolean createWorkItemBranchAssociation(final ServerContext context, final String branchName, final int workItemId) {
+    protected boolean createWorkItemBranchAssociation(final ServerContext context, final String branchName, final int workItemId) {
         final GitRefArtifactID gitRefArtifactID = new GitRefArtifactID(context.getTeamProjectReference().getId().toString(),
                 context.getGitRepository().getId().toString(), branchName);
 
@@ -170,19 +176,6 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                 return false;
             }
         }
-    }
-
-    private List<WorkItem> getSelectedWorkItems() {
-        if (isTfGitRepository()) {
-            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
-
-            if (context != null && context.getGitRepository() != null) {
-                if (StringUtils.isNotEmpty(context.getGitRepository().getRemoteUrl())) {
-                    return viewForModel.getSelectedWorkItems();
-                }
-            }
-        }
-        return null;
     }
 
     public void appendData(final Operation.Results results) {
