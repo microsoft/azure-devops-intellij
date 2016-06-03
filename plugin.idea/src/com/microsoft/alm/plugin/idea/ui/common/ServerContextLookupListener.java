@@ -4,7 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.common;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;

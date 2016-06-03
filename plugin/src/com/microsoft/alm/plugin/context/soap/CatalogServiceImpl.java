@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.context.soap;
 
 import com.microsoft.alm.client.model.VssServiceException;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import org.apache.commons.lang.StringUtils;

@@ -3,7 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.services;
 
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.LocalizedException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.LocalizationService;
 import org.apache.commons.lang.StringUtils;
@@ -46,8 +47,8 @@ public class LocalizationServiceImpl implements LocalizationService {
         //get exception message
         String message = t.getLocalizedMessage();
 
-        if (t instanceof TeamServicesException) {
-            final String key = ((TeamServicesException) t).getMessageKey();
+        if (t instanceof LocalizedException) {
+            final String key = ((LocalizedException) t).getMessageKey();
             if (keysMap.containsKey(key)) {
                 message = getLocalizedMessage(keysMap.get(key));
             }
@@ -56,8 +57,8 @@ public class LocalizationServiceImpl implements LocalizationService {
         //exception message is not set
         //Use the message on the cause if there is one
         if (StringUtils.isEmpty(message) && t.getCause() != null) {
-            if (t.getCause() instanceof TeamServicesException) {
-                final String key = ((TeamServicesException) t).getMessageKey();
+            if (t.getCause() instanceof LocalizedException) {
+                final String key = ((LocalizedException) t).getMessageKey();
                 if (keysMap.containsKey(key)) {
                     message = getLocalizedMessage(keysMap.get(key));
                 }

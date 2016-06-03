@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.services;
 
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import org.junit.Assert;
 import org.junit.Test;

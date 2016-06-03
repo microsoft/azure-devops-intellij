@@ -14,7 +14,7 @@ import com.microsoft.alm.helpers.Action;
 import com.microsoft.alm.oauth2.useragent.AuthorizationException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.ProfileDoesNotExistException;
+import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.services.DeviceFlowResponsePrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.provider.JaxrsClientProvider;

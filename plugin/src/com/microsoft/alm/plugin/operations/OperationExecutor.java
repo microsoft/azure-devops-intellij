@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

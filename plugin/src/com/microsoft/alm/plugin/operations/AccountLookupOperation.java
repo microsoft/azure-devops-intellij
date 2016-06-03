@@ -4,7 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.TeamServicesException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
