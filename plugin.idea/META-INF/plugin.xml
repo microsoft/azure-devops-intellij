@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services (Preview)</name>
-    <version>0.100.1</version>
+    <version>0.101.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <b>Preview</b>
@@ -24,6 +24,8 @@
         <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
         <li>Create pull requests and view your active pull requests.</li>
         <li>View work items assigned to you and select one or more work items to associate with your commits.</li>
+        <li>Create a new branch and associate it with the work item you are working on.</li>
+        <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
       </ul>
       <br />
@@ -39,9 +41,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 0.100.1 <i>Preview</i>
+      v 0.101.0 <i>Preview</i>
       <br />
-      This release adds device flow authentication in addition to incremental fixes and updates.
+      This release adds the ability to view a repository's build status, queue a build, and create a branch and associate it with a work item. Additionally, incremental fixes and updates are also included.
       <br />
     ]]>
     </change-notes>
