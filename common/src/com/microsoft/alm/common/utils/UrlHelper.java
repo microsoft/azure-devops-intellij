@@ -279,7 +279,7 @@ public class UrlHelper {
      * schema://host[:port][/IIS-path]/collection[/project]/_git[/(_optimized|_full)]/repository[/]
      * <p/>
      * name restrictions for TFS:
-     * http://go.microsoft.com/fwlink/?LinkId=77936
+     * https://go.microsoft.com/fwlink/?LinkId=77936
      *
      * @param gitUrl    git fetch/push url
      * @param validator a provided method to validate the validity of the parsed result

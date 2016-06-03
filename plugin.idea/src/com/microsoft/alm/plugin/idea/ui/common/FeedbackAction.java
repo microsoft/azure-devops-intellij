@@ -28,7 +28,7 @@ public class FeedbackAction extends AbstractAction {
 
     private final Project project;
     private final String feedbackContextInfo;
-    private static final String URL_PRIVACY_POLICY = "http://go.microsoft.com/fwlink/?LinkID=277167"; // This is the same URL used by Visual Studio Send a Smile
+    private static final String URL_PRIVACY_POLICY = "https://go.microsoft.com/fwlink/?LinkID=277167"; // This is the same URL used by Visual Studio Send a Smile
 
     public FeedbackAction(final Project project, final String feedbackContextInfo) {
         super(TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE), PlatformIcons.COMBOBOX_ARROW_ICON);

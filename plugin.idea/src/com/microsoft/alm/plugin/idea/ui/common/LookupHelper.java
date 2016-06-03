@@ -193,7 +193,7 @@ public class LookupHelper {
         if (throwable instanceof ProfileDoesNotExistException) {
             logger.info("Exception ProfileDoesNotExistException found and being handled.");
             // redirect the user to http://go.microsoft.com/fwlink/?LinkId=800292 (the no profile exists FAQ on the java site)
-            final String url = "http://go.microsoft.com/fwlink/?LinkId=800292";
+            final String url = "https://go.microsoft.com/fwlink/?LinkId=800292";
             // The html tags are not part of the localized strings to allow full control of the tags here
             final String error = String.format("<html>%s<br>%s<br><a href=\"%s\">%s</a></html>",
                     LocalizationServiceImpl.getInstance().getExceptionMessage(throwable),
