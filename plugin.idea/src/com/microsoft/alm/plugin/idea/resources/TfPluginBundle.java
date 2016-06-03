@@ -84,6 +84,8 @@ public class TfPluginBundle {
     public static final String KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR = "Message.TeamServices.Unexpected.Error";
     @NonNls
     public static final String KEY_ERRORS_NOT_TFS_REPO = "Errors.NotTfsRepo";
+    @NonNls
+    public static final String KEY_VSO_NO_PROFILE_ERROR_HELP = "VSO.NoProfileError.Help";
 
     // Common Git
     @NonNls

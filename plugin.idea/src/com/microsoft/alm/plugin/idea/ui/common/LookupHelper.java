@@ -3,11 +3,14 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
+import com.microsoft.alm.plugin.authentication.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -81,7 +84,10 @@ public class LookupHelper {
                             // Log exception
                             if (throwable != null) {
                                 logger.warn("Connecting to TFS server failed", throwable);
-                                if (throwable instanceof TeamServicesException) {
+                                if (handleProfileDoesNotExist(throwable, loginPageModel)) {
+                                    // The error was handled, so leave this method
+                                    return;
+                                } else if (throwable instanceof TeamServicesException) {
                                     loginPageModel.addError(ModelValidationInfo.createWithMessage(LocalizationServiceImpl.getInstance().getExceptionMessage(throwable)));
                                 } else {
                                     loginPageModel.addError(ModelValidationInfo.createWithResource(LoginPageModel.PROP_SERVER_NAME,
@@ -169,6 +175,10 @@ public class LookupHelper {
                             //Log exception
                             if (throwable != null) {
                                 logger.warn("Authenticating with Team Services failed", throwable);
+                                if (handleProfileDoesNotExist(throwable, loginPageModel)) {
+                                    // The error was handled, so leave this method
+                                    return;
+                                }
                             }
                             //try to load the contexts from the accounts
                             loadVsoContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
@@ -177,6 +187,28 @@ public class LookupHelper {
                 }
             });
         }
+    }
+
+    public static boolean handleProfileDoesNotExist(final Throwable throwable, final LoginPageModel loginPageModel) {
+        if (throwable instanceof ProfileDoesNotExistException) {
+            logger.info("Exception ProfileDoesNotExistException found and being handled.");
+            // redirect the user to http://go.microsoft.com/fwlink/?LinkId=800292 (the no profile exists FAQ on the java site)
+            final String url = "http://go.microsoft.com/fwlink/?LinkId=800292";
+            // The html tags are not part of the localized strings to allow full control of the tags here
+            final String error = String.format("<html>%s<br>%s<br><a href=\"%s\">%s</a></html>",
+                    LocalizationServiceImpl.getInstance().getExceptionMessage(throwable),
+                    TfPluginBundle.message(TfPluginBundle.KEY_VSO_NO_PROFILE_ERROR_HELP),
+                    url, url);
+            final Project project = ProjectManager.getInstance().getDefaultProject();
+            IdeaHelper.showErrorDialog(project, error);
+
+            // Still show the error at the bottom of the login dialog and force a sign out
+            loginPageModel.addError(ModelValidationInfo.createWithMessage(error));
+            loginPageModel.signOut();
+            return true;
+        }
+
+        return false;
     }
 
     public static void loadVsoContexts(final LoginPageModel loginPageModel,

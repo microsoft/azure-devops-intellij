@@ -92,15 +92,23 @@ public class IdeaHelper {
      */
     public static void showErrorDialog(@NotNull final Project project, final Throwable throwable) {
         if (throwable != null) {
-            Messages.showErrorDialog(project,
-                    throwable.getMessage(),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR));
+            showErrorDialog(project, throwable.getMessage());
         } else {
-            Messages.showErrorDialog(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR));
+            showErrorDialog(project, TfPluginBundle.message(TfPluginBundle.KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR));
         }
     }
+
+    /**
+     * Shows an error dialog
+     *
+     * @param project
+     * @param message
+     */
+    public static void showErrorDialog(@NotNull final Project project, @NotNull final String message) {
+        Messages.showErrorDialog(project, message,
+                TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR));
+    }
+
 
     /**
      * Finds the full path to a resource whether it's installed by the idea or being run inside the idea

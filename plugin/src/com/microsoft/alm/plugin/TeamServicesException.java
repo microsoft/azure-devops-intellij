@@ -26,5 +26,6 @@ public class TeamServicesException extends RuntimeException {
     public static String KEY_VSO_AUTH_FAILED = "KEY_VSO_AUTH_FAILED";
     public static String KEY_TFS_AUTH_FAILED = "KEY_TFS_AUTH_FAILED";
     public static String KEY_OPERATION_ERRORS = "KEY_OPERATION_ERRORS";
+    public static String KEY_VSO_NO_PROFILE_ERROR = "KEY_VSO_NO_PROFILE_ERROR";
 
 }

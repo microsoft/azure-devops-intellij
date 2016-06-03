@@ -14,6 +14,7 @@ import com.microsoft.alm.helpers.Action;
 import com.microsoft.alm.oauth2.useragent.AuthorizationException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.services.DeviceFlowResponsePrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.provider.JaxrsClientProvider;
@@ -26,6 +27,9 @@ import com.microsoft.visualstudio.services.account.AccountHttpClient;
 import com.microsoft.visualstudio.services.account.Profile;
 
 import javax.ws.rs.client.Client;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
@@ -100,7 +104,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
                         //at that time user knows which account/email they are logged in under already.  So the email provides
                         //no additional value.
                         final AccountHttpClient accountHttpClient
-                                = new AccountHttpClient(client, OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO);
+                                = new MyHttpClient(client, OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO);
 
                         final Profile me = accountHttpClient.getMyProfile();
                         final String emailAddress = me.getCoreAttributes().getEmailAddress().getValue();
@@ -147,5 +151,21 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     public void clearAuthenticationInfo(final String serverUri) {
         // Only generates global PAT currently, so ignore serverUri and clear global PAT only
         this.vstsPatAuthenticator.signOut();
+    }
+
+    // We are subclassing the AccountHttpClient here in order to add mapped exceptions
+    // TODO: add handling in the TFS Java REST SDK for these exceptions
+    private class MyHttpClient extends AccountHttpClient {
+
+        public MyHttpClient(final Client jaxrsClient, final URI baseUrl) {
+            super(jaxrsClient, baseUrl);
+        }
+
+        @Override
+        protected Map<String, Class<? extends Exception>> getTranslatedExceptions() {
+            final Map<String, Class<? extends Exception>> map = new HashMap<String, Class<? extends Exception>>();
+            map.put("ProfileDoesNotExistException", ProfileDoesNotExistException.class);
+            return map;
+        }
     }
 }
