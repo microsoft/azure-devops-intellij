@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
@@ -34,7 +35,7 @@ public class ServerContextBuilder {
     }
 
     public ServerContextBuilder(final ServerContext originalContext) {
-        assert originalContext != null;
+        ArgumentHelper.checkNotNull(originalContext, "originalContext");
 
         this.type = originalContext.getType();
         this.uri = originalContext.getUri();

@@ -64,6 +64,7 @@ public class AuthHelper {
      * This method wraps the normal Async call to authenticate and waits on the result.
      */
     public static AuthenticationInfo getAuthenticationInfoSynchronously(final AuthenticationProvider provider, final String gitRemoteUrl) {
+        logger.info("getAuthenticationInfoSynchronously calling authenticateAsync on " + gitRemoteUrl);
         final SettableFuture<AuthenticationInfo> future = SettableFuture.create();
 
         provider.authenticateAsync(gitRemoteUrl, new AuthenticationListener() {

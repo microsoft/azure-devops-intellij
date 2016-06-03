@@ -65,6 +65,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
         getAuthenticationInfoProvider().getAuthenticationInfoAsync(serverUri, new AuthenticationInfoCallback() {
             @Override
             public void onSuccess(final AuthenticationInfo authenticationInfo) {
+                logger.info("getAuthenticationInfoAsync succeeded");
                 try {
                     //save for VSO_Deployment
                     ServerContextManager.getInstance().validateServerConnection(
@@ -92,6 +93,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
 
             @Override
             public void onFailure(Throwable t) {
+                logger.error("getAuthenticationInfoAsync failed", t);
                 clearAuthenticationDetails();
                 AuthenticationListener.Helper.authenticated(listener, AuthenticationInfo.NONE, t);
             }

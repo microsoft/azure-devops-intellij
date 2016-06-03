@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.ui.common;
 
+import com.google.common.collect.ImmutableList;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.mocks.MockServerContext;
@@ -13,60 +14,44 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class ServerContextLookupListenerTest extends IdeaAbstractTest {
+    MockServerContextLookupPageModel pageModel = new MockServerContextLookupPageModel();
+    ServerContextLookupListener listener = new ServerContextLookupListener(pageModel);
+
     /**
-     * This test will make sure that the constructors work as expected.
+     * These tests will make sure that the constructors work as expected.
      */
     @Test
-    public void testConstructor() {
-        try {
-            ServerContextLookupListener listener = new ServerContextLookupListener(null);
-            fail("constructor allowed null argument");
-        } catch (AssertionError error) {
-            // This is the expected result
-        }
-
-        MockServerContextLookupPageModel pageModel = new MockServerContextLookupPageModel();
-        ServerContextLookupListener listener = new ServerContextLookupListener(pageModel);
+    public void testConstructor_Happy() {
+        new ServerContextLookupListener(new MockServerContextLookupPageModel());
     }
 
-    @Test
-    public void testLoadContexts_invalidParameters() {
-        MockServerContextLookupPageModel pageModel = new MockServerContextLookupPageModel();
-        ServerContextLookupListener listener = new ServerContextLookupListener(pageModel);
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_PageModelNull() {
+        new ServerContextLookupListener(null);
+    }
 
-        // Make sure null list fails
-        try {
-            listener.loadContexts(null, null);
-            fail("null list of contexts worked");
-        } catch (AssertionError error) {
-            // This is the expected result
-        }
+    @Test(expected = IllegalArgumentException.class)
+    public void testLoadContexts_ContextListNull() {
+        listener.loadContexts(null, ServerContextLookupOperation.ContextScope.PROJECT);
+    }
 
-        // Make sure empty list fails
-        List<ServerContext> contexts = new ArrayList<ServerContext>();
-        try {
-            listener.loadContexts(contexts, null);
-            fail("empty list worked");
-        } catch (AssertionError error) {
-            // This is the expected result
-        }
+    @Test(expected = IllegalArgumentException.class)
+    public void testLoadContexts_ContextListEmpty() {
+        listener.loadContexts(Collections.EMPTY_LIST, ServerContextLookupOperation.ContextScope.PROJECT);
+    }
 
-        // Make sure null scope fails
-        contexts.add(new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl"), null, null, null));
-        try {
-            listener.loadContexts(contexts, null);
-            fail("null scope worked");
-        } catch (AssertionError error) {
-            // This is the expected result
-        }
+    @Test(expected = IllegalArgumentException.class)
+    public void testLoadContexts_ScopeNull() {
+        ServerContext context = new MockServerContext(ServerContext.Type.TFS, null, URI.create("http://notanurl1"), null, null, null);
+        listener.loadContexts(ImmutableList.of(context), null);
     }
 
     @Test

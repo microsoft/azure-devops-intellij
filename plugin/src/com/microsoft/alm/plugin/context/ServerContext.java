@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.build.webapi.BuildHttpClient;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
@@ -80,7 +81,8 @@ public class ServerContext {
      * Use this static method to convert a server uri string into an appropriate unique key for a serverContext object
      */
     public static String getKey(String uri) {
-        assert uri != null;
+        ArgumentHelper.checkNotNull(uri, "uri");
+
         return getKey(UrlHelper.createUri(uri));
     }
 
@@ -91,7 +93,8 @@ public class ServerContext {
                             final URI serverUri, final Client client, final TeamProjectCollectionReference teamProjectCollectionReference,
                             final TeamProjectReference teamProjectReference,
                             final GitRepository gitRepository) {
-        assert type != null;
+
+        ArgumentHelper.checkNotNull(type, "type");
 
         this.type = type;
         this.authenticationInfo = authenticationInfo;

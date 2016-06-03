@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.google.common.collect.ImmutableList;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
@@ -15,43 +16,31 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class ServerContextLookupOperationTest {
+    private final ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
+
     @Test
-    public void constructor() {
-        List<ServerContext> contexts = new ArrayList<ServerContext>();
+    public void testConstructor_Happy() {
+        new ServerContextLookupOperation(ImmutableList.of(context), ServerContextLookupOperation.ContextScope.PROJECT);
+    }
 
-        // test null parameters
-        try {
-            ServerContextLookupOperation operation = new ServerContextLookupOperation(null, null);
-            Assert.fail();
-        } catch (AssertionError error) { /* correct */ }
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_ContextListNull() {
+        new ServerContextLookupOperation(null, ServerContextLookupOperation.ContextScope.PROJECT);
+    }
 
-        // list of contexts is null
-        try {
-            ServerContextLookupOperation operation = new ServerContextLookupOperation(null, ServerContextLookupOperation.ContextScope.PROJECT);
-            Assert.fail();
-        } catch (AssertionError error) { /* correct */ }
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_ContextListEmpty() {
+        new ServerContextLookupOperation(Collections.EMPTY_LIST, ServerContextLookupOperation.ContextScope.PROJECT);
+    }
 
-        // list of contexts is empty
-        try {
-            ServerContextLookupOperation operation = new ServerContextLookupOperation(contexts, ServerContextLookupOperation.ContextScope.PROJECT);
-            Assert.fail();
-        } catch (AssertionError error) { /* correct */ }
-
-        // list is good, scope is null
-        contexts.add(new ServerContextBuilder().type(ServerContext.Type.TFS).build());
-        try {
-            ServerContextLookupOperation operation = new ServerContextLookupOperation(contexts, null);
-            Assert.fail();
-        } catch (AssertionError error) { /* correct */ }
-
-        // finally, construct one correctly
-        ServerContextLookupOperation operation = new ServerContextLookupOperation(contexts, ServerContextLookupOperation.ContextScope.PROJECT);
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_ScopeNull() {
+        new ServerContextLookupOperation(ImmutableList.of(context), null);
     }
 
     @Test

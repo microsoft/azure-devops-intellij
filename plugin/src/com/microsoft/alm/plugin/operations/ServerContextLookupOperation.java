@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
@@ -43,9 +44,8 @@ public class ServerContextLookupOperation extends Operation {
     }
 
     public ServerContextLookupOperation(final List<ServerContext> contextList, final ContextScope resultScope) {
-        assert contextList != null;
-        assert !contextList.isEmpty();
-        assert resultScope != null;
+        ArgumentHelper.checkNotNullOrEmpty(contextList, "contextList");
+        ArgumentHelper.checkNotNull(resultScope, "resultScope");
 
         this.contextList = new ArrayList<ServerContext>(contextList.size());
         this.contextList.addAll(contextList);

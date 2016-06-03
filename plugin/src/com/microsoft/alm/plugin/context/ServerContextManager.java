@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
@@ -320,7 +321,7 @@ public class ServerContextManager {
     }
 
     public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
-        assert !StringUtils.isEmpty(gitRemoteUrl);
+        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
 
         // Get matching context from manager
         ServerContext context = get(gitRemoteUrl);
