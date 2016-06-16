@@ -98,6 +98,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
         if (controller.showModalDialog()) {
             final String branchName = controller.getBranchName();
             try {
+                //TODO should this be an IntelliJ background task so we can provide progress information? (if so we should pass the progress indicator to createBranch and create association)
                 OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                     @Override
                     public void run() {

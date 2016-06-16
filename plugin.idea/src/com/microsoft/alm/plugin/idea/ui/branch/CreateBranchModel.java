@@ -8,7 +8,10 @@ import com.google.common.collect.Collections2;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -22,13 +25,17 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.utils.GeneralGitHelper;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdate;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdateResult;
 import git4idea.GitRemoteBranch;
+import git4idea.branch.GitBrancher;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
+import git4idea.update.GitFetchResult;
+import git4idea.update.GitFetcher;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -38,6 +45,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.event.HyperlinkEvent;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,6 +61,7 @@ public class CreateBranchModel extends AbstractModel {
     public static final String PROP_BRANCH_NAME = "branchName";
     public static final String PROP_SELECTED_REMOTE_BRANCH = "selectedRemoteBranch";
     public static final String PROP_REMOTE_BRANCH_COMBO_MODEL = "remoteBranchComboModel";
+    public static final String PROP_CHECKOUT_BRANCH = "checkoutBranch";
     public static final String CREATE_BRANCH_ACTION = "create-branch";
 
     private final Project project;
@@ -61,6 +70,7 @@ public class CreateBranchModel extends AbstractModel {
     private String branchName;
     private GitRemoteBranch selectedRemoteBranch;
     private SortedComboBoxModel<GitRemoteBranch> remoteBranchComboModel;
+    private boolean checkoutBranch = true;
     private boolean branchWasCreated = false;
 
     protected CreateBranchModel(final Project project, final String defaultBranchName, final GitRepository gitRepository) {
@@ -116,6 +126,17 @@ public class CreateBranchModel extends AbstractModel {
         }
     }
 
+    public boolean getCheckoutBranch() {
+        return checkoutBranch;
+    }
+
+    public void setCheckoutBranch(boolean checkoutBranch) {
+        if (this.checkoutBranch != checkoutBranch) {
+            this.checkoutBranch = checkoutBranch;
+            setChangedAndNotify(PROP_CHECKOUT_BRANCH);
+        }
+    }
+
     private void setBranchWasCreated(final boolean branchWasCreated) {
         this.branchWasCreated = branchWasCreated;
     }
@@ -166,14 +187,14 @@ public class CreateBranchModel extends AbstractModel {
                                 TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitRemoteUrl));
                         return;
                     }
-                    doBranchCreate(context);
+                    doBranchCreate(context, progressIndicator);
                 }
             };
             createBranchTask.queue();
         }
     }
 
-    public boolean doBranchCreate(@NotNull final ServerContext context) {
+    public boolean doBranchCreate(@NotNull final ServerContext context, final ProgressIndicator progressIndicator) {
         logger.info("CreateBranchModel.doBranchCreate");
         // call server to create branch
         boolean hasNotifiedUser = false; //keep track of notifications because of recursive call
@@ -193,13 +214,41 @@ public class CreateBranchModel extends AbstractModel {
             // check returned results
             if (results.size() < 1 || !results.get(0).getSuccess()) {
                 errorMessage = results.size() > 0 ? results.get(0).getCustomMessage() : TfPluginBundle.KEY_CREATE_BRANCH_ERRORS_UNEXPECTED_SERVER_ERROR;
+            } else {
+                // Get the repository object for this project
+                final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
+                if (gitRepository != null) {
+                    // Create a progressIndicator if one was not passed in
+                    // Fetch server changes so we can checkout here if we want to
+                    logger.info("Fetching latest from server so that the new branch is available to checkout");
+                    final GitFetcher fetcher = new GitFetcher(project, getProgressIndicator(progressIndicator), true);
+                    final GitFetchResult fetchResult = fetcher.fetch(gitRepository);
+                    if (fetchResult.isSuccess() && this.checkoutBranch) {
+                        logger.info("Checking out new branch: " + branchName);
+                        // Creating a branch using the brancher has to start on the UI thread (it will background the work itself)
+                        IdeaHelper.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                logger.info("Finishing: Checking out new branch: " + branchName);
+                                final String remoteBranchName = TfGitHelper.getRemoteBranchName(selectedRemoteBranch.getRemote(), branchName);
+                                final GitBrancher brancher = ServiceManager.getService(project, GitBrancher.class);
+                                // Checkout a new branch from the remote branch that was created on the server and fetched above
+                                brancher.checkoutNewBranchStartingFrom(branchName,remoteBranchName,
+                                        Collections.singletonList(gitRepository), null);
+                            }
+                        });
+                    }
+                } else {
+                    logger.warn("Could not fetch branch from server. Unable to retrieve the git repo object from the project.");
+                }
+
             }
         } catch (Throwable t) {
             if (AuthHelper.isNotAuthorizedError(t)) {
                 final ServerContext newContext = ServerContextManager.getInstance().updateAuthenticationInfo(context.getGitRepository().getRemoteUrl());
                 if (newContext != null) {
                     //retry creating the branch with new context and authentication info
-                    hasNotifiedUser = doBranchCreate(newContext);
+                    hasNotifiedUser = doBranchCreate(newContext, progressIndicator);
                 } else {
                     //user cancelled login, don't retry
                     errorMessage = t.getMessage();
@@ -240,5 +289,118 @@ public class CreateBranchModel extends AbstractModel {
             hasNotifiedUser = true;
         }
         return hasNotifiedUser;
+    }
+
+    // This method will ensure that we have a progress indicator to pass on to other methods
+    private ProgressIndicator getProgressIndicator(final ProgressIndicator indicator) {
+        if (indicator != null) {
+            return indicator;
+        }
+
+        // return a default implementation that doesn't do anything
+        return new ProgressIndicator() {
+            @Override
+            public void start() {
+            }
+
+            @Override
+            public void stop() {
+            }
+
+            @Override
+            public boolean isRunning() {
+                return false;
+            }
+
+            @Override
+            public void cancel() {
+            }
+
+            @Override
+            public boolean isCanceled() {
+                return false;
+            }
+
+            @Override
+            public void setText(String text) {
+            }
+
+            @Override
+            public String getText() {
+                return null;
+            }
+
+            @Override
+            public void setText2(String text) {
+            }
+
+            @Override
+            public String getText2() {
+                return null;
+            }
+
+            @Override
+            public double getFraction() {
+                return 0;
+            }
+
+            @Override
+            public void setFraction(double fraction) {
+            }
+
+            @Override
+            public void pushState() {
+            }
+
+            @Override
+            public void popState() {
+            }
+
+            @Override
+            public void startNonCancelableSection() {
+            }
+
+            @Override
+            public void finishNonCancelableSection() {
+            }
+
+            @Override
+            public boolean isModal() {
+                return false;
+            }
+
+            @NotNull
+            @Override
+            public ModalityState getModalityState() {
+                return null;
+            }
+
+            @Override
+            public void setModalityProgress(ProgressIndicator modalityProgress) {
+            }
+
+            @Override
+            public boolean isIndeterminate() {
+                return false;
+            }
+
+            @Override
+            public void setIndeterminate(boolean indeterminate) {
+            }
+
+            @Override
+            public void checkCanceled() throws ProcessCanceledException {
+            }
+
+            @Override
+            public boolean isPopupWasShown() {
+                return false;
+            }
+
+            @Override
+            public boolean isShowing() {
+                return false;
+            }
+        };
     }
 }

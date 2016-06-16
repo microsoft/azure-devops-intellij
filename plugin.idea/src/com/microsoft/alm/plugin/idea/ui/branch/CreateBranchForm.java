@@ -9,8 +9,10 @@ import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import git4idea.GitRemoteBranch;
 import org.apache.commons.lang.StringUtils;
 
+import javax.swing.AbstractButton;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -32,6 +34,7 @@ public class CreateBranchForm implements BasicForm {
     private JTextField nameTextField;
     private JComboBox remoteBranchComboBox;
     private JLabel basedOn;
+    private JCheckBox checkoutBranch;
     private boolean initialized = false;
 
     public CreateBranchForm() {
@@ -103,6 +106,15 @@ public class CreateBranchForm implements BasicForm {
         return StringUtils.trim(nameTextField.getText());
     }
 
+    public void setCheckoutBranch(boolean checkoutBranch) {
+        this.checkoutBranch.setSelected(checkoutBranch);
+
+    }
+
+    public boolean getCheckoutBranch() {
+        return checkoutBranch.isSelected();
+    }
+
     private JComponent getBranchNameComponent() {
         return nameTextField;
     }
@@ -128,7 +140,7 @@ public class CreateBranchForm implements BasicForm {
      */
     private void $$$setupUI$$$() {
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         nameLabel = new JLabel();
         this.$$$loadLabelText$$$(nameLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreateBranchDialog.NameLabel"));
         contentPanel.add(nameLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -139,6 +151,10 @@ public class CreateBranchForm implements BasicForm {
         basedOn = new JLabel();
         this.$$$loadLabelText$$$(basedOn, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreateBranchDialog.BasedOn"));
         contentPanel.add(basedOn, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        checkoutBranch = new JCheckBox();
+        checkoutBranch.setSelected(true);
+        this.$$$loadButtonText$$$(checkoutBranch, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CreateBranchDialog.CheckoutBranch"));
+        contentPanel.add(checkoutBranch, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
@@ -164,6 +180,33 @@ public class CreateBranchForm implements BasicForm {
         component.setText(result.toString());
         if (haveMnemonic) {
             component.setDisplayedMnemonic(mnemonic);
+            component.setDisplayedMnemonicIndex(mnemonicIndex);
+        }
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private void $$$loadButtonText$$$(AbstractButton component, String text) {
+        StringBuffer result = new StringBuffer();
+        boolean haveMnemonic = false;
+        char mnemonic = '\0';
+        int mnemonicIndex = -1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '&') {
+                i++;
+                if (i == text.length()) break;
+                if (!haveMnemonic && text.charAt(i) != '&') {
+                    haveMnemonic = true;
+                    mnemonic = text.charAt(i);
+                    mnemonicIndex = result.length();
+                }
+            }
+            result.append(text.charAt(i));
+        }
+        component.setText(result.toString());
+        if (haveMnemonic) {
+            component.setMnemonic(mnemonic);
             component.setDisplayedMnemonicIndex(mnemonicIndex);
         }
     }

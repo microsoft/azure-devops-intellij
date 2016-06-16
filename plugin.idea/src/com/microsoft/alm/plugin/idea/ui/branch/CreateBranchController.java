@@ -67,7 +67,7 @@ public class CreateBranchController implements Observer, ActionListener {
     }
 
     public boolean createBranch(ServerContext context) {
-        model.doBranchCreate(context);
+        model.doBranchCreate(context, null);
         return model.getBranchWasCreated();
     }
 
@@ -85,6 +85,10 @@ public class CreateBranchController implements Observer, ActionListener {
     public void update(final Observable o, final Object arg) {
         if (arg == null || CreateBranchModel.PROP_BRANCH_NAME.equals(arg)) {
             dialog.setBranchName(model.getBranchName());
+        }
+
+        if (arg == null || CreateBranchModel.PROP_CHECKOUT_BRANCH.equals(arg)) {
+            dialog.setCheckoutBranch(model.getCheckoutBranch());
         }
 
         if (arg == null || CreateBranchModel.PROP_REMOTE_BRANCH_COMBO_MODEL.equals(arg)) {
@@ -110,5 +114,6 @@ public class CreateBranchController implements Observer, ActionListener {
     protected void updateModel() {
         model.setBranchName(dialog.getBranchName());
         model.setSelectedRemoteBranch(dialog.getSelectedRemoteBranch());
+        model.setCheckoutBranch(dialog.getCheckoutBranch());
     }
 }

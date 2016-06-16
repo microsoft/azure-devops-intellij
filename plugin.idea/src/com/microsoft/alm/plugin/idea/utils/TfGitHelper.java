@@ -7,6 +7,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import git4idea.GitRemoteBranch;
@@ -133,6 +134,17 @@ public class TfGitHelper {
         }
 
         return remoteBranches.get(0);
+    }
+
+    /**
+     * This method gets the TFGit remote name for the GitRemote and then forms the remote branch name
+     * @param branchName the local branch name without any prefix (refs/heads/)
+     * @return returns the remote branch name like origin/branchName
+     */
+    public static String getRemoteBranchName(GitRemote remote, String branchName) {
+        ArgumentHelper.checkNotNull(remote, "remote");
+        ArgumentHelper.checkNotEmptyString(branchName);
+        return remote.getName() + "/" + branchName;
     }
 
     public static class BranchComparator implements Comparator<GitRemoteBranch>, Serializable {

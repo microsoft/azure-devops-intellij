@@ -183,7 +183,7 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
         underTest.setBranchName("testBranch");
-        assertTrue(underTest.doBranchCreate(mockContext));
+        assertTrue(underTest.doBranchCreate(mockContext, null));
         assertTrue(underTest.getBranchWasCreated());
         verify(mockVcsNotifier).notifyImportantInfo(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE)), any(String.class), any(NotificationListener.class));
 
@@ -199,7 +199,7 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
         underTest.setBranchName("testBranch");
-        assertTrue(underTest.doBranchCreate(mockContext));
+        assertTrue(underTest.doBranchCreate(mockContext, null));
         assertFalse(underTest.getBranchWasCreated());
         verify(mockVcsNotifier).notifyError(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE)), any(String.class));
 
@@ -212,7 +212,7 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
         underTest.setBranchName("testBranch");
-        assertTrue(underTest.doBranchCreate(mockContext));
+        assertTrue(underTest.doBranchCreate(mockContext, null));
         assertFalse(underTest.getBranchWasCreated());
         verify(mockVcsNotifier).notifyError(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE)), any(String.class));
     }

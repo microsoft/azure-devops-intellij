@@ -71,6 +71,14 @@ public class CreateBranchDialog extends BaseDialogImpl {
         return createBranchForm.getBranchName();
     }
 
+    public void setCheckoutBranch(boolean checkoutBranch) {
+        createBranchForm.setCheckoutBranch(checkoutBranch);
+    }
+
+    public boolean getCheckoutBranch() {
+        return createBranchForm.getCheckoutBranch();
+    }
+
     public JComponent getComponent(final String componentPropName) {
         if (StringUtils.isEmpty(componentPropName)) {
             return null;
