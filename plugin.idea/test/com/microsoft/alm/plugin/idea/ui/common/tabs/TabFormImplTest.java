@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.workitem.WorkItemsTableModel;
+import com.microsoft.alm.plugin.operations.Operation;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +23,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import java.awt.event.ActionListener;
 import java.util.List;
 
@@ -53,12 +55,26 @@ public class TabFormImplTest extends IdeaAbstractTest {
             }
 
             @Override
+            protected void addCustomTools(final JPanel panel) {
+            }
+
+            @Override
             protected List<JBMenuItem> getMenuItems(ActionListener listener) {
                 return null;
             }
 
             @Override
             public void setModelForView(WorkItemsTableModel modelView) {
+
+            }
+
+            @Override
+            public Operation.Inputs getOperationInputs() {
+                return null;
+            }
+
+            @Override
+            public void refresh() {
 
             }
         });

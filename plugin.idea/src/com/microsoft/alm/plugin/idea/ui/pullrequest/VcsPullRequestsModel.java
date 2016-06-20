@@ -31,6 +31,7 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
 
     public VcsPullRequestsModel(@NotNull Project project) {
         super(project, new PullRequestsTreeModel());
+        operationInputs = Operation.EMPTY_INPUTS;
     }
 
     protected void createDataProvider() {

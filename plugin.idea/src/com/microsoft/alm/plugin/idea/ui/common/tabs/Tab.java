@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.operations.Operation;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
@@ -28,4 +29,8 @@ public interface Tab<T extends FilteredModel> {
     String getFilter();
 
     void setViewModel(final T modelView);
+
+    Operation.Inputs getOperationInputs();
+
+    void refresh();
 }

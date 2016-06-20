@@ -89,6 +89,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
         }
         if (TabForm.CMD_REFRESH.equals(arg)) {
             model.loadData();
+            tab.refresh();
         }
         if (TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER.equals(arg)) {
             model.openSelectedItemsLink();
@@ -97,6 +98,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
 
     protected void updateModel() {
         model.setFilter(tab.getFilter());
+        model.setOperationInputs(tab.getOperationInputs());
     }
 
     public void dispose() {

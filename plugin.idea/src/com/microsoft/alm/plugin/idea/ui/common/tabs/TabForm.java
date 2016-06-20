@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.operations.Operation;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
@@ -35,4 +36,8 @@ public interface TabForm<T extends FilteredModel> {
     void addObserver(final Observer observer);
 
     void setModelForView(final T viewModel);
+
+    Operation.Inputs getOperationInputs();
+
+    void refresh();
 }

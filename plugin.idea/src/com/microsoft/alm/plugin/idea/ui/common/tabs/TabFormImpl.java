@@ -22,6 +22,7 @@ import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
+import com.microsoft.alm.plugin.operations.Operation;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.Icon;
@@ -81,6 +82,11 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
     protected abstract void createCustomView();
 
     /**
+     * Adds custom items to the toolbar
+     */
+    protected abstract void addCustomTools(final JPanel toolBar);
+
+    /**
      * Sets the view model that is used for the tab
      *
      * @param modelView
@@ -106,6 +112,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 final JPanel toolBarPanelLeft = new JPanel(flowLayout);
                 toolBarPanelLeft.add(prActionsToolbar.getComponent());
                 toolBarPanelLeft.add(searchFilter);
+                addCustomTools(toolBarPanelLeft);
 
                 //entire top toolbar
                 toolBarPanel = new JPanel(new BorderLayout());
@@ -314,6 +321,10 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
     public String getFilter() {
         return searchFilter.getFilterText();
     }
+
+    public abstract Operation.Inputs getOperationInputs();
+
+    public abstract void refresh();
 
     @VisibleForTesting
     String getStatusText() {

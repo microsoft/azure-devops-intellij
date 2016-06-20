@@ -40,6 +40,10 @@ public interface TabModel<T extends FilteredModel> {
 
     String getFilter();
 
+    Operation.Inputs getOperationInputs();
+
+    void setOperationInputs(final Operation.Inputs operationInputs);
+
     void dispose();
 
     void addObserver(final Observer observer);

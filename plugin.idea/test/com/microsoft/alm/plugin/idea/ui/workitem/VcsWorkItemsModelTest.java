@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -145,6 +146,12 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
         when(mockContext.getWitHttpClient()).thenReturn(mockClient);
 
         assertTrue(model.createWorkItemBranchAssociation(mockContext, "branchName", 10));
+    }
+
+    @Test
+    public void testGetOperationInputs_DefaultValue() {
+        WorkItemLookupOperation.WitInputs inputs = (WorkItemLookupOperation.WitInputs) model.getOperationInputs();
+        assertEquals(WorkItemHelper.getAssignedToMeQuery(), inputs.getQuery());
     }
 
     private void setupBranchCreate(boolean showDialog, String branchName, boolean createBranch) throws Exception {

@@ -49,6 +49,7 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     public void testObservableActions_Refresh() {
         underTest.update(null, TabForm.CMD_REFRESH);
         verify(mockModel).loadData();
+        verify(mockTab).refresh();
     }
 
     @Test

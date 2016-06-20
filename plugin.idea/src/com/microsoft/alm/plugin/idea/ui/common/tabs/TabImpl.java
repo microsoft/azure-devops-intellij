@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
@@ -56,5 +57,13 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
 
     public void setViewModel(final T modelView) {
         form.setModelForView(modelView);
+    }
+
+    public Operation.Inputs getOperationInputs() {
+        return form.getOperationInputs();
+    }
+
+    public void refresh() {
+        form.refresh();
     }
 }

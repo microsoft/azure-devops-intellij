@@ -367,6 +367,12 @@ public class TfPluginBundle {
     public static final String KEY_VCS_WIT_REFRESH_TOOLTIP = "VcsWorkItemsTab.Refresh.Tooltip";
     @NonNls
     public static final String KEY_VCS_WIT_UNEXPECTED_ERRORS = "VcsWorkItemsTab.Unexpected.Errors";
+    @NonNls
+    public static final String KEY_VCS_WIT_QUERY_TITLE = "VcsWorkItemsTab.Query.Title";
+    @NonNls
+    public static final String KEY_VCS_WIT_QUERY_SEPARATOR_MY_QUERIES = "VcsWorkItemsTab.Query.Separator.MyQueries";
+    @NonNls
+    public static final String KEY_VCS_WIT_QUERY_DEFAULT_QUERY = "VcsWorkItemsTab.Query.DefaultQuery";
 
     //Branch Creation Dialog
     @NonNls

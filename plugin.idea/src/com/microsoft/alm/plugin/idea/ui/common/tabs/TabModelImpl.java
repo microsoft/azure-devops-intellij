@@ -25,6 +25,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     protected GitRepository gitRepository;
     private String filter = StringUtils.EMPTY;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
+    protected Operation.Inputs operationInputs;
 
     public TabModelImpl(@NotNull final Project project, @NotNull T viewModel) {
         this.project = project;
@@ -69,7 +70,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     public void loadData() {
         if (isTfGitRepository()) {
-            dataProvider.loadData(TfGitHelper.getTfGitRemoteUrl(gitRepository));
+            dataProvider.loadData(TfGitHelper.getTfGitRemoteUrl(gitRepository), getOperationInputs());
         }
     }
 
@@ -96,6 +97,14 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     public String getFilter() {
         return filter;
+    }
+
+    public Operation.Inputs getOperationInputs() {
+        return operationInputs;
+    }
+
+    public void setOperationInputs(final Operation.Inputs operationInputs) {
+        this.operationInputs = operationInputs;
     }
 
     public void dispose() {

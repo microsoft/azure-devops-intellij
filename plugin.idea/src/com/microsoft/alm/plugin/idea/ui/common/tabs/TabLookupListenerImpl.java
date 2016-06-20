@@ -18,14 +18,11 @@ import org.jetbrains.annotations.NotNull;
 public abstract class TabLookupListenerImpl implements Operation.Listener {
 
     private final TabModel model;
-    private final Operation.Inputs inputs;
     private Operation activeOperation;
     protected String gitRemoteUrl;
 
-    public TabLookupListenerImpl(@NotNull final TabModel model, final Operation.Inputs inputs) {
-        assert model != null;
+    public TabLookupListenerImpl(@NotNull final TabModel model) {
         this.model = model;
-        this.inputs = inputs;
     }
 
     /**
@@ -33,7 +30,7 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
      *
      * @param gitRemoteUrl
      */
-    public abstract void loadData(final String gitRemoteUrl);
+    public abstract void loadData(final String gitRemoteUrl, final Operation.Inputs inputs);
 
     /**
      * Load data asynchronously based on the given operation.
@@ -41,7 +38,7 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
      *
      * @param activeOperation
      */
-    protected void loadData(final Operation activeOperation) {
+    protected void loadData(final Operation activeOperation, final Operation.Inputs inputs) {
         assert activeOperation != null;
         if (model.getTabStatus() != VcsTabStatus.LOADING_IN_PROGRESS) {
             this.model.clearData();

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 public class PullRequestsTabLookupListener extends TabLookupListenerImpl {
 
     public PullRequestsTabLookupListener(@NotNull final VcsPullRequestsModel model) {
-        super(model, Operation.EMPTY_INPUTS);
+        super(model);
     }
 
     /**
@@ -22,9 +22,9 @@ public class PullRequestsTabLookupListener extends TabLookupListenerImpl {
      *
      * @param gitRemoteUrl
      */
-    public void loadData(final String gitRemoteUrl) {
+    public void loadData(final String gitRemoteUrl, Operation.Inputs inputs) {
         this.gitRemoteUrl = gitRemoteUrl;
         final PullRequestLookupOperation activeOperation = new PullRequestLookupOperation(gitRemoteUrl);
-        loadData(activeOperation);
+        loadData(activeOperation, inputs);
     }
 }

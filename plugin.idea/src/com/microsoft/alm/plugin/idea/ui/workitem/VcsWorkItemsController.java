@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.workitem;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.idea.ui.controls.WorkItemQueryDropDown;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabControllerImpl;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -19,7 +20,7 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
     private static final String WIT_TAB_CREATE_BRANCH_SELECTED_ACTION = "wit-tab-create-branch-selected";
 
     public VcsWorkItemsController(final @NotNull Project project) {
-        super(new TabImpl(new VcsWorkItemsForm(), EVENT_NAME), new VcsWorkItemsModel(project));
+        super(new TabImpl(new VcsWorkItemsForm(project), EVENT_NAME), new VcsWorkItemsModel(project));
     }
 
     @Override
@@ -35,6 +36,9 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
 
             //create a new remote branch and add a link for it in the work item
             model.createBranch();
+        } else if (WorkItemQueryDropDown.CMD_QUERY_COMBO_BOX_CHANGED.equals(e.getActionCommand())) {
+            // reload data if the query selected has changed
+            model.loadData();
         } else {
             super.performAction(e);
         }

@@ -48,6 +48,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
 
     public VcsWorkItemsModel(final @NotNull Project project) {
         super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH));
+        operationInputs = new WorkItemLookupOperation.WitInputs(WorkItemHelper.getAssignedToMeQuery());
     }
 
     @VisibleForTesting

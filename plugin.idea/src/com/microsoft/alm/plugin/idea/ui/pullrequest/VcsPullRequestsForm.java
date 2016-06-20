@@ -9,7 +9,9 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabFormImpl;
+import com.microsoft.alm.plugin.operations.Operation;
 
+import javax.swing.JPanel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeModelEvent;
@@ -49,6 +51,10 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
         pullRequestsTree.setRootVisible(false);
         pullRequestsTree.setRowHeight(0); //dynamically have row height computed for each row
         scrollPanel = new JBScrollPane(pullRequestsTree);
+    }
+
+    protected void addCustomTools(final JPanel toolBar) {
+        // nothing custom to do
     }
 
     public void setModelForView(final PullRequestsTreeModel treeModel) {
@@ -153,6 +159,14 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
         return Arrays.asList(
                 createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener),
                 createMenuItem(TfPluginBundle.KEY_VCS_PR_ABANDON, null, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR, listener));
+    }
+
+    public Operation.Inputs getOperationInputs() {
+        return Operation.EMPTY_INPUTS;
+    }
+
+    public void refresh() {
+        // nothing to refresh in this tab
     }
 
     @VisibleForTesting

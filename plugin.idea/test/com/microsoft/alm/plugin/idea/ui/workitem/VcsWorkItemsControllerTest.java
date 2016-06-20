@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.ui.workitem;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
+import com.microsoft.alm.plugin.idea.ui.controls.WorkItemQueryDropDown;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +17,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.awt.event.ActionEvent;
 
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 @RunWith(PowerMockRunner.class)
@@ -35,11 +37,12 @@ public class VcsWorkItemsControllerTest extends IdeaAbstractTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.whenNew(VcsWorkItemsForm.class).withNoArguments().thenReturn(mockForm);
+        PowerMockito.whenNew(VcsWorkItemsForm.class).withArguments(mockProject).thenReturn(mockForm);
         PowerMockito.whenNew(VcsWorkItemsModel.class).withArguments(mockProject).thenReturn(modelMock);
         PowerMockito.whenNew(TabImpl.class).withAnyArguments().thenReturn(mockTab);
 
         underTest = new VcsWorkItemsController(mockProject);
+        reset(modelMock);
     }
 
     @Test
@@ -52,5 +55,11 @@ public class VcsWorkItemsControllerTest extends IdeaAbstractTest {
     public void testActionListener_CreateBranch() throws Exception {
         underTest.actionPerformed(new ActionEvent(this, 0, VcsWorkItemsForm.CMD_CREATE_BRANCH));
         verify(modelMock).createBranch();
+    }
+
+    @Test
+    public void testActionListener_QueryChanged() throws Exception {
+        underTest.actionPerformed(new ActionEvent(this, 0, WorkItemQueryDropDown.CMD_QUERY_COMBO_BOX_CHANGED));
+        verify(modelMock).loadData();
     }
 }

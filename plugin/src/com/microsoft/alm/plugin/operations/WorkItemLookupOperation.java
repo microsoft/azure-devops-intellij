@@ -62,6 +62,10 @@ public class WorkItemLookupOperation extends Operation {
             this.fields = null;
             this.expand = WorkItemExpand.ALL;
         }
+
+        public String getQuery() {
+            return query;
+        }
     }
 
     public class WitResults extends ResultsImpl {
