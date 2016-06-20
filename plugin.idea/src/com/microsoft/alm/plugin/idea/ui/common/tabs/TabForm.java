@@ -33,8 +33,6 @@ public interface TabForm<T extends FilteredModel> {
 
     String getFilter();
 
-    void addObserver(final Observer observer);
-
     void setModelForView(final T viewModel);
 
     Operation.Inputs getOperationInputs();

@@ -20,8 +20,6 @@ public interface Tab<T extends FilteredModel> {
 
     void addActionListener(final ActionListener listener);
 
-    void addObserver(final Observer observer);
-
     void setStatus(final VcsTabStatus status);
 
     void setFilter(final String filterString);

@@ -17,6 +17,7 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.ActionListenerContainer;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
@@ -39,16 +40,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Date;
 import java.util.List;
-import java.util.Observable;
 
 /**
  * Common functionality for all tab views
  */
-public abstract class TabFormImpl<T extends FilteredModel> extends Observable implements TabForm<T> {
+public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T> {
     private final String tabTitle;
     private final String createDialogTitle;
     private final String refreshTooltip;
     private final String toolbarLocation;
+    private final ActionListenerContainer listenerContainer = new ActionListenerContainer();
 
     protected JPanel tabPanel;
     protected JScrollPane scrollPanel;
@@ -164,7 +165,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 AllIcons.ToolbarDecorator.Add) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(CMD_CREATE_NEW_ITEM);
+                listenerContainer.triggerEvent(this, CMD_CREATE_NEW_ITEM);
             }
         };
         createAction.registerCustomShortcutSet(CommonShortcuts.getNew(), scrollPanel); //Ctrl+N on windows or Cmd+M on Mac
@@ -173,7 +174,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 TfPluginBundle.message(refreshTooltip), AllIcons.Actions.Refresh) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(CMD_REFRESH);
+                listenerContainer.triggerEvent(this, CMD_REFRESH);
             }
         };
         refreshAction.registerCustomShortcutSet(CommonShortcuts.getRerun(), scrollPanel); //Ctrl+R on windows or Cmd+R on Mac
@@ -265,6 +266,11 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
     public void addActionListener(final ActionListener listener) {
         timer.addActionListener(listener);
         statusLink.addActionListener(listener);
+        listenerContainer.add(listener);
+    }
+
+    protected void triggerEvent(String event) {
+        listenerContainer.triggerEvent(this, event);
     }
 
     /**
@@ -307,11 +313,6 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
         menuItem.setActionCommand(actionCommand);
         menuItem.addActionListener(listener);
         return menuItem;
-    }
-
-    protected void setChangedAndNotify(final String propertyName) {
-        super.setChanged();
-        super.notifyObservers(propertyName);
     }
 
     public void setFilter(final String filterString) {

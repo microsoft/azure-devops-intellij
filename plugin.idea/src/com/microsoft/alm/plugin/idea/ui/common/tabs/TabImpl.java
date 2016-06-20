@@ -39,10 +39,6 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         form.addActionListener(listener);
     }
 
-    public void addObserver(final Observer observer) {
-        form.addObserver(observer);
-    }
-
     public void setStatus(final VcsTabStatus status) {
         form.setStatus(status);
     }

@@ -25,20 +25,20 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
     protected Tab tab;
     protected T model;
 
-    public TabControllerImpl(@NotNull final Tab tab, @NotNull T model, @NotNull final ServerEvent[] eventFilters) {
+    public TabControllerImpl(@NotNull final Tab tab, @NotNull T model, final ServerEvent[] eventFilters) {
         this.tab = tab;
         this.model = model;
 
-        setupTab();
+        // hook all the events on the UI part of the tab
+        tab.addActionListener(this);
 
         // Initialize the form with the current values from the model
         update(null, null);
 
-        // add the observer and action listener after we are fully initialized, otherwise we will just get called
-        // in the middle
+        // add the observer after we are fully initialized, otherwise we will just get called in the middle
         model.addObserver(this);
 
-        //load the items
+        // load the items
         model.loadData();
 
         // Hook up to the server changed events so that we can auto update when the server changes
@@ -78,11 +78,6 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
         });
     }
 
-    private void setupTab() {
-        tab.addActionListener(this);
-        tab.addObserver(this);
-    }
-
     public void actionPerformed(final ActionEvent e) {
         updateModel();
         performAction(e);
@@ -94,7 +89,15 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
      * @param e
      */
     protected void performAction(final ActionEvent e) {
-        if (TabForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
+        //actions from the form
+        if (TabForm.CMD_CREATE_NEW_ITEM.equals(e.getActionCommand())) {
+            model.createNewItem();
+        } else if (TabForm.CMD_REFRESH.equals(e.getActionCommand())) {
+            model.loadData();
+            tab.refresh();
+        } else if (TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER.equals(e.getActionCommand())) {
+            model.openSelectedItemsLink();
+        } else if (TabForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {
             if (model.getTabStatus() == VcsTabStatus.NOT_TF_GIT_REPO) {
                 //import into team services git
                 model.importIntoTeamServicesGit();
@@ -114,27 +117,14 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
 
     @Override
     public void update(final Observable observable, final Object arg) {
-        if (arg == null
-                || TabModel.PROP_TAB_STATUS.equals(arg)) {
+        if (arg == null || TabModel.PROP_TAB_STATUS.equals(arg)) {
             tab.setStatus(model.getTabStatus());
+        }
+        if (arg == null || TabModel.PROP_FILTER.equals(arg)) {
+            tab.setFilter(model.getFilter());
         }
         if (arg == null) {
             tab.setViewModel(model.getModelForView());
-        }
-        if (arg == null || arg.equals(TabModel.PROP_FILTER)) {
-            tab.setFilter(model.getFilter());
-        }
-
-        //actions from the form
-        if (TabForm.CMD_CREATE_NEW_ITEM.equals(arg)) {
-            model.createNewItem();
-        }
-        if (TabForm.CMD_REFRESH.equals(arg)) {
-            model.loadData();
-            tab.refresh();
-        }
-        if (TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER.equals(arg)) {
-            model.openSelectedItemsLink();
         }
     }
 
