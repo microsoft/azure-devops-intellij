@@ -4,7 +4,8 @@
 package com.microsoft.alm.plugin.events;
 
 import java.util.EventListener;
+import java.util.Map;
 
 public interface ServerEventListener extends EventListener {
-    void serverChanged(final ServerEvent event);
+    void serverChanged(final ServerEvent event, final Map<String,Object> contextMap);
 }

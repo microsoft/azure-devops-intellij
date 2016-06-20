@@ -5,10 +5,13 @@ package com.microsoft.alm.plugin.idea.statusBar;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.microsoft.alm.client.utils.StringUtil;
+import com.microsoft.alm.plugin.events.ServerEvent;
+import com.microsoft.alm.plugin.events.ServerEventListener;
+import com.microsoft.alm.plugin.events.ServerEventManager;
+import com.microsoft.alm.plugin.idea.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
@@ -16,33 +19,42 @@ import com.microsoft.alm.plugin.operations.Operation;
 import git4idea.branch.GitBranchUtil;
 import git4idea.repo.GitRepository;
 
-import javax.swing.Timer;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.Map;
 
 public class StatusBarManager {
-    private static ProjectEventListener listener;
-    private static Timer timer;
-    private static final int NORMAL_TIMER_DELAY = 5 * 60 * 1000; // TODO eventually get from settings
-    private static final int MIN_TIMER_DELAY = 2 * 1000;
+    private static ServerEventListener serverEventListener;
 
     public static void setupStatusBar() {
-        if (listener == null) {
-            listener = new ProjectEventListener();
-            ProjectManager.getInstance().addProjectManagerListener(listener);
-        }
-        // TODO: pull out the polling logic into a common class that the VCS tabs can use as well
-        if (timer == null) {
-            timer = new Timer(NORMAL_TIMER_DELAY, new ActionListener() {
+        if (serverEventListener == null) {
+            serverEventListener = new ServerEventListener() {
                 @Override
-                public void actionPerformed(ActionEvent e) {
-                    timer.stop();
-                    updateStatusBar();
+                public void serverChanged(final ServerEvent event, final Map<String, Object> contextMap) {
+                    // When we receive an event that builds have changed, update the status bar (ON UI THREAD)
+                    if (event == ServerEvent.BUILDS_CHANGED) {
+                        IdeaHelper.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Check the context object to see if these change events were triggered by IntelliJ
+                                if (EventContextHelper.isProjectOpened(contextMap)
+                                        || EventContextHelper.isRepositoryChanged(contextMap)) {
+                                    // On project opened or repo changed we use the project context to update the status bar
+                                    updateStatusBar(EventContextHelper.getProject(contextMap), false);
+                                } else if (EventContextHelper.isProjectClosing(contextMap)) {
+                                    // On project closing we remove our widgets from the status bar
+                                    removeWidgets(EventContextHelper.getProject(contextMap));
+                                } else {
+                                    // If there isn't any context, then we were called by the polling timer
+                                    // Just update all the status bars for all the projects
+                                    updateStatusBar();
+                                }
+
+                            }
+                        });
+                    }
                 }
-            });
-            timer.setRepeats(false);
-            timer.setInitialDelay(MIN_TIMER_DELAY); // The very first time we want to try quickly, after that we back off to TIMER_DELAY
-            timer.start();
+            };
+            // Add the listener to the server event manager
+            ServerEventManager.getInstance().addListener(serverEventListener);
         }
     }
 
@@ -94,9 +106,7 @@ public class StatusBarManager {
                 op.doWorkAsync(null);
             }
         } else {
-            // The repository hasn't been opened yet, so try again quickly
-            timer.setInitialDelay(MIN_TIMER_DELAY);
-            timer.restart();
+            // The repository hasn't been opened yet, we should get an event when it is opened
         }
     }
 
@@ -111,9 +121,6 @@ public class StatusBarManager {
             @Override
             public void run() {
                 statusBar.updateWidget(BuildWidget.getID());
-                // Update again based on the Normal delay
-                timer.setInitialDelay(NORMAL_TIMER_DELAY);
-                timer.restart();
             }
         });
     }
@@ -127,28 +134,4 @@ public class StatusBarManager {
             }
         }
     }
-
-    private static class ProjectEventListener implements ProjectManagerListener {
-        @Override
-        public void projectOpened(final Project project) {
-            updateStatusBar(project, false);
-        }
-
-        @Override
-        public boolean canCloseProject(final Project project) {
-            return true;
-        }
-
-        @Override
-        public void projectClosed(final Project project) {
-            // nothing to do here
-        }
-
-        @Override
-        public void projectClosing(final Project project) {
-            // remove all our widgets
-            removeWidgets(project);
-        }
-    }
-
 }

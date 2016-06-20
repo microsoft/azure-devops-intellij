@@ -7,6 +7,7 @@ import com.intellij.idea.Main;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.util.containers.HashMap;
+import com.microsoft.alm.plugin.events.ServerPollingManager;
 import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
 import com.microsoft.alm.plugin.idea.services.DeviceFlowResponsePromptImpl;
 import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
@@ -65,6 +66,12 @@ public class ApplicationStartup implements ApplicationComponent {
 
         // Setup status bar
         StatusBarManager.setupStatusBar();
+
+        // Hook up to VCS and Project events
+        VcsEventManager.getInstance().startListening();
+
+        // Start polling for server events
+        ServerPollingManager.getInstance().startPolling();
     }
 
     public void disposeComponent() {

@@ -6,6 +6,8 @@ package com.microsoft.alm.plugin.events;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Map;
+
 public class ServerEventManagerTest {
     private static class EventCounter {
         private int eventCount = 0;
@@ -28,7 +30,7 @@ public class ServerEventManagerTest {
         final EventCounter counter = new EventCounter();
         final ServerEventListener listener = new ServerEventListener() {
             @Override
-            public void serverChanged(ServerEvent event) {
+            public void serverChanged(final ServerEvent event, final Map<String,Object> contextMap) {
                 synchronized (EventCounter.class) {
                     counter.increment();
                 }
@@ -62,7 +64,7 @@ public class ServerEventManagerTest {
         final EventCounter counterPullRequest = new EventCounter();
         final ServerEventListener listener = new ServerEventListener() {
             @Override
-            public void serverChanged(ServerEvent event) {
+            public void serverChanged(final ServerEvent event, final Map<String,Object> contextMap) {
                 if (event == ServerEvent.BUILDS_CHANGED) {
                     counterBuild.increment();
                 }
@@ -83,7 +85,7 @@ public class ServerEventManagerTest {
         Assert.assertEquals(1, manager.getListenerCount());
 
         try {
-            manager.triggerEvent(null);
+            manager.triggerEvent(null, null);
             Assert.fail("null was accepted in the triggerEvent method");
         } catch (IllegalArgumentException e) {
             // This is expected
@@ -95,25 +97,25 @@ public class ServerEventManagerTest {
         Assert.assertEquals(0, counterWit.getEventCount());
 
         // Make sure that firing an event only triggers the event passed in
-        manager.triggerEvent(ServerEvent.BUILDS_CHANGED);
+        manager.triggerEvent(ServerEvent.BUILDS_CHANGED, null);
         Assert.assertEquals(1, counterBuild.getEventCount());
         Assert.assertEquals(0, counterPullRequest.getEventCount());
         Assert.assertEquals(0, counterWit.getEventCount());
 
-        manager.triggerEvent(ServerEvent.PULL_REQUESTS_CHANGED);
+        manager.triggerEvent(ServerEvent.PULL_REQUESTS_CHANGED, null);
         Assert.assertEquals(1, counterBuild.getEventCount());
         Assert.assertEquals(1, counterPullRequest.getEventCount());
         Assert.assertEquals(0, counterWit.getEventCount());
 
-        manager.triggerEvent(ServerEvent.WORK_ITEMS_CHANGED);
+        manager.triggerEvent(ServerEvent.WORK_ITEMS_CHANGED, null);
         Assert.assertEquals(1, counterBuild.getEventCount());
         Assert.assertEquals(1, counterPullRequest.getEventCount());
         Assert.assertEquals(1, counterWit.getEventCount());
 
         // Make sure that multiple events fire individually and don't affect other events
-        manager.triggerEvent(ServerEvent.BUILDS_CHANGED);
-        manager.triggerEvent(ServerEvent.BUILDS_CHANGED);
-        manager.triggerEvent(ServerEvent.BUILDS_CHANGED);
+        manager.triggerEvent(ServerEvent.BUILDS_CHANGED, null);
+        manager.triggerEvent(ServerEvent.BUILDS_CHANGED, null);
+        manager.triggerEvent(ServerEvent.BUILDS_CHANGED, null);
         Assert.assertEquals(4, counterBuild.getEventCount());
         Assert.assertEquals(1, counterPullRequest.getEventCount());
         Assert.assertEquals(1, counterWit.getEventCount());

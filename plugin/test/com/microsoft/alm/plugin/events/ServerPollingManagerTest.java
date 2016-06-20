@@ -7,6 +7,7 @@ import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -37,7 +38,7 @@ public class ServerPollingManagerTest {
         final SettableFuture<Boolean> prChangedCalled = SettableFuture.create();
         eventManager.addListener(new ServerEventListener() {
             @Override
-            public void serverChanged(ServerEvent event) {
+            public void serverChanged(final ServerEvent event, final Map<String,Object> contextMap) {
                 if (event == ServerEvent.BUILDS_CHANGED) {
                     buildChangedCalled.set(true);
                 }

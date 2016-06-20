@@ -4,12 +4,17 @@
 package com.microsoft.alm.plugin.events;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class ServerPollingManager {
+    private static final Logger logger = LoggerFactory.getLogger(ServerPollingManager.class);
+    private static final int DEFAULT_POLLING_INTERVAL = 5 * 60 * 1000; // TODO eventually get from settings
+
     private final ServerEventManager eventManager;
     private final Timer timer;
     private boolean polling = false;
@@ -23,6 +28,7 @@ public class ServerPollingManager {
     }
 
     protected ServerPollingManager(final ServerEventManager eventManager) {
+        logger.info("ServerPollingManager created");
         ArgumentHelper.checkNotNull(eventManager, "eventManager");
         this.eventManager = eventManager;
         timer = new Timer(Integer.MAX_VALUE, new ActionListener() {
@@ -33,7 +39,12 @@ public class ServerPollingManager {
         });
     }
 
+    public void startPolling() {
+        startPolling(DEFAULT_POLLING_INTERVAL);
+    }
+
     public void startPolling(final int intervalInMilliSeconds) {
+        logger.info("Polling started");
         polling = true;
         if (!timer.isRunning()) {
             timer.setInitialDelay(intervalInMilliSeconds);
@@ -42,6 +53,7 @@ public class ServerPollingManager {
     }
 
     public void stopPolling() {
+        logger.info("Polling stopped");
         polling = false;
         if (timer.isRunning()) {
             timer.stop();
@@ -49,16 +61,15 @@ public class ServerPollingManager {
     }
 
     private void timerFired() {
+        logger.info("Timer fired");
         timer.stop();
         if (!polling) {
             return;
         }
 
         // TODO: Ideally we would contact the server and see what actually changed, but there isn't any call for that, yet
-        // Fire each changed event
-        eventManager.triggerEvent(ServerEvent.BUILDS_CHANGED);
-        eventManager.triggerEvent(ServerEvent.PULL_REQUESTS_CHANGED);
-        eventManager.triggerEvent(ServerEvent.WORK_ITEMS_CHANGED);
+        // Fire all changed events
+        eventManager.triggerAllEvents(null);
         timer.restart();
     }
 }
