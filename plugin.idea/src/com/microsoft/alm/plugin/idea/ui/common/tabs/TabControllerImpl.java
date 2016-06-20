@@ -3,12 +3,18 @@
 
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
+import com.microsoft.alm.plugin.events.ServerEvent;
+import com.microsoft.alm.plugin.events.ServerEventListener;
+import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.utils.EventContextHelper;
+import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -19,7 +25,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
     protected Tab tab;
     protected T model;
 
-    public TabControllerImpl(@NotNull final Tab tab, @NotNull T model) {
+    public TabControllerImpl(@NotNull final Tab tab, @NotNull T model, @NotNull final ServerEvent[] eventFilters) {
         this.tab = tab;
         this.model = model;
 
@@ -34,6 +40,42 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
 
         //load the items
         model.loadData();
+
+        // Hook up to the server changed events so that we can auto update when the server changes
+        ServerEventManager.getInstance().addListener(new ServerEventListener() {
+            @Override
+            public void serverChanged(final ServerEvent event, final Map<String, Object> contextMap) {
+                for (final ServerEvent filter : eventFilters) {
+                    if (filter == event) {
+                        handleServerChangedEvent(event, contextMap);
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * The default behavior is to simply refresh the tab. If a subclass needs to do additional work or change the
+     * behavior, they should override this method.
+     * Note that this method will not be called except for events that are in the eventFilters passed into the constructor.
+     *
+     * @param event      the event that was triggered.
+     * @param contextMap the map of name value pairs that make up the context of this event.
+     */
+    protected void handleServerChangedEvent(ServerEvent event, Map<String, Object> contextMap) {
+        if (EventContextHelper.isProjectClosing(contextMap)) {
+            // Nothing to do in this case, just ignore it
+            return;
+        }
+
+        // Push back onto the UI thread and refresh the model
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                model.loadData();
+            }
+        });
     }
 
     private void setupTab() {

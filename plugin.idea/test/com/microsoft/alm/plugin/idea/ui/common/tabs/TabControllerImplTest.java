@@ -33,7 +33,7 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
-        underTest = new TabControllerImpl(mockTab, mockModel) {{
+        underTest = new TabControllerImpl(mockTab, mockModel, null) {{
         }};
         Mockito.reset(mockTab);
         Mockito.reset(mockModel);
