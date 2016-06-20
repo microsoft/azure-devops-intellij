@@ -22,22 +22,22 @@ import java.util.Map;
  * The purpose of this class is to listen for IDEA events like project changed or repository changed and
  * notify the ServerEventManager to fire all changed events.
  */
-public class VcsEventManager {
-    private static final Logger logger = LoggerFactory.getLogger(VcsEventManager.class);
+public class ProjectRepoEventManager {
+    private static final Logger logger = LoggerFactory.getLogger(ProjectRepoEventManager.class);
 
 
     private ProjectEventListener projectEventListener;
 
     private static class Holder {
-        private static final VcsEventManager INSTANCE = new VcsEventManager();
+        private static final ProjectRepoEventManager INSTANCE = new ProjectRepoEventManager();
     }
 
-    public static VcsEventManager getInstance() {
+    public static ProjectRepoEventManager getInstance() {
         return Holder.INSTANCE;
     }
 
-    protected VcsEventManager() {
-        logger.info("VcsEventManager created");
+    protected ProjectRepoEventManager() {
+        logger.info("ProjectRepoEventManager created");
     }
 
     public void startListening() {
@@ -51,7 +51,7 @@ public class VcsEventManager {
         ArgumentHelper.checkNotEmptyString(sender);
         ArgumentHelper.checkNotNull(project, "project");
 
-        Map<String,Object> context = new HashMap<String, Object>();
+        final Map<String,Object> context = new HashMap<String, Object>();
         EventContextHelper.setSender(context, sender);
         EventContextHelper.setProject(context, project);
         if (repository != null) {
@@ -65,7 +65,7 @@ public class VcsEventManager {
     private static class ProjectEventListener implements ProjectManagerListener {
         @Override
         public void projectOpened(final Project project) {
-            VcsEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_OPENED, project, null);
+            ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_OPENED, project, null);
             subscribeToRepoChangeEvents(project);
         }
 
@@ -81,7 +81,7 @@ public class VcsEventManager {
 
         @Override
         public void projectClosing(final Project project) {
-            VcsEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_CLOSING, project, null);
+            ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_CLOSING, project, null);
         }
 
         private void subscribeToRepoChangeEvents(@NotNull final Project project) {
@@ -89,7 +89,7 @@ public class VcsEventManager {
                 @Override
                 public void repositoryChanged(@NotNull final GitRepository repository) {
                     logger.info("repository changed");
-                    VcsEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
+                    ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
                 }
             });
         }

@@ -4,13 +4,14 @@
 package com.microsoft.alm.plugin.idea.utils;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import git4idea.repo.GitRepository;
 
 import java.util.Map;
 
 /**
  * This class is used to help listeners of Server events easily get the context of events that were triggered by
- * the VcsEventManager in response to IntelliJ changes like project opening/closing or repository changes.
+ * the ProjectRepoEventManager in response to IntelliJ changes like project opening/closing or repository changes.
  */
 public class EventContextHelper {
     public static final String SENDER_PROJECT_OPENED = "projectOpened";
@@ -20,42 +21,48 @@ public class EventContextHelper {
     public static final String CONTEXT_PROJECT = "project";
     public static final String CONTEXT_REPOSITORY = "repository";
 
-    public static void setSender(Map<String,Object> eventContext, String sender) {
+    public static void setSender(final Map<String,Object> eventContext, final String sender) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         eventContext.put(EventContextHelper.CONTEXT_SENDER, sender);
     }
 
-    public static void setProject(Map<String,Object> eventContext, Project project) {
+    public static void setProject(final Map<String,Object> eventContext, final Project project) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         eventContext.put(EventContextHelper.CONTEXT_PROJECT, project);
     }
 
-    public static void setRepository(Map<String,Object> eventContext, GitRepository repository) {
+    public static void setRepository(final Map<String,Object> eventContext, final GitRepository repository) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         eventContext.put(EventContextHelper.CONTEXT_REPOSITORY, repository);
     }
 
-    public static String getSender(Map<String,Object> eventContext) {
+    public static String getSender(final Map<String,Object> eventContext) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         return (String)eventContext.get(EventContextHelper.CONTEXT_SENDER);
     }
 
-    public static Project getProject(Map<String,Object> eventContext) {
+    public static Project getProject(final Map<String,Object> eventContext) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         return (Project)eventContext.get(EventContextHelper.CONTEXT_PROJECT);
     }
 
-    public static GitRepository getRepository(Map<String,Object> eventContext) {
+    public static GitRepository getRepository(final Map<String,Object> eventContext) {
+        ArgumentHelper.checkNotNull(eventContext, "eventContext");
         return (GitRepository)eventContext.get(EventContextHelper.CONTEXT_REPOSITORY);
     }
 
-    public static boolean isProjectOpened(Map<String,Object> eventContext) {
-        String sender = getSender(eventContext);
+    public static boolean isProjectOpened(final Map<String,Object> eventContext) {
+        final String sender = getSender(eventContext);
         return SENDER_PROJECT_OPENED.equals(sender) && getProject(eventContext) != null;
     }
 
-    public static boolean isProjectClosing(Map<String,Object> eventContext) {
-        String sender = getSender(eventContext);
+    public static boolean isProjectClosing(final Map<String,Object> eventContext) {
+        final String sender = getSender(eventContext);
         return SENDER_PROJECT_CLOSING.equals(sender) && getProject(eventContext) != null;
     }
 
-    public static boolean isRepositoryChanged(Map<String,Object> eventContext) {
-        String sender = getSender(eventContext);
+    public static boolean isRepositoryChanged(final Map<String,Object> eventContext) {
+        final String sender = getSender(eventContext);
         return SENDER_REPO_CHANGED.equals(sender) && getProject(eventContext) != null;
     }
 }

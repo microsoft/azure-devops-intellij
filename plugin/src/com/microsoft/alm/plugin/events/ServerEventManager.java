@@ -39,6 +39,7 @@ public class ServerEventManager {
     }
 
     public void triggerAllEvents(final Map<String,Object> contextMap) {
+        logger.info("triggering ALL events");
         triggerEvent(ServerEvent.BUILDS_CHANGED, contextMap);
         triggerEvent(ServerEvent.PULL_REQUESTS_CHANGED, contextMap);
         triggerEvent(ServerEvent.WORK_ITEMS_CHANGED, contextMap);

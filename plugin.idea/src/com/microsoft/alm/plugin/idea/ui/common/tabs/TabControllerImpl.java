@@ -63,7 +63,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
      * @param event      the event that was triggered.
      * @param contextMap the map of name value pairs that make up the context of this event.
      */
-    protected void handleServerChangedEvent(ServerEvent event, Map<String, Object> contextMap) {
+    protected void handleServerChangedEvent(final ServerEvent event, final Map<String, Object> contextMap) {
         if (EventContextHelper.isProjectClosing(contextMap)) {
             // Nothing to do in this case, just ignore it
             return;

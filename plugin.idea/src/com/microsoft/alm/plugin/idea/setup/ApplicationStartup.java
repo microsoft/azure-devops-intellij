@@ -68,7 +68,7 @@ public class ApplicationStartup implements ApplicationComponent {
         StatusBarManager.setupStatusBar();
 
         // Hook up to VCS and Project events
-        VcsEventManager.getInstance().startListening();
+        ProjectRepoEventManager.getInstance().startListening();
 
         // Start polling for server events
         ServerPollingManager.getInstance().startPolling();
