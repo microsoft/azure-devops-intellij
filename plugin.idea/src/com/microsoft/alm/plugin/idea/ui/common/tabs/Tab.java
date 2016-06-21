@@ -26,6 +26,10 @@ public interface Tab<T extends FilteredModel> {
 
     String getFilter();
 
+    void setAutoRefresh(boolean autoRefresh);
+
+    boolean getAutoRefresh();
+
     void setViewModel(final T modelView);
 
     Operation.Inputs getOperationInputs();

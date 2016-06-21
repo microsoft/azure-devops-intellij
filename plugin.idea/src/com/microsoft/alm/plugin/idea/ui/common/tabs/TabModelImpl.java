@@ -4,6 +4,8 @@
 package com.microsoft.alm.plugin.idea.ui.common.tabs;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.client.utils.StringUtil;
+import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
@@ -21,15 +23,23 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     protected final Project project;
     protected final T viewForModel;
+    private final String propertyStoragePrefix;
     protected TabLookupListenerImpl dataProvider;
     protected GitRepository gitRepository;
     private String filter = StringUtils.EMPTY;
+    private boolean autoRefresh = true;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
     protected Operation.Inputs operationInputs;
 
-    public TabModelImpl(@NotNull final Project project, @NotNull T viewModel) {
+    public TabModelImpl(@NotNull final Project project, @NotNull T viewModel, String propertyStoragePrefix) {
         this.project = project;
         this.viewForModel = viewModel;
+        // Make sure the prefix isn't null
+        this.propertyStoragePrefix = StringUtil.isNullOrEmpty(propertyStoragePrefix) ? StringUtil.EMPTY : propertyStoragePrefix;
+
+        // Get the value of auto refresh from the property service
+        String autoRefreshText = PropertyServiceImpl.getInstance().getProperty(propertyStoragePrefix + PROP_AUTO_REFRESH);
+        autoRefresh = StringUtils.isEmpty(autoRefreshText) ? true : Boolean.parseBoolean(autoRefreshText);
 
         // need to create data provider after calling parent class since it passes the class to the provider
         createDataProvider();
@@ -97,6 +107,19 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
 
     public String getFilter() {
         return filter;
+    }
+
+    public void setAutoRefresh(final boolean autoRefresh) {
+        if (this.autoRefresh != autoRefresh) {
+            this.autoRefresh = autoRefresh;
+            setChangedAndNotify(PROP_AUTO_REFRESH);
+            PropertyServiceImpl.getInstance().setProperty(propertyStoragePrefix + PROP_AUTO_REFRESH,
+                    Boolean.toString(autoRefresh));
+        }
+    }
+
+    public boolean getAutoRefresh() {
+        return autoRefresh;
     }
 
     public Operation.Inputs getOperationInputs() {

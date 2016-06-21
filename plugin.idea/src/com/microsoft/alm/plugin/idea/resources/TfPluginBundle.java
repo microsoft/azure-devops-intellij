@@ -411,6 +411,8 @@ public class TfPluginBundle {
     public static final String KEY_VCS_LAST_REFRESHED_AT = "VcsTab.LastRefreshedAt";
     @NonNls
     public static final String KEY_VCS_LOADING_ERRORS = "VcsTab.LoadingErrors";
+    @NonNls
+    public static final String KEY_VCS_AUTO_REFRESH = "VcsTab.AutoRefresh";
 
     //status bar
     @NonNls

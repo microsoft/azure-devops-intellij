@@ -16,6 +16,7 @@ import java.util.Observer;
  */
 public interface TabForm<T extends FilteredModel> {
     // tab commands
+    String CMD_AUTO_REFRESH_CHANGED = "autoRefreshChanged";
     String CMD_REFRESH = "refresh";
     String CMD_FILTER_CHANGED = "filter";
     String CMD_STATUS_LINK = "statusLink";
@@ -32,6 +33,10 @@ public interface TabForm<T extends FilteredModel> {
     void setFilter(final String filterString);
 
     String getFilter();
+
+    void setAutoRefresh(boolean autoRefresh);
+
+    boolean getAutoRefresh();
 
     void setModelForView(final T viewModel);
 

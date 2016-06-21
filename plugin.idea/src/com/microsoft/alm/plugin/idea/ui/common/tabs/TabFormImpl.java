@@ -20,6 +20,8 @@ import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ActionListenerContainer;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
+import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.ToolbarToggleButton;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
@@ -36,6 +38,7 @@ import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Date;
@@ -56,6 +59,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
     protected JLabel statusLabel;
     protected Hyperlink statusLink;
     protected SearchFilter searchFilter;
+    protected ToolbarToggleButton autoRefreshToggleButton;
 
     private boolean initialized = false;
     protected Timer timer;
@@ -107,6 +111,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
             if (ApplicationManager.getApplication() != null) {
                 final ActionToolbar prActionsToolbar = createToolbar(createActionsGroup());
                 final ActionToolbar feedbackActionsToolbar = createToolbar(createFeedbackGroup());
+                final ActionToolbar optionsActionsToolbar = createToolbar(createOptionsGroup());
 
                 // left panel of the top toolbar
                 final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, JBUI.scale(3)); // give vertical padding
@@ -115,9 +120,16 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
                 toolBarPanelLeft.add(searchFilter);
                 addCustomTools(toolBarPanelLeft);
 
+                // middle panel of the top toolbar
+                final FlowLayout flowLayout2 = new FlowLayout(FlowLayout.LEFT, 0, JBUI.scale(3)); // give vertical padding
+                final JPanel toolBarPanelMiddle = new JPanel(flowLayout2);
+                toolBarPanelMiddle.add(optionsActionsToolbar.getComponent());
+                SwingHelper.setMargin(toolBarPanelMiddle, new Insets(JBUI.scale(2), JBUI.scale(15), 0, 0));
+
                 //entire top toolbar
                 toolBarPanel = new JPanel(new BorderLayout());
                 toolBarPanel.add(toolBarPanelLeft, BorderLayout.LINE_START);
+                toolBarPanel.add(toolBarPanelMiddle, BorderLayout.CENTER);
                 toolBarPanel.add(feedbackActionsToolbar.getComponent(), BorderLayout.LINE_END);
             } else {
                 //skip setup when called from unit tests
@@ -181,6 +193,22 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
 
         return new DefaultActionGroup(createAction, refreshAction);
     }
+
+    /**
+     * Create the option buttons for the toolbar
+     *
+     * @return action group
+     */
+    protected DefaultActionGroup createOptionsGroup() {
+        autoRefreshToggleButton = new ToolbarToggleButton(
+                TfPluginBundle.message(TfPluginBundle.KEY_VCS_AUTO_REFRESH),
+                true,
+                CMD_AUTO_REFRESH_CHANGED);
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(autoRefreshToggleButton);
+        return group;
+    }
+
 
     /**
      * Create the feedback portion of the toolbar
@@ -266,6 +294,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
     public void addActionListener(final ActionListener listener) {
         timer.addActionListener(listener);
         statusLink.addActionListener(listener);
+        autoRefreshToggleButton.addActionListener(listener);
         listenerContainer.add(listener);
     }
 
@@ -321,6 +350,14 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
 
     public String getFilter() {
         return searchFilter.getFilterText();
+    }
+
+    public void setAutoRefresh(boolean autoRefresh) {
+        autoRefreshToggleButton.setSelected(null, autoRefresh);
+    }
+
+    public boolean getAutoRefresh() {
+        return autoRefreshToggleButton.isSelected(null);
     }
 
     public abstract Operation.Inputs getOperationInputs();

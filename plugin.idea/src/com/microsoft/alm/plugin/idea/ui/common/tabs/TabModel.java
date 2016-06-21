@@ -15,6 +15,7 @@ import java.util.Observer;
 public interface TabModel<T extends FilteredModel> {
     String PROP_FILTER = "filter";
     String PROP_TAB_STATUS = "tabStatus";
+    String PROP_AUTO_REFRESH = "autoRefresh";
 
     VcsTabStatus getTabStatus();
 
@@ -39,6 +40,10 @@ public interface TabModel<T extends FilteredModel> {
     void setFilter(final String filter);
 
     String getFilter();
+
+    void setAutoRefresh(boolean autoRefresh);
+
+    boolean getAutoRefresh();
 
     Operation.Inputs getOperationInputs();
 

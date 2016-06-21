@@ -14,6 +14,7 @@ import java.util.Map;
  * the ProjectRepoEventManager in response to IntelliJ changes like project opening/closing or repository changes.
  */
 public class EventContextHelper {
+    public static final String SENDER_POLLING_MANAGER = "pollingManager";
     public static final String SENDER_PROJECT_OPENED = "projectOpened";
     public static final String SENDER_PROJECT_CLOSING = "projectClosing";
     public static final String SENDER_REPO_CHANGED = "repoChanged";

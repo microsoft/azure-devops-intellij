@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.Timer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ServerPollingManager {
     private static final Logger logger = LoggerFactory.getLogger(ServerPollingManager.class);
@@ -69,7 +71,9 @@ public class ServerPollingManager {
 
         // TODO: Ideally we would contact the server and see what actually changed, but there isn't any call for that, yet
         // Fire all changed events
-        eventManager.triggerAllEvents(null);
+        final Map<String,Object> eventContext = new HashMap<String,Object>();
+        eventContext.put("sender", "pollingManager");
+        eventManager.triggerAllEvents(eventContext);
         timer.restart();
     }
 }

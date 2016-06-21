@@ -64,7 +64,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
      * @param contextMap the map of name value pairs that make up the context of this event.
      */
     protected void handleServerChangedEvent(final ServerEvent event, final Map<String, Object> contextMap) {
-        if (EventContextHelper.isProjectClosing(contextMap)) {
+        if (!model.getAutoRefresh() || EventContextHelper.isProjectClosing(contextMap)) {
             // Nothing to do in this case, just ignore it
             return;
         }
@@ -108,6 +108,8 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
                 //open current repository in web
                 model.openGitRepoLink();
             }
+        } else if (TabForm.CMD_AUTO_REFRESH_CHANGED.equals(e.getActionCommand())) {
+            model.setAutoRefresh(tab.getAutoRefresh());
         }
     }
 
@@ -123,6 +125,9 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
         if (arg == null || TabModel.PROP_FILTER.equals(arg)) {
             tab.setFilter(model.getFilter());
         }
+        if (arg == null || TabModel.PROP_AUTO_REFRESH.equals(arg)) {
+            tab.setAutoRefresh(model.getAutoRefresh());
+        }
         if (arg == null) {
             tab.setViewModel(model.getModelForView());
         }
@@ -130,6 +135,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
 
     protected void updateModel() {
         model.setFilter(tab.getFilter());
+        model.setAutoRefresh(tab.getAutoRefresh());
         model.setOperationInputs(tab.getOperationInputs());
     }
 

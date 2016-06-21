@@ -51,6 +51,14 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         return form.getFilter();
     }
 
+    public void setAutoRefresh(boolean autoRefresh) {
+        form.setAutoRefresh(autoRefresh);
+    }
+
+    public boolean getAutoRefresh() {
+        return form.getAutoRefresh();
+    }
+
     public void setViewModel(final T modelView) {
         form.setModelForView(modelView);
     }

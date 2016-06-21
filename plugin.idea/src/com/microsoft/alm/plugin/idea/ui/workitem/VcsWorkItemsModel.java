@@ -47,13 +47,13 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     public static final String ASSOCIATE_WORK_ITEM_ACTION = "associate-work-item";
 
     public VcsWorkItemsModel(final @NotNull Project project) {
-        super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH));
+        super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH), "WorkItemsTab.");
         operationInputs = new WorkItemLookupOperation.WitInputs(WorkItemHelper.getAssignedToMeQuery());
     }
 
     @VisibleForTesting
     protected VcsWorkItemsModel(final @NotNull Project project, final @NotNull WorkItemsTableModel tableModel) {
-        super(project, tableModel);
+        super(project, tableModel, "WorkItemsTab.");
     }
 
     protected void createDataProvider() {

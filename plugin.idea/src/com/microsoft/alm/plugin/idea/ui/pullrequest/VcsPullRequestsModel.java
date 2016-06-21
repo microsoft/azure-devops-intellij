@@ -30,7 +30,7 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsPullRequestsModel.class);
 
     public VcsPullRequestsModel(@NotNull Project project) {
-        super(project, new PullRequestsTreeModel());
+        super(project, new PullRequestsTreeModel(), "PullRequestsTab.");
         operationInputs = Operation.EMPTY_INPUTS;
     }
 
