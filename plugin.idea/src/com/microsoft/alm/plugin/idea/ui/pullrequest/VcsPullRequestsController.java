@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.events.ServerEvent;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabControllerImpl;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabImpl;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +18,8 @@ public class VcsPullRequestsController extends TabControllerImpl<VcsPullRequests
     private static final String EVENT_NAME = "Pull Requests";
 
     public VcsPullRequestsController(final @NotNull Project project) {
-        super(new TabImpl(new VcsPullRequestsForm(), EVENT_NAME), new VcsPullRequestsModel(project));
+        super(new TabImpl(new VcsPullRequestsForm(), EVENT_NAME), new VcsPullRequestsModel(project),
+                new ServerEvent[]{ServerEvent.PULL_REQUESTS_CHANGED});
     }
 
     @Override
