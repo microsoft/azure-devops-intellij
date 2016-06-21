@@ -48,7 +48,7 @@ public class TabModelImplTest extends IdeaAbstractTest {
     @SuppressWarnings("unchecked")
     public void setUp() {
         PowerMockito.mockStatic(TfGitHelper.class);
-        underTest = Mockito.spy(new TabModelImpl(mockProject, mockModel) {
+        underTest = Mockito.spy(new TabModelImpl(mockProject, mockModel, null) {
             protected void createDataProvider() {
 
             }

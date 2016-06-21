@@ -17,8 +17,11 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.ui.common.ActionListenerContainer;
 import com.microsoft.alm.plugin.idea.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.ui.common.FilteredModel;
+import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.ToolbarToggleButton;
 import com.microsoft.alm.plugin.idea.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.ui.controls.SearchFilter;
@@ -35,26 +38,28 @@ import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Date;
 import java.util.List;
-import java.util.Observable;
 
 /**
  * Common functionality for all tab views
  */
-public abstract class TabFormImpl<T extends FilteredModel> extends Observable implements TabForm<T> {
+public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T> {
     private final String tabTitle;
     private final String createDialogTitle;
     private final String refreshTooltip;
     private final String toolbarLocation;
+    private final ActionListenerContainer listenerContainer = new ActionListenerContainer();
 
     protected JPanel tabPanel;
     protected JScrollPane scrollPanel;
     protected JLabel statusLabel;
     protected Hyperlink statusLink;
     protected SearchFilter searchFilter;
+    protected ToolbarToggleButton autoRefreshToggleButton;
 
     private boolean initialized = false;
     protected Timer timer;
@@ -106,6 +111,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
             if (ApplicationManager.getApplication() != null) {
                 final ActionToolbar prActionsToolbar = createToolbar(createActionsGroup());
                 final ActionToolbar feedbackActionsToolbar = createToolbar(createFeedbackGroup());
+                final ActionToolbar optionsActionsToolbar = createToolbar(createOptionsGroup());
 
                 // left panel of the top toolbar
                 final FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT, 0, JBUI.scale(3)); // give vertical padding
@@ -114,9 +120,16 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 toolBarPanelLeft.add(searchFilter);
                 addCustomTools(toolBarPanelLeft);
 
+                // middle panel of the top toolbar
+                final FlowLayout flowLayout2 = new FlowLayout(FlowLayout.LEFT, 0, JBUI.scale(3)); // give vertical padding
+                final JPanel toolBarPanelMiddle = new JPanel(flowLayout2);
+                toolBarPanelMiddle.add(optionsActionsToolbar.getComponent());
+                SwingHelper.setMargin(toolBarPanelMiddle, new Insets(JBUI.scale(2), JBUI.scale(15), 0, 0));
+
                 //entire top toolbar
                 toolBarPanel = new JPanel(new BorderLayout());
                 toolBarPanel.add(toolBarPanelLeft, BorderLayout.LINE_START);
+                toolBarPanel.add(toolBarPanelMiddle, BorderLayout.CENTER);
                 toolBarPanel.add(feedbackActionsToolbar.getComponent(), BorderLayout.LINE_END);
             } else {
                 //skip setup when called from unit tests
@@ -164,7 +177,7 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 AllIcons.ToolbarDecorator.Add) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(CMD_CREATE_NEW_ITEM);
+                listenerContainer.triggerEvent(this, CMD_CREATE_NEW_ITEM);
             }
         };
         createAction.registerCustomShortcutSet(CommonShortcuts.getNew(), scrollPanel); //Ctrl+N on windows or Cmd+M on Mac
@@ -173,13 +186,29 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
                 TfPluginBundle.message(refreshTooltip), AllIcons.Actions.Refresh) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
-                setChangedAndNotify(CMD_REFRESH);
+                listenerContainer.triggerEvent(this, CMD_REFRESH);
             }
         };
         refreshAction.registerCustomShortcutSet(CommonShortcuts.getRerun(), scrollPanel); //Ctrl+R on windows or Cmd+R on Mac
 
         return new DefaultActionGroup(createAction, refreshAction);
     }
+
+    /**
+     * Create the option buttons for the toolbar
+     *
+     * @return action group
+     */
+    protected DefaultActionGroup createOptionsGroup() {
+        autoRefreshToggleButton = new ToolbarToggleButton(
+                TfPluginBundle.message(TfPluginBundle.KEY_VCS_AUTO_REFRESH),
+                true,
+                CMD_AUTO_REFRESH_CHANGED);
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(autoRefreshToggleButton);
+        return group;
+    }
+
 
     /**
      * Create the feedback portion of the toolbar
@@ -265,6 +294,12 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
     public void addActionListener(final ActionListener listener) {
         timer.addActionListener(listener);
         statusLink.addActionListener(listener);
+        autoRefreshToggleButton.addActionListener(listener);
+        listenerContainer.add(listener);
+    }
+
+    protected void triggerEvent(String event) {
+        listenerContainer.triggerEvent(this, event);
     }
 
     /**
@@ -309,17 +344,20 @@ public abstract class TabFormImpl<T extends FilteredModel> extends Observable im
         return menuItem;
     }
 
-    protected void setChangedAndNotify(final String propertyName) {
-        super.setChanged();
-        super.notifyObservers(propertyName);
-    }
-
     public void setFilter(final String filterString) {
         searchFilter.setFilterText(filterString);
     }
 
     public String getFilter() {
         return searchFilter.getFilterText();
+    }
+
+    public void setAutoRefresh(final boolean autoRefresh) {
+        autoRefreshToggleButton.setSelected(null, autoRefresh);
+    }
+
+    public boolean getAutoRefresh() {
+        return autoRefreshToggleButton.isSelected(null);
     }
 
     public abstract Operation.Inputs getOperationInputs();

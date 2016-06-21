@@ -126,7 +126,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
                 super.mouseClicked(mouseEvent);
                 //double click
                 if (mouseEvent.getClickCount() == 2) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
+                    triggerEvent(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 } else if (mouseEvent.isPopupTrigger() || ((mouseEvent.getModifiers() & InputEvent.BUTTON3_MASK) == InputEvent.BUTTON3_MASK)) {
                     //right click, show pop up
                     showPopupMenu(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY(), listener);
@@ -144,7 +144,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
             @Override
             public void keyPressed(KeyEvent keyEvent) {
                 if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER) {
-                    setChangedAndNotify(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
+                    triggerEvent(CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
                 }
             }
 

@@ -9,13 +9,13 @@ import com.microsoft.alm.plugin.operations.Operation;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Observer;
 
 /**
  * Interface for IntelliJ tab views
  */
 public interface TabForm<T extends FilteredModel> {
     // tab commands
+    String CMD_AUTO_REFRESH_CHANGED = "autoRefreshChanged";
     String CMD_REFRESH = "refresh";
     String CMD_FILTER_CHANGED = "filter";
     String CMD_STATUS_LINK = "statusLink";
@@ -33,7 +33,9 @@ public interface TabForm<T extends FilteredModel> {
 
     String getFilter();
 
-    void addObserver(final Observer observer);
+    void setAutoRefresh(final boolean autoRefresh);
+
+    boolean getAutoRefresh();
 
     void setModelForView(final T viewModel);
 

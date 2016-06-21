@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Observer;
 
 /**
  * Tab class to setup common functionality such as metrics and getters/setters
@@ -39,10 +38,6 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         form.addActionListener(listener);
     }
 
-    public void addObserver(final Observer observer) {
-        form.addObserver(observer);
-    }
-
     public void setStatus(final VcsTabStatus status) {
         form.setStatus(status);
     }
@@ -53,6 +48,14 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
 
     public String getFilter() {
         return form.getFilter();
+    }
+
+    public void setAutoRefresh(final boolean autoRefresh) {
+        form.setAutoRefresh(autoRefresh);
+    }
+
+    public boolean getAutoRefresh() {
+        return form.getAutoRefresh();
     }
 
     public void setViewModel(final T modelView) {

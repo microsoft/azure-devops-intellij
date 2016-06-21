@@ -40,21 +40,25 @@ public class TabControllerImplTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testObservableActions_CreateItem() {
-        underTest.update(null, TabForm.CMD_CREATE_NEW_ITEM);
+    public void testActionListener_CreateItem() {
+        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
+        underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_CREATE_NEW_ITEM));
         verify(mockModel).createNewItem();
     }
 
     @Test
-    public void testObservableActions_Refresh() {
+    public void testActionListener_Refresh() {
+        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
+        underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_REFRESH));
         underTest.update(null, TabForm.CMD_REFRESH);
         verify(mockModel).loadData();
         verify(mockTab).refresh();
     }
 
     @Test
-    public void testObservableActions_OpenItem() {
-        underTest.update(null, TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER);
+    public void testActionListener_OpenItem() {
+        when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
+        underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER));
         verify(mockModel).openSelectedItemsLink();
     }
 

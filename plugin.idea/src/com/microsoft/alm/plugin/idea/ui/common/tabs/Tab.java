@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.operations.Operation;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Observer;
 
 /**
  * Tab interface for IntelliJ
@@ -20,13 +19,15 @@ public interface Tab<T extends FilteredModel> {
 
     void addActionListener(final ActionListener listener);
 
-    void addObserver(final Observer observer);
-
     void setStatus(final VcsTabStatus status);
 
     void setFilter(final String filterString);
 
     String getFilter();
+
+    void setAutoRefresh(final boolean autoRefresh);
+
+    boolean getAutoRefresh();
 
     void setViewModel(final T modelView);
 
