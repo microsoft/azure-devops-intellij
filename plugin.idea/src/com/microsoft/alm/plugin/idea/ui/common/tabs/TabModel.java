@@ -41,7 +41,7 @@ public interface TabModel<T extends FilteredModel> {
 
     String getFilter();
 
-    void setAutoRefresh(boolean autoRefresh);
+    void setAutoRefresh(final boolean autoRefresh);
 
     boolean getAutoRefresh();
 

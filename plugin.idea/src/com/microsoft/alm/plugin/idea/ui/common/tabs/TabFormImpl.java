@@ -352,7 +352,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
         return searchFilter.getFilterText();
     }
 
-    public void setAutoRefresh(boolean autoRefresh) {
+    public void setAutoRefresh(final boolean autoRefresh) {
         autoRefreshToggleButton.setSelected(null, autoRefresh);
     }
 

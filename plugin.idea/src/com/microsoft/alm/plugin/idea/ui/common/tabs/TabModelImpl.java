@@ -27,7 +27,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     protected TabLookupListenerImpl dataProvider;
     protected GitRepository gitRepository;
     private String filter = StringUtils.EMPTY;
-    private boolean autoRefresh = true;
+    private boolean autoRefresh;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
     protected Operation.Inputs operationInputs;
 
@@ -38,6 +38,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
         this.propertyStoragePrefix = StringUtil.isNullOrEmpty(propertyStoragePrefix) ? StringUtil.EMPTY : propertyStoragePrefix;
 
         // Get the value of auto refresh from the property service
+        // If the value is found, use it. Otherwise default to true;
         String autoRefreshText = PropertyServiceImpl.getInstance().getProperty(propertyStoragePrefix + PROP_AUTO_REFRESH);
         autoRefresh = StringUtils.isEmpty(autoRefreshText) ? true : Boolean.parseBoolean(autoRefreshText);
 

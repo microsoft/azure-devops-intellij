@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.operations.Operation;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Observer;
 
 /**
  * Tab interface for IntelliJ
@@ -26,7 +25,7 @@ public interface Tab<T extends FilteredModel> {
 
     String getFilter();
 
-    void setAutoRefresh(boolean autoRefresh);
+    void setAutoRefresh(final boolean autoRefresh);
 
     boolean getAutoRefresh();
 

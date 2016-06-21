@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
 import java.awt.event.ActionListener;
-import java.util.Observer;
 
 /**
  * Tab class to setup common functionality such as metrics and getters/setters
@@ -51,7 +50,7 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         return form.getFilter();
     }
 
-    public void setAutoRefresh(boolean autoRefresh) {
+    public void setAutoRefresh(final boolean autoRefresh) {
         form.setAutoRefresh(autoRefresh);
     }
 

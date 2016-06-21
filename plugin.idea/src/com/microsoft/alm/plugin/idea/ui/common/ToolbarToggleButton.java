@@ -14,9 +14,9 @@ import java.awt.event.ActionListener;
 public class ToolbarToggleButton extends CheckboxAction implements DumbAware {
     private final ActionListenerContainer listenerContainer = new ActionListenerContainer();
     private final String actionCommand;
-    private boolean checked = false;
+    private boolean checked;
 
-    public ToolbarToggleButton(String text, boolean defaultValue, String actionCommand) {
+    public ToolbarToggleButton(final String text, boolean defaultValue, final String actionCommand) {
         super(text);
         this.actionCommand = actionCommand;
         checked = defaultValue;
