@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.resources.Icons;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModelImpl;
+import com.microsoft.alm.plugin.idea.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
@@ -153,6 +154,9 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
             VcsNotifier.getInstance(project).notifyError(
                     TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_TITLE), message, NotificationListener.URL_OPENING_LISTENER);
         }
+
+        // Update the PR tab and any other UI that is listening for PR Changed events (even on failure updating the tab is a good idea)
+        EventContextHelper.triggerPullRequestChanged(EventContextHelper.SENDER_ABANDON_PULL_REQUEST, project);
     }
 
     public void appendData(final Operation.Results results) {

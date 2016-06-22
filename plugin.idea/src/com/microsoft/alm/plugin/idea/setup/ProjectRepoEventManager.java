@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -51,8 +50,7 @@ public class ProjectRepoEventManager {
         ArgumentHelper.checkNotEmptyString(sender);
         ArgumentHelper.checkNotNull(project, "project");
 
-        final Map<String,Object> context = new HashMap<String, Object>();
-        EventContextHelper.setSender(context, sender);
+        final Map<String, Object> context = EventContextHelper.createContext(sender);
         EventContextHelper.setProject(context, project);
         if (repository != null) {
             EventContextHelper.setRepository(context, repository);
