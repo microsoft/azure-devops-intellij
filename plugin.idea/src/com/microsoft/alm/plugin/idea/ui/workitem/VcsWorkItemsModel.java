@@ -17,6 +17,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.branch.CreateBranchController;
 import com.microsoft.alm.plugin.idea.ui.common.tabs.TabModelImpl;
+import com.microsoft.alm.plugin.idea.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
@@ -128,6 +129,9 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                                 .currentOrActiveContext(context)
                                 .actionName(ASSOCIATE_WORK_ITEM_ACTION)
                                 .success(wasWorkItemAssociated).build());
+
+                        // Update the work items tab and any other listener to WorkItemChanged events
+                        EventContextHelper.triggerWorkItemChanged(EventContextHelper.SENDER_ASSOCIATE_BRANCH, project);
                     }
                 });
             } catch (Exception e) {

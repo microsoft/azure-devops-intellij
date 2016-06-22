@@ -35,6 +35,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -669,6 +670,9 @@ public class CreatePullRequestModel extends AbstractModel {
                 BrowserUtil.browse(e.getURL());
             }
         });
+
+        // Update the PR tab and any other UI that is listening for PR Changed events
+        EventContextHelper.triggerPullRequestChanged(EventContextHelper.SENDER_CREATE_PULL_REQUEST, project);
     }
 
     static class ApplicationProvider {

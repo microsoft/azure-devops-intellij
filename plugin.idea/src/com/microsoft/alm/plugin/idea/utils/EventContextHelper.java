@@ -5,8 +5,11 @@ package com.microsoft.alm.plugin.idea.utils;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.events.ServerEvent;
+import com.microsoft.alm.plugin.events.ServerEventManager;
 import git4idea.repo.GitRepository;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,9 +21,18 @@ public class EventContextHelper {
     public static final String SENDER_PROJECT_OPENED = "projectOpened";
     public static final String SENDER_PROJECT_CLOSING = "projectClosing";
     public static final String SENDER_REPO_CHANGED = "repoChanged";
+    public static final String SENDER_ABANDON_PULL_REQUEST = "abandonPullReguest";
+    public static final String SENDER_CREATE_PULL_REQUEST = "createPullRequest";
+    public static final String SENDER_ASSOCIATE_BRANCH = "associateBranch";
     public static final String CONTEXT_SENDER = "sender";
     public static final String CONTEXT_PROJECT = "project";
     public static final String CONTEXT_REPOSITORY = "repository";
+
+    public static Map<String,Object> createContext(final String sender) {
+        final Map<String,Object> eventContext = new HashMap<String, Object>();
+        setSender(eventContext, sender);
+        return eventContext;
+    }
 
     public static void setSender(final Map<String,Object> eventContext, final String sender) {
         ArgumentHelper.checkNotNull(eventContext, "eventContext");
@@ -66,4 +78,17 @@ public class EventContextHelper {
         final String sender = getSender(eventContext);
         return SENDER_REPO_CHANGED.equals(sender) && getProject(eventContext) != null;
     }
+
+    public static void triggerPullRequestChanged(final String sender, final Project project) {
+        final Map<String,Object> context = EventContextHelper.createContext(sender);
+        EventContextHelper.setProject(context, project);
+        ServerEventManager.getInstance().triggerEvent(ServerEvent.PULL_REQUESTS_CHANGED, context);
+    }
+
+    public static void triggerWorkItemChanged(final String sender, final Project project) {
+        final Map<String,Object> context = EventContextHelper.createContext(sender);
+        EventContextHelper.setProject(context, project);
+        ServerEventManager.getInstance().triggerEvent(ServerEvent.WORK_ITEMS_CHANGED, context);
+    }
 }
+
