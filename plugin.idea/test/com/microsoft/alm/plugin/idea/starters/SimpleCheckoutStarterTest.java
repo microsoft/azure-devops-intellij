@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.starters;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,30 +19,25 @@ public class SimpleCheckoutStarterTest extends IdeaAbstractTest {
 
     @Test
     public void testCreateWithGitUrlHappy() {
-        SimpleCheckoutStarter starter = SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL);
+        SimpleCheckoutStarter starter = SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL, StringUtils.EMPTY);
         Assert.assertEquals(VALID_GIT_URL, starter.getGitUrl());
     }
 
     @Test
     public void testCreateWithGitUrlHappyLimitedRefs() {
-        SimpleCheckoutStarter starter = SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL.replace("_git/", "_git/_optimized/"));
+        SimpleCheckoutStarter starter = SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL.replace("_git/", "_git/_optimized/"), StringUtils.EMPTY);
         Assert.assertEquals(VALID_GIT_URL.replace("_git/", "_git/_optimized/"), starter.getGitUrl());
     }
 
     @Test(expected = RuntimeException.class)
     public void testCreateWithGitUrlBadUrl() {
-        SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL.replace("_git/", ""));
+        SimpleCheckoutStarter.createWithGitUrl(VALID_GIT_URL.replace("_git/", ""), StringUtils.EMPTY);
     }
 
     @Test
     public void testCreateWithCommandLineArgsHappy() {
         SimpleCheckoutStarter starter = SimpleCheckoutStarter.createWithCommandLineArgs(Arrays.asList(VALID_GIT_URL));
         Assert.assertEquals(VALID_GIT_URL, starter.getGitUrl());
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testCreateWithCommandLineArgsTooManyArgs() {
-        SimpleCheckoutStarter.createWithCommandLineArgs(Arrays.asList(VALID_GIT_URL, VALID_GIT_URL));
     }
 
     @Test

@@ -131,6 +131,6 @@ public class SimpleCheckoutModelTest extends IdeaAbstractTest {
         when(PluginServiceProvider.getInstance()).thenReturn(pluginServiceProvider);
         when(pluginServiceProvider.getPropertyService()).thenReturn(propertyService);
 
-        return new SimpleCheckoutModel(mockProject, mockListener, gitUrl);
+        return new SimpleCheckoutModel(mockProject, mockListener, gitUrl, StringUtils.EMPTY);
     }
 }

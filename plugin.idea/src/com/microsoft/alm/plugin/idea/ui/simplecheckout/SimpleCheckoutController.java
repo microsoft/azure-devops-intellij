@@ -23,13 +23,13 @@ public class SimpleCheckoutController implements Observer, ActionListener {
     private final SimpleCheckoutDialog dialog;
     private final SimpleCheckoutModel model;
 
-    public SimpleCheckoutController(final Project project, final CheckoutProvider.Listener listener, final String gitUrl) {
+    public SimpleCheckoutController(final Project project, final CheckoutProvider.Listener listener, final String gitUrl, final String ref) {
         this(new SimpleCheckoutDialog(
                         project,
                         TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
                         TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_CLONE_BUTTON),
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
-                new SimpleCheckoutModel(project, listener, gitUrl));
+                new SimpleCheckoutModel(project, listener, gitUrl, ref));
     }
 
     public SimpleCheckoutController(final SimpleCheckoutDialog dialog, final SimpleCheckoutModel model) {

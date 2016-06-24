@@ -31,16 +31,19 @@ public class SimpleCheckoutStarter implements StarterBase {
     private final Logger logger = LoggerFactory.getLogger(SimpleCheckoutStarter.class);
     public static final String SUB_COMMAND_NAME = "checkout";
     private static final String URL_ARGUMENT = "url";
+    private static final String REF_ARGUMENT = "Ref";
     private static final String ENCODING_ARGUMENT = "EncFormat";
     private final String gitUrl;
+    private final String ref;
 
     /**
      * Private constructor so that Git Url can be checked as a precaution
      *
      * @param gitUrl
      */
-    private SimpleCheckoutStarter(final String gitUrl) {
+    private SimpleCheckoutStarter(final String gitUrl, final String ref) {
         this.gitUrl = gitUrl;
+        this.ref = ref;
     }
 
     /**
@@ -50,12 +53,12 @@ public class SimpleCheckoutStarter implements StarterBase {
      * @return SimpleCheckoutStarter with associated Git Url
      * @throws RuntimeException
      */
-    public static SimpleCheckoutStarter createWithGitUrl(final String gitUrl) throws RuntimeException {
+    public static SimpleCheckoutStarter createWithGitUrl(final String gitUrl, final String ref) throws RuntimeException {
         if (!UrlHelper.isGitRemoteUrl(gitUrl)) {
             throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.STARTER_ERRORS_INVALID_GIT_URL, gitUrl));
         }
 
-        return new SimpleCheckoutStarter(gitUrl);
+        return new SimpleCheckoutStarter(gitUrl, ref);
     }
 
     /**
@@ -66,11 +69,11 @@ public class SimpleCheckoutStarter implements StarterBase {
      * @throws RuntimeException
      */
     public static SimpleCheckoutStarter createWithCommandLineArgs(final List<String> args) throws RuntimeException {
-        if (args.size() != 1) {
+        if (args.size() < 1) {
             throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.STARTER_ERRORS_SIMPLECHECKOUT_INVALID_COMMAND_LINE_ARGS));
         }
 
-        return createWithGitUrl(args.get(0));
+        return createWithGitUrl(args.get(0), args.size() < 2 ? StringUtils.EMPTY : args.get(1));
     }
 
     /**
@@ -83,6 +86,7 @@ public class SimpleCheckoutStarter implements StarterBase {
      */
     public static SimpleCheckoutStarter createWithUriAttributes(Map<String, String> args) throws RuntimeException, UnsupportedEncodingException {
         String url = args.get(URL_ARGUMENT);
+        String ref = args.get(REF_ARGUMENT);
         String encoding = args.get(ENCODING_ARGUMENT);
 
         if (StringUtils.isEmpty(url)) {
@@ -94,7 +98,13 @@ public class SimpleCheckoutStarter implements StarterBase {
             url = URLDecoder.decode(url, encoding);
         }
 
-        return createWithGitUrl(url);
+        if (StringUtils.isNotEmpty(ref)) {
+            ref = URLDecoder.decode(ref, encoding);
+        } else {
+            ref = StringUtils.EMPTY;
+        }
+
+        return createWithGitUrl(url, ref);
     }
 
     /**
@@ -107,7 +117,7 @@ public class SimpleCheckoutStarter implements StarterBase {
         try {
             launchApplicationWindow();
 
-            final SimpleCheckoutController controller = new SimpleCheckoutController(project, listener, gitUrl);
+            final SimpleCheckoutController controller = new SimpleCheckoutController(project, listener, gitUrl, ref);
             controller.showModalDialog();
         } catch (Throwable t) {
             //unexpected error occurred while doing simple checkout

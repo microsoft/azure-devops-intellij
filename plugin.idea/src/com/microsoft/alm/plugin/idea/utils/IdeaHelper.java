@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.utils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import git4idea.GitVcs;
@@ -152,5 +153,23 @@ public class IdeaHelper {
         if (!executable.canExecute()) {
             executable.setExecutable(true, false);
         }
+    }
+
+    /**
+     * Find the project that is associated with the repository directory
+     *
+     * @param repoBaseDirectory
+     * @return project based on repo
+     */
+    public static Project getProject(final String repoBaseDirectory) {
+        final Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+
+        for (final Project project : openProjects) {
+            if (project.getBasePath().equals(repoBaseDirectory)) {
+                return project;
+            }
+        }
+
+        return null;
     }
 }
