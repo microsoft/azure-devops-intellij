@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
@@ -165,7 +166,9 @@ public class IdeaHelper {
         final Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
         for (final Project project : openProjects) {
-            if (project.getBasePath().equals(repoBaseDirectory)) {
+            // the path IntelliJ returns for project uses forward slashes (Unix) while the repo directory passed in is dependent on the OS
+            // standardize the repo path passed in so that both paths being compared are Unix standard
+            if (project.getBasePath().equals(SystemHelper.getUnixPath(repoBaseDirectory))) {
                 return project;
             }
         }

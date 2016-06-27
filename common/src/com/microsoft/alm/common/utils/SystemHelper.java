@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.common.utils;
 
+import com.sun.jna.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,20 @@ public class SystemHelper {
         } catch (UnknownHostException e) {
             logger.warn("getComputerName failed", e);
             return System.getenv(COMPUTER_NAME);
+        }
+    }
+
+    /**
+     * Takes in a path and converts it to Unix standard if Windows OS is detected
+     *
+     * @param path
+     * @return path with forward slashes
+     */
+    public static String getUnixPath(final String path) {
+        if (Platform.isWindows()) {
+            return path.replace("\\", "/");
+        } else {
+            return path;
         }
     }
 }
