@@ -174,10 +174,10 @@ public class SimpleCheckoutModel extends AbstractModel {
                 public void run(@NotNull final ProgressIndicator progressIndicator) {
                     progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE));
                     // get context from manager, and store in active context
-                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
-                            gitUrl, true);
+                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitUrl);
 
                     if (context == null) {
+                        logger.warn("No context could be found");
                         VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_AUTHENTICATION_FAILED_TITLE), TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_AUTH_NOT_SUCCESSFUL, gitUrl));
                         return;
                     }

@@ -379,6 +379,7 @@ public class ServerContextManager {
         final URI remoteUri = UrlHelper.createUri(gitRemoteUrl);
         for (final ServerContext context : getAllServerContexts()) {
             if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
+                logger.info("AuthenticatedInfo found for url " + gitRemoteUrl);
                 authenticationInfo = context.getAuthenticationInfo();
                 break;
             }
@@ -386,11 +387,38 @@ public class ServerContextManager {
 
         // If the auth info wasn't found and we are ok to prompt, then prompt
         if (authenticationInfo == null && prompt) {
+            logger.info("Prompting for credentials");
             final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
             authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
         }
 
         return authenticationInfo;
+    }
+
+    /**
+     * Gets back the most updated context with auth info possible. It first checks to see if an existing context exists
+     * and if not it tries to create one. If the create fails (possibility auth info used was stale) then the auth info
+     * is updated and then we try to create the context again
+     *
+     * TODO: Rip out this method and refactor the code to throw up the unauthorized exception instead of swallowing it
+     * TODO: so we can specifically retry on that and remove the bad cached creds
+     *
+     * @param remoteUrl
+     * @return context
+     */
+    public ServerContext getUpdatedContext(final String remoteUrl) {
+        // try to get the context the normal way first
+        ServerContext context = getAuthenticatedContext(remoteUrl, true);
+
+        if (context != null) {
+            logger.info("getUpdatedContext found/created context on first attempt");
+            return context;
+        }
+
+        // if the context was not obtained in the first try, update the auth info and try again if need be
+        context = updateAuthenticationInfo(remoteUrl);
+        logger.info("getUpdatedContext updated auth info and found a context: " + (context == null ? "false" : "true"));
+        return context == null ? getAuthenticatedContext(remoteUrl, true) : context;
     }
 
     /**
@@ -400,6 +428,7 @@ public class ServerContextManager {
      * @param remoteUrl
      */
     public ServerContext updateAuthenticationInfo(final String remoteUrl) {
+        logger.info("Updating auth info for url " + remoteUrl);
         AuthenticationInfo newAuthenticationInfo = null;
         boolean promptUser = true;
         final URI remoteUri = UrlHelper.createUri(remoteUrl);
@@ -407,12 +436,15 @@ public class ServerContextManager {
 
         //Linear search through all contexts to find the ones with same authority as remoteUrl
         for (final ServerContext context : getAllServerContexts()) {
+            logger.info("auth info updateAuthenticationInfo compare " + context.getUri().getPath());
             if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
                 //remove the context with old credentials
                 remove(context.getKey());
 
+                logger.info("auth info updateAuthenticationInfo removed");
                 //get new credentials by prompting the user one time only
                 if (promptUser) {
+                    logger.info("auth info updateAuthenticationInfo prompting");
                     //prompt user
                     final AuthenticationProvider authenticationProvider = getAuthenticationProvider(remoteUrl);
                     newAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, remoteUrl);
@@ -420,19 +452,26 @@ public class ServerContextManager {
                 }
 
                 if (newAuthenticationInfo != null) {
+                    logger.info("auth info updateAuthenticationInfo not null" );
                     //build a context with new authentication info and add
                     final ServerContextBuilder builder = new ServerContextBuilder(context);
                     builder.authentication(newAuthenticationInfo);
                     final ServerContext newContext = builder.build();
+                    logger.info(context.getUri().toString() + "       " + remoteUrl);
                     if (StringUtils.equalsIgnoreCase(context.getUri().toString(), remoteUrl)) {
+                        logger.info("The updated auth info created a context that matches the remote url" );
                         add(newContext, true);
                         matchingContext = newContext;
                     } else {
+                        logger.info("The updated auth info created a context that has a different remote url" );
                         add(newContext, false);
                     }
                 }
             }
         }
+
+        logger.info("auth info updateAuthenticationInfo returning an updated context: "
+                + (matchingContext == null ? "false" : "true"));
         return matchingContext;
     }
 
