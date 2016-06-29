@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.auth.PromptBehavior;
+import com.microsoft.alm.auth.oauth.AzureAuthority;
 import com.microsoft.alm.auth.oauth.OAuth2Authenticator;
 import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
 import com.microsoft.alm.helpers.Action;
@@ -25,14 +26,18 @@ import com.microsoft.alm.storage.InsecureInMemoryStore;
 import com.microsoft.alm.storage.SecretStore;
 import com.microsoft.visualstudio.services.account.AccountHttpClient;
 import com.microsoft.visualstudio.services.account.Profile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
+    private final static Logger logger = LoggerFactory.getLogger(VsoAuthInfoProvider.class);
 
     private static final String CLIENT_ID = "97877f11-0fc6-4aee-b1ff-febb0519dd00";
     private static final String REDIRECT_URL = "https://java.visualstudio.com";
@@ -88,9 +93,32 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
                 // Must share the same accessTokenStore with the member variable vstsPatAuthenticator to avoid prompt the user
                 // when we generate PAT
-                final OAuth2Authenticator oAuth2Authenticator = OAuth2Authenticator.getAuthenticator(
-                        CLIENT_ID, REDIRECT_URL, accessTokenStore, deviceFlowResponsePrompt.getCallback(cancellationCallback));
+                final OAuth2Authenticator.OAuth2AuthenticatorBuilder oAuth2AuthenticatorBuilder = new OAuth2Authenticator.OAuth2AuthenticatorBuilder()
+                        .withClientId(CLIENT_ID)
+                        .redirectTo(REDIRECT_URL)
+                        .backedBy(accessTokenStore)
+                        .withDeviceFlowCallback(deviceFlowResponsePrompt.getCallback(cancellationCallback));
 
+                // Check if common url was passed or if a specific url was given
+                // If a specific url is being used and a tenant id is found use the tenant id with the authenticator
+                String resourceId = OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE;
+                if (!OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO.getAuthority().equals(URI.create(serverUri).getAuthority())) {
+                    try {
+                        final UUID tenantId = AzureAuthority.detectTenantId(URI.create(serverUri));
+                        if (tenantId != null) {
+                            logger.info(String.format("Adding tenant id %s to oAuth2Authenticator builder for url %s",
+                                    tenantId.toString(), serverUri));
+                            resourceId = OAuth2Authenticator.VSTS_RESOURCE;
+                            oAuth2AuthenticatorBuilder.withTenantId(tenantId);
+                        }
+                    } catch (Error e) {
+                        logger.warn("Error while trying to get tenant id", e);
+                        // ok to continue without using tenant id
+                    }
+                }
+                oAuth2AuthenticatorBuilder.manage(resourceId);
+
+                final OAuth2Authenticator oAuth2Authenticator = oAuth2AuthenticatorBuilder.build();
                 final JaxrsClientProvider jaxrsClientProvider = new JaxrsClientProvider(oAuth2Authenticator);
 
                 try {

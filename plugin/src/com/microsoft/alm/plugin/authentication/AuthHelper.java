@@ -7,8 +7,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.client.model.VssServiceResponseException;
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.visualstudio.services.delegatedauthorization.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -39,24 +37,6 @@ public class AuthHelper {
                 credentials.getPassword(),
                 serverUri,
                 credentials.getUserPrincipal().getName()
-        );
-    }
-
-    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final AuthenticationResult authenticationResult) {
-        return new AuthenticationInfo(
-                getUserId(authenticationResult),
-                getPassword(authenticationResult),
-                serverUri,
-                getEmail(authenticationResult)
-        );
-    }
-
-    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final AuthenticationResult authenticationResult, final SessionToken sessionToken) {
-        return new AuthenticationInfo(
-                getUserId(authenticationResult),
-                sessionToken.getToken(),
-                serverUri,
-                getEmail(authenticationResult)
         );
     }
 
@@ -157,25 +137,6 @@ public class AuthHelper {
         }
 
         return new org.apache.http.auth.NTCredentials(user, password, workstation, domain);
-    }
-
-    private static String getUserId(final AuthenticationResult authenticationResult) {
-        return authenticationResult.getUserInfo().getUniqueName();
-    }
-
-    private static String getPassword(final AuthenticationResult authenticationResult) {
-        return authenticationResult.getAccessToken();
-    }
-
-    public static String getEmail(final AuthenticationResult authenticationResult) {
-        final String email;
-        final String identityProvider = authenticationResult.getUserInfo().getIdentityProvider();
-        if (identityProvider == null || identityProvider.isEmpty()) {
-            email = authenticationResult.getUserInfo().getUniqueName();
-        } else {
-            email = authenticationResult.getUserInfo().getUniqueName().substring(identityProvider.length() + 1);
-        }
-        return email;
     }
 
     public static String getTokenDescription(final String emailAddress) {

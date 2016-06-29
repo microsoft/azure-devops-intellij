@@ -5,9 +5,6 @@ package com.microsoft.alm.plugin.authentication;
 
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.visualstudio.services.delegatedauthorization.SessionToken;
-import com.microsoftopentechnologies.auth.AuthenticationResult;
-import com.microsoftopentechnologies.auth.UserInfo;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -51,28 +48,11 @@ public class AuthHelperTest {
 
     @Test
     public void createAuthInfo() {
-        // test all 3 methods
         final Credentials credentials = new UsernamePasswordCredentials("userName", "password");
         final AuthenticationInfo info = AuthHelper.createAuthenticationInfo("server", credentials);
         Assert.assertEquals("userName", info.getUserName());
         Assert.assertEquals("password", info.getPassword());
         Assert.assertEquals("server", info.getServerUri());
         Assert.assertEquals("userName", info.getUserNameForDisplay());
-
-        final AuthenticationResult result = new AuthenticationResult("tokenType", "accessToken", "refreshToken", 0, "res",
-                new UserInfo("id", "name", "family", "provider", "upn", "provider:unique", "tenant"));
-        final AuthenticationInfo info2 = AuthHelper.createAuthenticationInfo("server2", result);
-        Assert.assertEquals("provider:unique", info2.getUserName());
-        Assert.assertEquals("accessToken", info2.getPassword());
-        Assert.assertEquals("server2", info2.getServerUri());
-        Assert.assertEquals("unique", info2.getUserNameForDisplay());
-
-        final SessionToken token = new SessionToken();
-        token.setToken("sessionToken");
-        AuthenticationInfo info3 = AuthHelper.createAuthenticationInfo("server3", result, token);
-        Assert.assertEquals("provider:unique", info3.getUserName());
-        Assert.assertEquals("sessionToken", info3.getPassword());
-        Assert.assertEquals("server3", info3.getServerUri());
-        Assert.assertEquals("unique", info3.getUserNameForDisplay());
     }
 }
