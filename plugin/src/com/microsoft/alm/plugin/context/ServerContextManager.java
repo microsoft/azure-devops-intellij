@@ -406,9 +406,9 @@ public class ServerContextManager {
      * @param remoteUrl
      * @return context
      */
-    public ServerContext getUpdatedContext(final String remoteUrl) {
+    public ServerContext getUpdatedContext(final String remoteUrl, final boolean setAsActiveContext) {
         // try to get the context the normal way first
-        ServerContext context = getAuthenticatedContext(remoteUrl, true);
+        ServerContext context = getAuthenticatedContext(remoteUrl, setAsActiveContext);
 
         if (context != null) {
             logger.info("getUpdatedContext found/created context on first attempt");
@@ -418,7 +418,7 @@ public class ServerContextManager {
         // if the context was not obtained in the first try, update the auth info and try again if need be
         context = updateAuthenticationInfo(remoteUrl);
         logger.info("getUpdatedContext updated auth info and found a context: " + (context == null ? "false" : "true"));
-        return context == null ? getAuthenticatedContext(remoteUrl, true) : context;
+        return context == null ? getAuthenticatedContext(remoteUrl, setAsActiveContext) : context;
     }
 
     /**

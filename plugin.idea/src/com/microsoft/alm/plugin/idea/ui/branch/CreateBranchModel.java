@@ -178,7 +178,7 @@ public class CreateBranchModel extends AbstractModel {
                 public void run(@NotNull final ProgressIndicator progressIndicator) {
                     progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_TITLE));
                     // get context from manager, and store in active context
-                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
+                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(
                             gitRemoteUrl, true);
 
                     if (context == null) {

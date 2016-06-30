@@ -465,7 +465,7 @@ public class CreatePullRequestModel extends AbstractModel {
                             final String branchNameOnRemoteServer = result.getFirst();
 
                             // get context from manager, we want to do this after push completes since credentials could have changed during the Git push
-                            final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(
+                            final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(
                                     gitRemoteUrl, true);
 
                             if (context == null) {

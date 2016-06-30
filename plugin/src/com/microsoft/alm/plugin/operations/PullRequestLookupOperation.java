@@ -65,7 +65,7 @@ public class PullRequestLookupOperation extends Operation {
                     // Get the authenticated context for the gitRemoteUrl
                     // This should be done on a background thread so as not to block UI or hang the IDE
                     // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                    final ServerContext context = ServerContextManager.getInstance().getAuthenticatedContext(gitRemoteUrl, false);
+                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
                     if (context != null) {
                         authenticatedContexts.add(context);
                     }

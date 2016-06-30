@@ -174,7 +174,7 @@ public class SimpleCheckoutModel extends AbstractModel {
                 public void run(@NotNull final ProgressIndicator progressIndicator) {
                     progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE));
                     // get context from manager, and store in active context
-                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitUrl);
+                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitUrl, true);
 
                     if (context == null) {
                         logger.warn("No context could be found");
