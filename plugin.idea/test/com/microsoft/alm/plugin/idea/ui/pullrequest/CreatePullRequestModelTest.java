@@ -147,7 +147,8 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         assertEquals(0, changesContainer.getGitCommitCompareInfo().getBranchToHeadCommits(gitRepositoryMock).size());
 
         // when there is a local branch, but we didn't select any remote branch, also return empty compareInfo
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(PRGitObjectMockHelper.createLocalBranch("local"));
+        GitLocalBranch mockLocalBranch = PRGitObjectMockHelper.createLocalBranch("local");
+        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(mockLocalBranch);
         when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Collections.<GitRemoteBranch>emptyList());
 
         changesContainer = underTest.getMyChangesCompareInfo();

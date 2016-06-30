@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcs.log.Hash;
 import com.intellij.vcs.log.VcsUser;
 import com.intellij.vcs.log.impl.HashImpl;
 import git4idea.GitCommit;
@@ -13,62 +12,33 @@ import git4idea.GitLocalBranch;
 import git4idea.GitRemoteBranch;
 import git4idea.history.GitLogStatusInfo;
 import git4idea.repo.GitRemote;
-import org.jetbrains.annotations.NotNull;
-import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class PRGitObjectMockHelper {
 
     public static GitLocalBranch createLocalBranch(final String name) {
-        return new GitLocalBranch(name, HashImpl.build(getSha1(name)));
+        GitLocalBranch branch = mock(GitLocalBranch.class);
+        when(branch.getName()).thenReturn(name);
+        when(branch.getFullName()).thenReturn(name);
+        when(branch.isRemote()).thenReturn(false);
+        return branch;
     }
 
     public static GitRemoteBranch createRemoteBranch(final String name, final GitRemote remote) {
-        Hash hash = HashImpl.build(getSha1(name));
-        return new GitRemoteBranch("refs/remotes/" + name, hash) {
-            @Override
-            public boolean isRemote() {
-                return true;
-            }
-
-            @NotNull
-            @Override
-            public String getNameForRemoteOperations() {
-                return name;
-            }
-
-            @NotNull
-            @Override
-            public String getNameForLocalOperations() {
-                return name;
-            }
-
-            @NotNull
-            @Override
-            public GitRemote getRemote() {
-                return remote;
-            }
-        };
-    }
-
-    private static String getSha1(final String name) {
-        // I don't want to generate sha1, I need crypto libs for that
-        if ("origin/test1".equals(name)) {
-            return "cfd40ea42910161c368956a93b623b1a8a519241";
-        }
-
-        if ("origin/test2".equals(name)) {
-            return "b0169783481296ee97d7a2061d3f93c079194";
-        }
-
-        if ("origin/master".equals(name)) {
-            return "9afa081effdaeafdff089b2aa3543415f6cdb1fb";
-        }
-
-        return "935b168d0601bd05d57489fae04d5c6ec439cfea";
+        GitRemoteBranch branch = mock(GitRemoteBranch.class);
+        when(branch.getName()).thenReturn("refs/remotes/" + name);
+        when(branch.getFullName()).thenReturn(name);
+        when(branch.isRemote()).thenReturn(true);
+        when(branch.getRemote()).thenReturn(remote);
+        when(branch.getNameForLocalOperations()).thenReturn(name);
+        when(branch.getNameForRemoteOperations()).thenReturn(name);
+        return branch;
     }
 
     public static GitCommit getCommit(final Project project, final VirtualFile root) {
@@ -83,7 +53,7 @@ public class PRGitObjectMockHelper {
     public static GitCommit getCommit(final Project project, final VirtualFile root,
                                       final String subject, final String message, final String hash) {
         long date = new Date().getTime();
-        VcsUser user = Mockito.mock(VcsUser.class);
+        VcsUser user = mock(VcsUser.class);
         return new GitCommit(project,
                 HashImpl.build(hash),
                 Arrays.asList(HashImpl.build("9afa081effdaeafdff089b2aa3543415f6cdb1fb")),
