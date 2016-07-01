@@ -111,7 +111,7 @@ subprojects {
         /* Task 454223: anchor JNA dependency to version 3.4.0 to match Android Studio 1.4 and IntelliJ IDEA 14 */
         compile group: 'net.java.dev.jna', name: 'jna', version: '3.4.0'
 
-        compile (group: 'com.microsoft.alm', name: 'auth-providers', version: '0.2.1') {
+        compile (group: 'com.microsoft.alm', name: 'auth-providers', version: '0.2.2') {
             /* Exclude default JNA dependency (would be version 4.2.1 as of this writing) */
             exclude group: 'net.java.dev.jna', module: 'jna'
             exclude group: 'net.java.dev.jna', module: 'jna-platform'
