@@ -20,13 +20,13 @@ import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl;
 import com.intellij.openapi.vcs.impl.VcsInitObject;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -35,6 +35,7 @@ import git4idea.GitVcs;
 import git4idea.branch.GitBrancher;
 import git4idea.commands.Git;
 import git4idea.repo.GitRepository;
+import git4idea.repo.GitRepositoryManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -225,16 +226,35 @@ public class SimpleCheckoutModel extends AbstractModel {
                         // if currentProject is null that means the user chose not to create the project so not checking the branch out
                         if (StringUtils.isNotEmpty(ref) && !StringUtils.equals(ref, MASTER_BRANCH) && currentProject != null) {
                             logger.info("Non-master branch detected to checkout");
-                            checkoutBranch(ref, currentProject);
+                            checkoutBranch(ref, currentProject, projectDirectory);
                         }
                     }
                 }
 
-                private void checkoutBranch(final String ref, final Project lastOpenedProject) {
+                private void checkoutBranch(final String ref, final Project lastOpenedProject, final File projectDirectory) {
                     // adds a post initialization step to the project to checkout the given branch
-                    ((ProjectLevelVcsManagerImpl) ProjectLevelVcsManager.getInstance(lastOpenedProject)).addInitializationRequest(VcsInitObject.BRANCHES, new DumbAwareRunnable() {
+                    final ProjectLevelVcsManagerImpl manager = (ProjectLevelVcsManagerImpl) ProjectLevelVcsManager.getInstance(lastOpenedProject);
+
+                    // add step to refresh the root mapping so the new root is found for the repo
+                    // TODO: refactor to use existing call instead of calling twice. Current call happens too late currently
+                    // TODO: so that's why we need to call this beforehand so we can checkout the branch
+                    manager.addInitializationRequest(VcsInitObject.MAPPINGS, new Runnable() {
+                        @Override
                         public void run() {
-                            final GitRepository gitRepository = TfGitHelper.getTfGitRepository(lastOpenedProject);
+                            manager.setDirectoryMapping(projectDirectory.getPath(), "Git");
+                            manager.fireDirectoryMappingsChanged();
+                        }
+                    });
+
+                    // step to checkout the desired branch
+                    manager.addInitializationRequest(VcsInitObject.AFTER_COMMON, new DumbAwareRunnable() {
+                        public void run() {
+                            final GitRepositoryManager gitRepositoryManager = ServiceManager.getService(lastOpenedProject, GitRepositoryManager.class);
+                            ArgumentHelper.checkNotNull(gitRepositoryManager, "GitRepositoryManager");
+                            ArgumentHelper.checkNotNullOrEmpty(gitRepositoryManager.getRepositories(), "gitRepositoryManager.getRepositories()");
+                            // TODO: use more direct manner to get repo but right now due to timing we can't
+                            final GitRepository gitRepository = gitRepositoryManager.getRepositories().get(0);
+                            ArgumentHelper.checkNotNull(gitRepository, "GitRepository");
                             String fullRefName = StringUtils.EMPTY;
 
                             // find remote red name from given name

@@ -7,8 +7,8 @@ import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.project.DefaultProjectFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProvider;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsNotifier;
-import com.intellij.openapi.vcs.checkout.CompositeCheckoutListener;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.impl.SystemDock;
 import com.intellij.openapi.wm.impl.WindowManagerImpl;
@@ -112,7 +112,7 @@ public class SimpleCheckoutStarter implements StarterBase {
      */
     public void processCommand() {
         final Project project = DefaultProjectFactory.getInstance().getDefaultProject();
-        final CheckoutProvider.Listener listener = new CompositeCheckoutListener(project);
+        final CheckoutProvider.Listener listener = ProjectLevelVcsManager.getInstance(project).getCompositeCheckoutListener();
 
         try {
             launchApplicationWindow();
