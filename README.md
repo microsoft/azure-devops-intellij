@@ -1,4 +1,4 @@
-# Visual Studio Team Services Plugin for IntelliJ (Preview)
+# Visual Studio Team Services Plugin for IntelliJ
 
 An IntelliJ plugin for working with Git repositories on Visual Studio Team Services and Team Foundation Server (TFS) 2015 inside IntelliJ.
 Supported on Linux, Mac OS X, and Windows.
