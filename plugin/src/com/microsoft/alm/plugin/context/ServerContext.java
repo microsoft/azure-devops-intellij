@@ -15,6 +15,12 @@ import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
+import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.AuthScheme;
+import org.apache.commons.httpclient.auth.BasicScheme;
+import org.apache.commons.httpclient.auth.NTLMScheme;
+import org.apache.commons.httpclient.params.DefaultHttpParams;
+import org.apache.commons.httpclient.params.HttpParams;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -36,6 +42,8 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -170,9 +178,12 @@ public class ServerContext {
 
         final ClientConfig clientConfig = new ClientConfig().connectorProvider(connectorProvider);
         clientConfig.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider);
-
-        clientConfig.property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true);
         clientConfig.property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED);
+
+        // For TFS OnPrem we only support NTLM authentication right now. Since 2016 servers support Basic as well,
+        // we need to let the server and client negotiate the protocol instead of preemptively assuming Basic.
+        // TODO: This prevents PATs from being used OnPrem. We need to fix this soon to support PATs onPrem.
+        clientConfig.property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, type != Type.TFS);
 
         //Define a local HTTP proxy
         if (includeProxySettings) {

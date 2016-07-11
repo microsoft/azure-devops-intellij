@@ -97,7 +97,7 @@ public class ServerContextTest extends AbstractTest {
         final Map<String, Object> properties = config.getProperties();
         Assert.assertEquals(3, properties.size());
 
-        Assert.assertEquals(true, properties.get(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION));
+        Assert.assertEquals(false, properties.get(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION));
         Assert.assertEquals(RequestEntityProcessing.BUFFERED, properties.get(ClientProperties.REQUEST_ENTITY_PROCESSING));
 
         final CredentialsProvider cp = (CredentialsProvider) properties.get(ApacheClientProperties.CREDENTIALS_PROVIDER);
