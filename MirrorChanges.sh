@@ -4,6 +4,7 @@
 # Changes should not be made in the mirror but all changes should flow to the mirror repository via the master repository.
 # Inputs needed for the script are : 1. Remote URL for the master repository 2. Remote URL for the mirror repository
 
+source ~/.bashrc
 set -e
 mirrorDirName="repoMirror"
 errorMessage="Invalid arguments passed to script 1>&2
