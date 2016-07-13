@@ -4,6 +4,7 @@ An IntelliJ plugin for working with Git repositories on Visual Studio Team Servi
 Supported on Linux, Mac OS X, and Windows.
 Compatible with IntelliJ IDEA Community and Ultimate editions (version 14) and Android Studio (version 1.2 - 1.4).
 
+To learn more about installing and using our Team Services IntelliJ plug-in, visit: http://java.visualstudio.com/Docs/tools/intelliJ
 
 ## Pre-Reqs
 1. Install JDK 6
@@ -111,4 +112,12 @@ A few styles we follow:
 Those settings are already configured in the `com.microsoft.alm.plugin.idea.iml` project file we provided.  
 
 Gradle build will fail if checkstyle plugin detects a violation.
+
+## Learn More
+
+Want more information? The following resources are available to help:
+
+* <a href="http://java.visualstudio.com/Downloads/intellijplugin/Index" target="_blank">Instructions</a> on how to install the plugin
+* <a href="https://youtu.be/wSdgmQL-Zbg" target="_blank">End-to-end demo</a> video of the plugin's features
+* <a href="http://java.visualstudio.com/Docs/tools/intelliJ" target="_blank">Documentation and tutorial</a> on how to use the plugin 
 
