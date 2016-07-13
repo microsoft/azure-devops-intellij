@@ -483,7 +483,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
     }
 
     private com.microsoft.alm.sourcecontrol.webapi.model.GitRepository createRemoteGitRepo(final Project project,
-                                                                                                      final ServerContext context, final ServerContext localContext, final ProgressIndicator indicator) {
+                                                                                           final ServerContext context, final ServerContext localContext, final ProgressIndicator indicator) {
         //create remote repository
         indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO));
         final GitHttpClient gitClient = context.getGitHttpClient();
@@ -507,21 +507,22 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 logger.error("doImport: Failed to create remote git repository name: {} collection: {}", repositoryName, collectionUrl);
                 logger.warn("doImport", t);
                 final String errorMessage;
-                final String teamProjectName = localContext.getTeamProjectReference().getName();
                 if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitRepositoryNameAlreadyExists")) {
                     //The REST SDK asserts for exceptions that are not handled, there could be a very large number of server exceptions to manually add code for
                     //Handling it here since we are not decided on what to do with exceptions on the REST SDK
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_ALREADY_EXISTS_ERROR,
-                            repositoryName,
-                            collectionUrl + "/" + teamProjectName);
+                            repositoryName, localContext.getTeamProjectURI().toString());
                 } else if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.InvalidGitRepositoryNameException")) {
                     //name is not valid
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_INVALID_NAME_ERROR,
                             repositoryName);
+                } else if (t.getMessage().contains("Microsoft.TeamFoundation.Git.Server.GitNeedsPermissionException")) {
+                    // Git permission issue importing
+                    errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_PERMISSION_ERROR,
+                            repositoryName, localContext.getTeamProjectURI().toString());
                 } else {
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_UNEXPECTED_ERROR,
-                            repositoryName,
-                            collectionUrl + "/" + teamProjectName);
+                            repositoryName, localContext.getTeamProjectURI().toString());
                 }
                 notifyImportError(project, errorMessage, ACTION_NAME, localContext);
             }

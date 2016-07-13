@@ -111,19 +111,19 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                         boolean wasWorkItemAssociated = false;
                         if (wasBranchCreated) {
                             wasWorkItemAssociated = createWorkItemBranchAssociation(context, branchName, workItem.getId());
+
+                            logger.info("Work item association " + (wasWorkItemAssociated ? "succeeded" : "failed"));
+                            final String notificationMsg = TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION,
+                                    UrlHelper.getSpecificWorkItemURI(context.getTeamProjectURI(), workItem.getId()), workItem.getId(), UrlHelper.getBranchURI(context.getUri(), branchName), branchName);
+
+                            VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_TITLE),
+                                    notificationMsg, new NotificationListener() {
+                                        @Override
+                                        public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                            BrowserUtil.browse(hyperlinkEvent.getURL());
+                                        }
+                                    });
                         }
-
-                        logger.info("Work item association " + (wasWorkItemAssociated ? "succeeded" : "failed"));
-                        final String notificationMsg = TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION,
-                                UrlHelper.getSpecificWorkItemURI(context.getTeamProjectURI(), workItem.getId()), workItem.getId(), UrlHelper.getBranchURI(context.getUri(), branchName), branchName);
-
-                        VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_TITLE),
-                                notificationMsg, new NotificationListener() {
-                                    @Override
-                                    public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
-                                        BrowserUtil.browse(hyperlinkEvent.getURL());
-                                    }
-                                });
 
                         TfsTelemetryHelper.getInstance().sendEvent(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                                 .currentOrActiveContext(context)
