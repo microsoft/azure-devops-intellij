@@ -20,7 +20,6 @@ import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.NotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
