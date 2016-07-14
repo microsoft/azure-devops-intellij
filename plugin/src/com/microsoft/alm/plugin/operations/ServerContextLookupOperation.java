@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.client.model.VssResourceNotFoundException;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
@@ -19,6 +20,7 @@ import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,7 +88,14 @@ public class ServerContextLookupOperation extends Operation {
                             // If there's only one context we need to bubble the exception out
                             // But if there's more than one let's just continue
                             if (throwOnError) {
-                                terminate(t);
+                                // check if error is due to the server URI not being found after a valid authentication
+                                // this is an indication that the server URI contains more than just the base URI
+                                if (t instanceof VssResourceNotFoundException) {
+                                    logger.warn(String.format("User authenticated but 404 on server so URI (%s) is malformed", context.getServerUri().toString()));
+                                    terminate(new TeamServicesException(TeamServicesException.KEY_TFS_MALFORMED_SERVER_URI, t));
+                                } else {
+                                    terminate(t);
+                                }
                             }
                         }
                     }

@@ -29,5 +29,5 @@ public class TeamServicesException extends RuntimeException implements Localized
     public static String KEY_TFS_AUTH_FAILED = "KEY_TFS_AUTH_FAILED";
     public static String KEY_OPERATION_ERRORS = "KEY_OPERATION_ERRORS";
     public static String KEY_VSO_NO_PROFILE_ERROR = "KEY_VSO_NO_PROFILE_ERROR";
-
+    public static String KEY_TFS_MALFORMED_SERVER_URI = "KEY_TFS_MALFORMED_SERVER_URI";
 }
