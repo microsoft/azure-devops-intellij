@@ -126,8 +126,16 @@ public class PullRequestHelperTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void parseGitExistExceptionShouldReturnLinkToExistingPR() {
-        final String error = "This exception contains " + PullRequestHelper.PR_EXISTS_EXEPTION_NAME;
+    public void parseGitExistExceptionShouldReturnLinkToExistingPR_Code() {
+        parseExceptionForError("This exception contains " + PullRequestHelper.PR_EXISTS_EXCEPTION_CODE);
+    }
+
+    @Test
+    public void parseGitExistExceptionShouldReturnLinkToExistingPR_Exception() {
+        parseExceptionForError("This exception contains " + PullRequestHelper.PR_EXISTS_EXCEPTION_NAME);
+    }
+
+    public void parseExceptionForError(final String error) {
         final RuntimeException exception = new RuntimeException(error);
 
         final ServerContext context = Mockito.mock(ServerContext.class);

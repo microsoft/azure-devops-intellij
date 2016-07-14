@@ -35,7 +35,8 @@ public class PullRequestHelper {
         DUPLICATE
     }
 
-    public static final String PR_EXISTS_EXEPTION_NAME = "GitPullRequestExistsException";
+    public static final String PR_EXISTS_EXCEPTION_NAME = "GitPullRequestExistsException";
+    public static final String PR_EXISTS_EXCEPTION_CODE = "TF401179";
 
     private static final String WEB_ACCESS_PR_FORMAT = "%s/pullrequest/%d#view=discussion";
     private static final String TF_REF_FORMATTER = "refs/heads/%s";
@@ -162,7 +163,7 @@ public class PullRequestHelper {
             return Pair.create(PRCreateStatus.UNKNOWN, StringUtils.EMPTY);
         }
 
-        if (StringUtils.indexOf(t.getMessage(), PR_EXISTS_EXEPTION_NAME) > -1) {
+        if ((StringUtils.contains(t.getMessage(), PR_EXISTS_EXCEPTION_NAME)) || (StringUtils.contains(t.getMessage(), PR_EXISTS_EXCEPTION_CODE))) {
             try {
                 // look for the existing PR
                 final UUID repoId = context.getGitRepository().getId();
