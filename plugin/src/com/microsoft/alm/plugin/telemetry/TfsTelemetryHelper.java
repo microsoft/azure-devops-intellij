@@ -32,10 +32,10 @@ public class TfsTelemetryHelper {
     // Static members
     private static final Logger logger = LoggerFactory.getLogger(TfsTelemetryHelper.class);
 
-    public static final String UNIQUE_PREFIX = "ai-log"; //$NON-NLS-1$
-    public static final String BASE_FOLDER = "AppInsights"; //$NON-NLS-1$
+    public static final String UNIQUE_PREFIX = "ai-log";
+    public static final String BASE_FOLDER = "AppInsights";
 
-    private static final String UNKNOWN = "unknown"; //$NON-NLS-1$
+    public static final String UNKNOWN = "unknown";
 
     // Instance members
     private TelemetryClient telemetryClient;
@@ -64,9 +64,9 @@ public class TfsTelemetryHelper {
 
         // Initialize the internal logger
         final Map<String, String> loggerData = new HashMap<String, String>();
-        loggerData.put("Level", InternalLogger.LoggingLevel.ERROR.toString()); //$NON-NLS-1$
-        loggerData.put("UniquePrefix", UNIQUE_PREFIX); //$NON-NLS-1$
-        loggerData.put("BaseFolder", BASE_FOLDER); //$NON-NLS-1$
+        loggerData.put("Level", InternalLogger.LoggingLevel.ERROR.toString());
+        loggerData.put("UniquePrefix", UNIQUE_PREFIX);
+        loggerData.put("BaseFolder", BASE_FOLDER);
         InternalLogger.INSTANCE.initialize(LoggerOutputType.FILE.toString(), loggerData);
 
         // Initialize the active TelemetryConfiguration
@@ -83,11 +83,11 @@ public class TfsTelemetryHelper {
         }
 
         // Create the telemetry client and cache it for later use
-        logger.debug("AppInsights telemetry initialized"); //$NON-NLS-1$
+        logger.debug("AppInsights telemetry initialized");
         logger.debug(MessageFormat.format(
-                "    Developer Mode: {0}", TfsTelemetryInstrumentationInfo.getInstance().isDeveloperMode())); //$NON-NLS-1$
+                "    Developer Mode: {0}", TfsTelemetryInstrumentationInfo.getInstance().isDeveloperMode()));
         logger.debug(MessageFormat.format(
-                "    Production Environment: {0}", !TfsTelemetryInstrumentationInfo.getInstance().isTestKey())); //$NON-NLS-1$
+                "    Production Environment: {0}", !TfsTelemetryInstrumentationInfo.getInstance().isTestKey()));
 
         telemetryClient = new TelemetryClient();
         telemetryClient.getContext().getSession().setId(UUID.randomUUID().toString());

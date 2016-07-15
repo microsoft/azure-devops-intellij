@@ -41,6 +41,8 @@ public class SelectWorkItemsAction extends InstrumentedAction {
                     TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION)));
         } else {
             anActionEvent.getPresentation().setEnabled(true);
+            // update hover text in case it was disabled before
+            anActionEvent.getPresentation().setText(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_SELECT_WORK_ITEMS_TITLE));
         }
     }
 
