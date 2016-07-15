@@ -12,6 +12,7 @@ import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.TableFocusListener;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
@@ -87,6 +88,7 @@ public class ImportForm implements BasicForm {
 
             // Fix tabbing in table
             SwingHelper.fixTabKeys(teamProjectTable);
+            teamProjectTable.addFocusListener(new TableFocusListener(teamProjectTable));
 
             // Set help text and popup text
             helpPanel.addPopupCommand(TfPluginBundle.message(TfPluginBundle.KEY_VSO_LOOKUP_HELP_ENTER_URL), CMD_GOTO_TFS);

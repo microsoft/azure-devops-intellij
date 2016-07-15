@@ -8,10 +8,11 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.ui.common.SwingHelper;
+import com.microsoft.alm.plugin.idea.ui.common.TableFocusListener;
 import com.microsoft.alm.plugin.idea.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.ui.controls.BusySpinnerPanel;
+import com.microsoft.alm.plugin.idea.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.ui.controls.HelpPanel;
 import com.microsoft.alm.plugin.idea.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.ui.controls.Hyperlink;
@@ -84,6 +85,7 @@ public class SelectWorkItemsForm {
 
             // Fix tabbing in table
             SwingHelper.fixTabKeys(workItemTable);
+            workItemTable.addFocusListener(new TableFocusListener(workItemTable));
 
             // Set help text and popup text
             helpPanel.addPopupCommand(TfPluginBundle.message(TfPluginBundle.KEY_VIEW_MY_WORK_ITEMS), CMD_GOTO_VIEW_MY_WORK_ITEMS);
