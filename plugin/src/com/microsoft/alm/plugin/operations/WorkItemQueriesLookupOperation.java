@@ -67,6 +67,7 @@ public class WorkItemQueriesLookupOperation extends Operation {
     }
 
     public WorkItemQueriesLookupOperation(final String gitRemoteUrl) {
+        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
         this.gitRemoteUrl = gitRemoteUrl;
     }
 
@@ -75,6 +76,7 @@ public class WorkItemQueriesLookupOperation extends Operation {
         onLookupStarted();
 
         final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+        //TODO: get rid of the calls that create more background tasks unless they run in parallel
         final List<Future> authTasks = new ArrayList<Future>();
         try {
             // TODO: refactor this into a common class
@@ -129,6 +131,7 @@ public class WorkItemQueriesLookupOperation extends Operation {
                 // If My Queries is the input then according to the WIT team check for if it's a directory
                 // that is not public and has children (do not check name due to localization).
                 // The other option is Shared Queries which would be public with children.
+                // TODO Consider making the enum a flags enum and allowing the user to get both root directories at the same time (right now you have to specify one or the other)
                 if (inputs.directory == QueryRootDirectories.MY_QUERIES
                         && directory.isFolder() && !directory.isPublic() && directory.getHasChildren()) {
                     queries.addAll(directory.getChildren());

@@ -58,6 +58,7 @@ public class PullRequestLookupOperation extends Operation {
 
         final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
         final List<Future> authTasks = new ArrayList<Future>();
+        //TODO: get rid of the calls that create more background tasks unless they run in parallel
         try {
             authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override

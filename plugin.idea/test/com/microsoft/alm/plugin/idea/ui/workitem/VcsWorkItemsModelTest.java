@@ -14,7 +14,6 @@ import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import git4idea.repo.GitRepository;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +57,7 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         model = new VcsWorkItemsModel(mockProject);
-        operation = new WorkItemLookupOperation(StringUtils.EMPTY);
+        operation = new WorkItemLookupOperation("remoteURL");
         PowerMockito.mockStatic(TfGitHelper.class);
         when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(mockGitRepository);
     }

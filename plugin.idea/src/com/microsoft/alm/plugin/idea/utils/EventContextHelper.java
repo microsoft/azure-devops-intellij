@@ -8,6 +8,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.events.ServerEvent;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import git4idea.repo.GitRepository;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,23 +31,37 @@ public class EventContextHelper {
 
     public static Map<String,Object> createContext(final String sender) {
         final Map<String,Object> eventContext = new HashMap<String, Object>();
-        setSender(eventContext, sender);
+        if (!StringUtils.isEmpty(sender)) {
+            setSender(eventContext, sender);
+        }
         return eventContext;
     }
 
     public static void setSender(final Map<String,Object> eventContext, final String sender) {
         ArgumentHelper.checkNotNull(eventContext, "eventContext");
-        eventContext.put(EventContextHelper.CONTEXT_SENDER, sender);
+        if (sender == null) {
+            eventContext.remove(EventContextHelper.CONTEXT_SENDER);
+        } else {
+            eventContext.put(EventContextHelper.CONTEXT_SENDER, sender);
+        }
     }
 
     public static void setProject(final Map<String,Object> eventContext, final Project project) {
         ArgumentHelper.checkNotNull(eventContext, "eventContext");
-        eventContext.put(EventContextHelper.CONTEXT_PROJECT, project);
+        if (project == null) {
+            eventContext.remove(EventContextHelper.CONTEXT_PROJECT);
+        } else {
+            eventContext.put(EventContextHelper.CONTEXT_PROJECT, project);
+        }
     }
 
     public static void setRepository(final Map<String,Object> eventContext, final GitRepository repository) {
         ArgumentHelper.checkNotNull(eventContext, "eventContext");
-        eventContext.put(EventContextHelper.CONTEXT_REPOSITORY, repository);
+        if (repository == null) {
+            eventContext.remove(EventContextHelper.CONTEXT_REPOSITORY);
+        } else {
+            eventContext.put(EventContextHelper.CONTEXT_REPOSITORY, repository);
+        }
     }
 
     public static String getSender(final Map<String,Object> eventContext) {

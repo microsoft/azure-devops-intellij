@@ -131,7 +131,7 @@ public class ServerContextBuilder {
         return buildWithClient(client);
     }
 
-    private ServerContext buildWithClient(Client client) {
+    protected ServerContext buildWithClient(Client client) {
         final ServerContext serverContext = new ServerContext(type, authenticationInfo, userId, uri, serverUri, client,
                 teamProjectCollectionReference, teamProjectReference, gitRepository);
 

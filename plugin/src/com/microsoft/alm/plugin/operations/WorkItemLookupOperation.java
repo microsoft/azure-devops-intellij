@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
@@ -43,8 +44,8 @@ public class WorkItemLookupOperation extends Operation {
          * @param fields
          */
         public WitInputs(String query, List<String> fields) {
-            assert query != null;
-            assert fields != null;
+            ArgumentHelper.checkNotNull(query, "query");
+            ArgumentHelper.checkNotNull(fields, "fields");
             this.query = query;
             this.fields = new FieldList();
             this.fields.addAll(fields);
@@ -57,7 +58,7 @@ public class WorkItemLookupOperation extends Operation {
          * @param query
          */
         public WitInputs(String query) {
-            assert query != null;
+            ArgumentHelper.checkNotNull(query, "query");
             this.query = query;
             this.fields = null;
             this.expand = WorkItemExpand.ALL;
@@ -93,7 +94,7 @@ public class WorkItemLookupOperation extends Operation {
     }
 
     public WorkItemLookupOperation(final String gitRemoteUrl) {
-        assert gitRemoteUrl != null;
+        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
         this.gitRemoteUrl = gitRemoteUrl;
     }
 
@@ -102,6 +103,7 @@ public class WorkItemLookupOperation extends Operation {
 
         final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
         final List<Future> authTasks = new ArrayList<Future>();
+        //TODO: get rid of the calls that create more background tasks unless they run in parallel
         try {
             authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                 @Override
@@ -119,11 +121,13 @@ public class WorkItemLookupOperation extends Operation {
         } catch (Throwable t) {
             logger.warn("doWork: failed to get authenticated server context", t);
             terminate(new NotAuthorizedException(gitRemoteUrl));
+            return;
         }
 
         if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
             //no context was found, user might have cancelled
             terminate(new NotAuthorizedException(gitRemoteUrl));
+            return;
         }
 
         final ServerContext latestServerContext = authenticatedContexts.get(0);
@@ -216,7 +220,7 @@ public class WorkItemLookupOperation extends Operation {
         onLookupCompleted();
     }
 
-    private static class IDList extends ArrayList<Integer> {
+    protected static class IDList extends ArrayList<Integer> {
         public IDList(int initialCapacity) {
             super(initialCapacity);
         }
@@ -233,7 +237,7 @@ public class WorkItemLookupOperation extends Operation {
         }
     }
 
-    private static class FieldList extends ArrayList<String> {
+    protected static class FieldList extends ArrayList<String> {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < size(); i++) {

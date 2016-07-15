@@ -37,7 +37,7 @@ public class FeedbackAction extends AbstractAction {
     }
 
     public JMenu getSubMenu() {
-        final JMenu menu = new JMenu("Feedback");
+        final JMenu menu = new JMenu(TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE));
         menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_SMILE, Icons.Smile, CMD_SEND_SMILE));
         menu.add(createMenuItem(TfPluginBundle.KEY_FEEDBACK_DIALOG_OK_FROWN, Icons.Frown, CMD_SEND_FROWN));
         return menu;

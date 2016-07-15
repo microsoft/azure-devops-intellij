@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
 import com.microsoft.alm.plugin.operations.Operation;
+import com.microsoft.alm.plugin.operations.OperationFactory;
 import git4idea.branch.GitBranchUtil;
 import git4idea.repo.GitRepository;
 
@@ -90,7 +91,7 @@ public class StatusBarManager {
                 final String branch = "refs/heads/" + GitBranchUtil.getDisplayableBranchText(repository);
 
                 // Create the operation and start the background work to get the latest build information
-                final BuildStatusLookupOperation op = new BuildStatusLookupOperation(repoUrl, branch, allowPrompt);
+                final BuildStatusLookupOperation op = OperationFactory.createBuildStatusLookupOperation(repoUrl, branch, allowPrompt);
                 op.addListener(new Operation.Listener() {
                     @Override
                     public void notifyLookupStarted() { /* do nothing */ }

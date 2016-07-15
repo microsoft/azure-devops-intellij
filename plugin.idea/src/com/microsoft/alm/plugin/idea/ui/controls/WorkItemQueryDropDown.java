@@ -136,6 +136,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
 
                             // add results to the menu
                             for (final QueryHierarchyItem item : wiResults.getQueries()) {
+                                //TODO check for folder items here and handle appropriately
                                 group.add(new QueryAction(item.getName(), item.getWiql()));
                             }
                         }

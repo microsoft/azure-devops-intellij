@@ -17,12 +17,16 @@ public class DateHelper {
     private final static Logger logger = LoggerFactory.getLogger(DateHelper.class);
 
     public static String getFriendlyDateTimeString(final Date date) {
+        final Date now = new Date();
+        return (getFriendlyDateTimeString(date, now));
+    }
+
+    protected static String getFriendlyDateTimeString(final Date date, final Date now) {
         if (date == null) {
             return "";
         }
 
         try {
-            final Date now = new Date();
             final long diff = now.getTime() - date.getTime(); //in milliseconds
             if (diff < 0) {
                 return date.toString(); //input date is not in the past

@@ -3,19 +3,51 @@
 
 package com.microsoft.alm.plugin.context;
 
-import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.core.webapi.CoreHttpClient;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollection;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.AbstractTest;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
+import com.microsoft.alm.plugin.context.rest.ConnectionData;
+import com.microsoft.alm.plugin.context.rest.LocationServiceData;
+import com.microsoft.alm.plugin.context.rest.ServiceDefinition;
+import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
+import com.microsoft.alm.plugin.context.rest.VstsUserInfo;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
+import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.Collection;
 import java.util.UUID;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({VstsHttpClient.class, AuthHelper.class})
 public class ServerContextManagerTest extends AbstractTest {
+
+    @Before
+    public void setupLocalTests() {
+        MockitoAnnotations.initMocks(this);
+    }
+
     @Test
     public void testEmptyManager() {
         ServerContextManager manager = new ServerContextManager();
@@ -127,6 +159,184 @@ public class ServerContextManagerTest extends AbstractTest {
         _context = manager.get(context.getUri().toString());
         Assert.assertNull(_context);
         Assert.assertNull(manager.getLastUsedContext());
+
+        // Make sure calling remove with null doesn't throw
+        manager.remove(null);
+    }
+
+    @Test
+    public void testValidateServerConnection_VSTS() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        ConnectionData connectionData = new ConnectionData();
+        connectionData.setAuthenticatedUser(new VstsUserInfo());
+        connectionData.setAuthorizedUser(new VstsUserInfo());
+        connectionData.setInstanceId(UUID.randomUUID());
+        connectionData.setLocationServiceData(new LocationServiceData());
+        ServiceDefinition definition = new ServiceDefinition();
+        definition.setServiceType("distributedtask");
+        connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenReturn(connectionData);
+
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).uri("https://server.visualstudio.com").buildWithClient(client);
+
+        // Make sure it doesn't throw for a 2015 server
+        manager.validateServerConnection(context);
+    }
+
+    @Test
+    public void testValidateServerConnection_2015Server() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        ConnectionData connectionData = new ConnectionData();
+        connectionData.setAuthenticatedUser(new VstsUserInfo());
+        connectionData.setAuthorizedUser(new VstsUserInfo());
+        connectionData.setInstanceId(UUID.randomUUID());
+        connectionData.setLocationServiceData(new LocationServiceData());
+        ServiceDefinition definition = new ServiceDefinition();
+        definition.setServiceType("distributedtask");
+        connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenReturn(connectionData);
+
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").buildWithClient(client);
+
+        // Make sure it doesn't throw for a 2015 server
+        manager.validateServerConnection(context);
+    }
+
+    @Test
+    public void testValidateServerConnection_2013Server() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        ConnectionData connectionData = new ConnectionData();
+        connectionData.setAuthenticatedUser(new VstsUserInfo());
+        connectionData.setAuthorizedUser(new VstsUserInfo());
+        connectionData.setInstanceId(UUID.randomUUID());
+        connectionData.setLocationServiceData(new LocationServiceData());
+        ServiceDefinition definition = new ServiceDefinition();
+        definition.setServiceType("doesntExist");
+        connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenReturn(connectionData);
+
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").buildWithClient(client);
+
+        // Make sure we get unsupported version
+        try {
+            manager.validateServerConnection(context);
+            Assert.fail("should not get here");
+        } catch (TeamServicesException ex) {
+            Assert.assertEquals(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidateServerConnection_404() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenThrow(new VstsHttpClient.VstsHttpClientException(404, "message", null));
+
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").buildWithClient(client);
+
+        // Make sure we get unsupported version
+        try {
+            manager.validateServerConnection(context);
+            Assert.fail("should not get here");
+        } catch (TeamServicesException ex) {
+            Assert.assertEquals(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidateServerConnection_justVSTSRemoteURL() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        ConnectionData connectionData = new ConnectionData();
+        connectionData.setAuthenticatedUser(new VstsUserInfo());
+        connectionData.setAuthorizedUser(new VstsUserInfo());
+        connectionData.setInstanceId(UUID.randomUUID());
+        connectionData.setLocationServiceData(new LocationServiceData());
+        ServiceDefinition definition = new ServiceDefinition();
+        definition.setServiceType("distributedtask");
+        connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenReturn(connectionData);
+
+        final TeamProjectCollection collection = new TeamProjectCollection();
+        collection.setName("coll1");
+        collection.setId(UUID.randomUUID());
+        collection.setUrl("https://server.visualstudio.com/coll1");
+        final GitRepository repo = new GitRepository();
+        repo.setName("repo1");
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).uri("https://server.visualstudio.com/project/_git/repo").buildWithClient(client);
+        final GitHttpClient gitHttpClient = Mockito.mock(GitHttpClient.class);
+        when(gitHttpClient.getRepository(anyString(), anyString())).thenReturn(repo);
+        final CoreHttpClient coreHttpClient = Mockito.mock(CoreHttpClient.class);
+        when(coreHttpClient.getProjectCollection(anyString())).thenReturn(collection);
+        final MyValidator myValidator = new MyValidator(context, gitHttpClient, coreHttpClient, collection);
+
+
+        // test the code path when we just provide the remote URL
+        manager.validateServerConnection(context, myValidator);
+    }
+
+    @Test
+    public void testValidateServerConnection_justTFSRemoteURL() {
+        ServerContextManager manager = new ServerContextManager();
+        Assert.assertNull(manager.getLastUsedContext());
+
+        ConnectionData connectionData = new ConnectionData();
+        connectionData.setAuthenticatedUser(new VstsUserInfo());
+        connectionData.setAuthorizedUser(new VstsUserInfo());
+        connectionData.setInstanceId(UUID.randomUUID());
+        connectionData.setLocationServiceData(new LocationServiceData());
+        ServiceDefinition definition = new ServiceDefinition();
+        definition.setServiceType("distributedtask");
+        connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+                .thenReturn(connectionData);
+
+        final TeamProjectCollection collection = new TeamProjectCollection();
+        collection.setName("coll1");
+        collection.setId(UUID.randomUUID());
+        collection.setUrl("https://server:8080/coll1");
+        final GitRepository repo = new GitRepository();
+        repo.setName("repo1");
+        final Client client = Mockito.mock(Client.class);
+        ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).uri("https://server:8080/project/_git/repo").buildWithClient(client);
+        final GitHttpClient gitHttpClient = Mockito.mock(GitHttpClient.class);
+        when(gitHttpClient.getRepository(anyString(), anyString())).thenReturn(repo);
+        final CoreHttpClient coreHttpClient = Mockito.mock(CoreHttpClient.class);
+        when(coreHttpClient.getProjectCollection(anyString())).thenReturn(collection);
+        final MyValidator myValidator = new MyValidator(context, gitHttpClient, coreHttpClient, collection);
+
+
+        // test the code path when we just provide the remote URL
+        manager.validateServerConnection(context, myValidator);
     }
 
     @Test
@@ -136,9 +346,13 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).uri("http://server/path").build();
         manager.add(context);
         Assert.assertEquals(context, manager.getLastUsedContext());
+        Assert.assertTrue(manager.lastUsedContextIsTFS());
+        Assert.assertFalse(manager.lastUsedContextIsEmpty());
 
         manager.clearLastUsedContext();
         Assert.assertNull(manager.getLastUsedContext());
+        Assert.assertTrue(manager.lastUsedContextIsEmpty());
+        Assert.assertFalse(manager.lastUsedContextIsTFS());
     }
 
     @Test
@@ -210,5 +424,63 @@ public class ServerContextManagerTest extends AbstractTest {
         ServerContext testContext = manager.getAuthenticatedContext(gitUri.toString(), true);
         Assert.assertNotNull(testContext);
         Assert.assertEquals(gitUri, testContext.getUri());
+    }
+
+    @Test
+    public void testUpdateAuthenticationInfo() {
+        String serverURL1 = "http://server:8080/project";
+        String serverURL2 = "http://server2:8080/project";
+        String serverURL3 = "http://server:8080/project/_git/repo";
+
+        AuthenticationInfo authInfo = new AuthenticationInfo("user", "pass", serverURL1, "user");
+        PowerMockito.mockStatic(AuthHelper.class);
+        when(AuthHelper.getAuthenticationInfoSynchronously(any(AuthenticationProvider.class), anyString())).thenReturn(authInfo);
+
+        ServerContextManager manager = new ServerContextManager();
+        AuthenticationInfo authInfo1 = new AuthenticationInfo("user1", "pass1", serverURL1, "user1");
+        ServerContext context1 = new ServerContext(ServerContext.Type.TFS, authInfo1, UUID.randomUUID(), URI.create(serverURL1), URI.create(serverURL1), null, null, null, null);
+        AuthenticationInfo authInfo2 = new AuthenticationInfo("user2", "pass2", serverURL2, "user2");
+        ServerContext context2 = new ServerContext(ServerContext.Type.TFS, authInfo2, UUID.randomUUID(), URI.create(serverURL2), URI.create(serverURL2), null, null, null, null);
+        ServerContext context3 = new ServerContext(ServerContext.Type.TFS, authInfo1, UUID.randomUUID(), URI.create(serverURL3), URI.create(serverURL1), null, null, null, null);
+
+        manager.add(context1);
+        manager.add(context2);
+        manager.add(context3);
+        Assert.assertEquals(3, manager.getAllServerContexts().size());
+
+        manager.updateAuthenticationInfo(serverURL1);
+        Assert.assertEquals(3, manager.getAllServerContexts().size());
+        Assert.assertEquals(authInfo, manager.get(serverURL1).getAuthenticationInfo());
+        Assert.assertNotEquals(authInfo, manager.get(serverURL2).getAuthenticationInfo());
+        Assert.assertEquals(authInfo, manager.get(serverURL3).getAuthenticationInfo());
+    }
+
+    private class MyValidator extends ServerContextManager.Validator {
+
+        final GitHttpClient gitHttpClient;
+        final CoreHttpClient coreHttpClient;
+        final TeamProjectCollection collection;
+
+        public MyValidator(final ServerContext context, final GitHttpClient gitHttpClient, final CoreHttpClient coreHttpClient, final TeamProjectCollection collection) {
+            super(context);
+            this.gitHttpClient = gitHttpClient;
+            this.coreHttpClient = coreHttpClient;
+            this.collection = collection;
+        }
+
+        @Override
+        protected GitHttpClient getGitHttpClient(Client jaxrsClient, URI baseUrl) {
+            return gitHttpClient;
+        }
+
+        @Override
+        protected CoreHttpClient getCoreHttpClient(Client jaxrsClient, URI baseUrl) {
+            return coreHttpClient;
+        }
+
+        @Override
+        protected TeamProjectCollectionReference getProjectCollection(ServerContext context, String collectionName) {
+            return collection;
+        }
     }
 }

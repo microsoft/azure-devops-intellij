@@ -4,10 +4,11 @@
 package com.microsoft.alm.plugin.context.soap;
 
 import com.microsoft.alm.client.model.VssServiceException;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.exceptions.TeamServicesException;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -52,9 +53,9 @@ public class CatalogServiceImpl implements CatalogService {
 
     private static final String QUERY_NODE_RESPONSE = "QueryNodesResponse"; //$NON-NLS-1$
 
-    private static final String ORGANIZATIONAL_ROOT = "69A51C5E-C093-447e-A177-A09E47A60974"; //$NON-NLS-1$
-    private static final String TEAM_FOUNDATION_SERVER_INSTANCE = "b36f1bda-df2d-482b-993a-f194a31a1fa2"; //$NON-NLS-1$
-    private static final String PROJECT_COLLECTION = "26338D9E-D437-44aa-91F2-55880A328B54"; //$NON-NLS-1$
+    public static final String ORGANIZATIONAL_ROOT = "69A51C5E-C093-447e-A177-A09E47A60974"; //$NON-NLS-1$
+    public static final String TEAM_FOUNDATION_SERVER_INSTANCE = "b36f1bda-df2d-482b-993a-f194a31a1fa2"; //$NON-NLS-1$
+    public static final String PROJECT_COLLECTION = "26338D9E-D437-44aa-91F2-55880A328B54"; //$NON-NLS-1$
 
     private static final XMLInputFactory XML_INPUT_FACTORY;
 
@@ -64,7 +65,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     public CatalogServiceImpl(final ServerContext context) {
-        assert context != null;
+        ArgumentHelper.checkNotNull(context, "context");
         this.context = context;
 
         final URI baseURI = context.getServerUri();
@@ -110,12 +111,21 @@ public class CatalogServiceImpl implements CatalogService {
 
     public TeamProjectCollectionReference getProjectCollection(final String collectionName) {
         final List<TeamProjectCollectionReference> collections = getProjectCollections();
-        for(final TeamProjectCollectionReference collection : collections) {
-            if(StringUtils.equalsIgnoreCase(collection.getName(), collectionName)) {
+        for (final TeamProjectCollectionReference collection : collections) {
+            if (StringUtils.equalsIgnoreCase(collection.getName(), collectionName)) {
                 return collection;
             }
         }
         throw new VssServiceException(TeamServicesException.KEY_OPERATION_ERRORS);
+    }
+
+    protected HttpResponse executeRequest(final HttpPost httpPost) throws IOException {
+        if (context.getHttpClient() == null) {
+            logger.warn("context.getHttpClient() is null");
+            throw new IllegalArgumentException("context");
+        }
+
+        return context.getHttpClient().execute(httpPost);
     }
 
     private class QueryData {
@@ -139,11 +149,7 @@ public class CatalogServiceImpl implements CatalogService {
         httpPost.addHeader(new BasicHeader("Content-Type", "application/soap+xml; charset=utf-8")); //$NON-NLS-1$ //$NON-NLS-2$
 
         try {
-            if (context.getHttpClient() == null) {
-                logger.warn("getCatalogDataFromServer context.getHttpClient() is null");
-                return null;
-            }
-            final HttpResponse httpResponse = context.getHttpClient().execute(httpPost);
+            final HttpResponse httpResponse = executeRequest(httpPost);
             final int responseStatusCode = httpResponse.getStatusLine().getStatusCode();
 
             CatalogData catalogData;
