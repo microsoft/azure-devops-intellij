@@ -14,4 +14,8 @@ public class OperationFactory {
             final String gitRemoteUrl, final String branch, final boolean forcePrompt) {
         return new BuildStatusLookupOperation(gitRemoteUrl, branch, forcePrompt);
     }
+
+    public static AccountLookupOperation createAccountLookupOperation() {
+        return new AccountLookupOperation();
+    }
 }

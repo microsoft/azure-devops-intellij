@@ -107,6 +107,11 @@ public class IdeaHelper {
      * @param message
      */
     public static void showErrorDialog(@NotNull final Project project, @NotNull final String message) {
+        if (ApplicationManager.getApplication() == null) {
+            // No application manager means no IntelliJ, we are probably in a test context
+            return;
+        }
+
         Messages.showErrorDialog(project, message,
                 TfPluginBundle.message(TfPluginBundle.KEY_TITLE_TEAM_SERVICES_ERROR));
     }

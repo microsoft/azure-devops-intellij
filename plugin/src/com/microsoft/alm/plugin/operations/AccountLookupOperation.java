@@ -36,7 +36,7 @@ public class AccountLookupOperation extends Operation {
         }
     }
 
-    public AccountLookupOperation() {
+    protected AccountLookupOperation() {
     }
 
     public AccountLookupResults castResults(final Results results) {
