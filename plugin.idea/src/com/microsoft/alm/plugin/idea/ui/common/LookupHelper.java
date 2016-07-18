@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.utils.IdeaHelper;
 import com.microsoft.alm.plugin.operations.AccountLookupOperation;
 import com.microsoft.alm.plugin.operations.Operation;
+import com.microsoft.alm.plugin.operations.OperationFactory;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -241,7 +242,7 @@ public class LookupHelper {
             lookupListener.loadContexts(vsoContexts, scope);
         } else {
             //lookup all accounts and query for repositories/projects in all the accounts
-            final AccountLookupOperation accountLookupOperation = new AccountLookupOperation();
+            final AccountLookupOperation accountLookupOperation = OperationFactory.createAccountLookupOperation();
             accountLookupOperation.addListener(new Operation.Listener() {
                 @Override
                 public void notifyLookupStarted() {
