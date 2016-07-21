@@ -24,11 +24,13 @@ import git4idea.GitVcs;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 
 public class OpenFileInBrowserAction extends InstrumentedAction {
@@ -149,30 +151,22 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
             return;
         }
 
-        final StringBuilder stringBuilder = new StringBuilder(gitRemote.getFirstUrl());
-
-        stringBuilder.append("#path=");
         final String rootPath = gitRepository.getRoot().getPath();
         final String path = virtualFile.getPath();
         final String relativePath = path.substring(rootPath.length());
-        stringBuilder.append(encodeVirtualFilePath(relativePath));
 
+        String gitRemoteBranchName = StringUtils.EMPTY;
         final GitLocalBranch gitLocalBranch = gitRepository.getCurrentBranch();
         if (gitLocalBranch != null) {
             final GitRemoteBranch gitRemoteBranch = gitLocalBranch.findTrackedBranch(gitRepository);
             if (gitRemoteBranch != null) {
-                stringBuilder.append("&version=GB");
-                stringBuilder.append(gitRemoteBranch.getNameForRemoteOperations());
+                gitRemoteBranchName = gitRemoteBranch.getNameForRemoteOperations();
             }
         }
 
-        final String urlToBrowseTo = stringBuilder.toString();
-        if (UrlHelper.isValidUrl(urlToBrowseTo)) {
-            logger.info("Browsing to url " + urlToBrowseTo);
-            BrowserUtil.browse(urlToBrowseTo);
-        } else {
-            logger.warn("Invalid server url to browse to " + urlToBrowseTo);
-        }
+        final URI urlToBrowseTo = UrlHelper.getFileURI(gitRemote.getFirstUrl(), encodeVirtualFilePath(relativePath), gitRemoteBranchName);
+        logger.info("Browsing to url " + urlToBrowseTo.getPath());
+        BrowserUtil.browse(urlToBrowseTo);
     }
 
     /**

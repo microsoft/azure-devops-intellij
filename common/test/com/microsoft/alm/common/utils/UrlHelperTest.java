@@ -221,6 +221,9 @@ public class UrlHelperTest {
         assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
                 UrlHelper.getHttpsGitUrlFromSshUrl("myaccount@myaccount.visualstudio.com:22/myCollection/_git/My.Repo"));
 
+        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("https://myaccount.visualstudio.com/myCollection/_git/My.Repo"));
+
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("ssh://git@github.com:Microsoft/vso-agent-tasks.git"));
 
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("git@github.com:Microsoft/vso-agent-tasks.git"));

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.List;
 
 public class OpenCommitInBrowserAction extends InstrumentedAction {
@@ -87,16 +88,8 @@ public class OpenCommitInBrowserAction extends InstrumentedAction {
             return;
         }
 
-        final StringBuilder stringBuilder = new StringBuilder(remoteUrl);
-        // vso will redirect to /commits (which shows the full history)if the particular commit does not exist on vso
-        stringBuilder.append("/commit/");
-        stringBuilder.append(commit.getId().asString());
-        final String urlToBrowseTo = stringBuilder.toString();
-        if (UrlHelper.isValidUrl(urlToBrowseTo)) {
-            logger.info("Browsing to url " + urlToBrowseTo);
-            BrowserUtil.browse(urlToBrowseTo);
-        } else {
-            logger.warn("Invalid server Url to browse to " + urlToBrowseTo);
-        }
+        final URI urlToBrowseTo = UrlHelper.getCommitURI(remoteUrl, commit.getId().toString());
+        logger.info("Browsing to url " + urlToBrowseTo.getPath());
+        BrowserUtil.browse(urlToBrowseTo);
     }
 }

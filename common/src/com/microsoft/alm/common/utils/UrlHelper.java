@@ -37,6 +37,9 @@ public class UrlHelper {
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
     private static final String URL_BRANCH_SEGMENT = "?path=%2F&_a=contents&version=GB";
+    private static final String URL_COMMIT_SEGMENT = "commit";
+    private static final String URL_PATH_SEGMENT = "#path=";
+    private static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -150,9 +153,14 @@ public class UrlHelper {
             final String path = sshUrl.getPath();
             final URI httpsUrl = UrlHelper.createUri("https://" + host + path);
             return httpsUrl.toString();
+        } else if (StringUtils.startsWithIgnoreCase(sshGitRemoteUrl, HTTP_PROTOCOL)
+                || StringUtils.startsWithIgnoreCase(sshGitRemoteUrl, HTTPS_PROTOCOL)) {
+            // http/https url so return the url untouched
+            return sshGitRemoteUrl;
+        } else {
+            // unsure what this url is
+            return null;
         }
-
-        return null;
     }
 
     public static String getCmdLineFriendlyUrl(final String url) {
@@ -210,6 +218,19 @@ public class UrlHelper {
 
     public static URI getBranchURI(final URI repoUri, final String branchName) {
         return UrlHelper.createUri(repoUri.toString().concat(URL_BRANCH_SEGMENT).concat(encode(branchName)));
+    }
+
+    public static URI getCommitURI(final String remoteUrl, final String commitId) {
+        return UrlHelper.createUri(getHttpsGitUrlFromSshUrl(remoteUrl).concat(URL_SEPARATOR).concat(URL_COMMIT_SEGMENT).concat(URL_SEPARATOR).concat(commitId));
+    }
+
+    public static URI getFileURI(final String remoteUrl, final String filePath, final String gitRemoteBranchName) {
+        String uri = getHttpsGitUrlFromSshUrl(remoteUrl).concat(URL_PATH_SEGMENT).concat(filePath);
+
+        if (StringUtils.isNotEmpty(gitRemoteBranchName)) {
+            uri.concat(URL_GIT_VERSION_SEGMENT).concat(gitRemoteBranchName);
+        }
+        return UrlHelper.createUri(uri);
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
