@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.103.0</version>
+    <version>1.104.0</version>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
@@ -40,9 +40,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.103.0
+      v 1.104.0
       <br />
-      This release adds work item query selection, cloning a specific branch from the web, and auto-refresh for work items, pull requests, and builds. Additionally, incremental fixes and updates are also included.
+      This release contains incremental fixes and updates to pull request, work item, and web links.
       <br />
     ]]>
     </change-notes>
