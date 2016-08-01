@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import org.junit.Before;
@@ -56,6 +55,6 @@ public class VcsPullRequestsModelTest extends IdeaAbstractTest {
     @Test
     public void testGetOperationInputs_DefaultValue() {
         underTest = new VcsPullRequestsModel(projectMock);
-        assertEquals(Operation.EMPTY_INPUTS, underTest.getOperationInputs());
+        assertEquals(true, underTest.getOperationInputs().getPromptForCreds());
     }
 }

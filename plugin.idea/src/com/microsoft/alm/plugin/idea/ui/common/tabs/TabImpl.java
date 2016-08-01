@@ -62,7 +62,7 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         form.setModelForView(modelView);
     }
 
-    public Operation.Inputs getOperationInputs() {
+    public Operation.CredInputsImpl getOperationInputs() {
         return form.getOperationInputs();
     }
 

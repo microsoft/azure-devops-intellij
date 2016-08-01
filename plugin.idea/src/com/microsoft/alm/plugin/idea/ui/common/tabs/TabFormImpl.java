@@ -360,7 +360,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
         return autoRefreshToggleButton.isSelected(null);
     }
 
-    public abstract Operation.Inputs getOperationInputs();
+    public abstract Operation.CredInputsImpl getOperationInputs();
 
     public abstract void refresh();
 

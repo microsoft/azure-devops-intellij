@@ -31,7 +31,7 @@ public interface Tab<T extends FilteredModel> {
 
     void setViewModel(final T modelView);
 
-    Operation.Inputs getOperationInputs();
+    Operation.CredInputsImpl getOperationInputs();
 
     void refresh();
 }

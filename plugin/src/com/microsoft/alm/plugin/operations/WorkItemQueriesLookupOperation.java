@@ -67,11 +67,13 @@ public class WorkItemQueriesLookupOperation extends Operation {
     }
 
     public WorkItemQueriesLookupOperation(final String gitRemoteUrl) {
+        logger.info("WorkItemQueriesLookupOperation created");
         ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
         this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
+        logger.info("WorkItemQueriesLookupOperation.doWork()");
         ArgumentHelper.checkNotNull(inputs, "inputs");
         onLookupStarted();
 
@@ -122,6 +124,7 @@ public class WorkItemQueriesLookupOperation extends Operation {
     }
 
     protected void doLookup(final ServerContext context, final QueryInputs inputs) {
+        logger.info("WorkItemQueriesLookupOperation.doLookup()");
         try {
             final WorkItemTrackingHttpClient witHttpClient = context.getWitHttpClient();
             final List<QueryHierarchyItem> rootDirectories = witHttpClient.getQueries(context.getTeamProjectReference().getId(), QueryExpand.WIQL, 1, false);

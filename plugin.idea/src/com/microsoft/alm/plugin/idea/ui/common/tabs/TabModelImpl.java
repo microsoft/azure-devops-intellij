@@ -29,7 +29,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     private String filter = StringUtils.EMPTY;
     private boolean autoRefresh;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
-    protected Operation.Inputs operationInputs;
+    protected Operation.CredInputsImpl operationInputs;
 
     public TabModelImpl(@NotNull final Project project, @NotNull T viewModel, String propertyStoragePrefix) {
         this.project = project;
@@ -80,7 +80,13 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     }
 
     public void loadData() {
+        loadData(true);
+    }
+
+    public void loadData(final boolean promptForCreds) {
         if (isTfGitRepository()) {
+            logger.info("Loading data for tab. Prompting " + promptForCreds);
+            getOperationInputs().setPromptForCreds(promptForCreds);
             dataProvider.loadData(TfGitHelper.getTfGitRemoteUrl(gitRepository), getOperationInputs());
         }
     }
@@ -123,11 +129,11 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
         return autoRefresh;
     }
 
-    public Operation.Inputs getOperationInputs() {
+    public Operation.CredInputsImpl getOperationInputs() {
         return operationInputs;
     }
 
-    public void setOperationInputs(final Operation.Inputs operationInputs) {
+    public void setOperationInputs(final Operation.CredInputsImpl operationInputs) {
         this.operationInputs = operationInputs;
     }
 

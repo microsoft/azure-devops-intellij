@@ -73,7 +73,8 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
         IdeaHelper.runOnUIThread(new Runnable() {
             @Override
             public void run() {
-                model.loadData();
+                model.loadData(false);
+                // TODO: refresh dropdown for new queries too
             }
         });
     }

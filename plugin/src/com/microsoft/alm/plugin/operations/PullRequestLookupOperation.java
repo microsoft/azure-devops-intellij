@@ -49,41 +49,54 @@ public class PullRequestLookupOperation extends Operation {
     }
 
     public PullRequestLookupOperation(final String gitRemoteUrl) {
+        logger.info("PullRequestLookupOperation created.");
         assert gitRemoteUrl != null;
         this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
+        logger.info("PullRequestLookupOperation.doWork()");
         onLookupStarted();
+        final ServerContext context;
 
-        final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
-        final List<Future> authTasks = new ArrayList<Future>();
-        //TODO: get rid of the calls that create more background tasks unless they run in parallel
-        try {
-            authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                @Override
-                public void run() {
-                    // Get the authenticated context for the gitRemoteUrl
-                    // This should be done on a background thread so as not to block UI or hang the IDE
-                    // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
-                    if (context != null) {
-                        authenticatedContexts.add(context);
+        if (((CredInputsImpl) inputs).getPromptForCreds() == true) {
+            final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+            final List<Future> authTasks = new ArrayList<Future>();
+            //TODO: get rid of the calls that create more background tasks unless they run in parallel
+            try {
+                authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Get the authenticated context for the gitRemoteUrl
+                        // This should be done on a background thread so as not to block UI or hang the IDE
+                        // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+                        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
+                        if (context != null) {
+                            authenticatedContexts.add(context);
+                        }
                     }
-                }
-            }));
-            OperationExecutor.getInstance().wait(authTasks);
-        } catch (Throwable t) {
-            logger.warn("doWork: failed to get authenticated server context", t);
-            terminate(new NotAuthorizedException(gitRemoteUrl));
+                }));
+                OperationExecutor.getInstance().wait(authTasks);
+            } catch (Throwable t) {
+                logger.warn("doWork: failed to get authenticated server context", t);
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
+
+            if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
+                //no context was found, user might have cancelled
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
+            context = authenticatedContexts.get(0);
+        } else {
+            context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, false);
+            if (context == null ) {
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
         }
 
-        if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
-            //no context was found, user might have cancelled
-            terminate(new NotAuthorizedException(gitRemoteUrl));
-        }
-
-        final ServerContext context = authenticatedContexts.get(0);
         final List<Future> lookupTasks = new ArrayList<Future>();
         try {
             lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {

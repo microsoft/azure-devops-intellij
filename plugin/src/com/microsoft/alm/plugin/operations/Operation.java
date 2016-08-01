@@ -54,6 +54,18 @@ public abstract class Operation {
     public interface Inputs {
     }
 
+    public static class CredInputsImpl implements Inputs {
+        protected boolean promptForCreds = true;
+
+        public void setPromptForCreds(final boolean promptForCreds) {
+            this.promptForCreds = promptForCreds;
+        }
+
+        public boolean getPromptForCreds() {
+            return promptForCreds;
+        }
+    }
+
     private final List<Listener> listeners = new CopyOnWriteArrayList<Listener>();
     private final UUID id;
     private State state;

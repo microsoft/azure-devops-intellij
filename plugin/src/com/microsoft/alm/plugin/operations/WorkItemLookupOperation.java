@@ -32,7 +32,7 @@ public class WorkItemLookupOperation extends Operation {
 
     private final String gitRemoteUrl;
 
-    public static class WitInputs implements Inputs {
+    public static class WitInputs extends CredInputsImpl {
         private final String query;
         private final FieldList fields;
         private final WorkItemExpand expand;
@@ -43,7 +43,7 @@ public class WorkItemLookupOperation extends Operation {
          * @param query
          * @param fields
          */
-        public WitInputs(String query, List<String> fields) {
+        public WitInputs(final String query, final List<String> fields) {
             ArgumentHelper.checkNotNull(query, "query");
             ArgumentHelper.checkNotNull(fields, "fields");
             this.query = query;
@@ -57,7 +57,7 @@ public class WorkItemLookupOperation extends Operation {
          *
          * @param query
          */
-        public WitInputs(String query) {
+        public WitInputs(final String query) {
             ArgumentHelper.checkNotNull(query, "query");
             this.query = query;
             this.fields = null;
@@ -94,43 +94,54 @@ public class WorkItemLookupOperation extends Operation {
     }
 
     public WorkItemLookupOperation(final String gitRemoteUrl) {
+        logger.info("WorkItemLookupOperation created.");
         ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
         this.gitRemoteUrl = gitRemoteUrl;
     }
 
     public void doWork(final Inputs inputs) {
+        logger.info("WorkItemLookupOperation.doWork()");
         onLookupStarted();
+        final ServerContext latestServerContext;
 
-        final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
-        final List<Future> authTasks = new ArrayList<Future>();
-        //TODO: get rid of the calls that create more background tasks unless they run in parallel
-        try {
-            authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                @Override
-                public void run() {
-                    // Get the authenticated context for the gitRemoteUrl
-                    // This should be done on a background thread so as not to block UI or hang the IDE
-                    // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
-                    if (context != null) {
-                        authenticatedContexts.add(context);
+        if (((CredInputsImpl) inputs).getPromptForCreds() == true) {
+            final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+            final List<Future> authTasks = new ArrayList<Future>();
+            //TODO: get rid of the calls that create more background tasks unless they run in parallel
+            try {
+                authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Get the authenticated context for the gitRemoteUrl
+                        // This should be done on a background thread so as not to block UI or hang the IDE
+                        // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+                        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
+                        if (context != null) {
+                            authenticatedContexts.add(context);
+                        }
                     }
-                }
-            }));
-            OperationExecutor.getInstance().wait(authTasks);
-        } catch (Throwable t) {
-            logger.warn("doWork: failed to get authenticated server context", t);
-            terminate(new NotAuthorizedException(gitRemoteUrl));
-            return;
+                }));
+                OperationExecutor.getInstance().wait(authTasks);
+            } catch (Throwable t) {
+                logger.warn("doWork: failed to get authenticated server context", t);
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
+
+            if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
+                //no context was found, user might have cancelled
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
+            latestServerContext = authenticatedContexts.get(0);
+        } else {
+            latestServerContext = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, false);
+            if (latestServerContext == null) {
+                terminate(new NotAuthorizedException(gitRemoteUrl));
+                return;
+            }
         }
 
-        if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
-            //no context was found, user might have cancelled
-            terminate(new NotAuthorizedException(gitRemoteUrl));
-            return;
-        }
-
-        final ServerContext latestServerContext = authenticatedContexts.get(0);
         final List<Future> lookupTasks = new ArrayList<Future>();
         final WitInputs witInputs = (WitInputs) inputs;
 

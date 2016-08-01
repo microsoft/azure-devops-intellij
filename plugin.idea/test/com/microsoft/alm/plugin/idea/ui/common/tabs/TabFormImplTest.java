@@ -69,7 +69,7 @@ public class TabFormImplTest extends IdeaAbstractTest {
             }
 
             @Override
-            public Operation.Inputs getOperationInputs() {
+            public Operation.CredInputsImpl getOperationInputs() {
                 return null;
             }
 

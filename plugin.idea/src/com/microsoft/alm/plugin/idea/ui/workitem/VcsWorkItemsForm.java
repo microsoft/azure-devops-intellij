@@ -169,7 +169,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
                 createMenuItem(TfPluginBundle.KEY_VCS_WIT_CREATE_BRANCH, null, CMD_CREATE_BRANCH, listener));
     }
 
-    public Operation.Inputs getOperationInputs() {
+    public Operation.CredInputsImpl getOperationInputs() {
         return new WorkItemLookupOperation.WitInputs(queryDropDown.getSelectedResults());
     }
 

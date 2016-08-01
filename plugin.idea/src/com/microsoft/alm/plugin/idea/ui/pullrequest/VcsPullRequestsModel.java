@@ -32,7 +32,7 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
 
     public VcsPullRequestsModel(@NotNull Project project) {
         super(project, new PullRequestsTreeModel(), "PullRequestsTab.");
-        operationInputs = Operation.EMPTY_INPUTS;
+        operationInputs = new Operation.CredInputsImpl();
     }
 
     protected void createDataProvider() {

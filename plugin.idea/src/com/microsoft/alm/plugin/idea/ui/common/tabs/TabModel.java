@@ -27,6 +27,8 @@ public interface TabModel<T extends FilteredModel> {
 
     void loadData();
 
+    void loadData(final boolean promptForCreds);
+
     void importIntoTeamServicesGit();
 
     void openSelectedItemsLink();
@@ -45,9 +47,9 @@ public interface TabModel<T extends FilteredModel> {
 
     boolean getAutoRefresh();
 
-    Operation.Inputs getOperationInputs();
+    Operation.CredInputsImpl getOperationInputs();
 
-    void setOperationInputs(final Operation.Inputs operationInputs);
+    void setOperationInputs(final Operation.CredInputsImpl operationInputs);
 
     void dispose();
 

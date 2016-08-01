@@ -161,8 +161,8 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
                 createMenuItem(TfPluginBundle.KEY_VCS_PR_ABANDON, null, VcsPullRequestsForm.CMD_ABANDON_SELECTED_PR, listener));
     }
 
-    public Operation.Inputs getOperationInputs() {
-        return Operation.EMPTY_INPUTS;
+    public Operation.CredInputsImpl getOperationInputs() {
+        return new Operation.CredInputsImpl();
     }
 
     public void refresh() {
