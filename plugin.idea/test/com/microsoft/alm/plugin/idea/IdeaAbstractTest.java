@@ -11,12 +11,18 @@ import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.common.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import org.junit.BeforeClass;
 
 /**
  * This class assures the the plugin service provider is initialized for all tests.
  */
 public class IdeaAbstractTest extends AbstractTest {
-    public IdeaAbstractTest() {
+
+    @BeforeClass
+    public static void setup() {
+        // Make sure we skip client initialization so telemetry is not sent to azure
+        System.setProperty("com.microsoft.alm.plugin.telemetry.skipClientInitialization", "true");
+
         PluginServiceProvider.getInstance().initialize(
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
@@ -25,5 +31,12 @@ public class IdeaAbstractTest extends AbstractTest {
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
                 false);
+
+        // ensure the AbstractTest's setup method is called as well.
+        // We need to do the lines above first since the plugin service provider can only be inited once
+        AbstractTest.setup();
+    }
+
+    public IdeaAbstractTest() {
     }
 }

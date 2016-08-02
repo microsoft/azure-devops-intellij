@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class implements the abstract CheckoutPageModel for VSO.
  */
-class VsoCheckoutPageModel extends CheckoutPageModelImpl {
+public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(VsoCheckoutPageModel.class);
     private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
 

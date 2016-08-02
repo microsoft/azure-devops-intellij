@@ -9,6 +9,7 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({FileDocumentManager.class, ApplicationManager.class})
+@PrepareForTest({FileDocumentManager.class, ApplicationManager.class, TeamServicesSettingsService.class})
 public class ApplicationStarterBaseTest extends IdeaAbstractTest {
     public final String URI_ARG = "vsoi://checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
     public final String URI_MINUS_PREFIX = "checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
@@ -40,6 +41,8 @@ public class ApplicationStarterBaseTest extends IdeaAbstractTest {
 
     @Mock
     public Application mockApplication;
+
+    public TeamServicesSettingsService teamServicesSettingsService = new TeamServicesSettingsService();
 
     public ApplicationStarterBase starterBase = new ApplicationStarterBase() {
         @Override
@@ -65,6 +68,9 @@ public class ApplicationStarterBaseTest extends IdeaAbstractTest {
         PowerMockito.mockStatic(ApplicationManager.class);
         when(FileDocumentManager.getInstance()).thenReturn(mockFileDocumentManager);
         when(ApplicationManager.getApplication()).thenReturn(mockApplication);
+
+        PowerMockito.mockStatic(TeamServicesSettingsService.class);
+        when(TeamServicesSettingsService.getInstance()).thenReturn(teamServicesSettingsService);
 
         processCommandArgs = Collections.emptyList();
         processUriArgs  = StringUtils.EMPTY;

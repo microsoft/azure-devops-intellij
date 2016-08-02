@@ -7,14 +7,13 @@ import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.ui.common.mocks.MockServerContext;
+import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockServerContext;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
 import org.apache.http.auth.NTCredentials;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TestName;
 
 import java.net.URI;
@@ -78,7 +77,7 @@ public class ServerContextLookupOperationTest extends AbstractTest {
 
         @Override
         public void notifyLookupResults(Operation.Results operationResults) {
-            ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults)operationResults;
+            ServerContextLookupOperation.ServerContextLookupResults lookupResults = (ServerContextLookupOperation.ServerContextLookupResults) operationResults;
             if (lookupResults.isCancelled()) {
                 cancelEvents++;
                 if (debug) {
@@ -146,7 +145,8 @@ public class ServerContextLookupOperationTest extends AbstractTest {
 
         gitRepositoryLookupOperation.addListener(new Operation.Listener() {
             @Override
-            public void notifyLookupStarted() {}
+            public void notifyLookupStarted() {
+            }
 
             @Override
             public void notifyLookupCompleted() {
@@ -219,7 +219,8 @@ public class ServerContextLookupOperationTest extends AbstractTest {
 
         asyncGitRepositoryLookupOperation.addListener(new Operation.Listener() {
             @Override
-            public void notifyLookupStarted() {}
+            public void notifyLookupStarted() {
+            }
 
             @Override
             public void notifyLookupCompleted() {
@@ -266,7 +267,8 @@ public class ServerContextLookupOperationTest extends AbstractTest {
 
             asyncGitRepositoryLookupOperation.addListener(new Operation.Listener() {
                 @Override
-                public void notifyLookupStarted() {}
+                public void notifyLookupStarted() {
+                }
 
                 @Override
                 public void notifyLookupCompleted() {

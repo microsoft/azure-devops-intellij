@@ -20,7 +20,6 @@ public class AbstractTest {
 
     @BeforeClass
     public static void setup() {
-
         // Make sure we skip client initialization so telemetry is not sent to azure
         System.setProperty("com.microsoft.alm.plugin.telemetry.skipClientInitialization", "true");
 
