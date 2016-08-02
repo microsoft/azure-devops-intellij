@@ -4,12 +4,12 @@
 package com.microsoft.alm.plugin.idea;
 
 import com.microsoft.alm.plugin.AbstractTest;
-import com.microsoft.alm.plugin.idea.services.CredentialsPromptImpl;
-import com.microsoft.alm.plugin.idea.services.DeviceFlowResponsePromptImpl;
-import com.microsoft.alm.plugin.idea.services.LocalizationServiceImpl;
-import com.microsoft.alm.plugin.idea.services.PropertyServiceImpl;
-import com.microsoft.alm.plugin.idea.services.ServerContextStoreImpl;
-import com.microsoft.alm.plugin.idea.services.TelemetryContextInitializer;
+import com.microsoft.alm.plugin.idea.common.services.CredentialsPromptImpl;
+import com.microsoft.alm.plugin.idea.common.services.DeviceFlowResponsePromptImpl;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
+import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
+import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
+import com.microsoft.alm.plugin.idea.common.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 
 /**

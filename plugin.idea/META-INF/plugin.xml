@@ -58,22 +58,22 @@
     <depends>Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <appStarter implementation="com.microsoft.alm.plugin.idea.starters.VstsStarter"/>
-        <checkoutProvider implementation="com.microsoft.alm.plugin.idea.extensions.GitCheckoutProvider"/>
+        <appStarter implementation="com.microsoft.alm.plugin.idea.common.starters.VstsStarter"/>
+        <checkoutProvider implementation="com.microsoft.alm.plugin.idea.git.extensions.GitCheckoutProvider"/>
         <!-- TODO: can tabName be localized ?-->
-        <changesViewContent className="com.microsoft.alm.plugin.idea.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
-        <changesViewContent className="com.microsoft.alm.plugin.idea.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>
-        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"
-                            serviceImplementation="com.microsoft.alm.plugin.idea.settings.TeamServicesSettingsService"/>
+        <changesViewContent className="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
+        <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>
+        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"
+                            serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
     </extensions>
 
     <extensions defaultExtensionNs="Git4Idea">
-        <GitHttpAuthDataProvider implementation="com.microsoft.alm.plugin.idea.extensions.TfGitHttpAuthDataProvider" />
+        <GitHttpAuthDataProvider implementation="com.microsoft.alm.plugin.idea.git.extensions.TfGitHttpAuthDataProvider" />
     </extensions>
 
     <application-components>
         <component>
-            <implementation-class>com.microsoft.alm.plugin.idea.setup.ApplicationStartup</implementation-class>
+            <implementation-class>com.microsoft.alm.plugin.idea.common.setup.ApplicationStartup</implementation-class>
         </component>
     </application-components>
 
@@ -82,22 +82,22 @@
     </project-components>
 
     <actions>
-        <action id="VSO.Open.In.Browser" class="com.microsoft.alm.plugin.idea.actions.OpenFileInBrowserAction">
+        <action id="VSO.Open.In.Browser" class="com.microsoft.alm.plugin.idea.common.actions.OpenFileInBrowserAction">
             <add-to-group group-id="EditorPopupMenu"/>
             <add-to-group group-id="ProjectViewPopupMenu"/>
             <add-to-group group-id="EditorTabPopupMenu"/>
         </action>
-        <action id="VSO.Open.Commit.In.Browser" class="com.microsoft.alm.plugin.idea.actions.OpenCommitInBrowserAction">
+        <action id="VSO.Open.Commit.In.Browser" class="com.microsoft.alm.plugin.idea.common.actions.OpenCommitInBrowserAction">
             <add-to-group group-id="Git.LogContextMenu" />
             <add-to-group group-id="Vcs.Log.ContextMenu" />
         </action>
-        <action id="VSO.Import" class="com.microsoft.alm.plugin.idea.actions.ImportAction">
+        <action id="VSO.Import" class="com.microsoft.alm.plugin.idea.git.actions.ImportAction">
             <add-to-group group-id="Vcs.Import" />
         </action>
-        <action id="VSO.Create.Pull.Request" class="com.microsoft.alm.plugin.idea.actions.CreatePullRequestAction">
+        <action id="VSO.Create.Pull.Request" class="com.microsoft.alm.plugin.idea.git.actions.CreatePullRequestAction">
             <add-to-group group-id="Git.Menu" />
         </action>
-        <action id="VSO.Select.Work.Items" class="com.microsoft.alm.plugin.idea.actions.SelectWorkItemsAction">
+        <action id="VSO.Select.Work.Items" class="com.microsoft.alm.plugin.idea.common.actions.SelectWorkItemsAction">
             <add-to-group group-id="Vcs.MessageActionGroup" />
         </action>
     </actions>
