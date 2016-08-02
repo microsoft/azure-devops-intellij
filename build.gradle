@@ -158,6 +158,10 @@ subprojects {
         }
     }
 
+    test {
+        forkEvery = 10
+    }
+
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
