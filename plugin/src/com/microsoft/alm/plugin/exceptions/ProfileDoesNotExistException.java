@@ -12,7 +12,13 @@ public class ProfileDoesNotExistException extends VssServiceException implements
         super(TeamServicesException.KEY_VSO_NO_PROFILE_ERROR, innerException);
     }
 
+    @Override
     public String getMessageKey() {
         return TeamServicesException.KEY_VSO_NO_PROFILE_ERROR;
+    }
+
+    @Override
+    public String[] getMessageParameters() {
+        return new String[0];
     }
 }

@@ -8,8 +8,14 @@ public class TeamServicesException extends RuntimeException implements Localized
 
     private String messageKey;
 
+    @Override
     public String getMessageKey() {
         return this.messageKey;
+    }
+
+    @Override
+    public String[] getMessageParameters() {
+        return new String[0];
     }
 
     public TeamServicesException(final String key) {

@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.common.services;
 
 import com.microsoft.alm.plugin.exceptions.LocalizedException;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
+import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.services.LocalizationService;
 import org.apache.commons.lang.StringUtils;
@@ -48,9 +49,10 @@ public class LocalizationServiceImpl implements LocalizationService {
         String message = t.getLocalizedMessage();
 
         if (t instanceof LocalizedException) {
-            final String key = ((LocalizedException) t).getMessageKey();
+            final LocalizedException localizedException = (LocalizedException)t;
+            final String key = localizedException.getMessageKey();
             if (keysMap.containsKey(key)) {
-                message = getLocalizedMessage(keysMap.get(key));
+                message = getLocalizedMessage(keysMap.get(key), (Object)localizedException.getMessageParameters());
             }
         }
 
@@ -58,9 +60,10 @@ public class LocalizationServiceImpl implements LocalizationService {
         //Use the message on the cause if there is one
         if (StringUtils.isEmpty(message) && t.getCause() != null) {
             if (t.getCause() instanceof LocalizedException) {
-                final String key = ((LocalizedException) t).getMessageKey();
+                final LocalizedException localizedException = (LocalizedException)t.getCause();
+                final String key = localizedException.getMessageKey();
                 if (keysMap.containsKey(key)) {
-                    message = getLocalizedMessage(keysMap.get(key));
+                    message = getLocalizedMessage(keysMap.get(key), (Object)localizedException.getMessageParameters());
                 }
             } else {
                 message = t.getCause().getLocalizedMessage();
@@ -77,6 +80,7 @@ public class LocalizationServiceImpl implements LocalizationService {
 
     private static final Map<String, String> keysMap = new HashMap<String, String>() {
         {
+            // Exception messages
             put(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION, "TFS.UnsupportedVersion");
             put(TeamServicesException.KEY_VSO_AUTH_SESSION_EXPIRED, "VSO.Auth.SessionExpired");
             put(TeamServicesException.KEY_VSO_AUTH_FAILED, "VSO.Auth.Failed");
@@ -84,6 +88,11 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(TeamServicesException.KEY_OPERATION_ERRORS, "Operation.Lookup.Errors");
             put(TeamServicesException.KEY_VSO_NO_PROFILE_ERROR, "VSO.NoProfileError");
             put(TeamServicesException.KEY_TFS_MALFORMED_SERVER_URI, "TFS.MalformedServerUri");
+
+            // Tool Exception messages
+            put(ToolException.KEY_TF_BAD_EXIT_CODE, "ToolException.TF.BadExitCode");
+            put(ToolException.KEY_TF_HOME_NOT_SET, "ToolException.TF.HomeNotSet");
+            put(ToolException.KEY_TF_EXE_NOT_FOUND, "ToolException.TF.ExeNotFound");
         }
     };
 

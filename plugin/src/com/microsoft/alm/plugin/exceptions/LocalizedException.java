@@ -5,4 +5,5 @@ package com.microsoft.alm.plugin.exceptions;
 
 public interface LocalizedException {
     String getMessageKey();
+    String[] getMessageParameters();
 }
