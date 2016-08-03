@@ -6,13 +6,17 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
+import org.apache.commons.lang.StringUtils;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
-import java.text.ParseException;
 
 /**
  * Base class for all TF commands. This class provides an argument builder for the common arguments for all commmands:
@@ -38,6 +42,7 @@ public abstract class Command<T> {
     public interface Listener<T> {
         /**
          * This method is called to notify the owner of progress made by the command process.
+         *
          * @param output
          * @param outputType
          * @param percentComplete
@@ -48,6 +53,7 @@ public abstract class Command<T> {
          * This method is called to notify the owner that the command process has completed.
          * Check the error parameter first to see if anything went wrong. If the error is
          * set, the result parameter may be null.
+         *
          * @param result
          * @param error
          */
@@ -76,6 +82,7 @@ public abstract class Command<T> {
     /**
      * This method starts the command after hooking up the listener. It returns immediately and calls the listener
      * when the command process finishes.
+     *
      * @param listener
      */
     public void run(final Listener<T> listener) {
@@ -85,32 +92,32 @@ public abstract class Command<T> {
         final ToolRunner runner = new ToolRunner(TfTool.getLocation(), getArgumentBuilder());
         runner.start(new ToolRunner.Listener() {
             @Override
-            public void processStandardOutput(String line) {
+            public void processStandardOutput(final String line) {
                 stdout.append(line + "\n");
                 listener.progress(line, OUTPUT_TYPE_INFO, 50);
             }
 
             @Override
-            public void processStandardError(String line) {
+            public void processStandardError(final String line) {
                 stderr.append(line + "\n");
                 listener.progress(line, OUTPUT_TYPE_ERROR, 50);
             }
 
             @Override
-            public void processException(Throwable throwable) {
+            public void processException(final Throwable throwable) {
                 listener.progress("", OUTPUT_TYPE_INFO, 100);
                 listener.completed(null, throwable);
             }
 
             @Override
-            public void completed(int returnCode) {
+            public void completed(final int returnCode) {
                 listener.progress("Parsing command output", OUTPUT_TYPE_INFO, 99);
 
                 // TODO wait for streams to finish (there is a timing issue right now where completed is called before the streams are finished)
                 Throwable error = null;
                 T result = null;
                 try {
-                    result = parseOutput(new StringReader(stdout.toString()), new StringReader(stderr.toString()));
+                    result = parseOutput(stdout.toString(), stderr.toString());
                     TfTool.throwBadExitCode(returnCode);
                 } catch (Throwable throwable) {
                     error = throwable;
@@ -121,26 +128,26 @@ public abstract class Command<T> {
         });
     }
 
-    public abstract T parseOutput(Reader stdoutReader, Reader stderrReader) throws ParseException, IOException;
+    public abstract T parseOutput(final String stdout, final String stderr);
 
-    protected void throwIfError(Reader stderrReader) throws IOException {
-        if (stderrReader != null) {
-            final StringBuilder errorLines = new StringBuilder();
-            final BufferedReader errReader = new BufferedReader(stderrReader);
-            try {
-                String line = errReader.readLine();
-                while (line != null) {
-                    errorLines.append(line);
-                    errorLines.append('\n');
-                    line = errReader.readLine();
-                }
-                if (errorLines.length() > 0) {
-                    //TODO what kind of exception should this be?
-                    throw new RuntimeException(errorLines.toString());
-                }
-            } finally {
-                errReader.close();
+    protected NodeList evaluateXPath(final String stdout, final String xpathQuery) {
+        final XPath xpath = XPathFactory.newInstance().newXPath();
+        try {
+            final Object result = xpath.evaluate(xpathQuery, new InputSource(new StringReader(stdout)), XPathConstants.NODESET);
+            if (result != null && result instanceof NodeList) {
+                return (NodeList) result;
             }
+        } catch (final XPathExpressionException inner) {
+            throw new ToolParseFailureException(inner);
+        }
+
+        throw new ToolParseFailureException();
+    }
+
+    protected void throwIfError(final String stderr) {
+        if (StringUtils.isNotEmpty(stderr)) {
+            //TODO what kind of exception should this be?
+            throw new RuntimeException(stderr);
         }
     }
 
