@@ -6,11 +6,9 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,59 +41,30 @@ public class StatusCommand extends Command<List<PendingChange>> {
      * <pending-changes/>
      * <candidate-pending-changes>
      * <pending-change server-item="$/tfsTest_01/test.txt" version="0" owner="NORTHAMERICA\jpricket" date="2016-07-13T12:36:51.060-0400" lock="none" change-type="add" workspace="MyNewWorkspace2" computer="JPRICKET-DEV2" local-item="D:\tmp\test\test.txt"/>
-     * <p/>
      * </candidate-pending-changes>
      * </status>
-     *
-     * @param stdoutReader
-     * @param stderrReader
-     * @return
-     * @throws ParseException
-     * @throws IOException
      */
     @Override
-    public List<PendingChange> parseOutput(Reader stdoutReader, Reader stderrReader) throws ParseException, IOException {
-        final BufferedReader outputReader = new BufferedReader(stdoutReader);
+    public List<PendingChange> parseOutput(final String stdout, final String stderr) {
+        super.throwIfError(stderr);
+        final List<PendingChange> changes = new ArrayList<PendingChange>(100);
+        final NodeList nodes = super.evaluateXPath(stdout, "/status/*/pending-change");
 
-        //TODO Use XPath or some other xml parsing class
-        try {
-            // If stderror has any output, throw an exception with the details
-            super.throwIfError(stderrReader);
-
-            final List<PendingChange> changes = new ArrayList<PendingChange>(100);
-            String line = outputReader.readLine();
-            while (line != null) {
-                final int index = line.indexOf("<pending-change ");
-                if (index >= 0) {
-                    changes.add(new PendingChange(
-                            getValue(line, "server-item"),
-                            getValue(line, "local-item"),
-                            getValue(line, "version"),
-                            getValue(line, "owner"),
-                            getValue(line, "date"),
-                            getValue(line, "lock"),
-                            getValue(line, "change-type"),
-                            getValue(line, "workspace"),
-                            getValue(line, "computer")
-                    ));
-                }
-                line = outputReader.readLine();
-            }
-            return changes;
-        } finally {
-            outputReader.close();
+        // Convert all the xpath nodes to pending change models
+        for (int i = 0; i < nodes.getLength(); i++) {
+            final NamedNodeMap attributes = nodes.item(i).getAttributes();
+            changes.add(new PendingChange(
+                    attributes.getNamedItem("server-item").getNodeValue(),
+                    attributes.getNamedItem("local-item").getNodeValue(),
+                    attributes.getNamedItem("version").getNodeValue(),
+                    attributes.getNamedItem("owner").getNodeValue(),
+                    attributes.getNamedItem("date").getNodeValue(),
+                    attributes.getNamedItem("lock").getNodeValue(),
+                    attributes.getNamedItem("change-type").getNodeValue(),
+                    attributes.getNamedItem("workspace").getNodeValue(),
+                    attributes.getNamedItem("computer").getNodeValue()));
         }
-    }
 
-    private String getValue(final String line, final String attributeName) {
-        final String marker = " " + attributeName + "=\"";
-        final int index = line.indexOf(marker);
-        if (index >= 0) {
-            final int endIndex = line.indexOf("\"", index + marker.length());
-            if (endIndex > index) {
-                return line.substring(index + marker.length(), endIndex);
-            }
-        }
-        return "";
+        return changes;
     }
 }
