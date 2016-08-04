@@ -6,9 +6,13 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
+import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -17,6 +21,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Base class for all TF commands. This class provides an argument builder for the common arguments for all commmands:
@@ -29,6 +34,8 @@ import java.io.StringReader;
  * @param <T>
  */
 public abstract class Command<T> {
+    private static final Logger logger = LoggerFactory.getLogger(Command.class);
+
     public static final int OUTPUT_TYPE_INFO = 0;
     public static final int OUTPUT_TYPE_WARNING = 1;
     public static final int OUTPUT_TYPE_ERROR = 2;
@@ -93,18 +100,21 @@ public abstract class Command<T> {
         runner.start(new ToolRunner.Listener() {
             @Override
             public void processStandardOutput(final String line) {
+                logger.info("CMD: " + line);
                 stdout.append(line + "\n");
                 listener.progress(line, OUTPUT_TYPE_INFO, 50);
             }
 
             @Override
             public void processStandardError(final String line) {
+                logger.info("ERROR: " + line);
                 stderr.append(line + "\n");
                 listener.progress(line, OUTPUT_TYPE_ERROR, 50);
             }
 
             @Override
             public void processException(final Throwable throwable) {
+                logger.info("ERROR: " + throwable.toString());
                 listener.progress("", OUTPUT_TYPE_INFO, 100);
                 listener.completed(null, throwable);
             }
@@ -120,12 +130,58 @@ public abstract class Command<T> {
                     result = parseOutput(stdout.toString(), stderr.toString());
                     TfTool.throwBadExitCode(returnCode);
                 } catch (Throwable throwable) {
+                    logger.error("CMD: parsing output failed", throwable);
                     error = throwable;
                 }
                 listener.progress("", OUTPUT_TYPE_INFO, 100);
                 listener.completed(result, error);
             }
         });
+    }
+
+    /**
+     * This method is provided to allow callers to run the command and wait on the result.
+     * You should probably not call this method on the main thread.
+     * You should also limit this to fast local commands.
+     *
+     * @return
+     */
+    public T runSynchronously() {
+        final SettableFuture<T> syncResult = SettableFuture.create();
+        final SettableFuture<Throwable> syncError = SettableFuture.create();
+
+        run(new Listener<T>() {
+            @Override
+            public void progress(String output, int outputType, int percentComplete) {
+                // Do nothing
+            }
+
+            @Override
+            public void completed(T result, Throwable error) {
+                syncResult.set(result);
+                syncError.set(error);
+            }
+        });
+
+        try {
+            Throwable error = syncError.get();
+            if (error != null) {
+                if (error instanceof RuntimeException) {
+                    throw (RuntimeException) error;
+                } else {
+                    // Wrap the exception
+                    throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, error);
+                }
+            } else {
+                return syncResult.get();
+            }
+        } catch (InterruptedException e) {
+            logger.error("CMD: failure", e);
+            throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
+        } catch (ExecutionException e) {
+            logger.error("CMD: failure", e);
+            throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
+        }
     }
 
     public abstract T parseOutput(final String stdout, final String stderr);
@@ -142,6 +198,11 @@ public abstract class Command<T> {
         }
 
         throw new ToolParseFailureException();
+    }
+
+    protected String[] getLines(String buffer) {
+        final String[] lines = buffer.replace("\r\n", "\n").split("\n");
+        return lines;
     }
 
     protected void throwIfError(final String stderr) {

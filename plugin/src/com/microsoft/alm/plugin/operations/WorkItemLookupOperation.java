@@ -135,7 +135,7 @@ public class WorkItemLookupOperation extends Operation {
             }
             latestServerContext = authenticatedContexts.get(0);
         } else {
-            latestServerContext = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, false);
+            latestServerContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, false);
             if (latestServerContext == null) {
                 terminate(new NotAuthorizedException(gitRemoteUrl));
                 return;

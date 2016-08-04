@@ -160,7 +160,7 @@ public class BuildStatusLookupOperation extends Operation {
 
             // Lookup the context that goes with this remoteUrl
             // If no match exists simply return the default results
-            final ServerContext context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, forcePrompt);
+            final ServerContext context = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, forcePrompt);
             if (context != null && context.getGitRepository() != null) {
                 // Using the build REST client we will get the last 100 builds for this team project.
                 // We will go through those builds and try to find one that matches our repo and branch.

@@ -90,7 +90,7 @@ public class PullRequestLookupOperation extends Operation {
             }
             context = authenticatedContexts.get(0);
         } else {
-            context = ServerContextManager.getInstance().createContextFromRemoteUrl(gitRemoteUrl, false);
+            context = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, false);
             if (context == null ) {
                 terminate(new NotAuthorizedException(gitRemoteUrl));
                 return;

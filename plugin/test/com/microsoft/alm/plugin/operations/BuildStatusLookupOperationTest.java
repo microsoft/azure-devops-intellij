@@ -68,7 +68,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
 
         serverContextManager = Mockito.mock(ServerContextManager.class);
         when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
+        when(serverContextManager.createContextFromGitRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
 
         PowerMockito.mockStatic(ServerContextManager.class);
         when(ServerContextManager.getInstance()).thenReturn(serverContextManager);

@@ -190,6 +190,7 @@ public class ServerContextManager {
                 contextToValidate = null;
             }
         }
+        //TODO we need to parse the TFVC url as well and get collection (and perhaps team project) information
 
         if (context.getType() == ServerContext.Type.TFS) {
             return checkTfsVersionAndConnection(contextToValidate);
@@ -302,7 +303,7 @@ public class ServerContextManager {
     public ServerContext getAuthenticatedContext(final String gitRemoteUrl, final boolean setAsActiveContext) {
         try {
             // get context from builder, create PAT if needed, and store in active context
-            final ServerContext context = createContextFromRemoteUrl(gitRemoteUrl);
+            final ServerContext context = createContextFromGitRemoteUrl(gitRemoteUrl);
             if (context != null && setAsActiveContext) {
                 //nothing to do
                 //context is already added to the manager if it is valid
@@ -321,11 +322,11 @@ public class ServerContextManager {
      * @param gitRemoteUrl
      * @return
      */
-    public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl) {
-        return createContextFromRemoteUrl(gitRemoteUrl, true);
+    public ServerContext createContextFromGitRemoteUrl(final String gitRemoteUrl) {
+        return createContextFromGitRemoteUrl(gitRemoteUrl, true);
     }
 
-    public ServerContext createContextFromRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
+    public ServerContext createContextFromGitRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
         ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
 
         // Get matching context from manager
@@ -344,6 +345,35 @@ public class ServerContextManager {
                 final ServerContext.Type type = UrlHelper.isTeamServicesUrl(gitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
                 final ServerContext contextToValidate = new ServerContextBuilder()
                         .type(type).uri(gitRemoteUrl).authentication(authenticationInfo).build();
+                context = validateServerConnection(contextToValidate);
+            }
+        }
+
+        if (context != null && context.getUserId() == null) {
+            //validate the context and save it with userId
+            context = validateServerConnection(context);
+        }
+
+        return context;
+    }
+
+
+    public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final boolean prompt) {
+        ArgumentHelper.checkNotEmptyString(tfvcServerUrl);
+
+        // Get matching context from manager
+        ServerContext context = get(tfvcServerUrl);
+        if (context == null || context.getServerUri() == null) {
+            context = null;
+        }
+
+        if (context == null) {
+            // Manager didn't have a matching context, so try to look up the auth info
+            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(tfvcServerUrl, prompt);
+            if (authenticationInfo != null) {
+                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(tfvcServerUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
+                final ServerContext contextToValidate = new ServerContextBuilder()
+                        .type(type).uri(tfvcServerUrl).authentication(authenticationInfo).build();
                 context = validateServerConnection(contextToValidate);
             }
         }
