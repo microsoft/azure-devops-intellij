@@ -32,6 +32,7 @@ public class ServerContextLookupOperation extends Operation {
 
     public enum ContextScope {REPOSITORY, PROJECT}
 
+    private static final String HTTP_503_EXCEPTION = "HTTP 503 Service Unavailable";
     private final List<ServerContext> contextList;
     private final ContextScope resultScope;
 
@@ -166,10 +167,17 @@ public class ServerContextLookupOperation extends Operation {
                 addTeamProjectResults(projects, context, teamProjectCollectionReference);
             } else {
                 final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-                final List<GitRepository> gitRepositories = gitClient.getRepositories();
-
-                logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
-                addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                try {
+                    final List<GitRepository> gitRepositories = gitClient.getRepositories();
+                    logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+                    addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                } catch (VssResourceNotFoundException e) {
+                    if (e.getMessage().contains(HTTP_503_EXCEPTION)) {
+                        logger.warn("Collection " + teamProjectCollectionReference.getName() + " is unavailable.", e);
+                    } else {
+                        logger.error("Failure while trying to find collection repos", e);
+                    }
+                }
             }
         }
     }
