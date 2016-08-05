@@ -1,62 +1,51 @@
-package org.jetbrains.tfsIntegration.core.tfs;
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
+package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 
 /**
- * User: ksafonov
+ * TODO: leantk- this number needs to be made unique and it currently isn't
  */
 public class TfsRevisionNumber extends VcsRevisionNumber.Int {
 
-  private static final String SEPARATOR = ":";
+    private static final String SEPARATOR = ":";
 
-  public static final int UNDEFINED_ID = Integer.MIN_VALUE;
+    private final String myItemId;
 
-  private final int myItemId;
-
-  public TfsRevisionNumber(final int value, final int itemId) {
-    super(value);
-    myItemId = itemId;
-  }
-
-  @Override
-  public String asString() {
-    if (myItemId != UNDEFINED_ID) {
-      return String.valueOf(getValue()) + SEPARATOR + String.valueOf(myItemId);
+    public TfsRevisionNumber(final int value, final String itemId) {
+        super(value);
+        myItemId = itemId;
     }
-    else {
-      return String.valueOf(getValue());
+
+    @Override
+    public String asString() {
+        return String.valueOf(getValue()) + SEPARATOR + myItemId;
     }
-  }
 
-  public TfsRevisionNumber(final int value) {
-    this(value, UNDEFINED_ID);
-  }
-
-  public int getItemId() {
-    return myItemId;
-  }
-
-  public static VcsRevisionNumber tryParse(final String s) {
-    try {
-      int i = s.indexOf(SEPARATOR);
-      if (i != -1) {
-        String revisionNumberString = s.substring(0, i);
-        String itemIdString = s.substring(i + 1);
-        int revisionNumber = Integer.parseInt(revisionNumberString);
-        int changeset = Integer.parseInt(itemIdString);
-        return new TfsRevisionNumber(revisionNumber, changeset);
-      }
-      else {
-        int revisionNumber = Integer.parseInt(s);
-        return new TfsRevisionNumber(revisionNumber);
-      }
+    public String getItemId() {
+        return myItemId;
     }
-    catch (NumberFormatException e) {
-      return null;
-    }
-  }
 
-  public String getChangesetString() {
-    return String.valueOf(getValue());
-  }
+    public static VcsRevisionNumber tryParse(final String s) {
+        try {
+            int i = s.indexOf(SEPARATOR);
+            if (i != -1) {
+                String revisionNumberString = s.substring(0, i);
+                String itemIdString = s.substring(i + 1);
+                int revisionNumber = Integer.parseInt(revisionNumberString);
+                return new TfsRevisionNumber(revisionNumber, itemIdString);
+            } else {
+                int revisionNumber = Integer.parseInt(s);
+                return new TfsRevisionNumber(revisionNumber, "");
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    public String getChangesetString() {
+        return String.valueOf(getValue());
+    }
 }

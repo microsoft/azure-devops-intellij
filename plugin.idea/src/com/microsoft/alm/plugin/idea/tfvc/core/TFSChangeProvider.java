@@ -1,109 +1,96 @@
-/*
- * Copyright 2000-2008 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
 
-package org.jetbrains.tfsIntegration.core;
+package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
+import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.changes.ChangelistBuilder;
+import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.plugin.external.commands.Command;
+import com.microsoft.alm.plugin.external.commands.StatusCommand;
+import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
+import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.tfsIntegration.core.tfs.*;
-import org.jetbrains.tfsIntegration.exceptions.TfsException;
 
-import java.text.MessageFormat;
 import java.util.List;
 
 /**
- * TODO important cases
+ * Extends the VCS change provider to execture the correct events to find out the local changes in the workspace
+ * <p/>
+ * TODO (Jetbrains) important cases
  * 1. when folder1 is unversioned and folder1/file1 is scheduled for addition, team explorer effectively shows folder1 as scheduled for addition
  */
 
 public class TFSChangeProvider implements ChangeProvider {
 
-  private final Project myProject;
+    private final Project myProject;
 
-  public TFSChangeProvider(final Project project) {
-    myProject = project;
-  }
-
-  public boolean isModifiedDocumentTrackingRequired() {
-    return true;
-  }
-
-  public void doCleanup(final List<VirtualFile> files) {
-  }
-
-  public void getChanges(@NotNull final VcsDirtyScope dirtyScope,
-                         @NotNull final ChangelistBuilder builder,
-                         @NotNull final ProgressIndicator progress,
-                         @NotNull final ChangeListManagerGate addGate) throws VcsException {
-    if (myProject.isDisposed()) {
-      return;
-    }
-    if (builder == null) {
-      return;
+    public TFSChangeProvider(final Project project) {
+        myProject = project;
     }
 
-    progress.setText("Processing changes");
-
-    // process only roots, filter out child items since requests are recursive anyway
-    RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
-    roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
-
-    final ChangeListManager changeListManager = ChangeListManager.getInstance(myProject);
-    for (FilePath dirtyFile : dirtyScope.getDirtyFiles()) {
-      // workaround for IDEADEV-31511 and IDEADEV-31721
-      if (dirtyFile.getVirtualFile() == null || !changeListManager.isIgnoredFile(dirtyFile.getVirtualFile())) {
-        roots.add(dirtyFile);
-      }
+    public boolean isModifiedDocumentTrackingRequired() {
+        return true;
     }
 
-    if (roots.isEmpty()) {
-      return;
+    public void doCleanup(final List<VirtualFile> files) {
     }
 
-    try {
-      final Ref<Boolean> mappingFound = Ref.create(false);
-      // ingore orphan roots here
-      WorkstationHelper.processByWorkspaces(roots, true, myProject, new WorkstationHelper.VoidProcessDelegate() {
-        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-          StatusProvider
-            .visitByStatus(workspace, paths, true, progress, new ChangelistBuilderStatusVisitor(myProject, builder, workspace), myProject);
-          mappingFound.set(true);
+    public void getChanges(@NotNull final VcsDirtyScope dirtyScope,
+                           @NotNull final ChangelistBuilder builder,
+                           @NotNull final ProgressIndicator progress,
+                           @NotNull final ChangeListManagerGate addGate) throws VcsException {
+
+        if (myProject.isDisposed()) {
+            return;
         }
-      });
-      if (!mappingFound.get()) {
-        final String message;
-        if (roots.size() > 1) {
-          message = "Team Foundation Server mappings not found";
+        if (builder == null) {
+            return;
         }
-        else {
-          FilePath orphan = roots.iterator().next();
-          message = MessageFormat.format("Team Foundation Server mappings not found for ''{0}''", orphan.getPresentableUrl());
+
+        progress.setText("Processing changes");
+
+        // process only roots, filter out child items since requests are recursive anyway
+        RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
+        roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
+
+        final ChangeListManager changeListManager = ChangeListManager.getInstance(myProject);
+        for (FilePath dirtyFile : dirtyScope.getDirtyFiles()) {
+            // workaround for IDEADEV-31511 and IDEADEV-31721
+            if (dirtyFile.getVirtualFile() == null || !changeListManager.isIgnoredFile(dirtyFile.getVirtualFile())) {
+                roots.add(dirtyFile);
+            }
         }
-        throw new VcsException(message);
-      }
+
+        if (roots.isEmpty()) {
+            return;
+        }
+
+        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
+
+        for (final FilePath root : roots) {
+            // TODO: add the ability to pass multiple roots to the command line
+            final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
+            final List<PendingChange> changes = command.runSynchronously();
+
+            // for each change, find out the status of the changes and then add to the list
+            for (final PendingChange change : changes) {
+                try {
+                    StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
+                } catch (TfsException e) {
+                    throw new VcsException(e.getMessage(), e);
+                }
+            }
+        }
     }
-    catch (TfsException e) {
-      throw new VcsException(e.getMessage(), e);
-    }
-  }
 
 }

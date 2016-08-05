@@ -5,6 +5,7 @@ package com.microsoft.alm.common.utils;
 
 import org.apache.commons.lang.StringUtils;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -12,6 +13,7 @@ import java.util.List;
  */
 public class ArgumentHelper {
     private static final String EMPTY_ARG_MSG = "%s is empty";
+    private static final String NOT_FILE_MSG = "%s expected to be a file";
 
     public static void checkNotNull(final Object arg, final String argName) {
         if (arg == null) {
@@ -30,6 +32,13 @@ public class ArgumentHelper {
     public static void checkNotEmptyString(final String arg) {
         if (StringUtils.isEmpty(arg)) {
             throw new IllegalArgumentException(String.format(EMPTY_ARG_MSG, arg));
+        }
+    }
+
+    public static void checkIfFile(final File file) {
+        checkNotNull(file, "file");
+        if (file.isDirectory()) {
+            throw new IllegalArgumentException(String.format(NOT_FILE_MSG, file.getPath()));
         }
     }
 }

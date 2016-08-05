@@ -7,6 +7,7 @@
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
     <version>1.104.0</version>
+    <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
@@ -54,8 +55,8 @@
          on how to target different products -->
     <!-- enables plugin in all products -->
     <depends>com.intellij.modules.lang</depends>
-
     <depends>Git4Idea</depends>
+    <depends>com.intellij.modules.vcs</depends> <!-- Dependency for tfvc -->
 
     <extensions defaultExtensionNs="com.intellij">
         <appStarter implementation="com.microsoft.alm.plugin.idea.common.starters.VstsStarter"/>
@@ -65,6 +66,17 @@
         <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+      <!--  <applicationService serviceInterface="com.microsoft.alm.plugin.idea.tfvc.core.configuration.TFSConfigurationManager"
+                            serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.configuration.TFSConfigurationManager"/>
+        <checkoutProvider implementation="com.microsoft.alm.plugin.idea.tfvc.core.TFSCheckoutProvider"/>
+        <search.topHitProvider implementation="com.microsoft.alm.plugin.idea.tfvc.core.configuration.TFSOptionsTopHitProvider"/> -->
+        <vcs name="TFVC" vcsClass="com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs" displayName="TFVC" administrativeAreaName=".tf"/>
+       <!-- <vcsCheckinHandlerFactory implementation="com.microsoft.alm.plugin.idea.tfvc.core.TFSCheckinHandlerFactory"/>
+
+        <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.TFSProjectConfiguration"/>-->
     </extensions>
 
     <extensions defaultExtensionNs="Git4Idea">
