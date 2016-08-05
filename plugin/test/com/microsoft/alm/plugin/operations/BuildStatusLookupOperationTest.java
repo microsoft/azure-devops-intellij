@@ -17,6 +17,7 @@ import com.microsoft.alm.build.webapi.model.QueryDeletedOption;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
@@ -75,28 +76,14 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructor_nullUrl() {
-        BuildStatusLookupOperation operation = new BuildStatusLookupOperation(null, "branch", false);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConstructor_emptyUrl() {
-        BuildStatusLookupOperation operation = new BuildStatusLookupOperation("", "branch", false);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConstructor_nullBranch() {
-        BuildStatusLookupOperation operation = new BuildStatusLookupOperation("gitRemoteUrl", null, false);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testConstructor_emptyBranch() {
-        BuildStatusLookupOperation operation = new BuildStatusLookupOperation("gitRemoteUrl", "", false);
+    public void testConstructor_nullRepo() {
+        BuildStatusLookupOperation operation = new BuildStatusLookupOperation(null, false);
     }
 
     @Test
     public void testConstructor_goodInputs() {
-        BuildStatusLookupOperation operation1 = new BuildStatusLookupOperation("gitRemoteUrl", "branch", false);
+        BuildStatusLookupOperation operation1 = new BuildStatusLookupOperation(
+                RepositoryContext.createGitContext("repoName", "branch", "url"), false);
     }
 
     @Test
@@ -109,7 +96,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, data.builds);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
 
         operation.doWork(null);
@@ -131,7 +118,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, data.builds);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
 
         operation.doWork(null);
@@ -158,7 +145,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, data.builds);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
 
         operation.doWork(null);
@@ -188,7 +175,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, data.builds);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
 
         operation.doWork(null);
@@ -218,7 +205,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, data.builds);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
         operation.doWork(null);
         Assert.assertTrue(data.startedCalled.get(1, TimeUnit.SECONDS));
@@ -243,7 +230,7 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         setupLocalTests(data.currentRepo, null);
 
         BuildStatusLookupOperation operation = new BuildStatusLookupOperation(
-                data.currentRepo.getRemoteUrl(), data.currentBranch, false);
+                data.getRepositoryContext(), false);
         data.setupListener(operation);
         operation.doWork(null); // This should cause a null point exception during the operation
         Assert.assertTrue(data.startedCalled.get(1, TimeUnit.SECONDS));
@@ -293,6 +280,10 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
                     buildResults.set((BuildStatusLookupOperation.BuildStatusResults) lookupResults);
                 }
             });
+        }
+
+        public RepositoryContext getRepositoryContext() {
+            return RepositoryContext.createGitContext(currentRepo.getName(), currentBranch, currentRepo.getRemoteUrl());
         }
     }
 

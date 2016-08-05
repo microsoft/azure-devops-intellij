@@ -7,18 +7,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
-import com.microsoft.alm.client.utils.StringUtil;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.events.ServerEvent;
 import com.microsoft.alm.plugin.events.ServerEventListener;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationFactory;
-import git4idea.branch.GitBranchUtil;
-import git4idea.repo.GitRepository;
 
 import java.util.Map;
 
@@ -80,32 +78,27 @@ public class StatusBarManager {
             buildWidget = new BuildWidget();
             statusBar.addWidget(buildWidget, project);
         }
-        // Attempt to get the current repo and branch (if none, then the status stays as it was)
-        final GitRepository repository = GitBranchUtil.getCurrentRepository(project);
-        if (repository != null) {
-            final String repoUrl = TfGitHelper.getTfGitRemoteUrl(repository);
-            if (!StringUtil.isNullOrEmpty(repoUrl)) {
-                // It's a tf git url so continue
-                final BuildWidget widget = buildWidget;
-                // TODO: Fix this HACK. There doesn't seem to be a clear way to get the full name of the current branch
-                final String branch = "refs/heads/" + GitBranchUtil.getDisplayableBranchText(repository);
+        // Attempt to get the current repository context (if none, then the status stays as it was)
+        final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(project);
+        if (repositoryContext != null) {
+            final BuildWidget widget = buildWidget;
 
-                // Create the operation and start the background work to get the latest build information
-                final BuildStatusLookupOperation op = OperationFactory.createBuildStatusLookupOperation(repoUrl, branch, allowPrompt);
-                op.addListener(new Operation.Listener() {
-                    @Override
-                    public void notifyLookupStarted() { /* do nothing */ }
+            // Create the operation and start the background work to get the latest build information
+            final BuildStatusLookupOperation op = OperationFactory.createBuildStatusLookupOperation(repositoryContext, allowPrompt);
+            op.addListener(new Operation.Listener() {
+                @Override
+                public void notifyLookupStarted() { /* do nothing */ }
 
-                    @Override
-                    public void notifyLookupCompleted() { /* do nothing */ }
+                @Override
+                public void notifyLookupCompleted() { /* do nothing */ }
 
-                    @Override
-                    public void notifyLookupResults(final Operation.Results results) {
-                        updateBuildWidget(project, statusBar, widget, (BuildStatusLookupOperation.BuildStatusResults) results);
-                    }
-                });
-                op.doWorkAsync(null);
-            }
+                @Override
+                public void notifyLookupResults(final Operation.Results results) {
+                    updateBuildWidget(project, statusBar, widget, (BuildStatusLookupOperation.BuildStatusResults) results);
+                }
+            });
+            op.doWorkAsync(null);
+
         } else {
             // The repository hasn't been opened yet, we should get an event when it is opened
         }

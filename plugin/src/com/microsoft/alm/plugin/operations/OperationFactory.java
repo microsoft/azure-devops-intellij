@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.plugin.context.RepositoryContext;
+
 /**
  * Other modules have to use this class to create Operation instances.
  * This allows tests in other modules to easily mock operations even if they are completely
@@ -11,8 +13,8 @@ package com.microsoft.alm.plugin.operations;
 public class OperationFactory {
     //TODO add other operation types
     public static BuildStatusLookupOperation createBuildStatusLookupOperation(
-            final String gitRemoteUrl, final String branch, final boolean forcePrompt) {
-        return new BuildStatusLookupOperation(gitRemoteUrl, branch, forcePrompt);
+            final RepositoryContext repositoryContext, final boolean forcePrompt) {
+        return new BuildStatusLookupOperation(repositoryContext, forcePrompt);
     }
 
     public static AccountLookupOperation createAccountLookupOperation() {
