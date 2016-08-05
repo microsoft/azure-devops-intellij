@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
@@ -30,7 +31,7 @@ public class WorkItemLookupOperation extends Operation {
     // The WIT REST API restricts us to getting 200 work items at a time.
     public static final int MAX_WORK_ITEM_COUNT = 200;
 
-    private final String gitRemoteUrl;
+    private final RepositoryContext repositoryContext;
 
     public static class WitInputs extends CredInputsImpl {
         private final String query;
@@ -93,10 +94,10 @@ public class WorkItemLookupOperation extends Operation {
         }
     }
 
-    public WorkItemLookupOperation(final String gitRemoteUrl) {
+    public WorkItemLookupOperation(final RepositoryContext repositoryContext) {
         logger.info("WorkItemLookupOperation created.");
-        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
-        this.gitRemoteUrl = gitRemoteUrl;
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        this.repositoryContext = repositoryContext;
     }
 
     public void doWork(final Inputs inputs) {
@@ -112,10 +113,10 @@ public class WorkItemLookupOperation extends Operation {
                 authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
                     @Override
                     public void run() {
-                        // Get the authenticated context for the gitRemoteUrl
+                        // Get the authenticated context for the Url
                         // This should be done on a background thread so as not to block UI or hang the IDE
                         // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
+                        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(repositoryContext.getUrl(), false);
                         if (context != null) {
                             authenticatedContexts.add(context);
                         }
@@ -124,20 +125,26 @@ public class WorkItemLookupOperation extends Operation {
                 OperationExecutor.getInstance().wait(authTasks);
             } catch (Throwable t) {
                 logger.warn("doWork: failed to get authenticated server context", t);
-                terminate(new NotAuthorizedException(gitRemoteUrl));
+                terminate(new NotAuthorizedException(repositoryContext.getUrl()));
                 return;
             }
 
             if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
                 //no context was found, user might have cancelled
-                terminate(new NotAuthorizedException(gitRemoteUrl));
+                terminate(new NotAuthorizedException(repositoryContext.getUrl()));
                 return;
             }
             latestServerContext = authenticatedContexts.get(0);
         } else {
-            latestServerContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, false);
+            // Create the context from the appropriate url and repo type
+            if (repositoryContext.getType() == RepositoryContext.GIT) {
+                latestServerContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(repositoryContext.getUrl(), false);
+            } else {
+                latestServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), false);
+            }
+
             if (latestServerContext == null) {
-                terminate(new NotAuthorizedException(gitRemoteUrl));
+                terminate(new NotAuthorizedException(repositoryContext.getUrl()));
                 return;
             }
         }
@@ -192,7 +199,7 @@ public class WorkItemLookupOperation extends Operation {
             }
 
             final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, null, witInputs.expand);
-            logger.debug("doLookup: Found {} work items on repo {}", items.size(), context.getGitRepository().getRemoteUrl());
+            logger.debug("doLookup: Found {} work items on repo {}", items.size(), repositoryContext.getUrl());
 
             // Correct the order of the work items. The second call here to get the work items,
             // always returns them in id order. We need to use the map we created above to put

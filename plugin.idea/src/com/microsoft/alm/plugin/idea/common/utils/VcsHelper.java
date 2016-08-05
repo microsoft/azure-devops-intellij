@@ -42,7 +42,28 @@ public class VcsHelper {
         return false;
     }
 
+    /**
+     * Returns the Git repository object for the project or null if this is not a Git repo project.
+     * @param project
+     * @return
+     */
+    public static GitRepository getGitRepository(final Project project) {
+        if (isGitVcs(project)) {
+            final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
+            final GitRepository repository = manager.getRepositoryForRoot(project.getBaseDir());
+            return repository;
+        }
+        return null;
+    }
+
+    /**
+     * This method creates a RepositoryContext object from the local project context.
+     * It works for TF Git or TFVC repositories. Any other type of repo will return null.
+     * @param project
+     * @return
+     */
     public static RepositoryContext getRepositoryContext(final Project project) {
+        ArgumentHelper.checkNotNull(project, "project");
         final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
         // See if the project has any active version control systems
         if (projectLevelVcsManager.hasActiveVcss()) {

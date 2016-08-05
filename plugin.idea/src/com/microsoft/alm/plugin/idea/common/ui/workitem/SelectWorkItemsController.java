@@ -5,8 +5,7 @@ package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractController;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
-import git4idea.repo.GitRepository;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 
 import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
@@ -17,9 +16,7 @@ public class SelectWorkItemsController extends AbstractController {
     private final SelectWorkItemsForm form;
 
     public SelectWorkItemsController(final Project project) {
-        final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
-
-        model = new SelectWorkItemsModel(gitRepository);
+        model = new SelectWorkItemsModel(project, VcsHelper.getRepositoryContext(project));
         form = new SelectWorkItemsForm();
 
         // add the observer and action listener

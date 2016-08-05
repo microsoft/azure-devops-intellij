@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabLookupListenerImpl;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -17,13 +18,13 @@ public class WorkItemsTabLookupListener extends TabLookupListenerImpl {
     }
 
     /**
-     * Load work item data based on the git url
+     * Load work item data based on the repository context
      *
-     * @param gitRemoteUrl
+     * @param repositoryContext
      */
-    public void loadData(final String gitRemoteUrl, final Operation.Inputs inputs) {
-        this.gitRemoteUrl = gitRemoteUrl;
-        WorkItemLookupOperation activeOperation = new WorkItemLookupOperation(gitRemoteUrl);
+    public void loadData(final RepositoryContext repositoryContext, final Operation.Inputs inputs) {
+        this.repositoryContext = repositoryContext;
+        WorkItemLookupOperation activeOperation = new WorkItemLookupOperation(repositoryContext);
         loadData(activeOperation, inputs);
     }
 }

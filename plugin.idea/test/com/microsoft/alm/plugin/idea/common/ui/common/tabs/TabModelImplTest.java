@@ -4,10 +4,11 @@
 package com.microsoft.alm.plugin.idea.common.ui.common.tabs;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.ui.pullrequest.PullRequestsTreeModel;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import git4idea.repo.GitRepository;
 import org.junit.Assert;
@@ -22,6 +23,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Observer;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -30,7 +32,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(TfGitHelper.class)
+@PrepareForTest({VcsHelper.class})
 public class TabModelImplTest extends IdeaAbstractTest {
     private final String FILTER = "filter";
     private TabModelImpl underTest;
@@ -47,7 +49,8 @@ public class TabModelImplTest extends IdeaAbstractTest {
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
-        PowerMockito.mockStatic(TfGitHelper.class);
+        PowerMockito.mockStatic(VcsHelper.class);
+
         underTest = Mockito.spy(new TabModelImpl(mockProject, mockModel, null) {
             protected void createDataProvider() {
 
@@ -90,15 +93,15 @@ public class TabModelImplTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testIsTfGitRepository_True() {
-        when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(mockGitRepository);
-        Assert.assertTrue(underTest.isTfGitRepository());
+    public void testisTeamServicesRepository_True() {
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("repo1", "branch1", "repoUrl1"));
+        Assert.assertTrue(underTest.isTeamServicesRepository());
     }
 
     @Test
-    public void testIsTfGitRepository_False() {
-        when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(null);
-        Assert.assertFalse(underTest.isTfGitRepository());
+    public void testisTeamServicesRepository_False() {
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(null);
+        Assert.assertFalse(underTest.isTeamServicesRepository());
     }
 
     @Test

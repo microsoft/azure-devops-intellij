@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
@@ -84,7 +85,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
         }
 
         //construct correctly
-        WorkItemLookupOperation operation1 = new WorkItemLookupOperation("gitRemoteUrl");
+        WorkItemLookupOperation operation1 = new WorkItemLookupOperation(RepositoryContext.createGitContext("repo1", "branch1", "gitRemoteUrl"));
     }
 
     @Test
@@ -96,7 +97,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
         workItems.add(item);
         setupLocalTests(workItems);
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation("gitRemoteUrl");
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("repo1", "branch1", "gitRemoteUrl"));
         final SettableFuture<Boolean> startedCalled = SettableFuture.create();
         final SettableFuture<Boolean> completedCalled = SettableFuture.create();
         final SettableFuture<WorkItemLookupOperation.WitResults> witResults = SettableFuture.create();
@@ -132,7 +133,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
     public void testDoWork_failure() throws InterruptedException, ExecutionException, TimeoutException {
         setupLocalTests(null);
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation("gitRemoteUrl");
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("repo1", "branch1", "gitRemoteUrl"));
         final SettableFuture<Boolean> startedCalled = SettableFuture.create();
         final SettableFuture<Boolean> completedCalled = SettableFuture.create();
         final SettableFuture<WorkItemLookupOperation.WitResults> witResults = SettableFuture.create();

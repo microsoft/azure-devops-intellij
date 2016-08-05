@@ -5,14 +5,14 @@ package com.microsoft.alm.plugin.idea.common.ui.common.tabs;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.client.utils.StringUtil;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.ImportController;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
-import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     protected final T viewForModel;
     private final String propertyStoragePrefix;
     protected TabLookupListenerImpl dataProvider;
-    protected GitRepository gitRepository;
+    protected RepositoryContext repositoryContext;
     private String filter = StringUtils.EMPTY;
     private boolean autoRefresh;
     private VcsTabStatus tabStatus = VcsTabStatus.NOT_TF_GIT_REPO;
@@ -68,11 +68,11 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
         return viewForModel;
     }
 
-    protected boolean isTfGitRepository() {
-        gitRepository = TfGitHelper.getTfGitRepository(project);
-        if (gitRepository == null) {
+    protected boolean isTeamServicesRepository() {
+        repositoryContext = VcsHelper.getRepositoryContext(project);
+        if (repositoryContext == null) {
             setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);
-            logger.debug("isTfGitRepository: Failed to get Git repo for current project");
+            logger.debug("isTeamServicesRepository: Failed to get Git repo for current project");
             return false;
         } else {
             return true;
@@ -84,10 +84,10 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
     }
 
     public void loadData(final boolean promptForCreds) {
-        if (isTfGitRepository()) {
+        if (isTeamServicesRepository()) {
             logger.info("Loading data for tab. Prompting " + promptForCreds);
             getOperationInputs().setPromptForCreds(promptForCreds);
-            dataProvider.loadData(TfGitHelper.getTfGitRemoteUrl(gitRepository), getOperationInputs());
+            dataProvider.loadData(repositoryContext, getOperationInputs());
         }
     }
 

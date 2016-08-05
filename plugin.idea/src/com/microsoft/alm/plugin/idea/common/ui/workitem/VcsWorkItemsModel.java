@@ -12,13 +12,14 @@ import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.common.artifact.GitRefArtifactID;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabModelImpl;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.ui.branch.CreateBranchController;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -67,13 +68,13 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     }
 
     public void openSelectedItemsLink() {
-        if (isTfGitRepository()) {
-            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+        if (isTeamServicesRepository()) {
+            final ServerContext context = ServerContextManager.getInstance().get(repositoryContext.getUrl());
 
-            if (context != null && context.getTeamProjectURI() != null) {
-                final List<WorkItem> workItems = viewForModel.getSelectedWorkItems();
+            if (context != null) {
                 final URI teamProjectURI = context.getTeamProjectURI();
                 if (teamProjectURI != null) {
+                    final List<WorkItem> workItems = viewForModel.getSelectedWorkItems();
                     for (WorkItem item : workItems) {
                         super.gotoLink(UrlHelper.getSpecificWorkItemURI(teamProjectURI, item.getId()).toString());
                     }
@@ -85,17 +86,17 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     }
 
     public void createBranch() {
-        if (!isTfGitRepository()) {
-            logger.debug("createBranch: cannot associate a work item with a branch in a non-TF repo");
+        if (!isTeamServicesRepository() || repositoryContext.getType() != RepositoryContext.GIT) {
+            logger.debug("createBranch: cannot associate a work item with a branch in a non-TF Git repo");
             return;
         }
 
-        final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+        final ServerContext context = ServerContextManager.getInstance().get(repositoryContext.getUrl());
         final WorkItem workItem = viewForModel.getSelectedWorkItems().get(0); // TODO: associate multiple work items with a branch
 
         // call the Create Branch dialog and get the branch name from the user
         final CreateBranchController controller = new CreateBranchController(project,
-                String.format(DEFAULT_BRANCH_NAME_PATTERN, workItem.getId()), gitRepository);
+                String.format(DEFAULT_BRANCH_NAME_PATTERN, workItem.getId()), VcsHelper.getGitRepository(project));
 
         if (controller.showModalDialog()) {
             final String branchName = controller.getBranchName();
@@ -194,10 +195,10 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     }
 
     public void createNewItem() {
-        if (isTfGitRepository()) {
-            final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
+        if (isTeamServicesRepository()) {
+            final ServerContext context = ServerContextManager.getInstance().get(repositoryContext.getUrl());
 
-            if (context != null && context.getTeamProjectURI() != null) {
+            if (context != null) {
                 final URI teamProjectURI = context.getTeamProjectURI();
                 if (teamProjectURI != null) {
                     super.gotoLink(UrlHelper.getCreateWorkItemURI(teamProjectURI).toString());
