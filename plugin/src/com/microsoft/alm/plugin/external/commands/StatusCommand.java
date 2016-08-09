@@ -25,8 +25,7 @@ public class StatusCommand extends Command<List<PendingChange>> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add("-format:xml")
-                .add("-recursive")
-                .add("-noprompt");
+                .add("-recursive");
         if (localPath != null) {
             builder.add(localPath);
         }
