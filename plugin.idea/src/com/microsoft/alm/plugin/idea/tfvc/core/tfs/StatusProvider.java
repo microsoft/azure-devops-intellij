@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -20,11 +19,6 @@ import java.io.File;
  */
 public class StatusProvider {
     public static final Logger logger = LoggerFactory.getLogger(StatusProvider.class);
-
-    // TODO: make this an enum and change PendingChanges to contain enum for state
-    public static final String ADD = "add";
-    public static final String DELETE = "delete";
-    public static final String EDIT = "edit";
 
     /**
      * Finds the status of the file and then uses that status to determine how to add it to the local changes list
@@ -63,23 +57,30 @@ public class StatusProvider {
      * @return ServerState
      */
     private static ServerStatus determineServerStatus(final @Nullable PendingChange pendingChange) {
-        if (StringUtils.equalsIgnoreCase(pendingChange.getChangeType(), ADD)) {
-            return new ServerStatus.ScheduledForAddition(pendingChange);
-        } else if (StringUtils.equalsIgnoreCase(pendingChange.getChangeType(), DELETE)) {
-            return new ServerStatus.ScheduledForDeletion(pendingChange);
-        } else if (StringUtils.equalsIgnoreCase(pendingChange.getChangeType(), EDIT)) {
-            return new ServerStatus.CheckedOutForEdit(pendingChange);
-        } else {
-            logger.error("Uncovered case for item " + pendingChange.getChangeType());
-            return null;
+        if (pendingChange.isCandidate()) {
+            return ServerStatus.Unversioned.INSTANCE;
+        }
+
+        switch (pendingChange.getChangeType()) {
+            case ADD:
+                return new ServerStatus.ScheduledForAddition(pendingChange);
+            case DELETE:
+                return new ServerStatus.ScheduledForDeletion(pendingChange);
+            case EDIT:
+                return new ServerStatus.CheckedOutForEdit(pendingChange);
+            case RENAME:
+                return new ServerStatus.Renamed(pendingChange);
+            case UNDELETE:
+                return new ServerStatus.Undeleted(pendingChange);
+            case RENAME_EDIT:
+                return new ServerStatus.RenamedCheckedOut(pendingChange);
+            default:
+                logger.error("Unhandled status type: " + pendingChange.getChangeType().name());
+                return null;
         }
 
         // TODO: other scenarios that need to be considered that Jetbrains had
-        // ServerStatus.Unversioned.INSTANCE;
         // ServerStatus.OutOfDate(pendingChange);
         // ServerStatus.UpToDate(pendingChange);
-        // ServerStatus.Renamed(pendingChange);
-        // ServerStatus.RenamedCheckedOut(pendingChange);
-        // ServerStatus.Undeleted(pendingChange);
     }
 }

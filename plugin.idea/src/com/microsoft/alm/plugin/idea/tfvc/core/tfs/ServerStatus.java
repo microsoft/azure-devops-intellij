@@ -84,7 +84,28 @@ public abstract class ServerStatus {
         }
     }
 
-    /* TODO:
+    public static class RenamedCheckedOut extends ServerStatus {
+        protected RenamedCheckedOut(final @NotNull PendingChange pendingChange) {
+            super(pendingChange);
+        }
+
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+                throws TfsException {
+            statusVisitor.renamedCheckedOut(localPath, localItemExists, this);
+        }
+    }
+
+    public static class Renamed extends ServerStatus {
+        protected Renamed(final @NotNull PendingChange pendingChange) {
+            super(pendingChange);
+        }
+
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+                throws TfsException {
+            statusVisitor.renamed(localPath, localItemExists, this);
+        }
+    }
+
     public static class Unversioned extends ServerStatus {
 
         public static final ServerStatus INSTANCE = new Unversioned();
@@ -99,6 +120,18 @@ public abstract class ServerStatus {
         }
     }
 
+    public static class Undeleted extends ServerStatus {
+        protected Undeleted(final @NotNull PendingChange pendingChange) {
+            super(pendingChange);
+        }
+
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+                throws TfsException {
+            statusVisitor.undeleted(localPath, localItemExists, this);
+        }
+    }
+
+    /* TODO:
     public static class OutOfDate extends ServerStatus {
         protected OutOfDate(final @NotNull ExtendedItem extendedItem) {
             super(extendedItem);
@@ -118,39 +151,6 @@ public abstract class ServerStatus {
         public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
                 throws TfsException {
             statusVisitor.upToDate(localPath, localItemExists, this);
-        }
-    }
-
-    public static class Renamed extends ServerStatus {
-        protected Renamed(final @NotNull PendingChange pendingChange) {
-            super(pendingChange);
-        }
-
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
-            statusVisitor.renamed(localPath, localItemExists, this);
-        }
-    }
-
-    public static class RenamedCheckedOut extends ServerStatus {
-        protected RenamedCheckedOut(final @NotNull PendingChange pendingChange) {
-            super(pendingChange);
-        }
-
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
-            statusVisitor.renamedCheckedOut(localPath, localItemExists, this);
-        }
-    }
-
-    public static class Undeleted extends ServerStatus {
-        protected Undeleted(final @NotNull PendingChange pendingChange) {
-            super(pendingChange);
-        }
-
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
-            statusVisitor.undeleted(localPath, localItemExists, this);
         }
     }
     */

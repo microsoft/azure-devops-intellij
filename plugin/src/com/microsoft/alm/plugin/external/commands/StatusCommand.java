@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 
@@ -14,6 +15,8 @@ import java.util.List;
 
 
 public class StatusCommand extends Command<List<PendingChange>> {
+    private static final String CANDIDATE_TAG = "candidate-pending-changes";
+
     private final String localPath;
 
     public StatusCommand(ServerContext context, String localPath) {
@@ -53,6 +56,7 @@ public class StatusCommand extends Command<List<PendingChange>> {
         // Convert all the xpath nodes to pending change models
         for (int i = 0; i < nodes.getLength(); i++) {
             final NamedNodeMap attributes = nodes.item(i).getAttributes();
+            final boolean isCandidate = StringUtils.equalsIgnoreCase(nodes.item(i).getParentNode().getNodeName(), CANDIDATE_TAG);
             changes.add(new PendingChange(
                     attributes.getNamedItem("server-item").getNodeValue(),
                     attributes.getNamedItem("local-item").getNodeValue(),
@@ -62,7 +66,8 @@ public class StatusCommand extends Command<List<PendingChange>> {
                     attributes.getNamedItem("lock").getNodeValue(),
                     attributes.getNamedItem("change-type").getNodeValue(),
                     attributes.getNamedItem("workspace").getNodeValue(),
-                    attributes.getNamedItem("computer").getNodeValue()));
+                    attributes.getNamedItem("computer").getNodeValue(),
+                    isCandidate));
         }
 
         return changes;

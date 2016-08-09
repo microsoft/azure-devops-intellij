@@ -13,26 +13,29 @@ public class PendingChange {
     private final String owner;
     private final String date;
     private final String lock;
-    private final String changeType;
+    private final ServerStatusType changeType;
     private final String workspace;
     private final String computer;
+    private final boolean isCandidate;
 
-    public PendingChange(final String serverItem, final String changeType) {
-        this(serverItem, null, null, null, null, null, changeType, null, null);
+    public PendingChange(final String serverItem, final String changeType, final boolean isCandidate) {
+        this(serverItem, null, null, null, null, null, changeType, null, null, isCandidate);
     }
 
     public PendingChange(final String serverItem, final String localItem, final String version,
                          final String owner, final String date, final String lock,
-                         final String changeType, final String workspace, final String computer) {
+                         final String changeType, final String workspace, final String computer,
+                         final boolean isCandidate) {
         this.serverItem = serverItem;
         this.localItem = localItem;
         this.version = version;
         this.owner = owner;
         this.date = date;
         this.lock = lock;
-        this.changeType = changeType;
+        this.changeType = ServerStatusType.getServerStatusType(changeType);
         this.workspace = workspace;
         this.computer = computer;
+        this.isCandidate = isCandidate;
     }
 
     public String getComputer() {
@@ -63,11 +66,15 @@ public class PendingChange {
         return lock;
     }
 
-    public String getChangeType() {
+    public ServerStatusType getChangeType() {
         return changeType;
     }
 
     public String getWorkspace() {
         return workspace;
+    }
+
+    public boolean isCandidate() {
+        return isCandidate;
     }
 }

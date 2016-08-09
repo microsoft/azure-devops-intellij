@@ -22,7 +22,6 @@ import java.io.IOException;
 /**
  * Creates a revision object for a file so that comparisons can be done between them
  * <p/>
- * Jetbrains:
  * TODO: Used to implement ContenRevision until recently when it was changed to ByteBackedContentRevision
  * TODO: That class does not exist in IntelliJ 14 or 15 so reverting that change back to ContentRevision for now
  */
