@@ -18,8 +18,8 @@ public class PendingChange {
     private final String computer;
     private final boolean isCandidate;
 
-    public PendingChange(final String serverItem, final String changeType, final boolean isCandidate) {
-        this(serverItem, null, null, null, null, null, changeType, null, null, isCandidate);
+    public PendingChange(final String serverItem, final String changeType) {
+        this(serverItem, null, null, null, null, null, changeType, null, null, false);
     }
 
     public PendingChange(final String serverItem, final String localItem, final String version,
