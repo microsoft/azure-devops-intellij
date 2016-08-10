@@ -6,15 +6,15 @@ package com.microsoft.alm.plugin.operations;
 import com.microsoft.alm.client.model.VssResourceNotFoundException;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.exceptions.TeamServicesException;
+import com.microsoft.alm.core.webapi.CoreHttpClient;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.context.soap.CatalogService;
-import com.microsoft.alm.core.webapi.CoreHttpClient;
-import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.slf4j.Logger;
@@ -32,6 +32,7 @@ public class ServerContextLookupOperation extends Operation {
 
     public enum ContextScope {REPOSITORY, PROJECT}
 
+    private static final String HTTP_503_EXCEPTION = "HTTP 503 Service Unavailable";
     private final List<ServerContext> contextList;
     private final ContextScope resultScope;
 
@@ -166,10 +167,17 @@ public class ServerContextLookupOperation extends Operation {
                 addTeamProjectResults(projects, context, teamProjectCollectionReference);
             } else {
                 final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-                final List<GitRepository> gitRepositories = gitClient.getRepositories();
-
-                logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
-                addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                try {
+                    final List<GitRepository> gitRepositories = gitClient.getRepositories();
+                    logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+                    addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
+                } catch (VssResourceNotFoundException e) {
+                    if (e.getMessage().contains(HTTP_503_EXCEPTION)) {
+                        logger.warn("Collection " + teamProjectCollectionReference.getName() + " is unavailable.", e);
+                    } else {
+                        logger.error("Failure while trying to find collection repos", e);
+                    }
+                }
             }
         }
     }
