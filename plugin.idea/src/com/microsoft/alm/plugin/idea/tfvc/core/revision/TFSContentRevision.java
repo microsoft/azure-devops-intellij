@@ -9,8 +9,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.external.commands.Command;
-import com.microsoft.alm.plugin.external.commands.DownloadCommand;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NonNls;
@@ -38,9 +36,12 @@ public abstract class TFSContentRevision implements ContentRevision {
 
     protected abstract int getChangeset() throws TfsException;
 
+    protected abstract String getFilePath();
+
     public static TFSContentRevision create(final Project project,
                                             final @NotNull FilePath localPath,
-                                            final int changeset) {
+                                            final int changeset,
+                                            final String modificationDate) {
         return new TFSContentRevision(project) {
 
             protected int getChangeset() {
@@ -52,9 +53,51 @@ public abstract class TFSContentRevision implements ContentRevision {
                 return localPath;
             }
 
+            protected String getFilePath() {
+                return localPath.getPath();
+            }
+
             @NotNull
             public VcsRevisionNumber getRevisionNumber() {
-                return new TfsRevisionNumber(changeset, localPath.getPath()); //TODO: make this number unique
+                return new TfsRevisionNumber(changeset, localPath.getName(), modificationDate);
+            }
+        };
+    }
+
+    /**
+     * Creates a revision especially for a renamed file since the original path is needed to display where the file
+     * used to reside while the server path is needed to pull down that version of the file from the server for diffs
+     *
+     * @param project
+     * @param orignalPath:     path of the file before it was renamed
+     * @param changeset
+     * @param modificationDate
+     * @param serverPath:      path of the file on the server
+     * @return
+     */
+    public static TFSContentRevision createRenameRevision(final Project project,
+                                                          final @NotNull FilePath orignalPath,
+                                                          final int changeset,
+                                                          final String modificationDate,
+                                                          final String serverPath) {
+        return new TFSContentRevision(project) {
+
+            protected int getChangeset() {
+                return changeset;
+            }
+
+            @NotNull
+            public FilePath getFile() {
+                return orignalPath;
+            }
+
+            protected String getFilePath() {
+                return serverPath;
+            }
+
+            @NotNull
+            public VcsRevisionNumber getRevisionNumber() {
+                return new TfsRevisionNumber(changeset, orignalPath.getName(), modificationDate);
             }
         };
     }
@@ -80,14 +123,8 @@ public abstract class TFSContentRevision implements ContentRevision {
 
     @Nullable
     private byte[] loadContent() throws TfsException, IOException {
-        TFSContentStore store = TFSContentStoreFactory.find(getFile().getPath(), getChangeset());
-        if (store == null) {
-            ArgumentHelper.checkNotNull(getFile(), "localPath");
-            store = TFSContentStoreFactory.create(getFile().getPath(), getChangeset());
-            // TODO: pass a context instead of null
-            final Command<String> command = new DownloadCommand(null, getFile().getPath(), getChangeset(), store.getTmpFile().getPath());
-            command.runSynchronously();
-        }
+        ArgumentHelper.checkNotNull(getFile(), "localPath");
+        final TFSContentStore store = TFSContentStoreFactory.findOrCreate(getFile().getPath(), getChangeset(), getFilePath());
         return store.loadContent();
     }
 

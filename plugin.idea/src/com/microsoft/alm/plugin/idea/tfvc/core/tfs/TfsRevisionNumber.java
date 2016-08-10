@@ -4,43 +4,41 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * TODO: leantk- this number needs to be made unique and it currently isn't
+ * Create a unique revision number from the file name, revision number, and modification date
  */
 public class TfsRevisionNumber extends VcsRevisionNumber.Int {
+    private static final Logger logger = LoggerFactory.getLogger(TfsRevisionNumber.class);
 
-    private static final String SEPARATOR = ":";
+    private static final String SEPARATOR = "/";
 
-    private final String myItemId;
+    private final String fileName;
+    private final String modificationDate;
 
-    public TfsRevisionNumber(final int value, final String itemId) {
+    public TfsRevisionNumber(final int value, final String fileName, final String modificationDate) {
         super(value);
-        myItemId = itemId;
+        this.fileName = fileName;
+        this.modificationDate = modificationDate;
     }
 
     @Override
     public String asString() {
-        return String.valueOf(getValue()) + SEPARATOR + myItemId;
-    }
-
-    public String getItemId() {
-        return myItemId;
+        return String.valueOf(getValue()) + SEPARATOR + fileName + SEPARATOR + modificationDate;
     }
 
     public static VcsRevisionNumber tryParse(final String s) {
         try {
-            int i = s.indexOf(SEPARATOR);
-            if (i != -1) {
-                String revisionNumberString = s.substring(0, i);
-                String itemIdString = s.substring(i + 1);
-                int revisionNumber = Integer.parseInt(revisionNumberString);
-                return new TfsRevisionNumber(revisionNumber, itemIdString);
-            } else {
-                int revisionNumber = Integer.parseInt(s);
-                return new TfsRevisionNumber(revisionNumber, "");
+            final String[] sections = StringUtils.split(s, SEPARATOR);
+            if (sections == null || sections.length < 3) {
+                return null;
             }
+            return new TfsRevisionNumber(Integer.parseInt(sections[0]), sections[1], sections[2]);
         } catch (NumberFormatException e) {
+            logger.error("Could not parse revision number: " + s, e);
             return null;
         }
     }

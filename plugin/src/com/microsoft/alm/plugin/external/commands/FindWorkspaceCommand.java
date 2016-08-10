@@ -41,7 +41,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         // look for the ==== line to see if the command was successful
         final String[] lines = getLines(stdout);
         if (lines.length > 2 && lines[0].contains("==========")) {
-            final String workspaceName = getValue(lines[1]);
+            final String workspaceName = getValue(lines[1]).trim();
             final String collectionURL = getValue(lines[2]);
             return new Workspace(collectionURL, workspaceName, "", "", "");
         }

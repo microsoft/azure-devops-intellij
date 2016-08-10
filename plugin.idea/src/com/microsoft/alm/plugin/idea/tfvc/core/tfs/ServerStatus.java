@@ -10,16 +10,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Date;
 
 public abstract class ServerStatus {
     public final int localVer;
     public final boolean isDirectory;
-    public
     @Nullable
-    final String sourceItem;
-    public
+    public final String sourceItem;
     @Nullable
-    final String targetItem;
+    public final String targetItem;
+    public final String modicationDate;
 
     /**
      * Types of statuses that are found on the server and how to process them
@@ -32,15 +32,17 @@ public abstract class ServerStatus {
     protected ServerStatus(final int localVer,
                            final boolean isDirectory,
                            final String sourceItem,
-                           final String targetItem) {
+                           final String targetItem,
+                           final String modicationDate) {
         this.localVer = localVer;
         this.isDirectory = isDirectory;
         this.sourceItem = sourceItem;
         this.targetItem = targetItem;
+        this.modicationDate = modicationDate;
     }
 
     protected ServerStatus(final @NotNull PendingChange pendingChange) {
-        this(Integer.parseInt(pendingChange.getVersion()), new File(pendingChange.getLocalItem()).isDirectory(), pendingChange.getServerItem(), pendingChange.getLocalItem());
+        this(Integer.parseInt(pendingChange.getVersion()), new File(pendingChange.getLocalItem()).isDirectory(), pendingChange.getServerItem(), pendingChange.getLocalItem(), pendingChange.getDate());
     }
 
     public abstract void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
@@ -111,7 +113,7 @@ public abstract class ServerStatus {
         public static final ServerStatus INSTANCE = new Unversioned();
 
         private Unversioned() {
-            super(0, false, null, null);
+            super(0, false, null, null, new Date().toString()); // use now date for unversioned since it doesn't matter there are no previous versions
         }
 
         public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)

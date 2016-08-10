@@ -9,16 +9,26 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Adds changes to change log as the correct status
  */
 class ChangelistBuilderStatusVisitor implements StatusVisitor {
+    private static final Logger logger = LoggerFactory.getLogger(ChangelistBuilderStatusVisitor.class);
+
     @NotNull
     private final Project myProject;
     @NotNull
@@ -34,7 +44,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
             throws TfsException {
         if (localItemExists) {
             TFSContentRevision baseRevision =
-                    TFSContentRevision.create(myProject, localPath, serverStatus.localVer);
+                    TFSContentRevision.create(myProject, localPath, serverStatus.localVer, serverStatus.modicationDate);
             myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)), TFSVcs.getKey());
         } else {
             myChangelistBuilder.processLocallyDeletedFile(localPath);
@@ -55,43 +65,27 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                      final boolean localItemExists,
                                      final @NotNull ServerStatus serverStatus) {
         TFSContentRevision baseRevision =
-                TFSContentRevision.create(myProject, localPath, serverStatus.localVer);
+                TFSContentRevision.create(myProject, localPath, serverStatus.localVer, serverStatus.modicationDate);
         myChangelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
     }
 
     public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException {
-        try {
-            if (localItemExists) {
-// TODO: create the before version once able to download renamed versions
-//            sourceItem can 't be null for renamed
-//            noinspection ConstantConditions
-//            FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory, myProject);
-//
-//            noinspection ConstantConditions
-//            TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
-                ContentRevision after = CurrentContentRevision.create(localPath);
-                myChangelistBuilder.processChange(new Change(null, after), TFSVcs.getKey());
-            } else {
-                myChangelistBuilder.processLocallyDeletedFile(localPath);
-            }
-        } catch (Exception e) {
-
+        if (localItemExists) {
+            final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
+            final ContentRevision after = CurrentContentRevision.create(localPath);
+            myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
+        } else {
+            myChangelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
 
     public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException {
         if (localItemExists) {
-// TODO: create the before version once able to download renamed versions
-//            sourceItem can 't be null for renamed
-//            noinspection ConstantConditions
-//            FilePath beforePath = myWorkspace.findLocalPathByServerPath(serverStatus.sourceItem, serverStatus.isDirectory, myProject);
-//
-//            noinspection ConstantConditions
-//            TFSContentRevision before = TFSContentRevision.create(myProject, myWorkspace, beforePath, serverStatus.localVer, serverStatus.itemId);
-            ContentRevision after = CurrentContentRevision.create(localPath);
-            myChangelistBuilder.processChange(new Change(null, after), TFSVcs.getKey());
+            final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
+            final ContentRevision after = CurrentContentRevision.create(localPath);
+            myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
         } else {
             myChangelistBuilder.processLocallyDeletedFile(localPath);
         }
@@ -106,6 +100,30 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException {
         checkedOutForEdit(localPath, localItemExists, serverStatus);
+    }
+
+    /**
+     * Create the previous revision of a file that has been renamed
+     *
+     * @param localPath
+     * @param revision
+     * @return
+     */
+    private TFSContentRevision getPreviousRenamedRevision(final FilePath localPath, final int revision) {
+        // find the original name of file by getting the most recent history entry
+        final List<ChangeSet> historyResults = CommandUtils.getHistoryCommand(null, localPath.getPath(), null, 1, false, StringUtils.EMPTY);
+
+        // check that the history command returned an entry with a change
+        if (!historyResults.isEmpty() && !historyResults.get(0).getChanges().isEmpty()) {
+            final String serverPath = historyResults.get(0).getChanges().get(0).getServerItem();
+            final String originalPath = CommandUtils.getLocalPathSynchronously(null, serverPath, CommandUtils.getWorkspaceSynchronously(null, myProject).getName());
+            return TFSContentRevision.createRenameRevision(myProject,
+                    VersionControlPath.getFilePath(originalPath, localPath.isDirectory()),
+                    revision,
+                    historyResults.get(0).getDate(),
+                    serverPath);
+        }
+        return null;
     }
 
     /* TODO:
