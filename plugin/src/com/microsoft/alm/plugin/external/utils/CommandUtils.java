@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
@@ -35,5 +36,10 @@ public class CommandUtils {
                                                     final int stopAfter, final boolean recursive, final String user) {
         final Command<List<ChangeSet>> historyCommand = new HistoryCommand(context, localPath, version, stopAfter, recursive, user);
         return historyCommand.runSynchronously();
+    }
+
+    public static ChangeSet getLastHistoryEntryForAnyUser(final ServerContext context, final String localPath) {
+        final List<ChangeSet> results = getHistoryCommand(context, localPath, null, 1, false, StringUtils.EMPTY);
+        return results.isEmpty() ? null : results.get(0);
     }
 }

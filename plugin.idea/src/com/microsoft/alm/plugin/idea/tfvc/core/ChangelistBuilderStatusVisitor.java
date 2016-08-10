@@ -9,19 +9,16 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * Adds changes to change log as the correct status
@@ -111,16 +108,18 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
      */
     private TFSContentRevision getPreviousRenamedRevision(final FilePath localPath, final int revision) {
         // find the original name of file by getting the most recent history entry
-        final List<ChangeSet> historyResults = CommandUtils.getHistoryCommand(null, localPath.getPath(), null, 1, false, StringUtils.EMPTY);
+        final ChangeSet lastChangeSet = CommandUtils.getLastHistoryEntryForAnyUser(null, localPath.getPath());
 
         // check that the history command returned an entry with a change
-        if (!historyResults.isEmpty() && !historyResults.get(0).getChanges().isEmpty()) {
-            final String serverPath = historyResults.get(0).getChanges().get(0).getServerItem();
-            final String originalPath = CommandUtils.getLocalPathSynchronously(null, serverPath, CommandUtils.getWorkspaceSynchronously(null, myProject).getName());
+        if (lastChangeSet != null && !lastChangeSet.getChanges().isEmpty()) {
+            final String serverPath = lastChangeSet.getChanges().get(0).getServerItem();
+            final String originalPath = CommandUtils.getLocalPathSynchronously(null, serverPath,
+                    CommandUtils.getWorkspaceSynchronously(null, myProject).getName());
+
             return TFSContentRevision.createRenameRevision(myProject,
                     VersionControlPath.getFilePath(originalPath, localPath.isDirectory()),
                     revision,
-                    historyResults.get(0).getDate(),
+                    lastChangeSet.getDate(),
                     serverPath);
         }
         return null;
