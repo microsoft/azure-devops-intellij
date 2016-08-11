@@ -479,4 +479,10 @@ public class TfPluginBundle {
     public static final String KEY_DEVICE_FLOW_PROMPT_TITLE = "Authentication.DeviceFlowPromptTitle";
     @NonNls
     public static final String KEY_DEVICE_FLOW_PROMPT_CONTINUE_BUTTON = "Authentication.DeviceFlowPromptContinueButton";
+
+    //TFVC
+    @NonNls
+    public static final String KEY_TFVC_ADD_SCHEDULING = "Tfvc.Add.Scheduling";
+    @NonNls
+    public static final String KEY_TFVC_ADD_ERROR = "Tfvc.Add.Error";
 }

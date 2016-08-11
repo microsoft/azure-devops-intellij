@@ -15,6 +15,8 @@ import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
+import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import org.jetbrains.annotations.NonNls;
@@ -40,6 +42,8 @@ public class TFSVcs extends AbstractVcs {
     private final VcsShowConfirmationOption myDeleteConfirmation;
     private final VcsShowSettingOption myCheckoutOptions;
 
+    private TFSCheckinEnvironment myCheckinEnvironment;
+    private UpdateEnvironment myUpdateEnvironment;
 
     public TFSVcs(@NotNull Project project) {
         super(project, TFVC_NAME);
@@ -48,7 +52,6 @@ public class TFSVcs extends AbstractVcs {
         myDeleteConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.REMOVE, this);
         myCheckoutOptions = vcsManager.getStandardOption(VcsConfiguration.StandardOption.CHECKOUT, this);
     }
-
 
     public static TFSVcs getInstance(Project project) {
         return (TFSVcs) ProjectLevelVcsManager.getInstance(project).findVcsByName(TFVC_NAME);
@@ -92,20 +95,25 @@ public class TFSVcs extends AbstractVcs {
         return new TFSChangeProvider(myProject);
     }
 
-    /*
-    TODO:
-      @NotNull
-      public TFSCheckinEnvironment createCheckinEnvironment() {
+    @NotNull
+    public TFSCheckinEnvironment createCheckinEnvironment() {
         if (myCheckinEnvironment == null) {
-          myCheckinEnvironment = new TFSCheckinEnvironment(this);
+            myCheckinEnvironment = new TFSCheckinEnvironment(this);
         }
         return myCheckinEnvironment;
-      }
+    }
 
-      public RollbackEnvironment createRollbackEnvironment() {
+    @NotNull
+    public UpdateEnvironment createUpdateEnvironment() {
+        if (myUpdateEnvironment == null) {
+            myUpdateEnvironment = new TFSUpdateEnvironment(this);
+        }
+        return myUpdateEnvironment;
+    }
+
+    public RollbackEnvironment createRollbackEnvironment() {
         return new TFSRollbackEnvironment(myProject);
-      }
-     */
+    }
 
     public boolean fileIsUnderVcs(final FilePath filePath) {
         return isVersionedDirectory(filePath.getVirtualFile());
