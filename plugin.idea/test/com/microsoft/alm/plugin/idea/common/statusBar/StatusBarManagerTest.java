@@ -8,11 +8,13 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
 import com.microsoft.alm.plugin.operations.OperationFactory;
 import git4idea.branch.GitBranchUtil;
@@ -41,7 +43,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WindowManager.class, ProjectManager.class, GitBranchUtil.class, OperationFactory.class})
+@PrepareForTest({WindowManager.class, ProjectManager.class, GitBranchUtil.class, OperationFactory.class, VcsHelper.class})
 public class StatusBarManagerTest extends IdeaAbstractTest {
 
     @Mock
@@ -80,6 +82,9 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
         when(ProjectManager.getInstance()).thenReturn(projectManager);
         when(projectManager.getOpenProjects()).thenReturn(new Project[]{project});
 
+        PowerMockito.mockStatic(VcsHelper.class);
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "repoUrl1"));
+
         PowerMockito.mockStatic(GitBranchUtil.class);
         when(GitBranchUtil.getCurrentRepository(any(Project.class))).thenReturn(gitRepository);
         when(GitBranchUtil.getDisplayableBranchText(any(GitRepository.class))).thenReturn("branch");
@@ -91,7 +96,7 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
                         Collections.singletonList("https://test.visualstudio.com/"))));
 
         PowerMockito.mockStatic(OperationFactory.class);
-        when(OperationFactory.createBuildStatusLookupOperation(anyString(), anyString(), anyBoolean())).thenReturn(buildStatusLookupOperation);
+        when(OperationFactory.createBuildStatusLookupOperation(any(RepositoryContext.class), anyBoolean())).thenReturn(buildStatusLookupOperation);
     }
 
     @Test
@@ -171,7 +176,7 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
     private class MyBuildStatusLookupOperation extends BuildStatusLookupOperation {
 
         protected MyBuildStatusLookupOperation() {
-            super("gitRemoteUrl", "branch", false);
+            super(RepositoryContext.createGitContext("/root/one", "gitrepo", "branch", "gitRemoteUrl"), false);
         }
 
         @Override

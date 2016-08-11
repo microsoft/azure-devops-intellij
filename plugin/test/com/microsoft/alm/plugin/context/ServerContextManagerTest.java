@@ -479,7 +479,7 @@ public class ServerContextManagerTest extends AbstractTest {
         }
 
         @Override
-        protected TeamProjectCollectionReference getProjectCollection(ServerContext context, String collectionName) {
+        protected TeamProjectCollection getCollectionFromServer(ServerContext context, String collectionName) {
             return collection;
         }
     }

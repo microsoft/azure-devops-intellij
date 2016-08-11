@@ -4,8 +4,8 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.alm.workitemtracking.webapi.models.Wiql;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
@@ -15,14 +15,12 @@ import com.microsoft.alm.workitemtracking.webapi.models.WorkItemReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 public class WorkItemLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(WorkItemLookupOperation.class);
@@ -30,7 +28,7 @@ public class WorkItemLookupOperation extends Operation {
     // The WIT REST API restricts us to getting 200 work items at a time.
     public static final int MAX_WORK_ITEM_COUNT = 200;
 
-    private final String gitRemoteUrl;
+    private final RepositoryContext repositoryContext;
 
     public static class WitInputs extends CredInputsImpl {
         private final String query;
@@ -93,70 +91,27 @@ public class WorkItemLookupOperation extends Operation {
         }
     }
 
-    public WorkItemLookupOperation(final String gitRemoteUrl) {
+    public WorkItemLookupOperation(final RepositoryContext repositoryContext) {
         logger.info("WorkItemLookupOperation created.");
-        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
-        this.gitRemoteUrl = gitRemoteUrl;
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        this.repositoryContext = repositoryContext;
     }
 
     public void doWork(final Inputs inputs) {
-        logger.info("WorkItemLookupOperation.doWork()");
-        onLookupStarted();
-        final ServerContext latestServerContext;
-
-        if (((CredInputsImpl) inputs).getPromptForCreds() == true) {
-            final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
-            final List<Future> authTasks = new ArrayList<Future>();
-            //TODO: get rid of the calls that create more background tasks unless they run in parallel
-            try {
-                authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Get the authenticated context for the gitRemoteUrl
-                        // This should be done on a background thread so as not to block UI or hang the IDE
-                        // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
-                        if (context != null) {
-                            authenticatedContexts.add(context);
-                        }
-                    }
-                }));
-                OperationExecutor.getInstance().wait(authTasks);
-            } catch (Throwable t) {
-                logger.warn("doWork: failed to get authenticated server context", t);
-                terminate(new NotAuthorizedException(gitRemoteUrl));
-                return;
-            }
-
-            if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
-                //no context was found, user might have cancelled
-                terminate(new NotAuthorizedException(gitRemoteUrl));
-                return;
-            }
-            latestServerContext = authenticatedContexts.get(0);
-        } else {
-            latestServerContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, false);
-            if (latestServerContext == null) {
-                terminate(new NotAuthorizedException(gitRemoteUrl));
-                return;
-            }
-        }
-
-        final List<Future> lookupTasks = new ArrayList<Future>();
-        final WitInputs witInputs = (WitInputs) inputs;
-
         try {
-            lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                @Override
-                public void run() {
-                    // Send results with the new context (no work items)
-                    onLookupResults(new WitResults(latestServerContext, new ArrayList<WorkItem>()));
+            logger.info("WorkItemLookupOperation.doWork()");
+            ArgumentHelper.checkNotNull(inputs, "inputs");
+            onLookupStarted();
+            final boolean allowPrompt = ((CredInputsImpl) inputs).getPromptForCreds();
+            final ServerContext latestServerContext = Operation.getServerContext(repositoryContext, false, allowPrompt, logger);
 
-                    // Get the actual work items
-                    doLookup(latestServerContext, witInputs);
-                }
-            }));
-            OperationExecutor.getInstance().wait(lookupTasks);
+            // Send results with the new context (no work items)
+            onLookupResults(new WitResults(latestServerContext, new ArrayList<WorkItem>()));
+
+            // Get the actual work items
+            doLookup(latestServerContext, (WitInputs) inputs);
+
+            // let listeners know that we are done
             onLookupCompleted();
         } catch (Throwable t) {
             logger.warn("doWork: failed with an exception", t);
@@ -165,60 +120,55 @@ public class WorkItemLookupOperation extends Operation {
     }
 
     protected void doLookup(final ServerContext context, final WitInputs witInputs) {
-        try {
-            final WorkItemTrackingHttpClient witHttpClient = context.getWitHttpClient();
+        final WorkItemTrackingHttpClient witHttpClient = context.getWitHttpClient();
 
-            // query server and add results
-            Wiql wiql = new Wiql();
-            wiql.setQuery(witInputs.query);
-            WorkItemQueryResult result = witHttpClient.queryByWiql(wiql, context.getTeamProjectReference().getId());
+        // query server and add results
+        Wiql wiql = new Wiql();
+        wiql.setQuery(witInputs.query);
+        WorkItemQueryResult result = witHttpClient.queryByWiql(wiql, context.getTeamProjectReference().getId());
 
-            int count = 0;
-            final List<WorkItemReference> itemRefs = result.getWorkItems();
-            final int maxCount = Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT);
-            if (maxCount == 0) {
-                return; //no workitem ids matched the wiql
-            }
-
-            final List<Integer> ids = new IDList(maxCount);
-            final Map<Integer, Integer> workItemOrderMap = new HashMap<Integer, Integer>(maxCount);
-            for (WorkItemReference itemRef : itemRefs) {
-                ids.add(itemRef.getId());
-                workItemOrderMap.put(itemRef.getId(), count);
-                count++;
-                if (count >= MAX_WORK_ITEM_COUNT) {
-                    break;
-                }
-            }
-
-            final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, null, witInputs.expand);
-            logger.debug("doLookup: Found {} work items on repo {}", items.size(), context.getGitRepository().getRemoteUrl());
-
-            // Correct the order of the work items. The second call here to get the work items,
-            // always returns them in id order. We need to use the map we created above to put
-            // them back into the correct order based on the query.
-            Collections.sort(items, new Comparator<WorkItem>() {
-                @Override
-                public int compare(final WorkItem wi1, final WorkItem wi2) {
-                    Integer index1 = workItemOrderMap.get(wi1.getId());
-                    Integer index2 = workItemOrderMap.get(wi2.getId());
-                    if (index1 != null && index2 != null) {
-                        return index1 - index2;
-                    } else if (index1 != null) {
-                        return -1;
-                    } else if (index2 != null) {
-                        return 1;
-                    }
-
-                    return 0;
-                }
-            });
-
-            super.onLookupResults(new WitResults(context, items));
-        } catch (Throwable t) {
-            logger.warn("doLookup: failed with an exception", t);
-            terminate(t);
+        int count = 0;
+        final List<WorkItemReference> itemRefs = result.getWorkItems();
+        final int maxCount = Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT);
+        if (maxCount == 0) {
+            return; //no workitem ids matched the wiql
         }
+
+        final List<Integer> ids = new IDList(maxCount);
+        final Map<Integer, Integer> workItemOrderMap = new HashMap<Integer, Integer>(maxCount);
+        for (WorkItemReference itemRef : itemRefs) {
+            ids.add(itemRef.getId());
+            workItemOrderMap.put(itemRef.getId(), count);
+            count++;
+            if (count >= MAX_WORK_ITEM_COUNT) {
+                break;
+            }
+        }
+
+        final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, null, witInputs.expand);
+        logger.debug("doLookup: Found {} work items on repo {}", items.size(), repositoryContext.getUrl());
+
+        // Correct the order of the work items. The second call here to get the work items,
+        // always returns them in id order. We need to use the map we created above to put
+        // them back into the correct order based on the query.
+        Collections.sort(items, new Comparator<WorkItem>() {
+            @Override
+            public int compare(final WorkItem wi1, final WorkItem wi2) {
+                Integer index1 = workItemOrderMap.get(wi1.getId());
+                Integer index2 = workItemOrderMap.get(wi2.getId());
+                if (index1 != null && index2 != null) {
+                    return index1 - index2;
+                } else if (index1 != null) {
+                    return -1;
+                } else if (index2 != null) {
+                    return 1;
+                }
+
+                return 0;
+            }
+        });
+
+        super.onLookupResults(new WitResults(context, items));
     }
 
     @Override

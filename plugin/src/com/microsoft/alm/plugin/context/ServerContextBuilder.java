@@ -118,6 +118,18 @@ public class ServerContextBuilder {
         return this;
     }
 
+    /**
+     * This method creates an incomplete TP reference that should be replaced later after getting more information
+     * from the server.
+     * @param teamProjectName
+     * @return
+     */
+    public ServerContextBuilder teamProject(final String teamProjectName) {
+        this.teamProjectReference = new TeamProjectReference();
+        this.teamProjectReference.setName(teamProjectName);
+        return this;
+    }
+
     public ServerContextBuilder repository(final GitRepository repository) {
         this.gitRepository = repository;
         if (this.gitRepository != null && this.teamProjectReference == null) {

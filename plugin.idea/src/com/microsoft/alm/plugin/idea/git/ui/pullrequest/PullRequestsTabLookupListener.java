@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.pullrequest;
 
+import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabLookupListenerImpl;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
@@ -20,11 +22,15 @@ public class PullRequestsTabLookupListener extends TabLookupListenerImpl {
     /**
      * Load PR data based on the git url
      *
-     * @param gitRemoteUrl
+     * @param repositoryContext
      */
-    public void loadData(final String gitRemoteUrl, Operation.Inputs inputs) {
-        this.gitRemoteUrl = gitRemoteUrl;
-        final PullRequestLookupOperation activeOperation = new PullRequestLookupOperation(gitRemoteUrl);
+    public void loadData(final RepositoryContext repositoryContext, Operation.Inputs inputs) {
+        this.repositoryContext = repositoryContext;
+        if (repositoryContext.getType() != RepositoryContext.Type.GIT) {
+            //TODO fix this error message
+            throw new TeamServicesException(TeamServicesException.KEY_OPERATION_ERRORS);
+        }
+        final PullRequestLookupOperation activeOperation = new PullRequestLookupOperation(repositoryContext.getUrl());
         loadData(activeOperation, inputs);
     }
 }

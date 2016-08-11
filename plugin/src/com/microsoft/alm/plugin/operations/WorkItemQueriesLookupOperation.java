@@ -4,19 +4,17 @@
 package com.microsoft.alm.plugin.operations;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.alm.workitemtracking.webapi.models.QueryExpand;
 import com.microsoft.alm.workitemtracking.webapi.models.QueryHierarchyItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Future;
 
 /**
  * WorkItemQueriesLookupOperation makes a call to the server to find the queries under a specific directory
@@ -24,10 +22,10 @@ import java.util.concurrent.Future;
 public class WorkItemQueriesLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(WorkItemQueriesLookupOperation.class);
 
-    private final String gitRemoteUrl;
+    private final RepositoryContext repositoryContext;
 
     // the different root query directories that are standard for users
-    public enum QueryRootDirectories{
+    public enum QueryRootDirectories {
         MY_QUERIES,
         SHARED_QUERIES
     }
@@ -66,61 +64,33 @@ public class WorkItemQueriesLookupOperation extends Operation {
         }
     }
 
-    public WorkItemQueriesLookupOperation(final String gitRemoteUrl) {
+    public WorkItemQueriesLookupOperation(final RepositoryContext repositoryContext) {
         logger.info("WorkItemQueriesLookupOperation created");
-        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
-        this.gitRemoteUrl = gitRemoteUrl;
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        this.repositoryContext = repositoryContext;
     }
 
     public void doWork(final Inputs inputs) {
-        logger.info("WorkItemQueriesLookupOperation.doWork()");
-        ArgumentHelper.checkNotNull(inputs, "inputs");
-        onLookupStarted();
-
-        final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
-        //TODO: get rid of the calls that create more background tasks unless they run in parallel
-        final List<Future> authTasks = new ArrayList<Future>();
         try {
-            // TODO: refactor this into a common class
-            authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                @Override
-                public void run() {
-                    // Get the authenticated context for the gitRemoteUrl
-                    // This should be done on a background thread so as not to block UI or hang the IDE
-                    // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
-                    final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(gitRemoteUrl, false);
-                    if (context != null) {
-                        authenticatedContexts.add(context);
-                    }
-                }
-            }));
-            OperationExecutor.getInstance().wait(authTasks);
-        } catch (Throwable t) {
-            logger.warn("doWork: failed to get authenticated server context", t);
-            terminate(new NotAuthorizedException(gitRemoteUrl));
-        }
+            logger.info("WorkItemQueriesLookupOperation.doWork()");
+            ArgumentHelper.checkNotNull(inputs, "inputs");
 
-        if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
-            //no context was found, user might have cancelled
-            terminate(new NotAuthorizedException(gitRemoteUrl));
-        }
+            // Trigger the started event
+            onLookupStarted();
 
-        final ServerContext context = authenticatedContexts.get(0);
-        final List<Future> lookupTasks = new ArrayList<Future>();
-        try {
-            lookupTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-                @Override
-                public void run() {
-                    doLookup(context, (QueryInputs) inputs);
-                }
-            }));
-            OperationExecutor.getInstance().wait(lookupTasks);
+            // Get the server context object
+            final ServerContext context = Operation.getServerContext(repositoryContext, false, false, logger);
+
+            // Do the lookup
+            doLookup(context, (QueryInputs) inputs);
+
+            // Trigger the completed event
             onLookupCompleted();
         } catch (Throwable t) {
+            // If any errors happen we need to terminate the operation
             logger.warn("doWork: failed with an exception", t);
             terminate(t);
         }
-
     }
 
     protected void doLookup(final ServerContext context, final QueryInputs inputs) {

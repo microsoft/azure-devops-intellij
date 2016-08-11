@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
@@ -41,6 +42,8 @@ import static org.mockito.Mockito.when;
 @PrepareForTest({ServerContextManager.class})
 public class WorkItemQueriesLookupOperationTest extends AbstractTest {
     private ServerContextManager serverContextManager;
+    private RepositoryContext defaultRepositoryContext =
+            RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "http://one.vs.com/_git/repo1");
 
     private void setupLocalTests(List<QueryHierarchyItem> queries) {
         MockitoAnnotations.initMocks(this);
@@ -65,6 +68,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         serverContextManager = Mockito.mock(ServerContextManager.class);
         when(serverContextManager.getAuthenticatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
         when(serverContextManager.getUpdatedContext(anyString(), anyBoolean())).thenReturn(authenticatedContext);
+        when(serverContextManager.createContextFromGitRemoteUrl(anyString(), anyBoolean())).thenReturn(authenticatedContext);
 
         PowerMockito.mockStatic(ServerContextManager.class);
         when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
@@ -77,7 +81,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
 
     @Test
     public void testConstructor_goodInputs() {
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
     }
 
     @Test
@@ -85,7 +89,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         TestData data = new TestData();
         setupLocalTests(getRootDirectories(3, 3));
 
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
         data.setupListener(operation);
         operation.doWork(new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES));
 
@@ -104,7 +108,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         TestData data = new TestData();
         setupLocalTests(getRootDirectories(3, 3));
 
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
         data.setupListener(operation);
         operation.doWork(new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.SHARED_QUERIES));
 
@@ -123,7 +127,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         TestData data = new TestData();
         setupLocalTests(getRootDirectories(0, 0));
 
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
         data.setupListener(operation);
         operation.doWork(new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES));
 
@@ -142,7 +146,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         rootDirectories.get(1).getChildren().add(getQueryFolder("folder2", true, 3, "folder2-"));
         setupLocalTests(rootDirectories);
 
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
         data.setupListener(operation);
         operation.doWork(new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.SHARED_QUERIES));
 
@@ -166,7 +170,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         TestData data = new TestData();
         setupLocalTests(null);
 
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation("gitRemoteUrl");
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(defaultRepositoryContext);
         data.setupListener(operation);
         operation.doWork(new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES));
 

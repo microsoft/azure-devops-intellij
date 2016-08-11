@@ -3,6 +3,10 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This class represents the properties of a local TFVC workspace.
  */
@@ -12,13 +16,16 @@ public class Workspace {
     private final String owner;
     private final String comment;
     private final String server;
+    private final List<Mapping> mappings;
 
-    public Workspace(final String server, final String name, final String computer, final String owner, final String comment) {
+    public Workspace(final String server, final String name, final String computer, final String owner,
+                     final String comment, final List<Mapping> mappings) {
         this.server = server;
         this.name = name;
         this.computer = computer;
         this.owner = owner;
         this.comment = comment;
+        this.mappings = new ArrayList<Mapping>(mappings);
     }
 
     public String getServer() {
@@ -39,5 +46,33 @@ public class Workspace {
 
     public String getComment() {
         return comment;
+    }
+
+    public List<Mapping> getMappings() {
+        return Collections.unmodifiableList(mappings);
+    }
+
+    public static class Mapping {
+        private final String serverPath;
+        private final String localPath;
+        private final boolean isCloaked;
+
+        public Mapping(final String serverPath, final String localPath, final boolean isCloaked) {
+            this.serverPath = serverPath;
+            this.localPath = localPath;
+            this.isCloaked = isCloaked;
+        }
+
+        public String getLocalPath() {
+            return localPath;
+        }
+
+        public String getServerPath() {
+            return serverPath;
+        }
+
+        public boolean isCloaked() {
+            return isCloaked;
+        }
     }
 }

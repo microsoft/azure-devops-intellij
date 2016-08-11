@@ -10,8 +10,8 @@ import com.microsoft.alm.build.webapi.model.BuildRepository;
 import com.microsoft.alm.build.webapi.model.BuildResult;
 import com.microsoft.alm.build.webapi.model.BuildStatus;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +24,9 @@ import java.util.List;
 public class BuildStatusLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(BuildStatusLookupOperation.class);
 
-    private final String gitRemoteUrl;
-    private final String branch;
+    public static final String TFVC_REPO_TYPE = "TfsVersionControl";
+
+    private final RepositoryContext repositoryContext;
     private final boolean forcePrompt;
 
     public static class BuildStatusRecord {
@@ -131,89 +132,30 @@ public class BuildStatusLookupOperation extends Operation {
     /**
      * Use OperationFactory to create one of these operation classes.
      */
-    protected BuildStatusLookupOperation(final String gitRemoteUrl, final String branch, final boolean forcePrompt) {
+    protected BuildStatusLookupOperation(final RepositoryContext repositoryContext, final boolean forcePrompt) {
         logger.info("BuildStatusLookupOperation created.");
-        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
-        ArgumentHelper.checkNotEmptyString(branch);
-        this.gitRemoteUrl = gitRemoteUrl;
-        this.branch = branch;
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        this.repositoryContext = repositoryContext;
         this.forcePrompt = forcePrompt;
     }
 
     @Override
     public void doWork(final Inputs inputs) {
-        logger.info("BuildStatusLookupOperation.doWork()");
-        onLookupStarted();
-
         try {
-            // Create a default result to return if something goes wrong
-            final List<BuildStatusRecord> buildStatusRecords = new ArrayList<BuildStatusRecord>(2);
+            logger.info("BuildStatusLookupOperation.doWork()");
+            onLookupStarted();
+
+            // Get the server context from the repository context
+            final ServerContext context = Operation.getServerContext(repositoryContext, forcePrompt, forcePrompt, logger);
+
+            // Get the build results based on the repo type
             final BuildStatusResults results;
-            Build latestBuildForRepository = null;
-            Build matchingBuild = null;
-
-            // Check to see if we should remove the context from the manager
-            if (ServerContextManager.getInstance().get(gitRemoteUrl) != null && forcePrompt) {
-                // The context already exists, but the user has requested to "Sign In", so we need to update the auth info
-                ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl);
-            }
-
-            // Lookup the context that goes with this remoteUrl
-            // If no match exists simply return the default results
-            final ServerContext context = ServerContextManager.getInstance().createContextFromGitRemoteUrl(gitRemoteUrl, forcePrompt);
-            if (context != null && context.getGitRepository() != null) {
-                // Using the build REST client we will get the last 100 builds for this team project.
-                // We will go through those builds and try to find one that matches our repo and branch.
-                // If we can't find a perfect match, we will keep the first one that matches our repo.
-                // TODO: The latest REST API allows you to filter the builds based on repo and branch, but the Java SDK
-                // TODO: is not up to date with that version yet. We should change this code to use that method as soon
-                // TODO: as we can.
-                final BuildHttpClient buildClient = context.getBuildHttpClient();
-                final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null, null, null, null, null, null, null, BuildStatus.COMPLETED, null, null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
-                if (builds.size() > 0) {
-                    for (final Build b : builds) {
-                        // Get the repo and branch for the build and compare them to ours
-                        final BuildRepository repo = b.getRepository();
-                        if (repo != null && StringUtils.equalsIgnoreCase(context.getGitRepository().getId().toString(), repo.getId())) {
-                            // TODO: Get the constant refs/heads/master from someplace common or query for the default branch from the server
-                            // Branch names are case sensitive
-                            if (StringUtils.equals(b.getSourceBranch(), "refs/heads/master")) {
-                                if (latestBuildForRepository == null) {
-                                    // Found the master branch for the repo, so save that off
-                                    logger.info("Latest build found for repo for the master branch.");
-                                    latestBuildForRepository = b;
-                                }
-                            } else if (StringUtils.equals(b.getSourceBranch(), branch)) {
-                                if (matchingBuild == null) {
-                                    // The repo and branch match the build exactly, so save that off
-                                    logger.info("Matching build found for repo and branch.");
-                                    matchingBuild = b;
-                                }
-                            }
-
-                            if (latestBuildForRepository != null && matchingBuild != null) {
-                                // We found both builds
-                                break;
-                            }
-                        }
-                    }
-
-                    // Create the results
-                    if (latestBuildForRepository != null) {
-                        // Add the repository build to the status records list first
-                        buildStatusRecords.add(new BuildStatusRecord(latestBuildForRepository));
-                    }
-                    if (matchingBuild != null) {
-                        // Add the matching build to the status records list last
-                        buildStatusRecords.add(new BuildStatusRecord(matchingBuild));
-                    }
-                    results = new BuildStatusResults(context, buildStatusRecords);
-                } else {
-                    // No builds were found for this project
-                    results = new BuildStatusResults(context, null);
-                }
+            if (repositoryContext.getType() == RepositoryContext.Type.GIT) {
+                logger.info("Getting Git build results.");
+                results = getGitResults(context);
             } else {
-                results = new BuildStatusResults(null, null);
+                logger.info("Getting TFVC build results.");
+                results = getTfvcResults(context);
             }
 
             logger.info("Returning results.");
@@ -223,6 +165,102 @@ public class BuildStatusLookupOperation extends Operation {
             logger.warn("doWork: failed with an exception", t);
             terminate(t);
         }
+    }
+
+    private BuildStatusResults getGitResults(final ServerContext context) {
+        final List<BuildStatusRecord> buildStatusRecords = new ArrayList<BuildStatusRecord>(2);
+        Build latestBuildForRepository = null;
+        Build matchingBuild = null;
+        BuildStatusResults results;
+
+        if (context.getGitRepository() != null) {
+            // Using the build REST client we will get the last 100 builds for this team project.
+            // We will go through those builds and try to find one that matches our repo and branch.
+            // If we can't find a perfect match, we will keep the first one that matches our repo.
+            // TODO: The latest REST API allows you to filter the builds based on repo and branch, but the Java SDK
+            // TODO: is not up to date with that version yet. We should change this code to use that method as soon
+            // TODO: as we can.
+            final BuildHttpClient buildClient = context.getBuildHttpClient();
+            final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null, null, null, null, null, null, null, BuildStatus.COMPLETED, null, null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
+            if (builds.size() > 0) {
+                for (final Build b : builds) {
+                    // Get the repo and branch for the build and compare them to ours
+                    final BuildRepository repo = b.getRepository();
+                    if (repo != null && StringUtils.equalsIgnoreCase(context.getGitRepository().getId().toString(), repo.getId())) {
+                        // TODO: Get the constant refs/heads/master from someplace common or query for the default branch from the server
+                        // Branch names are case sensitive
+                        if (StringUtils.equals(b.getSourceBranch(), "refs/heads/master")) {
+                            if (latestBuildForRepository == null) {
+                                // Found the master branch for the repo, so save that off
+                                logger.info("Latest build found for repo for the master branch.");
+                                latestBuildForRepository = b;
+                            }
+                        } else if (StringUtils.equals(b.getSourceBranch(), repositoryContext.getBranch())) {
+                            if (matchingBuild == null) {
+                                // The repo and branch match the build exactly, so save that off
+                                logger.info("Matching build found for repo and branch.");
+                                matchingBuild = b;
+                            }
+                        }
+
+                        if (latestBuildForRepository != null && matchingBuild != null) {
+                            // We found both builds
+                            break;
+                        }
+                    }
+                }
+
+                // Create the results
+                if (latestBuildForRepository != null) {
+                    // Add the repository build to the status records list first
+                    buildStatusRecords.add(new BuildStatusRecord(latestBuildForRepository));
+                }
+                if (matchingBuild != null) {
+                    // Add the matching build to the status records list last
+                    buildStatusRecords.add(new BuildStatusRecord(matchingBuild));
+                }
+                results = new BuildStatusResults(context, buildStatusRecords);
+            } else {
+                // No builds were found for this project
+                results = new BuildStatusResults(context, null);
+            }
+        } else {
+            results = new BuildStatusResults(null, null);
+        }
+        return results;
+    }
+
+    private BuildStatusResults getTfvcResults(final ServerContext context) {
+        final List<BuildStatusRecord> buildStatusRecords = new ArrayList<BuildStatusRecord>(2);
+        Build matchingBuild = null;
+        BuildStatusResults results;
+
+        // Using the build REST client we will get the last 100 builds for this team project.
+        // TODO: We will go through those builds and try to find one that matches our repo and common root.
+        // If we can't find a perfect match, we will keep the first one that matches our repo type.
+        final BuildHttpClient buildClient = context.getBuildHttpClient();
+        final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null, null, null, null, null, null, null, BuildStatus.COMPLETED, null, null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
+        if (builds.size() > 0) {
+            for (final Build b : builds) {
+                // Get the repo and branch for the build and compare them to ours
+                final BuildRepository repo = b.getRepository();
+                if (repo != null && StringUtils.equalsIgnoreCase(repo.getType(), TFVC_REPO_TYPE)) {
+                    matchingBuild = b;
+                    break;
+                }
+            }
+
+            // Create the results
+            if (matchingBuild != null) {
+                // Add the matching build to the status records list last
+                buildStatusRecords.add(new BuildStatusRecord(matchingBuild));
+            }
+            results = new BuildStatusResults(context, buildStatusRecords);
+        } else {
+            // No builds were found for this project
+            results = new BuildStatusResults(context, null);
+        }
+        return results;
     }
 
     @Override

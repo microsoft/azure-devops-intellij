@@ -3,17 +3,18 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
+import com.intellij.openapi.project.Project;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
-import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +30,19 @@ public class SelectWorkItemsModel extends AbstractModel {
     public final static String PROP_SERVER_NAME = "serverName";
 
     private final WorkItemsTableModel tableModel;
-    private final GitRepository gitRepository;
+    private final Project project;
+    private final RepositoryContext repositoryContext;
     private boolean loading = false;
     private String filter;
     private ServerContext latestServerContext;
 
     private boolean maxItemsReached = false;
 
-    public SelectWorkItemsModel(final GitRepository gitRepository) {
-        this.gitRepository = gitRepository;
+    public SelectWorkItemsModel(final Project project, final RepositoryContext repositoryContext) {
+        ArgumentHelper.checkNotNull(project, "project");
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        this.project = project;
+        this.repositoryContext = repositoryContext;
         tableModel = new WorkItemsTableModel(WorkItemsTableModel.DEFAULT_COLUMNS);
     }
 
@@ -68,8 +73,7 @@ public class SelectWorkItemsModel extends AbstractModel {
         setLoading(true);
         tableModel.clearRows();
 
-        final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(gitRemoteUrl);
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(repositoryContext);
         operation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {
@@ -101,7 +105,7 @@ public class SelectWorkItemsModel extends AbstractModel {
                     final ServerContext newContext;
                     if (wiResults.hasError() && AuthHelper.isNotAuthorizedError(wiResults.getError())) {
                         //401 or 403 - token is not valid, prompt user for credentials and retry
-                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(repositoryContext.getUrl()); //call this on a background thread, will hang UI thread if not
                     } else {
                         newContext = null;
                     }
@@ -118,7 +122,7 @@ public class SelectWorkItemsModel extends AbstractModel {
                                         //user cancelled login, don't retry
                                     }
                                 } else {
-                                    IdeaHelper.showErrorDialog(gitRepository.getProject(), wiResults.getError());
+                                    IdeaHelper.showErrorDialog(project, wiResults.getError());
                                 }
                             }
 

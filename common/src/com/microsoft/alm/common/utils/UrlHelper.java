@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 public class UrlHelper {
@@ -24,6 +25,7 @@ public class UrlHelper {
 
     public static final String HOST_VSO = "visualstudio.com";
     public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
+    public static final String DEFAULT_COLLECTION = "DefaultCollection";
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
     private static final String URL_BUILD_PATH_SEGMENT = "_build";
@@ -77,6 +79,25 @@ public class UrlHelper {
             if (lastIndex >= 0) {
                 return uri.substring(0, lastIndex);
             }
+        }
+
+        return uri;
+    }
+
+    public static String trimLeadingAndTrailingSeparators(final String uri) {
+        if (StringUtils.isNotEmpty(uri)) {
+            int startingIndex = 0;
+            while (startingIndex < uri.length() && uri.charAt(startingIndex) == URL_SEPARATOR.charAt(0)) {
+                startingIndex++;
+            }
+            int lastIndex = uri.length();
+            while (lastIndex > 0 && uri.charAt(lastIndex - 1) == URL_SEPARATOR.charAt(0)) {
+                lastIndex--;
+            }
+            if (startingIndex < uri.length() && lastIndex >= 0 && startingIndex < lastIndex) {
+                return uri.substring(startingIndex, lastIndex);
+            }
+            return StringUtils.EMPTY;
         }
 
         return uri;
@@ -176,44 +197,43 @@ public class UrlHelper {
             //collection in the domain case on VSTS
             return serverUri;
         }
-        return UrlHelper.createUri(serverUri.toString().concat(URL_SEPARATOR).concat(collectionName));
+        return UrlHelper.createUri(combine(serverUri.toString(), collectionName));
     }
 
     public static URI getTeamProjectURI(final URI serverUri, final String collectionName, final String teamProjectName) {
-        return UrlHelper.createUri(getCollectionURI(serverUri, collectionName).toString().concat(URL_SEPARATOR).concat(teamProjectName));
+        return UrlHelper.createUri(combine(getCollectionURI(serverUri, collectionName).toString(), teamProjectName));
     }
 
     public static URI getBuildsPageURI(final URI projectUri) {
-        return UrlHelper.createUri(projectUri.toString()
-                .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_BUILD_PATH_SEGMENT));
     }
 
     public static URI getBuildURI(final URI projectUri, final int buildId) {
-        return UrlHelper.createUri(projectUri.toString()
-                .concat(URL_SEPARATOR).concat(URL_BUILD_PATH_SEGMENT)
-                .concat(String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_BUILD_PATH_SEGMENT,
+                String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
     }
 
     public static URI getQueueBuildURI(final URI serverUri, final String collectionId, final String projectName, final int buildDefinitionId) {
-        return UrlHelper.createUri(serverUri.toString()
-                .concat(URL_SEPARATOR).concat(String.format(URL_BUILD_ASPX_SEGMENT, collectionId))
-                .concat(String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)))
-                .concat(String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId))
-                .concat(URL_BUILD_QUEUE_ACTION));
+        return UrlHelper.createUri(combine(serverUri.toString(),
+                String.format(URL_BUILD_ASPX_SEGMENT, collectionId),
+                String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)),
+                String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId),
+                URL_BUILD_QUEUE_ACTION));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
         //TODO: this url isn't exactly correct because we don't know the WI Type to create
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT));
     }
 
     public static URI getSpecificWorkItemURI(final URI projectUri, final int workItemId) {
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT).concat(String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT,
+                String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
     }
 
     public static URI getMyWorkItemsURI(final URI projectUri) {
         // The default query when you navigate to the work items section is the "Assigned to me" query results
-        return UrlHelper.createUri(projectUri.toString().concat(URL_SEPARATOR).concat(URL_WIT_PATH_SEGMENT));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT));
     }
 
     public static URI getBranchURI(final URI repoUri, final String branchName) {
@@ -221,7 +241,7 @@ public class UrlHelper {
     }
 
     public static URI getCommitURI(final String remoteUrl, final String commitId) {
-        return UrlHelper.createUri(getHttpsGitUrlFromSshUrl(remoteUrl).concat(URL_SEPARATOR).concat(URL_COMMIT_SEGMENT).concat(URL_SEPARATOR).concat(commitId));
+        return UrlHelper.createUri(combine(getHttpsGitUrlFromSshUrl(remoteUrl), URL_COMMIT_SEGMENT, commitId));
     }
 
     public static URI getFileURI(final String remoteUrl, final String filePath, final String gitRemoteBranchName) {
@@ -252,6 +272,37 @@ public class UrlHelper {
              */
             throw new RuntimeException(ex);
         }
+    }
+
+    public static String decode(String urlParameter) {
+        try {
+            return URLDecoder.decode(urlParameter, "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            /*
+             * we should never get here (UTF-8 URL encoding is the recommended
+             * encoding and should be supported on all platforms), so convert
+             * into a runtime exception and throw
+             */
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static String combine(String... urlParts) {
+        StringBuilder sb = new StringBuilder();
+        if (urlParts != null) {
+            for (String part : urlParts) {
+                if (StringUtils.isEmpty(part)) {
+                    continue;
+                }
+
+                if (sb.length() > 0) {
+                    sb.append(URL_SEPARATOR);
+                }
+
+                sb.append(trimLeadingAndTrailingSeparators(part));
+            }
+        }
+        return sb.toString();
     }
 
     /**

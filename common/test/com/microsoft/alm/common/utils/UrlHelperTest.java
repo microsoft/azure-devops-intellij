@@ -172,7 +172,7 @@ public class UrlHelperTest {
     }
 
     @Test
-    public void testTrim() {
+    public void testTrimTrailing() {
         assertEquals(null, UrlHelper.trimTrailingSeparators(null));
         assertEquals("", UrlHelper.trimTrailingSeparators(""));
         assertEquals("", UrlHelper.trimTrailingSeparators("/"));
@@ -187,6 +187,26 @@ public class UrlHelperTest {
         assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three/"));
         assertEquals("one/two/three", UrlHelper.trimTrailingSeparators("one/two/three///"));
         assertEquals("/one/two/three", UrlHelper.trimTrailingSeparators("/one/two/three/"));
+    }
+
+    @Test
+    public void testTrimLeadingAndTrailing() {
+        assertEquals(null, UrlHelper.trimLeadingAndTrailingSeparators(null));
+        assertEquals("", UrlHelper.trimLeadingAndTrailingSeparators(""));
+        assertEquals("", UrlHelper.trimLeadingAndTrailingSeparators("/"));
+        assertEquals("", UrlHelper.trimLeadingAndTrailingSeparators("////"));
+        assertEquals("one", UrlHelper.trimLeadingAndTrailingSeparators("one"));
+        assertEquals("one", UrlHelper.trimLeadingAndTrailingSeparators("one/"));
+        assertEquals("one", UrlHelper.trimLeadingAndTrailingSeparators("one//"));
+        assertEquals("one", UrlHelper.trimLeadingAndTrailingSeparators("///one//"));
+        assertEquals("one/two", UrlHelper.trimLeadingAndTrailingSeparators("one/two"));
+        assertEquals("one/two", UrlHelper.trimLeadingAndTrailingSeparators("one/two/"));
+        assertEquals("one/two", UrlHelper.trimLeadingAndTrailingSeparators("one/two//"));
+        assertEquals("one/two", UrlHelper.trimLeadingAndTrailingSeparators("//one/two//"));
+        assertEquals("one/two/three", UrlHelper.trimLeadingAndTrailingSeparators("one/two/three"));
+        assertEquals("one/two/three", UrlHelper.trimLeadingAndTrailingSeparators("one/two/three/"));
+        assertEquals("one/two/three", UrlHelper.trimLeadingAndTrailingSeparators("one/two/three///"));
+        assertEquals("one/two/three", UrlHelper.trimLeadingAndTrailingSeparators("///one/two/three/"));
     }
 
     @Test
@@ -241,6 +261,19 @@ public class UrlHelperTest {
         assertEquals(StringUtils.EMPTY, UrlHelper.parseUriForBranch(null));
 
         assertEquals(StringUtils.EMPTY, UrlHelper.parseUriForBranch(StringUtils.EMPTY));
+    }
+
+    @Test
+    public void testCombine() {
+        assertEquals("", UrlHelper.combine(null));
+        assertEquals("", UrlHelper.combine(""));
+        assertEquals("", UrlHelper.combine("", null, ""));
+        assertEquals("", UrlHelper.combine("", "", ""));
+        assertEquals("", UrlHelper.combine(null, null, null));
+        assertEquals("one", UrlHelper.combine("one"));
+        assertEquals("one/two", UrlHelper.combine("one", "two"));
+        assertEquals("one/two/three", UrlHelper.combine("one", "two", "three"));
+        assertEquals("one/two/three", UrlHelper.combine("/one//", "//two/", "/three"));
     }
 
 }

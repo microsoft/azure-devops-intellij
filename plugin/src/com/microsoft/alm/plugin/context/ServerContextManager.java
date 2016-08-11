@@ -5,7 +5,10 @@ package com.microsoft.alm.plugin.context;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.exceptions.TeamServicesException;
+import com.microsoft.alm.core.webapi.CoreHttpClient;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollection;
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
@@ -15,13 +18,11 @@ import com.microsoft.alm.plugin.context.rest.ConnectionData;
 import com.microsoft.alm.plugin.context.rest.ServiceDefinition;
 import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
 import com.microsoft.alm.plugin.context.rest.VstsInfo;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import com.microsoft.alm.core.webapi.CoreHttpClient;
-import com.microsoft.alm.core.webapi.model.TeamProjectCollection;
-import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
@@ -174,23 +175,32 @@ public class ServerContextManager {
         ServerContext contextToValidate = context;
 
         //If context.uri is remote git repo url, try to parse it if needed
-        if (UrlHelper.isGitRemoteUrl(context.getUri().toString()) && (
-                context.getServerUri() == null ||
-                        context.getTeamProjectCollectionReference() == null ||
-                        context.getGitRepository() == null)) {
-            //parse url
-            if (validator.validate(context.getUri().toString())) {
+        if (UrlHelper.isGitRemoteUrl(context.getUri().toString())) {
+            if ((context.getServerUri() == null ||
+                    context.getTeamProjectCollectionReference() == null ||
+                    context.getGitRepository() == null)) {
+                //parse url
+                if (validator.validateGitUrl(context.getUri().toString())) {
+                    contextToValidate = new ServerContextBuilder(context)
+                            .serverUri(validator.getServerUrl())
+                            .collection(validator.getCollection())
+                            .repository(validator.getRepository())
+                            .build();
+                } else {
+                    //failed to parse
+                    contextToValidate = null;
+                }
+            }
+        } else if (context.getTeamProjectReference() != null) {
+            // Assume this is a TFVC url and parse the TFVC url to get collection information
+            if (validator.validateTfvcUrl(context.getUri().toString(), context.getTeamProjectReference().getName())) {
                 contextToValidate = new ServerContextBuilder(context)
                         .serverUri(validator.getServerUrl())
                         .collection(validator.getCollection())
-                        .repository(validator.getRepository())
+                        .teamProject(validator.getProject())
                         .build();
-            } else {
-                //failed to parse
-                contextToValidate = null;
             }
         }
-        //TODO we need to parse the TFVC url as well and get collection (and perhaps team project) information
 
         if (context.getType() == ServerContext.Type.TFS) {
             return checkTfsVersionAndConnection(contextToValidate);
@@ -358,12 +368,17 @@ public class ServerContextManager {
     }
 
 
-    public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final boolean prompt) {
+    public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final String teamProjectName, final boolean prompt) {
         ArgumentHelper.checkNotEmptyString(tfvcServerUrl);
+        ArgumentHelper.checkNotEmptyString(teamProjectName);
 
         // Get matching context from manager
         ServerContext context = get(tfvcServerUrl);
-        if (context == null || context.getServerUri() == null) {
+        if (context == null || context.getServerUri() == null ||
+                context.getTeamProjectCollectionReference() == null ||
+                context.getTeamProjectCollectionReference().getName() == null ||
+                context.getTeamProjectReference() == null ||
+                context.getTeamProjectReference().getId() == null) {
             context = null;
         }
 
@@ -373,7 +388,8 @@ public class ServerContextManager {
             if (authenticationInfo != null) {
                 final ServerContext.Type type = UrlHelper.isTeamServicesUrl(tfvcServerUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
                 final ServerContext contextToValidate = new ServerContextBuilder()
-                        .type(type).uri(tfvcServerUrl).authentication(authenticationInfo).build();
+                        .type(type).uri(tfvcServerUrl).authentication(authenticationInfo)
+                        .teamProject(teamProjectName).build();
                 context = validateServerConnection(contextToValidate);
             }
         }
@@ -434,7 +450,7 @@ public class ServerContextManager {
      * Gets back the most updated context with auth info possible. It first checks to see if an existing context exists
      * and if not it tries to create one. If the create fails (possibility auth info used was stale) then the auth info
      * is updated and then we try to create the context again
-     *
+     * <p/>
      * TODO: Rip out this method and refactor the code to throw up the unauthorized exception instead of swallowing it
      * TODO: so we can specifically retry on that and remove the bad cached creds
      *
@@ -487,18 +503,18 @@ public class ServerContextManager {
                 }
 
                 if (newAuthenticationInfo != null) {
-                    logger.info("auth info updateAuthenticationInfo not null" );
+                    logger.info("auth info updateAuthenticationInfo not null");
                     //build a context with new authentication info and add
                     final ServerContextBuilder builder = new ServerContextBuilder(context);
                     builder.authentication(newAuthenticationInfo);
                     final ServerContext newContext = builder.build();
                     logger.info(context.getUri().toString() + "       " + remoteUrl);
                     if (StringUtils.equalsIgnoreCase(context.getUri().toString(), remoteUrl)) {
-                        logger.info("The updated auth info created a context that matches the remote url" );
+                        logger.info("The updated auth info created a context that matches the remote url");
                         add(newContext, true);
                         matchingContext = newContext;
                     } else {
-                        logger.info("The updated auth info created a context that has a different remote url" );
+                        logger.info("The updated auth info created a context that has a different remote url");
                         add(newContext, false);
                     }
                 }
@@ -525,11 +541,13 @@ public class ServerContextManager {
     }
 
     protected static class Validator implements UrlHelper.ParseResultValidator {
+        private final static String TFVC_BRANCHES_URL_PATH = "/_apis/tfvc/branches";
         private final static String REPO_INFO_URL_PATH = "/vsts/info";
         private String serverUrl;
         private final ServerContext context;
         private GitRepository repository;
         private TeamProjectCollection collection;
+        private TeamProjectReference project;
 
         public Validator(final ServerContext context) {
             this.context = context;
@@ -547,6 +565,10 @@ public class ServerContextManager {
             return collection;
         }
 
+        public TeamProjectReference getProject() {
+            return project;
+        }
+
         protected GitHttpClient getGitHttpClient(final Client jaxrsClient, final URI baseUrl) {
             return new GitHttpClient(jaxrsClient, baseUrl);
         }
@@ -555,8 +577,25 @@ public class ServerContextManager {
             return new CoreHttpClient(jaxrsClient, baseUrl);
         }
 
-        protected TeamProjectCollectionReference getProjectCollection(final ServerContext context, String collectionName) {
-            return context.getSoapServices().getCatalogService().getProjectCollection(collectionName);
+        protected TeamProjectCollection getCollectionFromServer(final ServerContext context, String collectionName) {
+            final TeamProjectCollectionReference ref =
+                    context.getSoapServices().getCatalogService().getProjectCollection(collectionName);
+
+            TeamProjectCollection collection = new TeamProjectCollection();
+            collection.setId(ref.getId());
+            collection.setName(ref.getName());
+            collection.setUrl(ref.getUrl());
+            return collection;
+        }
+
+        protected TeamProjectReference getProjectFromServer(final ServerContext context, URI collectionURI, String teamProjectName) {
+            final CoreHttpClient client = new CoreHttpClient(context.getClient(), collectionURI);
+            for (TeamProjectReference ref : client.getProjects()) {
+                if (StringUtils.equalsIgnoreCase(ref.getName(), teamProjectName)) {
+                    return ref;
+                }
+            }
+            return null;
         }
 
         /**
@@ -566,7 +605,7 @@ public class ServerContextManager {
          * @param gitRemoteUrl
          * @return true if server information is determined
          */
-        public boolean validate(final String gitRemoteUrl) {
+        public boolean validateGitUrl(final String gitRemoteUrl) {
             try {
                 final String gitUrlToParse;
 
@@ -578,7 +617,7 @@ public class ServerContextManager {
                 }
 
                 //query the server endpoint for VSTS repo, project and collection info
-                if (getVstsInfo(gitUrlToParse)) {
+                if (getVstsInfoForGit(gitUrlToParse)) {
                     return true;
                 }
                 //server endpoint query was not successful, try to parse the url
@@ -591,11 +630,11 @@ public class ServerContextManager {
                 logger.warn("validate: unexpected exception ", t);
             }
 
-            //failed to get VSTS repo, project and collection info
+            logger.info("validateGitUrl: failed to get VSTS repo, project and collection info");
             return false;
         }
 
-        private boolean getVstsInfo(final String gitRemoteUrl) {
+        private boolean getVstsInfoForGit(final String gitRemoteUrl) {
             try {
                 //Try to query the server endpoint gitRemoteUrl/vsts/info
                 final VstsInfo vstsInfo = VstsHttpClient.sendRequest(context.getClient(), gitRemoteUrl.concat(REPO_INFO_URL_PATH), VstsInfo.class);
@@ -626,6 +665,89 @@ public class ServerContextManager {
         }
 
         /**
+         * This method queries the server with the given TFVC URL for collection information
+         *
+         * @param collectionUrl
+         * @return true if server information is determined
+         */
+        public boolean validateTfvcUrl(final String collectionUrl, final String teamProjectName) {
+            try {
+                final String collectionName;
+                final String serverUrl;
+                if (validateTfvcCollectionUrl(collectionUrl)) {
+                    final String[] parts = splitTfvcCollectionUrl(collectionUrl);
+                    serverUrl = parts[0];
+                    collectionName = parts[1];
+                } else {
+                    serverUrl = collectionUrl;
+                    collectionName = UrlHelper.DEFAULT_COLLECTION;
+                    if (!validateTfvcCollectionUrl(UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName).toString())) {
+                        return false;
+                    }
+                }
+
+                this.serverUrl = serverUrl;
+                this.collection = getCollectionFromServer(context, collectionName);
+                this.project = getProjectFromServer(context, UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName), teamProjectName);
+                return true;
+            } catch (Throwable t) {
+                logger.warn("validate: {} of server url failed", collectionUrl);
+                logger.warn("validate: unexpected exception ", t);
+            }
+
+            logger.info("validateTfvcUrl: failed to get collection info");
+            return false;
+        }
+
+        /**
+         * This method parses the collection url into 2 parts:
+         * 0: the server url (ending in a slash)
+         * 1: the collection name (no slashes)
+         *
+         * @param collectionUrl
+         * @return
+         */
+        private String[] splitTfvcCollectionUrl(final String collectionUrl) {
+            final String[] result = new String[2];
+            if (StringUtils.isEmpty(collectionUrl)) {
+                return result;
+            }
+
+            // Now find the TRUE last separator (before the collection name)
+            final String trimmedUrl = UrlHelper.trimTrailingSeparators(collectionUrl);
+            final int index = trimmedUrl.lastIndexOf(UrlHelper.URL_SEPARATOR);
+            if (index >= 0) {
+                // result0 is the server url without the collection name
+                result[0] = collectionUrl.substring(0, index + 1);
+                // result1 is just the collection name (no separators)
+                result[1] = collectionUrl.substring(index + 1);
+            } else {
+                // We can't determine the collection name so leave it empty
+                result[0] = collectionUrl;
+                result[1] = StringUtils.EMPTY;
+            }
+
+            return result;
+        }
+
+        private boolean validateTfvcCollectionUrl(final String collectionUrl) {
+            //Try to query the server endpoint for branches to see if the collection url is correct
+            try {
+                final String jsonResult = VstsHttpClient.sendRequest(context.getClient(), UrlHelper.combine(collectionUrl, TFVC_BRANCHES_URL_PATH), String.class);
+                return true;
+            } catch (VstsHttpClient.VstsHttpClientException e) {
+                if (e.getStatusCode() == 404) {
+                    // Add the DefaultCollection to the url and try again
+                    logger.info("validateTfvcCollectionUrl: found 404 for url: " + collectionUrl);
+                    return false;
+                } else {
+                    logger.warn("validateTfvcCollectionUrl failed", e);
+                    throw e;
+                }
+            }
+        }
+
+        /**
          * This method gets all the info we need from the server given the parse results.
          * If some call fails we simply return false and ignore the results.
          *
@@ -647,11 +769,7 @@ public class ServerContextManager {
                     collection = coreClient.getProjectCollection(parseResult.getCollectionName());
                 } else {
                     final ServerContext contextToValidate = new ServerContextBuilder(context).serverUri(serverUrl).build();
-                    final TeamProjectCollectionReference ref = getProjectCollection(contextToValidate, parseResult.getCollectionName());
-                    collection = new TeamProjectCollection();
-                    collection.setId(ref.getId());
-                    collection.setName(ref.getName());
-                    collection.setUrl(ref.getUrl());
+                    collection = getCollectionFromServer(contextToValidate, parseResult.getCollectionName());
                 }
             } catch (Throwable throwable) {
                 logger.error("validate: failed for parseResult " + parseResult.toString());

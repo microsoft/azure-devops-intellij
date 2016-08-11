@@ -17,11 +17,13 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabModelImpl;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.PullRequestLookupOperation;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.alm.sourcecontrol.webapi.model.PullRequestStatus;
+import git4idea.repo.GitRepository;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -29,16 +31,22 @@ import org.slf4j.LoggerFactory;
 
 public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     private static final Logger logger = LoggerFactory.getLogger(VcsPullRequestsModel.class);
+    private final GitRepository gitRepository;
 
     public VcsPullRequestsModel(@NotNull Project project) {
         super(project, new PullRequestsTreeModel(), "PullRequestsTab.");
         operationInputs = new Operation.CredInputsImpl();
+        gitRepository = VcsHelper.getGitRepository(project);
     }
 
     protected void createDataProvider() {
         dataProvider = new PullRequestsTabLookupListener(this);
     }
 
+    private boolean isTfGitRepository() {
+        return isTeamServicesRepository() && gitRepository != null;
+    }
+    
     public void openGitRepoLink() {
         if (isTfGitRepository()) {
             final ServerContext context = TfGitHelper.getSavedServerContext(gitRepository);
@@ -169,7 +177,7 @@ public class VcsPullRequestsModel extends TabModelImpl<PullRequestsTreeModel> {
     }
 
     public void createNewItem() {
-        if (!isTfGitRepository()) {
+        if (!isTeamServicesRepository() || gitRepository == null) {
             return;
         }
 

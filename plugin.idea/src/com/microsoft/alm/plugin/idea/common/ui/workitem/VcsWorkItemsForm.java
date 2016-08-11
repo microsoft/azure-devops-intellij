@@ -9,11 +9,11 @@ import com.intellij.openapi.ui.JBMenuItem;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.common.ui.controls.WorkItemQueryDropDown;
-import com.microsoft.alm.plugin.idea.common.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabFormImpl;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
+import com.microsoft.alm.plugin.idea.common.ui.controls.FormattedTable;
+import com.microsoft.alm.plugin.idea.common.ui.controls.WorkItemQueryDropDown;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +50,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
                 TfPluginBundle.KEY_VCS_WIT_REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION);
 
-        this.queryDropDown = new WorkItemQueryDropDown(TfGitHelper.getTfGitRepository(project));
+        this.queryDropDown = new WorkItemQueryDropDown(project, VcsHelper.getRepositoryContext(project));
         ensureInitialized();
     }
 

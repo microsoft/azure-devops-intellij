@@ -6,10 +6,11 @@ package com.microsoft.alm.plugin.idea.common.ui.workitem;
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.ui.branch.CreateBranchController;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({TfGitHelper.class, CreateBranchController.class, VcsWorkItemsModel.class})
+@PrepareForTest({CreateBranchController.class, VcsWorkItemsModel.class, VcsHelper.class})
 public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     private VcsWorkItemsModel model;
     private WorkItemLookupOperation operation;
@@ -56,10 +57,11 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
 
     @Before
     public void setUp() {
+        PowerMockito.mockStatic(VcsHelper.class);
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "repoUrl1"));
+
         model = new VcsWorkItemsModel(mockProject);
-        operation = new WorkItemLookupOperation("remoteURL");
-        PowerMockito.mockStatic(TfGitHelper.class);
-        when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(mockGitRepository);
+        operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "remoteURL"));
     }
 
     @Test
@@ -99,9 +101,9 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testCreateBranch_NotTfGitRepo() {
+    public void testCreateBranch_NotTfRepo() {
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(null);
         VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
-        when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(null);
         spyModel.createBranch();
 
         verify(mockTableModel, never()).getSelectedWorkItems();

@@ -178,13 +178,14 @@ public class ToolRunner {
 
         @Override
         public void run() {
+            // Don't let exceptions escape from this top level method
             try {
                 // Wait for the process to finish
                 process.waitFor();
                 // Call the completed event on the listener with the exit code
                 // Note that all the standard output/error may not have finished
                 listener.completed(process.exitValue());
-            } catch (InterruptedException e) {
+            } catch (Throwable e) {
                 logger.error("Failed to wait for process exit.", e);
                 listener.processException(e);
             }
@@ -222,10 +223,13 @@ public class ToolRunner {
 
         @Override
         public void run() {
-            // Create a buffered reader so that we can process the output one line at a time
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream));
-            String line;
+            BufferedReader bufferedReader = null;
+
+            // Don't let exceptions escape from this top level method
             try {
+                // Create a buffered reader so that we can process the output one line at a time
+                bufferedReader = new BufferedReader(new InputStreamReader(stream));
+                String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     // Call the appropriate event with the line that was read
                     if (isStandardError) {
@@ -234,14 +238,17 @@ public class ToolRunner {
                         listener.processStandardOutput(line);
                     }
                 }
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 logger.error("Failed to process output.", e);
                 listener.processException(e);
             } finally {
+                // Don't let exceptions escape from this top level method
                 try {
                     // Make sure to close the buffered reader
-                    bufferedReader.close();
-                } catch (IOException e) {
+                    if (bufferedReader != null) {
+                        bufferedReader.close();
+                    }
+                } catch (Throwable e) {
                     logger.error("Failed to close buffer.", e);
                     listener.processException(e);
                 }

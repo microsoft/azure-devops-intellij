@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.ui.common.tabs;
 
 import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
@@ -19,18 +20,18 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
 
     private final TabModel model;
     private Operation activeOperation;
-    protected String gitRemoteUrl;
+    protected RepositoryContext repositoryContext;
 
     public TabLookupListenerImpl(@NotNull final TabModel model) {
         this.model = model;
     }
 
     /**
-     * Load data based on the git url
+     * Load data based on the repository context
      *
-     * @param gitRemoteUrl
+     * @param repositoryContext
      */
-    public abstract void loadData(final String gitRemoteUrl, final Operation.Inputs inputs);
+    public abstract void loadData(final RepositoryContext repositoryContext, final Operation.Inputs inputs);
 
     /**
      * Load data asynchronously based on the given operation.
@@ -85,11 +86,11 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
         } else if (results.hasError()) {
             final ServerContext newContext;
             if (AuthHelper.isNotAuthorizedError(results.getError())) {
-                newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+                newContext = ServerContextManager.getInstance().updateAuthenticationInfo(repositoryContext.getUrl()); //call this on a background thread, will hang UI thread if not
             } else if (results.getError() instanceof java.lang.AssertionError &&
                     StringUtils.containsIgnoreCase(results.getError().getMessage(), "Microsoft.TeamFoundation.Git.Server.GitRepositoryNotFoundException")) {
                 //repo was probably deleted on the server
-                ServerContextManager.getInstance().remove(gitRemoteUrl);
+                ServerContextManager.getInstance().remove(repositoryContext.getUrl());
                 newContext = null;
             } else {
                 newContext = null;

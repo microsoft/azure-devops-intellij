@@ -3,6 +3,12 @@
 
 package com.microsoft.alm.plugin.operations;
 
+import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import org.slf4j.Logger;
+
+import javax.ws.rs.NotAuthorizedException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -135,5 +141,42 @@ public abstract class Operation {
         for (final Listener listener : listeners) {
             listener.notifyLookupResults(results);
         }
+    }
+
+    /**
+     * Use this method to get a properly authenticated context based on the repositoryContext given.
+     * @param repositoryContext
+     * @return
+     */
+    protected static ServerContext getServerContext(final RepositoryContext repositoryContext, final boolean forcePrompt, final boolean allowPrompt, final Logger logger ) {
+        final ServerContext serverContext;
+
+        // Get the authenticated context for the Url
+        // This should be done on a background thread so as not to block UI or hang the IDE
+        // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+        if (ServerContextManager.getInstance().get(repositoryContext.getUrl()) != null && forcePrompt) {
+            logger.info("getServerContext: context found. updating auth info");
+            // The context already exists, but the credentials may be out of date, so we need to update the auth info
+            ServerContextManager.getInstance().updateAuthenticationInfo(repositoryContext.getUrl());
+        }
+
+        // Create the context from the appropriate url and repo type
+        // Note that this will simply return the existing context if one exists.
+        if (repositoryContext.getType() == RepositoryContext.Type.GIT) {
+            logger.info("getServerContext: creating GIT context");
+            serverContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(
+                    repositoryContext.getUrl(), allowPrompt);
+        } else {
+            logger.info("getServerContext: creating TFVC context");
+            serverContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
+                    repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), allowPrompt);
+        }
+
+        if (serverContext == null) {
+            logger.warn("getServerContext: failed to get authenticated server context");
+            throw new NotAuthorizedException(repositoryContext.getUrl());
+        }
+
+        return serverContext;
     }
 }

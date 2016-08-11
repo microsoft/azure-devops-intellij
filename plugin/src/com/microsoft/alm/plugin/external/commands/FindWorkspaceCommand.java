@@ -7,6 +7,10 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class FindWorkspaceCommand extends Command<Workspace> {
@@ -20,9 +24,10 @@ public class FindWorkspaceCommand extends Command<Workspace> {
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
-        final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
-                .add(localPath)
-                .add("-noprompt");
+        final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
+        if (StringUtils.isNotEmpty(localPath)) {
+            builder.add(localPath);
+        }
         return builder;
     }
 
@@ -41,9 +46,18 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         // look for the ==== line to see if the command was successful
         final String[] lines = getLines(stdout);
         if (lines.length > 2 && lines[0].contains("==========")) {
-            final String workspaceName = getValue(lines[1]).trim();
+            // Get the name and url from the next 2 lines
+            final String workspaceName = getValue(lines[1]);
             final String collectionURL = getValue(lines[2]);
-            return new Workspace(collectionURL, workspaceName, "", "", "");
+            // Finally, parse the workspace mappings
+            final List<Workspace.Mapping> mappings = new ArrayList<Workspace.Mapping>(10);
+            for (int i = 3; i < lines.length; i++) {
+                Workspace.Mapping mapping = getMapping(lines[i]);
+                if (mapping != null) {
+                    mappings.add(mapping);
+                }
+            }
+            return new Workspace(collectionURL, workspaceName, "", "", "", mappings);
         }
 
         return null;
@@ -54,7 +68,26 @@ public class FindWorkspaceCommand extends Command<Workspace> {
      * Example:  "   Name: myWorkspace"  => "myWorkspace"
      */
     private String getValue(final String line) {
-        int index = line.indexOf(": ");
-        return line.substring(index + 2);
+        final int index = line.indexOf(": ");
+        return line.substring(index + 2).trim();
+    }
+
+    /**
+     * This method parses a single line of output returning the mapping if one was found
+     * Examples:
+     * "$/TFVC_11/folder1: D:\tmp\notdefault\folder1"
+     * "(cloaked) $/TFVC_11/folder1:"
+     */
+    private Workspace.Mapping getMapping(final String line) {
+        final boolean isCloaked = StringUtils.startsWithIgnoreCase(line.trim(), "(cloaked)");
+        final int endIndex = line.indexOf(":");
+        final int startIndex = isCloaked ? line.indexOf(")") + 1 : 0;
+        if (endIndex >= 0) {
+            final String serverPath = line.substring(startIndex, endIndex).trim();
+            final String localPath = line.substring(endIndex + 1).trim();
+            return new Workspace.Mapping(serverPath, localPath, isCloaked);
+        }
+
+        return null;
     }
 }

@@ -8,17 +8,17 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Constraints;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.WorkItemHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
-import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemQueriesLookupOperation;
 import com.microsoft.alm.workitemtracking.webapi.models.QueryHierarchyItem;
-import git4idea.repo.GitRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,15 +31,17 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
     public static final String CMD_QUERY_COMBO_BOX_CHANGED = "cmdQueryComboBoxChanged";
 
     private final QueryAction defaultQuery;
-    private final GitRepository gitRepository;
+    private final RepositoryContext repositoryContext;
+    private final Project project;
     private final LoadingAction loadingAction;
     private final WorkItemQueriesLookupOperation.QueryInputs queryOperationInput;
 
     private QueryAction selectedQuery;
 
-    public WorkItemQueryDropDown(final GitRepository gitRepository) {
+    public WorkItemQueryDropDown(final Project project, final RepositoryContext repositoryContext) {
         super();
-        this.gitRepository = gitRepository;
+        this.project = project;
+        this.repositoryContext = repositoryContext;
         this.defaultQuery = new QueryAction(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_QUERY_DEFAULT_QUERY), WorkItemHelper.getAssignedToMeQuery());
         this.loadingAction = new LoadingAction();
         this.queryOperationInput = new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES);
@@ -80,9 +82,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
     }
 
     private void addQueriesFromServer(final DefaultActionGroup group) {
-        final String gitRemoteUrl = TfGitHelper.getTfGitRemote(gitRepository).getFirstUrl();
-
-        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(gitRemoteUrl);
+        WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(repositoryContext);
         operation.addListener(new Operation.Listener() {
             @Override
             public void notifyLookupStarted() {
@@ -112,7 +112,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
                     final ServerContext newContext;
                     if (wiResults.hasError() && AuthHelper.isNotAuthorizedError(wiResults.getError())) {
                         //401 or 403 - token is not valid, prompt user for credentials and retry
-                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(gitRemoteUrl); //call this on a background thread, will hang UI thread if not
+                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(repositoryContext.getUrl()); //call this on a background thread, will hang UI thread if not
                     } else {
                         newContext = null;
                     }
@@ -130,7 +130,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
                                         logger.info("WorkItemQueriesLookupOperation was cancelled");
                                     }
                                 } else {
-                                    IdeaHelper.showErrorDialog(gitRepository.getProject(), wiResults.getError());
+                                    IdeaHelper.showErrorDialog(project, wiResults.getError());
                                 }
                             }
 
