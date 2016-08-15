@@ -40,8 +40,8 @@ public class UrlHelper {
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
     private static final String URL_BRANCH_SEGMENT = "?path=%2F&_a=contents&version=GB";
     private static final String URL_COMMIT_SEGMENT = "commit";
-    private static final String URL_PATH_SEGMENT = "#path=";
-    private static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
+    protected static final String URL_PATH_SEGMENT = "#path=";
+    protected static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -248,7 +248,7 @@ public class UrlHelper {
         String uri = getHttpsGitUrlFromSshUrl(remoteUrl).concat(URL_PATH_SEGMENT).concat(filePath);
 
         if (StringUtils.isNotEmpty(gitRemoteBranchName)) {
-            uri.concat(URL_GIT_VERSION_SEGMENT).concat(gitRemoteBranchName);
+            uri = uri.concat(URL_GIT_VERSION_SEGMENT).concat(gitRemoteBranchName);
         }
         return UrlHelper.createUri(uri);
     }
