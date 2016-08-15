@@ -276,4 +276,23 @@ public class UrlHelperTest {
         assertEquals("one/two/three", UrlHelper.combine("/one//", "//two/", "/three"));
     }
 
+    @Test
+    public void testGetFileURI_NoBranch() {
+        String remoteUrl = "https://myaccount.visualstudio.com";
+        String filePath = "path/to/file.txt";
+        
+        final URI result = UrlHelper.getFileURI(remoteUrl, filePath, StringUtils.EMPTY);
+        assertEquals(remoteUrl.concat(UrlHelper.URL_PATH_SEGMENT).concat(filePath), result.toString());
+    }
+
+    @Test
+    public void testGetFileURI_Branch() {
+        String remoteUrl = "https://myaccount.visualstudio.com";
+        String filePath = "path/to/file.txt";
+        String branchName = "branch";
+
+        final URI result = UrlHelper.getFileURI(remoteUrl, filePath, branchName);
+        assertEquals(remoteUrl.concat(UrlHelper.URL_PATH_SEGMENT).concat(filePath).concat(UrlHelper.URL_GIT_VERSION_SEGMENT).concat(branchName),
+                result.toString());
+    }
 }
