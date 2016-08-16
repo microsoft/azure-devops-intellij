@@ -3,25 +3,43 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.FunctionUtil;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
+import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
+import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.swing.event.HyperlinkEvent;
+import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +49,8 @@ import java.util.Set;
  * TODO: comment back in the features as needed
  */
 public class TFSCheckinEnvironment implements CheckinEnvironment {
+    public static final Logger logger = LoggerFactory.getLogger(TFSCheckinEnvironment.class);
+
     private static final String CHECKIN_OPERATION_NAME = "Checkin";
 
     @NotNull
@@ -133,142 +153,59 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     public List<VcsException> commit(final List<Change> changes,
                                      final String preparedComment,
                                      @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
-//        myVcs.getCheckinData().messageLabel = null;
-//
-//        final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
-//        final List<FilePath> files = new ArrayList<FilePath>();
-//        for (Change change : changes) {
-//            FilePath path = null;
-//            ContentRevision beforeRevision = change.getBeforeRevision();
-//            ContentRevision afterRevision = change.getAfterRevision();
-//            if (afterRevision != null) {
-//                path = afterRevision.getFile();
-//            } else if (beforeRevision != null) {
-//                path = beforeRevision.getFile();
-//            }
-//            if (path != null) {
-//                files.add(path);
-//            }
-//        }
         final List<VcsException> errors = new ArrayList<VcsException>();
-//    try {
-//      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
-//        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-//          try {
-//            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("loading.pending.changes"));
-//            // get pending changes for given items
-//            Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-//              .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.None, myVcs.getProject(),
-//                                            TFSBundle.message("loading.pending.changes"));
-//
-//            if (pendingChanges.isEmpty()) {
-//              return;
-//            }
-//
-//            Collection<String> checkIn = new ArrayList<String>();
-//            // upload files
-//            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("uploading.files"));
-//            for (PendingChange pendingChange : pendingChanges) {
-//              if (pendingChange.getType() == ItemType.File) {
-//                ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
-//                if (changeType.contains(ChangeType_type0.Edit) || changeType.contains(ChangeType_type0.Add)) {
-//                  TFSProgressUtil
-//                    .setProgressText2(progressIndicator, VersionControlPath.localPathFromTfsRepresentation(pendingChange.getLocal()));
-//                  workspace.getServer().getVCS()
-//                    .uploadItem(workspace, pendingChange, myVcs.getProject(), null);
-//                }
-//              }
-//              checkIn.add(pendingChange.getItem());
-//            }
-//            TFSProgressUtil.setProgressText2(progressIndicator, "");
-//
-//            final WorkItemsCheckinParameters state = myVcs.getCheckinData().parameters.getWorkItems(workspace.getServer());
-//            final Map<WorkItem, CheckinWorkItemAction> workItemActions =
-//              state != null ? state.getWorkItemsActions() : Collections.<WorkItem, CheckinWorkItemAction>emptyMap();
-//
-//            List<Pair<String, String>> checkinNotes =
-//              new ArrayList<Pair<String, String>>(myVcs.getCheckinData().parameters.getCheckinNotes(workspace.getServer()).size());
-//            for (CheckinParameters.CheckinNote checkinNote : myVcs.getCheckinData().parameters.getCheckinNotes(workspace.getServer())) {
-//              checkinNotes.add(Pair.create(checkinNote.name, StringUtil.notNullize(checkinNote.value)));
-//            }
-//
-//            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("checking.in"));
-//            ResultWithFailures<CheckinResult> result = workspace.getServer().getVCS()
-//              .checkIn(workspace.getName(), workspace.getOwnerName(), checkIn, preparedComment, workItemActions, checkinNotes,
-//                       myVcs.getCheckinData().parameters.getPolicyOverride(workspace.getServer()), myVcs.getProject(), null);
-//            errors.addAll(TfsUtil.getVcsExceptions(result.getFailures()));
-//
-//            Collection<String> commitFailed = new ArrayList<String>(result.getFailures().size());
-//            for (Failure failure : result.getFailures()) {
-//              TFSVcs.assertTrue(failure.getItem() != null);
-//              commitFailed.add(failure.getItem());
-//            }
-//
-//            Collection<FilePath> invalidateRoots = new ArrayList<FilePath>(pendingChanges.size());
-//            Collection<FilePath> invalidateFiles = new ArrayList<FilePath>();
-//            // set readonly status for files
-//            Collection<VirtualFile> makeReadOnly = new ArrayList<VirtualFile>();
-//            for (PendingChange pendingChange : pendingChanges) {
-//              TFSVcs.assertTrue(pendingChange.getItem() != null);
-//              if (commitFailed.contains(pendingChange.getItem())) {
-//                continue;
-//              }
-//
-//              ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
-//              if (pendingChange.getType() == ItemType.File) {
-//                if (changeType.contains(ChangeType_type0.Edit) ||
-//                    changeType.contains(ChangeType_type0.Add) ||
-//                    changeType.contains(ChangeType_type0.Rename)) {
-//                  VirtualFile file = VersionControlPath.getVirtualFile(pendingChange.getLocal());
-//                  if (file != null && file.isValid()) {
-//                    makeReadOnly.add(file);
-//                  }
-//                }
-//              }
-//
-//              // TODO don't add recursive invalidate
-//              // TODO if Rename, invalidate old and new items?
-//              final FilePath path = VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
-//              invalidateRoots.add(path);
-//              if (changeType.contains(ChangeType_type0.Add) || changeType.contains(ChangeType_type0.Rename)) {
-//                // [IDEADEV-27087] invalidate parent folders since they can be implicitly checked in with child checkin
-//                final VirtualFile vcsRoot = ProjectLevelVcsManager.getInstance(myVcs.getProject()).getVcsRootFor(path);
-//                if (vcsRoot != null) {
-//                  final FilePath vcsRootPath = TfsFileUtil.getFilePath(vcsRoot);
-//                  for (FilePath parent = path.getParentPath();
-//                       parent != null && parent.isUnder(vcsRootPath, false);
-//                       parent = parent.getParentPath()) {
-//                    invalidateFiles.add(parent);
-//                  }
-//                }
-//              }
-//            }
-//
-//            TfsFileUtil.setReadOnly(makeReadOnly, true);
-//
-//            TFSProgressUtil.setProgressText(progressIndicator, TFSBundle.message("updating.work.items"));
-//            if (commitFailed.isEmpty()) {
-//              CheckinResult checkinResult = result.getResult().iterator().next();
-//              workspace.getServer().getVCS()
-//                .updateWorkItemsAfterCheckin(workspace.getOwnerName(), workItemActions, checkinResult.getCset(), myVcs.getProject(),
-//                                             null);
-//            }
-//
-//            TfsFileUtil.markDirty(myVcs.getProject(), invalidateRoots, invalidateFiles);
-//          }
-//          catch (IOException e) {
-//            //noinspection ThrowableInstanceNeverThrown
-//            errors.add(new VcsException(e));
-//          }
-//        }
-//      });
-//    }
-//    catch (TfsException e) {
-//      //noinspection ThrowableInstanceNeverThrown
-//      errors.add(new VcsException(e));
-//    }
-//    myVcs.getCheckinData().parameters = null;
-//    myVcs.fireRevisionChanged();
+
+        // set progress bar status
+        final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
+        TFSProgressUtil.setProgressText(progressIndicator, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_STATUS));
+
+        // find files that are to be checked in
+        final List<String> files = new ArrayList<String>();
+        for (final Change change : changes) {
+            String path = null;
+            final ContentRevision beforeRevision = change.getBeforeRevision();
+            final ContentRevision afterRevision = change.getAfterRevision();
+            if (afterRevision != null) {
+                path = afterRevision.getFile().getPath();
+            } else if (beforeRevision != null) {
+                path = beforeRevision.getFile().getPath();
+            }
+            if (path != null) {
+                files.add(path);
+            }
+        }
+
+        try {
+            final String remoteUrl = VcsHelper.getRepositoryContext(myVcs.getProject()).getUrl();
+            final ServerContext context = ServerContextManager.getInstance().createContextFromGitRemoteUrl(remoteUrl, true);
+            if (context == null) {
+                throw new NotAuthorizedException(remoteUrl);
+            } else {
+                final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
+                final String changesetNumber = checkinCommand.runSynchronously();
+
+                // notify user of success
+                final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
+                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_LINK_TEXT, changesetNumber));
+                VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
+                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), new NotificationListener() {
+                            @Override
+                            public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                BrowserUtil.browse(hyperlinkEvent.getURL());
+                            }
+                        });
+            }
+        } catch (Exception e) {
+            // no notification needs to be done by us for errors, IntelliJ handles that
+            logger.warn("Error during checkin", e);
+            if (e instanceof TeamServicesException) {
+                // get localized message in the case of TeamServicesException otherwise the key will print out instead of the error
+                errors.add(new VcsException(LocalizationServiceImpl.getInstance().getExceptionMessage(e)));
+            } else {
+                errors.add(new VcsException(e));
+            }
+        }
+
         return errors;
     }
 

@@ -42,6 +42,8 @@ public class UrlHelper {
     private static final String URL_COMMIT_SEGMENT = "commit";
     protected static final String URL_PATH_SEGMENT = "#path=";
     protected static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
+    protected static final String URL_TFVC_PATH_SEGMENT = "_versionControl";
+    protected static final String URL_TFVC_CHANGESET_SEGMENT = "changeset";
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
@@ -251,6 +253,11 @@ public class UrlHelper {
             uri = uri.concat(URL_GIT_VERSION_SEGMENT).concat(gitRemoteBranchName);
         }
         return UrlHelper.createUri(uri);
+    }
+
+    public static URI getTfvcChangesetURI(final String remoteUrl, final String changesetNumber) {
+        return UrlHelper.createUri(combine(getHttpsGitUrlFromSshUrl(remoteUrl), URL_TFVC_PATH_SEGMENT,
+                URL_TFVC_CHANGESET_SEGMENT, changesetNumber));
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
