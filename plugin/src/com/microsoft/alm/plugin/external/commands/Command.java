@@ -130,7 +130,7 @@ public abstract class Command<T> {
                     result = parseOutput(stdout.toString(), stderr.toString());
                     TfTool.throwBadExitCode(returnCode);
                 } catch (Throwable throwable) {
-                    logger.error("CMD: parsing output failed", throwable);
+                    logger.warn("CMD: parsing output failed", throwable);
                     error = throwable;
                 }
                 listener.progress("", OUTPUT_TYPE_INFO, 100);

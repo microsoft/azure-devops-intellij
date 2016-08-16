@@ -88,6 +88,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(TeamServicesException.KEY_OPERATION_ERRORS, "Operation.Lookup.Errors");
             put(TeamServicesException.KEY_VSO_NO_PROFILE_ERROR, "VSO.NoProfileError");
             put(TeamServicesException.KEY_TFS_MALFORMED_SERVER_URI, "TFS.MalformedServerUri");
+            put(TeamServicesException.KEY_ERROR_UNKNOWN, "Errors.Unknown");
 
             // Tool Exception messages
             put(ToolException.KEY_TF_BAD_EXIT_CODE, "ToolException.TF.BadExitCode");

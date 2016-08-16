@@ -485,4 +485,12 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_ADD_SCHEDULING = "Tfvc.Add.Scheduling";
     @NonNls
     public static final String KEY_TFVC_ADD_ERROR = "Tfvc.Add.Error";
+    @NonNls
+    public static final String KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE = "Tfvc.Checkin.Successful.Title";
+    @NonNls
+    public static final String KEY_TFVC_CHECKIN_SUCCESSFUL_MSG = "Tfvc.Checkin.Successful.Msg";
+    @NonNls
+    public static final String KEY_TFVC_CHECKIN_LINK_TEXT="Tfvc.Checkin.Link.Text";
+    @NonNls
+    public static final String KEY_TFVC_CHECKIN_STATUS="Tfvc.Checkin.Status";
 }
