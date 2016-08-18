@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.jetbrains.tfsIntegration.ui.WorkspaceForm">
-  <grid id="27dc6" binding="myContentPane" layout-manager="GridLayoutManager" row-count="10" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceForm">
+  <grid id="27dc6" binding="contentPane" layout-manager="GridLayoutManager" row-count="9" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="500" height="400"/>
+      <xy x="20" y="20" width="500" height="408"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -14,10 +14,10 @@
         </constraints>
         <properties>
           <labelFor value="ad82b"/>
-          <text value="&amp;Name:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Name"/>
         </properties>
       </component>
-      <component id="ad82b" class="javax.swing.JTextField" binding="myNameField">
+      <component id="ad82b" class="javax.swing.JTextField" binding="name">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="150" height="-1"/>
@@ -30,15 +30,15 @@
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Server:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Server"/>
         </properties>
       </component>
-      <component id="d113f" class="javax.swing.JLabel" binding="myServerField">
+      <component id="d113f" class="javax.swing.JLabel" binding="server">
         <constraints>
           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="http://"/>
+          <text value="https://"/>
         </properties>
       </component>
       <component id="d0bd9" class="javax.swing.JLabel">
@@ -46,10 +46,10 @@
           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Owner:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Owner"/>
         </properties>
       </component>
-      <component id="2d076" class="javax.swing.JLabel" binding="myOwnerField">
+      <component id="2d076" class="javax.swing.JLabel" binding="owner">
         <constraints>
           <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -62,10 +62,10 @@
           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Computer:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Computer"/>
         </properties>
       </component>
-      <component id="49959" class="javax.swing.JLabel" binding="myComputerField">
+      <component id="49959" class="javax.swing.JLabel" binding="computer">
         <constraints>
           <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -79,7 +79,7 @@
         </constraints>
         <properties>
           <labelFor value="51a30"/>
-          <text value="C&amp;omment:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Comment"/>
         </properties>
       </component>
       <scrollpane id="81d24" class="com.intellij.ui.components.JBScrollPane">
@@ -89,7 +89,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="51a30" class="javax.swing.JTextArea" binding="myCommentField">
+          <component id="51a30" class="javax.swing.JTextArea" binding="comment">
             <constraints/>
             <properties>
               <lineWrap value="true"/>
@@ -99,12 +99,12 @@
           </component>
         </children>
       </scrollpane>
-      <component id="c86d0" class="javax.swing.JLabel" binding="myWorkingFoldrersLabel">
+      <component id="c86d0" class="javax.swing.JLabel" binding="workingFoldersLabel">
         <constraints>
           <grid row="7" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="&amp;Working folders:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.WorkingFolders"/>
         </properties>
       </component>
       <vspacer id="d9c5a">
@@ -114,24 +114,16 @@
           </grid>
         </constraints>
       </vspacer>
-      <component id="126e7" class="javax.swing.JLabel" binding="myMessageLabel">
-        <constraints>
-          <grid row="9" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text value="Label"/>
-        </properties>
-      </component>
       <component id="472ab" class="javax.swing.JLabel">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <labelFor value="ad82b"/>
-          <text value="&amp;Location:"/>
+          <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="WorkspaceDialog.Location"/>
         </properties>
       </component>
-      <component id="aaa2b" class="com.intellij.openapi.ui.ComboBox" binding="myLocationField">
+      <component id="aaa2b" class="com.intellij.openapi.ui.ComboBox" binding="location">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -139,7 +131,7 @@
           <editable value="false"/>
         </properties>
       </component>
-      <grid id="9aea7" binding="myTableWrapper" custom-create="true" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="9aea7" binding="workingFolderPanel" custom-create="true" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="8" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>

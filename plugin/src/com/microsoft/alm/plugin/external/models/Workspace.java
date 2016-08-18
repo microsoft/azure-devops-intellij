@@ -55,12 +55,12 @@ public class Workspace {
     public static class Mapping {
         private final String serverPath;
         private final String localPath;
-        private final boolean isCloaked;
+        private final boolean cloaked;
 
         public Mapping(final String serverPath, final String localPath, final boolean isCloaked) {
             this.serverPath = serverPath;
             this.localPath = localPath;
-            this.isCloaked = isCloaked;
+            this.cloaked = isCloaked;
         }
 
         public String getLocalPath() {
@@ -72,7 +72,7 @@ public class Workspace {
         }
 
         public boolean isCloaked() {
-            return isCloaked;
+            return cloaked;
         }
     }
 }

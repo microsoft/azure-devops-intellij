@@ -493,4 +493,19 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CHECKIN_LINK_TEXT="Tfvc.Checkin.Link.Text";
     @NonNls
     public static final String KEY_TFVC_CHECKIN_STATUS="Tfvc.Checkin.Status";
+
+    //Workspace dialog
+    public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";
+    public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON="WorkspaceDialog.SaveButton";
+    public static final String KEY_WORKSPACE_DIALOG_LOADING="WorkspaceDialog.Loading";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_LOCAL_PATH_EMPTY="WorkspaceDialog.Errors.LocalPathEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_EMPTY="WorkspaceDialog.Errors.ServerPathEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_INVALID="WorkspaceDialog.Errors.ServerPathInvalid";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_NAME_EMPTY="WorkspaceDialog.Errors.NameEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_MAPPINGS_EMPTY="WorkspaceDialog.Errors.MappingsEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED="WorkspaceDialog.Errors.ContextFailed";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED="WorkspaceDialog.Errors.AuthenticationFailed";
+    public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_STATUS = "WorkspaceDialog.ColumnHeaders.Status";
+    public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_SERVER_PATH = "WorkspaceDialog.ColumnHeaders.ServerPath";
+    public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_LOCAL_PATH = "WorkspaceDialog.ColumnHeaders.LocalPath";
 }

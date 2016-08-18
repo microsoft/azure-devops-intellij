@@ -12,7 +12,10 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * This command only returns a partial workspace object that allows you to get the name and server.
+ * To get the entire workspace object you should call GetWorkspace with the workspace name.
+ */
 public class FindWorkspaceCommand extends Command<Workspace> {
     private final String localPath;
 
@@ -25,9 +28,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
-        if (StringUtils.isNotEmpty(localPath)) {
-            builder.add(localPath);
-        }
+        builder.add(localPath);
         return builder;
     }
 

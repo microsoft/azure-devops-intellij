@@ -718,9 +718,9 @@ public class ServerContextManager {
             final int index = trimmedUrl.lastIndexOf(UrlHelper.URL_SEPARATOR);
             if (index >= 0) {
                 // result0 is the server url without the collection name
-                result[0] = collectionUrl.substring(0, index + 1);
+                result[0] = trimmedUrl.substring(0, index + 1);
                 // result1 is just the collection name (no separators)
-                result[1] = collectionUrl.substring(index + 1);
+                result[1] = trimmedUrl.substring(index + 1);
             } else {
                 // We can't determine the collection name so leave it empty
                 result[0] = collectionUrl;

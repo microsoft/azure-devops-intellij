@@ -9,6 +9,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
+import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -21,9 +22,44 @@ import java.util.List;
  */
 public class CommandUtils {
 
-    public static Workspace getWorkspaceSynchronously(final ServerContext context, final Project project) {
+    /**
+     * This method will return just the workspace name or empty string (never null)
+     *
+     * @param context
+     * @param project
+     * @return
+     */
+    public static String getWorkspaceName(final ServerContext context, final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
         final FindWorkspaceCommand command = new FindWorkspaceCommand(context, project.getBasePath());
+        final Workspace workspace = command.runSynchronously();
+        if (workspace != null) {
+            return workspace.getName();
+        }
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * This method determines the workspace name from the project and then calls getWorkspace with the name.
+     *
+     * @param context
+     * @param project
+     * @return
+     */
+    public static Workspace getWorkspace(final ServerContext context, final Project project) {
+        final String workspaceName = getWorkspaceName(context, project);
+        return getWorkspace(context, workspaceName);
+    }
+
+    /**
+     * This method returns the fully filled out Workspace object.
+     *
+     * @param context
+     * @param workspaceName
+     * @return
+     */
+    public static Workspace getWorkspace(final ServerContext context, final String workspaceName) {
+        final GetWorkspaceCommand command = new GetWorkspaceCommand(context, workspaceName);
         return command.runSynchronously();
     }
 
