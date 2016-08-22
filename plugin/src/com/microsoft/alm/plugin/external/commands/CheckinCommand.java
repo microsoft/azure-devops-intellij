@@ -23,7 +23,6 @@ public class CheckinCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(CheckinCommand.class);
 
     private static final String CHECKIN_LINE_PREFIX = "Checking in";
-    private static final String CHANGESET_LINE_PREFIX = "Changeset";
     private static final String CHECKIN_FAILED_MSG = "No files checked in";
     private static final Pattern CHANGESET_NUMBER_PATTERN = Pattern.compile("#(\\d+)");
 

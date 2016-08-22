@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import java.util.List;
+
 /**
  * This class represents the data returned by the TF command line about a pending change.
  */
@@ -13,7 +15,7 @@ public class PendingChange {
     private final String owner;
     private final String date;
     private final String lock;
-    private final ServerStatusType changeType;
+    private final List<ServerStatusType> changeTypes;
     private final String workspace;
     private final String computer;
     private final boolean isCandidate;
@@ -32,7 +34,7 @@ public class PendingChange {
         this.owner = owner;
         this.date = date;
         this.lock = lock;
-        this.changeType = ServerStatusType.getServerStatusType(changeType);
+        this.changeTypes = ServerStatusType.getServerStatusTypes(changeType);
         this.workspace = workspace;
         this.computer = computer;
         this.isCandidate = isCandidate;
@@ -66,8 +68,8 @@ public class PendingChange {
         return lock;
     }
 
-    public ServerStatusType getChangeType() {
-        return changeType;
+    public List<ServerStatusType> getChangeTypes() {
+        return changeTypes;
     }
 
     public String getWorkspace() {

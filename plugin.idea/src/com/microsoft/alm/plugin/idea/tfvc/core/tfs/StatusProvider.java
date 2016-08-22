@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 // Note: if item is renamed (moved), same local item and pending change reported by server for source and target names (Jetbrains)
 
@@ -61,22 +64,24 @@ public class StatusProvider {
             return ServerStatus.Unversioned.INSTANCE;
         }
 
-        switch (pendingChange.getChangeType()) {
-            case ADD:
-                return new ServerStatus.ScheduledForAddition(pendingChange);
-            case DELETE:
-                return new ServerStatus.ScheduledForDeletion(pendingChange);
-            case EDIT:
-                return new ServerStatus.CheckedOutForEdit(pendingChange);
-            case RENAME:
-                return new ServerStatus.Renamed(pendingChange);
-            case UNDELETE:
-                return new ServerStatus.Undeleted(pendingChange);
-            case RENAME_EDIT:
-                return new ServerStatus.RenamedCheckedOut(pendingChange);
-            default:
-                logger.error("Unhandled status type: " + pendingChange.getChangeType().name());
-                return null;
+        final List<ServerStatusType> types = pendingChange.getChangeTypes();
+
+        // check the list of statuses for how to process the pending change
+        if (types.contains(ServerStatusType.ADD)) {
+            return new ServerStatus.ScheduledForAddition(pendingChange);
+        } else if (types.contains(ServerStatusType.EDIT) && types.contains(ServerStatusType.RENAME)) {
+            return new ServerStatus.RenamedCheckedOut(pendingChange);
+        } else if (types.contains(ServerStatusType.EDIT)) {
+            return new ServerStatus.CheckedOutForEdit(pendingChange);
+        } else if (types.contains(ServerStatusType.RENAME)) {
+            return new ServerStatus.Renamed(pendingChange);
+        } else if (types.contains(ServerStatusType.DELETE)) {
+            return new ServerStatus.ScheduledForDeletion(pendingChange);
+        } else if (types.contains(ServerStatusType.UNDELETE)) {
+            return new ServerStatus.Undeleted(pendingChange);
+        } else {
+            logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
+            return null;
         }
 
         // TODO: other scenarios that need to be considered that Jetbrains had
