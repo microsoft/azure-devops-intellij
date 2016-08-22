@@ -31,6 +31,8 @@ import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -242,6 +244,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             }
             final Command<List<String>> addCommand = new AddCommand(null, filesToAddPaths);
             final List<String> successfullyAdded = addCommand.runSynchronously();
+
+            // mark files as dirty so that they refresh in local changes tab
+            for (final String path : successfullyAdded) {
+                final VirtualFile file = VersionControlPath.getVirtualFile(path);
+                if (file != null && file.isValid()) {
+                    TfsFileUtil.markFileDirty(myVcs.getProject(), file);
+                }
+            }
 
             //check all files were added
             if (successfullyAdded.size() != filesToAddPaths.size()) {
