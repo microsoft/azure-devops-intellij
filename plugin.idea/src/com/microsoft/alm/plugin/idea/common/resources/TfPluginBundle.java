@@ -508,4 +508,8 @@ public class TfPluginBundle {
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_STATUS = "WorkspaceDialog.ColumnHeaders.Status";
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_SERVER_PATH = "WorkspaceDialog.ColumnHeaders.ServerPath";
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_LOCAL_PATH = "WorkspaceDialog.ColumnHeaders.LocalPath";
+    public static final String KEY_WORKSPACE_DIALOG_PROGRESS_TITLE = "WorkspaceDialog.Progress.Title";
+    public static final String KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE = "WorkspaceDialog.NotifySuccess.Title";
+    public static final String KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_MESSAGE = "WorkspaceDialog.NotifySuccess.Message";
+    public static final String KEY_WORKSPACE_DIALOG_NOTIFY_FAILURE_TITLE = "WorkspaceDialog.NotifyFailure.Title";
 }

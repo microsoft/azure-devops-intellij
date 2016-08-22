@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.ui.JBUI;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
@@ -120,7 +121,11 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
 
     @Override
     protected ValidationInfo doValidate() {
-        return validationListenerContainer.doValidate();
+        try {
+            return validationListenerContainer.doValidate();
+        } catch (final Throwable t) {
+            return new ValidationInfo(LocalizationServiceImpl.getInstance().getExceptionMessage(t));
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -31,7 +32,7 @@ public class GetWorkspaceCommand extends Command<Workspace> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add(workspaceName)
-                .add("/format:xml");
+                .add("-format:xml");
         return builder;
     }
 
@@ -51,20 +52,20 @@ public class GetWorkspaceCommand extends Command<Workspace> {
 
         final NodeList workspaceNodeList = super.evaluateXPath(stdout, "/workspaces/workspace");
         if (workspaceNodeList != null && workspaceNodeList.getLength() == 1) {
-            final NamedNodeMap workspaceAttributes = ((Element) workspaceNodeList.item(0)).getAttributes();
+            final NamedNodeMap workspaceAttributes = workspaceNodeList.item(0).getAttributes();
             // Get all the mappings for the workspace
             final NodeList mappingsNodeList = super.evaluateXPath(stdout, "/workspaces/workspace/working-folder");
             final List<Workspace.Mapping> mappings = new ArrayList<Workspace.Mapping>(mappingsNodeList.getLength());
             for (int i = 0; i < mappingsNodeList.getLength(); i++) {
-                final NamedNodeMap mappingAttributes = ((Element) mappingsNodeList.item(i)).getAttributes();
-                final String localPath = mappingAttributes.getNamedItem("local-item").getNodeValue();
-                final String depth = mappingAttributes.getNamedItem("depth").getNodeValue();
-                final boolean isCloaked = !StringUtils.equals(mappingAttributes.getNamedItem("type").getNodeValue(), "map");
-                String serverPath = mappingAttributes.getNamedItem("server-item").getNodeValue();
+                final NamedNodeMap mappingAttributes = mappingsNodeList.item(i).getAttributes();
+                final String localPath = getXPathAttributeValue(mappingAttributes, "local-item");
+                final String depth = getXPathAttributeValue(mappingAttributes, "depth");
+                final boolean isCloaked = !StringUtils.equals(getXPathAttributeValue(mappingAttributes, "type"), "map");
+                String serverPath = getXPathAttributeValue(mappingAttributes, "server-item");
                 if (!StringUtils.equals(depth, "full")) {
                     // The normal way to denote one level mappings (not full mappings) is to end the server path
                     // with a /*. This indicates that the mapping is not recursive to all subfolders.
-                    serverPath = serverPath + "/*";
+                    serverPath = WorkspaceHelper.getOneLevelServerPath(serverPath);
                 }
                 mappings.add(new Workspace.Mapping(serverPath, localPath, isCloaked));
             }

@@ -11,6 +11,8 @@ import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
+import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
@@ -77,5 +79,36 @@ public class CommandUtils {
     public static ChangeSet getLastHistoryEntryForAnyUser(final ServerContext context, final String localPath) {
         final List<ChangeSet> results = getHistoryCommand(context, localPath, null, 1, false, StringUtils.EMPTY);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * This command updates the properies of the workspace as well as the mappings.
+     * There are many commands that go into the update, not just a single call.
+     * If anything goes wrong, an exception will be thrown.
+     * Note: this method does NOT sync the workspace.
+     * @param context
+     * @param oldWorkspace
+     * @param newWorkspace
+     */
+    public static void updateWorkspace(final ServerContext context, final Workspace oldWorkspace, final Workspace newWorkspace) {
+        // No need to update the mappings if they are the same
+        if (WorkspaceHelper.areMappingsDifferent(oldWorkspace, newWorkspace)) {
+            // First remove the mappings that are no longer needed
+            for (final Workspace.Mapping m : WorkspaceHelper.getMappingsToRemove(oldWorkspace, newWorkspace)) {
+                final UpdateWorkspaceMappingCommand command = new UpdateWorkspaceMappingCommand(context, oldWorkspace.getName(), m, true);
+                command.runSynchronously();
+            }
+
+            // Now update the mappings to match the new workspace
+            for (final Workspace.Mapping m : WorkspaceHelper.getMappingsToChange(oldWorkspace, newWorkspace)) {
+                final UpdateWorkspaceMappingCommand command = new UpdateWorkspaceMappingCommand(context, oldWorkspace.getName(), m, false);
+                command.runSynchronously();
+            }
+        }
+
+        // Finally update the properties of the workspace
+        final UpdateWorkspaceCommand updateWorkspaceCommand = new UpdateWorkspaceCommand(context, oldWorkspace.getName(),
+                newWorkspace.getName(), newWorkspace.getComment(), null, null);
+        updateWorkspaceCommand.runSynchronously();
     }
 }

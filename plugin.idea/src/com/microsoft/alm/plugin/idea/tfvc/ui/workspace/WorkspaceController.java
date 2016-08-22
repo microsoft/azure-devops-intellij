@@ -22,12 +22,14 @@ public class WorkspaceController implements Observer, ActionListener {
     private final WorkspaceDialog dialog;
     private final WorkspaceModel model;
     private boolean suspendEvents = false;
+    private final Project project;
 
     public WorkspaceController(final Project project) {
         this(project, new WorkspaceDialog(project), new WorkspaceModel());
     }
 
     public WorkspaceController(final Project project, final WorkspaceDialog dialog, final WorkspaceModel model) {
+        this.project = project;
         this.dialog = dialog;
         this.dialog.addActionListener(this);
 
@@ -44,7 +46,9 @@ public class WorkspaceController implements Observer, ActionListener {
         updateModel();
 
         if (BaseDialog.CMD_OK.equals(e.getActionCommand())) {
-            model.saveWorkspace();
+            // Trigger the save workspace method
+            // (this method will do all the background work and notify the user of the result)
+            model.saveWorkspace(project);
         }
     }
 

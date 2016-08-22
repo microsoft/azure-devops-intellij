@@ -109,14 +109,14 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
 
     @Nullable
     protected String validate(final Row item) {
-        if (StringUtils.isEmpty(item.localPath)) {
-            return TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_LOCAL_PATH_EMPTY);
-        }
         if (StringUtils.isEmpty(item.serverPath)) {
             return TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_EMPTY);
         }
         if (!item.serverPath.startsWith(VcsHelper.TFVC_ROOT)) {
             return TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_INVALID);
+        }
+        if (StringUtils.isEmpty(item.localPath) && item.mappingType == MappingType.MAPPED) {
+            return TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_LOCAL_PATH_EMPTY);
         }
         return null;
     }

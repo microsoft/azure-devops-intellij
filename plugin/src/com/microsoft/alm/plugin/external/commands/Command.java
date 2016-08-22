@@ -13,6 +13,9 @@ import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -127,6 +130,8 @@ public abstract class Command<T> {
                 Throwable error = null;
                 T result = null;
                 try {
+                    //TODO there are some commands that write errors to stdout and simply return a non-zero exit code (i.e. when a workspace is not found by name)
+                    //TODO we may want to pass in the return code to the parse method or something like that to allow the command to inspect this info as well.
                     result = parseOutput(stdout.toString(), stderr.toString());
                     TfTool.throwBadExitCode(returnCode);
                 } catch (Throwable throwable) {
@@ -200,7 +205,19 @@ public abstract class Command<T> {
         throw new ToolParseFailureException();
     }
 
-    protected String[] getLines(String buffer) {
+    protected String getXPathAttributeValue(final NamedNodeMap attributeMap, final String attributeName) {
+        String value = StringUtils.EMPTY;
+        if (attributeMap != null) {
+            final Node node = attributeMap.getNamedItem(attributeName);
+            if (node != null) {
+                value = node.getNodeValue();
+            }
+        }
+
+        return value;
+    }
+
+    protected String[] getLines(final String buffer) {
         final String[] lines = buffer.replace("\r\n", "\n").split("\n");
         return lines;
     }

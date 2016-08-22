@@ -3,13 +3,21 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.progress.PerformInBackgroundOption;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
@@ -20,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.event.HyperlinkEvent;
 import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +53,9 @@ public class WorkspaceModel extends AbstractModel {
     private String server;
     private List<Workspace.Mapping> mappings;
 
+    private Workspace oldWorkspace;
+    private ServerContext currentServerContext;
+
     public WorkspaceModel() {
     }
 
@@ -61,8 +73,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setName(final String name) {
-        this.name = name;
-        super.setChangedAndNotify(PROP_NAME);
+        if (!StringUtils.equals(this.name, name)) {
+            this.name = name;
+            super.setChangedAndNotify(PROP_NAME);
+        }
     }
 
     public String getComputer() {
@@ -70,8 +84,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setComputer(final String computer) {
-        this.computer = computer;
-        super.setChangedAndNotify(PROP_COMPUTER);
+        if (!StringUtils.equals(this.computer, computer)) {
+            this.computer = computer;
+            super.setChangedAndNotify(PROP_COMPUTER);
+        }
     }
 
     public String getOwner() {
@@ -79,8 +95,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setOwner(final String owner) {
-        this.owner = owner;
-        super.setChangedAndNotify(PROP_OWNER);
+        if (!StringUtils.equals(this.owner, owner)) {
+            this.owner = owner;
+            super.setChangedAndNotify(PROP_OWNER);
+        }
     }
 
     public String getComment() {
@@ -88,8 +106,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setComment(final String comment) {
-        this.comment = comment;
-        super.setChangedAndNotify(PROP_COMMENT);
+        if (!StringUtils.equals(this.comment, comment)) {
+            this.comment = comment;
+            super.setChangedAndNotify(PROP_COMMENT);
+        }
     }
 
     public String getServer() {
@@ -97,8 +117,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setServer(final String server) {
-        this.server = server;
-        super.setChangedAndNotify(PROP_SERVER);
+        if (!StringUtils.equals(this.server, server)) {
+            this.server = server;
+            super.setChangedAndNotify(PROP_SERVER);
+        }
     }
 
     public List<Workspace.Mapping> getMappings() {
@@ -109,8 +131,10 @@ public class WorkspaceModel extends AbstractModel {
     }
 
     public void setMappings(@NotNull final List<Workspace.Mapping> mappings) {
-        this.mappings = mappings;
-        super.setChangedAndNotify(PROP_MAPPINGS);
+        if (WorkspaceHelper.areMappingsDifferent(this.mappings, mappings)) {
+            this.mappings = mappings;
+            super.setChangedAndNotify(PROP_MAPPINGS);
+        }
     }
 
     public ModelValidationInfo validate() {
@@ -143,22 +167,24 @@ public class WorkspaceModel extends AbstractModel {
                     }
 
                     logger.info("loadWorkspace: getting server context");
-                    final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
-                    if (context == null) {
+                    currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
+                    if (currentServerContext == null) {
                         logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
                         throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
                     }
 
                     logger.info("loadWorkspace: getting workspace");
-                    final Workspace workspace = CommandUtils.getWorkspace(context, repositoryContext.getName());
-                    if (workspace != null) {
+                    // It would be a bit more effecient here to pass the workspace name into the getWorkspace command.
+                    // However, when you change the name of the workspace that causes errors. So for now, we are not optimal.
+                    oldWorkspace = CommandUtils.getWorkspace(currentServerContext, project);
+                    if (oldWorkspace != null) {
                         logger.info("loadWorkspace: got workspace, setting fields");
-                        server = workspace.getServer();
-                        owner = workspace.getOwner();
-                        computer = workspace.getComputer();
-                        name = workspace.getName();
-                        comment = workspace.getComment();
-                        mappings = new ArrayList<Workspace.Mapping>(workspace.getMappings());
+                        server = oldWorkspace.getServer();
+                        owner = oldWorkspace.getOwner();
+                        computer = oldWorkspace.getComputer();
+                        name = oldWorkspace.getName();
+                        comment = oldWorkspace.getComment();
+                        mappings = new ArrayList<Workspace.Mapping>(oldWorkspace.getMappings());
                     } else {
                         // This shouldn't happen, so we will log this case, but not throw
                         logger.warn("loadWorkspace: workspace was returned as null");
@@ -180,6 +206,41 @@ public class WorkspaceModel extends AbstractModel {
         });
     }
 
-    public void saveWorkspace() {
+    public void saveWorkspace(final Project project) {
+        final ServerContext serverContext = currentServerContext;
+        final Workspace oldWorkspace = this.oldWorkspace;
+        final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
+
+        // Using IntelliJ's background framework here so the user can choose to wait or continue working
+        final Task.Backgroundable createPullRequestTask = new Task.Backgroundable(project,
+                TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_PROGRESS_TITLE),
+                true, PerformInBackgroundOption.DEAF) {
+            @Override
+            public void run(@NotNull final ProgressIndicator progressIndicator) {
+                try {
+                    //TODO show some progress to the user
+                    // provide some indication of progress (setting indeterminate didn't do anything
+                    CommandUtils.updateWorkspace(serverContext, oldWorkspace, newWorkspace);
+
+                    // Notify the user of success and provide a link to sync the workspace
+                    VcsNotifier.getInstance(project).notifyImportantInfo(
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE),
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_MESSAGE),
+                            new NotificationListener() {
+                                @Override
+                                public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
+                                    //TODO: Sync the workspace
+                                }
+                            });
+                } catch (final Throwable t) {
+                    //TODO on failure we could provide a link that reopened the dialog with the values they tried to save
+                    VcsNotifier.getInstance(project).notifyError(
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_FAILURE_TITLE),
+                            LocalizationServiceImpl.getInstance().getExceptionMessage(t));
+                }
+            }
+        };
+
+        createPullRequestTask.queue();
     }
 }

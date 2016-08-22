@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -78,6 +79,12 @@ public class TFSChangeProvider implements ChangeProvider {
         final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
 
         for (final FilePath root : roots) {
+            // if we get a change notification in the $tf folder, we need to just ignore it
+            if (StringUtils.containsIgnoreCase(root.getPath(), "$tf") ||
+                    StringUtils.containsIgnoreCase(root.getPath(), ".tf")) {
+                continue;
+            }
+
             // TODO: add the ability to pass multiple roots to the command line
             final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
             final List<PendingChange> changes = command.runSynchronously();
