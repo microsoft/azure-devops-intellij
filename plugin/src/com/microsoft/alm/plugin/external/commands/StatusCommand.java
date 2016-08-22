@@ -13,7 +13,12 @@ import org.w3c.dom.NodeList;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * This command returns the status of the workspace as a list of pending changes.
+ * NOTE: Currently this command does not support all of the options of the command line
+ *
+ *  status [/workspace:<value>] [/shelveset:<value>] [/format:brief|detailed|xml] [/recursive] [/user:<value>] [/nodetect] [<itemSpec>...]
+ */
 public class StatusCommand extends Command<List<PendingChange>> {
     private static final String CANDIDATE_TAG = "candidate-pending-changes";
 
@@ -42,7 +47,7 @@ public class StatusCommand extends Command<List<PendingChange>> {
      * <status>
      * <pending-changes/>
      * <candidate-pending-changes>
-     * <pending-change server-item="$/tfsTest_01/test.txt" version="0" owner="NORTHAMERICA\jpricket" date="2016-07-13T12:36:51.060-0400" lock="none" change-type="add" workspace="MyNewWorkspace2" computer="JPRICKET-DEV2" local-item="D:\tmp\test\test.txt"/>
+     * <pending-change server-item="$/tfsTest_01/test.txt" version="0" owner="jason" date="2016-07-13T12:36:51.060-0400" lock="none" change-type="add" workspace="MyNewWorkspace2" computer="JPRICKET-DEV2" local-item="D:\tmp\test\test.txt"/>
      * </candidate-pending-changes>
      * </status>
      */
@@ -53,22 +58,23 @@ public class StatusCommand extends Command<List<PendingChange>> {
         final NodeList nodes = super.evaluateXPath(stdout, "/status/*/pending-change");
 
         // Convert all the xpath nodes to pending change models
-        for (int i = 0; i < nodes.getLength(); i++) {
-            final NamedNodeMap attributes = nodes.item(i).getAttributes();
-            final boolean isCandidate = StringUtils.equalsIgnoreCase(nodes.item(i).getParentNode().getNodeName(), CANDIDATE_TAG);
-            changes.add(new PendingChange(
-                    attributes.getNamedItem("server-item").getNodeValue(),
-                    attributes.getNamedItem("local-item").getNodeValue(),
-                    attributes.getNamedItem("version").getNodeValue(),
-                    attributes.getNamedItem("owner").getNodeValue(),
-                    attributes.getNamedItem("date").getNodeValue(),
-                    attributes.getNamedItem("lock").getNodeValue(),
-                    attributes.getNamedItem("change-type").getNodeValue(),
-                    attributes.getNamedItem("workspace").getNodeValue(),
-                    attributes.getNamedItem("computer").getNodeValue(),
-                    isCandidate));
+        if (nodes != null) {
+            for (int i = 0; i < nodes.getLength(); i++) {
+                final NamedNodeMap attributes = nodes.item(i).getAttributes();
+                final boolean isCandidate = StringUtils.equalsIgnoreCase(nodes.item(i).getParentNode().getNodeName(), CANDIDATE_TAG);
+                changes.add(new PendingChange(
+                        attributes.getNamedItem("server-item").getNodeValue(),
+                        attributes.getNamedItem("local-item").getNodeValue(),
+                        attributes.getNamedItem("version").getNodeValue(),
+                        attributes.getNamedItem("owner").getNodeValue(),
+                        attributes.getNamedItem("date").getNodeValue(),
+                        attributes.getNamedItem("lock").getNodeValue(),
+                        attributes.getNamedItem("change-type").getNodeValue(),
+                        attributes.getNamedItem("workspace").getNodeValue(),
+                        attributes.getNamedItem("computer").getNodeValue(),
+                        isCandidate));
+            }
         }
-
         return changes;
     }
 }

@@ -13,7 +13,6 @@ import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -82,7 +81,7 @@ public abstract class Command<T> {
         if (context != null && context.getCollectionURI() != null) {
             builder.add("-collection:" + context.getCollectionURI().toString());
             if (context.getAuthenticationInfo() != null) {
-                builder.add("-login:" + context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword());
+                builder.addSecret("-login:" + context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword());
             }
         }
 
@@ -192,6 +191,10 @@ public abstract class Command<T> {
     public abstract T parseOutput(final String stdout, final String stderr);
 
     protected NodeList evaluateXPath(final String stdout, final String xpathQuery) {
+        if (StringUtils.isEmpty(stdout)) {
+            return null;
+        }
+
         final XPath xpath = XPathFactory.newInstance().newXPath();
         try {
             final Object result = xpath.evaluate(xpathQuery, new InputSource(new StringReader(stdout)), XPathConstants.NODESET);

@@ -22,9 +22,36 @@ public class UpdateWorkspaceCommand extends Command<String> {
     private final FileTime newFileTime;
     private final Permission newPermission;
 
-    public enum FileTime {CURRENT, CHECKIN}
+    public enum FileTime {
+        CURRENT,
+        CHECKIN;
 
-    public enum Permission {PRIVATE, PUBLIC_LIMITED, PUBLIC}
+        @Override
+        public String toString() {
+            if (this == FileTime.CHECKIN) {
+                return "checkin";
+            } else {
+                return "current";
+            }
+        }
+    }
+
+    public enum Permission {
+        PRIVATE,
+        PUBLIC_LIMITED,
+        PUBLIC;
+
+        @Override
+        public String toString() {
+            if (this == Permission.PRIVATE) {
+                return "Private";
+            } else if (this == Permission.PUBLIC) {
+                return "Public";
+            } else {
+                return "PublicLimited";
+            }
+        }
+    }
 
     /**
      * Constructor
@@ -55,32 +82,16 @@ public class UpdateWorkspaceCommand extends Command<String> {
             builder.add("-comment:" + newComment);
         }
         if (newFileTime != null) {
-            builder.add("-filetime:" + getFileTimeValue());
+            builder.add("-filetime:" + newFileTime.toString());
         }
         if (newPermission != null) {
-            builder.add("-permission:" + getPermissionValue());
+            builder.add("-permission:" + newPermission.toString());
         }
 
         return builder;
     }
 
-    private String getFileTimeValue() {
-        if (newFileTime == FileTime.CHECKIN) {
-            return "checkin";
-        } else {
-            return "current";
-        }
-    }
 
-    private String getPermissionValue() {
-        if (newPermission == Permission.PRIVATE) {
-            return "Private";
-        } else if (newPermission == Permission.PUBLIC) {
-            return "Public";
-        } else {
-            return "PublicLimited";
-        }
-    }
 
     /**
      * There is no useful output from this command unless there is an error. This method parses the error and throws if

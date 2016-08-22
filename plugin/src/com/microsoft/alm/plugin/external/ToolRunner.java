@@ -3,7 +3,9 @@
 
 package com.microsoft.alm.plugin.external;
 
+import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class is used to run an external command line tool and listen to the output.
@@ -100,7 +103,7 @@ public class ToolRunner {
                 builder.append(arg);
                 builder.append(" ");
             }
-            return builder.toString();
+            return builder.toString().trim();
         }
     }
 
@@ -113,19 +116,21 @@ public class ToolRunner {
         logger.info("ToolRunner.start: toolLocation = " + toolLocation);
         logger.info("ToolRunner.start: arguments = " + argumentBuilder.toString());
 
-        // Create the process builder from the tool location and all the arguments
-        final ProcessBuilder pb = new ProcessBuilder(argumentBuilder.build(toolLocation));
         try {
-            toolProcess = pb.start();
+            SettableFuture<Boolean> standardOutputFlushed = SettableFuture.create();
+            SettableFuture<Boolean> standardErrorFlushed = SettableFuture.create();
+
+            // Create and start the process from the tool location and all the arguments
+            toolProcess = ProcessHelper.startProcess(argumentBuilder.build(toolLocation));
             if (listener != null) {
                 // We have a listener object so create the listener threads and hook up the listener
                 final InputStream stderr = toolProcess.getErrorStream();
                 final InputStream stdout = toolProcess.getInputStream();
-                standardErrorProcessor = new StreamProcessor(stderr, true, listener);
+                standardErrorProcessor = new StreamProcessor(stderr, true, listener, standardErrorFlushed);
                 standardErrorProcessor.start();
-                standardOutProcessor = new StreamProcessor(stdout, false, listener);
+                standardOutProcessor = new StreamProcessor(stdout, false, listener, standardOutputFlushed);
                 standardOutProcessor.start();
-                processWaiter = new ProcessWaiter(toolProcess, listener);
+                processWaiter = new ProcessWaiter(toolProcess, listener, standardErrorFlushed, standardOutputFlushed);
                 processWaiter.start();
             }
             return toolProcess;
@@ -165,15 +170,19 @@ public class ToolRunner {
      * This internal class is used to manage the thread that waits on the process to finish.
      * It takes in the process to wait on and the listener to issue callbacks to.
      */
-    private class ProcessWaiter extends Thread {
+    private static class ProcessWaiter extends Thread {
         private final Process process;
         private final Listener listener;
+        private final SettableFuture<Boolean> errorsFlushed;
+        private final SettableFuture<Boolean> outputFlushed;
 
-        public ProcessWaiter(final Process process, final Listener listener) {
+        public ProcessWaiter(final Process process, final Listener listener, final SettableFuture<Boolean> errorsFlushed, final SettableFuture<Boolean> outputFlushed) {
             ArgumentHelper.checkNotNull(process, "process");
             ArgumentHelper.checkNotNull(listener, "listener");
             this.process = process;
             this.listener = listener;
+            this.errorsFlushed = errorsFlushed;
+            this.outputFlushed = outputFlushed;
         }
 
         @Override
@@ -182,8 +191,10 @@ public class ToolRunner {
             try {
                 // Wait for the process to finish
                 process.waitFor();
+                // Wait for the output streams to be flushed
+                errorsFlushed.get(30, TimeUnit.SECONDS);
+                outputFlushed.get(30, TimeUnit.SECONDS);
                 // Call the completed event on the listener with the exit code
-                // Note that all the standard output/error may not have finished
                 listener.completed(process.exitValue());
             } catch (Throwable e) {
                 logger.error("Failed to wait for process exit.", e);
@@ -207,18 +218,21 @@ public class ToolRunner {
      * The constructor takes in the stream to listen to, what kind of stream it is, and the listener to
      * issue callbacks to.
      */
-    private class StreamProcessor extends Thread {
+    private static class StreamProcessor extends Thread {
 
         private final InputStream stream;
         private final boolean isStandardError;
         private final Listener listener;
+        private final SettableFuture<Boolean> flushed;
 
-        public StreamProcessor(InputStream stream, boolean isStandardError, Listener listener) {
+        public StreamProcessor(final InputStream stream, final boolean isStandardError, final Listener listener, final SettableFuture<Boolean> flushed) {
             ArgumentHelper.checkNotNull(stream, "stream");
             ArgumentHelper.checkNotNull(listener, "listener");
+            ArgumentHelper.checkNotNull(flushed, "flushed");
             this.stream = stream;
             this.isStandardError = isStandardError;
             this.listener = listener;
+            this.flushed = flushed;
         }
 
         @Override
@@ -248,6 +262,7 @@ public class ToolRunner {
                     if (bufferedReader != null) {
                         bufferedReader.close();
                     }
+                    flushed.set(true);
                 } catch (Throwable e) {
                     logger.error("Failed to close buffer.", e);
                     listener.processException(e);

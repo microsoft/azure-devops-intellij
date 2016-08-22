@@ -87,6 +87,9 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
         Assert.assertEquals(0, model.getModelForView().getRowCount());
     }
 
+    //TODO: FLAKY TEST
+    //TODO: This test calls createBranch which does work on another thread. We should be waiting for the other thread to
+    //TODO: finish or forcing this to be synchronous while testing.
     @Test
     public void testCreateBranch_Success() throws Exception {
         setupBranchCreate(true, "branchName", true);

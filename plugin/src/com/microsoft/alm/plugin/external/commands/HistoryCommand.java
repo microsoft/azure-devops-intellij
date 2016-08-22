@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
@@ -18,6 +19,8 @@ import java.util.List;
 
 /**
  * Use this command to get the history of any workspace item.
+ *
+ * history [/version:<value>] [/stopafter:<value>] [/recursive] [/user:<value>] [/format:brief|detailed|xml] [/slotmode] [/itemmode] <itemSpec>
  */
 public class HistoryCommand extends Command<List<ChangeSet>> {
     private final String localPath;
@@ -29,6 +32,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
     public HistoryCommand(final ServerContext context, final String localPath, final String version,
                           final int stopAfter, final boolean recursive, final String user) {
         super("history", context);
+        ArgumentHelper.checkNotEmptyString(localPath);
         this.localPath = localPath;
         this.version = version;
         this.user = user;
@@ -52,9 +56,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
         if (StringUtils.isNotEmpty(version)) {
             builder.add("-version:" + version);
         }
-        if (StringUtils.isNotEmpty(localPath)) {
-            builder.add(localPath);
-        }
+        builder.add(localPath);
         return builder;
     }
 
@@ -81,40 +83,41 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
         final NodeList nodes = super.evaluateXPath(stdout, "/history/changeset");
 
         // Convert all the xpath nodes to changeset models
-        for (int i = 0; i < nodes.getLength(); i++) {
-            final Element changeset = (Element) nodes.item(i);
+        if (nodes != null) {
+            for (int i = 0; i < nodes.getLength(); i++) {
+                final Element changeset = (Element) nodes.item(i);
 
-            // Read comment element
-            final NodeList commentNodes = changeset.getElementsByTagName("comment");
-            final String comment;
-            if (commentNodes.getLength() == 1) {
-                comment = commentNodes.item(0).getTextContent();
-            } else {
-                comment = "";
+                // Read comment element
+                final NodeList commentNodes = changeset.getElementsByTagName("comment");
+                final String comment;
+                if (commentNodes.getLength() == 1) {
+                    comment = commentNodes.item(0).getTextContent();
+                } else {
+                    comment = "";
+                }
+
+                // Gather pending changes
+                final List<PendingChange> changes = new ArrayList<PendingChange>(100);
+                final NodeList childNodes = changeset.getElementsByTagName("item");
+                for (int j = 0; j < childNodes.getLength(); j++) {
+                    final Node child = childNodes.item(i);
+                    // Assume this is a change
+                    final NamedNodeMap attributes = child.getAttributes();
+                    changes.add(new PendingChange(
+                            attributes.getNamedItem("server-item").getNodeValue(),
+                            attributes.getNamedItem("change-type").getNodeValue()));
+                }
+
+                final NamedNodeMap attributes = changeset.getAttributes();
+                changeSets.add(new ChangeSet(
+                        attributes.getNamedItem("id").getNodeValue(),
+                        attributes.getNamedItem("owner").getNodeValue(),
+                        attributes.getNamedItem("committer").getNodeValue(),
+                        attributes.getNamedItem("date").getNodeValue(),
+                        comment,
+                        changes));
             }
-
-            // Gather pending changes
-            final List<PendingChange> changes = new ArrayList<PendingChange>(100);
-            final NodeList childNodes = changeset.getElementsByTagName("item");
-            for (int j = 0; j < childNodes.getLength(); j++) {
-                final Node child = childNodes.item(i);
-                // Assume this is a change
-                final NamedNodeMap attributes = child.getAttributes();
-                changes.add(new PendingChange(
-                        attributes.getNamedItem("server-item").getNodeValue(),
-                        attributes.getNamedItem("change-type").getNodeValue()));
-            }
-
-            final NamedNodeMap attributes = changeset.getAttributes();
-            changeSets.add(new ChangeSet(
-                    attributes.getNamedItem("id").getNodeValue(),
-                    attributes.getNamedItem("owner").getNodeValue(),
-                    attributes.getNamedItem("committer").getNodeValue(),
-                    attributes.getNamedItem("date").getNodeValue(),
-                    comment,
-                    changes));
         }
-
         return changeSets;
     }
 }
