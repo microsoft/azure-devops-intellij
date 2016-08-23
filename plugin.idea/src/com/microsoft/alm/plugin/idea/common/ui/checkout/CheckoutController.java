@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -33,14 +33,14 @@ public class CheckoutController implements Observer {
     public final static int TAB_VSO = 0;
     public final static int TAB_TFS = 1;
 
-    public CheckoutController(final Project project, final CheckoutProvider.Listener listener) {
+    public CheckoutController(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel) {
         this(new BaseDialogImpl(project,
                         TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
-                        TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_CLONE_BUTTON),
+                        specificCheckoutModel.getButtonText(),
                         TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
-                new CheckoutPageImpl(new VsoLoginForm(), new CheckoutForm(true)),
-                new CheckoutPageImpl(new TfsLoginForm(), new CheckoutForm(false)),
-                new CheckoutModel(project, listener));
+                new CheckoutPageImpl(new VsoLoginForm(), new CheckoutForm(true, specificCheckoutModel.getRepositoryType())),
+                new CheckoutPageImpl(new TfsLoginForm(), new CheckoutForm(false, specificCheckoutModel.getRepositoryType())),
+                new CheckoutModel(project, listener, specificCheckoutModel));
     }
 
     // This constructor is here for tests to use with mocked pages

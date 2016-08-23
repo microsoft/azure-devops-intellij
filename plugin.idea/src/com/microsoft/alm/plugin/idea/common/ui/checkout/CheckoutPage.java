@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.common.ui.common.FocusableTabPage;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
@@ -22,6 +22,10 @@ public interface CheckoutPage extends FocusableTabPage {
     void setLoading(boolean loading);
 
     void setAuthenticating(boolean authenticating);
+
+    void setAdvanced(boolean advanced);
+
+    boolean getAdvanced();
 
     void setRepositoryFilter(String filter);
 

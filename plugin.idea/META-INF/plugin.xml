@@ -61,6 +61,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <appStarter implementation="com.microsoft.alm.plugin.idea.common.starters.VstsStarter"/>
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.git.extensions.GitCheckoutProvider"/>
+        <checkoutProvider implementation="com.microsoft.alm.plugin.idea.tfvc.extensions.TfvcCheckoutProvider"/>
         <!-- TODO: can tabName be localized ?-->
         <changesViewContent className="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
         <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>

@@ -1,18 +1,19 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockCheckoutPageModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockServerContext;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,12 +32,12 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     public void testConstructor() {
 
         // all combinations should succeed
-        CheckoutPageModel pm1 = new MockCheckoutPageModel(null, ServerContextTableModel.VSO_REPO_COLUMNS);
-        CheckoutPageModel pm2 = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
-        CheckoutPageModel pm3 = new MockCheckoutPageModel(new CheckoutModel(null, null), new ServerContextTableModel.Column[0]);
+        CheckoutPageModel pm1 = new MockCheckoutPageModel(null, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
+        CheckoutPageModel pm2 = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
+        CheckoutPageModel pm3 = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), new ServerContextTableModel.Column[0]);
 
         // Make sure default values are set correctly
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(CheckoutPageModel.DEFAULT_SOURCE_PATH, pm.getParentDirectory());
         Assert.assertTrue(pm.getTableModel() != null);
         Assert.assertTrue(pm.getTableSelectionModel() != null);
@@ -47,8 +48,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testObservable() {
-        final CheckoutModel m = new CheckoutModel(null, null);
-        CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_REPO_COLUMNS);
+        final CheckoutModel m = new CheckoutModel(null, null, new GitCheckoutModel());
+        CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         MockObserver observer = new MockObserver((Observable) pm);
         MockObserver observer1 = new MockObserver(m);
 
@@ -153,8 +154,8 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testValidate() {
-        final CheckoutModel m = new CheckoutModel(null, null);
-        CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_REPO_COLUMNS);
+        final CheckoutModel m = new CheckoutModel(null, null, new GitCheckoutModel());
+        CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
 
         // The model is empty right now. So, all properties are missing.
         // Will call validate and fill in each property as we go
@@ -235,13 +236,13 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     @Test
     public void testGetColumnName() {
         // First test the VSO columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_REPO_COLUMN), pm.getTableModel().getColumnName(0));
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_PROJECT_COLUMN), pm.getTableModel().getColumnName(1));
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_ACCOUNT_COLUMN), pm.getTableModel().getColumnName(2));
 
         // Now check the TFS columns
-        pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
+        pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_REPO_COLUMN), pm.getTableModel().getColumnName(0));
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_PROJECT_COLUMN), pm.getTableModel().getColumnName(1));
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_COLLECTION_COLUMN), pm.getTableModel().getColumnName(2));
@@ -252,7 +253,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testGotoLink() {
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         pm.gotoLink(null);
         pm.gotoLink("");
     }
@@ -262,7 +263,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testErrors() {
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(0, pm.getErrors().size());
         Assert.assertEquals(false, pm.hasErrors());
 
@@ -306,7 +307,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testServerName() {
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals("", pm.getServerName());
 
         // full server url
@@ -331,7 +332,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String projectName2 = "project2";
 
         // Construct the model and verify the number of columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
@@ -370,7 +371,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String projectName2 = "project2";
 
         // Construct the model and verify the number of columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
@@ -412,7 +413,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String repoUrl2 = "repoUrl2";
 
         // Construct the model and verify the number of columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
@@ -462,7 +463,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String repoName4 = "repo4";
 
         // Construct the model and verify the number of columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.VSO_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
@@ -502,7 +503,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String repoName2 = "repo2";
 
         // Construct the model and verify the number of columns
-        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
+        CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects
@@ -582,7 +583,7 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
         final String repoName2 = "repo2";
 
         // Construct the model and verify the number of columns
-        MockCheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null), ServerContextTableModel.TFS_REPO_COLUMNS);
+        MockCheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.TFS_GIT_REPO_COLUMNS);
         Assert.assertEquals(3, pm.getTableModel().getColumnCount());
 
         // Create the mock context and other objects

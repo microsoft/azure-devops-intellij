@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.idea.common.ui.common;
 
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.LoginForm;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.CheckoutPageModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutPageModel;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.JComponent;

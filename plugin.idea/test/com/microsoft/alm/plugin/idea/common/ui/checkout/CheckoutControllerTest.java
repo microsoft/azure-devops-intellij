@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockBaseDialog;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockCheckoutModel;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockCheckoutPage;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockBaseDialog;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPage;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import org.junit.Assert;

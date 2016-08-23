@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout.mocks;
+package com.microsoft.alm.plugin.idea.common.ui.checkout.mocks;
 
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.CheckoutModel;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.CheckoutPageModelImpl;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutPageModelImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import org.apache.commons.lang.StringUtils;

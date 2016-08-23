@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
@@ -10,6 +10,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.SwingHelper;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.NonNls;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -57,7 +59,9 @@ public class CheckoutForm implements BasicForm {
     private BusySpinnerPanel busySpinner;
     private JScrollPane repositoryTableScrollPane;
     private HelpPanel helpPanel;
+    private JCheckBox advancedCheckBox;
     private boolean initialized = false;
+    private RepositoryContext.Type repositoryType;
     private Timer timer;
 
     @NonNls
@@ -69,7 +73,8 @@ public class CheckoutForm implements BasicForm {
     @NonNls
     public static final String CMD_GOTO_SPS_PROFILE = "gotoSPSProfile";
 
-    public CheckoutForm(final boolean vsoSelected) {
+    public CheckoutForm(final boolean vsoSelected, final RepositoryContext.Type repositoryType) {
+        this.repositoryType = repositoryType;
         // The following call is required to initialize the controls on the form
         // DO NOT MOVE THIS CALL
         $$$setupUI$$$();
@@ -147,6 +152,16 @@ public class CheckoutForm implements BasicForm {
             });
 
             repositoryTableScrollPane.setMinimumSize(new Dimension(JBUI.scale(200), JBUI.scale(70)));
+
+            // Initialize the advanced button (only used for TFVC right now)
+            advancedCheckBox.setSelected(false);
+            if (repositoryType == RepositoryContext.Type.TFVC) {
+                advancedCheckBox.setVisible(true);
+                advancedCheckBox.setText(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TFVC_ADVANCED));
+            } else {
+                // There are no advanced features for our Git checkout dialog
+                advancedCheckBox.setVisible(false);
+            }
 
             initialized = true;
         }
@@ -242,6 +257,14 @@ public class CheckoutForm implements BasicForm {
         }
     }
 
+    public boolean isAdvanced() {
+        return advancedCheckBox.isSelected();
+    }
+
+    public void setAdvanced(final boolean advanced) {
+        advancedCheckBox.setSelected(advanced);
+    }
+
     private void createUIComponents() {
         // Create user account panel
         userAccountPanel = new UserAccountPanel();
@@ -274,7 +297,7 @@ public class CheckoutForm implements BasicForm {
     private void $$$setupUI$$$() {
         createUIComponents();
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(10, 3, new Insets(0, 0, 0, 0), -1, -1));
         contentPanel.setName("");
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoCheckoutForm.SelectRepository"));
@@ -313,6 +336,9 @@ public class CheckoutForm implements BasicForm {
         helpPanel.setHelpText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.helpText"));
         helpPanel.setPopupText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.Instructions"));
         contentPanel.add(helpPanel, new GridConstraints(4, 0, 1, 3, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        advancedCheckBox = new JCheckBox();
+        advancedCheckBox.setText("example text");
+        contentPanel.add(advancedCheckBox, new GridConstraints(9, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

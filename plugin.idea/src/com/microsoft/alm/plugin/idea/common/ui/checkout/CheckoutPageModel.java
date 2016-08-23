@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.common.ui.common.LoginPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
@@ -15,6 +15,7 @@ import javax.swing.ListSelectionModel;
 public interface CheckoutPageModel extends LoginPageModel {
     String PROP_DIRECTORY_NAME = "directoryName";
     String PROP_LOADING = "loading";
+    String PROP_ADVANCED = "advanced";
     String PROP_PARENT_DIR = "parentDirectory";
     String PROP_REPO_FILTER = "repositoryFilter";
     String PROP_REPO_TABLE = "repoTable";
@@ -34,6 +35,10 @@ public interface CheckoutPageModel extends LoginPageModel {
     void setRepositoryFilter(String repositoryFilter);
 
     boolean isLoading();
+
+    void setAdvanced(boolean advanced);
+
+    boolean isAdvanced();
 
     void setLoading(boolean loading);
 

@@ -98,7 +98,7 @@ public abstract class Command<T> {
         final StringBuilder stdout = new StringBuilder();
         final StringBuilder stderr = new StringBuilder();
         ArgumentHelper.checkNotNull(listener, "listener");
-        final ToolRunner runner = new ToolRunner(TfTool.getLocation(), getArgumentBuilder());
+        final ToolRunner runner = new ToolRunner(TfTool.getValidLocation(), getArgumentBuilder());
         runner.start(new ToolRunner.Listener() {
             @Override
             public void processStandardOutput(final String line) {

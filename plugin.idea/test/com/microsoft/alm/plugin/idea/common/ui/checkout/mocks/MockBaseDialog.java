@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout.mocks;
+package com.microsoft.alm.plugin.idea.common.ui.checkout.mocks;
 
 import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;

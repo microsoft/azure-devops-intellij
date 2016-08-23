@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
@@ -18,7 +17,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import git4idea.commands.Git;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.ListSelectionModel;
@@ -36,6 +34,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     private CheckoutModel parentModel;
     private boolean loading = false;
     private boolean cloneEnabled = false;
+    private boolean advanced = false;
     //default values for Strings should be "" rather than null.
     private String parentDirectory = "";
     private String directoryName = "";
@@ -144,6 +143,19 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     }
 
     @Override
+    public void setAdvanced(final boolean advanced) {
+        if (this.advanced != advanced) {
+            this.advanced = advanced;
+            setChangedAndNotify(PROP_ADVANCED);
+        }
+    }
+
+    @Override
+    public boolean isAdvanced() {
+        return advanced;
+    }
+
+    @Override
     public void setLoading(final boolean loading) {
         if (this.loading != loading) {
             this.loading = loading;
@@ -243,7 +255,6 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
         final ModelValidationInfo validationInfo = validate();
         if (validationInfo == null) {
             final ServerContext context = getSelectedContext();
-            final String gitRepositoryStr = context.getUsableGitUrl();
 
             // The base LoginPageModel manages the context for us
             super.completeSignIn(context);
@@ -251,19 +262,16 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
             final VirtualFile destinationParent = LocalFileSystem.getInstance().findFileByIoFile(
                     new File(getParentDirectory()));
 
-            final Git git = ServiceManager.getService(Git.class);
-            git4idea.checkout.GitCheckoutProvider.clone(getParentModel().getProject(), git, getParentModel().getListener(),
-                    destinationParent,
-                    gitRepositoryStr,
-                    getDirectoryName(),
-                    getParentDirectory());
+            // Do the specific checkout for this VCS provider (Git or TFVC)
+            parentModel.doCheckout(getParentModel().getProject(), getParentModel().getListener(),
+                    context, destinationParent, getDirectoryName(), getParentDirectory(), isAdvanced());
 
             // Save parent directory for next time
             PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_REPO_ROOT, getParentDirectory());
 
             // TODO: need a way to tell if/when the clone actually succeeded or failed
             // Add Telemetry for a successful clone
-            final String action = "clone";
+            final String action = parentModel.getTelemetryAction();
             TfsTelemetryHelper.getInstance().sendEvent(action, new TfsTelemetryHelper.PropertyMapBuilder()
                     .currentOrActiveContext(context)
                     .actionName(action)
@@ -309,7 +317,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
                 if (!e.getValueIsAdjusting()) {
                     final ServerContext row = repositoryTableModel.getSelectedContext();
                     // Get the repository name and set the directory name to match
-                    final String repositoryName = (row != null && row.getGitRepository() != null) ? row.getGitRepository().getName() : "";
+                    final String repositoryName = parentModel.getRepositoryName(row);
                     setDirectoryName(repositoryName);
                 }
             }
