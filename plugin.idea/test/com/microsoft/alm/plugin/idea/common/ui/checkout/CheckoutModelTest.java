@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
+import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,7 +18,7 @@ public class CheckoutModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testConstructor() {
-        CheckoutModel cm = new CheckoutModel(null, null);
+        CheckoutModel cm = new CheckoutModel(null, null, new GitCheckoutModel());
         Assert.assertTrue(cm.getTfsModel() != null);
         Assert.assertTrue(cm.getVsoModel() != null);
     }
@@ -27,7 +28,7 @@ public class CheckoutModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testObservable() {
-        CheckoutModel cm = new CheckoutModel(null, null);
+        CheckoutModel cm = new CheckoutModel(null, null, new GitCheckoutModel());
         MockObserver observer = new MockObserver(cm);
 
         // Change vso selected and make sure that we get notified

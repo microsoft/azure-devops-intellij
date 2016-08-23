@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.tools;
 import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.sun.jna.Platform;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 
@@ -19,12 +20,31 @@ public class TfTool {
     /**
      * This method returns the path to the TF command line program.
      * It relies on the TF_HOME env var to be set.
+     * This method will throw if no valid path exists.
+     */
+    public static String getValidLocation() {
+        // Get the home location for TF
+        final String location = getLocation();
+        if (location == null) {
+            // TF_HOME not set
+            throw new ToolException(ToolException.KEY_TF_HOME_NOT_SET);
+        } else if (StringUtils.isEmpty(location)) {
+            // No program was found in TF_HOME folder
+            throw new ToolException(ToolException.KEY_TF_EXE_NOT_FOUND);
+        } else {
+            return location;
+        }
+    }
+
+    /**
+     * This method returns the path to the TF command line program.
+     * it doesn't throw
      */
     public static String getLocation() {
         // Get the home location for TF
         final String home = System.getenv("TF_HOME");
         if (home == null) {
-            throw new ToolException(ToolException.KEY_TF_HOME_NOT_SET);
+            return null;
         }
 
         final String[] filenames = Platform.isWindows() ? TF_WINDOWS_PROGRAMS : TF_OTHER_PROGRAMS;
@@ -38,7 +58,7 @@ public class TfTool {
         }
 
         // No program was found in that folder
-        throw new ToolException(ToolException.KEY_TF_EXE_NOT_FOUND);
+        return StringUtils.EMPTY;
     }
 
     /**

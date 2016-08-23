@@ -9,9 +9,10 @@ import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.CheckoutModel;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.VsoCheckoutPageModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
+import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.security.util.Debug;
@@ -38,7 +39,7 @@ public class CheckoutTest extends L2Test {
             public void checkoutCompleted() {
                 checkoutCompleted.set(true);
             }
-        });
+        }, new GitCheckoutModel());
 
         // Create a temp folder for the clone
         File tempFolder = createTempDirectory();

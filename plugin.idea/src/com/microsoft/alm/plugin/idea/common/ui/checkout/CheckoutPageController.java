@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractController;
@@ -53,6 +53,9 @@ class CheckoutPageController extends AbstractController {
         }
         if (arg == null || arg.equals(CheckoutPageModel.PROP_LOADING)) {
             page.setLoading(model.isLoading());
+        }
+        if (arg == null || arg.equals(CheckoutPageModel.PROP_ADVANCED)) {
+            page.setAdvanced(model.isAdvanced());
         }
         if (arg == null || arg.equals(LoginPageModel.PROP_AUTHENTICATING)) {
             page.setAuthenticating(model.isAuthenticating());
@@ -115,5 +118,6 @@ class CheckoutPageController extends AbstractController {
         model.setDirectoryName(page.getDirectoryName());
         model.setRepositoryFilter(page.getRepositoryFilter());
         model.setServerName(page.getServerName());
+        model.setAdvanced(page.getAdvanced());
     }
 }

@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.ui.common.LookupHelper;
@@ -23,12 +24,23 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(CheckoutPageModelImpl.class);
 
     private AuthenticationProvider authenticationProvider;
+    private final ServerContextLookupOperation.ContextScope scope;
 
     public TfsCheckoutPageModel(final CheckoutModel checkoutModel) {
-        super(checkoutModel, ServerContextTableModel.TFS_REPO_COLUMNS);
+        super(checkoutModel,
+                checkoutModel.getRepositoryType() == RepositoryContext.Type.GIT ?
+                        ServerContextTableModel.TFS_GIT_REPO_COLUMNS :
+                        ServerContextTableModel.TFS_TFVC_REPO_COLUMNS);
 
         setConnected(false);
         setAuthenticating(false);
+
+        // Check the repository type to get the SCOPE of the query
+        // Git => repository scope
+        // TFVC => project scope (TFVC repositories are not separate from the team projects)
+        scope = (checkoutModel.getRepositoryType() == RepositoryContext.Type.GIT) ?
+                ServerContextLookupOperation.ContextScope.REPOSITORY :
+                ServerContextLookupOperation.ContextScope.PROJECT;
 
         //check if the url is a TFS server url or team services account url
         if (!UrlHelper.isTeamServicesUrl(getServerName())) {
@@ -41,7 +53,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                     setServerNameInternal(authenticatedContext.getServerUri().toString());
                     LookupHelper.loadTfsContexts(this, this,
                             authenticationProvider, getRepositoryProvider(),
-                            ServerContextLookupOperation.ContextScope.REPOSITORY);
+                            scope);
                 }
             }
         } else {
@@ -50,7 +62,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                 setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getRepositoryProvider(),
-                        ServerContextLookupOperation.ContextScope.REPOSITORY);
+                        scope);
             }
         }
 
@@ -74,12 +86,12 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
             authenticationProvider = TfsAuthenticationProvider.getInstance();
             LookupHelper.authenticateAndLoadTfsContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
-                    ServerContextLookupOperation.ContextScope.REPOSITORY);
+                    scope);
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
             LookupHelper.authenticateAndLoadVsoContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
-                    ServerContextLookupOperation.ContextScope.REPOSITORY);
+                    scope);
         }
     }
 }

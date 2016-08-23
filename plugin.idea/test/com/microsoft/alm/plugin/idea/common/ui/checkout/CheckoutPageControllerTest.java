@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockCheckoutPage;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockCheckoutPageModel;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPage;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.idea.common.ui.controls.UserAccountPanel;
@@ -23,7 +23,7 @@ public class CheckoutPageControllerTest extends IdeaAbstractTest {
      */
     @Test
     public void testActionPerformed() {
-        MockCheckoutPageModel tfsModel = new MockCheckoutPageModel(null, ServerContextTableModel.VSO_REPO_COLUMNS);
+        MockCheckoutPageModel tfsModel = new MockCheckoutPageModel(null, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         MockCheckoutPage tfsPage = new MockCheckoutPage();
         CheckoutPageController tcc = new CheckoutPageController(null, tfsModel, tfsPage);
 

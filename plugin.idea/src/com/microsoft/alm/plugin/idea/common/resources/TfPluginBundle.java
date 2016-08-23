@@ -40,6 +40,10 @@ public class TfPluginBundle {
     public static final String KEY_TF_GIT = "Providers.TfGitCheckoutProvider";
     @NonNls
     public static final String KEY_GIT_NOT_CONFIGURED = "Plugin.Error.GitExeNotConfigured";
+    @NonNls
+    public static final String KEY_TFVC = "Providers.TfvcCheckoutProvider";
+    @NonNls
+    public static final String KEY_TFVC_NOT_CONFIGURED = "Plugin.Error.TFNotConfigured";
 
     // Login form
     @NonNls
@@ -99,6 +103,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_CLONE_BUTTON = "CheckoutDialog.CloneButton";
     @NonNls
+    public static final String KEY_CHECKOUT_DIALOG_CREATE_WORKSPACE_BUTTON = "CheckoutDialog.CreateWorkspaceButton";
+    @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TITLE = "CheckoutDialog.Title";
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_FILTER_HINT = "CheckoutDialog.FilterHint";
@@ -116,6 +122,8 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DESTINATION_EXISTS = "CheckoutDialog.Errors.DestinationExists";
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_ERRORS_DIR_NAME_INVALID = "CheckoutDialog.Errors.DirNameInvalid";
+    @NonNls
+    public static final String KEY_CHECKOUT_DIALOG_TFVC_ADVANCED = "CheckoutDialog.Tfvc.Advanced";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
     @NonNls

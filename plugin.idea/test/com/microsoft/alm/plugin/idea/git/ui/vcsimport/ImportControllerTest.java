@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.mocks.MockImportPage;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.mocks.MockBaseDialog;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockBaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.mocks.MockImportModel;

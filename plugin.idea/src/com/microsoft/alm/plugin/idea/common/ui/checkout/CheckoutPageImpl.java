@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.idea.common.ui.common.LoginPageImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
@@ -68,6 +68,16 @@ class CheckoutPageImpl extends LoginPageImpl implements CheckoutPage {
     @Override
     public void setLoading(final boolean loading) {
         checkoutForm.setLoading(loading);
+    }
+
+    @Override
+    public void setAdvanced(boolean advanced) {
+        checkoutForm.setAdvanced(advanced);
+    }
+
+    @Override
+    public boolean getAdvanced() {
+        return checkoutForm.isAdvanced();
     }
 
     // Overrides of LoginPage //

@@ -1,17 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProvider;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.PageModelImpl;
 
 /**
  * This class is the overall model for the Checkout dialog UI.
  * It manages the 2 other models for VSO and TFS.
  */
-public class CheckoutModel extends PageModelImpl {
+public class CheckoutModel extends PageModelImpl implements VcsSpecificCheckoutModel{
     private boolean vsoSelected = true;
     private boolean cloneEnabledForVso = false;
     private boolean cloneEnabledForTfs = false;
@@ -19,18 +22,20 @@ public class CheckoutModel extends PageModelImpl {
     private final CheckoutPageModel tfsModel;
     private final Project project;
     private final CheckoutProvider.Listener listener;
+    private final VcsSpecificCheckoutModel specificCheckoutModel;
 
     public final static String PROP_VSO_SELECTED = "vsoSelected";
     public final static String PROP_CLONE_ENABLED = "cloneEnabled";
 
-    public CheckoutModel(final Project project, final CheckoutProvider.Listener listener) {
-        this(project, listener, null, null);
+    public CheckoutModel(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel) {
+        this(project, listener, specificCheckoutModel, null, null);
     }
 
-    protected CheckoutModel(final Project project, final CheckoutProvider.Listener listener,
+    protected CheckoutModel(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel,
                             final CheckoutPageModel vsoModel, final CheckoutPageModel tfsModel) {
         this.project = project;
         this.listener = listener;
+        this.specificCheckoutModel = specificCheckoutModel;
         this.vsoModel = vsoModel == null ? new VsoCheckoutPageModel(this) : vsoModel;
         this.tfsModel = tfsModel == null ? new TfsCheckoutPageModel(this) : tfsModel;
         updateCloneEnabled();
@@ -98,4 +103,34 @@ public class CheckoutModel extends PageModelImpl {
         vsoModel.dispose();
         tfsModel.dispose();
     }
+
+    // Implement VcsSpecificCheckoutModel and redirect calls to the specific implementation
+    // BEGIN VcsSpecificCheckoutModel
+    @Override
+    public void doCheckout(final Project project, final CheckoutProvider.Listener listener, final ServerContext context,
+                           final VirtualFile destinationParent, final String directoryName, final String parentDirectory,
+                           final boolean isAdvancedChecked) {
+        specificCheckoutModel.doCheckout(project, listener, context, destinationParent, directoryName, parentDirectory, isAdvancedChecked);
+    }
+
+    @Override
+    public String getTelemetryAction() {
+        return specificCheckoutModel.getTelemetryAction();
+    }
+
+    @Override
+    public String getButtonText() {
+        return specificCheckoutModel.getButtonText();
+    }
+
+    @Override
+    public String getRepositoryName(final ServerContext context) {
+        return specificCheckoutModel.getRepositoryName(context);
+    }
+
+    @Override
+    public RepositoryContext.Type getRepositoryType() {
+        return specificCheckoutModel.getRepositoryType();
+    }
+    //END VcsSpecificCheckoutModel
 }

@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
@@ -30,6 +31,7 @@ public class IdeaHelper {
     public IdeaHelper() {
     }
 
+
     /**
      * Verifies if Git exe is configured, show notification and warning message if not
      *
@@ -48,6 +50,28 @@ public class IdeaHelper {
 
         return true;
     }
+
+
+    /**
+     * Verifies if TF is configured, show notification and warning message if not
+     *
+     * @param project Idea project
+     * @return true if TF is configured, false if TF is not correctly configured
+     */
+    public static boolean isTFConfigured(@NotNull final Project project) {
+        final String tfLocation = TfTool.getLocation();
+        if (StringUtils.isEmpty(tfLocation)) {
+            //TF is not configured, show warning message
+            Messages.showWarningDialog(project,
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_NOT_CONFIGURED),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC));
+            return false;
+        }
+
+        return true;
+    }
+
+
 
     public static void runOnUIThread(final Runnable runnable) {
         runOnUIThread(runnable, false);

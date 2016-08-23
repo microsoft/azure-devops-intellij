@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import jersey.repackaged.com.google.common.base.Predicate;
 import jersey.repackaged.com.google.common.collect.Collections2;
@@ -23,10 +24,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ServerContextTableModel extends AbstractTableModel {
-    public enum Column {REPOSITORY, PROJECT, COLLECTION, ACCOUNT}
+    public enum Column {GIT_REPOSITORY, TFVC_REPOSITORY, PROJECT, COLLECTION, ACCOUNT}
 
-    public final static Column[] VSO_REPO_COLUMNS = new Column[]{Column.REPOSITORY, Column.PROJECT, Column.ACCOUNT};
-    public final static Column[] TFS_REPO_COLUMNS = new Column[]{Column.REPOSITORY, Column.PROJECT, Column.COLLECTION};
+    public final static Column[] VSO_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.ACCOUNT};
+    public final static Column[] TFS_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.COLLECTION};
+    public final static Column[] VSO_TFVC_REPO_COLUMNS = new Column[]{Column.TFVC_REPOSITORY, Column.PROJECT, Column.ACCOUNT};
+    public final static Column[] TFS_TFVC_REPO_COLUMNS = new Column[]{Column.TFVC_REPOSITORY, Column.PROJECT, Column.COLLECTION};
     public final static Column[] VSO_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.ACCOUNT};
     public final static Column[] TFS_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.COLLECTION};
 
@@ -172,9 +175,13 @@ public class ServerContextTableModel extends AbstractTableModel {
         Column column = columns[columnIndex];
 
         switch (column) {
-            case REPOSITORY: {
+            case GIT_REPOSITORY: {
                 final GitRepository repository = serverContext.getGitRepository();
                 return repository != null ? repository.getName() : "";
+            }
+            case TFVC_REPOSITORY: {
+                final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
+                return (teamProject != null) ? VcsHelper.TFVC_ROOT + teamProject.getName() : "";
             }
             case PROJECT: {
                 final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
@@ -197,7 +204,8 @@ public class ServerContextTableModel extends AbstractTableModel {
         Column column = columns[columnIndex];
 
         switch (column) {
-            case REPOSITORY:
+            case GIT_REPOSITORY:
+            case TFVC_REPOSITORY:
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_REPO_COLUMN);
             case PROJECT:
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_PROJECT_COLUMN);

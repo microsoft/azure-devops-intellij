@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout;
+package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.LookupHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
@@ -20,7 +21,11 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
 
     public VsoCheckoutPageModel(CheckoutModel checkoutModel) {
-        super(checkoutModel, ServerContextTableModel.VSO_REPO_COLUMNS);
+        super(checkoutModel,
+                checkoutModel.getRepositoryType() == RepositoryContext.Type.GIT ?
+                        ServerContextTableModel.VSO_GIT_REPO_COLUMNS :
+                        ServerContextTableModel.VSO_TFVC_REPO_COLUMNS);
+
 
         // Set default server name for VSO
         setServerNameInternal(TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME));

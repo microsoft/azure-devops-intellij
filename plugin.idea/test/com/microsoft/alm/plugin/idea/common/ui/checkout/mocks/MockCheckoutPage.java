@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.plugin.idea.git.ui.checkout.mocks;
+package com.microsoft.alm.plugin.idea.common.ui.checkout.mocks;
 
-import com.microsoft.alm.plugin.idea.git.ui.checkout.CheckoutPage;
+import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutPage;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 
 import javax.swing.JComponent;
@@ -36,6 +36,15 @@ public class MockCheckoutPage implements CheckoutPage {
 
     @Override
     public void setAuthenticating(final boolean authenticating) {
+    }
+
+    @Override
+    public void setAdvanced(boolean advanced) {
+    }
+
+    @Override
+    public boolean getAdvanced() {
+        return false;
     }
 
     @Override
