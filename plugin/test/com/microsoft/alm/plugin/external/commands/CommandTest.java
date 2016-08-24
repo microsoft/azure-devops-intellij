@@ -3,8 +3,8 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
-import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
@@ -24,8 +24,8 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ProcessHelper.class})
-public class CommandTest extends AbstractTest {
+@PrepareForTest({ProcessHelper.class, TfTool.class})
+public class CommandTest extends AbstractCommandTest {
 
     /**
      * This test makes sure that output from a command is flushed before the completion event is fired.
@@ -34,6 +34,10 @@ public class CommandTest extends AbstractTest {
      */
     @Test
     public void testRaceCondition() throws Exception {
+        // Fake the tool location so this works on any machine
+        PowerMockito.mockStatic(TfTool.class);
+        when(TfTool.getValidLocation()).thenReturn("/path/tf_home");
+
         Process proc = Mockito.mock(Process.class);
         PowerMockito.mockStatic(ProcessHelper.class);
         when(ProcessHelper.startProcess(anyList())).thenReturn(proc);
