@@ -74,6 +74,7 @@ public class VcsHelper {
         final String projectRootFolder = project.getBasePath();
 
         // Check the manager first since that's where we cache these things
+        //TODO this cache doesn't include the current branch info that could have changed. We should probably only cache stuff for TFVC
         RepositoryContext context = RepositoryContextManager.getInstance().get(projectRootFolder);
         if (context != null) {
             logger.info("getRepositoryContext: cache hit: " + projectRootFolder);
@@ -95,7 +96,7 @@ public class VcsHelper {
             }
         } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
             // It's TFVC so run the FindWorkspace command to get the workspace object which as the server info
-            final FindWorkspaceCommand command = new FindWorkspaceCommand(null, projectRootFolder);
+            final FindWorkspaceCommand command = new FindWorkspaceCommand(projectRootFolder);
             final Workspace workspace = command.runSynchronously();
             if (workspace != null) {
                 final String projectName = getTeamProjectFromTfvcServerPath(

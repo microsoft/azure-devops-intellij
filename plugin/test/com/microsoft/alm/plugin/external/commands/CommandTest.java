@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -40,7 +41,7 @@ public class CommandTest extends AbstractCommandTest {
 
         Process proc = Mockito.mock(Process.class);
         PowerMockito.mockStatic(ProcessHelper.class);
-        when(ProcessHelper.startProcess(anyList())).thenReturn(proc);
+        when(ProcessHelper.startProcess(anyString(), anyList())).thenReturn(proc);
         when(proc.getErrorStream()).thenReturn(new InputStream() {
             @Override
             public int read() throws IOException {

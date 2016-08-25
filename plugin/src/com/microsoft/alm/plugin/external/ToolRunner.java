@@ -57,10 +57,23 @@ public class ToolRunner {
      */
     public static class ArgumentBuilder {
         private static final String STARS = "********";
-        List<String> arguments = new ArrayList<String>(5);
-        Set<Integer> secretArgumentIndexes = new HashSet<Integer>(5);
+        private List<String> arguments = new ArrayList<String>(5);
+        private Set<Integer> secretArgumentIndexes = new HashSet<Integer>(5);
+        private String workingDirectory;
 
         public ArgumentBuilder() {
+        }
+
+        /**
+         * WorkingDirectory is a special argument and is stored and retrieved separately.
+         */
+        public ArgumentBuilder setWorkingDirectory(final String workingDirectory) {
+            this.workingDirectory = workingDirectory;
+            return this;
+        }
+
+        public String getWorkingDirectory() {
+            return workingDirectory;
         }
 
         public ArgumentBuilder add(final String argument) {
@@ -148,7 +161,8 @@ public class ToolRunner {
             SettableFuture<Boolean> standardErrorFlushed = SettableFuture.create();
 
             // Create and start the process from the tool location and all the arguments
-            toolProcess = ProcessHelper.startProcess(argumentBuilder.build(toolLocation));
+            // (it is perfectly okay if working directly is null here. null == not set)
+            toolProcess = ProcessHelper.startProcess(argumentBuilder.getWorkingDirectory(), argumentBuilder.build(toolLocation));
             if (listener != null) {
                 // We have a listener object so create the listener threads and hook up the listener
                 final InputStream stderr = toolProcess.getErrorStream();

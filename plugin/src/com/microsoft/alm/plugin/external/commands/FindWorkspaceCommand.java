@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
@@ -15,12 +14,14 @@ import java.util.List;
 /**
  * This command only returns a partial workspace object that allows you to get the name and server.
  * To get the entire workspace object you should call GetWorkspace with the workspace name.
+ * (This is one of the only commands that expects to be a strictly local operation - no server calls - and so does not
+ * take a server context object in the constructor)
  */
 public class FindWorkspaceCommand extends Command<Workspace> {
     private final String localPath;
 
-    public FindWorkspaceCommand(final ServerContext context, final String localPath) {
-        super("workfold", context);
+    public FindWorkspaceCommand(final String localPath) {
+        super("workfold", null);
         ArgumentHelper.checkNotEmptyString(localPath);
         this.localPath = localPath;
     }
@@ -28,7 +29,10 @@ public class FindWorkspaceCommand extends Command<Workspace> {
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
-        builder.add(localPath);
+        // To find the workspace we set the working directory to the localPath and call workfold with no arguments
+        // NOTE Calling workfold with the localPath forces it to refresh the workspace from the server. Calling it with
+        //      no arguments does not refresh it from the server.
+        builder.setWorkingDirectory(localPath);
         return builder;
     }
 

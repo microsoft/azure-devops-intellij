@@ -242,6 +242,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             for (final VirtualFile file : files) {
                 filesToAddPaths.add(file.getPath());
             }
+            // TODO: pass a context instead of null
             final Command<List<String>> addCommand = new AddCommand(null, filesToAddPaths);
             final List<String> successfullyAdded = addCommand.runSynchronously();
 
