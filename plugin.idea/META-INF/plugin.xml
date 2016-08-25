@@ -127,8 +127,8 @@
             <separator/>
             <action id="Tfs.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
             <reference id="CheckinFiles"/>
-            <!--<reference id="UpdateFiles"/>
-            <reference id="IntegrateFiles"/>
+            <reference id="UpdateFiles"/>
+            <!--<reference id="IntegrateFiles"/>
             <reference id="CheckStatusForFiles"/>
             <separator/>
             <separator/>

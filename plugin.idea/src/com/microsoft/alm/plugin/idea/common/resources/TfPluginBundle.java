@@ -503,6 +503,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CHECKIN_LINK_TEXT="Tfvc.Checkin.Link.Text";
     @NonNls
     public static final String KEY_TFVC_CHECKIN_STATUS="Tfvc.Checkin.Status";
+    @NonNls
+    public static final String KEY_TFVC_UPDATE_STATUS_MSG="Tfvc.Update.Status.Msg";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";

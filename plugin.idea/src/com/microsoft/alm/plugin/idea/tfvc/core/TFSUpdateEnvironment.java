@@ -9,14 +9,26 @@ import com.intellij.openapi.progress.ProgressIndicator;
 //import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
-//import com.intellij.openapi.vcs.VcsException;
-//import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.*;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.external.commands.Command;
+import com.microsoft.alm.plugin.external.commands.SyncCommand;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 //import org.jetbrains.tfsIntegration.core.tfs.*;
 //import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
 //import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
@@ -26,8 +38,6 @@ import org.jetbrains.annotations.Nullable;
 //import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 //import org.jetbrains.tfsIntegration.exceptions.TfsException;
 //import org.jetbrains.tfsIntegration.ui.UpdateSettingsForm;
-
-import java.util.Collection;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
     private final
@@ -48,8 +58,32 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                                            final UpdatedFiles updatedFiles,
                                            final ProgressIndicator progressIndicator,
                                            @NotNull final Ref<SequentialUpdatesContext> context) throws ProcessCanceledException {
-//    final List<VcsException> exceptions = new ArrayList<VcsException>();
-//    TFSProgressUtil.setProgressText(progressIndicator, "Request update information");
+        final List<VcsException> exceptions = new ArrayList<VcsException>();
+        TFSProgressUtil.setProgressText(progressIndicator, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_UPDATE_STATUS_MSG));
+
+        try {
+            final List<String> filesUpdatePaths = new ArrayList<String>(contentRoots.length);
+            boolean needRecursion = false;
+            for (final FilePath file : contentRoots) {
+                // checks for directories so we know if to perform a recursive update
+                needRecursion = file.isDirectory() ? true : needRecursion;
+                filesUpdatePaths.add(file.getPath());
+            }
+
+            final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(myVcs.getProject());
+            final ServerContext serverContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
+                    repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
+            final Command<String> command = new SyncCommand(serverContext, filesUpdatePaths, needRecursion);
+            try {
+                command.runSynchronously();
+            } catch (RuntimeException e) {
+                exceptions.addAll(SyncCommand.getFormattedExceptions(e));
+            }
+        } catch (Exception e) {
+            exceptions.add(new VcsException(e));
+        }
+
+//    TODO: add in the conflict resolution part of this code
 //    try {
 //      final Map<WorkspaceInfo, Collection<Conflict>> workspace2Conflicts = new HashMap<WorkspaceInfo, Collection<Conflict>>();
 //      List<FilePath> orphanPaths =
@@ -107,27 +141,27 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
 //      exceptions.add(new VcsException(e));
 //    }
 //
-//    // TODO content roots can be renamed while executing
-//    TfsFileUtil.refreshAndInvalidate(myVcs.getProject(), contentRoots, false);
-//
-//    return new UpdateSession() {
-//      @Override
-//      @NotNull
-//      public List<VcsException> getExceptions() {
-//        return exceptions;
-//      }
-//
-//      @Override
-//      public void onRefreshFilesCompleted() {
-//        myVcs.fireRevisionChanged();
-//      }
-//
-//      @Override
-//      public boolean isCanceled() {
-//        return false;
-//      }
-//    };
-        return null;
+        // TODO (Jetbrains) content roots can be renamed while executing
+        TfsFileUtil.refreshAndInvalidate(myVcs.getProject(), contentRoots, false);
+
+        return new UpdateSession() {
+            @Override
+            @NotNull
+            public List<VcsException> getExceptions() {
+                return exceptions;
+            }
+
+            @Override
+            public void onRefreshFilesCompleted() {
+                // TODO: add in the code that does this
+                //myVcs.fireRevisionChanged();
+            }
+
+            @Override
+            public boolean isCanceled() {
+                return false;
+            }
+        };
     }
 
     @Override
