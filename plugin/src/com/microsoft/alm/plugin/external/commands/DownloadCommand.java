@@ -34,10 +34,9 @@ public class DownloadCommand extends Command<String> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add(localPath)
-                .add("-proxy:http://fail:0001")  // HACK to avoid the timeout that happens when you don't specify a proxy
-                .add("-noprompt");
+                .addSwitch("proxy", "http://fail:0001");  // HACK to avoid the timeout that happens when you don't specify a proxy
         if (version > 0) {
-            builder.add("-version:" + version);
+            builder.addSwitch("version", Integer.toString(version));
         }
         return builder;
     }

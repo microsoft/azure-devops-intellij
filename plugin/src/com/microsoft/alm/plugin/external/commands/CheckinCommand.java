@@ -43,7 +43,7 @@ public class CheckinCommand extends Command<String> {
             builder.add(file);
         }
         if (StringUtils.isNotEmpty(comment)) {
-            builder.add("-comment:" + comment);
+            builder.addSwitch("comment", comment);
         }
         return builder;
     }

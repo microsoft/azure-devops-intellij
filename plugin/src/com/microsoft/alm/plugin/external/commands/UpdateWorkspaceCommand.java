@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -19,39 +20,8 @@ public class UpdateWorkspaceCommand extends Command<String> {
     private final String currentWorkspaceName;
     private final String newName;
     private final String newComment;
-    private final FileTime newFileTime;
-    private final Permission newPermission;
-
-    public enum FileTime {
-        CURRENT,
-        CHECKIN;
-
-        @Override
-        public String toString() {
-            if (this == FileTime.CHECKIN) {
-                return "checkin";
-            } else {
-                return "current";
-            }
-        }
-    }
-
-    public enum Permission {
-        PRIVATE,
-        PUBLIC_LIMITED,
-        PUBLIC;
-
-        @Override
-        public String toString() {
-            if (this == Permission.PRIVATE) {
-                return "Private";
-            } else if (this == Permission.PUBLIC) {
-                return "Public";
-            } else {
-                return "PublicLimited";
-            }
-        }
-    }
+    private final Workspace.FileTime newFileTime;
+    private final Workspace.Permission newPermission;
 
     /**
      * Constructor
@@ -60,8 +30,8 @@ public class UpdateWorkspaceCommand extends Command<String> {
      * @param currentWorkspaceName This is the current name of the workspace to update
      */
     public UpdateWorkspaceCommand(final ServerContext context, final String currentWorkspaceName,
-                                  final String newName, final String newComment, final FileTime newFileTime,
-                                  final Permission newPermission) {
+                                  final String newName, final String newComment, final Workspace.FileTime newFileTime,
+                                  final Workspace.Permission newPermission) {
         super("workspace", context);
         ArgumentHelper.checkNotEmptyString(currentWorkspaceName);
         this.currentWorkspaceName = currentWorkspaceName;
@@ -76,16 +46,16 @@ public class UpdateWorkspaceCommand extends Command<String> {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add(currentWorkspaceName);
         if (StringUtils.isNotEmpty(newName)) {
-            builder.add("-newname:" + newName);
+            builder.addSwitch("newname", newName);
         }
         if (StringUtils.isNotEmpty(newComment)) {
-            builder.add("-comment:" + newComment);
+            builder.addSwitch("comment", newComment);
         }
         if (newFileTime != null) {
-            builder.add("-filetime:" + newFileTime.toString());
+            builder.addSwitch("filetime", newFileTime.toString());
         }
         if (newPermission != null) {
-            builder.add("-permission:" + newPermission.toString());
+            builder.addSwitch("permission", newPermission.toString());
         }
 
         return builder;

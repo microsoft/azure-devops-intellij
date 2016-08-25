@@ -31,7 +31,7 @@ public class GetWorkspaceCommand extends Command<Workspace> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add(workspaceName)
-                .add("-format:xml");
+                .addSwitch("format", "xml");
         return builder;
     }
 

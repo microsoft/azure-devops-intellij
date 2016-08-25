@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
+import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -150,7 +151,6 @@ public class WorkspaceModel extends AbstractModel {
         return ModelValidationInfo.NO_ERRORS;
     }
 
-
     public void loadWorkspace(final Project project) {
         logger.info("loadWorkspace starting");
         setLoading(true);
@@ -174,39 +174,76 @@ public class WorkspaceModel extends AbstractModel {
                     }
 
                     logger.info("loadWorkspace: getting workspace");
-                    // It would be a bit more effecient here to pass the workspace name into the getWorkspace command.
+                    // It would be a bit more efficient here to pass the workspace name into the getWorkspace command.
                     // However, when you change the name of the workspace that causes errors. So for now, we are not optimal.
-                    oldWorkspace = CommandUtils.getWorkspace(currentServerContext, project);
-                    if (oldWorkspace != null) {
-                        logger.info("loadWorkspace: got workspace, setting fields");
-                        server = oldWorkspace.getServer();
-                        owner = oldWorkspace.getOwner();
-                        computer = oldWorkspace.getComputer();
-                        name = oldWorkspace.getName();
-                        comment = oldWorkspace.getComment();
-                        mappings = new ArrayList<Workspace.Mapping>(oldWorkspace.getMappings());
-                    } else {
-                        // This shouldn't happen, so we will log this case, but not throw
-                        logger.warn("loadWorkspace: workspace was returned as null");
-                    }
+                    loadWorkspaceInternal(CommandUtils.getWorkspace(currentServerContext, project));
                 } finally {
-                    // Make sure to fire events only on the UI thread
-                    IdeaHelper.runOnUIThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // Update all fields
-                            setChangedAndNotify(null);
-                            // Set loading to false
-                            setLoading(false);
-                            logger.info("loadWorkspace: done loading");
-                        }
-                    });
+                    loadWorkspaceComplete();
+
                 }
             }
         });
     }
 
-    public void saveWorkspace(final Project project) {
+    public void loadWorkspace(final RepositoryContext repositoryContext, final String workspaceName) {
+        logger.info("loadWorkspace starting");
+        ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
+        ArgumentHelper.checkNotEmptyString(workspaceName);
+
+        setLoading(true);
+        // Load
+        OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    logger.info("loadWorkspace: getting server context");
+                    currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
+                    if (currentServerContext == null) {
+                        logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
+                        throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
+                    }
+
+                    logger.info("loadWorkspace: getting workspace by name");
+                    loadWorkspaceInternal(CommandUtils.getWorkspace(currentServerContext, workspaceName));
+                } finally {
+                    // Make sure to fire events only on the UI thread
+                    loadWorkspaceComplete();
+                }
+            }
+        });
+    }
+
+    private void loadWorkspaceInternal(final Workspace workspace) {
+        oldWorkspace = workspace;
+        if (oldWorkspace != null) {
+            logger.info("loadWorkspace: got workspace, setting fields");
+            server = oldWorkspace.getServer();
+            owner = oldWorkspace.getOwner();
+            computer = oldWorkspace.getComputer();
+            name = oldWorkspace.getName();
+            comment = oldWorkspace.getComment();
+            mappings = new ArrayList<Workspace.Mapping>(oldWorkspace.getMappings());
+        } else {
+            // This shouldn't happen, so we will log this case, but not throw
+            logger.warn("loadWorkspace: workspace was returned as null");
+        }
+    }
+
+    private void loadWorkspaceComplete() {
+        // Make sure to fire events only on the UI thread
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                // Update all fields
+                setChangedAndNotify(null);
+                // Set loading to false
+                setLoading(false);
+                logger.info("loadWorkspace: done loading");
+            }
+        });
+    }
+
+    public void saveWorkspace(final Project project, final boolean syncFiles, final Runnable onSuccess) {
         final ServerContext serverContext = currentServerContext;
         final Workspace oldWorkspace = this.oldWorkspace;
         final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
@@ -216,11 +253,27 @@ public class WorkspaceModel extends AbstractModel {
                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_PROGRESS_TITLE),
                 true, PerformInBackgroundOption.DEAF) {
             @Override
-            public void run(@NotNull final ProgressIndicator progressIndicator) {
+            public void run(@NotNull final ProgressIndicator indicator) {
                 try {
-                    //TODO show some progress to the user
+                    IdeaHelper.setProgress(indicator, 0.10,
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_UPDATING));
+
                     // provide some indication of progress (setting indeterminate didn't do anything
                     CommandUtils.updateWorkspace(serverContext, oldWorkspace, newWorkspace);
+
+                    if (syncFiles) {
+                        IdeaHelper.setProgress(indicator, 0.30,
+                                TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING));
+                        syncWorkspace(project);
+                    }
+
+                    if (onSuccess != null) {
+                        // Trigger the onSuccess callback on the UI thread
+                        IdeaHelper.runOnUIThread(onSuccess);
+                    }
+
+                    IdeaHelper.setProgress(indicator, 1.00,
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_DONE), true);
 
                     // Notify the user of success and provide a link to sync the workspace
                     VcsNotifier.getInstance(project).notifyImportantInfo(
@@ -229,7 +282,7 @@ public class WorkspaceModel extends AbstractModel {
                             new NotificationListener() {
                                 @Override
                                 public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
-                                    //TODO: Sync the workspace
+                                    syncWorkspace(project);
                                 }
                             });
                 } catch (final Throwable t) {
@@ -242,5 +295,9 @@ public class WorkspaceModel extends AbstractModel {
         };
 
         createPullRequestTask.queue();
+    }
+
+    public void syncWorkspace(final Project project) {
+        //TODO
     }
 }

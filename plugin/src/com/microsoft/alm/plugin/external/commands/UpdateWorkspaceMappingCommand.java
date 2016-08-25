@@ -23,10 +23,10 @@ public class UpdateWorkspaceMappingCommand extends Command<String> {
     private final boolean removeMapping;
     private final String workspaceName;
 
-    private static final String SUB_MAP = "-map";
-    private static final String SUB_CLOAK = "-cloak";
-    private static final String SUB_UNMAP = "-unmap";
-    private static final String SUB_DECLOAK = "-decloak";
+    private static final String SUB_MAP = "map";
+    private static final String SUB_CLOAK = "cloak";
+    private static final String SUB_UNMAP = "unmap";
+    private static final String SUB_DECLOAK = "decloak";
 
     /**
      * Constructor
@@ -62,8 +62,8 @@ public class UpdateWorkspaceMappingCommand extends Command<String> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final String subCommand = getSubCommand();
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
-                .add(subCommand)
-                .add("-workspace:" + workspaceName);
+                .addSwitch(subCommand)
+                .addSwitch("workspace", workspaceName);
         if (removeMapping) {
             // When removing a mapping, it cannot contain the "/*" notation at the end
             builder.add(WorkspaceHelper.getNormalizedServerPath(mapping.getServerPath()));

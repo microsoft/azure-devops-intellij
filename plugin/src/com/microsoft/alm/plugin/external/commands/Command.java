@@ -77,11 +77,11 @@ public abstract class Command<T> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = new ToolRunner.ArgumentBuilder()
                 .add(name)
-                .add("-noprompt");
+                .addSwitch("noprompt");
         if (context != null && context.getCollectionURI() != null) {
-            builder.add("-collection:" + context.getCollectionURI().toString());
+            builder.addSwitch("collection", context.getCollectionURI().toString());
             if (context.getAuthenticationInfo() != null) {
-                builder.addSecret("-login:" + context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword());
+                builder.addSwitch("login", context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword(), true);
             }
         }
 
@@ -125,7 +125,6 @@ public abstract class Command<T> {
             public void completed(final int returnCode) {
                 listener.progress("Parsing command output", OUTPUT_TYPE_INFO, 99);
 
-                // TODO wait for streams to finish (there is a timing issue right now where completed is called before the streams are finished)
                 Throwable error = null;
                 T result = null;
                 try {

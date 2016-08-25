@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.apache.commons.lang.StringUtils;
@@ -24,36 +24,68 @@ public class WorkspaceController implements Observer, ActionListener {
     private boolean suspendEvents = false;
     private final Project project;
 
+    /**
+     * Use this constructor to edit the workspace for the current project.
+     *
+     * @param project
+     */
     public WorkspaceController(final Project project) {
         this(project, new WorkspaceDialog(project), new WorkspaceModel());
+        this.model.loadWorkspace(project);
     }
 
-    public WorkspaceController(final Project project, final WorkspaceDialog dialog, final WorkspaceModel model) {
+    /**
+     * This constructor is used by the "checkout from version control" flow where the project path is not the same as
+     * the workspace path.
+     *
+     * @param project
+     * @param repositoryContext
+     * @param workspaceName
+     */
+    public WorkspaceController(final Project project, final RepositoryContext repositoryContext, final String workspaceName) {
+        this(project, new WorkspaceDialog(project), new WorkspaceModel());
+        this.model.loadWorkspace(repositoryContext, workspaceName);
+    }
+
+    protected WorkspaceController(final Project project, final WorkspaceDialog dialog, final WorkspaceModel model) {
         this.project = project;
         this.dialog = dialog;
         this.dialog.addActionListener(this);
 
         this.model = model;
         this.model.addObserver(this);
-        this.model.loadWorkspace(project);
 
         setupDialog();
     }
 
-    @Override
-    public void actionPerformed(final ActionEvent e) {
-        // Update model before action is initiated on it
-        updateModel();
-
-        if (BaseDialog.CMD_OK.equals(e.getActionCommand())) {
-            // Trigger the save workspace method
-            // (this method will do all the background work and notify the user of the result)
-            model.saveWorkspace(project);
+    /**
+     * Shows the dialog modally and optionally saves the workspace when the user hits OK.
+     * If you choose not to auto save the workspace, you should call saveWorkspace if this method returns true.
+     *
+     * @param autoSaveWorkspace
+     * @return
+     */
+    public boolean showModalDialog(final boolean autoSaveWorkspace) {
+        final boolean result = dialog.showModalDialog();
+        if (result && autoSaveWorkspace) {
+            saveWorkspace(false, null);
         }
+
+        return result;
     }
 
-    public boolean showModalDialog() {
-        return dialog.showModalDialog();
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // The OK action is already handled
+    }
+
+    public void saveWorkspace(final boolean syncFiles, final Runnable onSuccess) {
+        // Update model before action is initiated on it
+        updateModel();
+        // Trigger the save workspace method
+        // (this method will do all the background work and notify the user of the result)
+        model.saveWorkspace(project, syncFiles, onSuccess);
     }
 
     @Override

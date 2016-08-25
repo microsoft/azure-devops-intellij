@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external;
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +65,32 @@ public class ToolRunner {
 
         public ArgumentBuilder add(final String argument) {
             arguments.add(argument);
+            return this;
+        }
+
+        public ArgumentBuilder addSwitch(final String switchName) {
+            return addSwitch(switchName, null, false);
+        }
+
+        public ArgumentBuilder addSwitch(final String switchName, final String switchValue) {
+            return addSwitch(switchName, switchValue, false);
+        }
+
+        public ArgumentBuilder addSwitch(final String switchName, final String switchValue, final boolean isSecret) {
+            ArgumentHelper.checkNotEmptyString(switchName);
+            final String arg;
+            if (StringUtils.isEmpty(switchValue)) {
+                arg = "-" + switchName;
+            } else {
+                arg = "-" + switchName + ":" + switchValue;
+            }
+
+            if (isSecret) {
+                addSecret(arg);
+            } else {
+                add(arg);
+            }
+
             return this;
         }
 

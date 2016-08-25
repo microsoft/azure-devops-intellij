@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,42 +40,42 @@ public class UpdateWorkspaceCommandTest extends AbstractCommandTest {
 
     @Test
     public void testGetArgumentBuilder_private_checkin() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", UpdateWorkspaceCommand.FileTime.CHECKIN, UpdateWorkspaceCommand.Permission.PRIVATE);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -filetime:checkin -permission:Private", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_public_checkin() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", UpdateWorkspaceCommand.FileTime.CHECKIN, UpdateWorkspaceCommand.Permission.PUBLIC);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PUBLIC);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -filetime:checkin -permission:Public", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_limited_checkin() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", UpdateWorkspaceCommand.FileTime.CHECKIN, UpdateWorkspaceCommand.Permission.PUBLIC_LIMITED);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PUBLIC_LIMITED);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -filetime:checkin -permission:PublicLimited", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_private_current() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", UpdateWorkspaceCommand.FileTime.CURRENT, UpdateWorkspaceCommand.Permission.PRIVATE);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", Workspace.FileTime.CURRENT, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -filetime:current -permission:Private", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_current() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", UpdateWorkspaceCommand.FileTime.CURRENT, null);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", Workspace.FileTime.CURRENT, null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -filetime:current", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_private() {
-        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", null, UpdateWorkspaceCommand.Permission.PRIVATE);
+        final UpdateWorkspaceCommand cmd = new UpdateWorkspaceCommand(null, "ws1", "workspace2", "comment2", null, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workspace -noprompt ws1 -newname:workspace2 -comment:comment2 -permission:Private", builder.toString());
     }

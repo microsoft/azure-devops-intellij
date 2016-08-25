@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
@@ -15,6 +16,8 @@ import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.Icon;
 import java.io.File;
@@ -24,6 +27,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 public class IdeaHelper {
+    private static final Logger logger = LoggerFactory.getLogger(IdeaHelper.class);
+
     private static final String CHARSET_UTF8 = "utf-8";
     public static final String TEST_RESOURCES_SUB_PATH = "/externals/platform/";
     private static final String PROD_RESOURCES_SUB_PATH = "platform";
@@ -31,6 +36,28 @@ public class IdeaHelper {
     public IdeaHelper() {
     }
 
+    public static void setProgress(@NotNull final ProgressIndicator indicator, final double fraction, final String text) {
+        setProgress(indicator, fraction, text, false);
+    }
+
+    public static void setProgress(@NotNull final ProgressIndicator indicator, final double fraction, final String text, final boolean delay) {
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                indicator.setFraction(fraction);
+                indicator.setText(text);
+            }
+        });
+
+        if (delay) {
+            // Give time for the progress to be updated
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.warn("setting progress failed", e);
+            }
+        }
+    }
 
     /**
      * Verifies if Git exe is configured, show notification and warning message if not
@@ -51,7 +78,6 @@ public class IdeaHelper {
         return true;
     }
 
-
     /**
      * Verifies if TF is configured, show notification and warning message if not
      *
@@ -70,8 +96,6 @@ public class IdeaHelper {
 
         return true;
     }
-
-
 
     public static void runOnUIThread(final Runnable runnable) {
         runOnUIThread(runnable, false);

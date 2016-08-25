@@ -43,18 +43,18 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
-                .add("-format:xml");
+                .addSwitch("format", "xml");
         if (recursive) {
-            builder.add("-recursive");
+            builder.addSwitch("recursive");
         }
         if (stopAfter > 0) {
-            builder.add("-stopafter:" + stopAfter);
+            builder.addSwitch("stopafter", Integer.toString(stopAfter));
         }
         if (StringUtils.isNotEmpty(user)) {
-            builder.add("-user:" + user);
+            builder.addSwitch("user", user);
         }
         if (StringUtils.isNotEmpty(version)) {
-            builder.add("-version:" + version);
+            builder.addSwitch("version", version);
         }
         builder.add(localPath);
         return builder;

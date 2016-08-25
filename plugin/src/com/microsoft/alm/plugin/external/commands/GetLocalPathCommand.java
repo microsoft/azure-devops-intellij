@@ -28,7 +28,7 @@ public class GetLocalPathCommand extends Command<String> {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .add(serverPath);
         if (StringUtils.isNotEmpty(workspace)) {
-            builder.add("-workspace:" + workspace);
+            builder.addSwitch("workspace", workspace);
         }
         return builder;
     }

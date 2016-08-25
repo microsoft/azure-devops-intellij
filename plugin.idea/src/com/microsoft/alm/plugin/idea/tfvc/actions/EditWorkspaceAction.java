@@ -17,7 +17,7 @@ public class EditWorkspaceAction extends InstrumentedAction {
     public void doActionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
         final WorkspaceController controller = new WorkspaceController(project);
-        controller.showModalDialog();
+        controller.showModalDialog(true);
     }
 
     @Override

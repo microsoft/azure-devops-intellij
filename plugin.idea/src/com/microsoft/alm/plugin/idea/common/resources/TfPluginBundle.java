@@ -128,6 +128,8 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_AUTHENTICATION_FAILED_TITLE = "CheckoutDialog.Errors.AuthenticationFailed.Title";
+    @NonNls
+    public static final String KEY_CHECKOUT_TFVC_CREATING_WORKSPACE = "CheckoutDialog.Tfvc.CreatingWorkspace";
 
     //User account panel
     @NonNls
@@ -520,4 +522,7 @@ public class TfPluginBundle {
     public static final String KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE = "WorkspaceDialog.NotifySuccess.Title";
     public static final String KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_MESSAGE = "WorkspaceDialog.NotifySuccess.Message";
     public static final String KEY_WORKSPACE_DIALOG_NOTIFY_FAILURE_TITLE = "WorkspaceDialog.NotifyFailure.Title";
+    public static final String KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_UPDATING = "WorkspaceDialog.Save.Progress.Updating";
+    public static final String KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING = "WorkspaceDialog.Save.Progress.Syncing";
+    public static final String KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_DONE = "WorkspaceDialog.Save.Progress.Done";
 }

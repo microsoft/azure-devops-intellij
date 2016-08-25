@@ -52,6 +52,46 @@ public class Workspace {
         return Collections.unmodifiableList(mappings);
     }
 
+    /**
+     * This class is used by the Workspace commands when creating or updating a workspace.
+     */
+    public enum FileTime {
+        CURRENT,
+        CHECKIN;
+
+        @Override
+        public String toString() {
+            if (this == FileTime.CHECKIN) {
+                return "checkin";
+            } else {
+                return "current";
+            }
+        }
+    }
+
+    /**
+     * This class is used by the Workspace commands when creating or updating a workspace.
+     */
+    public enum Permission {
+        PRIVATE,
+        PUBLIC_LIMITED,
+        PUBLIC;
+
+        @Override
+        public String toString() {
+            if (this == Permission.PRIVATE) {
+                return "Private";
+            } else if (this == Permission.PUBLIC) {
+                return "Public";
+            } else {
+                return "PublicLimited";
+            }
+        }
+    }
+
+    /**
+     * This class represents a "working folder" in a workspace that maps a local path to a server path.
+     */
     public static class Mapping {
         private final String serverPath;
         private final String localPath;
