@@ -33,7 +33,7 @@ public class CommandUtils {
      */
     public static String getWorkspaceName(final ServerContext context, final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
-        final FindWorkspaceCommand command = new FindWorkspaceCommand(context, project.getBasePath());
+        final FindWorkspaceCommand command = new FindWorkspaceCommand(project.getBasePath());
         final Workspace workspace = command.runSynchronously();
         if (workspace != null) {
             return workspace.getName();

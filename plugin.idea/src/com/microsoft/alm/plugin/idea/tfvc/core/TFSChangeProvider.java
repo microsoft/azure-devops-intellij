@@ -86,6 +86,7 @@ public class TFSChangeProvider implements ChangeProvider {
             }
 
             // TODO: add the ability to pass multiple roots to the command line
+            // TODO: pass a context instead of null
             final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
             final List<PendingChange> changes = command.runSynchronously();
 
