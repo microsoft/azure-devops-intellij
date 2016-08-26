@@ -11,6 +11,7 @@ import com.microsoft.alm.auth.PromptBehavior;
 import com.microsoft.alm.auth.oauth.AzureAuthority;
 import com.microsoft.alm.auth.oauth.OAuth2Authenticator;
 import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.helpers.Action;
 import com.microsoft.alm.oauth2.useragent.AuthorizationException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
@@ -93,9 +94,10 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         // Check if common url was passed or if a specific url was given
         // If a specific url is being used and a tenant id is found use the tenant id with the authenticator
         String resourceId = OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE;
-        if (!OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO.getAuthority().equals(URI.create(serverUri).getAuthority())) {
+        final URI encodedServerUri = UrlHelper.createUri(serverUri);
+        if (!OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO.getAuthority().equals(encodedServerUri.getAuthority())) {
             try {
-                final UUID tenantId = AzureAuthority.detectTenantId(URI.create(serverUri));
+                final UUID tenantId = AzureAuthority.detectTenantId(encodedServerUri);
                 if (tenantId != null) {
                     logger.info(String.format("Adding tenant id %s to oAuth2Authenticator builder for url %s",
                             tenantId.toString(), serverUri));

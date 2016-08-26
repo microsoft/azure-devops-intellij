@@ -758,12 +758,12 @@ public class ServerContextManager {
         public boolean validate(final UrlHelper.ParseResult parseResult) {
             try {
                 serverUrl = parseResult.getServerUrl();
-                final URI collectionUri = URI.create(UrlHelper.getCmdLineFriendlyUrl(parseResult.getCollectionUrl()));
+                final URI collectionUri = UrlHelper.createUri(parseResult.getCollectionUrl());
                 final GitHttpClient gitClient = getGitHttpClient(context.getClient(), collectionUri);
                 // Get the repository object and team project
                 repository = gitClient.getRepository(parseResult.getProjectName(), parseResult.getRepoName());
                 // Get the collection object
-                final URI serverUri = URI.create(parseResult.getServerUrl());
+                final URI serverUri = UrlHelper.createUri(parseResult.getServerUrl());
                 if (UrlHelper.isTeamServicesUrl(parseResult.getServerUrl())) {
                     final CoreHttpClient coreClient = getCoreHttpClient(context.getClient(), serverUri);
                     collection = coreClient.getProjectCollection(parseResult.getCollectionName());
