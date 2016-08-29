@@ -674,20 +674,45 @@ public class ServerContextManager {
             try {
                 final String collectionName;
                 final String serverUrl;
-                if (validateTfvcCollectionUrl(collectionUrl)) {
-                    final String[] parts = splitTfvcCollectionUrl(collectionUrl);
-                    serverUrl = parts[0];
-                    collectionName = parts[1];
-                } else {
-                    serverUrl = collectionUrl;
-                    collectionName = UrlHelper.DEFAULT_COLLECTION;
-                    if (!validateTfvcCollectionUrl(UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName).toString())) {
+                if (UrlHelper.isTeamServicesUrl(collectionUrl)) {
+                    // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
+                    // and the url without defaultCollection will validate just fine. However, it expects you to refer to
+                    // the collection by the account name. So, we just need to grab the account name and use that to
+                    // recreate the url.
+                    // If validation fails, we return false.
+                    final String accountName = UrlHelper.getVSOAccountName(UrlHelper.createUri(collectionUrl));
+                    serverUrl = UrlHelper.getVSOAccountURI(accountName).toString();
+                    collectionName = accountName;
+                    if (!validateTfvcCollectionUrl(serverUrl)) {
                         return false;
+                    }
+                } else {
+                    // A full Team Foundation Server collection url is required for the validate call to succeed. So,
+                    // we try the url given. If that fails, we assume it is a server Url and the collection is the
+                    // defaultCollection. If that assumption fails we return false.
+                    if (validateTfvcCollectionUrl(collectionUrl)) {
+                        final String[] parts = splitTfvcCollectionUrl(collectionUrl);
+                        serverUrl = parts[0];
+                        collectionName = parts[1];
+                    } else {
+                        serverUrl = collectionUrl;
+                        collectionName = UrlHelper.DEFAULT_COLLECTION;
+                        if (!validateTfvcCollectionUrl(UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName).toString())) {
+                            return false;
+                        }
                     }
                 }
 
                 this.serverUrl = serverUrl;
-                this.collection = getCollectionFromServer(context, collectionName);
+                // Get the collection object from the server (different based on VSO vs OnPrem)
+                if (UrlHelper.isTeamServicesUrl(serverUrl)) {
+                    final CoreHttpClient coreClient = getCoreHttpClient(context.getClient(), UrlHelper.createUri(serverUrl));
+                    collection = coreClient.getProjectCollection(collectionName);
+                } else {
+                    final ServerContext contextToValidate = new ServerContextBuilder(context).serverUri(serverUrl).build();
+                    collection = getCollectionFromServer(contextToValidate, collectionName);
+                }
+                // Get the Team Project object from the server
                 this.project = getProjectFromServer(context, UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName), teamProjectName);
                 return true;
             } catch (Throwable t) {

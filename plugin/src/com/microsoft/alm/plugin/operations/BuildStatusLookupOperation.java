@@ -235,6 +235,12 @@ public class BuildStatusLookupOperation extends Operation {
         Build matchingBuild = null;
         BuildStatusResults results;
 
+        // Check the context object to make sure it is valid
+        if (context.getTeamProjectReference() == null || context.getTeamProjectReference().getId() == null) {
+            logger.warn("getTfvcResults: The server context object is not correct. So, builds cannot be retrieved.");
+            return new BuildStatusResults(context, null);
+        }
+
         // Using the build REST client we will get the last 100 builds for this team project.
         // TODO: We will go through those builds and try to find one that matches our repo and common root.
         // If we can't find a perfect match, we will keep the first one that matches our repo type.

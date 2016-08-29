@@ -18,12 +18,18 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.NotAuthorizedException;
 
 /**
  * Class that sets up the TFS version control extension.
@@ -165,5 +171,23 @@ public class TFSVcs extends AbstractVcs {
     @Override
     public CheckoutProvider getCheckoutProvider() {
         return null; ///TODO: new TFSCheckoutProvider();
+    }
+
+
+    /**
+     * This method is used by the environment classes to get the ServerContext.
+     * We do not cache it here because it should already be cached in the ServerContextManager.
+     */
+    public ServerContext getServerContext(boolean throwIfNotFound) {
+        final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(getProject());
+        final ServerContext serverContext = repositoryContext != null ?
+                ServerContextManager.getInstance().createContextFromTfvcServerUrl(
+                        repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true)
+                : null;
+
+        if (serverContext == null && throwIfNotFound) {
+            throw new NotAuthorizedException(repositoryContext != null ? repositoryContext.getUrl() : "");
+        }
+        return serverContext;
     }
 }

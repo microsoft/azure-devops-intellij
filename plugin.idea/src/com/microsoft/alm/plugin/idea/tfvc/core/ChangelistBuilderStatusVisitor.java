@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
@@ -27,24 +28,27 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     private static final Logger logger = LoggerFactory.getLogger(ChangelistBuilderStatusVisitor.class);
 
     @NotNull
-    private final Project myProject;
+    private final Project project;
     @NotNull
-    private final ChangelistBuilder myChangelistBuilder;
+    private final ChangelistBuilder changelistBuilder;
+    private final ServerContext serverContext;
 
     public ChangelistBuilderStatusVisitor(final @NotNull Project project,
+                                          final ServerContext serverContext,
                                           final @NotNull ChangelistBuilder changelistBuilder) {
-        myProject = project;
-        myChangelistBuilder = changelistBuilder;
+        this.project = project;
+        this.changelistBuilder = changelistBuilder;
+        this.serverContext = serverContext;
     }
 
     public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException {
         if (localItemExists) {
             TFSContentRevision baseRevision =
-                    TFSContentRevision.create(myProject, localPath, serverStatus.localVer, serverStatus.modicationDate);
-            myChangelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)), TFSVcs.getKey());
+                    TFSContentRevision.create(project, serverContext, localPath, serverStatus.localVer, serverStatus.modicationDate);
+            changelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)), TFSVcs.getKey());
         } else {
-            myChangelistBuilder.processLocallyDeletedFile(localPath);
+            changelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
 
@@ -52,9 +56,9 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                      final boolean localItemExists,
                                      final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
-            myChangelistBuilder.processChange(new Change(null, new CurrentContentRevision(localPath)), TFSVcs.getKey());
+            changelistBuilder.processChange(new Change(null, new CurrentContentRevision(localPath)), TFSVcs.getKey());
         } else {
-            myChangelistBuilder.processLocallyDeletedFile(localPath);
+            changelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
 
@@ -62,8 +66,8 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                      final boolean localItemExists,
                                      final @NotNull ServerStatus serverStatus) {
         TFSContentRevision baseRevision =
-                TFSContentRevision.create(myProject, localPath, serverStatus.localVer, serverStatus.modicationDate);
-        myChangelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
+                TFSContentRevision.create(project, serverContext, localPath, serverStatus.localVer, serverStatus.modicationDate);
+        changelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
     }
 
     public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
@@ -71,9 +75,9 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         if (localItemExists) {
             final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
             final ContentRevision after = CurrentContentRevision.create(localPath);
-            myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
+            changelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
         } else {
-            myChangelistBuilder.processLocallyDeletedFile(localPath);
+            changelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
 
@@ -82,15 +86,15 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         if (localItemExists) {
             final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
             final ContentRevision after = CurrentContentRevision.create(localPath);
-            myChangelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
+            changelistBuilder.processChange(new Change(before, after), TFSVcs.getKey());
         } else {
-            myChangelistBuilder.processLocallyDeletedFile(localPath);
+            changelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
 
     public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
-            myChangelistBuilder.processUnversionedFile(localPath.getVirtualFile());
+            changelistBuilder.processUnversionedFile(localPath.getVirtualFile());
         }
     }
 
@@ -114,9 +118,10 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         if (lastChangeSet != null && !lastChangeSet.getChanges().isEmpty()) {
             final String serverPath = lastChangeSet.getChanges().get(0).getServerItem();
             final String originalPath = CommandUtils.getLocalPathSynchronously(null, serverPath,
-                    CommandUtils.getWorkspaceName(null, myProject));
+                    CommandUtils.getWorkspaceName(null, project));
 
-            return TFSContentRevision.createRenameRevision(myProject,
+            return TFSContentRevision.createRenameRevision(project,
+                    serverContext,
                     VersionControlPath.getFilePath(originalPath, localPath.isDirectory()),
                     revision,
                     lastChangeSet.getDate(),
@@ -134,10 +139,10 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
             //  if (!myWorkspace.isLocal() && TfsFileUtil.isFileWritable(localPath)) {
-            myChangelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
+            changelistBuilder.processModifiedWithoutCheckout(localPath.getVirtualFile());
             //     }
         } else {
-            myChangelistBuilder.processLocallyDeletedFile(localPath);
+            changelistBuilder.processLocallyDeletedFile(localPath);
         }
     }
     */

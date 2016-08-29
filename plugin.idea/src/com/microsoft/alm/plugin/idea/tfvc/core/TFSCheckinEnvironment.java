@@ -23,14 +23,12 @@ import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
-import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.event.HyperlinkEvent;
-import javax.ws.rs.NotAuthorizedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -178,25 +175,20 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
         }
 
         try {
-            final String remoteUrl = VcsHelper.getRepositoryContext(myVcs.getProject()).getUrl();
-            final ServerContext context = ServerContextManager.getInstance().createContextFromGitRemoteUrl(remoteUrl, true);
-            if (context == null) {
-                throw new NotAuthorizedException(remoteUrl);
-            } else {
-                final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
-                final String changesetNumber = checkinCommand.runSynchronously();
+            final ServerContext context = myVcs.getServerContext(true);
+            final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
+            final String changesetNumber = checkinCommand.runSynchronously();
 
-                // notify user of success
-                final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
-                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_LINK_TEXT, changesetNumber));
-                VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
-                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), new NotificationListener() {
-                            @Override
-                            public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
-                                BrowserUtil.browse(hyperlinkEvent.getURL());
-                            }
-                        });
-            }
+            // notify user of success
+            final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_LINK_TEXT, changesetNumber));
+            VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), new NotificationListener() {
+                        @Override
+                        public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                            BrowserUtil.browse(hyperlinkEvent.getURL());
+                        }
+                    });
         } catch (Exception e) {
             // no notification needs to be done by us for errors, IntelliJ handles that
             logger.warn("Error during checkin", e);
@@ -242,8 +234,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             for (final VirtualFile file : files) {
                 filesToAddPaths.add(file.getPath());
             }
-            // TODO: pass a context instead of null
-            final Command<List<String>> addCommand = new AddCommand(null, filesToAddPaths);
+            final Command<List<String>> addCommand = new AddCommand(myVcs.getServerContext(false), filesToAddPaths);
             final List<String> successfullyAdded = addCommand.runSynchronously();
 
             // mark files as dirty so that they refresh in local changes tab

@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.revision;
 
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.DownloadCommand;
 import org.jetbrains.annotations.Nullable;
@@ -29,12 +30,11 @@ public class TFSContentStoreFactory {
      * @return
      * @throws IOException
      */
-    public static TFSContentStore findOrCreate(final String localPath, final int revision, final String actualPath) throws IOException {
+    public static TFSContentStore findOrCreate(final String localPath, final int revision, final String actualPath, final ServerContext serverContext) throws IOException {
         TFSContentStore store = TFSContentStoreFactory.find(localPath, revision);
         if (store == null) {
             store = TFSContentStoreFactory.create(localPath, revision);
-            // TODO: pass a context instead of null
-            final Command<String> command = new DownloadCommand(null, actualPath, revision, store.getTmpFile().getPath());
+            final Command<String> command = new DownloadCommand(serverContext, actualPath, revision, store.getTmpFile().getPath());
             command.runSynchronously();
         }
         return store;

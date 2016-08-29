@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-//import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -14,13 +13,9 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import com.microsoft.alm.plugin.context.RepositoryContext;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.SyncCommand;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+//import com.intellij.openapi.progress.ProgressManager;
 
 //import org.jetbrains.tfsIntegration.core.tfs.*;
 //import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
@@ -70,10 +67,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 filesUpdatePaths.add(file.getPath());
             }
 
-            final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(myVcs.getProject());
-            final ServerContext serverContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
-                    repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
-            final Command<String> command = new SyncCommand(serverContext, filesUpdatePaths, needRecursion);
+            final Command<String> command = new SyncCommand(myVcs.getServerContext(false), filesUpdatePaths, needRecursion);
             try {
                 command.runSynchronously();
             } catch (RuntimeException e) {

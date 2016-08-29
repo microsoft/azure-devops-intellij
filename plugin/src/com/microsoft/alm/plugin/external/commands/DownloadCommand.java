@@ -15,6 +15,9 @@ import java.io.IOException;
 /**
  * This command calls View to get the contents of the file at the version provided and write them to the destination
  * file.
+ *
+ * This command actually wraps the print command:
+ * print [/version:<value>] <itemSpec>
  */
 public class DownloadCommand extends Command<String> {
     private final String localPath;
@@ -33,8 +36,7 @@ public class DownloadCommand extends Command<String> {
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
-                .add(localPath)
-                .addSwitch("proxy", "http://fail:0001");  // HACK to avoid the timeout that happens when you don't specify a proxy
+                .add(localPath);
         if (version > 0) {
             builder.addSwitch("version", Integer.toString(version));
         }
