@@ -220,7 +220,7 @@ public class SimpleCheckoutModel extends AbstractModel {
 
                         // the project has changed since a new project was created above during the directoryCheckedOut process
                         // finding the new project based on the repo path
-                        final Project currentProject = IdeaHelper.getProject(projectDirectory.getPath());
+                        final Project currentProject = IdeaHelper.getCurrentProject();
 
                         // check if ref is not master and if currentProject is not null
                         // if currentProject is null that means the user chose not to create the project so not checking the branch out

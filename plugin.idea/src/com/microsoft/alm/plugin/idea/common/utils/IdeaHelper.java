@@ -9,7 +9,8 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
-import com.microsoft.alm.common.utils.SystemHelper;
+import com.intellij.openapi.wm.IdeFocusManager;
+import com.intellij.openapi.wm.IdeFrame;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import git4idea.GitVcs;
@@ -210,23 +211,14 @@ public class IdeaHelper {
     }
 
     /**
-     * Find the project that is associated with the repository directory
+     * Find the project that is associated with the current open frame
+     * Got this method from how Git gets the current project
      *
-     * @param repoBaseDirectory
      * @return project based on repo
      */
-    public static Project getProject(final String repoBaseDirectory) {
-        final Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-
-        for (final Project project : openProjects) {
-            // the path IntelliJ returns for project uses forward slashes (Unix) while the repo directory passed in is dependent on the OS
-            // standardize the repo path passed in so that both paths being compared are Unix standard
-            if (project.getBasePath().equals(SystemHelper.getUnixPath(repoBaseDirectory))) {
-                return project;
-            }
-        }
-
-        return null;
+    public static Project getCurrentProject() {
+        final IdeFrame frame = IdeFocusManager.getGlobalInstance().getLastFocusedFrame();
+        return frame == null || frame.getProject() == null ? ProjectManager.getInstance().getDefaultProject() : frame.getProject();
     }
 
 }
