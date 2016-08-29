@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.CreateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VcsSpecificCheckoutModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
@@ -45,14 +46,14 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                 TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_CREATING_WORKSPACE),
                 true, PerformInBackgroundOption.DEAF) {
             public void run(@NotNull final ProgressIndicator indicator) {
-                IdeaHelper.setProgress(indicator, 0.10, "Creating workspace...");
+                IdeaHelper.setProgress(indicator, 0.10, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_CREATING));
 
                 // Create the workspace with default values
                 final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
-                        context, workspaceName, "Workspace created through IntelliJ", null, null);
+                        context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
                 command.runSynchronously();
 
-                IdeaHelper.setProgress(indicator, 0.20, "Adding root mapping...");
+                IdeaHelper.setProgress(indicator, 0.20, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_ADD_ROOT));
 
                 // Map the project root to the local folder
                 final String serverPath = VcsHelper.TFVC_ROOT + teamProjectName;
@@ -60,7 +61,7 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                         new Workspace.Mapping(serverPath, localPath, false), false);
                 mappingCommand.runSynchronously();
 
-                IdeaHelper.setProgress(indicator, 0.30, "Creating root folder...");
+                IdeaHelper.setProgress(indicator, 0.30, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_CREATE_FOLDER));
 
                 // Ensure that the local folder exists
                 final File file = new File(localPath);
@@ -71,8 +72,9 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                 // if advanced is set, then sync just some of the files (those that we need for IntelliJ)
                 // Otherwise, sync all the files for the team project
                 if (!isAdvancedChecked) {
-                    IdeaHelper.setProgress(indicator, 0.50, "Syncing files recursively...");
-                    //TODO sync all files recursively
+                    IdeaHelper.setProgress(indicator, 0.50, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_SYNC));
+                    // Sync all files recursively
+                    CommandUtils.syncWorkspace(context, localPath);
                 }
 
                 IdeaHelper.setProgress(indicator, 1.00, "", true);

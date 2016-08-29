@@ -11,12 +11,14 @@ import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
+import com.microsoft.alm.plugin.external.commands.SyncCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -110,5 +112,14 @@ public class CommandUtils {
         final UpdateWorkspaceCommand updateWorkspaceCommand = new UpdateWorkspaceCommand(context, oldWorkspace.getName(),
                 newWorkspace.getName(), newWorkspace.getComment(), null, null);
         updateWorkspaceCommand.runSynchronously();
+    }
+
+    /**
+     * This method Syncs the workspace based on the root path recursively.
+     * This is a synchronous call so it should only be called on a background thread.
+     */
+    public static void syncWorkspace(final ServerContext context, final String rootPath) {
+        final SyncCommand command = new SyncCommand(context, Collections.singletonList(rootPath), true);
+        command.runSynchronously();
     }
 }
