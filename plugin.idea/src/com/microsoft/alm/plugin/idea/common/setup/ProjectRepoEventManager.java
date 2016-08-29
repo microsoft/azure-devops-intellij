@@ -24,6 +24,7 @@ import java.util.Map;
 public class ProjectRepoEventManager {
     private static final Logger logger = LoggerFactory.getLogger(ProjectRepoEventManager.class);
 
+    private static boolean repositoryChanging = false;
 
     private ProjectEventListener projectEventListener;
 
@@ -86,8 +87,20 @@ public class ProjectRepoEventManager {
             project.getMessageBus().connect().subscribe(GitRepository.GIT_REPO_CHANGE, new GitRepositoryChangeListener() {
                 @Override
                 public void repositoryChanged(@NotNull final GitRepository repository) {
-                    logger.info("repository changed");
-                    ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
+                    if (repositoryChanging) {
+                        // We are already in the middle of a change, so ignore the event
+                        // There is a case where we get into an infinite loop here if we don't ignore the message
+                        logger.info("Ignoring repository changed event since we are already in the middle of a change.");
+                    }
+                    else {
+                        try {
+                            repositoryChanging = true;
+                            logger.info("repository changed");
+                            ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
+                        } finally {
+                            repositoryChanging = false;
+                        }
+                    }
                 }
             });
         }
