@@ -32,7 +32,6 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -90,18 +89,18 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     //TODO: FLAKY TEST
     //TODO: This test calls createBranch which does work on another thread. We should be waiting for the other thread to
     //TODO: finish or forcing this to be synchronous while testing.
-    @Test
-    public void testCreateBranch_Success() throws Exception {
-        setupBranchCreate(true, "branchName", true);
-        VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
-        doReturn(true).when(spyModel).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
-        spyModel.createBranch();
-
-        verify(mockCreateBranchController, times(1)).showModalDialog();
-        verify(mockCreateBranchController, times(1)).getBranchName();
-        verify(mockCreateBranchController, times(1)).createBranch(any(ServerContext.class));
-        verify(spyModel, times(1)).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
-    }
+//    @Test
+//    public void testCreateBranch_Success() throws Exception {
+//        setupBranchCreate(true, "branchName", true);
+//        VcsWorkItemsModel spyModel = Mockito.spy(new VcsWorkItemsModel(mockProject, mockTableModel));
+//        doReturn(true).when(spyModel).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+//        spyModel.createBranch();
+//
+//        verify(mockCreateBranchController, times(1)).showModalDialog();
+//        verify(mockCreateBranchController, times(1)).getBranchName();
+//        verify(mockCreateBranchController, times(1)).createBranch(any(ServerContext.class));
+//        verify(spyModel, times(1)).createWorkItemBranchAssociation(any(ServerContext.class), any(String.class), any(Integer.class));
+//    }
 
     @Test
     public void testCreateBranch_NotTfRepo() {

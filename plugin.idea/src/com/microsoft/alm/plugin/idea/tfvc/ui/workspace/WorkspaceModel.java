@@ -249,7 +249,7 @@ public class WorkspaceModel extends AbstractModel {
         final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
 
         // Using IntelliJ's background framework here so the user can choose to wait or continue working
-        final Task.Backgroundable createPullRequestTask = new Task.Backgroundable(project,
+        final Task.Backgroundable backgroundTask = new Task.Backgroundable(project,
                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_PROGRESS_TITLE),
                 true, PerformInBackgroundOption.DEAF) {
             @Override
@@ -258,13 +258,13 @@ public class WorkspaceModel extends AbstractModel {
                     IdeaHelper.setProgress(indicator, 0.10,
                             TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_UPDATING));
 
-                    // provide some indication of progress (setting indeterminate didn't do anything
+                    // Update the workspace mappings and other properties
                     CommandUtils.updateWorkspace(serverContext, oldWorkspace, newWorkspace);
 
                     if (syncFiles) {
                         IdeaHelper.setProgress(indicator, 0.30,
                                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING));
-                        syncWorkspace(project);
+                        CommandUtils.syncWorkspace(serverContext, project.getBasePath());
                     }
 
                     if (onSuccess != null) {
@@ -282,7 +282,7 @@ public class WorkspaceModel extends AbstractModel {
                             new NotificationListener() {
                                 @Override
                                 public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
-                                    syncWorkspace(project);
+                                    syncWorkspaceAsync(serverContext, project);
                                 }
                             });
                 } catch (final Throwable t) {
@@ -294,10 +294,34 @@ public class WorkspaceModel extends AbstractModel {
             }
         };
 
-        createPullRequestTask.queue();
+        backgroundTask.queue();
     }
 
-    public void syncWorkspace(final Project project) {
-        //TODO
+    public void syncWorkspaceAsync(final ServerContext context, final Project project) {
+        final Task.Backgroundable backgroundTask = new Task.Backgroundable(project,
+                TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_PROGRESS_TITLE),
+                true, PerformInBackgroundOption.DEAF) {
+            @Override
+            public void run(@NotNull final ProgressIndicator indicator) {
+                try {
+                    IdeaHelper.setProgress(indicator, 0.30,
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING));
+
+                    // Sync all files recursively
+                    CommandUtils.syncWorkspace(context, project.getBasePath());
+
+                    // Notify the user of a successful sync
+                    VcsNotifier.getInstance(project).notifySuccess(
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE),
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_SYNC_MESSAGE));
+                } catch (final Throwable t) {
+                    VcsNotifier.getInstance(project).notifyError(
+                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_FAILURE_TITLE),
+                            LocalizationServiceImpl.getInstance().getExceptionMessage(t));
+                }
+
+            }
+        };
+        backgroundTask.queue();
     }
 }
