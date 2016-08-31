@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
 import com.microsoft.alm.plugin.external.commands.SyncCommand;
+import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
@@ -121,5 +122,14 @@ public class CommandUtils {
     public static void syncWorkspace(final ServerContext context, final String rootPath) {
         final SyncCommand command = new SyncCommand(context, Collections.singletonList(rootPath), true);
         command.runSynchronously();
+    }
+
+    /**
+     * This method undoes the list of local files passed in.
+     * This is a synchronous call so it should only be called on a background thread.
+     */
+    public static List<String> undoLocalFiles(final ServerContext context, final List<String> files) {
+        final UndoCommand command = new UndoCommand(context, files);
+        return command.runSynchronously();
     }
 }

@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.ToolRunner;
@@ -80,10 +79,7 @@ public class CheckinCommand extends Command<String> {
             for (int i = 0; i < output.length; i++) {
                 // finding error message by eliminating all other known output lines since we can't parse for the error line itself (it's unknown to us)
                 // TODO: figure out a better way to get the error message instead of parsing
-                if (StringUtils.isNotEmpty(output[i]) &&
-                        !StringUtils.startsWithIgnoreCase(output[i], CHECKIN_LINE_PREFIX) &&
-                        !StringUtils.startsWithIgnoreCase(output[i], CHECKIN_FAILED_MSG) &&
-                        !(StringUtils.startsWith(output[i], UrlHelper.URL_SEPARATOR) && StringUtils.endsWith(output[i], ":"))) {
+                if (isOutputLineExpected(output[i], new String[]{CHECKIN_LINE_PREFIX, CHECKIN_FAILED_MSG}, true)) {
                     throw new RuntimeException(output[i]);
                 }
             }

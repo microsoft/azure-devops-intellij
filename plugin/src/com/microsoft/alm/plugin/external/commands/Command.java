@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
@@ -232,6 +233,64 @@ public abstract class Command<T> {
     protected String[] getLines(final String buffer) {
         final String[] lines = buffer.replace("\r\n", "\n").split("\n");
         return lines;
+    }
+
+    /**
+     * This method evaluates a line of output to see if it contains something that is expected.
+     * If not, it returns false.
+     * There are 3 kinds of expected lines:
+     * 1) lines that begin with an expected prefix
+     * 2) lines that contain a folder path (/path/path:)
+     * 3) empty lines
+     * All other types of lines are unexpected.
+     */
+    protected boolean isOutputLineExpected(final String line, final String[] expectedPrefixes, final boolean filePathsAreExpected) {
+        final String trimmed = line != null ? line.trim() : null;
+        if (StringUtils.isNotEmpty(trimmed)) {
+            // If we are expecting file paths, check for a file path pattern (ex. /path/path2:)
+            if (filePathsAreExpected && isFilePath(line)) {
+                // This matched our file path pattern, so it is expected
+                return true;
+            }
+
+            // Next, check for one of the expected prefixes
+            if (expectedPrefixes != null) {
+                for (final String prefix : expectedPrefixes) {
+                    if (StringUtils.startsWithIgnoreCase(line, prefix)) {
+                        // The line starts with an expected prefix so it is expected
+                        return true;
+                    }
+                }
+            }
+
+            // The line is not empty and does not contain anything we expect
+            // So, it is probably an error.
+            return false;
+        }
+
+        // Just return true for empty lines
+        return true;
+    }
+
+    protected boolean isFilePath(final String line) {
+        if (StringUtils.endsWith(line, ":")) {
+            // File paths are different on different OSes
+            if (StringUtils.containsAny(line, "\\/")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected String getFilePath(final String path, final String filename, final String pathRoot) {
+        // If the path still has a ':' at the end, remove it
+        String folderPath = StringUtils.removeEnd(path, ":");
+        // If the path isn't rooted, add in the root
+        if (!Path.isAbsolute(folderPath) && StringUtils.isNotEmpty(pathRoot)) {
+            folderPath = Path.combine(pathRoot, folderPath);
+        }
+
+        return Path.combine(folderPath, filename);
     }
 
     protected void throwIfError(final String stderr) {

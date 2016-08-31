@@ -130,10 +130,10 @@
             <reference id="UpdateFiles"/>
             <!--<reference id="IntegrateFiles"/>
             <reference id="CheckStatusForFiles"/>
-            <separator/>
+            <separator/ -->
             <separator/>
             <reference id="ChangesView.Revert"/>
-            <separator/>
+            <!-- separator/>
             <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
             <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="_Branch..."/>
             <action id="Tfs.MergeChanges" class="org.jetbrains.tfsIntegration.actions.MergeBranchAction" text="_Merge Branch Changes..."/>

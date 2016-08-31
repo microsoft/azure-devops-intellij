@@ -181,9 +181,17 @@ public class BuildStatusLookupOperation extends Operation {
             // TODO: is not up to date with that version yet. We should change this code to use that method as soon
             // TODO: as we can.
             final BuildHttpClient buildClient = context.getBuildHttpClient();
-            final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null, null, null, null, null, null, null, BuildStatus.COMPLETED, null, null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
+            final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null,
+                    null, null, null, null, null, null, BuildStatus.COMPLETED,
+                    null, //TODO: EnumSet.of(BuildResult.FAILED, BuildResult.PARTIALLY_SUCCEEDED, BuildResult.SUCCEEDED),
+                    null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
             if (builds.size() > 0) {
                 for (final Build b : builds) {
+                    if (b.getResult() == BuildResult.CANCELED) {
+                        // Ignore canceled builds (it would be better to not query for them above, but that isn't working in the SDK)
+                        continue;
+                    }
+
                     // Get the repo and branch for the build and compare them to ours
                     final BuildRepository repo = b.getRepository();
                     if (repo != null && StringUtils.equalsIgnoreCase(context.getGitRepository().getId().toString(), repo.getId())) {
@@ -248,6 +256,11 @@ public class BuildStatusLookupOperation extends Operation {
         final List<Build> builds = buildClient.getBuilds(context.getTeamProjectReference().getId(), null, null, null, null, null, null, null, BuildStatus.COMPLETED, null, null, null, null, 100, null, null, null, BuildQueryOrder.FINISH_TIME_DESCENDING);
         if (builds.size() > 0) {
             for (final Build b : builds) {
+                if (b.getResult() == BuildResult.CANCELED) {
+                    // Ignore canceled builds (it would be better to not query for them above, but that isn't working in the SDK)
+                    continue;
+                }
+
                 // Get the repo and branch for the build and compare them to ours
                 final BuildRepository repo = b.getRepository();
                 if (repo != null && StringUtils.equalsIgnoreCase(repo.getType(), TFVC_REPO_TYPE)) {
