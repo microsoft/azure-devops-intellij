@@ -1,67 +1,47 @@
-/*
- * Copyright 2000-2008 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
 
-package org.jetbrains.tfsIntegration.ui;
+package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
-import com.intellij.openapi.ui.DialogWrapper;
-import com.microsoft.schemas.teamfoundation._2005._06.versioncontrol.clientservices._03.Conflict;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialogImpl;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
 
-import javax.swing.*;
+import javax.swing.JComponent;
 
-public class ResolveConflictsDialog extends DialogWrapper {
-  private final ResolveConflictHelper myResolveConflictHelper;
+public class ResolveConflictsDialog extends BaseDialogImpl {
+    private ResolveConflictsForm resolveConflictsForm;
 
-  public ResolveConflictsDialog(final ResolveConflictHelper resolveConflictHelper) {
-    super(true);
-    myResolveConflictHelper = resolveConflictHelper;
-    setTitle("Resolve Conflicts");
-    setResizable(true);
-    setOKButtonText("Close");
-    init();
-  }
-
-  protected void doOKAction() {
-    for (Conflict conflict : myResolveConflictHelper.getConflicts()) {
-      myResolveConflictHelper.skip(conflict);
+    public ResolveConflictsDialog(final Project project) {
+        super(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_DIALOG_TITLE),
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_DIALOG_FINISHED),
+                TfPluginBundle.KEY_TFVC_CONFLICT_DIALOG_TITLE);
     }
-    super.doOKAction();
-  }
 
-  @Nullable
-  protected JComponent createCenterPanel() {
-    ResolveConflictsForm resolveConflictsForm = new ResolveConflictsForm(myResolveConflictHelper);
-    resolveConflictsForm.addListener(new ResolveConflictsForm.Listener() {
-      public void close() {
-        ResolveConflictsDialog.this.close(OK_EXIT_CODE);
-      }
-    });
-    return resolveConflictsForm.getPanel();
-  }
+//TODO: handle skipped conflicts
+//  protected void doOKAction() {
+//    for (String conflict : myResolveConflictHelper.getConflicts()) {
+//      myResolveConflictHelper.skip(conflict);
+//    }
+//    super.doOKAction();
+//  }
 
-  @NotNull
-  protected Action[] createActions() {
-    return new Action[]{getOKAction()};
-  }
+    @Nullable
+    protected JComponent createCenterPanel() {
+        resolveConflictsForm = new ResolveConflictsForm();
+        return resolveConflictsForm.getContentPanel();
+    }
 
-  @Override
-  protected String getDimensionServiceKey() {
-    return "TFS.ResolveConflicts";
-  }
+    public void setConflictsTableModel(final ConflictsTableModel conflictsTableModel) {
+        resolveConflictsForm.setModelForView(conflictsTableModel);
+    }
 
+    public int[] getSelectedConflicts() {
+        return resolveConflictsForm.getSelectedConflicts();
+    }
+
+    public void setLoading(final boolean isLoading) {
+        resolveConflictsForm.setLoading(isLoading);
+    }
 }

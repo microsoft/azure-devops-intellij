@@ -516,6 +516,24 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_UPDATE_STATUS_MSG="Tfvc.Update.Status.Msg";
 
+    //TFVC Conflicts
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_NAME="Tfvc.Conflict.Column.Name";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_DIALOG_TITLE="Tfvc.Conflict.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_DIALOG_FINISHED="Tfvc.Conflict.Dialog.Finished";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_DIALOG_MERGE="Tfvc.Conflict.Dialog.Merge";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_THEIRS="Tfvc.Conflict.Dialog.AcceptTheirs";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_YOURS="Tfvc.Conflict.Dialog.AcceptYours";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_LOADING_TABLE="Tfvc.Conflict.Loading.Table";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR="Tfvc.Conflict.Loading.ProgressBar";
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON="WorkspaceDialog.SaveButton";
