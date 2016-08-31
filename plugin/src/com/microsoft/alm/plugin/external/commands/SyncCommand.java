@@ -5,9 +5,13 @@ package com.microsoft.alm.plugin.external.commands;
 
 import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.SyncResults;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +23,15 @@ import java.util.List;
  * [/recursive] [/preview] [/noautoresolve] [/noprompt]
  * [/login:username,[password]]
  */
-public class SyncCommand extends Command<String> {
-    public static final String WARNING_PREFIX = "Warning";
+public class SyncCommand extends Command<SyncResults> {
+    private static final Logger logger = LoggerFactory.getLogger(SyncCommand.class);
+
+    private static final String WARNING_PREFIX = "Warning";
+    private static final String CONFLICT_PREFIX = "Conflict";
+    private static final String SUMMARY_PREFIX = "---- Summary:";
+    private static final String NEW_FILE_PREFIX = "Getting ";
+    private static final String UPDATED_FILE_PREFIX = "Replacing ";
+    private static final String DELETED_FILE_PREFIX = "Deleting ";
 
     private final List<String> updatePaths;
     private final boolean recursive;
@@ -41,7 +52,6 @@ public class SyncCommand extends Command<String> {
         if (recursive) {
             builder.addSwitch("recursive");
         }
-        builder.addSwitch("force");
         return builder;
     }
 
@@ -53,9 +63,39 @@ public class SyncCommand extends Command<String> {
      * @return
      */
     @Override
-    public String parseOutput(final String stdout, final String stderr) {
-        super.throwIfError(stderr);
-        return StringUtils.EMPTY;
+    public SyncResults parseOutput(final String stdout, final String stderr) {
+        final List<String> updatedFiles = new ArrayList<String>();
+        final List<String> newFiles = new ArrayList<String>();
+        final List<String> deletedFiles = new ArrayList<String>();
+        final List<VcsException> exceptions = new ArrayList<VcsException>();
+
+        // make note that conflicts exist but to get conflicts use resolve command
+        final boolean conflictsExist = StringUtils.contains(stderr, CONFLICT_PREFIX);
+
+        // parse the exception to get individual exceptions instead of 1 large one
+        exceptions.addAll(parseException(stderr));
+
+        // parse output for file changes
+        final String[] lines = getLines(stdout);
+        String path = StringUtils.EMPTY;
+        for (final String line : lines) {
+            if (StringUtils.isNotEmpty(line) || StringUtils.startsWith(line, SUMMARY_PREFIX)) {
+                if (StringUtils.endsWith(line, ":")) {
+                    path = line.substring(0, line.length() - 2);
+                } else if (StringUtils.startsWith(line, NEW_FILE_PREFIX)) {
+                    newFiles.add(UrlHelper.combine(path, line.replaceFirst(NEW_FILE_PREFIX, StringUtils.EMPTY)));
+                } else if (StringUtils.startsWith(line, UPDATED_FILE_PREFIX)) {
+                    updatedFiles.add(UrlHelper.combine(path, line.replaceFirst(UPDATED_FILE_PREFIX, StringUtils.EMPTY)));
+                } else if (StringUtils.startsWith(line, DELETED_FILE_PREFIX)) {
+                    deletedFiles.add(UrlHelper.combine(path, line.replaceFirst(DELETED_FILE_PREFIX, StringUtils.EMPTY)));
+                } else {
+                    // TODO: check for other cases to cover here but no need to hinder user if case not covered
+                    logger.warn("Unknown response from 'tf get' command: " + line);
+                }
+            }
+        }
+
+        return new SyncResults(conflictsExist, updatedFiles, newFiles, deletedFiles, exceptions);
     }
 
     /**
@@ -70,18 +110,34 @@ public class SyncCommand extends Command<String> {
      * Warning - Unable to refresh /Users/user/tfvc-tfs/tfsTest_01/addFold/testHereRename.txt because you have a pending edit.
      * Conflict /Users/user/tfvc-tfs/tfsTest_01/TestAdd.txt - Unable to perform the get operation because you have a conflicting edit
      *
-     * @param e
+     * @param stderr
      * @return
      */
-    public static List<VcsException> getFormattedExceptions(final Exception e) {
+    private List<VcsException> parseException(final String stderr) {
         final List<VcsException> exceptions = new ArrayList<VcsException>();
 
-        final String[] lines = e.getMessage().replace("\r\n", "\n").split("\n");
-        for (int i = lines.length / 2; i < lines.length; i++) {
-            final VcsException exception = new VcsException((lines[i]));
-            exception.setIsWarning(StringUtils.startsWith(lines[i], WARNING_PREFIX));
-            exceptions.add(exception);
+        final String[] exceptionLines = getLines(stderr);
+        for (int i = exceptionLines.length / 2; i < exceptionLines.length; i++) {
+            // don't treat conflicts as exceptions
+            if (!StringUtils.startsWith(exceptionLines[i], "Conflict")) {
+                //TODO: what if warning is that file was skipped (but only shows up when force was used)
+                final VcsException exception = new VcsException((exceptionLines[i]));
+                exception.setIsWarning(StringUtils.startsWith(exceptionLines[i], WARNING_PREFIX));
+                exceptions.add(exception);
+            }
         }
         return exceptions;
+    }
+
+    /**
+     * Override return code in the cases where partial success (1) was seen
+     * This occurs in the case where conflicts exists
+     *
+     * @param returnCode
+     * @return
+     */
+    @Override
+    public int interpretReturnCode(final int returnCode) {
+        return returnCode == 1 ? 0 : returnCode;
     }
 }

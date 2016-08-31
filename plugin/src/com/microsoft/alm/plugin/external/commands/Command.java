@@ -131,7 +131,7 @@ public abstract class Command<T> {
                     //TODO there are some commands that write errors to stdout and simply return a non-zero exit code (i.e. when a workspace is not found by name)
                     //TODO we may want to pass in the return code to the parse method or something like that to allow the command to inspect this info as well.
                     result = parseOutput(stdout.toString(), stderr.toString());
-                    TfTool.throwBadExitCode(returnCode);
+                    TfTool.throwBadExitCode(interpretReturnCode(returnCode));
                 } catch (Throwable throwable) {
                     logger.warn("CMD: parsing output failed", throwable);
                     error = throwable;
@@ -188,6 +188,16 @@ public abstract class Command<T> {
     }
 
     public abstract T parseOutput(final String stdout, final String stderr);
+
+    /**
+     * Default method for parsing return code that can be overridden if need be
+     *
+     * @param returnCode
+     * @return returnCode
+     */
+    public int interpretReturnCode(final int returnCode) {
+        return returnCode;
+    }
 
     protected NodeList evaluateXPath(final String stdout, final String xpathQuery) {
         if (StringUtils.isEmpty(stdout)) {

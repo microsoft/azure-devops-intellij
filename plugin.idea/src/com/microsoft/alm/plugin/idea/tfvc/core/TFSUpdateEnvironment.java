@@ -9,32 +9,22 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.SyncCommand;
+import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-//import com.intellij.openapi.progress.ProgressManager;
-
-//import org.jetbrains.tfsIntegration.core.tfs.*;
-//import org.jetbrains.tfsIntegration.core.tfs.conflicts.ConflictsEnvironment;
-//import org.jetbrains.tfsIntegration.core.tfs.conflicts.ResolveConflictHelper;
-//import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyGetOperations;
-//import org.jetbrains.tfsIntegration.core.tfs.operations.ApplyProgress;
-//import org.jetbrains.tfsIntegration.core.tfs.version.LatestVersionSpec;
-//import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
-//import org.jetbrains.tfsIntegration.exceptions.TfsException;
-//import org.jetbrains.tfsIntegration.ui.UpdateSettingsForm;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
     private final
@@ -67,15 +57,34 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 filesUpdatePaths.add(file.getPath());
             }
 
-            final Command<String> command = new SyncCommand(myVcs.getServerContext(false), filesUpdatePaths, needRecursion);
-            try {
-                command.runSynchronously();
-            } catch (RuntimeException e) {
-                exceptions.addAll(SyncCommand.getFormattedExceptions(e));
+            final SyncCommand command = new SyncCommand(myVcs.getServerContext(false), filesUpdatePaths, needRecursion);
+            final SyncResults results = command.runSynchronously();
+
+            // add the changed files to updatedFiles so user knows what has occurred in the workspace
+            // TODO: determine the resolution numbers (probably need to call history on each file to get this)
+            for (final String file : results.getDeletedFiles()) {
+                updatedFiles.getGroupById(FileGroup.REMOVED_FROM_REPOSITORY_ID).add(file, TFSVcs.getKey(), null);
+            }
+            for (final String file : results.getNewFiles()) {
+                updatedFiles.getGroupById(FileGroup.CREATED_ID).add(file, TFSVcs.getKey(), null);
+            }
+            for (final String file : results.getUpdatedFiles()) {
+                updatedFiles.getGroupById(FileGroup.UPDATED_ID).add(file, TFSVcs.getKey(), null);
+            }
+
+            // check and resolve conflicts
+            if (results.doConflictsExists()) {
+                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), myVcs.getServerContext(false), filesUpdatePaths);
+                //TODO: updateFiles needs to be told what was and wasn't resolved
+            }
+
+            if (!results.getExceptions().isEmpty()) {
+                exceptions.addAll(results.getExceptions());
             }
         } catch (Exception e) {
             exceptions.add(new VcsException(e));
         }
+
 
 //    TODO: add in the conflict resolution part of this code
 //    try {
