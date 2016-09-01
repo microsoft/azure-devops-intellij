@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 
@@ -56,8 +55,7 @@ public class FindConflictsCommand extends Command<List<String>> {
         for (final String line : lines) {
             final int index = line.indexOf(":");
             if (index != -1) {
-                // get full path of conflict by combining base path with output
-                conflicts.add(UrlHelper.combine(basePath, line.substring(0, index)));
+                conflicts.add(line.substring(0, index));
             }
         }
 

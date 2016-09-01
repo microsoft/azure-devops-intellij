@@ -10,5 +10,6 @@ import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import java.util.List;
 
 public interface ConflictsHandler {
-    void resolveConflicts(final Project project, final ServerContext serverContext, final List<String> filePaths) throws TfsException;
+    void resolveConflicts(final Project project, final ServerContext serverContext, final List<String> filePaths,
+                          final ResolveConflictHelper conflictHelper) throws TfsException;
 }
