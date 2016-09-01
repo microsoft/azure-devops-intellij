@@ -14,10 +14,11 @@ import java.util.List;
  * Handles conflicts interactively with the user to help resolve them
  */
 public class DialogConflictsHandler implements ConflictsHandler {
-    public void resolveConflicts(final Project project, final ServerContext serverContext, final List<String> filePaths) {
+    public void resolveConflicts(final Project project, final ServerContext serverContext, final List<String> filePaths,
+                                 final ResolveConflictHelper conflictHelper) {
         WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(new Runnable() {
             public void run() {
-                final ResolveConflictsController controller = new ResolveConflictsController(project, serverContext, filePaths);
+                final ResolveConflictsController controller = new ResolveConflictsController(project, serverContext, filePaths, conflictHelper);
                 controller.showModalDialog();
             }
         });

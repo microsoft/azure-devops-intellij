@@ -18,6 +18,13 @@ public class SyncResults {
     private final List<String> deletedFiles;
     private final List<VcsException> exceptions;
 
+    /**
+     * Constructor for when all files are up-to-date
+     */
+    public SyncResults() {
+        this(false, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+
     public SyncResults(final boolean conflictsExist, final List<String> updatedFiles, final List<String> newFiles,
                        final List<String> deletedFiles, final List<VcsException> exceptions) {
         this.conflictsExist = conflictsExist;

@@ -70,4 +70,8 @@ public class ConflictsTableModel extends AbstractTableModel {
         myConflicts.add(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_TABLE));
         fireTableDataChanged();
     }
+
+    public List<String> getMyConflicts() {
+        return myConflicts;
+    }
 }

@@ -90,7 +90,6 @@ public class ResolveConflictsForm implements BasicForm {
         }
     }
 
-    @Override
     public void addActionListener(final ActionListener listener) {
         myAcceptYoursButton.addActionListener(listener);
         myAcceptTheirsButton.addActionListener(listener);
@@ -112,7 +111,7 @@ public class ResolveConflictsForm implements BasicForm {
         myMergeButton.setEnabled(!isLoading && mergeEnabled);
     }
 
-    public int[] getSelectedConflicts() {
+    public int[] getSelectedRows() {
         return myItemsTable.getSelectedRows();
     }
 

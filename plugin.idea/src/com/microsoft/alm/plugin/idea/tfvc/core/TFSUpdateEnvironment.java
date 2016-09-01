@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironment;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,9 +74,11 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             }
 
             // check and resolve conflicts
+            // updatedFiles updated in the helper class
             if (results.doConflictsExists()) {
-                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), myVcs.getServerContext(false), filesUpdatePaths);
-                //TODO: updateFiles needs to be told what was and wasn't resolved
+                final ResolveConflictHelper conflictHelper = new ResolveConflictHelper(myVcs.getProject(), updatedFiles);
+                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), myVcs.getServerContext(false),
+                        filesUpdatePaths, conflictHelper);
             }
 
             if (!results.getExceptions().isEmpty()) {

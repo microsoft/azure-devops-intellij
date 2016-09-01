@@ -5,6 +5,8 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,9 +21,10 @@ public class ResolveConflictsController implements Observer, ActionListener {
     private final ResolveConflictsDialog dialog;
     private final ResolveConflictsModel model;
 
-    public ResolveConflictsController(final Project project, final ServerContext serverContext, final List<String> filePaths) {
+    public ResolveConflictsController(final Project project, final ServerContext serverContext, final List<String> filePaths,
+                                      final ResolveConflictHelper conflictHelper) {
         this.dialog = new ResolveConflictsDialog(project);
-        this.model = new ResolveConflictsModel(project, serverContext, filePaths);
+        this.model = new ResolveConflictsModel(project, serverContext, filePaths, conflictHelper);
 
         this.dialog.addActionListener(this);
         this.model.addObserver(this);
@@ -38,11 +41,13 @@ public class ResolveConflictsController implements Observer, ActionListener {
         updateModel();
 
         if (ResolveConflictsForm.CMD_ACCEPT_THEIRS.equals(e.getActionCommand())) {
-            //TODO: take their changes
+            model.acceptTheirs(dialog.getSelectedRows());
         } else if (ResolveConflictsForm.CMD_ACCEPT_YOURS.equals(e.getActionCommand())) {
-            //TODO: take your changes
+            model.acceptYours(dialog.getSelectedRows());
         } else if (ResolveConflictsForm.CMD_MERGE.equals(e.getActionCommand())) {
             //TODO: merge
+        } else if (BaseDialog.CMD_OK.equals(e.getActionCommand())) {
+            model.processSkippedConflicts();
         }
     }
 

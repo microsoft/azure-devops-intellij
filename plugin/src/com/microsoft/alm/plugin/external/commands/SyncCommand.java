@@ -26,6 +26,7 @@ import java.util.List;
 public class SyncCommand extends Command<SyncResults> {
     private static final Logger logger = LoggerFactory.getLogger(SyncCommand.class);
 
+    private static final String UP_TO_DATE_MSG = "All files up to date.";
     private static final String WARNING_PREFIX = "Warning";
     private static final String CONFLICT_PREFIX = "Conflict";
     private static final String SUMMARY_PREFIX = "---- Summary:";
@@ -69,6 +70,10 @@ public class SyncCommand extends Command<SyncResults> {
         final List<String> deletedFiles = new ArrayList<String>();
         final List<VcsException> exceptions = new ArrayList<VcsException>();
 
+        if (StringUtils.contains(stdout, UP_TO_DATE_MSG)) {
+            return new SyncResults();
+        }
+
         // make note that conflicts exist but to get conflicts use resolve command
         final boolean conflictsExist = StringUtils.contains(stderr, CONFLICT_PREFIX);
 
@@ -80,8 +85,8 @@ public class SyncCommand extends Command<SyncResults> {
         String path = StringUtils.EMPTY;
         for (final String line : lines) {
             if (StringUtils.isNotEmpty(line) || StringUtils.startsWith(line, SUMMARY_PREFIX)) {
-                if (StringUtils.endsWith(line, ":")) {
-                    path = line.substring(0, line.length() - 2);
+                if (isFilePath(line)) {
+                    path = getFilePath(line, StringUtils.EMPTY, StringUtils.EMPTY);
                 } else if (StringUtils.startsWith(line, NEW_FILE_PREFIX)) {
                     newFiles.add(UrlHelper.combine(path, line.replaceFirst(NEW_FILE_PREFIX, StringUtils.EMPTY)));
                 } else if (StringUtils.startsWith(line, UPDATED_FILE_PREFIX)) {
