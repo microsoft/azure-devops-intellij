@@ -22,7 +22,10 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,6 +36,7 @@ import java.util.List;
  */
 
 public class TFSChangeProvider implements ChangeProvider {
+    private static final Logger logger = LoggerFactory.getLogger(TFSChangeProvider.class);
 
     private final Project myProject;
 
@@ -89,9 +93,15 @@ public class TFSChangeProvider implements ChangeProvider {
                 continue;
             }
 
-            // TODO: add the ability to pass multiple roots to the command line
-            final Command<List<PendingChange>> command = new StatusCommand(serverContext, root.getPath());
-            final List<PendingChange> changes = command.runSynchronously();
+            List<PendingChange> changes;
+            try {
+                // TODO: add the ability to pass multiple roots to the command line
+                final Command<List<PendingChange>> command = new StatusCommand(serverContext, root.getPath());
+                changes = command.runSynchronously();
+            } catch (final Throwable t) {
+                logger.warn("Failed to get changes from command line. root=" + root.getPath(), t);
+                changes = Collections.emptyList();
+            }
 
             // for each change, find out the status of the changes and then add to the list
             for (final PendingChange change : changes) {

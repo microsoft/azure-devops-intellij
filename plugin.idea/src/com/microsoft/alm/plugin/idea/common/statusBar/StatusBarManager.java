@@ -17,10 +17,13 @@ import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class StatusBarManager {
+    private static final Logger logger = LoggerFactory.getLogger(StatusBarManager.class);
     private static ServerEventListener serverEventListener;
 
     public static void setupStatusBar() {
@@ -33,20 +36,24 @@ public class StatusBarManager {
                         IdeaHelper.runOnUIThread(new Runnable() {
                             @Override
                             public void run() {
-                                // Check the context object to see if these change events were triggered by IntelliJ
-                                if (EventContextHelper.isProjectOpened(contextMap)
-                                        || EventContextHelper.isRepositoryChanged(contextMap)) {
-                                    // On project opened or repo changed we use the project context to update the status bar
-                                    updateStatusBar(EventContextHelper.getProject(contextMap), false);
-                                } else if (EventContextHelper.isProjectClosing(contextMap)) {
-                                    // On project closing we remove our widgets from the status bar
-                                    removeWidgets(EventContextHelper.getProject(contextMap));
-                                } else {
-                                    // If there isn't any context, then we were called by the polling timer
-                                    // Just update all the status bars for all the projects
-                                    updateStatusBar();
+                                // Avoid letting exceptions bubble out here and cause error notifications
+                                try {
+                                    // Check the context object to see if these change events were triggered by IntelliJ
+                                    if (EventContextHelper.isProjectOpened(contextMap)
+                                            || EventContextHelper.isRepositoryChanged(contextMap)) {
+                                        // On project opened or repo changed we use the project context to update the status bar
+                                        updateStatusBar(EventContextHelper.getProject(contextMap), false);
+                                    } else if (EventContextHelper.isProjectClosing(contextMap)) {
+                                        // On project closing we remove our widgets from the status bar
+                                        removeWidgets(EventContextHelper.getProject(contextMap));
+                                    } else {
+                                        // If there isn't any context, then we were called by the polling timer
+                                        // Just update all the status bars for all the projects
+                                        updateStatusBar();
+                                    }
+                                } catch(final Throwable t) {
+                                    logger.warn("Unable to update the status bar.", t);
                                 }
-
                             }
                         });
                     }

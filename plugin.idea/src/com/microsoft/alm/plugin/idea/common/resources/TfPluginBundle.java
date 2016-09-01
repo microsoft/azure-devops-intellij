@@ -515,6 +515,10 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CHECKIN_STATUS="Tfvc.Checkin.Status";
     @NonNls
     public static final String KEY_TFVC_UPDATE_STATUS_MSG="Tfvc.Update.Status.Msg";
+    @NonNls
+    public static final String KEY_TFVC_TF_VERSION_WARNING_PROGRESS="Tfvc.tf.VersionWarning.Progress";
+    @NonNls
+    public static final String KEY_TFVC_TF_VERSION_WARNING_TITLE="Tfvc.tf.VersionWarning.Title";
 
     //TFVC Conflicts
     @NonNls

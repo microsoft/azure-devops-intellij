@@ -3,7 +3,12 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.google.common.util.concurrent.SettableFuture;
+import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.progress.PerformInBackgroundOption;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.CheckoutProvider;
@@ -11,6 +16,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsKey;
+import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -21,8 +27,14 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.external.exceptions.ToolException;
+import com.microsoft.alm.plugin.external.tools.TfTool;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +50,7 @@ import javax.ws.rs.NotAuthorizedException;
  */
 public class TFSVcs extends AbstractVcs {
     public static final Logger logger = LoggerFactory.getLogger(TFSVcs.class);
+    private static boolean hasVersionBeenVerified = false;
 
     @NonNls
     public static final String TFVC_NAME = "TFVC";
@@ -78,6 +91,7 @@ public class TFSVcs extends AbstractVcs {
     public void activate() {
 //    TODO: myFileListener = new TFSFileListener(getProject(), this);
 //    TODO: TfsSdkManager.activate();
+        checkCommandLineVersion();
     }
 
     @Override
@@ -189,5 +203,56 @@ public class TFSVcs extends AbstractVcs {
             throw new NotAuthorizedException(repositoryContext != null ? repositoryContext.getUrl() : "");
         }
         return serverContext;
+    }
+
+    private void checkCommandLineVersion() {
+        if (hasVersionBeenVerified) {
+            // No need to check the version again if we have already checked it once this session
+            logger.info("Skipping the attempt to check the version of the TF command line.");
+            return;
+        }
+
+        hasVersionBeenVerified = true;
+
+        // We want to start a background thread to check the version, but that can only be done
+        // form the UI thread.
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                final SettableFuture<String> versionMessage = SettableFuture.create();
+                (new Task.Backgroundable(getProject(), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_PROGRESS),
+                        false, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
+                    public void run(@NotNull final ProgressIndicator indicator) {
+                        try {
+                            logger.info("Attempting to check the version of the TF command line.");
+                            TfTool.checkVersion();
+                            versionMessage.set(StringUtils.EMPTY);
+                        } catch (final ToolException ex) {
+                            final String error = LocalizationServiceImpl.getInstance().getExceptionMessage(ex);
+                            logger.warn(error);
+                            versionMessage.set(error);
+                        } catch (final Throwable t) {
+                            // Don't let unknown errors bubble out here
+                            logger.warn("Unexpected error when checking the version of the command line.", t);
+                        }
+                    }
+
+                    public void onSuccess() {
+                        try {
+                            final String error = versionMessage.get();
+                            if (StringUtils.isNotEmpty(error)) {
+                                logger.info("Notifying the user of the min version problem.");
+                                // Notify the user that they should upgrade their version of the TF command line
+                                VcsNotifier.getInstance(getProject()).notifyImportantWarning(
+                                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE),
+                                        error, new NotificationListener.UrlOpeningListener(false));
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Failed to warn user about min version of TF command line.", e);
+                        }
+                    }
+                }).queue();
+            }
+        });
     }
 }

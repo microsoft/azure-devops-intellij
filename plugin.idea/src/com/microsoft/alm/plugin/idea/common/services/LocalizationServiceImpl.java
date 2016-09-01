@@ -52,7 +52,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             final LocalizedException localizedException = (LocalizedException)t;
             final String key = localizedException.getMessageKey();
             if (keysMap.containsKey(key)) {
-                message = getLocalizedMessage(keysMap.get(key), (Object)localizedException.getMessageParameters());
+                message = getLocalizedMessage(keysMap.get(key), (Object[])localizedException.getMessageParameters());
             }
         }
 
@@ -63,7 +63,7 @@ public class LocalizationServiceImpl implements LocalizationService {
                 final LocalizedException localizedException = (LocalizedException)t.getCause();
                 final String key = localizedException.getMessageKey();
                 if (keysMap.containsKey(key)) {
-                    message = getLocalizedMessage(keysMap.get(key), (Object)localizedException.getMessageParameters());
+                    message = getLocalizedMessage(keysMap.get(key), (Object[])localizedException.getMessageParameters());
                 }
             } else {
                 message = t.getCause().getLocalizedMessage();
@@ -94,6 +94,8 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(ToolException.KEY_TF_BAD_EXIT_CODE, "ToolException.TF.BadExitCode");
             put(ToolException.KEY_TF_HOME_NOT_SET, "ToolException.TF.HomeNotSet");
             put(ToolException.KEY_TF_EXE_NOT_FOUND, "ToolException.TF.ExeNotFound");
+            put(ToolException.KEY_TF_PARSE_FAILURE, "ToolException.TF.ParseFailure");
+            put(ToolException.KEY_TF_MIN_VERSION_WARNING, "ToolException.TF.MinVersionWarning");
         }
     };
 

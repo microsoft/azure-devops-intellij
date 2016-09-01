@@ -3,8 +3,11 @@
 
 package com.microsoft.alm.plugin.external.tools;
 
+import com.microsoft.alm.plugin.external.commands.TfVersionCommand;
 import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
+import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
+import com.microsoft.alm.plugin.external.models.ToolVersion;
 import com.sun.jna.Platform;
 import org.apache.commons.lang.StringUtils;
 
@@ -16,6 +19,7 @@ import java.io.File;
 public class TfTool {
     private static final String[] TF_WINDOWS_PROGRAMS = {"tf.exe", "tf.bat", "tf.cmd"};
     private static final String[] TF_OTHER_PROGRAMS = {"tf", "tf.sh"};
+    private static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.0.3");
 
     /**
      * This method returns the path to the TF command line program.
@@ -59,6 +63,17 @@ public class TfTool {
 
         // No program was found in that folder
         return StringUtils.EMPTY;
+    }
+
+    /**
+     * Determines the version of the TF command being used and throws if the version is too small.
+     */
+    public static void checkVersion() {
+        final TfVersionCommand command = new TfVersionCommand();
+        final ToolVersion version = command.runSynchronously();
+        if (version.compare(TF_MIN_VERSION) < 0) {
+            throw new ToolVersionException(version, TF_MIN_VERSION);
+        }
     }
 
     /**

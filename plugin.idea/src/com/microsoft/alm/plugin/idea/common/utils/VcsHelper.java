@@ -71,43 +71,48 @@ public class VcsHelper {
      */
     public static RepositoryContext getRepositoryContext(final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
-        final String projectRootFolder = project.getBasePath();
+        try {
+            final String projectRootFolder = project.getBasePath();
 
-        // Check the manager first since that's where we cache these things
-        //TODO this cache doesn't include the current branch info that could have changed. We should probably only cache stuff for TFVC
-        RepositoryContext context = RepositoryContextManager.getInstance().get(projectRootFolder);
-        if (context != null) {
-            logger.info("getRepositoryContext: cache hit: " + projectRootFolder);
-            return context;
-        }
-        logger.info("getRepositoryContext: cache miss: " + projectRootFolder);
-
-        final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
-        // Check for Git, then TFVC
-        if (projectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)) {
-            // It's Git, so get the repository and remote url to create the context from
-            final GitRepository repository = getGitRepository(project);
-            if (repository != null && TfGitHelper.isTfGitRepository(repository)) {
-                final GitRemote gitRemote = TfGitHelper.getTfGitRemote(repository);
-                final String gitRemoteUrl = gitRemote.getFirstUrl();
-                // TODO: Fix this HACK. There doesn't seem to be a clear way to get the full name of the current branch
-                final String branch = GIT_BRANCH_PREFIX + GitBranchUtil.getDisplayableBranchText(repository);
-                context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, gitRemoteUrl);
+            // Check the manager first since that's where we cache these things
+            //TODO this cache doesn't include the current branch info that could have changed. We should probably only cache stuff for TFVC
+            RepositoryContext context = RepositoryContextManager.getInstance().get(projectRootFolder);
+            if (context != null) {
+                logger.info("getRepositoryContext: cache hit: " + projectRootFolder);
+                return context;
             }
-        } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
-            // It's TFVC so run the FindWorkspace command to get the workspace object which as the server info
-            final FindWorkspaceCommand command = new FindWorkspaceCommand(projectRootFolder);
-            final Workspace workspace = command.runSynchronously();
-            if (workspace != null) {
-                final String projectName = getTeamProjectFromTfvcServerPath(
-                        workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
-                context = RepositoryContext.createTfvcContext(projectRootFolder, workspace.getName(), projectName, workspace.getServer());
-            }
-        }
+            logger.info("getRepositoryContext: cache miss: " + projectRootFolder);
 
-        if (context != null) {
-            RepositoryContextManager.getInstance().add(context);
-            return context;
+            final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
+            // Check for Git, then TFVC
+            if (projectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)) {
+                // It's Git, so get the repository and remote url to create the context from
+                final GitRepository repository = getGitRepository(project);
+                if (repository != null && TfGitHelper.isTfGitRepository(repository)) {
+                    final GitRemote gitRemote = TfGitHelper.getTfGitRemote(repository);
+                    final String gitRemoteUrl = gitRemote.getFirstUrl();
+                    // TODO: Fix this HACK. There doesn't seem to be a clear way to get the full name of the current branch
+                    final String branch = GIT_BRANCH_PREFIX + GitBranchUtil.getDisplayableBranchText(repository);
+                    context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, gitRemoteUrl);
+                }
+            } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
+                // It's TFVC so run the FindWorkspace command to get the workspace object which as the server info
+                final FindWorkspaceCommand command = new FindWorkspaceCommand(projectRootFolder);
+                final Workspace workspace = command.runSynchronously();
+                if (workspace != null) {
+                    final String projectName = getTeamProjectFromTfvcServerPath(
+                            workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
+                    context = RepositoryContext.createTfvcContext(projectRootFolder, workspace.getName(), projectName, workspace.getServer());
+                }
+            }
+
+            if (context != null) {
+                RepositoryContextManager.getInstance().add(context);
+                return context;
+            }
+        } catch (Throwable t) {
+            // Don't let errors bubble out here, just return null if something goes wrong
+            logger.warn("Unable to get repository context for the project.", t);
         }
 
         logger.info("getRepositoryContext: We couldn't determine the VCS provider, so returning null.");
