@@ -11,11 +11,14 @@ import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
+import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
+import com.microsoft.alm.plugin.external.commands.StatusCommand;
 import com.microsoft.alm.plugin.external.commands.SyncCommand;
 import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
+import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 
@@ -89,6 +92,7 @@ public class CommandUtils {
      * There are many commands that go into the update, not just a single call.
      * If anything goes wrong, an exception will be thrown.
      * Note: this method does NOT sync the workspace.
+     *
      * @param context
      * @param oldWorkspace
      * @param newWorkspace
@@ -131,5 +135,31 @@ public class CommandUtils {
     public static List<String> undoLocalFiles(final ServerContext context, final List<String> files) {
         final UndoCommand command = new UndoCommand(context, files);
         return command.runSynchronously();
+    }
+
+    /**
+     * Get the status for a single file
+     *
+     * @param context
+     * @param file
+     * @return
+     */
+    public static PendingChange getStatusForFile(final ServerContext context, final String file) {
+        final Command<List<PendingChange>> command = new StatusCommand(context, file);
+        final List<PendingChange> results = command.runSynchronously();
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * Resolves conflicts with the given resolution type
+     *
+     * @param context
+     * @param conflicts
+     * @param type
+     * @return
+     */
+    public static List<String> resolveConflicts(final ServerContext context, final List<String> conflicts, final ResolveConflictsCommand.AutoResolveType type) {
+        final Command<List<String>> conflictsCommand = new ResolveConflictsCommand(context, conflicts, type);
+        return conflictsCommand.runSynchronously();
     }
 }

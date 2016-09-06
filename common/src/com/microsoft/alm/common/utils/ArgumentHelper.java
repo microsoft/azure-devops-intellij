@@ -14,6 +14,7 @@ import java.util.List;
 public class ArgumentHelper {
     private static final String EMPTY_ARG_MSG = "%s is empty";
     private static final String NOT_FILE_MSG = "%s expected to be a file";
+    private static final String NOT_WRITEABLE_FILE_MSG = "%s must be writable";
 
     public static void checkNotNull(final Object arg, final String argName) {
         if (arg == null) {
@@ -39,6 +40,12 @@ public class ArgumentHelper {
         checkNotNull(file, "file");
         if (file.isDirectory()) {
             throw new IllegalArgumentException(String.format(NOT_FILE_MSG, file.getPath()));
+        }
+    }
+
+    public static void checkIfFileWriteable(final File file) {
+        if (!file.canWrite()) {
+            throw new IllegalArgumentException(String.format(NOT_WRITEABLE_FILE_MSG, file.getPath()));
         }
     }
 }
