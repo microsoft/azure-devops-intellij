@@ -99,16 +99,9 @@ public class ResolveConflictsForm implements BasicForm {
     private void enableButtons(final int[] selectedIndices) {
         myAcceptYoursButton.setEnabled(!isLoading && selectedIndices.length > 0);
         myAcceptTheirsButton.setEnabled(!isLoading && selectedIndices.length > 0);
-        boolean mergeEnabled = selectedIndices.length > 0;
-// TODO: pull in merge code to figure out if button should be enabled
-//        for (int index : selectedIndices) {
-//            String conflict = myItemsTableModel.getConflicts().get(index);
-//            if (!ResolveConflictHelper.canMerge(conflict)) {
-//                mergeEnabled = false;
-//                break;
-//            }
-//        }
-        myMergeButton.setEnabled(!isLoading && mergeEnabled);
+        // treating merge like other buttons and not checking if merge should not be allowed
+        // if a merge can't be done then we will present the user with an error later on
+        myMergeButton.setEnabled(!isLoading && selectedIndices.length > 0);
     }
 
     public int[] getSelectedRows() {

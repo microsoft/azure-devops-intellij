@@ -7,21 +7,16 @@ import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.external.commands.Command;
-import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
+import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
-import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,18 +28,13 @@ public class ResolveConflictsModel extends AbstractModel {
     public final static String PROP_LOADING = "loading";
 
     private final Project project;
-    private final ServerContext context;
-    private final List<String> filePaths;
     private final ConflictsTableModel conflictsTableModel;
     private final ResolveConflictHelper conflictHelper;
 
     private boolean isLoading = false;
 
-    public ResolveConflictsModel(final Project project, final ServerContext context, final List<String> filePaths,
-                                 final ResolveConflictHelper conflictHelper) {
+    public ResolveConflictsModel(final Project project, final ResolveConflictHelper conflictHelper) {
         this.project = project;
-        this.context = context;
-        this.filePaths = filePaths;
         this.conflictHelper = conflictHelper;
 
         this.conflictsTableModel = new ConflictsTableModel();
@@ -59,7 +49,7 @@ public class ResolveConflictsModel extends AbstractModel {
      *
      * @param isLoading
      */
-    private void setLoading(final boolean isLoading) {
+    public void setLoading(final boolean isLoading) {
         if (this.isLoading != isLoading) {
             if (isLoading) {
                 conflictsTableModel.setLoading();
@@ -87,7 +77,7 @@ public class ResolveConflictsModel extends AbstractModel {
             public void run(@NotNull final ProgressIndicator progressIndicator) {
                 logger.debug("Loading conflicts into the table");
                 progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR));
-                findConflicts();
+                conflictHelper.findConflicts(ResolveConflictsModel.this);
             }
         };
         loadConflictsTask.queue();
@@ -99,7 +89,7 @@ public class ResolveConflictsModel extends AbstractModel {
      * @param rows
      */
     public void acceptYours(final int[] rows) {
-        acceptChange(rows, ResolveConflictsCommand.AutoResolveType.KeepYours);
+        conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.KeepYours, this);
     }
 
     /**
@@ -108,62 +98,16 @@ public class ResolveConflictsModel extends AbstractModel {
      * @param rows
      */
     public void acceptTheirs(final int[] rows) {
-        acceptChange(rows, ResolveConflictsCommand.AutoResolveType.TakeTheirs);
+        conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.TakeTheirs, this);
     }
 
-    /**
-     * Resolve the conflicts based on auto resolve type and then refresh the table model to update the list of conflicts
-     *
-     * @param rows
-     * @param type
-     */
-    private void acceptChange(final int[] rows, final ResolveConflictsCommand.AutoResolveType type) {
+    public void merge(final int[] rows) {
         final List<String> conflicts = getSelectedConflicts(rows);
-        logger.info(String.format("Accepting changes to %s for file %s", type.name(), Arrays.toString(conflicts.toArray())));
-        final Task.Backgroundable loadConflictsTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR),
-                true, PerformInBackgroundOption.DEAF) {
-
-            @Override
-            public void run(@NotNull final ProgressIndicator progressIndicator) {
-                progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS));
-                final Command<List<String>> conflictsCommand = new ResolveConflictsCommand(context, conflicts, type);
-                try {
-                    List<String> resolved = (conflictsCommand.runSynchronously());
-                    conflictHelper.acceptChanges(resolved, type);
-
-                    // update status bar
-                    progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
-                    progressIndicator.setFraction(.5);
-
-                    // refresh conflicts so resolved ones are removed
-                    findConflicts();
-                } catch (Exception e) {
-                    // TODO: handle if tool fails
-                }
-            }
-        };
-        loadConflictsTask.queue();
-    }
-
-    /**
-     * Call command to find conflicts and add to table model
-     * <p/>
-     * Should always be called on a background thread!
-     */
-    private void findConflicts() {
-        for (final String updatePath : filePaths) {
-            final Command<List<String>> conflictsCommand = new FindConflictsCommand(context, updatePath);
+        logger.debug("Starting merge...");
+        for (final String conflict : conflicts) {
             try {
-                final List<String> conflicts = conflictsCommand.runSynchronously();
-                Collections.sort(conflicts);
-                IdeaHelper.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        conflictsTableModel.setConflicts(conflicts);
-                        setLoading(false);
-                    }
-                });
-            } catch (Exception e) {
+                conflictHelper.acceptMerge(conflict, this);
+            } catch (VcsException e) {
                 // TODO: handle if tool fails
             }
         }
@@ -187,8 +131,7 @@ public class ResolveConflictsModel extends AbstractModel {
         final List<String> selectedConflicts = new ArrayList<String>();
 
         for (final int index : rows) {
-            // only 1 column so only need to worry about rows
-            selectedConflicts.add(conflictsTableModel.getValueAt(index, 0).toString());
+            selectedConflicts.add(conflictsTableModel.getMyConflicts().get(index));
         }
         return selectedConflicts;
     }

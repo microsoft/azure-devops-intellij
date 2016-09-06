@@ -76,9 +76,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             // check and resolve conflicts
             // updatedFiles updated in the helper class
             if (results.doConflictsExists()) {
-                final ResolveConflictHelper conflictHelper = new ResolveConflictHelper(myVcs.getProject(), updatedFiles);
-                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), myVcs.getServerContext(false),
-                        filesUpdatePaths, conflictHelper);
+                final ResolveConflictHelper conflictHelper = new ResolveConflictHelper(myVcs.getProject(), updatedFiles, filesUpdatePaths);
+                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), conflictHelper);
             }
 
             if (!results.getExceptions().isEmpty()) {

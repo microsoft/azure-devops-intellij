@@ -9,9 +9,9 @@ public class ConflictsEnvironment {
 
 // TODO: comment back in once ready to use
 //   private static NameMerger ourNameMerger = new DialogNameMerger();
-//   private static ContentMerger ourContentMerger = new DialogContentMerger();
+    private static ContentMerger ourContentMerger = new DialogContentMerger();
 
-//  public static NameMerger getNameMerger() {
+    //  public static NameMerger getNameMerger() {
 //    return ourNameMerger;
 //  }
 //
@@ -19,9 +19,9 @@ public class ConflictsEnvironment {
 //    ourNameMerger = nameMerger;
 //  }
 //
-//  public static ContentMerger getContentMerger() {
-//    return ourContentMerger;
-//  }
+    public static ContentMerger getContentMerger() {
+        return ourContentMerger;
+    }
 //
 //  public static void setContentMerger(ContentMerger contentMerger) {
 //    ourContentMerger = contentMerger;

@@ -543,6 +543,16 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CONFLICT_RESOLVING_STATUS="Tfvc.Conflict.Resolving.Status";
     @NonNls
     public static final String KEY_TFVC_CONFLICT_RESOLVING_REFRESH="Tfvc.Conflict.Resolving.Refresh";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_LOAD_FAILED="Tfvc.Conflict.Load.Failed";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_MERGE_ORIGINAL="Tfvc.Conflict.Merge.Original";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_MERGE_SERVER="Tfvc.Conflict.Merge.Server";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_MERGE_LOADING="Tfvc.Conflict.Merge.Loading";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_MERGE_LOAD_FAILED="Tfvc.Conflict.Merge.LoadFailed";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";
