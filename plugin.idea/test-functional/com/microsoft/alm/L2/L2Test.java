@@ -42,6 +42,7 @@ import git4idea.rollback.GitRollbackEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
@@ -72,7 +73,7 @@ import static org.mockito.Mockito.when;
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
-public class L2Test extends IdeaAbstractTest {
+public abstract class L2Test extends IdeaAbstractTest {
     // Setup all the appropriate mocks so that we can run UI code
     @Mock
     WindowManager windowManager;

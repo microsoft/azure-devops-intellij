@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.tools;
 
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.external.commands.TfVersionCommand;
 import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
@@ -19,7 +20,7 @@ import java.io.File;
 public class TfTool {
     private static final String[] TF_WINDOWS_PROGRAMS = {"tf.exe", "tf.bat", "tf.cmd"};
     private static final String[] TF_OTHER_PROGRAMS = {"tf", "tf.sh"};
-    private static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.0.3");
+    public static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.0.3");
 
     /**
      * This method returns the path to the TF command line program.
@@ -46,7 +47,7 @@ public class TfTool {
      */
     public static String getLocation() {
         // Get the home location for TF
-        final String home = System.getenv("TF_HOME");
+        final String home = SystemHelper.getEnvironmentVariable("TF_HOME");
         if (home == null) {
             return null;
         }

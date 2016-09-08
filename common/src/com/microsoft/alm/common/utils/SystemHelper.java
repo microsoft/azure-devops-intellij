@@ -29,6 +29,15 @@ public class SystemHelper {
     }
 
     /**
+     * This method is a wrapper for the System.getenv method which cannot be mocked.
+     * @param name
+     * @return
+     */
+    public static String getEnvironmentVariable(final String name) {
+        return System.getenv(name);
+    }
+
+    /**
      * Takes in a path and converts it to Unix standard if Windows OS is detected
      *
      * @param path

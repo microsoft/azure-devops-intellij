@@ -282,7 +282,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     /**
      * This method is provided to allow the derived classes an easy way to get the selected repository instance.
      */
-    protected ServerContext getSelectedContext() {
+    public ServerContext getSelectedContext() {
         return repositoryTableModel.getSelectedContext();
     }
 

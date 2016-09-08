@@ -32,6 +32,16 @@ public class ToolVersion {
         }
     }
 
+    /**
+     * Simple constructor
+     */
+    public ToolVersion(final int major, final int minor, final int revision, final String build) {
+        this.major = major;
+        this.minor = minor;
+        this.revision = revision;
+        this.build = build;
+    }
+
     public int compare(final ToolVersion other) {
         if (this.getMajor() == other.getMajor()) {
             if (this.getMinor() == other.getMinor()) {

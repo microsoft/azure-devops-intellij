@@ -57,7 +57,26 @@ public class SyncCommand extends Command<SyncResults> {
     }
 
     /**
-     * There is no useful output from this command unless there is an error which we will throw
+     * Example output from TF Get:
+     * D:\tmp\test:
+     * Getting addFold
+     * Getting addFold-branch
+     *
+     * D:\tmp\test\addFold-branch:
+     * Getting testHereRename.txt
+     *
+     * D:\tmp\test\addFold:
+     * Getting testHere3
+     * Getting testHereRename7.txt
+     *
+     * D:\tmp\test:
+     * Getting Rename2.txt
+     * Getting test3.txt
+     * Conflict test_renamed.txt - Unable to perform the get operation because you have a conflicting rename, edit
+     * Getting TestAdd.txt
+     *
+     * ---- Summary: 1 conflicts, 0 warnings, 0 errors ----
+     * Conflict D:\tmp\test\test_renamed.txt - Unable to perform the get operation because you have a conflicting rename, edit
      *
      * @param stdout
      * @param stderr
@@ -123,8 +142,8 @@ public class SyncCommand extends Command<SyncResults> {
 
         final String[] exceptionLines = getLines(stderr);
         for (int i = exceptionLines.length / 2; i < exceptionLines.length; i++) {
-            // don't treat conflicts as exceptions
-            if (!StringUtils.startsWith(exceptionLines[i], "Conflict")) {
+            // skip empty lines and don't treat conflicts as exceptions
+            if (StringUtils.isNotEmpty(exceptionLines[i]) && !StringUtils.startsWith(exceptionLines[i], CONFLICT_PREFIX)) {
                 //TODO: what if warning is that file was skipped (but only shows up when force was used)
                 final VcsException exception = new VcsException((exceptionLines[i]));
                 exception.setIsWarning(StringUtils.startsWith(exceptionLines[i], WARNING_PREFIX));

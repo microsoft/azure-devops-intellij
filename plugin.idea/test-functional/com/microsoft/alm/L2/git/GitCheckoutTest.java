@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-package com.microsoft.alm.L2;
+package com.microsoft.alm.L2.git;
 
 import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
+import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
@@ -22,7 +23,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
-public class CheckoutTest extends L2Test {
+public class GitCheckoutTest extends L2Test {
 
     public static final String GIT_FOLDER = ".git";
     public static final String README_FILE = "readme.md";
