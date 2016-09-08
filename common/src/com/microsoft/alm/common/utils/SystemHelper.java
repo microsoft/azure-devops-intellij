@@ -4,9 +4,11 @@
 package com.microsoft.alm.common.utils;
 
 import com.sun.jna.Platform;
+import org.apache.commons.io.comparator.PathFileComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.UnknownHostException;
 
 public class SystemHelper {
@@ -30,6 +32,7 @@ public class SystemHelper {
 
     /**
      * This method is a wrapper for the System.getenv method which cannot be mocked.
+     *
      * @param name
      * @return
      */
@@ -49,5 +52,16 @@ public class SystemHelper {
         } else {
             return path;
         }
+    }
+
+    /**
+     * Compares to file paths to see if they are the same based on the OS that is being used
+     *
+     * @param path1
+     * @param path2
+     * @return
+     */
+    public static boolean areFilePathsSame(final String path1, final String path2) {
+        return PathFileComparator.PATH_SYSTEM_COMPARATOR.compare(new File(path1), new File(path2)) == 0 ? true : false;
     }
 }

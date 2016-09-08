@@ -28,7 +28,7 @@ public class SyncCommand extends Command<SyncResults> {
 
     private static final String UP_TO_DATE_MSG = "All files up to date.";
     private static final String WARNING_PREFIX = "Warning";
-    private static final String CONFLICT_PREFIX = "Conflict";
+    private static final String CONFLICT_MESSAGE = "you have a conflicting";
     private static final String SUMMARY_PREFIX = "---- Summary:";
     private static final String NEW_FILE_PREFIX = "Getting ";
     private static final String UPDATED_FILE_PREFIX = "Replacing ";
@@ -94,7 +94,7 @@ public class SyncCommand extends Command<SyncResults> {
         }
 
         // make note that conflicts exist but to get conflicts use resolve command
-        final boolean conflictsExist = StringUtils.contains(stderr, CONFLICT_PREFIX);
+        final boolean conflictsExist = StringUtils.contains(stderr, CONFLICT_MESSAGE);
 
         // parse the exception to get individual exceptions instead of 1 large one
         exceptions.addAll(parseException(stderr));
@@ -143,7 +143,7 @@ public class SyncCommand extends Command<SyncResults> {
         final String[] exceptionLines = getLines(stderr);
         for (int i = exceptionLines.length / 2; i < exceptionLines.length; i++) {
             // skip empty lines and don't treat conflicts as exceptions
-            if (StringUtils.isNotEmpty(exceptionLines[i]) && !StringUtils.startsWith(exceptionLines[i], CONFLICT_PREFIX)) {
+            if (StringUtils.isNotEmpty(exceptionLines[i]) && !StringUtils.contains(exceptionLines[i], CONFLICT_MESSAGE)) {
                 //TODO: what if warning is that file was skipped (but only shows up when force was used)
                 final VcsException exception = new VcsException((exceptionLines[i]));
                 exception.setIsWarning(StringUtils.startsWith(exceptionLines[i], WARNING_PREFIX));

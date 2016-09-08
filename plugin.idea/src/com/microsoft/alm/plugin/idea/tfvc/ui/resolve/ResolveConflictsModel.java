@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
+import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
@@ -102,9 +103,9 @@ public class ResolveConflictsModel extends AbstractModel {
     }
 
     public void merge(final int[] rows) {
-        final List<String> conflicts = getSelectedConflicts(rows);
+        final List<Conflict> conflicts = getSelectedConflicts(rows);
         logger.debug("Starting merge...");
-        for (final String conflict : conflicts) {
+        for (final Conflict conflict : conflicts) {
             try {
                 conflictHelper.acceptMerge(conflict, this);
             } catch (VcsException e) {
@@ -127,8 +128,8 @@ public class ResolveConflictsModel extends AbstractModel {
      * @param rows
      * @return
      */
-    private List<String> getSelectedConflicts(final int[] rows) {
-        final List<String> selectedConflicts = new ArrayList<String>();
+    private List<Conflict> getSelectedConflicts(final int[] rows) {
+        final List<Conflict> selectedConflicts = new ArrayList<Conflict>();
 
         for (final int index : rows) {
             selectedConflicts.add(conflictsTableModel.getMyConflicts().get(index));

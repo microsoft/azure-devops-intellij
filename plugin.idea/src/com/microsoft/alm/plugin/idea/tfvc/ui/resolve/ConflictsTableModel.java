@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
+import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 
 import javax.swing.table.AbstractTableModel;
@@ -17,8 +18,8 @@ public class ConflictsTableModel extends AbstractTableModel {
     public enum Column {
 
         Name(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_COLUMN_NAME)) {
-            public String getValue(final String conflict) {
-                return conflict;
+            public String getValue(final Conflict conflict) {
+                return conflict.getLocalPath();
             }
         };
 
@@ -32,15 +33,11 @@ public class ConflictsTableModel extends AbstractTableModel {
             return myCaption;
         }
 
-        public abstract String getValue(final String conflict);
+        public abstract String getValue(final Conflict conflict);
 
     }
 
-    private List<String> myConflicts = new ArrayList<String>();
-
-    public List<String> getMergeData() {
-        return myConflicts;
-    }
+    private List<Conflict> myConflicts = new ArrayList<Conflict>();
 
     public String getColumnName(final int column) {
         return Column.values()[column].getCaption();
@@ -55,11 +52,11 @@ public class ConflictsTableModel extends AbstractTableModel {
     }
 
     public Object getValueAt(final int rowIndex, final int columnIndex) {
-        final String conflict = myConflicts.get(rowIndex);
+        final Conflict conflict = myConflicts.get(rowIndex);
         return Column.values()[columnIndex].getValue(conflict);
     }
 
-    public void setConflicts(final List<String> conflicts) {
+    public void setConflicts(final List<Conflict> conflicts) {
         myConflicts.clear();
         myConflicts.addAll(conflicts);
         fireTableDataChanged();
@@ -67,11 +64,12 @@ public class ConflictsTableModel extends AbstractTableModel {
 
     public void setLoading() {
         myConflicts.clear();
-        myConflicts.add(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_TABLE));
+        // TODO: remove this and instead show a loading status bar
+        myConflicts.add(new Conflict(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_TABLE), Conflict.ConflictType.RESOLVED));
         fireTableDataChanged();
     }
 
-    public List<String> getMyConflicts() {
+    public List<Conflict> getMyConflicts() {
         return myConflicts;
     }
 }
