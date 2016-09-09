@@ -20,9 +20,11 @@ public enum ServerStatusType {
     DELETE,
     UNDELETE,
     LOCK,
+    BRANCH,
     UNKNOWN;
 
     public static final Logger logger = LoggerFactory.getLogger(ServerStatusType.class);
+    public static final String SOURCE_RENAME = "source rename";
 
     /**
      * Figure out server status type from string
@@ -41,12 +43,14 @@ public enum ServerStatusType {
                 types.add(DELETE);
             } else if (StringUtils.equalsIgnoreCase(args[i].trim(), EDIT.name())) {
                 types.add(EDIT);
-            } else if (StringUtils.equalsIgnoreCase(args[i].trim(), RENAME.name())) {
+            } else if (StringUtils.equalsIgnoreCase(args[i].trim(), RENAME.name()) || StringUtils.equalsIgnoreCase(args[i].trim(), SOURCE_RENAME)) {
                 types.add(RENAME);
             } else if (StringUtils.equalsIgnoreCase(args[i].trim(), UNDELETE.name())) {
                 types.add(UNDELETE);
             } else if (StringUtils.containsIgnoreCase(args[i].trim(), LOCK.name())) {
                 types.add(LOCK);
+            } else if (StringUtils.containsIgnoreCase(args[i].trim(), BRANCH.name())) {
+                types.add(BRANCH);
             } else {
                 logger.error("Undocumented status from server: " + args[i]);
                 types.add(UNKNOWN);

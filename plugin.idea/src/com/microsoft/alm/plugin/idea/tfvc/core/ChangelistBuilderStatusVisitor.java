@@ -112,7 +112,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
      */
     private TFSContentRevision getPreviousRenamedRevision(final FilePath localPath, final int revision) {
         // find the original name of file by getting the most recent history entry
-        final ChangeSet lastChangeSet = CommandUtils.getLastHistoryEntryForAnyUser(null, localPath.getPath());
+        final ChangeSet lastChangeSet = CommandUtils.getLastHistoryEntryForAnyUser(serverContext, localPath.getPath());
 
         // check that the history command returned an entry with a change
         if (lastChangeSet != null && !lastChangeSet.getChanges().isEmpty()) {

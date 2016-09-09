@@ -79,6 +79,9 @@ public class StatusProvider {
             return new ServerStatus.ScheduledForDeletion(pendingChange);
         } else if (types.contains(ServerStatusType.UNDELETE)) {
             return new ServerStatus.Undeleted(pendingChange);
+        } else if (types.contains(ServerStatusType.BRANCH)) {
+            // treat branch like an addition
+            return new ServerStatus.ScheduledForAddition(pendingChange);
         } else {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;
