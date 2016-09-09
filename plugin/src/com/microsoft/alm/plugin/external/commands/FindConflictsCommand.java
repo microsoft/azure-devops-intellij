@@ -6,6 +6,8 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.ConflictResults;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +19,10 @@ import java.util.List;
  * [/auto:(AutoMerge|TakeTheirs|KeepYours|OverwriteLocal|DeleteConflict|KeepYoursRenameTheirs)]
  * [/preview] [(/overridetype:overridetype | /converttotype:converttype] [/recursive] [/newname:path] [/noprompt] [/login:username, [password]]
  */
-public class FindConflictsCommand extends Command<List<String>> {
+public class FindConflictsCommand extends Command<ConflictResults> {
     public static final String WARNING_PREFIX = "Warning";
+    public static final String BOTH_CONFLICTS_SUFFIX = "The item name and content have changed";
+    public static final String RENAME_CONFLICT_SUFFIX = "The item name has changed";
 
     private final String basePath;
 
@@ -48,18 +52,26 @@ public class FindConflictsCommand extends Command<List<String>> {
      * @return
      */
     @Override
-    public List<String> parseOutput(final String stdout, final String stderr) {
-        final List<String> conflicts = new ArrayList<String>();
+    public ConflictResults parseOutput(final String stdout, final String stderr) {
+        final List<String> contentConflicts = new ArrayList<String>();
+        final List<String> renameConflicts = new ArrayList<String>();
+        final List<String> bothConflicts = new ArrayList<String>();
         final String[] lines = getLines(stderr);
 
         for (final String line : lines) {
             final int index = line.indexOf(":");
             if (index != -1) {
-                conflicts.add(line.substring(0, index));
+                if (StringUtils.endsWith(line, BOTH_CONFLICTS_SUFFIX)) {
+                    bothConflicts.add(line.substring(0, index));
+                } else if (StringUtils.endsWith(line, RENAME_CONFLICT_SUFFIX)) {
+                    renameConflicts.add(line.substring(0, index));
+                } else {
+                    contentConflicts.add(line.substring(0, index));
+                }
             }
         }
 
-        return conflicts;
+        return new ConflictResults(contentConflicts, renameConflicts, bothConflicts);
     }
 
     /**

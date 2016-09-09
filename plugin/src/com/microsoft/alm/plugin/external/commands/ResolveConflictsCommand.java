@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.Conflict;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.List;
  * [/auto:(AutoMerge|TakeTheirs|KeepYours|OverwriteLocal|DeleteConflict|KeepYoursRenameTheirs)]
  * [/preview] [(/overridetype:overridetype | /converttotype:converttype] [/recursive] [/newname:path] [/noprompt] [/login:username, [password]]
  */
-public class ResolveConflictsCommand extends Command<List<String>> {
+public class ResolveConflictsCommand extends Command<List<Conflict>> {
     private static final String RESOLVED_PREFIX = "Resolved ";
     private static final String RESOLVED_POST_MSG = " as ";
 
@@ -58,17 +59,17 @@ public class ResolveConflictsCommand extends Command<List<String>> {
      * @return
      */
     @Override
-    public List<String> parseOutput(final String stdout, final String stderr) {
+    public List<Conflict> parseOutput(final String stdout, final String stderr) {
         throwIfError(stderr);
 
-        final List<String> resolved = new ArrayList<String>();
+        final List<Conflict> resolved = new ArrayList<Conflict>();
         final String[] lines = getLines(stdout);
         for (String line : lines) {
             if (StringUtils.startsWith(line, RESOLVED_PREFIX)) {
                 line = StringUtils.removeStart(line, RESOLVED_PREFIX);
                 final int index = line.indexOf(RESOLVED_POST_MSG);
                 if (index != -1) {
-                    resolved.add(line.substring(0, index));
+                    resolved.add(new Conflict(line.substring(0, index), Conflict.ConflictType.RESOLVED));
                 }
             }
         }

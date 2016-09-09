@@ -28,9 +28,15 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
     private final String user;
     private final int stopAfter;
     private final boolean recursive;
+    private final boolean itemMode;
 
     public HistoryCommand(final ServerContext context, final String localPath, final String version,
                           final int stopAfter, final boolean recursive, final String user) {
+        this(context, localPath, version, stopAfter, recursive, user, false);
+    }
+
+    public HistoryCommand(final ServerContext context, final String localPath, final String version,
+                          final int stopAfter, final boolean recursive, final String user, final boolean itemMode) {
         super("history", context);
         ArgumentHelper.checkNotEmptyString(localPath);
         this.localPath = localPath;
@@ -38,6 +44,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
         this.user = user;
         this.stopAfter = stopAfter;
         this.recursive = recursive;
+        this.itemMode = itemMode;
     }
 
     @Override
@@ -55,6 +62,9 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
         }
         if (StringUtils.isNotEmpty(version)) {
             builder.addSwitch("version", version);
+        }
+        if (itemMode) {
+            builder.addSwitch("itemmode");
         }
         builder.add(localPath);
         return builder;
@@ -100,7 +110,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
                 final List<PendingChange> changes = new ArrayList<PendingChange>(100);
                 final NodeList childNodes = changeset.getElementsByTagName("item");
                 for (int j = 0; j < childNodes.getLength(); j++) {
-                    final Node child = childNodes.item(i);
+                    final Node child = childNodes.item(j);
                     // Assume this is a change
                     final NamedNodeMap attributes = child.getAttributes();
                     changes.add(new PendingChange(

@@ -25,7 +25,7 @@ public class DialogContentMerger implements ContentMerger {
 
     public boolean mergeContent(final String conflict, final ContentTriplet contentTriplet, final Project project, final VirtualFile localFile,
                                 final String localPath, final VcsRevisionNumber serverVersion) {
-        ArgumentHelper.checkIfFileWriteable(new File(localPath));
+        ArgumentHelper.checkIfFileWriteable(new File(localFile.getPath()));
 
         final MergeDialogCustomizer c = new MergeDialogCustomizer();
         final MergeRequest request = DiffRequestFactory.getInstance().createMergeRequest(StreamUtil.convertSeparators(contentTriplet.localContent),

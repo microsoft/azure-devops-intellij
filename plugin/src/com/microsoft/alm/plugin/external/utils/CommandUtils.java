@@ -5,12 +5,15 @@ package com.microsoft.alm.plugin.external.utils;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
+import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
+import com.microsoft.alm.plugin.external.commands.RenameCommand;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.StatusCommand;
 import com.microsoft.alm.plugin.external.commands.SyncCommand;
@@ -18,10 +21,15 @@ import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
+import com.microsoft.alm.plugin.external.models.Conflict;
+import com.microsoft.alm.plugin.external.models.ConflictResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.RenameConflict;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,7 +86,12 @@ public class CommandUtils {
 
     public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String localPath, final String version,
                                                     final int stopAfter, final boolean recursive, final String user) {
-        final Command<List<ChangeSet>> historyCommand = new HistoryCommand(context, localPath, version, stopAfter, recursive, user);
+        return getHistoryCommand(context, localPath, version, stopAfter, recursive, user, false);
+    }
+
+    public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String localPath, final String version,
+                                                    final int stopAfter, final boolean recursive, final String user, final boolean itemMode) {
+        final Command<List<ChangeSet>> historyCommand = new HistoryCommand(context, localPath, version, stopAfter, recursive, user, itemMode);
         return historyCommand.runSynchronously();
     }
 
@@ -151,6 +164,18 @@ public class CommandUtils {
     }
 
     /**
+     * Renames a file
+     *
+     * @param context
+     * @param oldName
+     * @param newName
+     */
+    public static void renameFile(final ServerContext context, final String oldName, final String newName) {
+        final Command<String> command = new RenameCommand(context, oldName, newName);
+        command.runSynchronously();
+    }
+
+    /**
      * Resolves conflicts with the given resolution type
      *
      * @param context
@@ -158,8 +183,108 @@ public class CommandUtils {
      * @param type
      * @return
      */
-    public static List<String> resolveConflicts(final ServerContext context, final List<String> conflicts, final ResolveConflictsCommand.AutoResolveType type) {
-        final Command<List<String>> conflictsCommand = new ResolveConflictsCommand(context, conflicts, type);
+    public static List<Conflict> resolveConflictsByPath(final ServerContext context, final List<String> conflicts, final ResolveConflictsCommand.AutoResolveType type) {
+        final Command<List<Conflict>> conflictsCommand = new ResolveConflictsCommand(context, conflicts, type);
         return conflictsCommand.runSynchronously();
+    }
+
+    public static List<Conflict> resolveConflictsByConflict(final ServerContext context, final List<Conflict> conflicts, final ResolveConflictsCommand.AutoResolveType type) {
+        final List<String> conflictFiles = new ArrayList<String>();
+        for (final Conflict conflict : conflicts) {
+            conflictFiles.add(conflict.getLocalPath());
+        }
+
+        return resolveConflictsByPath(context, conflictFiles, type);
+    }
+
+    /**
+     * Finds the conflicts under a given directory
+     *
+     * @param context
+     * @param root
+     * @return
+     */
+    public static List<Conflict> getConflicts(final ServerContext context, final String root) {
+        final List<Conflict> conflicts = new ArrayList<Conflict>();
+
+        final Command<ConflictResults> conflictsCommand = new FindConflictsCommand(context, root);
+        final ConflictResults conflictResults = conflictsCommand.runSynchronously();
+
+        for (final String contentConflict : conflictResults.getContentConflicts()) {
+            conflicts.add(new Conflict(contentConflict, Conflict.ConflictType.CONTENT));
+        }
+
+        for (final String renameConflict : conflictResults.getRenameConflicts()) {
+            final RenameConflict rename = findLocalRename(context, renameConflict, root, Conflict.ConflictType.RENAME);
+            if (rename != null) {
+                conflicts.add(rename);
+            }
+        }
+
+        for (final String bothConflict : conflictResults.getBothConflicts()) {
+            final RenameConflict rename = findLocalRename(context, bothConflict, root, Conflict.ConflictType.BOTH);
+            if (rename != null) {
+                conflicts.add(rename);
+            }
+        }
+
+        return conflicts;
+    }
+
+    /**
+     * For rename conflicts, find the old name and local name of the file
+     *
+     * @param context
+     * @param serverName
+     * @param root
+     * @param type
+     * @return
+     */
+    private static RenameConflict findLocalRename(final ServerContext context, final String serverName,
+                                                  final String root, final Conflict.ConflictType type) {
+        final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, serverName, StringUtils.EMPTY, 50,
+                false, StringUtils.EMPTY, true);
+
+        // step through most current changesets to find the one that did the rename
+        for (int index = 0; index < changeSets.size(); index++) {
+            final ChangeSet changeSet = changeSets.get(index);
+            if (doesChangeSetHaveChanges(changeSets, index) &&
+                    changeSet.getChanges().get(0).getChangeTypes().contains(ServerStatusType.RENAME)) {
+                // the entry after the rename contains the old name of the file
+                if (doesChangeSetHaveChanges(changeSets, index + 1)) {
+                    final String oldName = changeSets.get(index + 1).getChanges().get(0).getServerItem();
+
+                    // parse local changes for the old file name to get the new local name
+                    final Command<List<PendingChange>> command = new StatusCommand(context, root);
+                    final List<PendingChange> results = command.runSynchronously();
+
+                    for (final PendingChange change : results) {
+                        if (SystemHelper.areFilePathsSame(change.getSourceItem(), oldName)) {
+                            return new RenameConflict(change.getLocalItem(), serverName, oldName, type);
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks that a changeset in the list contains a change
+     *
+     * @param changeSets
+     * @param index
+     * @return
+     */
+    private static boolean doesChangeSetHaveChanges(final List<ChangeSet> changeSets, final int index) {
+        if (changeSets == null
+                || index >= changeSets.size()
+                || changeSets.get(index).getChanges() == null
+                || changeSets.get(index).getChanges().isEmpty()) {
+            return false;
+        }
+
+        return true;
     }
 }

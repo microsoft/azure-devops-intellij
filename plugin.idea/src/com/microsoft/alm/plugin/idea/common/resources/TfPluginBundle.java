@@ -553,6 +553,14 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CONFLICT_MERGE_LOADING="Tfvc.Conflict.Merge.Loading";
     @NonNls
     public static final String KEY_TFVC_CONFLICT_MERGE_LOAD_FAILED="Tfvc.Conflict.Merge.LoadFailed";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_NAME_DIALOG="Tfvc.Conflict.Name.DialogTitle";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_NAME_KEEP_LOCAL="Tfvc.Conflict.Name.KeepLocal";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_NAME_ACCEPT_SERVER="Tfvc.Conflict.Name.AcceptServer";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_NAME_USE_SPECIFED="Tfvc.Conflict.Name.UseSpecified";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";

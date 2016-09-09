@@ -5,33 +5,32 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts;
 
 public class ConflictsEnvironment {
 
-    private static ConflictsHandler ourConflictsHandler = new DialogConflictsHandler();
+    private static ConflictsHandler conflictsHandler = new DialogConflictsHandler();
 
-// TODO: comment back in once ready to use
-//   private static NameMerger ourNameMerger = new DialogNameMerger();
-    private static ContentMerger ourContentMerger = new DialogContentMerger();
+    private static NameMerger nameMerger = new DialogNameMerger();
+    private static ContentMerger contentMerger = new DialogContentMerger();
 
-    //  public static NameMerger getNameMerger() {
-//    return ourNameMerger;
-//  }
-//
-//  public static void setNameMerger(NameMerger nameMerger) {
-//    ourNameMerger = nameMerger;
-//  }
-//
-    public static ContentMerger getContentMerger() {
-        return ourContentMerger;
+    public static NameMerger getNameMerger() {
+        return nameMerger;
     }
-//
-//  public static void setContentMerger(ContentMerger contentMerger) {
-//    ourContentMerger = contentMerger;
-//  }
+
+    public static void setNameMerger(NameMerger nameMerger) {
+        ConflictsEnvironment.nameMerger = nameMerger;
+    }
+
+    public static ContentMerger getContentMerger() {
+        return contentMerger;
+    }
+
+    public static void setContentMerger(ContentMerger contentMerger) {
+        ConflictsEnvironment.contentMerger = contentMerger;
+    }
 
     public static void setConflictsHandler(ConflictsHandler conflictsHandler) {
-        ourConflictsHandler = conflictsHandler;
+        ConflictsEnvironment.conflictsHandler = conflictsHandler;
     }
 
     public static ConflictsHandler getConflictsHandler() {
-        return ourConflictsHandler;
+        return conflictsHandler;
     }
 }

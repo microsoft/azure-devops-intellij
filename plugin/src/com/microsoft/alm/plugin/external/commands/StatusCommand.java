@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
@@ -16,8 +17,8 @@ import java.util.List;
 /**
  * This command returns the status of the workspace as a list of pending changes.
  * NOTE: Currently this command does not support all of the options of the command line
- *
- *  status [/workspace:<value>] [/shelveset:<value>] [/format:brief|detailed|xml] [/recursive] [/user:<value>] [/nodetect] [<itemSpec>...]
+ * <p/>
+ * status [/workspace:<value>] [/shelveset:<value>] [/format:brief|detailed|xml] [/recursive] [/user:<value>] [/nodetect] [<itemSpec>...]
  */
 public class StatusCommand extends Command<List<PendingChange>> {
     private static final String CANDIDATE_TAG = "candidate-pending-changes";
@@ -62,6 +63,7 @@ public class StatusCommand extends Command<List<PendingChange>> {
             for (int i = 0; i < nodes.getLength(); i++) {
                 final NamedNodeMap attributes = nodes.item(i).getAttributes();
                 final boolean isCandidate = StringUtils.equalsIgnoreCase(nodes.item(i).getParentNode().getNodeName(), CANDIDATE_TAG);
+                final Node sourceItem = attributes.getNamedItem("source-item"); // not always present
                 changes.add(new PendingChange(
                         attributes.getNamedItem("server-item").getNodeValue(),
                         attributes.getNamedItem("local-item").getNodeValue(),
@@ -72,7 +74,8 @@ public class StatusCommand extends Command<List<PendingChange>> {
                         attributes.getNamedItem("change-type").getNodeValue(),
                         attributes.getNamedItem("workspace").getNodeValue(),
                         attributes.getNamedItem("computer").getNodeValue(),
-                        isCandidate));
+                        isCandidate,
+                        sourceItem != null ? sourceItem.getNodeValue() : StringUtils.EMPTY));
             }
         }
         return changes;
