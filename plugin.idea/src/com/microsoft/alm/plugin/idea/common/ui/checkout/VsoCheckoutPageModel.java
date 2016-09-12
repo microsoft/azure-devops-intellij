@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(VsoCheckoutPageModel.class);
     private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
+    private final ServerContextLookupOperation.ContextScope scope;
 
     public VsoCheckoutPageModel(CheckoutModel checkoutModel) {
         super(checkoutModel,
@@ -33,10 +34,17 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
         setConnected(false);
         setAuthenticating(false);
 
+        // Check the repository type to get the SCOPE of the query
+        // Git => repository scope
+        // TFVC => project scope (TFVC repositories are not separate from the team projects)
+        scope = (checkoutModel.getRepositoryType() == RepositoryContext.Type.GIT) ?
+                ServerContextLookupOperation.ContextScope.REPOSITORY :
+                ServerContextLookupOperation.ContextScope.PROJECT;
+
         if (authenticationProvider.isAuthenticated()) {
             LookupHelper.loadVsoContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
-                    ServerContextLookupOperation.ContextScope.REPOSITORY);
+                    scope);
         }
     }
 
@@ -55,6 +63,6 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     public void loadRepositories() {
         LookupHelper.authenticateAndLoadVsoContexts(this, this,
                 authenticationProvider, getRepositoryProvider(),
-                ServerContextLookupOperation.ContextScope.REPOSITORY);
+                scope);
     }
 }
