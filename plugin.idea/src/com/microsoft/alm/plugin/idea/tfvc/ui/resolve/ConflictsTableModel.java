@@ -62,13 +62,6 @@ public class ConflictsTableModel extends AbstractTableModel {
         fireTableDataChanged();
     }
 
-    public void setLoading() {
-        myConflicts.clear();
-        // TODO: remove this and instead show a loading status bar
-        myConflicts.add(new Conflict(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_TABLE), Conflict.ConflictType.RESOLVED));
-        fireTableDataChanged();
-    }
-
     public List<Conflict> getMyConflicts() {
         return myConflicts;
     }

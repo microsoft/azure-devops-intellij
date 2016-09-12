@@ -25,6 +25,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
@@ -72,6 +73,7 @@ public class ResolveConflictHelper {
      * @throws VcsException
      */
     public void acceptMerge(final @NotNull Conflict conflict, final ResolveConflictsModel model) throws VcsException {
+        logger.info(String.format("Merging changes for file %s", conflict.getLocalPath()));
         final File conflictPath = new File(conflict.getLocalPath());
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
 
@@ -80,15 +82,18 @@ public class ResolveConflictHelper {
 
         // only get file contents if a content conflict exists
         if (isContentConflict(conflict)) {
+            logger.info("Content conflict have been found so getting file contents");
             contentTriplet = populateContents(conflict, conflictPath, localPath, context);
         }
 
         // merge names
         if (isNameConflict(conflict)) {
+            logger.info("Naming conflict found");
             final RenameConflict renameConflict = (RenameConflict) conflict;
             final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
             if (mergedServerPath == null) {
                 // user cancelled
+                logger.warn("User canceled rename merge");
                 return;
             }
 
@@ -97,7 +102,7 @@ public class ResolveConflictHelper {
             if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
                 final VcsRunnable resolveRunnable = new VcsRunnable() {
                     public void run() throws VcsException {
-                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS));
+                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, conflict.getLocalPath()));
 
                         final List<Conflict> resolvedFiles = CommandUtils.resolveConflictsByPath(context, Arrays.asList(conflict.getLocalPath()), ResolveConflictsCommand.AutoResolveType.TakeTheirs);
 
@@ -132,6 +137,7 @@ public class ResolveConflictHelper {
         // merge content
         boolean resolved = true;
         if (isContentConflict(conflict) && contentTriplet != null) {
+            logger.info("Content conflict found");
             final File localFile = new File(localPath.getPath());
             ArgumentHelper.checkIfFile(localFile);
             VirtualFile vFile = VcsUtil.getVirtualFileWithRefresh(localFile);
@@ -155,18 +161,25 @@ public class ResolveConflictHelper {
         if (resolved) {
             final VcsRunnable resolveRunnable = new VcsRunnable() {
                 public void run() throws VcsException {
-                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS));
+                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, finalLocalPath));
 
-                    CommandUtils.resolveConflictsByPath(context, Arrays.asList(finalLocalPath), ResolveConflictsCommand.AutoResolveType.KeepYours);
-                    // TODO: create version number
-                    // use local path from conflict to update list because results from command gives server name even if you keep your own change
-                    updatedFiles.getGroupById(FileGroup.MERGED_ID).add(finalLocalPath, TFSVcs.getKey(), null);
+                    try {
+                        CommandUtils.resolveConflictsByPath(context, Arrays.asList(finalLocalPath), ResolveConflictsCommand.AutoResolveType.KeepYours);
+                        // TODO: create version number
+                        // use local path from conflict to update list because results from command gives server name even if you keep your own change
+                        updatedFiles.getGroupById(FileGroup.MERGED_ID).add(finalLocalPath, TFSVcs.getKey(), null);
 
-                    // update progress
-                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
+                        // update progress
+                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
 
-                    // reload conflicts
-                    findConflicts(model);
+                        // reload conflicts
+                        findConflicts(model);
+                    } catch (VcsException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        logger.error("Error while resolving conflict: " + e.getMessage());
+                        throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, finalLocalPath, e.getMessage()));
+                    }
                 }
             };
             VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR), false, project);
@@ -232,6 +245,7 @@ public class ResolveConflictHelper {
                         contentTriplet.serverContent = serverChanges != null ? serverChanges : StringUtils.EMPTY;
                     }
                 } catch (Exception e) {
+                    logger.error("Error loading contents for files");
                     throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOAD_FAILED, localPath.getPresentableUrl(), e.getMessage()));
                 }
             }
@@ -241,71 +255,39 @@ public class ResolveConflictHelper {
         return contentTriplet;
     }
 
-    public void acceptChanges(final @NotNull List<Conflict> conflicts, final ResolveConflictsCommand.AutoResolveType type) {
+    public void acceptChanges(final @NotNull String conflict, final ResolveConflictsCommand.AutoResolveType type) {
         if (type == ResolveConflictsCommand.AutoResolveType.TakeTheirs) {
-            acceptTheirs(conflicts);
+            acceptTheirs(conflict);
         } else if (type == ResolveConflictsCommand.AutoResolveType.KeepYours) {
-            acceptYours(conflicts);
+            acceptYours(conflict);
         }
     }
 
-    public void acceptYours(final @NotNull List<Conflict> conflicts) {
+    public void acceptYours(final @NotNull String conflict) {
         // treat just like skip
-        skip(conflicts);
+        skip(conflict);
     }
 
-    public void acceptTheirs(final @NotNull List<Conflict> conflicts) {
-        for (final Conflict conflict : conflicts) {
-            if (updatedFiles != null) {
-                //TODO create version number
-                updatedFiles.getGroupById(FileGroup.UPDATED_ID).add(conflict.getLocalPath(), TFSVcs.getKey(), null);
-            }
+    public void acceptTheirs(final @NotNull String conflict) {
+        if (updatedFiles != null) {
+            //TODO create version number
+            updatedFiles.getGroupById(FileGroup.UPDATED_ID).add(conflict, TFSVcs.getKey(), null);
+        }
+    }
+
+    public void skip(final @NotNull String conflict) {
+        if (updatedFiles != null) {
+            // Jetbrains used null for version number in this case
+            updatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict, TFSVcs.getKey(), null);
         }
     }
 
     public void skip(final @NotNull List<Conflict> conflicts) {
         for (final Conflict conflict : conflicts) {
-            if (updatedFiles != null) {
-                // Jetbrains used null for version number in this case
-                updatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict.getLocalPath(), TFSVcs.getKey(), null);
-            }
+            // Jetbrains used null for version number in this case
+            skip(conflict.getLocalPath());
         }
     }
-
-// TODO: not checking whether or not merge option is available, it's always available
-//  public static boolean canMerge(final @NotNull Conflict conflict) {
-//    if (conflict.getSrclitem() == null) {
-//      return false;
-//    }
-//
-//    final ChangeTypeMask yourChange = new ChangeTypeMask(conflict.getYchg());
-//    final ChangeTypeMask yourLocalChange = new ChangeTypeMask(conflict.getYlchg());
-//    final ChangeTypeMask baseChange = new ChangeTypeMask(conflict.getBchg());
-//
-//    boolean isNamespaceConflict =
-//      ((conflict.getCtype().equals(ConflictType.Get)) || (conflict.getCtype().equals(ConflictType.Checkin))) && conflict.getIsnamecflict();
-//    if (!isNamespaceConflict) {
-//      boolean yourRenamedOrModified = yourChange.containsAny(ChangeType_type0.Rename, ChangeType_type0.Edit);
-//      boolean baseRenamedOrModified = baseChange.containsAny(ChangeType_type0.Rename, ChangeType_type0.Edit);
-//      if (yourRenamedOrModified && baseRenamedOrModified) {
-//        return true;
-//      }
-//    }
-//    if ((conflict.getYtype() != ItemType.Folder) && !isNamespaceConflict) {
-//      if (conflict.getCtype().equals(ConflictType.Merge) && baseChange.contains(ChangeType_type0.Edit)) {
-//        if (yourLocalChange.contains(ChangeType_type0.Edit)) {
-//          return true;
-//        }
-//        if (conflict.getIsforced()) {
-//          return true;
-//        }
-//        if ((conflict.getTlmver() != conflict.getBver()) || (conflict.getYlmver() != conflict.getYver())) {
-//          return true;
-//        }
-//      }
-//    }
-//    return false;
-//  }
 
     private static boolean isNameConflict(final @NotNull Conflict conflict) {
         return Conflict.ConflictType.RENAME.equals(conflict.getType()) || Conflict.ConflictType.BOTH.equals(conflict.getType());
@@ -328,19 +310,35 @@ public class ResolveConflictHelper {
 
             @Override
             public void run(@NotNull final ProgressIndicator progressIndicator) {
-                progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS));
+                for (final Conflict conflict : conflicts) {
+                    try {
+                        progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, conflict.getLocalPath()));
+                        final List<Conflict> resolved = CommandUtils.resolveConflictsByConflict(TFSVcs.getInstance(myProject).getServerContext(false), Arrays.asList(conflict), type);
+
+                        // check if error is a rename so the correct file name is displayed in the Update Info tab
+                        if (resolved != null && resolved.size() > 0) {
+                            if (conflict instanceof RenameConflict && ResolveConflictsCommand.AutoResolveType.TakeTheirs.equals(type)) {
+                                acceptChanges(((RenameConflict) conflict).getServerPath(), type);
+                            } else {
+                                acceptChanges(conflict.getLocalPath(), type);
+                            }
+                        } else {
+                            skip(Arrays.asList(conflict));
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error while handling merge resolution: " + e.getMessage());
+                        model.addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
+                    }
+                }
+
+                // update status bar
+                IdeaHelper.setProgress(progressIndicator, 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
+
                 try {
-                    final List<Conflict> resolved = CommandUtils.resolveConflictsByConflict(TFSVcs.getInstance(myProject).getServerContext(false), conflicts, type);
-                    acceptChanges(resolved, type);
-
-                    // update status bar
-                    IdeaHelper.setProgress(progressIndicator, 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
-
                     // refresh conflicts so resolved ones are removed
                     findConflicts(model);
-                } catch (Exception e) {
-                    logger.error("Error while handling merge resolution", e);
-                    // TODO: handle if tool fails
+                } catch (VcsException e) {
+                    model.addError(ModelValidationInfo.createWithMessage(e.getMessage()));
                 }
             }
         };
@@ -352,10 +350,15 @@ public class ResolveConflictHelper {
      * <p/>
      * Should always be called on a background thread!
      */
-    public void findConflicts(final ResolveConflictsModel model) {
+    public void findConflicts(final ResolveConflictsModel model) throws VcsException {
         final List<Conflict> conflicts = new ArrayList<Conflict>();
-        for (final String updatePath : updateRoots) {
-            conflicts.addAll(CommandUtils.getConflicts(TFSVcs.getInstance(project).getServerContext(false), updatePath));
+        try {
+            for (final String updatePath : updateRoots) {
+                conflicts.addAll(CommandUtils.getConflicts(TFSVcs.getInstance(project).getServerContext(false), updatePath));
+            }
+        } catch (Exception e) {
+            logger.error("Error while finding conflicts: " + e.getMessage());
+            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOAD_ERROR));
         }
 
         // sort results based on path
@@ -370,7 +373,6 @@ public class ResolveConflictHelper {
             @Override
             public void run() {
                 model.getConflictsTableModel().setConflicts(conflicts);
-                model.setLoading(false);
             }
         });
     }

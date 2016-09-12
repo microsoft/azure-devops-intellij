@@ -232,7 +232,8 @@ public class CommandUtils {
     }
 
     /**
-     * For rename conflicts, find the old name and local name of the file
+     * For rename conflicts, find the old name and local name of the file by looking for the last rename entry in the
+     * history. Look at the last 50 history entries first and if not found there look at all the history
      *
      * @param context
      * @param serverName
@@ -242,8 +243,17 @@ public class CommandUtils {
      */
     private static RenameConflict findLocalRename(final ServerContext context, final String serverName,
                                                   final String root, final Conflict.ConflictType type) {
-        final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, serverName, StringUtils.EMPTY, 50,
-                false, StringUtils.EMPTY, true);
+        final RenameConflict conflict = searchChangeSetForRename(context, serverName, root, type, 50);
+
+        // return conflict if found, else do a search on all of the history (-1 will not add a stopAfter parameter to cmd)
+        return conflict != null ? conflict : searchChangeSetForRename(context, serverName, root, type, -1);
+    }
+
+    private static RenameConflict searchChangeSetForRename(final ServerContext context, final String serverName,
+                                                           final String root, final Conflict.ConflictType type,
+                                                           final int stopAfter) {
+        final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, serverName, StringUtils.EMPTY,
+                stopAfter, false, StringUtils.EMPTY, true);
 
         // step through most current changesets to find the one that did the rename
         for (int index = 0; index < changeSets.size(); index++) {
@@ -266,7 +276,6 @@ public class CommandUtils {
                 }
             }
         }
-
         return null;
     }
 

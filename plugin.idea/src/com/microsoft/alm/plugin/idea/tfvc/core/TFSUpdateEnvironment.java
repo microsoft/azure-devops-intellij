@@ -22,18 +22,21 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironmen
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
-    private final
+    private static final Logger logger = LoggerFactory.getLogger(TFSUpdateEnvironment.class);
+
     @NotNull
-    TFSVcs myVcs;
+    private final TFSVcs tfsVcs;
 
     TFSUpdateEnvironment(final @NotNull TFSVcs vcs) {
-        myVcs = vcs;
+        tfsVcs = vcs;
     }
 
     @Override
@@ -46,6 +49,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                                            final UpdatedFiles updatedFiles,
                                            final ProgressIndicator progressIndicator,
                                            @NotNull final Ref<SequentialUpdatesContext> context) throws ProcessCanceledException {
+        logger.info("Update on files initiated...");
         final List<VcsException> exceptions = new ArrayList<VcsException>();
         TFSProgressUtil.setProgressText(progressIndicator, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_UPDATE_STATUS_MSG));
 
@@ -58,7 +62,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 filesUpdatePaths.add(file.getPath());
             }
 
-            final SyncCommand command = new SyncCommand(myVcs.getServerContext(false), filesUpdatePaths, needRecursion);
+            final SyncCommand command = new SyncCommand(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion);
             final SyncResults results = command.runSynchronously();
 
             // add the changed files to updatedFiles so user knows what has occurred in the workspace
@@ -76,8 +80,9 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             // check and resolve conflicts
             // updatedFiles updated in the helper class
             if (results.doConflictsExists()) {
-                final ResolveConflictHelper conflictHelper = new ResolveConflictHelper(myVcs.getProject(), updatedFiles, filesUpdatePaths);
-                ConflictsEnvironment.getConflictsHandler().resolveConflicts(myVcs.getProject(), conflictHelper);
+                logger.info("Conflicts found during update");
+                final ResolveConflictHelper conflictHelper = new ResolveConflictHelper(tfsVcs.getProject(), updatedFiles, filesUpdatePaths);
+                ConflictsEnvironment.getConflictsHandler().resolveConflicts(tfsVcs.getProject(), conflictHelper);
             }
 
             if (!results.getExceptions().isEmpty()) {
@@ -87,67 +92,8 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             exceptions.add(new VcsException(e));
         }
 
-
-//    TODO: add in the conflict resolution part of this code
-//    try {
-//      final Map<WorkspaceInfo, Collection<Conflict>> workspace2Conflicts = new HashMap<WorkspaceInfo, Collection<Conflict>>();
-//      List<FilePath> orphanPaths =
-//        WorkstationHelper.processByWorkspaces(Arrays.asList(contentRoots), true, myVcs.getProject(),
-//                                              new WorkstationHelper.VoidProcessDelegate() {
-//          @Override
-//          public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-//            VersionSpecBase version = LatestVersionSpec.INSTANCE;
-//            RecursionType recursionType = RecursionType.Full;
-//            TFSProjectConfiguration configuration = TFSProjectConfiguration.getInstance(myVcs.getProject());
-//            if (configuration != null) {
-//              version = configuration.getUpdateWorkspaceInfo(workspace).getVersion();
-//              recursionType = configuration.getState().UPDATE_RECURSIVELY ? RecursionType.Full : RecursionType.None;
-//            }
-//
-//            // 1. query get operations for contentRoots - to let server know which version we need to report corresponding server conflicts
-//            List<VersionControlServer.GetRequestParams> requests = new ArrayList<VersionControlServer.GetRequestParams>(paths.size());
-//            for (ItemPath path : paths) {
-//              requests.add(new VersionControlServer.GetRequestParams(path.getServerPath(), recursionType, version));
-//              TFSProgressUtil.checkCanceled(progressIndicator);
-//            }
-//
-//            List<GetOperation> operations = workspace.getServer().getVCS()
-//              .get(workspace.getName(), workspace.getOwnerName(), requests, myVcs.getProject(),
-//                   TFSBundle.message("preparing.for.download"));
-//            // execute GetOperation-s, conflicting ones will be skipped
-//            final Collection<VcsException> applyErrors = ApplyGetOperations
-//              .execute(myVcs.getProject(), workspace, operations, new ApplyProgress.ProgressIndicatorWrapper(progressIndicator),
-//                       updatedFiles, ApplyGetOperations.DownloadMode.ALLOW);
-//            exceptions.addAll(applyErrors);
-//
-//            Collection<Conflict> conflicts =
-//              workspace.getServer().getVCS()
-//                .queryConflicts(workspace.getName(), workspace.getOwnerName(), paths, RecursionType.Full, myVcs.getProject(),
-//                                TFSBundle.message("loading.conflicts"));
-//
-//            final Collection<Conflict> unresolvedConflicts = ResolveConflictHelper.getUnresolvedConflicts(conflicts);
-//            if (!unresolvedConflicts.isEmpty()) {
-//              workspace2Conflicts.put(workspace, unresolvedConflicts);
-//            }
-//          }
-//        });
-//
-//      if (!workspace2Conflicts.isEmpty()) {
-//        ResolveConflictHelper resolveConflictHelper = new ResolveConflictHelper(myVcs.getProject(), workspace2Conflicts, updatedFiles);
-//        ConflictsEnvironment.getConflictsHandler().resolveConflicts(resolveConflictHelper);
-//      }
-//
-//      for (FilePath orphanPath : orphanPaths) {
-//        updatedFiles.getGroupById(FileGroup.UNKNOWN_ID).add(orphanPath.getPresentableUrl(), TFSVcs.getKey(), null);
-//      }
-//    }
-//    catch (TfsException e) {
-//      //noinspection ThrowableInstanceNeverThrown
-//      exceptions.add(new VcsException(e));
-//    }
-//
         // TODO (Jetbrains) content roots can be renamed while executing
-        TfsFileUtil.refreshAndInvalidate(myVcs.getProject(), contentRoots, false);
+        TfsFileUtil.refreshAndInvalidate(tfsVcs.getProject(), contentRoots, false);
 
         return new UpdateSession() {
             @Override

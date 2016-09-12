@@ -3,17 +3,18 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
-import com.intellij.openapi.progress.PerformInBackgroundOption;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsRunnable;
+import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
+import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.common.ui.common.PageModelImpl;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,16 +24,12 @@ import java.util.List;
 /**
  * Model for resolving conflicts in a workspace
  */
-public class ResolveConflictsModel extends AbstractModel {
+public class ResolveConflictsModel extends PageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(ResolveConflictsModel.class);
-
-    public final static String PROP_LOADING = "loading";
 
     private final Project project;
     private final ConflictsTableModel conflictsTableModel;
     private final ResolveConflictHelper conflictHelper;
-
-    private boolean isLoading = false;
 
     public ResolveConflictsModel(final Project project, final ResolveConflictHelper conflictHelper) {
         this.project = project;
@@ -40,48 +37,25 @@ public class ResolveConflictsModel extends AbstractModel {
 
         this.conflictsTableModel = new ConflictsTableModel();
 
-        loadConflicts();
-    }
-
-    /**
-     * Set loading for UI. Special model changes need to be made to displaying loading message but nothing needs to be
-     * done in the case of not loading. The loaded conflicts will take care of removing the loading message. The
-     * notification still needs to take place though to change the text color of the table.
-     *
-     * @param isLoading
-     */
-    public void setLoading(final boolean isLoading) {
-        if (this.isLoading != isLoading) {
-            if (isLoading) {
-                conflictsTableModel.setLoading();
-            }
-            // no need to clear anything in the case of not loading because the contents being loaded takes care of it
-            this.isLoading = isLoading;
-            setChangedAndNotify(PROP_LOADING);
-        }
-    }
-
-    public boolean isLoading() {
-        return isLoading;
     }
 
     /**
      * Load the conflicts into the table model
      */
-    private void loadConflicts() {
-        setLoading(true);
-
-        final Task.Backgroundable loadConflictsTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR),
-                true, PerformInBackgroundOption.DEAF) {
-
-            @Override
-            public void run(@NotNull final ProgressIndicator progressIndicator) {
-                logger.debug("Loading conflicts into the table");
-                progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR));
-                conflictHelper.findConflicts(ResolveConflictsModel.this);
-            }
-        };
-        loadConflictsTask.queue();
+    public void loadConflicts() {
+        logger.debug("Loading conflicts into the table");
+        try {
+            final VcsRunnable resolveRunnable = new VcsRunnable() {
+                public void run() throws VcsException {
+                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_CONFLICTS));
+                    conflictHelper.findConflicts(ResolveConflictsModel.this);
+                }
+            };
+            VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR), false, project);
+        } catch (VcsException e) {
+            logger.error("Error while loading conflicts: " + e.getMessage());
+            addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOAD_ERROR)));
+        }
     }
 
     /**
@@ -90,6 +64,7 @@ public class ResolveConflictsModel extends AbstractModel {
      * @param rows
      */
     public void acceptYours(final int[] rows) {
+        logger.info("Accepting yours for " + rows.length + " conflicts");
         conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.KeepYours, this);
     }
 
@@ -99,17 +74,19 @@ public class ResolveConflictsModel extends AbstractModel {
      * @param rows
      */
     public void acceptTheirs(final int[] rows) {
+        logger.info("Accepting theirs for " + rows.length + " conflicts");
         conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.TakeTheirs, this);
     }
 
     public void merge(final int[] rows) {
         final List<Conflict> conflicts = getSelectedConflicts(rows);
-        logger.debug("Starting merge...");
+        logger.info("Starting merge...");
         for (final Conflict conflict : conflicts) {
             try {
                 conflictHelper.acceptMerge(conflict, this);
             } catch (VcsException e) {
-                // TODO: handle if tool fails
+                logger.error("Error while merging conflicts: "+ e.getMessage());
+                addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
             }
         }
     }

@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
+import com.microsoft.alm.plugin.idea.common.ui.common.PageModel;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
 
 import java.awt.event.ActionEvent;
@@ -26,6 +27,7 @@ public class ResolveConflictsController implements Observer, ActionListener {
         this.dialog.addActionListener(this);
         this.model.addObserver(this);
 
+        this.model.loadConflicts();
         update(null, null);
     }
 
@@ -50,15 +52,21 @@ public class ResolveConflictsController implements Observer, ActionListener {
 
     @Override
     public void update(final Observable o, final Object arg) {
-        if (arg == null || arg.equals(ResolveConflictsModel.PROP_LOADING)) {
-            dialog.setLoading(model.isLoading());
-        }
         if (arg == null) {
             dialog.setConflictsTableModel(model.getConflictsTableModel());
+        }
+
+        if (PageModel.PROP_ERRORS.equals(arg)) {
+            if (model.hasErrors()) {
+                dialog.displayError(model.getErrors().get(0).getValidationMessage());
+            } else {
+                dialog.displayError(null);
+            }
         }
     }
 
     protected void updateModel() {
-        // TODO: implement updateModel once buttons are configured
+        // clear current errors, if still existing then they will reappear
+        model.clearErrors();
     }
 }
