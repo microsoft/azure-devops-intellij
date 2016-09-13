@@ -22,6 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class VcsHelper {
     private static final Logger logger = LoggerFactory.getLogger(VcsHelper.class);
 
@@ -56,7 +58,18 @@ public class VcsHelper {
     public static GitRepository getGitRepository(final Project project) {
         if (isGitVcs(project)) {
             final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-            final GitRepository repository = manager.getRepositoryForRoot(project.getBaseDir());
+            GitRepository repository = manager.getRepositoryForRoot(project.getBaseDir());
+
+            // in the case where the base dir of the Git repo and the base dir of IDEA project don't match this can be null
+            if (repository == null) {
+                final List<GitRepository> repos = manager.getRepositories();
+                ArgumentHelper.checkNotNullOrEmpty(repos, "Git Repositories");
+                repository = repos.get(0);
+                if (repos.size() > 1) {
+                    logger.warn("More than 1 Git repo was found. Defaulting to the first returned: " + repository.getRoot().getPath());
+                }
+            }
+
             return repository;
         }
         return null;
