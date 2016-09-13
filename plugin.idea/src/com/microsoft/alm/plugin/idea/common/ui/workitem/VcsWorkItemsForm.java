@@ -33,12 +33,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     private final WorkItemQueryDropDown queryDropDown;
     private FormattedTable workItemsTable;
+    private final boolean isGitRepo;
 
     //commands
     public static final String CMD_CREATE_BRANCH = "createBranch";
@@ -50,16 +51,18 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
                 TfPluginBundle.KEY_VCS_WIT_REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION);
 
+        this.isGitRepo = VcsHelper.isGitVcs(project);
         this.queryDropDown = new WorkItemQueryDropDown(project, VcsHelper.getRepositoryContext(project));
         ensureInitialized();
     }
 
     @VisibleForTesting
-    protected VcsWorkItemsForm(final WorkItemQueryDropDown queryDropDown) {
+    protected VcsWorkItemsForm(final boolean isGitRepo, final WorkItemQueryDropDown queryDropDown) {
         super(TfPluginBundle.KEY_VCS_WIT_TITLE,
                 TfPluginBundle.KEY_VCS_WIT_CREATE_WIT,
                 TfPluginBundle.KEY_VCS_WIT_REFRESH_TOOLTIP,
                 TOOLBAR_LOCATION);
+        this.isGitRepo = isGitRepo;
         this.queryDropDown = queryDropDown;
     }
 
@@ -164,9 +167,15 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
     }
 
     protected List<JBMenuItem> getMenuItems(final ActionListener listener) {
-        return Arrays.asList(
-                createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener),
-                createMenuItem(TfPluginBundle.KEY_VCS_WIT_CREATE_BRANCH, null, CMD_CREATE_BRANCH, listener));
+        final List<JBMenuItem> menuItems = new ArrayList<JBMenuItem>();
+        menuItems.add(createMenuItem(TfPluginBundle.KEY_VCS_OPEN_IN_BROWSER, null, CMD_OPEN_SELECTED_ITEM_IN_BROWSER, listener));
+
+        // only show create branch option for Git repos
+        if (isGitRepo) {
+            menuItems.add(createMenuItem(TfPluginBundle.KEY_VCS_WIT_CREATE_BRANCH, null, CMD_CREATE_BRANCH, listener));
+        }
+
+        return menuItems;
     }
 
     public Operation.CredInputsImpl getOperationInputs() {

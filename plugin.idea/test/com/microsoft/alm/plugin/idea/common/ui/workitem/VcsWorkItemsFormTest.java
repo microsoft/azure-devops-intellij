@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.JBMenuItem;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabForm;
@@ -31,9 +32,12 @@ public class VcsWorkItemsFormTest extends IdeaAbstractTest {
     @Mock
     private WorkItemQueryDropDown mockWorkItemQueryDropDown;
 
+    @Mock
+    private Project project;
+
     @Before
     public void setUp() throws Exception {
-        underTest = spy(new VcsWorkItemsForm(mockWorkItemQueryDropDown));
+        underTest = spy(new VcsWorkItemsForm(true, mockWorkItemQueryDropDown));
     }
 
     @Test
@@ -43,11 +47,20 @@ public class VcsWorkItemsFormTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testGetMenuItems() {
+    public void testGetMenuItems_Git() {
         List<JBMenuItem> menuItemList = underTest.getMenuItems(null);
         assertEquals(2, menuItemList.size());
         assertEquals(TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER, menuItemList.get(0).getActionCommand());
         assertEquals(VcsWorkItemsForm.CMD_CREATE_BRANCH, menuItemList.get(1).getActionCommand());
+    }
+
+    @Test
+    public void testGetMenuItems_TFVC() {
+        underTest = spy(new VcsWorkItemsForm(false, mockWorkItemQueryDropDown));
+
+        List<JBMenuItem> menuItemList = underTest.getMenuItems(null);
+        assertEquals(1, menuItemList.size());
+        assertEquals(TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER, menuItemList.get(0).getActionCommand());
     }
 
     @Test
