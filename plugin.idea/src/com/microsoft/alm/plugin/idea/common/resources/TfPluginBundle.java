@@ -377,6 +377,8 @@ public class TfPluginBundle {
     public static final String KEY_VCS_PR_DATE_YESTERDAY = "VcsPullRequestsTab.Date.Yesterday";
     @NonNls
     public static final String KEY_VCS_PR_DATE_DAYS_AGO = "VcsPullRequestsTab.Date.DaysAgo";
+    @NonNls
+    public static final String KEY_VCS_PR_TFVC_MSG = "VcsPullRequestsTab.Tfvc.Msg";
 
     //Vcs Work Item tab
     @NonNls

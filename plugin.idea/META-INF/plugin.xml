@@ -115,15 +115,15 @@
         </action>
 
         <!-- TFVC Action -->
-        <group id="TfsGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC">
+        <group id="TfsGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC (Preview)">
             <add-to-group group-id="VcsGroups" anchor="last"/>
         </group>
 
-        <group id="TfsFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC">
+        <group id="TfsFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC (Preview)">
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
 
-        <group id="TfsGroup" text="TFVC">
+        <group id="TfsGroup" text="TFVC (Preview)">
             <separator/>
             <action id="Tfs.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
             <reference id="CheckinFiles"/>
