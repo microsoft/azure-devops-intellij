@@ -85,24 +85,21 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
 
             public void onSuccess() {
                 if (checkoutResult.get()) {
+                    // Do final checkout steps to setup project
+                    UpdateVersionControlSystem(project, parentDirectory, directoryName, destinationParent, listener);
+
                     // Check the isAdvanced flag
                     if (isAdvancedChecked) {
+                        // A new project was created during checkout so use that going forward
+                        final Project currentProject = IdeaHelper.getCurrentProject();
+
                         // The user wants to edit the workspace before syncing...
                         final RepositoryContext repositoryContext = RepositoryContext.createTfvcContext(localPath, workspaceName, teamProjectName, context.getServerUri().toString());
-                        final WorkspaceController controller = new WorkspaceController(project, repositoryContext, workspaceName);
+                        final WorkspaceController controller = new WorkspaceController(currentProject, repositoryContext, workspaceName);
                         if (controller.showModalDialog(false)) {
                             // Save and Sync the workspace (this will be backgrounded)
-                            controller.saveWorkspace(true, new Runnable() {
-                                @Override
-                                public void run() {
-                                    // Files are all synchronized, so trigger the VCS update
-                                    UpdateVersionControlSystem(project, parentDirectory, directoryName, destinationParent, listener);
-                                }
-                            });
+                            controller.saveWorkspace(true, null);
                         }
-                    } else {
-                        // We don't have to wait for the workspace to be updated, so just trigger the VCS update
-                        UpdateVersionControlSystem(project, parentDirectory, directoryName, destinationParent, listener);
                     }
                 }
             }
