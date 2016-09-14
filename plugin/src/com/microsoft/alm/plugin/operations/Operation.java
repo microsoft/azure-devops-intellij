@@ -150,6 +150,9 @@ public abstract class Operation {
      */
     protected static ServerContext getServerContext(final RepositoryContext repositoryContext, final boolean forcePrompt, final boolean allowPrompt, final Logger logger ) {
         final ServerContext serverContext;
+        logger.info("getServerContext: url=", repositoryContext.getUrl());
+        logger.info("getServerContext: forcePrompt=", forcePrompt);
+        logger.info("getServerContext: allowPrompt=", allowPrompt);
 
         // Get the authenticated context for the Url
         // This should be done on a background thread so as not to block UI or hang the IDE
