@@ -63,10 +63,13 @@ public class VcsHelper {
             // in the case where the base dir of the Git repo and the base dir of IDEA project don't match this can be null
             if (repository == null) {
                 final List<GitRepository> repos = manager.getRepositories();
-                ArgumentHelper.checkNotNullOrEmpty(repos, "Git Repositories");
-                repository = repos.get(0);
-                if (repos.size() > 1) {
-                    logger.warn("More than 1 Git repo was found. Defaulting to the first returned: " + repository.getRoot().getPath());
+                if (repos.size() > 0) {
+                    repository = repos.get(0);
+                    if (repos.size() > 1) {
+                        logger.warn("More than 1 Git repo was found. Defaulting to the first returned: " + repository.getRoot().getPath());
+                    }
+                } else {
+                    logger.warn("We are in a Git project that does not have any Git repos. (We may be asking too early.)");
                 }
             }
 
