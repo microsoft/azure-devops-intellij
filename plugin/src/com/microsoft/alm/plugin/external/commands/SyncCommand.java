@@ -5,7 +5,6 @@ package com.microsoft.alm.plugin.external.commands;
 
 import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.SyncResults;
@@ -13,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,20 +61,20 @@ public class SyncCommand extends Command<SyncResults> {
      * D:\tmp\test:
      * Getting addFold
      * Getting addFold-branch
-     *
+     * <p/>
      * D:\tmp\test\addFold-branch:
      * Getting testHereRename.txt
-     *
+     * <p/>
      * D:\tmp\test\addFold:
      * Getting testHere3
      * Getting testHereRename7.txt
-     *
+     * <p/>
      * D:\tmp\test:
      * Getting Rename2.txt
      * Getting test3.txt
      * Conflict test_renamed.txt - Unable to perform the get operation because you have a conflicting rename, edit
      * Getting TestAdd.txt
-     *
+     * <p/>
      * ---- Summary: 1 conflicts, 0 warnings, 0 errors ----
      * Conflict D:\tmp\test\test_renamed.txt - Unable to perform the get operation because you have a conflicting rename, edit
      *
@@ -107,11 +107,11 @@ public class SyncCommand extends Command<SyncResults> {
                 if (isFilePath(line)) {
                     path = getFilePath(line, StringUtils.EMPTY, StringUtils.EMPTY);
                 } else if (StringUtils.startsWith(line, NEW_FILE_PREFIX)) {
-                    newFiles.add(UrlHelper.combine(path, line.replaceFirst(NEW_FILE_PREFIX, StringUtils.EMPTY)));
+                    newFiles.add((new File(path, line.replaceFirst(NEW_FILE_PREFIX, StringUtils.EMPTY)).getPath()));
                 } else if (StringUtils.startsWith(line, UPDATED_FILE_PREFIX)) {
-                    updatedFiles.add(UrlHelper.combine(path, line.replaceFirst(UPDATED_FILE_PREFIX, StringUtils.EMPTY)));
+                    updatedFiles.add((new File(path, line.replaceFirst(UPDATED_FILE_PREFIX, StringUtils.EMPTY)).getPath()));
                 } else if (StringUtils.startsWith(line, DELETED_FILE_PREFIX)) {
-                    deletedFiles.add(UrlHelper.combine(path, line.replaceFirst(DELETED_FILE_PREFIX, StringUtils.EMPTY)));
+                    deletedFiles.add((new File(path, line.replaceFirst(DELETED_FILE_PREFIX, StringUtils.EMPTY)).getPath()));
                 } else {
                     // TODO: check for other cases to cover here but no need to hinder user if case not covered
                     logger.warn("Unknown response from 'tf get' command: " + line);
