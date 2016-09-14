@@ -125,11 +125,15 @@ public class WorkItemLookupOperation extends Operation {
         // query server and add results
         Wiql wiql = new Wiql();
         wiql.setQuery(witInputs.query);
+        logger.info("client was created: " + (witHttpClient != null ? "true" : "false"));
+        logger.info("wiql is : " + witInputs.query);
         WorkItemQueryResult result = witHttpClient.queryByWiql(wiql, context.getTeamProjectReference().getId());
 
         int count = 0;
+        logger.info("Results were found for query: " + (result != null ? "true" : "false"));
         final List<WorkItemReference> itemRefs = result.getWorkItems();
-        final int maxCount = Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT);
+        logger.info("Number of work items found: " + (itemRefs != null ? itemRefs.size() : 0));
+        final int maxCount = itemRefs != null ? Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT) : 0;
         if (maxCount == 0) {
             return; //no workitem ids matched the wiql
         }
@@ -146,7 +150,7 @@ public class WorkItemLookupOperation extends Operation {
         }
 
         final List<WorkItem> items = witHttpClient.getWorkItems(ids, witInputs.fields, null, witInputs.expand);
-        logger.debug("doLookup: Found {} work items on repo {}", items.size(), repositoryContext.getUrl());
+        logger.info("doLookup: Found {} work items on repo {}", items.size(), repositoryContext.getUrl());
 
         // Correct the order of the work items. The second call here to get the work items,
         // always returns them in id order. We need to use the map we created above to put

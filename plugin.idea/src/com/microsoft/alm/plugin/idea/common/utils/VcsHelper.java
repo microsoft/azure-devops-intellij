@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
@@ -56,18 +57,15 @@ public class VcsHelper {
      * @return
      */
     public static GitRepository getGitRepository(final Project project) {
+        logger.info("GET REPO METHOD " + isGitVcs(project));
         if (isGitVcs(project)) {
             final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-            GitRepository repository = manager.getRepositoryForRoot(project.getBaseDir());
+            final List<GitRepository> repos = manager.getRepositories();
 
-            // in the case where the base dir of the Git repo and the base dir of IDEA project don't match this can be null
-            if (repository == null) {
-                final List<GitRepository> repos = manager.getRepositories();
-                ArgumentHelper.checkNotNullOrEmpty(repos, "Git Repositories");
-                repository = repos.get(0);
-                if (repos.size() > 1) {
-                    logger.warn("More than 1 Git repo was found. Defaulting to the first returned: " + repository.getRoot().getPath());
-                }
+            ArgumentHelper.checkNotNullOrEmpty(repos, "Git Repositories");
+            final GitRepository repository = repos.get(0);
+            if (repos.size() > 1) {
+                logger.warn("More than 1 Git repo was found. Defaulting to the first returned: " + repository.getRoot().getPath());
             }
 
             return repository;
@@ -97,10 +95,20 @@ public class VcsHelper {
             logger.info("getRepositoryContext: cache miss: " + projectRootFolder);
 
             final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
+            logger.info("PM found: " + projectLevelVcsManager == null ? "null" : "got it");
+            logger.info("Vcs: " + projectLevelVcsManager.getAllActiveVcss().length);
+
+            for (AbstractVcs v : projectLevelVcsManager.getAllActiveVcss()) {
+                logger.info("Found: " + v.getName() + "   " + v.getDisplayName() + " " + projectLevelVcsManager.checkVcsIsActive(GitVcs.NAME));
+            }
+
             // Check for Git, then TFVC
             if (projectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)) {
+                logger.info("INSIDE");
                 // It's Git, so get the repository and remote url to create the context from
                 final GitRepository repository = getGitRepository(project);
+                logger.info("repo  " + repository);
+                logger.info("repo info " + TfGitHelper.isTfGitRepository(repository));
                 if (repository != null && TfGitHelper.isTfGitRepository(repository)) {
                     final GitRemote gitRemote = TfGitHelper.getTfGitRemote(repository);
                     final String gitRemoteUrl = gitRemote.getFirstUrl();
