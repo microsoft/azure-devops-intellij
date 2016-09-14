@@ -211,16 +211,16 @@ public class UrlHelper {
     }
 
     public static URI getBuildURI(final URI projectUri, final int buildId) {
-        return UrlHelper.createUri(combine(projectUri.toString(), URL_BUILD_PATH_SEGMENT,
-                String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_BUILD_PATH_SEGMENT)
+                .concat(String.format(URL_BUILD_SPECIFIC_ITEM_PATH_SEGMENT, buildId)));
     }
 
     public static URI getQueueBuildURI(final URI serverUri, final String collectionId, final String projectName, final int buildDefinitionId) {
-        return UrlHelper.createUri(combine(serverUri.toString(),
-                String.format(URL_BUILD_ASPX_SEGMENT, collectionId),
-                String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)),
-                String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId),
-                URL_BUILD_QUEUE_ACTION));
+        return UrlHelper.createUri(
+                combine(serverUri.toString(), String.format(URL_BUILD_ASPX_SEGMENT, collectionId))
+                .concat(String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)))
+                .concat(String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId))
+                .concat(URL_BUILD_QUEUE_ACTION));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
@@ -229,8 +229,8 @@ public class UrlHelper {
     }
 
     public static URI getSpecificWorkItemURI(final URI projectUri, final int workItemId) {
-        return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT,
-                String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
+        return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT)
+                .concat(String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
     }
 
     public static URI getMyWorkItemsURI(final URI projectUri) {
