@@ -92,7 +92,7 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                         final WorkspaceController controller = new WorkspaceController(project, repositoryContext, workspaceName);
                         if (controller.showModalDialog(false)) {
                             // Save and Sync the workspace (this will be backgrounded)
-                            controller.saveWorkspace(true, new Runnable() {
+                            controller.saveWorkspace(localPath, true, new Runnable() {
                                 @Override
                                 public void run() {
                                     // Files are all synchronized, so trigger the VCS update

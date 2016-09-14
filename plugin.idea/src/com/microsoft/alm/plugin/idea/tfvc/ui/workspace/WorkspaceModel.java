@@ -243,7 +243,7 @@ public class WorkspaceModel extends AbstractModel {
         });
     }
 
-    public void saveWorkspace(final Project project, final boolean syncFiles, final Runnable onSuccess) {
+    public void saveWorkspace(final Project project, final String workspaceRootPath, final boolean syncFiles, final Runnable onSuccess) {
         final ServerContext serverContext = currentServerContext;
         final Workspace oldWorkspace = this.oldWorkspace;
         final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
@@ -264,7 +264,7 @@ public class WorkspaceModel extends AbstractModel {
                     if (syncFiles) {
                         IdeaHelper.setProgress(indicator, 0.30,
                                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING));
-                        CommandUtils.syncWorkspace(serverContext, project.getBasePath());
+                        CommandUtils.syncWorkspace(serverContext, workspaceRootPath);
                     }
 
                     if (onSuccess != null) {
@@ -282,7 +282,7 @@ public class WorkspaceModel extends AbstractModel {
                             new NotificationListener() {
                                 @Override
                                 public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
-                                    syncWorkspaceAsync(serverContext, project);
+                                    syncWorkspaceAsync(serverContext, project, workspaceRootPath);
                                 }
                             });
                 } catch (final Throwable t) {
@@ -297,7 +297,7 @@ public class WorkspaceModel extends AbstractModel {
         backgroundTask.queue();
     }
 
-    public void syncWorkspaceAsync(final ServerContext context, final Project project) {
+    public void syncWorkspaceAsync(final ServerContext context, final Project project, final String workspaceRootPath) {
         final Task.Backgroundable backgroundTask = new Task.Backgroundable(project,
                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_PROGRESS_TITLE),
                 true, PerformInBackgroundOption.DEAF) {
@@ -308,7 +308,7 @@ public class WorkspaceModel extends AbstractModel {
                             TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_SYNCING));
 
                     // Sync all files recursively
-                    CommandUtils.syncWorkspace(context, project.getBasePath());
+                    CommandUtils.syncWorkspace(context, workspaceRootPath);
 
                     // Notify the user of a successful sync
                     VcsNotifier.getInstance(project).notifySuccess(
