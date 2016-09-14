@@ -267,24 +267,25 @@ public class WorkspaceModel extends AbstractModel {
                         CommandUtils.syncWorkspace(serverContext, workspaceRootPath);
                     }
 
-                    if (onSuccess != null) {
-                        // Trigger the onSuccess callback on the UI thread
-                        IdeaHelper.runOnUIThread(onSuccess);
-                    }
-
                     IdeaHelper.setProgress(indicator, 1.00,
                             TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_PROGRESS_DONE), true);
 
-                    // Notify the user of success and provide a link to sync the workspace
-                    VcsNotifier.getInstance(project).notifyImportantInfo(
-                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE),
-                            TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_MESSAGE),
-                            new NotificationListener() {
-                                @Override
-                                public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
-                                    syncWorkspaceAsync(serverContext, project, workspaceRootPath);
-                                }
-                            });
+                    if (onSuccess != null) {
+                        // Trigger the onSuccess callback on the UI thread (it is up to the success handler to notify the user)
+                        IdeaHelper.runOnUIThread(onSuccess);
+                    } else {
+                        // Notify the user of success and provide a link to sync the workspace
+                        // (It doesn't make sense to tell the user we are done here if there is another thread still doing work)
+                        VcsNotifier.getInstance(project).notifyImportantInfo(
+                                TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_TITLE),
+                                TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_NOTIFY_SUCCESS_MESSAGE),
+                                new NotificationListener() {
+                                    @Override
+                                    public void hyperlinkUpdate(@NotNull final Notification n, @NotNull final HyperlinkEvent e) {
+                                        syncWorkspaceAsync(serverContext, project, workspaceRootPath);
+                                    }
+                                });
+                    }
                 } catch (final Throwable t) {
                     //TODO on failure we could provide a link that reopened the dialog with the values they tried to save
                     VcsNotifier.getInstance(project).notifyError(
