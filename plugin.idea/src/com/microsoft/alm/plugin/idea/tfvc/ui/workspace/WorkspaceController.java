@@ -68,7 +68,7 @@ public class WorkspaceController implements Observer, ActionListener {
     public boolean showModalDialog(final boolean autoSaveWorkspace) {
         final boolean result = dialog.showModalDialog();
         if (result && autoSaveWorkspace) {
-            saveWorkspace(false, null);
+            saveWorkspace(project.getBasePath(), false, null);
         }
 
         return result;
@@ -80,12 +80,12 @@ public class WorkspaceController implements Observer, ActionListener {
         // The OK action is already handled
     }
 
-    public void saveWorkspace(final boolean syncFiles, final Runnable onSuccess) {
+    public void saveWorkspace(final String workspaceRootPath, final boolean syncFiles, final Runnable onSuccess) {
         // Update model before action is initiated on it
         updateModel();
         // Trigger the save workspace method
         // (this method will do all the background work and notify the user of the result)
-        model.saveWorkspace(project, syncFiles, onSuccess);
+        model.saveWorkspace(project, workspaceRootPath, syncFiles, onSuccess);
     }
 
     @Override
