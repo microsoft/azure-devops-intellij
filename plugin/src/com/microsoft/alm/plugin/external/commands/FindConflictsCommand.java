@@ -59,7 +59,8 @@ public class FindConflictsCommand extends Command<ConflictResults> {
         final String[] lines = getLines(stderr);
 
         for (final String line : lines) {
-            final int index = line.indexOf(":");
+            // find last ue of colon because it can be included in the file path (i.e. C:\\Users\\user\\tfvc\\file.txt: The item content has changed)
+            final int index = line.lastIndexOf(":");
             if (index != -1) {
                 if (StringUtils.endsWith(line, BOTH_CONFLICTS_SUFFIX)) {
                     bothConflicts.add(line.substring(0, index));
