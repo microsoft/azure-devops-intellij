@@ -6,12 +6,12 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.104.0</version>
+    <version>1.106.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
-      Visual Studio Team Services is a plugin to enable working with Git repositories on Visual Studio Team Services or Team Foundation Server 2015.
+      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services or Team Foundation Server 2015.
       <br />
       <a href="https://github.com/Microsoft/vso-intellij">GitHub</a> | <a href="https://github.com/Microsoft/vso-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
       <br />
@@ -27,6 +27,7 @@
         <li>Create a new branch and associate it with the work item you are working on.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
+        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes.</li>
       </ul>
       <br />
       <br />
@@ -38,12 +39,17 @@
       <i>Compiled with Java 1.6</i>
       <br />
       <i>Compatible with IntelliJ Ultimate and Community editions versions 14 and later and Android Studio 1.2 and later</i>
+      <br />
+      <br />
+      <b>Privacy Policy</b>
+      <br />
+      For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Visual Studio Product Family Privacy Statement</a>
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.104.0
+      v 1.106.0
       <br />
-      This release contains incremental fixes and updates to pull request, work item, and web links.
+      A preview of TFVC support has been added that allows for TFVC repositories to be checked out, updated, and checked in. This release alo contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
