@@ -16,6 +16,8 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.List;
  * Action to add an unversioned file
  */
 public class AddAction extends InstrumentedAction {
+    private static final Logger logger = LoggerFactory.getLogger(AddAction.class);
 
     @Override
     public void doActionPerformed(final AnActionEvent anActionEvent) {
@@ -46,13 +49,18 @@ public class AddAction extends InstrumentedAction {
 
     @Override
     public void doUpdate(final AnActionEvent anActionEvent) {
-        final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
+        final Project project = anActionEvent.getProject();
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
         anActionEvent.getPresentation().setEnabled(isEnabled(project, files));
     }
 
     private static boolean isEnabled(final Project project, final VirtualFile[] files) {
         if (files.length == 0) {
+            return false;
+        }
+
+        if (project == null) {
+            logger.warn("Cannot enable AddAction because project is unknown (null)");
             return false;
         }
 

@@ -48,8 +48,7 @@ public class DownloadCommand extends Command<String> {
      */
     @Override
     public String parseOutput(final String stdout, final String stderr) {
-        //TODO: Throw an error if one occurred --- the HACK above causes an error every time
-        //TODO: super.throwIfError(stderr);
+        super.throwIfError(stderr);
         // Write the contents of stdout to the destination file
         File file = new File(destination);
         if (file.exists()) {
