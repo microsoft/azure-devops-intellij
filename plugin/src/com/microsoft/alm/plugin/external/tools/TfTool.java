@@ -20,7 +20,8 @@ import java.io.File;
 public class TfTool {
     private static final String[] TF_WINDOWS_PROGRAMS = {"tf.exe", "tf.bat", "tf.cmd"};
     private static final String[] TF_OTHER_PROGRAMS = {"tf", "tf.sh"};
-    public static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.0.3");
+    private static ToolVersion cachedVersion = null;
+    public static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.1.0"); //TODO fix this version number once the version of the CLC is released and we know what it is
 
     /**
      * This method returns the path to the TF command line program.
@@ -71,10 +72,14 @@ public class TfTool {
      */
     public static void checkVersion() {
         final TfVersionCommand command = new TfVersionCommand();
-        final ToolVersion version = command.runSynchronously();
-        if (version.compare(TF_MIN_VERSION) < 0) {
-            throw new ToolVersionException(version, TF_MIN_VERSION);
+        cachedVersion = command.runSynchronously();
+        if (cachedVersion.compare(TF_MIN_VERSION) < 0) {
+            throw new ToolVersionException(cachedVersion, TF_MIN_VERSION);
         }
+    }
+
+    public static ToolVersion getCachedVersion() {
+        return cachedVersion;
     }
 
     /**

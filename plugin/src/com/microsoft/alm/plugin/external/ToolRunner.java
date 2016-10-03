@@ -11,9 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,11 +33,12 @@ public class ToolRunner {
     private static final Logger logger = LoggerFactory.getLogger(ToolRunner.class);
 
     private Process toolProcess;
-    private String toolLocation;
-    private ArgumentBuilder argumentBuilder;
+    private final String toolLocation;
+    private final String workingDirectory;
     private StreamProcessor standardErrorProcessor;
     private StreamProcessor standardOutProcessor;
     private ProcessWaiter processWaiter;
+    private ListenerProxy listenerProxy;
 
     /**
      * Implement this class to get callbacks on events triggered by the ToolRunner.
@@ -109,7 +113,7 @@ public class ToolRunner {
 
         public ArgumentBuilder addSecret(final String argument) {
             add(argument);
-            secretArgumentIndexes.add(arguments.size()-1);
+            secretArgumentIndexes.add(arguments.size() - 1);
             return this;
         }
 
@@ -133,7 +137,7 @@ public class ToolRunner {
          */
         public String toString() {
             final StringBuilder builder = new StringBuilder();
-            for(int i = 0; i < arguments.size(); i++) {
+            for (int i = 0; i < arguments.size(); i++) {
                 final String arg;
                 if (secretArgumentIndexes.contains(i)) {
                     arg = STARS;
@@ -147,48 +151,76 @@ public class ToolRunner {
         }
     }
 
-    public ToolRunner(final String toolLocation, final ArgumentBuilder argumentBuilder) {
+    public ToolRunner(final String toolLocation, final String workingDirectory) {
         this.toolLocation = toolLocation;
-        this.argumentBuilder = argumentBuilder;
+        this.workingDirectory = workingDirectory;
+        this.listenerProxy = new ListenerProxy();
     }
 
-    public Process start(final Listener listener) {
+    public void addListener(final Listener listener) {
+        listenerProxy.addListener(listener);
+    }
+
+    public Process start(final ArgumentBuilder argumentBuilder) {
         logger.info("ToolRunner.start: toolLocation = " + toolLocation);
-        logger.info("ToolRunner.start: arguments = " + argumentBuilder.toString());
+        logger.info("ToolRunner.start: workingDirectory = " + workingDirectory);
+        ArgumentHelper.checkNotNull(argumentBuilder, "argumentBuilder");
+        logger.info("arguments: " + argumentBuilder.toString());
 
         try {
             SettableFuture<Boolean> standardOutputFlushed = SettableFuture.create();
             SettableFuture<Boolean> standardErrorFlushed = SettableFuture.create();
 
-            // Create and start the process from the tool location and all the arguments
+            // Create and start the process from the tool location and working directory
             // (it is perfectly okay if working directly is null here. null == not set)
-            toolProcess = ProcessHelper.startProcess(argumentBuilder.getWorkingDirectory(), argumentBuilder.build(toolLocation));
-            if (listener != null) {
-                // We have a listener object so create the listener threads and hook up the listener
-                final InputStream stderr = toolProcess.getErrorStream();
-                final InputStream stdout = toolProcess.getInputStream();
-                standardErrorProcessor = new StreamProcessor(stderr, true, listener, standardErrorFlushed);
-                standardErrorProcessor.start();
-                standardOutProcessor = new StreamProcessor(stdout, false, listener, standardOutputFlushed);
-                standardOutProcessor.start();
-                processWaiter = new ProcessWaiter(toolProcess, listener, standardErrorFlushed, standardOutputFlushed);
-                processWaiter.start();
-            }
+            toolProcess = ProcessHelper.startProcess(workingDirectory, argumentBuilder.build(toolLocation));
+            final InputStream stderr = toolProcess.getErrorStream();
+            final InputStream stdout = toolProcess.getInputStream();
+            standardErrorProcessor = new StreamProcessor(stderr, true, listenerProxy, standardErrorFlushed);
+            standardErrorProcessor.start();
+            standardOutProcessor = new StreamProcessor(stdout, false, listenerProxy, standardOutputFlushed);
+            standardOutProcessor.start();
+            processWaiter = new ProcessWaiter(toolProcess, listenerProxy, standardErrorFlushed, standardOutputFlushed);
+            processWaiter.start();
             return toolProcess;
         } catch (final IOException e) {
             logger.error("Failed to start tool process or redirect output.", e);
-            if (listener != null) {
-                listener.processException(e);
-            }
+            listenerProxy.processException(e);
         }
 
         return null;
     }
 
+    public Process sendArgsViaStandardInput(final ArgumentBuilder argumentBuilder) {
+        ArgumentHelper.checkNotNull(toolProcess, "toolProcess");
+        ArgumentHelper.checkNotNull(argumentBuilder, "argumentBuilder");
+        logger.info("sendArgsViaStandardInput: proceedWithArgs: " + argumentBuilder.toString());
+        final OutputStream stdin = toolProcess.getOutputStream();
+        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
+        try {
+            for (final String arg : argumentBuilder.build()) {
+                logger.info("sendArgsViaStandardInput: " + arg);
+                writer.write(arg);
+                writer.write("\n");
+            }
+            writer.flush();
+        } catch (final Throwable throwable) {
+            logger.warn("Error sending args.", throwable);
+            listenerProxy.processException(throwable);
+        } finally {
+            try {
+                writer.close();
+            } catch (final IOException e) {
+                logger.warn("Unable to close the writer.", e);
+            }
+        }
+        return toolProcess;
+    }
+
     /**
      * Call the dispose method to make sure all threads are cleaned up and disposed of properly.
      */
-    public void Dispose() {
+    public void dispose() {
         try {
             if (processWaiter != null) {
                 processWaiter.cleanUp();
@@ -207,11 +239,51 @@ public class ToolRunner {
         }
     }
 
+    private static class ListenerProxy implements Listener {
+        private final List<Listener> listeners = new ArrayList<Listener>(2);
+
+        public ListenerProxy() {
+        }
+
+        public void addListener(final Listener listener) {
+            listeners.add(listener);
+        }
+
+        @Override
+        public void processStandardOutput(final String line) {
+            for (final Listener l : listeners) {
+                l.processStandardOutput(line);
+            }
+        }
+
+        @Override
+        public void processStandardError(final String line) {
+            for (final Listener l : listeners) {
+                l.processStandardError(line);
+            }
+        }
+
+        @Override
+        public void processException(final Throwable throwable) {
+            for (final Listener l : listeners) {
+                l.processException(throwable);
+            }
+        }
+
+        @Override
+        public void completed(final int returnCode) {
+            for (final Listener l : listeners) {
+                l.completed(returnCode);
+            }
+        }
+    }
+
     /**
      * This internal class is used to manage the thread that waits on the process to finish.
      * It takes in the process to wait on and the listener to issue callbacks to.
      */
     private static class ProcessWaiter extends Thread {
+        private boolean processRunning;
         private final Process process;
         private final Listener listener;
         private final SettableFuture<Boolean> errorsFlushed;
@@ -230,11 +302,14 @@ public class ToolRunner {
         public void run() {
             // Don't let exceptions escape from this top level method
             try {
+                processRunning = true;
                 // Wait for the process to finish
                 process.waitFor();
                 // Wait for the output streams to be flushed
                 errorsFlushed.get(30, TimeUnit.SECONDS);
                 outputFlushed.get(30, TimeUnit.SECONDS);
+                // Clear the member variable so we don't try to destroy the process later
+                processRunning = false;
                 // Call the completed event on the listener with the exit code
                 listener.completed(process.exitValue());
             } catch (Throwable e) {
@@ -245,9 +320,17 @@ public class ToolRunner {
 
         /**
          * This method forces the thread to end by interrupting it and joining with the calling thread.
+         *
          * @throws InterruptedException
          */
         public void cleanUp() throws InterruptedException {
+            if (processRunning) {
+                try {
+                    process.destroy();
+                } catch (final Throwable t) {
+                    logger.warn("Failed to destroy process.", t);
+                }
+            }
             this.interrupt();
             this.join();
         }
@@ -313,6 +396,7 @@ public class ToolRunner {
 
         /**
          * This method forces the thread to end by interrupting it and joining with the calling thread.
+         *
          * @throws InterruptedException
          */
         public void cleanUp() throws InterruptedException {

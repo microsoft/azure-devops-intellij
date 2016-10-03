@@ -7,6 +7,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.ToolRunnerCache;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
@@ -99,48 +100,48 @@ public abstract class Command<T> {
         final StringBuilder stdout = new StringBuilder();
         final StringBuilder stderr = new StringBuilder();
         ArgumentHelper.checkNotNull(listener, "listener");
-        final ToolRunner runner = new ToolRunner(TfTool.getValidLocation(), getArgumentBuilder());
-        runner.start(new ToolRunner.Listener() {
-            @Override
-            public void processStandardOutput(final String line) {
-                logger.info("CMD: " + line);
-                stdout.append(line + "\n");
-                listener.progress(line, OUTPUT_TYPE_INFO, 50);
-            }
+        final ToolRunner runner = ToolRunnerCache.getRunningToolRunner(TfTool.getValidLocation(),
+                getArgumentBuilder(), new ToolRunner.Listener() {
+                    @Override
+                    public void processStandardOutput(final String line) {
+                        logger.info("CMD: " + line);
+                        stdout.append(line + "\n");
+                        listener.progress(line, OUTPUT_TYPE_INFO, 50);
+                    }
 
-            @Override
-            public void processStandardError(final String line) {
-                logger.info("ERROR: " + line);
-                stderr.append(line + "\n");
-                listener.progress(line, OUTPUT_TYPE_ERROR, 50);
-            }
+                    @Override
+                    public void processStandardError(final String line) {
+                        logger.info("ERROR: " + line);
+                        stderr.append(line + "\n");
+                        listener.progress(line, OUTPUT_TYPE_ERROR, 50);
+                    }
 
-            @Override
-            public void processException(final Throwable throwable) {
-                logger.info("ERROR: " + throwable.toString());
-                listener.progress("", OUTPUT_TYPE_INFO, 100);
-                listener.completed(null, throwable);
-            }
+                    @Override
+                    public void processException(final Throwable throwable) {
+                        logger.info("ERROR: " + throwable.toString());
+                        listener.progress("", OUTPUT_TYPE_INFO, 100);
+                        listener.completed(null, throwable);
+                    }
 
-            @Override
-            public void completed(final int returnCode) {
-                listener.progress("Parsing command output", OUTPUT_TYPE_INFO, 99);
+                    @Override
+                    public void completed(final int returnCode) {
+                        listener.progress("Parsing command output", OUTPUT_TYPE_INFO, 99);
 
-                Throwable error = null;
-                T result = null;
-                try {
-                    //TODO there are some commands that write errors to stdout and simply return a non-zero exit code (i.e. when a workspace is not found by name)
-                    //TODO we may want to pass in the return code to the parse method or something like that to allow the command to inspect this info as well.
-                    result = parseOutput(stdout.toString(), stderr.toString());
-                    TfTool.throwBadExitCode(interpretReturnCode(returnCode));
-                } catch (Throwable throwable) {
-                    logger.warn("CMD: parsing output failed", throwable);
-                    error = throwable;
-                }
-                listener.progress("", OUTPUT_TYPE_INFO, 100);
-                listener.completed(result, error);
-            }
-        });
+                        Throwable error = null;
+                        T result = null;
+                        try {
+                            //TODO there are some commands that write errors to stdout and simply return a non-zero exit code (i.e. when a workspace is not found by name)
+                            //TODO we may want to pass in the return code to the parse method or something like that to allow the command to inspect this info as well.
+                            result = parseOutput(stdout.toString(), stderr.toString());
+                            TfTool.throwBadExitCode(interpretReturnCode(returnCode));
+                        } catch (Throwable throwable) {
+                            logger.warn("CMD: parsing output failed", throwable);
+                            error = throwable;
+                        }
+                        listener.progress("", OUTPUT_TYPE_INFO, 100);
+                        listener.completed(result, error);
+                    }
+                });
     }
 
     /**
@@ -151,6 +152,7 @@ public abstract class Command<T> {
      * @return
      */
     public T runSynchronously() {
+        final long startTime = System.nanoTime();
         final SettableFuture<T> syncResult = SettableFuture.create();
         final SettableFuture<Throwable> syncError = SettableFuture.create();
 
@@ -185,6 +187,9 @@ public abstract class Command<T> {
         } catch (ExecutionException e) {
             logger.error("CMD: failure", e);
             throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
+        } finally {
+            final long endTime = System.nanoTime();
+            logger.info(Long.toString(endTime - startTime) + "(ns) - elapsed time for " + this.getArgumentBuilder().toString());
         }
     }
 
