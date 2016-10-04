@@ -17,9 +17,9 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabModelImpl;
+import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.ui.branch.CreateBranchController;
-import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
@@ -47,6 +47,8 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
     private static final String ARTIFACT_LINK_RELATION = "ArtifactLink";
     private static final String RELATIONS_PATH = "/relations/-";
     public static final String ASSOCIATE_WORK_ITEM_ACTION = "associate-work-item";
+    public static final String CONTEXT_FOUND = "context";
+    private boolean isContextFound = false;
 
     public VcsWorkItemsModel(final @NotNull Project project) {
         super(project, new WorkItemsTableModel(WorkItemsTableModel.COLUMNS_PLUS_BRANCH), "WorkItemsTab.");
@@ -60,6 +62,18 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
 
     protected void createDataProvider() {
         dataProvider = new WorkItemsTabLookupListener(this);
+    }
+
+    public void setContextFound(final boolean isFound) {
+        // notify if context is found for the first time
+        if (isContextFound != isFound && isFound) {
+            logger.info("Context found for work items tab for first time");
+            isContextFound = isFound;
+            setChangedAndNotify(CONTEXT_FOUND);
+        } else if (isContextFound != isFound) {
+            logger.warn("Context became invalid and isn't known anymore");
+            isContextFound = isFound;
+        }
     }
 
     public void openGitRepoLink() {

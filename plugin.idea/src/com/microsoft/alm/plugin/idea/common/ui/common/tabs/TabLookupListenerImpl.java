@@ -18,7 +18,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class TabLookupListenerImpl implements Operation.Listener {
 
-    private final TabModel model;
+    protected final TabModel model;
+    protected boolean isContextFound = true;
     private Operation activeOperation;
     protected RepositoryContext repositoryContext;
 
@@ -105,6 +106,7 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
                         } else {
                             //user cancelled login, don't retry
                             model.setTabStatus(VcsTabStatus.NO_AUTH_INFO);
+                            isContextFound = false;
                         }
                     } else {
                         model.setTabStatus(VcsTabStatus.LOADING_COMPLETED_ERRORS);
@@ -112,6 +114,7 @@ public abstract class TabLookupListenerImpl implements Operation.Listener {
                 }
             });
         } else {
+            isContextFound = true;
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {

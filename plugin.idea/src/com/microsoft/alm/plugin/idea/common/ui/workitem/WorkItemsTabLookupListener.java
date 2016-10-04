@@ -12,9 +12,12 @@ import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
  * Listener for work item lookup operations
  */
 public class WorkItemsTabLookupListener extends TabLookupListenerImpl {
+    private final VcsWorkItemsModel vcsWorkItemsModel;
 
     public WorkItemsTabLookupListener(final VcsWorkItemsModel model) {
         super(model);
+
+        this.vcsWorkItemsModel = model;
     }
 
     /**
@@ -26,5 +29,11 @@ public class WorkItemsTabLookupListener extends TabLookupListenerImpl {
         this.repositoryContext = repositoryContext;
         WorkItemLookupOperation activeOperation = new WorkItemLookupOperation(repositoryContext);
         loadData(activeOperation, inputs);
+    }
+
+    @Override
+    public void notifyLookupCompleted() {
+        super.notifyLookupCompleted();
+        vcsWorkItemsModel.setContextFound(isContextFound);
     }
 }

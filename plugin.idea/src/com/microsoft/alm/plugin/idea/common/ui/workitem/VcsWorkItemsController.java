@@ -5,13 +5,14 @@ package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.events.ServerEvent;
+import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabControllerImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabImpl;
 import com.microsoft.alm.plugin.idea.common.ui.controls.WorkItemQueryDropDown;
-import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabControllerImpl;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.event.ActionEvent;
+import java.util.Observable;
 
 /**
  * Controller for the WorkItems VC tab
@@ -44,5 +45,14 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
         } else {
             super.performAction(e);
         }
+    }
+
+    @Override
+    public void update(final Observable observable, final Object arg) {
+        if (VcsWorkItemsModel.CONTEXT_FOUND.equals(arg)) {
+            tab.refresh();
+        }
+
+        super.update(observable, arg);
     }
 }

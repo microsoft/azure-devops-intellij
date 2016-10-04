@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.JLabel;
 import java.awt.event.ActionEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
     private static final Logger logger = LoggerFactory.getLogger(WorkItemQueryDropDown.class);
@@ -46,7 +47,12 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
         this.loadingAction = new LoadingAction();
         this.queryOperationInput = new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES);
 
-        populateDropDownMenu();
+        // set defaults for dropdown entries
+        this.group.add(defaultQuery, Constraints.FIRST);
+        this.group.addSeparator(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_QUERY_SEPARATOR_MY_QUERIES));
+        this.group.add(loadingAction, Constraints.LAST);
+        this.selectedQuery = defaultQuery;
+
         initializeUI();
     }
 
@@ -82,6 +88,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
     }
 
     private void addQueriesFromServer(final DefaultActionGroup group) {
+        final AtomicBoolean isContextFound = new AtomicBoolean(true);
         WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(repositoryContext);
         operation.addListener(new Operation.Listener() {
             @Override
@@ -92,13 +99,16 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
 
             @Override
             public void notifyLookupCompleted() {
-                logger.info("WorkItemQueriesLookupOperation completed.");
-                IdeaHelper.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        group.remove(loadingAction);
-                    }
-                });
+                logger.info("WorkItemQueriesLookupOperation completed and context found: " + isContextFound.get());
+                // only remove loading when we have actually gotten a context and made a successful call to get the queries
+                if (isContextFound.get()) {
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            group.remove(loadingAction);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -111,8 +121,9 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
                 } else {
                     final ServerContext newContext;
                     if (wiResults.hasError() && AuthHelper.isNotAuthorizedError(wiResults.getError())) {
+                        isContextFound.set(false);
                         //401 or 403 - token is not valid, prompt user for credentials and retry
-                        newContext = ServerContextManager.getInstance().updateAuthenticationInfo(repositoryContext.getUrl()); //call this on a background thread, will hang UI thread if not
+                        newContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(repositoryContext.getUrl(), false);
                     } else {
                         newContext = null;
                     }
@@ -122,7 +133,9 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
                         public void run() {
                             if (wiResults.hasError()) {
                                 if (AuthHelper.isNotAuthorizedError(wiResults.getError())) {
+                                    logger.warn("WorkItemQueriesLookupOperation failed due to auth error");
                                     if (newContext != null) {
+                                        isContextFound.set(true);
                                         //retry loading workitems with new context and authentication info
                                         addQueriesFromServer(group);
                                     } else {

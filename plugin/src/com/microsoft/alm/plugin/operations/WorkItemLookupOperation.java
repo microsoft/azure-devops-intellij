@@ -125,11 +125,13 @@ public class WorkItemLookupOperation extends Operation {
         // query server and add results
         Wiql wiql = new Wiql();
         wiql.setQuery(witInputs.query);
+        logger.debug("WorkItemLookupOperation.doLookup() wiql " + wiql.getQuery());
         WorkItemQueryResult result = witHttpClient.queryByWiql(wiql, context.getTeamProjectReference().getId());
 
         int count = 0;
         final List<WorkItemReference> itemRefs = result.getWorkItems();
         final int maxCount = Math.min(itemRefs.size(), MAX_WORK_ITEM_COUNT);
+        logger.info("WorkItemLookupOperation.doLookup() found " + maxCount);
         if (maxCount == 0) {
             return; //no workitem ids matched the wiql
         }

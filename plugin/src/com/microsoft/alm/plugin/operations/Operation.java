@@ -9,9 +9,11 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import org.slf4j.Logger;
 
 import javax.ws.rs.NotAuthorizedException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 
 /**
  * This is an abstract Operation class to use as a base class for other operations.
@@ -145,14 +147,15 @@ public abstract class Operation {
 
     /**
      * Use this method to get a properly authenticated context based on the repositoryContext given.
+     *
      * @param repositoryContext
      * @return
      */
-    protected static ServerContext getServerContext(final RepositoryContext repositoryContext, final boolean forcePrompt, final boolean allowPrompt, final Logger logger ) {
+    protected static ServerContext getServerContext(final RepositoryContext repositoryContext, final boolean forcePrompt, final boolean allowPrompt, final Logger logger) {
         final ServerContext serverContext;
-        logger.info("getServerContext: url=", repositoryContext.getUrl());
-        logger.info("getServerContext: forcePrompt=", forcePrompt);
-        logger.info("getServerContext: allowPrompt=", allowPrompt);
+        logger.info(String.format("getServerContext: url=%s", repositoryContext.getUrl()));
+        logger.info(String.format("getServerContext: forcePrompt=%s", forcePrompt));
+        logger.info(String.format("getServerContext: allowPrompt=%s", allowPrompt));
 
         // Get the authenticated context for the Url
         // This should be done on a background thread so as not to block UI or hang the IDE
@@ -167,8 +170,39 @@ public abstract class Operation {
         // Note that this will simply return the existing context if one exists.
         if (repositoryContext.getType() == RepositoryContext.Type.GIT) {
             logger.info("getServerContext: creating GIT context");
-            serverContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(
-                    repositoryContext.getUrl(), allowPrompt);
+            if (allowPrompt) {
+                final List<ServerContext> authenticatedContexts = new ArrayList<ServerContext>();
+                final List<Future> authTasks = new ArrayList<Future>();
+                //TODO: get rid of the calls that create more background tasks unless they run in parallel
+                try {
+                    authTasks.add(OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Get the authenticated context for the gitRemoteUrl
+                            // This should be done on a background thread so as not to block UI or hang the IDE
+                            // Get the context before doing the server calls to reduce possibility of using an outdated context with expired credentials
+                            final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(repositoryContext.getUrl(), false);
+                            if (context != null) {
+                                authenticatedContexts.add(context);
+                            }
+                        }
+                    }));
+                    OperationExecutor.getInstance().wait(authTasks);
+                } catch (Throwable t) {
+                    logger.warn("getServerContext: failed to get authenticated server context", t);
+                    return null;
+                }
+
+                if (authenticatedContexts == null || authenticatedContexts.size() != 1) {
+                    logger.warn("getServerContext: Context not found");
+                    //no context was found, user might have cancelled
+                    return null;
+                } else {
+                    serverContext = authenticatedContexts.get(0);
+                }
+            } else {
+                serverContext = ServerContextManager.getInstance().createContextFromGitRemoteUrl(repositoryContext.getUrl(), allowPrompt);
+            }
         } else {
             logger.info("getServerContext: creating TFVC context");
             serverContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(

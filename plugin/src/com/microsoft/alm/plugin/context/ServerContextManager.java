@@ -355,7 +355,11 @@ public class ServerContextManager {
                 final ServerContext.Type type = UrlHelper.isTeamServicesUrl(gitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
                 final ServerContext contextToValidate = new ServerContextBuilder()
                         .type(type).uri(gitRemoteUrl).authentication(authenticationInfo).build();
-                context = validateServerConnection(contextToValidate);
+                try {
+                    context = validateServerConnection(contextToValidate);
+                } catch (TeamServicesException e) {
+                    logger.warn("Invalid server connection was found:", e);
+                }
             }
         }
 
