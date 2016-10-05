@@ -4,8 +4,11 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.intellij.ide.BrowserUtil;
+import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -41,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.event.HyperlinkEvent;
 import javax.ws.rs.NotAuthorizedException;
 
 /**
@@ -54,6 +58,9 @@ public class TFSVcs extends AbstractVcs {
 
     @NonNls
     public static final String TFVC_NAME = "TFVC";
+    public static final String TFVC_ONLINE_HELP_URL = "http://java.visualstudio.com/Docs/tools/intelliJ#_tfvc-support-preview";
+    public static final String HELP_URL_EVENT = "url";
+    public static final String SETTINGS_URL_EVENT = "settings";
     private static final VcsKey ourKey = createKey(TFVC_NAME);
 
     //  TODO: private VcsVFSListener myFileListener;
@@ -82,8 +89,7 @@ public class TFSVcs extends AbstractVcs {
     }
 
     public Configurable getConfigurable() {
-        //  TODO: return new TFSProjectConfigurable(myProject);
-        return null;
+        return new TFSProjectConfigurable(myProject);
     }
 
 
@@ -245,7 +251,19 @@ public class TFSVcs extends AbstractVcs {
                                 // Notify the user that they should upgrade their version of the TF command line
                                 VcsNotifier.getInstance(getProject()).notifyImportantWarning(
                                         TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE),
-                                        error, new NotificationListener.UrlOpeningListener(false));
+                                        error, new NotificationListener.Adapter() {
+
+                                            @Override
+                                            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                                if (SETTINGS_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
+                                                    ShowSettingsUtil.getInstance().showSettingsDialog(myProject, getConfigurable().getDisplayName());
+                                                } else if (HELP_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
+                                                    BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
+                                                } else {
+                                                    logger.warn("Unknown hyperlinkEvent triggered: " + hyperlinkEvent.getDescription());
+                                                }
+                                            }
+                                        });
                             }
                         } catch (Exception e) {
                             logger.warn("Failed to warn user about min version of TF command line.", e);

@@ -568,6 +568,15 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_CONFLICT_MERGE_ERROR="Tfvc.Conflict.Merge.Error";
 
+    //TFVC Settings
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_TITLE="Tfvc.Settings.Title";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_DESCRIPTION="Tfvc.Settings.Description";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_FOUND_EXE="Tfvc.Settings.FoundExe";
+
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON="WorkspaceDialog.SaveButton";
