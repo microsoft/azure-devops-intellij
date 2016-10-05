@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.core;
+package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
@@ -22,9 +22,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.configuration.TFSConfigurationManager;
-import org.jetbrains.tfsIntegration.core.configuration.TfsCheckinPoliciesCompatibility;
-import org.jetbrains.tfsIntegration.ui.ProjectConfigurableForm;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.ProjectConfigurableForm;
 
 import javax.swing.*;
 
@@ -50,31 +48,33 @@ public class TFSProjectConfigurable implements Configurable {
 
   public JComponent createComponent() {
     myComponent = new ProjectConfigurableForm(myProject);
+    myComponent.load();
     return myComponent.getContentPane();
   }
 
   public boolean isModified() {
-    if (TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy()) return true;
-    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
-    if (c.teamExplorer != myComponent.supportTfsCheckinPolicies()) return true;
-    if (c.teamprise != myComponent.supportStatefulCheckinPolicies()) return true;
-    if (c.nonInstalled != myComponent.reportNotInstalledCheckinPolicies()) return true;
+//    if (TFSConfigurationManager.getInstance().useIdeaHttpProxy() != myComponent.useProxy()) return true;
+//    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+//    if (c.teamExplorer != myComponent.supportTfsCheckinPolicies()) return true;
+//    if (c.teamprise != myComponent.supportStatefulCheckinPolicies()) return true;
+//    if (c.nonInstalled != myComponent.reportNotInstalledCheckinPolicies()) return true;
     return false;
   }
 
   public void apply() throws ConfigurationException {
-    TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myComponent.useProxy());
-    TFSConfigurationManager.getInstance().setSupportTfsCheckinPolicies(myComponent.supportTfsCheckinPolicies());
-    TFSConfigurationManager.getInstance().setSupportStatefulCheckinPolicies(myComponent.supportStatefulCheckinPolicies());
-    TFSConfigurationManager.getInstance().setReportNotInstalledCheckinPolicies(myComponent.reportNotInstalledCheckinPolicies());
+    myComponent.save();
+//    TFSConfigurationManager.getInstance().setUseIdeaHttpProxy(myComponent.useProxy());
+//    TFSConfigurationManager.getInstance().setSupportTfsCheckinPolicies(myComponent.supportTfsCheckinPolicies());
+//    TFSConfigurationManager.getInstance().setSupportStatefulCheckinPolicies(myComponent.supportStatefulCheckinPolicies());
+//    TFSConfigurationManager.getInstance().setReportNotInstalledCheckinPolicies(myComponent.reportNotInstalledCheckinPolicies());
   }
 
   public void reset() {
-    myComponent.setUserProxy(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
-    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
-    myComponent.setSupportTfsCheckinPolicies(c.teamExplorer);
-    myComponent.setSupportStatefulCheckinPolicies(c.teamprise);
-    myComponent.setReportNotInstalledCheckinPolicies(c.nonInstalled);
+//    myComponent.setUserProxy(TFSConfigurationManager.getInstance().useIdeaHttpProxy());
+//    TfsCheckinPoliciesCompatibility c = TFSConfigurationManager.getInstance().getCheckinPoliciesCompatibility();
+//    myComponent.setSupportTfsCheckinPolicies(c.teamExplorer);
+//    myComponent.setSupportStatefulCheckinPolicies(c.teamprise);
+//    myComponent.setReportNotInstalledCheckinPolicies(c.nonInstalled);
   }
 
   public void disposeUIResources() {
