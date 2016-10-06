@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
@@ -17,9 +18,11 @@ import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.CreateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceAlreadyExistsException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VcsSpecificCheckoutModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
@@ -27,11 +30,14 @@ import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
+    private static final Logger logger = LoggerFactory.getLogger(TfvcCheckoutModel.class);
 
 
     @Override
@@ -48,10 +54,24 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
             public void run(@NotNull final ProgressIndicator indicator) {
                 IdeaHelper.setProgress(indicator, 0.10, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_CREATING));
 
-                // Create the workspace with default values
-                final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
-                        context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
-                command.runSynchronously();
+                try {
+                    // Create the workspace with default values
+                    final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
+                            context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
+                    command.runSynchronously();
+                } catch (final WorkspaceAlreadyExistsException e) {
+                    logger.warn("Error creating workspace: " + LocalizationServiceImpl.getInstance().getExceptionMessage(e));
+                    // TODO: allow user to change name in the flow instead of starting over
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Messages.showErrorDialog(project, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_FAILED_TITLE));
+                        }
+                    });
+
+                    // returning since the workspace failed to create so we can't proceed with the next steps
+                    return;
+                }
 
                 IdeaHelper.setProgress(indicator, 0.20, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_ADD_ROOT));
 

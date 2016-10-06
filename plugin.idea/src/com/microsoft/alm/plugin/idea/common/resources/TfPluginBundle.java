@@ -140,6 +140,8 @@ public class TfPluginBundle {
     public static final String KEY_CHECKOUT_TFVC_PROGRESS_CREATE_FOLDER = "CheckoutDialog.Tfvc.Progress.CreateFolder";
     @NonNls
     public static final String KEY_CHECKOUT_TFVC_PROGRESS_SYNC = "CheckoutDialog.Tfvc.Progress.Sync";
+    @NonNls
+    public static final String KEY_CHECKOUT_TFVC_FAILED_TITLE = "CheckoutDialog.Tfvc.Failed.Title";
 
     //User account panel
     @NonNls

@@ -6,8 +6,12 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceAlreadyExistsException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This command creates a new workspace.
@@ -16,6 +20,8 @@ import org.apache.commons.lang.StringUtils;
  * [/filetime:current|checkin] [/permission:Private|PublicLimited|Public] [<workspacename;[workspaceowner]>]
  */
 public class CreateWorkspaceCommand extends Command<String> {
+    private static String WORKSPACE_EXISTS_ERROR = "An error occurred: The workspace %s;.* already exists on computer .*";
+
     private final String workspaceName;
     private final String comment;
     private final Workspace.FileTime fileTime;
@@ -63,8 +69,24 @@ public class CreateWorkspaceCommand extends Command<String> {
      */
     @Override
     public String parseOutput(final String stdout, final String stderr) {
-        super.throwIfError(stderr);
+        throwIfError(stderr);
         // There is no useful output on success
         return StringUtils.EMPTY;
+    }
+
+    /**
+     * Parse for specific error messages from CreateWorkspace command
+     *
+     * @param stderr
+     */
+    @Override
+    protected void throwIfError(final String stderr) {
+        if (StringUtils.isNotEmpty(stderr)) {
+            final Pattern pattern = Pattern.compile(String.format(WORKSPACE_EXISTS_ERROR, workspaceName));
+            final Matcher matcher = pattern.matcher(stderr);
+            if (matcher.find())
+                throw new WorkspaceAlreadyExistsException(workspaceName);
+        }
+        super.throwIfError(stderr);
     }
 }
