@@ -10,29 +10,78 @@ import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.models.ToolVersion;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
+import com.sun.jna.Platform;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.File;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SystemHelper.class, TfTool.class})
+@PrepareForTest({SystemHelper.class, TfTool.class, PluginServiceProvider.class, Platform.class})
 public class TfToolTest extends AbstractTest {
+    private static File exeDirectory;
+    private static File exeFile;
+
+    @Mock
+    public PluginServiceProvider pluginServiceProvider;
+
+    @Mock
+    public PropertyService propertyService;
+
+    @BeforeClass
+    public static void setOnce() throws Exception {
+        String path = System.getProperty("java.io.tmpdir") + File.separator + TfTool.TF_DIRECTORY_PREFIX + "-" + TfTool.TF_MIN_VERSION;
+        exeDirectory = new File(path);
+        exeDirectory.mkdir();
+        exeFile = new File(path, "tf.cmd");
+        exeFile.createNewFile();
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        exeFile.delete();
+        exeDirectory.delete();
+    }
+
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(SystemHelper.class);
+        PowerMockito.mockStatic(PluginServiceProvider.class);
+        when(PluginServiceProvider.getInstance()).thenReturn(pluginServiceProvider);
+        when(pluginServiceProvider.getPropertyService()).thenReturn(propertyService);
+
+        PowerMockito.mockStatic(Platform.class);
+        when(Platform.isWindows()).thenReturn(true);
+    }
 
     @Test(expected = ToolException.class)
-    public void testGetValidLocation_noTfHome() {
-        PowerMockito.mockStatic(SystemHelper.class);
-        when(SystemHelper.getEnvironmentVariable("TF_HOME")).thenReturn(null);
+    public void testGetValidLocation_noTfProperty() {
+        when(propertyService.getProperty(PropertyService.PROP_TF_HOME)).thenReturn(null);
         TfTool.getValidLocation();
+    }
+
+    @Test
+    public void testGetValidLocation_TfPropertySet() throws Exception {
+        when(propertyService.getProperty(PropertyService.PROP_TF_HOME)).thenReturn(exeFile.getPath());
+        assertEquals(exeFile.getPath(), TfTool.getValidLocation());
     }
 
     @Test(expected = ToolException.class)
     public void testGetValidLocation_noTfCommandFound() {
-        setTfHome("/path/clc");
+        when(propertyService.getProperty(PropertyService.PROP_TF_HOME)).thenReturn("/path/clc");
         TfTool.getValidLocation();
     }
 
@@ -81,8 +130,28 @@ public class TfToolTest extends AbstractTest {
         TfTool.throwBadExitCode(100);
     }
 
+    @Test
+    public void testTryDetectTf_TfHome() {
+        setTfHome(exeFile.getParent());
+        assertEquals(exeFile.getPath(), TfTool.tryDetectTf());
+    }
+
+    @Test
+    public void testTryDetectTf_Path() {
+        setTfHome(null);
+        when(SystemHelper.getEnvironmentVariable("PATH")).thenReturn(exeFile.getParent() + ";C\\path\\to\\bin");
+        assertEquals(exeFile.getPath(), TfTool.tryDetectTf());
+    }
+
+    @Test
+    public void testTryDetectTf_Fail() {
+        setTfHome(null);
+        when(SystemHelper.getEnvironmentVariable("PATH")).thenReturn(null);
+        assertEquals(null, TfTool.tryDetectTf());
+    }
+
+
     private void setTfHome(final String path) {
-        PowerMockito.mockStatic(SystemHelper.class);
         when(SystemHelper.getEnvironmentVariable("TF_HOME")).thenReturn(path);
     }
 
