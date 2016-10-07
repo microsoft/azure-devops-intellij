@@ -147,7 +147,11 @@ public class TfToolTest extends AbstractTest {
     public void testTryDetectTf_Fail() {
         setTfHome(null);
         when(SystemHelper.getEnvironmentVariable("PATH")).thenReturn(null);
-        assertEquals(null, TfTool.tryDetectTf());
+
+        final String[] exeNames = {"tf.exe", "tf.bat", "tf.cmd"};
+        final File[] filePaths = { new File("/path1"), new File("/path2") };
+
+        assertEquals(null, TfTool.tryDetectTf(exeNames, filePaths));
     }
 
 

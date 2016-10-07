@@ -19,12 +19,16 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import sun.security.util.Debug;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -43,6 +47,9 @@ public abstract class Command<T> {
     public static final int OUTPUT_TYPE_INFO = 0;
     public static final int OUTPUT_TYPE_WARNING = 1;
     public static final int OUTPUT_TYPE_ERROR = 2;
+
+    private static final String WARNING_PREFIX = "WARN ";
+    private static final String XML_PREFIX = "<?xml ";
 
     private final String name;
 
@@ -190,6 +197,7 @@ public abstract class Command<T> {
         } finally {
             final long endTime = System.nanoTime();
             logger.info(Long.toString(endTime - startTime) + "(ns) - elapsed time for " + this.getArgumentBuilder().toString());
+            Debug.println("", Long.toString(endTime - startTime) + "(ns) - elapsed time for " + this.getArgumentBuilder().toString());
         }
     }
 
@@ -210,9 +218,21 @@ public abstract class Command<T> {
             return null;
         }
 
+        // Skip over any lines (like WARNing lines) that come before the xml tag
+        // Example:
+        // WARN -- Unable to construct Telemetry Client
+        // <?xml ...
+        final InputSource xmlInput;
+        final int xmlStart = stdout.indexOf(XML_PREFIX);
+        if (xmlStart > 0) {
+            xmlInput = new InputSource(new StringReader(stdout.substring(xmlStart)));
+        } else {
+            xmlInput = new InputSource(new StringReader(stdout));
+        }
+
         final XPath xpath = XPathFactory.newInstance().newXPath();
         try {
-            final Object result = xpath.evaluate(xpathQuery, new InputSource(new StringReader(stdout)), XPathConstants.NODESET);
+            final Object result = xpath.evaluate(xpathQuery, xmlInput, XPathConstants.NODESET);
             if (result != null && result instanceof NodeList) {
                 return (NodeList) result;
             }
@@ -236,8 +256,17 @@ public abstract class Command<T> {
     }
 
     protected String[] getLines(final String buffer) {
-        final String[] lines = buffer.replace("\r\n", "\n").split("\n");
-        return lines;
+        return getLines(buffer, true);
+    }
+
+    protected String[] getLines(final String buffer, final boolean skipWarnings) {
+        final List<String> lines = new ArrayList<String>(Arrays.asList(buffer.replace("\r\n", "\n").split("\n")));
+        if (skipWarnings) {
+            while (lines.size() > 0 && StringUtils.startsWithIgnoreCase(lines.get(0), WARNING_PREFIX)) {
+                lines.remove(0);
+            }
+        }
+        return lines.toArray(new String[lines.size()]);
     }
 
     /**

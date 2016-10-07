@@ -28,7 +28,7 @@ public class TfTool {
     private static final String[] TF_WINDOWS_PROGRAMS = {"tf.exe", "tf.bat", "tf.cmd"};
     private static final String[] TF_OTHER_PROGRAMS = {"tf", "tf.sh"};
     private static ToolVersion cachedVersion = null;
-    public static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.1.0"); //TODO fix this version number once the version of the CLC is released and we know what it is
+    public static final ToolVersion TF_MIN_VERSION = new ToolVersion("14.0.3");
     public static final String TF_DIRECTORY_PREFIX = "TEE-CLC";
     private static final String PATH_ENV = "PATH";
     private static final String TF_HOME_ENV = "TF_HOME";
@@ -118,7 +118,10 @@ public class TfTool {
     public static String tryDetectTf() {
         final String[] exeNames = Platform.isWindows() ? TF_WINDOWS_PROGRAMS : TF_OTHER_PROGRAMS;
         final File[] filePaths = Platform.isWindows() ? PROGRAM_FILE_PATHS : UNIX_PATHS;
+        return tryDetectTf(exeNames, filePaths);
+    }
 
+    protected static String tryDetectTf(final String[] exeNames, final File[] filePaths) {
         try {
             // try looking at env path
             String exe = checkTfPath(SystemHelper.getEnvironmentVariable(TF_HOME_ENV), exeNames);

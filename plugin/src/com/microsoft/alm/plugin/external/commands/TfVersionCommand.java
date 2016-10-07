@@ -30,11 +30,12 @@ public class TfVersionCommand extends Command<ToolVersion> {
     public ToolVersion parseOutput(final String stdout, final String stderr) {
         throwIfError(stderr);
         final String[] lines = getLines(stdout);
-        if (lines.length > 0 && StringUtils.isNotEmpty(lines[0])) {
-            final String versionLine = lines[0];
-            final int start = versionLine.indexOf(VERSION_PREFIX);
-            if (start >= 0) {
-                return new ToolVersion(StringUtils.removeEnd(versionLine.substring(start + VERSION_PREFIX.length()), ")"));
+        for(final String line : lines) {
+            if (StringUtils.isNotEmpty(line)) {
+                final int start = line.indexOf(VERSION_PREFIX);
+                if (start >= 0) {
+                    return new ToolVersion(StringUtils.removeEnd(line.substring(start + VERSION_PREFIX.length()), ")"));
+                }
             }
         }
 

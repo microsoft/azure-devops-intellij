@@ -12,6 +12,10 @@ import java.util.List;
 public class ProcessHelper {
     public static Process startProcess(final String workingDirectory, final List<String> arguments) throws IOException {
         final ProcessBuilder pb = new ProcessBuilder(arguments);
+
+        // Disable any telemetry that the tool may initiate
+        pb.environment().put("tf_notelemetry", "TRUE");
+
         if (StringUtils.isNotEmpty(workingDirectory)) {
             pb.directory(new File(workingDirectory));
         }

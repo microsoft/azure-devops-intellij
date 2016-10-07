@@ -45,8 +45,6 @@ public class ToolRunnerCache {
             }
 
             // The toolRunner should already be started, we just need to send the args in
-            argumentBuilder.addSwitch("notelemetry"); // turn off telemetry
-            argumentBuilder.add("@"); // add the terminator
             toolRunner.sendArgsViaStandardInput(argumentBuilder);
 
             // Add another instance to the cache for later

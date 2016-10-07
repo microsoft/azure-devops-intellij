@@ -199,10 +199,12 @@ public class ToolRunner {
         final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
         try {
             for (final String arg : argumentBuilder.build()) {
-                logger.info("sendArgsViaStandardInput: " + arg);
-                writer.write(arg);
-                writer.write("\n");
+                final String escapedArg = escapeArgument(arg);
+                logger.info("sendArgsViaStandardInput: " + arg + " ==> " + escapedArg);
+                writer.write(escapedArg);
+                writer.write(" ");
             }
+            writer.write("\n");
             writer.flush();
         } catch (final Throwable throwable) {
             logger.warn("Error sending args.", throwable);
@@ -215,6 +217,18 @@ public class ToolRunner {
             }
         }
         return toolProcess;
+    }
+
+    /**
+     * Command line arguments should have all embedded double quotes repeated to escape them.
+     * They should also be surrounded by double quotes if they contain a space.
+     */
+    private String escapeArgument(final String argument) {
+        String escaped = StringUtils.replace(argument, "\"", "\"\"");
+        if (StringUtils.contains(escaped, " ")) {
+            escaped = "\"" + escaped + "\"";
+        }
+        return escaped;
     }
 
     /**
