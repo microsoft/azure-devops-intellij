@@ -44,6 +44,7 @@ public class ProjectConfigurableForm {
     private JLabel noteLabel;
     private JButton testExeButton;
     private TextFieldWithBrowseButton tfExeField;
+    private JLabel pathLabel;
     private String originalTfLocation = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
@@ -61,6 +62,7 @@ public class ProjectConfigurableForm {
         checkinPolicyLabel.setVisible(false);
         noteLabel.setVisible(false);
 
+        pathLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_DESCRIPTION));
         tfExeField.addBrowseFolderListener(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_DESCRIPTION), project,
                 FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor());
