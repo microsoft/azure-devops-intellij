@@ -221,9 +221,9 @@ public class ProjectConfigurableForm {
         myStatefulCheckBox.setMnemonic('E');
         myStatefulCheckBox.setDisplayedMnemonicIndex(10);
         checkinPolicyLabel.add(myStatefulCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label1 = new JLabel();
-        label1.setText("Path to tf executable:");
-        myContentPane.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        pathLabel = new JLabel();
+        pathLabel.setText("Path to tf executable:");
+        myContentPane.add(pathLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         tfExeField = new TextFieldWithBrowseButton();
         myContentPane.add(tfExeField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         testExeButton = new JButton();
@@ -240,7 +240,7 @@ public class ProjectConfigurableForm {
         return myContentPane;
     }
 
-//    public boolean useProxy() {
+    //    public boolean useProxy() {
 //        return myUseIdeaHttpProxyCheckBox.isSelected();
 //    }
 //

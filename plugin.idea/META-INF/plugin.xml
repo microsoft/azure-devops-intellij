@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.107.0</version>
+    <version>1.107.1</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -47,9 +47,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.107.0
+      v 1.107.1
       <br />
-      Performance improvements for TFVC have been made along with the addition of a Settings page for setting the tf command location. This release also contains incremental fixes and updates.
+      Settings bug fix.
       <br />
     ]]>
     </change-notes>
