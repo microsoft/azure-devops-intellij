@@ -4,14 +4,8 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutController;
-import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockBaseDialog;
-import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutModel;
-import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPage;
-import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.junit.Assert;
@@ -19,23 +13,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.verification.VerificationMode;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import sun.plugin.util.UIUtil;
 
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
