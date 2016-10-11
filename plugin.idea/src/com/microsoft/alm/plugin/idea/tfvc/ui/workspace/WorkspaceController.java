@@ -159,4 +159,12 @@ public class WorkspaceController implements Observer, ActionListener {
             suspendEvents = false;
         }
     }
+
+    protected WorkspaceDialog getDialog() {
+        return dialog;
+    }
+
+    protected WorkspaceModel getModel() {
+        return model;
+    }
 }
