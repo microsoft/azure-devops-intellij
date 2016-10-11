@@ -69,12 +69,19 @@ public class GetWorkspaceCommand extends Command<Workspace> {
                 mappings.add(new Workspace.Mapping(serverPath, localPath, isCloaked));
             }
 
+            // Get owner name (display name may not be available
+            String owner = getXPathAttributeValue(workspaceAttributes, "owner-display-name");
+            if (StringUtils.isEmpty(owner)) {
+                owner = getXPathAttributeValue(workspaceAttributes, "owner");
+            }
+
+
             final Workspace workspace = new Workspace(
-                    workspaceAttributes.getNamedItem("server").getNodeValue(),
-                    workspaceAttributes.getNamedItem("name").getNodeValue(),
-                    workspaceAttributes.getNamedItem("computer").getNodeValue(),
-                    workspaceAttributes.getNamedItem("owner").getNodeValue(),
-                    workspaceAttributes.getNamedItem("comment").getNodeValue(),
+                    getXPathAttributeValue(workspaceAttributes, "server"),
+                    getXPathAttributeValue(workspaceAttributes, "name"),
+                    getXPathAttributeValue(workspaceAttributes, "computer"),
+                    owner,
+                    getXPathAttributeValue(workspaceAttributes, "comment"),
                     mappings);
             return workspace;
         }
