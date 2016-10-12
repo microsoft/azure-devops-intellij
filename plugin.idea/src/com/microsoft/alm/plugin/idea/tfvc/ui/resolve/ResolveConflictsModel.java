@@ -32,10 +32,13 @@ public class ResolveConflictsModel extends PageModelImpl {
     private final ResolveConflictHelper conflictHelper;
 
     public ResolveConflictsModel(final Project project, final ResolveConflictHelper conflictHelper) {
+        this(project, conflictHelper, new ConflictsTableModel());
+    }
+
+    public ResolveConflictsModel(final Project project, final ResolveConflictHelper conflictHelper, final ConflictsTableModel conflictsTableModel) {
         this.project = project;
         this.conflictHelper = conflictHelper;
-
-        this.conflictsTableModel = new ConflictsTableModel();
+        this.conflictsTableModel = conflictsTableModel;
 
     }
 
@@ -85,7 +88,7 @@ public class ResolveConflictsModel extends PageModelImpl {
             try {
                 conflictHelper.acceptMerge(conflict, this);
             } catch (VcsException e) {
-                logger.error("Error while merging conflicts: "+ e.getMessage());
+                logger.error("Error while merging conflicts: " + e.getMessage());
                 addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
             }
         }

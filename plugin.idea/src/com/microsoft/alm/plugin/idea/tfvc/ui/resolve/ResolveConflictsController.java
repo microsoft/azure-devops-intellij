@@ -21,8 +21,12 @@ public class ResolveConflictsController implements Observer, ActionListener {
     private final ResolveConflictsModel model;
 
     public ResolveConflictsController(final Project project, final ResolveConflictHelper conflictHelper) {
-        this.dialog = new ResolveConflictsDialog(project);
-        this.model = new ResolveConflictsModel(project, conflictHelper);
+        this(new ResolveConflictsDialog(project), new ResolveConflictsModel(project, conflictHelper));
+    }
+
+    public ResolveConflictsController(final ResolveConflictsDialog dialog, final ResolveConflictsModel model) {
+        this.dialog = dialog;
+        this.model = model;
 
         this.dialog.addActionListener(this);
         this.model.addObserver(this);

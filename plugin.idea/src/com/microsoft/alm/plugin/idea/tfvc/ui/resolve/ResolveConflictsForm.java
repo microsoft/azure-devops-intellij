@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.resolve;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.table.JBTable;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -25,11 +26,15 @@ import java.awt.event.ActionListener;
 
 public class ResolveConflictsForm implements BasicForm {
 
-    private JTable myItemsTable;
+    @VisibleForTesting
+    protected JTable myItemsTable;
     private JPanel myContentPanel;
-    private JButton myAcceptYoursButton;
-    private JButton myAcceptTheirsButton;
-    private JButton myMergeButton;
+    @VisibleForTesting
+    protected JButton myAcceptYoursButton;
+    @VisibleForTesting
+    protected JButton myAcceptTheirsButton;
+    @VisibleForTesting
+    protected JButton myMergeButton;
     private boolean initialized = false;
     private boolean isLoading = false;
 
@@ -96,7 +101,8 @@ public class ResolveConflictsForm implements BasicForm {
         myMergeButton.addActionListener(listener);
     }
 
-    private void enableButtons(final int[] selectedIndices) {
+    @VisibleForTesting
+    protected void enableButtons(final int[] selectedIndices) {
         myAcceptYoursButton.setEnabled(!isLoading && selectedIndices.length > 0);
         myAcceptTheirsButton.setEnabled(!isLoading && selectedIndices.length > 0);
         // treating merge like other buttons and not checking if merge should not be allowed
