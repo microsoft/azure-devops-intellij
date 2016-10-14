@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -47,6 +48,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Helper to resolve conflicts found when updating TFVC files
+ */
 public class ResolveConflictHelper {
     private static final Logger logger = LoggerFactory.getLogger(ResolveConflictHelper.class);
 
@@ -77,67 +81,105 @@ public class ResolveConflictHelper {
         final File conflictPath = new File(conflict.getLocalPath());
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
 
-        FilePath localPath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+        final FilePath localPath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
         ContentTriplet contentTriplet = null;
 
         // only get file contents if a content conflict exists
+        // need to do this before any rename changes take place b/c it could overwrite the contents of the file
         if (isContentConflict(conflict)) {
             logger.info("Content conflict have been found so getting file contents");
-            contentTriplet = populateContents(conflict, conflictPath, localPath, context);
+            contentTriplet = populateThreeWayDiffWithProgress(conflict, conflictPath, localPath, context);
         }
 
-        // merge names
-        if (isNameConflict(conflict)) {
+        if (isNameConflict(conflict) && isContentConflict(conflict)) {
+            logger.info("Both conflict types found");
+            processBothConflicts(conflict, context, model, conflictPath, contentTriplet);
+        } else if (isNameConflict(conflict)) {
             logger.info("Naming conflict found");
-            final RenameConflict renameConflict = (RenameConflict) conflict;
-            final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
-            if (mergedServerPath == null) {
-                // user cancelled
-                logger.warn("User canceled rename merge");
-                return;
-            }
+            processRenameConflict(conflict, context, model);
+        } else if (isContentConflict(conflict)) {
+            logger.info("Content conflict found");
+            processContentConflict(context, model, contentTriplet, localPath);
+        } else {
+            logger.error("Unknown conflict state");
+        }
+    }
 
-            // rename local file if server name was selected
-            // do this by resolving conflict to TakeTheirs (you won't lose the current content because its already has been saved above)
-            if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
-                final VcsRunnable resolveRunnable = new VcsRunnable() {
-                    public void run() throws VcsException {
-                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, conflict.getLocalPath()));
-
-                        final List<Conflict> resolvedFiles = CommandUtils.resolveConflictsByPath(context, Arrays.asList(conflict.getLocalPath()), ResolveConflictsCommand.AutoResolveType.TakeTheirs);
-
-                        // if there are no content conflicts, add to the updatedFiles list and refresh conflicts
-                        if (!isContentConflict(conflict)) {
-                            // only 1 file is merged at a time so if resolvedFiles is not empty take the first first entry since that will be the only entry
-                            if (!resolvedFiles.isEmpty()) {
-                                // TODO: create version number
-                                updatedFiles.getGroupById(FileGroup.MERGED_ID).add(resolvedFiles.get(0).getLocalPath(), TFSVcs.getKey(), null);
-                            }
-
-                            // update progress
-                            IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
-
-                            // reload conflicts
-                            findConflicts(model);
-                        }
-                    }
-                };
-                VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR), false, project);
-
-                // if no content conflicts then no more work to do
-                if (!isContentConflict(conflict)) {
-                    return;
-                }
-
-                // update the local path to the new path
-                localPath = VersionControlPath.getFilePath(mergedServerPath, conflictPath.isDirectory());
-            }
+    /**
+     * Process a conflict that has both rename and content conflicts
+     *
+     * @param conflict
+     * @param context
+     * @param model
+     * @param conflictPath
+     * @param contentTriplet
+     * @throws VcsException
+     */
+    @VisibleForTesting
+    protected void processBothConflicts(final Conflict conflict, final ServerContext context, final ResolveConflictsModel model, final File conflictPath, @Nullable final ContentTriplet contentTriplet) throws VcsException {
+        final RenameConflict renameConflict = (RenameConflict) conflict;
+        final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
+        if (mergedServerPath == null) {
+            // user cancelled
+            logger.warn("User canceled rename merge");
+            return;
         }
 
-        // merge content
+        // take their name
+        if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
+            logger.debug("Taking their name before processing content conflict");
+            // resolve name conflict but do not update updatedFiles yet because content conflict still needs resolved
+            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, false);
+            processContentConflict(context, model, contentTriplet, VersionControlPath.getFilePath(mergedServerPath, conflictPath.isDirectory()));
+        } else {
+            // keep your name so just skip to content resolution which will do the resolve for you (it always does KeepYours)
+            logger.debug("Keeping your name so continue to content conflict");
+            processContentConflict(context, model, contentTriplet, VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory()));
+        }
+    }
+
+    /**
+     * Process a rename conflict specifically
+     *
+     * @param conflict
+     * @param context
+     * @param model
+     * @throws VcsException
+     */
+    @VisibleForTesting
+    protected void processRenameConflict(final Conflict conflict, final ServerContext context, final ResolveConflictsModel model) throws VcsException {
+        final RenameConflict renameConflict = (RenameConflict) conflict;
+        final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
+        if (mergedServerPath == null) {
+            // user cancelled
+            logger.warn("User canceled rename merge");
+            return;
+        }
+
+        // take their name
+        if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
+            logger.debug("Taking their name");
+            resolveConflictWithProgress(conflict.getLocalPath(), mergedServerPath, ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, true);
+        } else {
+            // keep your name
+            logger.debug("Keeping your name");
+            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, context, model, true);
+        }
+    }
+
+    /**
+     * Process a content conflict specifically
+     *
+     * @param context
+     * @param model
+     * @param contentTriplet
+     * @param localPath
+     * @throws VcsException
+     */
+    @VisibleForTesting
+    protected void processContentConflict(final ServerContext context, final ResolveConflictsModel model, final ContentTriplet contentTriplet, final FilePath localPath) throws VcsException {
         boolean resolved = true;
-        if (isContentConflict(conflict) && contentTriplet != null) {
-            logger.info("Content conflict found");
+        if (contentTriplet != null) {
             final File localFile = new File(localPath.getPath());
             ArgumentHelper.checkIfFile(localFile);
             VirtualFile vFile = VcsUtil.getVirtualFileWithRefresh(localFile);
@@ -146,7 +188,7 @@ public class ResolveConflictHelper {
                     TfsFileUtil.setReadOnly(vFile, false);
                     // opens dialog for merge
                     resolved = ConflictsEnvironment.getContentMerger()
-                            .mergeContent(conflict.getLocalPath(), contentTriplet, project, vFile, conflict.getLocalPath(), null);
+                            .mergeContent(contentTriplet, project, vFile, null);
                 } catch (IOException e) {
                     throw new VcsException(e);
                 }
@@ -155,35 +197,76 @@ public class ResolveConflictHelper {
             }
         }
 
-        // get the final path of the conflict file since it may have changed due to rename
-        final String finalLocalPath = localPath.getPath();
-
         if (resolved) {
-            final VcsRunnable resolveRunnable = new VcsRunnable() {
-                public void run() throws VcsException {
-                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, finalLocalPath));
-
-                    try {
-                        CommandUtils.resolveConflictsByPath(context, Arrays.asList(finalLocalPath), ResolveConflictsCommand.AutoResolveType.KeepYours);
-                        // TODO: create version number
-                        // use local path from conflict to update list because results from command gives server name even if you keep your own change
-                        updatedFiles.getGroupById(FileGroup.MERGED_ID).add(finalLocalPath, TFSVcs.getKey(), null);
-
-                        // update progress
-                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
-
-                        // reload conflicts
-                        findConflicts(model);
-                    } catch (VcsException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        logger.error("Error while resolving conflict: " + e.getMessage());
-                        throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, finalLocalPath, e.getMessage()));
-                    }
-                }
-            };
-            VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR), false, project);
+            resolveConflictWithProgress(localPath.getPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, context, model, true);
+        } else {
+            logger.warn("Conflict merge was aborted by user");
         }
+    }
+
+    @VisibleForTesting
+    protected void resolveConflictWithProgress(final String localPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
+        resolveConflictWithProgress(localPath, localPath, type, context, model, updateFiles);
+    }
+
+    @VisibleForTesting
+    protected void resolveConflictWithProgress(final String localPath, final String updatedPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
+        final VcsRunnable resolveRunnable = new VcsRunnable() {
+            public void run() throws VcsException {
+                resolveConflict(localPath, updatedPath, type, context, model, updateFiles);
+            }
+        };
+        VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR), false, project);
+    }
+
+    /**
+     * Resolve a conflict based on the given local path, update the updatedFiles if needed with the updated local path (this is needed for renames where the local path changes once a resolve takes place),
+     * then reload the conflicts
+     *
+     * @param localPath
+     * @param updatedPath
+     * @param type
+     * @param context
+     * @param model
+     * @param updateFiles
+     * @throws VcsException
+     */
+    @VisibleForTesting
+    protected void resolveConflict(final String localPath, final String updatedPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
+        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, localPath));
+
+        try {
+            CommandUtils.resolveConflictsByPath(context, Arrays.asList(localPath), type);
+
+            if (updateFiles) {
+                // use local path from conflict to update list because results from command gives server name even if you keep your own change
+                updatedFiles.getGroupById(FileGroup.MERGED_ID).add(updatedPath, TFSVcs.getKey(), null);
+            }
+
+            // update progress
+            IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
+
+            // reload conflicts
+            findConflicts(model);
+        } catch (VcsException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error while resolving conflict: " + e.getMessage());
+            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, localPath, e.getMessage()));
+        }
+    }
+
+    @VisibleForTesting
+    protected ContentTriplet populateThreeWayDiffWithProgress(final Conflict conflict, final File conflictPath,
+                                                              final FilePath localPath, final ServerContext context) throws VcsException {
+        final ContentTriplet contentTriplet = new ContentTriplet();
+        final VcsRunnable runnable = new VcsRunnable() {
+            public void run() throws VcsException {
+                populateThreeWayDiff(conflict, conflictPath, localPath, context, contentTriplet);
+            }
+        };
+        VcsUtil.runVcsProcessWithProgress(runnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_LOADING), false, project);
+        return contentTriplet;
     }
 
     /**
@@ -196,63 +279,57 @@ public class ResolveConflictHelper {
      * @return
      * @throws VcsException
      */
-    private ContentTriplet populateContents(final Conflict conflict, final File conflictPath, final FilePath localPath, final ServerContext context) throws VcsException {
-        final ContentTriplet contentTriplet = new ContentTriplet();
-        final VcsRunnable runnable = new VcsRunnable() {
-            public void run() throws VcsException {
-                // virtual file can be out of the current project so force its discovery
-                TfsFileUtil.refreshAndFindFile(localPath);
+    @VisibleForTesting
+    protected void populateThreeWayDiff(final Conflict conflict, final File conflictPath, final FilePath localPath,
+                                        final ServerContext context, final ContentTriplet contentTriplet) throws VcsException {
+        // virtual file can be out of the current project so force its discovery
+        TfsFileUtil.refreshAndFindFile(localPath);
+
+        // update progress
+        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ORIGINAL));
+
+        try {
+            // only get diff contents if it is an edited file
+            if (conflictPath.isFile()) {
+                // get original contents of file
+                final PendingChange originalChange = CommandUtils.getStatusForFile(context, conflict.getLocalPath());
+                String original = null;
+                if (originalChange != null) {
+                    if (isNameConflict(conflict)) {
+                        final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                        original = TFSContentRevision.createRenameRevision(project, context, renamePath,
+                                Integer.parseInt(originalChange.getVersion()), originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
+                    } else {
+                        original = TFSContentRevision.create(project, context, localPath,
+                                Integer.parseInt(originalChange.getVersion()), originalChange.getDate()).getContent();
+                    }
+                }
 
                 // update progress
-                IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ORIGINAL));
+                IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_SERVER));
 
-                try {
-                    // only get diff contents if it is an edited file
-                    if (conflictPath.isFile()) {
-                        // get original contents of file
-                        final PendingChange originalChange = CommandUtils.getStatusForFile(context, conflict.getLocalPath());
-                        String original = null;
-                        if (originalChange != null) {
-                            if (isNameConflict(conflict)) {
-                                final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                                original = TFSContentRevision.createRenameRevision(project, context, renamePath,
-                                        Integer.parseInt(originalChange.getVersion()), originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
-                            } else {
-                                original = TFSContentRevision.create(project, context, localPath,
-                                        Integer.parseInt(originalChange.getVersion()), originalChange.getDate()).getContent();
-                            }
-                        }
+                // get content from local file
+                final String myLocalChanges = CurrentContentRevision.create(localPath).getContent();
 
-                        // update progress
-                        IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_SERVER));
-
-                        // get content from local file
-                        final String myLocalChanges = CurrentContentRevision.create(localPath).getContent();
-
-                        // get content from server
-                        final String serverChanges;
-                        if (isNameConflict(conflict)) {
-                            final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
-                            final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                            serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, Integer.parseInt(serverChange.getId()), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
-                        } else {
-                            final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
-                            serverChanges = TFSContentRevision.create(project, context, localPath, Integer.parseInt(serverChange.getId()), serverChange.getDate()).getContent();
-                        }
-
-                        contentTriplet.baseContent = original != null ? original : StringUtils.EMPTY;
-                        contentTriplet.localContent = myLocalChanges != null ? myLocalChanges : StringUtils.EMPTY;
-                        contentTriplet.serverContent = serverChanges != null ? serverChanges : StringUtils.EMPTY;
-                    }
-                } catch (Exception e) {
-                    logger.error("Error loading contents for files");
-                    throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOAD_FAILED, localPath.getPresentableUrl(), e.getMessage()));
+                // get content from server
+                final String serverChanges;
+                if (isNameConflict(conflict)) {
+                    final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
+                    final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                    serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, Integer.parseInt(serverChange.getId()), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
+                } else {
+                    final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
+                    serverChanges = TFSContentRevision.create(project, context, localPath, Integer.parseInt(serverChange.getId()), serverChange.getDate()).getContent();
                 }
-            }
-        };
 
-        VcsUtil.runVcsProcessWithProgress(runnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_LOADING), false, project);
-        return contentTriplet;
+                contentTriplet.baseContent = original != null ? original : StringUtils.EMPTY;
+                contentTriplet.localContent = myLocalChanges != null ? myLocalChanges : StringUtils.EMPTY;
+                contentTriplet.serverContent = serverChanges != null ? serverChanges : StringUtils.EMPTY;
+            }
+        } catch (Exception e) {
+            logger.error("Error loading contents for files");
+            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_LOAD_FAILED, localPath.getPresentableUrl(), e.getMessage()));
+        }
     }
 
     public void acceptChanges(final @NotNull String conflict, final ResolveConflictsCommand.AutoResolveType type) {
@@ -289,11 +366,11 @@ public class ResolveConflictHelper {
         }
     }
 
-    private static boolean isNameConflict(final @NotNull Conflict conflict) {
+    public static boolean isNameConflict(final @NotNull Conflict conflict) {
         return Conflict.ConflictType.RENAME.equals(conflict.getType()) || Conflict.ConflictType.BOTH.equals(conflict.getType());
     }
 
-    private static boolean isContentConflict(final @NotNull Conflict conflict) {
+    public static boolean isContentConflict(final @NotNull Conflict conflict) {
         return Conflict.ConflictType.CONTENT.equals(conflict.getType()) || Conflict.ConflictType.BOTH.equals(conflict.getType());
     }
 
@@ -303,46 +380,51 @@ public class ResolveConflictHelper {
      * @param conflicts
      * @param type
      */
-    public void acceptChange(final List<Conflict> conflicts, final ResolveConflictsCommand.AutoResolveType type, final ResolveConflictsModel model) {
+    public void acceptChangeAsync(final List<Conflict> conflicts, final ResolveConflictsCommand.AutoResolveType type, final ResolveConflictsModel model) {
         logger.info(String.format("Accepting changes to %s for file %s", type.name(), Arrays.toString(conflicts.toArray())));
         final Task.Backgroundable loadConflictsTask = new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR),
                 true, PerformInBackgroundOption.DEAF) {
 
             @Override
             public void run(@NotNull final ProgressIndicator progressIndicator) {
-                for (final Conflict conflict : conflicts) {
-                    try {
-                        progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, conflict.getLocalPath()));
-                        final List<Conflict> resolved = CommandUtils.resolveConflictsByConflict(TFSVcs.getInstance(myProject).getServerContext(false), Arrays.asList(conflict), type);
-
-                        // check if error is a rename so the correct file name is displayed in the Update Info tab
-                        if (resolved != null && resolved.size() > 0) {
-                            if (conflict instanceof RenameConflict && ResolveConflictsCommand.AutoResolveType.TakeTheirs.equals(type)) {
-                                acceptChanges(((RenameConflict) conflict).getServerPath(), type);
-                            } else {
-                                acceptChanges(conflict.getLocalPath(), type);
-                            }
-                        } else {
-                            skip(Arrays.asList(conflict));
-                        }
-                    } catch (Exception e) {
-                        logger.error("Error while handling merge resolution: " + e.getMessage());
-                        model.addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
-                    }
-                }
-
-                // update status bar
-                IdeaHelper.setProgress(progressIndicator, 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
-
-                try {
-                    // refresh conflicts so resolved ones are removed
-                    findConflicts(model);
-                } catch (VcsException e) {
-                    model.addError(ModelValidationInfo.createWithMessage(e.getMessage()));
-                }
+                acceptChange(conflicts, progressIndicator, project, type, model);
             }
         };
         loadConflictsTask.queue();
+    }
+
+    @VisibleForTesting
+    protected void acceptChange(final List<Conflict> conflicts, final ProgressIndicator progressIndicator, final Project project, final ResolveConflictsCommand.AutoResolveType type, final ResolveConflictsModel model) {
+        for (final Conflict conflict : conflicts) {
+            try {
+                progressIndicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, conflict.getLocalPath()));
+                final List<Conflict> resolved = CommandUtils.resolveConflictsByConflict(TFSVcs.getInstance(project).getServerContext(false), Arrays.asList(conflict), type);
+
+                // check if error is a rename so the correct file name is displayed in the Update Info tab
+                if (resolved != null && resolved.size() > 0) {
+                    if (conflict instanceof RenameConflict && ResolveConflictsCommand.AutoResolveType.TakeTheirs.equals(type)) {
+                        acceptChanges(((RenameConflict) conflict).getServerPath(), type);
+                    } else {
+                        acceptChanges(conflict.getLocalPath(), type);
+                    }
+                } else {
+                    skip(Arrays.asList(conflict));
+                }
+            } catch (Exception e) {
+                logger.error("Error while handling merge resolution: " + e.getMessage());
+                model.addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
+            }
+        }
+
+        // update status bar
+        IdeaHelper.setProgress(progressIndicator, 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_REFRESH));
+
+        try {
+            // refresh conflicts so resolved ones are removed
+            findConflicts(model);
+        } catch (VcsException e) {
+            model.addError(ModelValidationInfo.createWithMessage(e.getMessage()));
+        }
     }
 
     /**

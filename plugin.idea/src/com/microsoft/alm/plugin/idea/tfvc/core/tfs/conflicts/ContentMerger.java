@@ -13,8 +13,8 @@ import java.io.IOException;
 
 public interface ContentMerger {
 
-    boolean mergeContent(final String conflict, final ContentTriplet contentTriplet, final Project project, final VirtualFile targetFile,
-                         final String localPath, final VcsRevisionNumber serverVersion)
+    boolean mergeContent(final ContentTriplet contentTriplet, final Project project, final VirtualFile targetFile,
+                         final VcsRevisionNumber serverVersion)
             throws IOException, VcsException;
 
 }

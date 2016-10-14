@@ -79,13 +79,13 @@ public class ResolveConflictsModelTest extends IdeaAbstractTest {
     @Test
     public void testAcceptYours() {
         resolveConflictsModel.acceptYours(new int[0]);
-        verify(mockResolveConflictHelper).acceptChange(Collections.EMPTY_LIST, ResolveConflictsCommand.AutoResolveType.KeepYours, resolveConflictsModel);
+        verify(mockResolveConflictHelper).acceptChangeAsync(Collections.EMPTY_LIST, ResolveConflictsCommand.AutoResolveType.KeepYours, resolveConflictsModel);
     }
 
     @Test
     public void testAcceptTheirs() {
         resolveConflictsModel.acceptTheirs(new int[0]);
-        verify(mockResolveConflictHelper).acceptChange(Collections.EMPTY_LIST, ResolveConflictsCommand.AutoResolveType.TakeTheirs, resolveConflictsModel);
+        verify(mockResolveConflictHelper).acceptChangeAsync(Collections.EMPTY_LIST, ResolveConflictsCommand.AutoResolveType.TakeTheirs, resolveConflictsModel);
     }
 
     @Test

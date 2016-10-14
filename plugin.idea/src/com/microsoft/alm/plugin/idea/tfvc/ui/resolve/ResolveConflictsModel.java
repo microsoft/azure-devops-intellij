@@ -68,7 +68,7 @@ public class ResolveConflictsModel extends PageModelImpl {
      */
     public void acceptYours(final int[] rows) {
         logger.info("Accepting yours for " + rows.length + " conflicts");
-        conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.KeepYours, this);
+        conflictHelper.acceptChangeAsync(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.KeepYours, this);
     }
 
     /**
@@ -78,7 +78,7 @@ public class ResolveConflictsModel extends PageModelImpl {
      */
     public void acceptTheirs(final int[] rows) {
         logger.info("Accepting theirs for " + rows.length + " conflicts");
-        conflictHelper.acceptChange(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.TakeTheirs, this);
+        conflictHelper.acceptChangeAsync(getSelectedConflicts(rows), ResolveConflictsCommand.AutoResolveType.TakeTheirs, this);
     }
 
     public void merge(final int[] rows) {

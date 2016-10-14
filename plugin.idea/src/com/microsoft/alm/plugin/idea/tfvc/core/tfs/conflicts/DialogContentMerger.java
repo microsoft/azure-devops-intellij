@@ -23,8 +23,8 @@ import java.io.File;
 
 public class DialogContentMerger implements ContentMerger {
 
-    public boolean mergeContent(final String conflict, final ContentTriplet contentTriplet, final Project project, final VirtualFile localFile,
-                                final String localPath, final VcsRevisionNumber serverVersion) {
+    public boolean mergeContent(final ContentTriplet contentTriplet, final Project project, final VirtualFile localFile,
+                                final VcsRevisionNumber serverVersion) {
         ArgumentHelper.checkIfFileWriteable(new File(localFile.getPath()));
 
         final MergeDialogCustomizer c = new MergeDialogCustomizer();
