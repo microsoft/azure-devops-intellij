@@ -26,6 +26,7 @@ import com.microsoft.alm.plugin.external.models.ConflictResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
+import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 
@@ -110,7 +111,7 @@ public class CommandUtils {
      * @param oldWorkspace
      * @param newWorkspace
      */
-    public static void updateWorkspace(final ServerContext context, final Workspace oldWorkspace, final Workspace newWorkspace) {
+    public static String updateWorkspace(final ServerContext context, final Workspace oldWorkspace, final Workspace newWorkspace) {
         // No need to update the mappings if they are the same
         if (WorkspaceHelper.areMappingsDifferent(oldWorkspace, newWorkspace)) {
             // First remove the mappings that are no longer needed
@@ -129,16 +130,16 @@ public class CommandUtils {
         // Finally update the properties of the workspace
         final UpdateWorkspaceCommand updateWorkspaceCommand = new UpdateWorkspaceCommand(context, oldWorkspace.getName(),
                 newWorkspace.getName(), newWorkspace.getComment(), null, null);
-        updateWorkspaceCommand.runSynchronously();
+        return updateWorkspaceCommand.runSynchronously();
     }
 
     /**
      * This method Syncs the workspace based on the root path recursively.
      * This is a synchronous call so it should only be called on a background thread.
      */
-    public static void syncWorkspace(final ServerContext context, final String rootPath) {
+    public static SyncResults syncWorkspace(final ServerContext context, final String rootPath) {
         final SyncCommand command = new SyncCommand(context, Collections.singletonList(rootPath), true);
-        command.runSynchronously();
+        return command.runSynchronously();
     }
 
     /**
