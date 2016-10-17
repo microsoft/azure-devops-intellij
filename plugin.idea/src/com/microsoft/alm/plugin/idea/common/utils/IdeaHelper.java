@@ -37,11 +37,16 @@ public class IdeaHelper {
     public IdeaHelper() {
     }
 
-    public static void setProgress(@NotNull final ProgressIndicator indicator, final double fraction, final String text) {
+    public static void setProgress(final ProgressIndicator indicator, final double fraction, final String text) {
         setProgress(indicator, fraction, text, false);
     }
 
-    public static void setProgress(@NotNull final ProgressIndicator indicator, final double fraction, final String text, final boolean delay) {
+    public static void setProgress(final ProgressIndicator indicator, final double fraction, final String text, final boolean delay) {
+        if (indicator == null) {
+            // Tests send null to skip showing progress
+            return;
+        }
+
         IdeaHelper.runOnUIThread(new Runnable() {
             @Override
             public void run() {

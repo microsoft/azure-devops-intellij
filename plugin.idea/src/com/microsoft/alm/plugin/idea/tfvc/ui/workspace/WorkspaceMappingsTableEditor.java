@@ -28,6 +28,7 @@ import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO: This class is currently not very testable. We could reimplement it and avoid deriving from the IntelliJ class
 public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<WorkspaceMappingsTableEditor.Row> {
     private final Project project;
     private final String defaultLocalPath;

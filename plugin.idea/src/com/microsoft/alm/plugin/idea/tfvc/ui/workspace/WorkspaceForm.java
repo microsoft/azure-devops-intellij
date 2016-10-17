@@ -141,7 +141,8 @@ public class WorkspaceForm {
     }
 
     private void createUIComponents() {
-        tableEditor = new WorkspaceMappingsTableEditor(project, project.getBasePath(), new WorkspaceMappingsTableEditor.ValidationDispatcher() {
+        final String defaultPath = project != null ? project.getBasePath() : "";
+        tableEditor = new WorkspaceMappingsTableEditor(project, defaultPath, new WorkspaceMappingsTableEditor.ValidationDispatcher() {
             @Override
             public void showValidationError(String errorMessage) {
                 if (validationListener != null) {
