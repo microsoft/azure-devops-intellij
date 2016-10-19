@@ -14,7 +14,6 @@ import com.microsoft.alm.plugin.external.commands.DeleteWorkspaceCommand;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
-import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import com.microsoft.alm.plugin.idea.tfvc.ui.checkout.TfvcCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +30,7 @@ public class TfvcCheckoutTest extends L2Test {
     public static final String TFVC_FOLDER_WIN = "$tf";
     public static final String README_FILE = "readme.txt";
 
-    @Test //TODO (timeout = 30000) - right now the test is interactive
+    @Test(timeout = 30000)
     public void checkout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {
@@ -43,14 +42,14 @@ public class TfvcCheckoutTest extends L2Test {
             public void checkoutCompleted() {
                 checkoutCompleted.set(true);
             }
-        }, new TfvcCheckoutModel());
+        }, new TfvcCheckoutModel(), null, null, false);
 
         // Create a temp folder for the clone
         File tempFolder = createTempDirectory();
         Debug.println("tempFolder=" + tempFolder, null);
 
         // Create the model and set fields appropriately
-        VsoCheckoutPageModel model = new VsoCheckoutPageModel(checkoutModel);
+        VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();
         // To avoid the test loading all the accounts for the user, we set the account server we care about
         model.setServerName(getServerUrl());
         model.setUserName(getUser());
@@ -95,8 +94,6 @@ public class TfvcCheckoutTest extends L2Test {
         // verify that the readme was downloaded
         File readme = new File(tempFolder, Path.combine(getTeamProject(), README_FILE));
         Assert.assertTrue(readme.exists());
-
-        //TODO Delete the workspace
 
         // Clean up the folder now that the test has passed
         // TODO: this delete seems to be failing

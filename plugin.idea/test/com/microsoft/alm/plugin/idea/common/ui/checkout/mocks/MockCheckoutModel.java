@@ -10,7 +10,7 @@ import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 public class MockCheckoutModel extends CheckoutModel {
     public MockCheckoutModel() {
         super(null, null, new GitCheckoutModel(), new MockCheckoutPageModel(null, ServerContextTableModel.VSO_GIT_REPO_COLUMNS),
-                new MockCheckoutPageModel(null, ServerContextTableModel.TFS_GIT_REPO_COLUMNS));
+                new MockCheckoutPageModel(null, ServerContextTableModel.TFS_GIT_REPO_COLUMNS), true);
         ((MockCheckoutPageModel) getVsoModel()).initialize(this);
         ((MockCheckoutPageModel) getTfsModel()).initialize(this);
     }

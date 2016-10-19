@@ -9,13 +9,21 @@ import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.helpers.Path;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import sun.security.util.Debug;
 
 import java.io.File;
@@ -23,12 +31,15 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
+import static org.mockito.Mockito.when;
+
 public class GitCheckoutTest extends L2Test {
 
     public static final String GIT_FOLDER = ".git";
     public static final String README_FILE = "readme.md";
 
-    @Test //TODO (timeout = 30000) - right now the test is interactive
+
+    @Test(timeout = 30000)
     public void checkout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {
@@ -40,25 +51,26 @@ public class GitCheckoutTest extends L2Test {
             public void checkoutCompleted() {
                 checkoutCompleted.set(true);
             }
-        }, new GitCheckoutModel());
+        }, new GitCheckoutModel(), null, null, false);
 
         // Create a temp folder for the clone
         File tempFolder = createTempDirectory();
         Debug.println("tempFolder=" + tempFolder, null);
 
-        // Create the model and set fields appropriately
-        VsoCheckoutPageModel model = new VsoCheckoutPageModel(checkoutModel);
+        // Get the model and set fields appropriately
+        VsoCheckoutPageModel model = (VsoCheckoutPageModel)checkoutModel.getVsoModel();
         // To avoid the test loading all the accounts for the user, we set the account server we care about
         model.setServerName(getServerUrl());
         model.setUserName(getUser());
         model.setParentDirectory(tempFolder.getPath());
         model.setDirectoryName(getTeamProject());
 
-        // Loadrepositories should now load just the repos for this account
+        // LoadRepositories should now load just the repos for this account
         model.loadRepositories();
         while (model.isAuthenticating() || model.isLoading()) {
             Thread.sleep(100);
         }
+
         // Now we need to find ours and select it
         final ServerContextTableModel table = model.getTableModel();
         int index = -1;

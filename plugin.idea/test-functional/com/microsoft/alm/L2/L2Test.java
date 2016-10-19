@@ -24,7 +24,11 @@ import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.openapi.vfs.encoding.EncodingManager;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
 import git4idea.GitVcs;
 import git4idea.annotate.GitAnnotationProvider;
 import git4idea.commands.Git;
@@ -39,10 +43,11 @@ import git4idea.diff.GitDiffProvider;
 import git4idea.history.GitHistoryProvider;
 import git4idea.i18n.GitBundle;
 import git4idea.rollback.GitRollbackEnvironment;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
@@ -69,7 +74,7 @@ import static org.mockito.Mockito.when;
 @PrepareForTest({ProjectManager.class, LocalFileSystem.class, ServiceManager.class, ProgressManager.class,
         GitVcsSettings.class, GitVcs.class, NotificationsConfigurationImpl.class, GitBundle.class,
         NotificationsManager.class, GitVcsApplicationSettings.class, EditorColorsManager.class,
-        EncodingManager.class})
+        EncodingManager.class, VsoAuthenticationProvider.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
@@ -115,6 +120,7 @@ public abstract class L2Test extends IdeaAbstractTest {
     String pass;
     String repoUrl;
     String legacyRepoUrl;
+    String tfExe;
 
     public String getServerUrl() {
         return serverUrl;
@@ -140,25 +146,61 @@ public abstract class L2Test extends IdeaAbstractTest {
         return legacyRepoUrl;
     }
 
+    private AuthenticationInfo getAuthenticationInfo() {
+        final AuthenticationInfo authenticationInfo = new AuthenticationInfo(user, pass, serverUrl, user);
+        return authenticationInfo;
+    }
+
     private void loadContext() {
-        // TODO load these from a file or from the env vars somehow
-        serverUrl = "https://xplatalm.visualstudio.com/";
-        user = "jpricket@microsoft.com";
-        teamProject = "L2.IntelliJ";
-        repoUrl = "https://xplatalm.visualstudio.com/_git/L2.IntelliJ";
-        legacyRepoUrl = "https://xplatalm.visualstudio.com/defaultcollection/_git/L2.IntelliJ";
+        user = System.getenv("MSVSTS_INTELLIJ_VSO_USER");
+        pass = System.getenv("MSVSTS_INTELLIJ_VSO_PASS");
+        serverUrl = System.getenv("MSVSTS_INTELLIJ_VSO_SERVER_URL");
+        teamProject = System.getenv("MSVSTS_INTELLIJ_VSO_TEAM_PROJECT");
+        repoUrl = System.getenv("MSVSTS_INTELLIJ_VSO_GIT_REPO_URL");
+        legacyRepoUrl = System.getenv("MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL");
+        tfExe = System.getenv("MSVSTS_INTELLIJ_TF_EXE");
+
+        Assert.assertFalse("You must provide a username, password, serverUrl, teamProject, repoUrl, and legacyRepoUrl " +
+                        "for the L2 tests through the following environment variables: " +
+                        "MSVSTS_INTELLIJ_VSO_USER, MSVSTS_INTELLIJ_VSO_PASS, MSVSTS_INTELLIJ_VSO_SERVER_URL, " +
+                        "MSVSTS_INTELLIJ_VSO_TEAM_PROJECT, MSVSTS_INTELLIJ_VSO_GIT_REPO_URL, " +
+                        "MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL, MSVSTS_INTELLIJ_TF_EXE",
+                StringUtils.isEmpty(user) ||
+                        StringUtils.isEmpty(pass) ||
+                        StringUtils.isEmpty(serverUrl) ||
+                        StringUtils.isEmpty(teamProject) ||
+                        StringUtils.isEmpty(repoUrl) ||
+                        StringUtils.isEmpty(legacyRepoUrl) ||
+                        StringUtils.isEmpty(tfExe));
+
+        // Examples
+        //serverUrl = "https://xplatalm.visualstudio.com/";
+        //user = "jpricket@microsoft.com";
+        //pass = "PAT_GENERATED_BY SERVER";
+        //teamProject = "L2.IntelliJ";
+        //repoUrl = "https://xplatalm.visualstudio.com/_git/L2.IntelliJ";
+        //legacyRepoUrl = "https://xplatalm.visualstudio.com/defaultcollection/_git/L2.IntelliJ";
+        //tfExe = "d:\\tmp\\bin\\TEE-CLC-14.0.4\\tf.cmd";
     }
 
     @Before
     public void setupLocalTests() throws IOException {
         loadContext();
 
+        PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfExe);
+
+        final VsoAuthenticationProvider authenticationProvider = Mockito.mock(VsoAuthenticationProvider.class);
+        PowerMockito.mockStatic(VsoAuthenticationProvider.class);
+        when(VsoAuthenticationProvider.getInstance()).thenReturn(authenticationProvider);
+        when(authenticationProvider.getAuthenticationInfo()).thenReturn(getAuthenticationInfo());
+        // We return false, the first time so that the constructors don't start loading stuff
+        // But we return true there after.
+        when(authenticationProvider.isAuthenticated()).thenReturn(true);
+
         //TODO Try to use the IntelliJ test framework to avoid mocking so much
         // When I first tried to use these classes they didn't help at all :(
         //final TestFixtureBuilder<IdeaProjectTestFixture> lightFixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createLightFixtureBuilder();
         //IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(lightFixtureBuilder.getFixture()).setUp();
-
-
 
         MockitoAnnotations.initMocks(this);
 

@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
@@ -21,7 +22,13 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
     private VsoAuthenticationProvider authenticationProvider = VsoAuthenticationProvider.getInstance();
     private final ServerContextLookupOperation.ContextScope scope;
 
-    public VsoCheckoutPageModel(CheckoutModel checkoutModel) {
+
+    public VsoCheckoutPageModel(final CheckoutModel checkoutModel) {
+        this(checkoutModel, true);
+    }
+
+    @VisibleForTesting
+    public VsoCheckoutPageModel(final CheckoutModel checkoutModel, final boolean autoLoad) {
         super(checkoutModel,
                 checkoutModel.getRepositoryType() == RepositoryContext.Type.GIT ?
                         ServerContextTableModel.VSO_GIT_REPO_COLUMNS :
@@ -41,10 +48,13 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                 ServerContextLookupOperation.ContextScope.REPOSITORY :
                 ServerContextLookupOperation.ContextScope.PROJECT;
 
-        if (authenticationProvider.isAuthenticated()) {
+        if (autoLoad && authenticationProvider.isAuthenticated()) {
+            logger.info("Loading contexts in constructor");
             LookupHelper.loadVsoContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
                     scope);
+        } else {
+            logger.info("Skipping loading contexts in constructor");
         }
     }
 
@@ -55,12 +65,14 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
 
     @Override
     public void signOut() {
+        logger.info("signOut called");
         super.signOut();
         authenticationProvider.clearAuthenticationDetails();
     }
 
     @Override
     public void loadRepositories() {
+        logger.info("loadRepositories called");
         LookupHelper.authenticateAndLoadVsoContexts(this, this,
                 authenticationProvider, getRepositoryProvider(),
                 scope);

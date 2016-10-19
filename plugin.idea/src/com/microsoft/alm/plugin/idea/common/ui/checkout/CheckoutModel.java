@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -28,15 +29,16 @@ public class CheckoutModel extends PageModelImpl implements VcsSpecificCheckoutM
     public final static String PROP_CLONE_ENABLED = "cloneEnabled";
 
     public CheckoutModel(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel) {
-        this(project, listener, specificCheckoutModel, null, null);
+        this(project, listener, specificCheckoutModel, null, null, true);
     }
 
-    protected CheckoutModel(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel,
-                            final CheckoutPageModel vsoModel, final CheckoutPageModel tfsModel) {
+    @VisibleForTesting
+    public CheckoutModel(final Project project, final CheckoutProvider.Listener listener, final VcsSpecificCheckoutModel specificCheckoutModel,
+                            final CheckoutPageModel vsoModel, final CheckoutPageModel tfsModel, final boolean autoLoad) {
         this.project = project;
         this.listener = listener;
         this.specificCheckoutModel = specificCheckoutModel;
-        this.vsoModel = vsoModel == null ? new VsoCheckoutPageModel(this) : vsoModel;
+        this.vsoModel = vsoModel == null ? new VsoCheckoutPageModel(this, autoLoad) : vsoModel;
         this.tfsModel = tfsModel == null ? new TfsCheckoutPageModel(this) : tfsModel;
         updateCloneEnabled();
     }
