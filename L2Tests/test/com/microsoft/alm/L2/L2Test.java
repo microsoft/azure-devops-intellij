@@ -47,6 +47,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -58,6 +59,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import sun.security.util.Debug;
 
 import java.io.File;
 import java.io.IOException;
@@ -185,6 +187,13 @@ public abstract class L2Test extends IdeaAbstractTest {
 
     @Before
     public void setupLocalTests() throws IOException {
+        // L2 tests will be ignored if the env var MSVSTS_INTELLIJ_RUN_L2_TESTS != "true"
+        // Note the Assume class simply causes the test to be ignored
+        if (!StringUtils.equalsIgnoreCase(System.getenv("MSVSTS_INTELLIJ_RUN_L2_TESTS"), "true")) {
+            Debug.println(">>>>>>>>>>", "Test is being ignored. You need to set the env var MSVSTS_INTELLIJ_RUN_L2_TESTS equal to 'true' to get this test to run.");
+            Assume.assumeTrue(false);
+        }
+
         loadContext();
 
         PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfExe);

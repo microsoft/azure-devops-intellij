@@ -9,29 +9,19 @@ import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.helpers.Path;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import sun.security.util.Debug;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
-
-import static org.mockito.Mockito.when;
 
 public class GitCheckoutTest extends L2Test {
 
@@ -58,7 +48,7 @@ public class GitCheckoutTest extends L2Test {
         Debug.println("tempFolder=" + tempFolder, null);
 
         // Get the model and set fields appropriately
-        VsoCheckoutPageModel model = (VsoCheckoutPageModel)checkoutModel.getVsoModel();
+        VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();
         // To avoid the test loading all the accounts for the user, we set the account server we care about
         model.setServerName(getServerUrl());
         model.setUserName(getUser());

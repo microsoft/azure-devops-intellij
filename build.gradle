@@ -35,8 +35,13 @@ subprojects {
     apply plugin: 'pmd'
     apply plugin: 'findbugs'
 
+
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
+
+    task unitTest(type: Test) {
+        exclude '**/L2/**'
+    }
 }
 
 /**
@@ -87,8 +92,21 @@ project(":plugin.idea") {
 
     task showVersion() {
         println("version = " + version)
+    }    
+}
+
+project(":L2Tests") {
+    dependencies {
+        compile project(':plugin.idea')
+        testCompile project(':plugin').sourceSets.test.output
+        testCompile project(':plugin.idea').sourceSets.test.output
+    }
+
+    jar {
+        baseName 'com.microsoft.alm.L2'
     }
 }
+
 
 /**
  * settings shared by each subproject (part 2)
@@ -128,7 +146,7 @@ subprojects {
         
         compile files('resources/externals')
     }
-
+    
     sourceSets {
         main {
             compileClasspath += configurations.ideaSdkLibs
@@ -156,12 +174,14 @@ subprojects {
                 srcDir 'test'
             }
         }
+        
+        
     }
 
     test {
         forkEvery = 10
     }
-
+    
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
@@ -202,7 +222,7 @@ subprojects {
         include '*-sources.jar'
         into file( 'lib/src' )
     }
-
+    
     tasks.withType(FindBugs) {
         ignoreFailures = true
         reports {
