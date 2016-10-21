@@ -162,18 +162,14 @@ public abstract class L2Test extends IdeaAbstractTest {
         legacyRepoUrl = System.getenv("MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL");
         tfExe = System.getenv("MSVSTS_INTELLIJ_TF_EXE");
 
-        Assert.assertFalse("You must provide a username, password, serverUrl, teamProject, repoUrl, and legacyRepoUrl " +
-                        "for the L2 tests through the following environment variables: " +
-                        "MSVSTS_INTELLIJ_VSO_USER, MSVSTS_INTELLIJ_VSO_PASS, MSVSTS_INTELLIJ_VSO_SERVER_URL, " +
-                        "MSVSTS_INTELLIJ_VSO_TEAM_PROJECT, MSVSTS_INTELLIJ_VSO_GIT_REPO_URL, " +
-                        "MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL, MSVSTS_INTELLIJ_TF_EXE",
-                StringUtils.isEmpty(user) ||
-                        StringUtils.isEmpty(pass) ||
-                        StringUtils.isEmpty(serverUrl) ||
-                        StringUtils.isEmpty(teamProject) ||
-                        StringUtils.isEmpty(repoUrl) ||
-                        StringUtils.isEmpty(legacyRepoUrl) ||
-                        StringUtils.isEmpty(tfExe));
+        final String message = "You must provide %s for the L2 tests through the following environment variable: %s";
+        Assert.assertFalse(String.format(message, "user", "MSVSTS_INTELLIJ_VSO_USER"), StringUtils.isEmpty(user));
+        Assert.assertFalse(String.format(message, "pass", "MSVSTS_INTELLIJ_VSO_PASS"), StringUtils.isEmpty(pass));
+        Assert.assertFalse(String.format(message, "serverUrl", "MSVSTS_INTELLIJ_VSO_SERVER_URL"), StringUtils.isEmpty(serverUrl));
+        Assert.assertFalse(String.format(message, "teamProject", "MSVSTS_INTELLIJ_VSO_TEAM_PROJECT"), StringUtils.isEmpty(teamProject));
+        Assert.assertFalse(String.format(message, "repoUrl", "MSVSTS_INTELLIJ_VSO_GIT_REPO_URL"), StringUtils.isEmpty(repoUrl));
+        Assert.assertFalse(String.format(message, "legacyRepoUrl", "MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL"), StringUtils.isEmpty(legacyRepoUrl));
+        Assert.assertFalse(String.format(message, "tfExe", "MSVSTS_INTELLIJ_TF_EXE"), StringUtils.isEmpty(tfExe));
 
         // Examples
         //serverUrl = "https://xplatalm.visualstudio.com/";
