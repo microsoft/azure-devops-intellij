@@ -121,17 +121,17 @@
         </action>
 
         <!-- TFVC Action -->
-        <group id="TfsGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC (Preview)">
+        <group id="TfvcGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC (Preview)">
             <add-to-group group-id="VcsGroups" anchor="last"/>
         </group>
 
-        <group id="TfsFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC (Preview)">
+        <group id="TfvcFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC (Preview)">
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
 
-        <group id="TfsGroup" text="TFVC (Preview)">
+        <group id="TfvcGroup" text="TFVC (Preview)">
             <separator/>
-            <action id="Tfs.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
+            <action id="Tfvc.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
             <reference id="CheckinFiles"/>
             <reference id="UpdateFiles"/>
             <!--<reference id="IntegrateFiles"/>
@@ -157,10 +157,10 @@
             <reference id="ChangesView.Browse"/>
             <separator/>
             <action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/>-->
-            <add-to-group group-id="TfsGlobalGroup" anchor="last"/>
-            <add-to-group group-id="TfsFilePopupGroup" anchor="last"/>
+            <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>
+            <add-to-group group-id="TfvcFilePopupGroup" anchor="last"/>
             <separator/>
-            <action id="Tfs.EditWorkspace" text="Edit _Workspace..."
+            <action id="Tfvc.EditWorkspace" text="Edit _Workspace..."
                     description="Change workspace mappings for this project"
                     class="com.microsoft.alm.plugin.idea.tfvc.actions.EditWorkspaceAction"/>
         </group>
