@@ -7,9 +7,10 @@ Compatible with IntelliJ IDEA Community and Ultimate editions (version 14) and A
 To learn more about installing and using our Team Services IntelliJ plug-in, visit: http://java.visualstudio.com/Docs/tools/intelliJ
 
 ## Pre-Reqs
-1. Install JDK 6
-  * You can find the JDK 6 download on Oracle's web site at <a href="http://www.oracle.com/technetwork/java/javase/downloads/java-archive-downloads-javase6-419409.html" target="_blank">Java SE 6 Downloads</a>.
-1. Install IntelliJ IDEA Community Edition version 14.x
+1. Install JDK 8
+  * You can find the JDK 8 download on Oracle's web site at <a href="http://www.oracle.com/technetwork/java/javase/downloads" target="_blank">Java SE Downloads</a>.
+1. Set JAVA_HOME to the location of JDK 8
+1. Install IntelliJ IDEA Community Edition version 16.x
 
 ## Create (or Update) the Gradle Properties file
 We use Gradle as the build tool for this project.  Before you get started, you will need to either create a `gradle.properties` 
@@ -22,22 +23,24 @@ From a terminal/console window,
 
 1. If you are updating the file in the IntelliJ repository, simply open that file in your favorite text editor.
 
-1. Add or update the values of ideaSdk and git4idea as shown below.
+1. Add or update the values of the properties as shown below. (the idea property needs to be set, but is only used for running integration tests)
 
-  * Sample property file on Linux
+  * Sample property file on Linux (TODO update these)
   ```
-  ideaSdk=/home/user/idea-IC-141.2735.5/lib
-  git4idea=/home/user/idea-IC-141.2735.5/plugins/git4idea/lib
+  ideaSdk=/home/user/idea-IC-161.2735.5/lib
+  git4idea=/home/user/idea-IC-161.2735.5/plugins/git4idea/lib
   ```
-  * Sample property file on Mac
+  * Sample property file on Mac (TODO verify these)
   ```
-  ideaSdk=/Applications/IntelliJ IDEA 14 CE.app/Contents/lib
-  git4idea=/Applications/IntelliJ\ IDEA\ 14\ CE.app/Contents/plugins/git4idea/lib
+  ideaSdk=/Applications/IntelliJ IDEA 16 CE.app/Contents/lib
+  git4idea=/Applications/IntelliJ\ IDEA\ 16\ CE.app/Contents/plugins/git4idea/lib
+  idea=/usr/github/intellij-community/bin
   ```
   * Sample property file on Windows
   ```
-  ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\lib
-  git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 14.1.4\\plugins\\git4idea\\lib
+  ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.3\\lib
+  git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.3\\plugins\\git4idea\\lib
+  idea=D:\\github\\intellij-community\\bin
   ```
 
 ## Build with Gradle
@@ -112,6 +115,40 @@ A few styles we follow:
 Those settings are already configured in the `com.microsoft.alm.plugin.idea.iml` project file we provided.  
 
 Gradle build will fail if checkstyle plugin detects a violation.
+
+## Running Integration Tests (L2 tests)
+
+Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have a VSTS account setup to run against.
+
+Here are the steps to setup your environment:
+
+1. Before you start, you will need to download and build the IntelliJ Community Edition version 2016.
+  * You can find the instructions here: https://github.com/JetBrains/intellij-community
+  
+1. First setup the gradle.properties file. There is an example above. 
+  * Specify the location of the git4idea plugin via the `git4idea` property (this can be found in the installation folder of the IntelliJ 16 Community Edition)
+  * Specify the location of the IDEA lib folder via the 'ideaSdk' property (this can be found in the installation folder of the IntelliJ 16 Community Edition) 
+  * Specify the location of the IDEA bin folder via the `idea` property (this is the bin folder of the IntelliJ github repository that you downloaded)
+  
+1. Second setup the environment variables that provide the connection information for the tests. If this information is missing the tests will fail with a message that describes the missing information. The values below are examples but you will have to fix them.
+  * MSVSTS_INTELLIJ_RUN_L2_TESTS=true
+  * MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd
+  * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://account.visualstudio.com/_git/projectName
+  * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://account.visualstudio.com/defaultcollection/_git/projectName
+  * MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage
+  * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://account.visualstudio.com
+  * MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName
+  * MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser
+
+1. Last you probably want to setup a Run Configuration for the L2 Tests inside IntelliJ
+  * Create a new JUnit run configuration with the following settings
+  * Set VM options to `-ea -Xmx512M -Didea.config.path=..\test-config -Didea.system.path=..\test-system -Didea.test.group=ALL_EXCLUDE_DEFINED`
+  * Set the working directory to `D:\github\intellij-community\bin` i.e. the path to the bin folder in your IntelliJ github repository
+  * Use classpath of module `L2Tests`
+
+1. Other things to note:
+  * You can toggle whether the tests will run or not simply by changing the MSVSTS_INTELLIJ_RUN_L2_TESTS environment variable.
+  * The internal CI build will run these tests
 
 ## Learn More
 

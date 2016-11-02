@@ -99,7 +99,7 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
     @Test
     public void testCacheIdeLocationOtherEntries() throws Exception {
         File expectedFile = File.createTempFile("expectedLocation", ".csv");
-        writeToFile(expectedFile, IDEA_NAME + ",/current/location/of/ide\npycharm,/current/dir/for/pycharm\n");
+        writeToFile(expectedFile, "pycharm,/current/dir/for/pycharm\n" + IDEA_NAME + ",/current/location/of/ide\n");
         writeToFile(new File(LOCATIONS_CSV_PATH), "pycharm,/current/dir/for/pycharm\n");
 
         ApplicationStartup appStartup = new ApplicationStartup();

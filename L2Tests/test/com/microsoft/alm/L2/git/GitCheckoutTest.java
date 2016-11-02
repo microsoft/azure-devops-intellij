@@ -4,6 +4,8 @@
 package com.microsoft.alm.L2.git;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
@@ -16,6 +18,7 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import sun.security.util.Debug;
 
 import java.io.File;
@@ -30,13 +33,14 @@ public class GitCheckoutTest extends L2Test {
 
 
     @Test(timeout = 30000)
-    public void checkout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
+    public void testCheckout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {
             @Override
             public void directoryCheckedOut(File directory, VcsKey vcs) {
             }
 
+            // Note: This method does not appear to ever be called (probably because everything happens on the same thread)
             @Override
             public void checkoutCompleted() {
                 checkoutCompleted.set(true);
@@ -44,11 +48,11 @@ public class GitCheckoutTest extends L2Test {
         }, new GitCheckoutModel(), null, null, false);
 
         // Create a temp folder for the clone
-        File tempFolder = createTempDirectory();
+        File tempFolder = L2Test.createTempDirectory();
         Debug.println("tempFolder=" + tempFolder, null);
 
         // Get the model and set fields appropriately
-        VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();
+        final VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();
         // To avoid the test loading all the accounts for the user, we set the account server we care about
         model.setServerName(getServerUrl());
         model.setUserName(getUser());
@@ -77,10 +81,16 @@ public class GitCheckoutTest extends L2Test {
         Assert.assertTrue(index >= 0);
         // select it
         model.getTableSelectionModel().setSelectionInterval(index, index);
-        // clone it
-        model.cloneSelectedRepo();
-        // run the clone task that was queued up
-        runProgressManagerTask();
+
+        // clone it (we need to run this method with a progress indicator)
+        // Everything happens synchronously, so no need to worry
+        ProgressIndicator indicator = Mockito.mock(ProgressIndicator.class);
+        ProgressManager.getInstance().runProcess(new Runnable() {
+            @Override
+            public void run() {
+                model.cloneSelectedRepo();
+            }
+        }, indicator);
 
         // verify that it got cloned
         File gitFolder = new File(tempFolder, Path.combine(getTeamProject(), GIT_FOLDER));

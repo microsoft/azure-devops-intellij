@@ -31,7 +31,7 @@ public class TfvcCheckoutTest extends L2Test {
     public static final String README_FILE = "readme.txt";
 
     @Test(timeout = 30000)
-    public void checkout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
+    public void testCheckout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {
             @Override
@@ -82,9 +82,8 @@ public class TfvcCheckoutTest extends L2Test {
         deleteWorkspaceCommand.runSynchronously();
 
         // clone it
+        // Everything happens synchronously, so no need to worry
         model.cloneSelectedRepo();
-        // run the clone task that was queued up
-        runProgressManagerTask();
 
         // verify that it got cloned
         File tfvcFolder = new File(tempFolder, Path.combine(getTeamProject(), TFVC_FOLDER));
