@@ -29,6 +29,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.ui.SortedComboBoxModel;
+import com.microsoft.alm.common.artifact.ArtifactID;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -40,6 +41,9 @@ import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
+import com.microsoft.alm.workitemtracking.webapi.models.Link;
+import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchDocument;
+import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchOperation;
 import git4idea.GitBranch;
 import git4idea.GitCommit;
 import git4idea.GitExecutionException;
@@ -60,11 +64,16 @@ import org.slf4j.LoggerFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.event.HyperlinkEvent;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CreatePullRequestModel extends AbstractModel {
 
@@ -85,6 +94,10 @@ public class CreatePullRequestModel extends AbstractModel {
     public static final String PROP_DESCRIPTION = "description";
     public static final String PROP_LOADING = "loading";
     public static final String PROP_DIFF_MODEL = "diffModel";
+    private static final String LINK_NAME_KEY = "name";
+    private static final String LINK_NAME_VALUE = "Pull Request";
+    private static final String ARTIFACT_LINK_RELATION = "ArtifactLink";
+    private static final String RELATIONS_PATH = "/relations/-";
 
     private Project project;
     private GitRepository gitRepository;
@@ -94,6 +107,7 @@ public class CreatePullRequestModel extends AbstractModel {
     private final Collection<GitRemote> tfGitRemotes;
     private final ComboBoxModel remoteBranchComboModel;
     private final PullRequestHelper pullRequestHelper;
+    private final Set<Integer> workItems;
 
     /* Branch diff provider, non-final for unit test */
     private DiffCompareInfoProvider diffCompareInfoProvider;
@@ -146,6 +160,7 @@ public class CreatePullRequestModel extends AbstractModel {
                 );
 
         this.executorService = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        this.workItems = new HashSet<Integer>();
     }
 
     public Project getProject() {
@@ -367,6 +382,23 @@ public class CreatePullRequestModel extends AbstractModel {
                                                 = pullRequestHelper.createDefaultDescription(commits);
                                         setDescription(defaultDescription);
                                     }
+
+                                    // find workitems from commits
+                                    workItems.clear();
+                                    final Pattern pattern = Pattern.compile("#(\\d+)");
+                                    for (final GitCommit commit : commits) {
+                                        final String commitMsg = commit.getFullMessage();
+                                        final Matcher matcher = pattern.matcher(commitMsg);
+                                        // finds all matches in the string where it is a # followed by an int
+                                        while (matcher.find()) {
+                                            try {
+                                                final int workItemId = Integer.parseInt(StringUtils.removeStart(matcher.group(), "#"));
+                                                workItems.add(workItemId);
+                                            } catch (NumberFormatException e) {
+                                                logger.warn("Error converting work item id into integer: " + matcher.group(1));
+                                            }
+                                        }
+                                    }
                                 }
 
                                 setLocalBranchChanges(changesContainer);
@@ -548,6 +580,11 @@ public class CreatePullRequestModel extends AbstractModel {
             final GitPullRequest gitPullRequest
                     = gitClient.createPullRequest(pullRequestToBeCreated, projectId, repositoryId);
 
+            // link workitems to PR
+            for (final int workItemId : workItems) {
+                createWorkItemLinks(workItemId, context, gitPullRequest.getPullRequestId());
+            }
+
             final String repositoryRemoteUrl = context.getGitRepository().getRemoteUrl();
             notifySuccess(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_CREATED_TITLE),
                     pullRequestHelper.getHtmlMsg(repositoryRemoteUrl, gitPullRequest.getPullRequestId()));
@@ -574,6 +611,38 @@ public class CreatePullRequestModel extends AbstractModel {
                     logger.warn("Create pull request failed", t);
                 }
             }
+        }
+    }
+
+    private void createWorkItemLinks(final int workItemId, final ServerContext context, final int prNumber) {
+        final String toolSpecificId = context.getTeamProjectReference().getId().toString() + "/" + context.getGitRepository().getId().toString() + "/" + prNumber;
+        final ArtifactID artifactID = new ArtifactID("Git", "PullRequestId", toolSpecificId);
+
+        // attributes specify the link type
+        final HashMap<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(LINK_NAME_KEY, LINK_NAME_VALUE);
+
+        // create link object to add to the work item
+        final Link link = new Link();
+        link.setUrl(artifactID.encodeURI());
+        link.setTitle(StringUtils.EMPTY);
+        link.setRel(ARTIFACT_LINK_RELATION);
+        link.setAttributes(attributes);
+
+        // create the operation that will add the link to the work item
+        final JsonPatchOperation operation = new JsonPatchOperation();
+        operation.setOp(com.microsoft.visualstudio.services.webapi.patch.Operation.ADD);
+        operation.setPath(RELATIONS_PATH);
+        operation.setValue(link);
+
+        final JsonPatchDocument doc = new JsonPatchDocument();
+        doc.add(operation);
+
+        try {
+            context.getWitHttpClient().updateWorkItem(doc, workItemId, false, false);
+        } catch (Throwable t) {
+            // if we fail then just swallow it
+            logger.warn("createWorkItemLinks experienced an exception while associating a work item and pull request", t);
         }
     }
 
