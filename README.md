@@ -142,7 +142,7 @@ Here are the steps to setup your environment:
 
 1. Last you probably want to setup a Run Configuration for the L2 Tests inside IntelliJ
   * Create a new JUnit run configuration with the following settings
-  * Set VM options to `-ea -Xmx512M -Didea.config.path=..\test-config -Didea.system.path=..\test-system -Didea.test.group=ALL_EXCLUDE_DEFINED`
+  * Set VM options to `-ea -Xmx2048M -Didea.config.path=..\test-config -Didea.system.path=..\test-system -Didea.test.group=ALL_EXCLUDE_DEFINED`
   * Set the working directory to `D:\github\intellij-community\bin` i.e. the path to the bin folder in your IntelliJ github repository
   * Use classpath of module `L2Tests`
 

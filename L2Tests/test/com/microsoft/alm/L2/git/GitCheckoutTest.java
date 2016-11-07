@@ -32,7 +32,7 @@ public class GitCheckoutTest extends L2Test {
     public static final String README_FILE = "readme.md";
 
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testCheckout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {

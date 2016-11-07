@@ -3,14 +3,16 @@
 
 package com.microsoft.alm.L2;
 
-import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.TestLoggerFactory;
 import com.intellij.testFramework.UsefulTestCase;
@@ -19,8 +21,11 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
+import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
+import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import git4idea.GitPlatformFacade;
 import git4idea.GitUtil;
 import git4idea.GitVcs;
@@ -33,7 +38,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -49,10 +57,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VsoAuthenticationProvider.class})
+@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -60,6 +71,9 @@ public abstract class L2Test extends UsefulTestCase {
     static {
         Logger.setFactory(TestLoggerFactory.class);
     }
+
+    @Rule
+    public TestName name = new TestName();
 
     // Context variables
     String serverUrl;
@@ -153,6 +167,31 @@ public abstract class L2Test extends UsefulTestCase {
 
         // Load context info from the environment
         loadContext();
+
+        // Set the name of the test in the base class
+        setName(name.getMethodName());
+    }
+
+    /**
+     * This method can be called by test methods to mock the JetBrains SelectFilesDialog so that it returns the files
+     * passed in here.
+     *
+     * @param filesToSelect are the file you want the dialog to return for the test
+     */
+    protected void mockSelectFilesDialog(final List<File> filesToSelect) {
+        final SelectFilesDialog dialog = Mockito.mock(SelectFilesDialog.class);
+        PowerMockito.mockStatic(SelectFilesDialog.class);
+        when(SelectFilesDialog.init(Matchers.any(Project.class), anyList(), anyString(), Matchers.any(VcsShowConfirmationOption.class), anyBoolean(), anyBoolean(), anyBoolean()))
+                .thenReturn(dialog);
+
+        final List<VirtualFile> virtualFiles = new ArrayList<VirtualFile>();
+        for (File f : filesToSelect) {
+            final VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
+            Assert.assertNotNull(vf);
+            virtualFiles.add(vf);
+        }
+        when(dialog.getSelectedFiles()).thenReturn(virtualFiles);
+        when(dialog.isOK()).thenReturn(virtualFiles.size() > 0);
     }
 
     @Override
@@ -162,7 +201,6 @@ public abstract class L2Test extends UsefulTestCase {
 
         try {
             myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getTestName(true)).getFixture();
-            PluginManagerCore.loadDescriptors(null, new ArrayList<String>());
             myProjectFixture.setUp();
 
             // Use the context info loaded earlier to setup the environment for TF work
@@ -229,6 +267,43 @@ public abstract class L2Test extends UsefulTestCase {
         //TestLoggerFactory.enableDebugLogging(myTestRootDisposable, ArrayUtil.toStringArray(commonCategories));
         myTestStartedIndicator = createTestStartedIndicator();
         LOG.info(myTestStartedIndicator);
+    }
+
+    /**
+     * Test methods can call this method to get the Server GitRepository object given a project level server context and
+     * the repository name.
+     *
+     * @param projectLevelContext
+     * @param repositoryName
+     * @return
+     */
+    protected GitRepository getServerGitRepository(final ServerContext projectLevelContext, final String repositoryName) {
+        final GitHttpClient gitClient = projectLevelContext.getGitHttpClient();
+        final List<GitRepository> repos = gitClient.getRepositories(projectLevelContext.getTeamProjectReference().getName());
+        if (repos != null && repos.size() > 0) {
+            for (GitRepository repo : repos) {
+                if (repo.getName().equalsIgnoreCase(repositoryName)) {
+                    return repo;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Test methods can call this method to remove an existing repository from the server.
+     * This is usually done at the beginning of a test that will be creating the repository.
+     *
+     * @param projectLevelContext
+     * @param repositoryName
+     */
+    protected void removeServerGitRepository(final ServerContext projectLevelContext, final String repositoryName) {
+        final GitHttpClient gitClient = projectLevelContext.getGitHttpClient();
+        final GitRepository foundRepo = getServerGitRepository(projectLevelContext, repositoryName);
+        if (foundRepo != null) {
+            gitClient.deleteRepository(foundRepo.getId());
+        }
     }
 
     @NotNull

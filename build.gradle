@@ -142,7 +142,7 @@ project(":L2Tests") {
      * No other tests require these settings.
      */
     test {
-        jvmArgs "-Xmx512M", "-Didea.config.path=$idea\\test-config", "-Didea.system.path=$idea\\test-system", "-Didea.test.group=ALL_EXCLUDE_DEFINED", "-Didea.launcher.port=7532", "-Didea.launcher.bin.path=$idea"
+        jvmArgs "-Xmx2048M", "-Didea.config.path=$idea\\test-config", "-Didea.system.path=$idea\\test-system", "-Didea.test.group=ALL_EXCLUDE_DEFINED", "-Didea.launcher.port=7532", "-Didea.launcher.bin.path=$idea"
         workingDir "$idea"
     } 
 }

@@ -20,7 +20,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
     private static final Logger logger = LoggerFactory.getLogger(VsoImportPageModel.class);
 
 
-    public VsoImportPageModel(final ImportModel importDialogModel) {
+    public VsoImportPageModel(final ImportModel importDialogModel, final boolean autoLoad) {
         super(importDialogModel, ServerContextTableModel.VSO_PROJECT_COLUMNS);
 
         // Set default server name for VSO
@@ -29,7 +29,7 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         setConnected(false);
         setAuthenticating(false);
 
-        if (authenticationProvider.isAuthenticated()) {
+        if (autoLoad && authenticationProvider.isAuthenticated()) {
             // Load the projects from all accounts into the list
             LookupHelper.loadVsoContexts(this, this,
                     authenticationProvider, getTeamProjectProvider(),

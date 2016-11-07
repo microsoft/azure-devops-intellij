@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.ui.common.PageModelImpl;
 
@@ -23,14 +24,16 @@ public class ImportModel extends PageModelImpl {
     public final static String PROP_IMPORT_ENABLED = "importEnabled";
 
     public ImportModel(final Project project) {
-        this(project, null, null);
+        this(project, null, null, true);
     }
 
-    protected ImportModel(final Project project,
+    @VisibleForTesting
+    public ImportModel(final Project project,
                           final ImportPageModel vsoImportPageModel,
-                          final ImportPageModel tfsImportPageModel) {
+                          final ImportPageModel tfsImportPageModel,
+                          final boolean autoLoad) {
         this.project = project;
-        this.vsoImportPageModel = vsoImportPageModel == null ? new VsoImportPageModel(this) : vsoImportPageModel;
+        this.vsoImportPageModel = vsoImportPageModel == null ? new VsoImportPageModel(this, autoLoad) : vsoImportPageModel;
         this.tfsImportPageModel = tfsImportPageModel == null ? new TfsImportPageModel(this) : tfsImportPageModel;
         updateImportEnabled();
     }

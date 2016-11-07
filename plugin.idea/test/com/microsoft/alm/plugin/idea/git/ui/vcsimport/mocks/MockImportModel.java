@@ -8,7 +8,7 @@ import com.microsoft.alm.plugin.idea.git.ui.vcsimport.ImportModel;
 public class MockImportModel extends ImportModel {
 
     public MockImportModel() {
-        super(null, new MockImportPageModel(null, false), new MockImportPageModel(null, true));
+        super(null, new MockImportPageModel(null, false), new MockImportPageModel(null, true), true);
         ((MockImportPageModel) getVsoImportPageModel()).initialize(this);
         ((MockImportPageModel) getTfsImportPageModel()).initialize(this);
     }
