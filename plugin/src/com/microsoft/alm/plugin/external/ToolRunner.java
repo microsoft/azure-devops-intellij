@@ -200,7 +200,6 @@ public class ToolRunner {
         try {
             for (final String arg : argumentBuilder.build()) {
                 final String escapedArg = escapeArgument(arg);
-                logger.info("sendArgsViaStandardInput: " + arg + " ==> " + escapedArg);
                 writer.write(escapedArg);
                 writer.write(" ");
             }
