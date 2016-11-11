@@ -15,6 +15,7 @@ public class ProcessHelper {
 
         // Disable any telemetry that the tool may initiate
         pb.environment().put("tf_notelemetry", "TRUE");
+        pb.environment().put("TF_ADDITIONAL_JAVA_ARGS", "-Duser.country=US -Duser.language=en");
 
         if (StringUtils.isNotEmpty(workingDirectory)) {
             pb.directory(new File(workingDirectory));

@@ -32,7 +32,7 @@ public class TfVersionCommand extends Command<ToolVersion> {
         final String[] lines = getLines(stdout);
         for(final String line : lines) {
             if (StringUtils.isNotEmpty(line)) {
-                final int start = line.indexOf(VERSION_PREFIX);
+                final int start = line.toLowerCase().indexOf(VERSION_PREFIX);
                 if (start >= 0) {
                     return new ToolVersion(StringUtils.removeEnd(line.substring(start + VERSION_PREFIX.length()), ")"));
                 }
