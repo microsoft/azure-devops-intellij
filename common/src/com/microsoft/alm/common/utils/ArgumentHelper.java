@@ -30,9 +30,9 @@ public class ArgumentHelper {
         }
     }
 
-    public static void checkNotEmptyString(final String arg) {
+    public static void checkNotEmptyString(final String arg, final String argName) {
         if (StringUtils.isEmpty(arg)) {
-            throw new IllegalArgumentException(String.format(EMPTY_ARG_MSG, arg));
+            throw new IllegalArgumentException(String.format(EMPTY_ARG_MSG, argName));
         }
     }
 

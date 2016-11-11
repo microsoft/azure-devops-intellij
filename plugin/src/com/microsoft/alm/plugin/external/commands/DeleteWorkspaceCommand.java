@@ -25,7 +25,7 @@ public class DeleteWorkspaceCommand extends Command<String> {
      */
     public DeleteWorkspaceCommand(final ServerContext context, final String workspaceName) {
         super("workspace", context);
-        ArgumentHelper.checkNotEmptyString(workspaceName);
+        ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
     }
 

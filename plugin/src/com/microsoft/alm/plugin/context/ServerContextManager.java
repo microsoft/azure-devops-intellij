@@ -337,7 +337,7 @@ public class ServerContextManager {
     }
 
     public ServerContext createContextFromGitRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
-        ArgumentHelper.checkNotEmptyString(gitRemoteUrl);
+        ArgumentHelper.checkNotEmptyString(gitRemoteUrl, "gitRemoteUrl");
 
         // Get matching context from manager
         ServerContext context = get(gitRemoteUrl);
@@ -373,8 +373,8 @@ public class ServerContextManager {
 
 
     public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final String teamProjectName, final boolean prompt) {
-        ArgumentHelper.checkNotEmptyString(tfvcServerUrl);
-        ArgumentHelper.checkNotEmptyString(teamProjectName);
+        ArgumentHelper.checkNotEmptyString(tfvcServerUrl, "tfvcServerUrl");
+        ArgumentHelper.checkNotEmptyString(teamProjectName, "teamProjectName");
 
         // Get matching context from manager
         ServerContext context = get(tfvcServerUrl);

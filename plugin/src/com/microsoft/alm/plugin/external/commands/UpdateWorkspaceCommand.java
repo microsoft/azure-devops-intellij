@@ -33,7 +33,7 @@ public class UpdateWorkspaceCommand extends Command<String> {
                                   final String newName, final String newComment, final Workspace.FileTime newFileTime,
                                   final Workspace.Permission newPermission) {
         super("workspace", context);
-        ArgumentHelper.checkNotEmptyString(currentWorkspaceName);
+        ArgumentHelper.checkNotEmptyString(currentWorkspaceName, "currentWorkspaceName");
         this.currentWorkspaceName = currentWorkspaceName;
         this.newName = newName;
         this.newComment = newComment;

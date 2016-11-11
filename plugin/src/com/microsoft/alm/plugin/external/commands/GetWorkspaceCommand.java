@@ -23,7 +23,7 @@ public class GetWorkspaceCommand extends Command<Workspace> {
 
     public GetWorkspaceCommand(final ServerContext context, final String workspaceName) {
         super("workspaces", context);
-        ArgumentHelper.checkNotEmptyString(workspaceName);
+        ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
     }
 

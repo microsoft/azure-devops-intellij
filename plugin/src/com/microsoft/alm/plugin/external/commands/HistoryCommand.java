@@ -38,7 +38,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
     public HistoryCommand(final ServerContext context, final String localPath, final String version,
                           final int stopAfter, final boolean recursive, final String user, final boolean itemMode) {
         super("history", context);
-        ArgumentHelper.checkNotEmptyString(localPath);
+        ArgumentHelper.checkNotEmptyString(localPath, "localPath");
         this.localPath = localPath;
         this.version = version;
         this.user = user;

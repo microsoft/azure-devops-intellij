@@ -37,7 +37,7 @@ public class CreateWorkspaceCommand extends Command<String> {
                                   final String comment, final Workspace.FileTime fileTime,
                                   final Workspace.Permission permission) {
         super("workspace", context);
-        ArgumentHelper.checkNotEmptyString(workspaceName);
+        ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
         this.comment = comment;
         this.fileTime = fileTime;
