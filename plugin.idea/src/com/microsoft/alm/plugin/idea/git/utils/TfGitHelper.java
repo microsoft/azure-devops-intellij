@@ -143,7 +143,7 @@ public class TfGitHelper {
      */
     public static String getRemoteBranchName(GitRemote remote, String branchName) {
         ArgumentHelper.checkNotNull(remote, "remote");
-        ArgumentHelper.checkNotEmptyString(branchName);
+        ArgumentHelper.checkNotEmptyString(branchName, "branchName");
         return remote.getName() + "/" + branchName;
     }
 

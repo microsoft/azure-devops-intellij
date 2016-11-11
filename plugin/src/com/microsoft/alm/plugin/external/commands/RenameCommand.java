@@ -19,8 +19,8 @@ public class RenameCommand extends Command<String> {
 
     public RenameCommand(final ServerContext context, final String oldName, final String newName) {
         super("rename", context);
-        ArgumentHelper.checkNotEmptyString(oldName);
-        ArgumentHelper.checkNotEmptyString(newName);
+        ArgumentHelper.checkNotEmptyString(oldName, "oldName");
+        ArgumentHelper.checkNotEmptyString(newName, "newName");
 
         this.oldName = oldName;
         this.newName = newName;

@@ -91,7 +91,7 @@ public class ToolRunnerCache {
     }
 
     private static String getKey(final String toolLocation, final ToolRunner.ArgumentBuilder argumentBuilder) {
-        ArgumentHelper.checkNotEmptyString(toolLocation);
+        ArgumentHelper.checkNotEmptyString(toolLocation, "toolLocation");
         if (argumentBuilder != null && argumentBuilder.getWorkingDirectory() != null) {
             return toolLocation.toLowerCase() + "|" + argumentBuilder.getWorkingDirectory().toLowerCase();
         } else {

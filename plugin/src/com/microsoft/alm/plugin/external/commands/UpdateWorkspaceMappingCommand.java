@@ -38,7 +38,7 @@ public class UpdateWorkspaceMappingCommand extends Command<String> {
      */
     public UpdateWorkspaceMappingCommand(final ServerContext context, final String workspaceName, final Workspace.Mapping mapping, final boolean removeMapping) {
         super("workfold", context);
-        ArgumentHelper.checkNotEmptyString(workspaceName);
+        ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         ArgumentHelper.checkNotNull(mapping, "mapping");
         this.workspaceName = workspaceName;
         this.mapping = mapping;

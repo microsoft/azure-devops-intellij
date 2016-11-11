@@ -139,7 +139,7 @@ public class WorkspaceHelper {
      * Note that it will leave the final / and just remove the *
      */
     public static String getNormalizedServerPath(final String serverPath) {
-        ArgumentHelper.checkNotEmptyString(serverPath);
+        ArgumentHelper.checkNotEmptyString(serverPath, "serverPath");
         if (isOneLevelMapping(serverPath)) {
             return serverPath.substring(0, serverPath.length() - 1).toLowerCase();
         }

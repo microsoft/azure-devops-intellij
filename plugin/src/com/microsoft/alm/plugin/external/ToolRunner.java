@@ -94,7 +94,7 @@ public class ToolRunner {
         }
 
         public ArgumentBuilder addSwitch(final String switchName, final String switchValue, final boolean isSecret) {
-            ArgumentHelper.checkNotEmptyString(switchName);
+            ArgumentHelper.checkNotEmptyString(switchName, "switchName");
             final String arg;
             if (StringUtils.isEmpty(switchValue)) {
                 arg = "-" + switchName;

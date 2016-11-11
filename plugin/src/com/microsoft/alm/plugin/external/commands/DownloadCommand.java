@@ -26,8 +26,8 @@ public class DownloadCommand extends Command<String> {
 
     public DownloadCommand(final ServerContext context, final String localPath, final int version, final String destination) {
         super("print", context);
-        ArgumentHelper.checkNotEmptyString(localPath);
-        ArgumentHelper.checkNotEmptyString(destination);
+        ArgumentHelper.checkNotEmptyString(localPath, "localPath");
+        ArgumentHelper.checkNotEmptyString(destination, "destination");
         this.localPath = localPath;
         this.version = version;
         this.destination = destination;

@@ -22,7 +22,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
 
     public FindWorkspaceCommand(final String localPath) {
         super("workfold", null);
-        ArgumentHelper.checkNotEmptyString(localPath);
+        ArgumentHelper.checkNotEmptyString(localPath, "localPath");
         this.localPath = localPath;
     }
 

@@ -18,7 +18,7 @@ public class GetLocalPathCommand extends Command<String> {
 
     public GetLocalPathCommand(final ServerContext context, final String serverPath, final String workspace) {
         super("resolvePath", context);
-        ArgumentHelper.checkNotEmptyString(serverPath);
+        ArgumentHelper.checkNotEmptyString(serverPath, "serverPath");
         this.serverPath = serverPath;
         this.workspace = workspace;
     }

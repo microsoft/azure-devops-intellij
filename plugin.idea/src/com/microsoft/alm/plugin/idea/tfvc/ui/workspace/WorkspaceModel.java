@@ -190,7 +190,7 @@ public class WorkspaceModel extends AbstractModel {
     public void loadWorkspace(final RepositoryContext repositoryContext, final String workspaceName) {
         logger.info("loadWorkspace starting");
         ArgumentHelper.checkNotNull(repositoryContext, "repositoryContext");
-        ArgumentHelper.checkNotEmptyString(workspaceName);
+        ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
 
         setLoading(true);
         // Load

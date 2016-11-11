@@ -48,7 +48,7 @@ public class ProjectRepoEventManager {
     }
 
     private void triggerServerEvents(final String sender, final Project project, final GitRepository repository) {
-        ArgumentHelper.checkNotEmptyString(sender);
+        ArgumentHelper.checkNotEmptyString(sender, "sender");
         ArgumentHelper.checkNotNull(project, "project");
 
         final Map<String, Object> context = EventContextHelper.createContext(sender);

@@ -38,8 +38,8 @@ From a terminal/console window,
   ```
   * Sample property file on Windows
   ```
-  ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.3\\lib
-  git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.3\\plugins\\git4idea\\lib
+  ideaSdk=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.x\\lib
+  git4idea=C:\\Program Files (x86)\\JetBrains\\IntelliJ IDEA Community Edition 2016.2.x\\plugins\\git4idea\\lib
   idea=D:\\github\\intellij-community\\bin
   ```
 
@@ -47,7 +47,7 @@ From a terminal/console window,
 Once your `gradle.properties` file has been updated, run the build.
 
 1. From a terminal/console window, change to the root folder of the IntelliJ repository and then run `./gradlew zip`.
-  * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.6 JDK.
+  * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.8 JDK.
 1. The plugin zip file will be created in the `plugin.idea/build/distributions/` folder.
 
 
@@ -57,13 +57,13 @@ and run `./gradlew copyDependencies` from the root directory of the IntelliJ rep
 
 1. After starting IntelliJ, open the existing IntelliJ project file `com.microsoft.alm.plugin.idea.iml` from the `plugin.idea` directory.
 
-1. Configure a "IntelliJ Platform Plugin SDK" based on JDK 6 and IntelliJ 14.x.
+1. Configure a "IntelliJ Platform Plugin SDK" based on JDK 8 and IntelliJ 16.x.
  * File -> Project Structure -> Project Settings -> Project
  * Under Project SDK, select the entry marked "IntelliJ IDEA Community Edition".
     * If this entry does not exist, click New -> IntelliJ Platform Plugin SDK and select the IntelliJ installation location folder.
        * Under Mac, the folder is similar to `/Applications/IntelliJ IDEA 14 CE.app/Contents`
        * Under Linux, the folder is similar to `/home/<user>/idea-IC-141.2735.5` 
-       * Under Windows, the folder is similar to `C:\Program Files (x86)\JetBrains\IntelliJ IDEA Community Edition 14.1.5`
+       * Under Windows, the folder is similar to `C:\Program Files (x86)\JetBrains\IntelliJ IDEA Community Edition 16.2.x`
  
 1. Configure the project and ***each module*** to build with this "IntelliJ Platform Plugin SDK".
  * File -> Project Structure -> Project Settings -> Project.
