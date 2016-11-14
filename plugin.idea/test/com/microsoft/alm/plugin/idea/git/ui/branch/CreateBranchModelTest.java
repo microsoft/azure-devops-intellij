@@ -9,11 +9,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
-import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdateResult;
 import git4idea.GitRemoteBranch;
 import git4idea.repo.GitRemote;
@@ -80,7 +80,7 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     @Mock
     private ServerContext mockContext;
     @Mock
-    private GitHttpClient mockClient;
+    private GitHttpClientEx mockClient;
 
     @Before
     public void setUp() throws Exception {

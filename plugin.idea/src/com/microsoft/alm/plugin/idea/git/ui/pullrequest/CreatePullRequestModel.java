@@ -33,13 +33,13 @@ import com.microsoft.alm.common.artifact.ArtifactID;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
-import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.alm.workitemtracking.webapi.models.Link;
 import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchDocument;
@@ -568,7 +568,7 @@ public class CreatePullRequestModel extends AbstractModel {
                                      @NotNull final String description,
                                      @NotNull final String branchNameOnRemoteServer,
                                      @NotNull final GitRemoteBranch targetBranch) {
-        final GitHttpClient gitClient = context.getGitHttpClient();
+        final GitHttpClientEx gitClient = context.getGitHttpClient();
 
         try {
             final UUID repositoryId = context.getGitRepository().getId();
@@ -577,10 +577,11 @@ public class CreatePullRequestModel extends AbstractModel {
             final GitPullRequest pullRequestToBeCreated
                     = pullRequestHelper.generateGitPullRequest(title, description, branchNameOnRemoteServer, targetBranch);
 
+            // creating pull request and associating work items with it (if that API is available)
             final GitPullRequest gitPullRequest
-                    = gitClient.createPullRequest(pullRequestToBeCreated, projectId, repositoryId);
+                    = gitClient.createPullRequest(pullRequestToBeCreated, projectId, repositoryId, true);
 
-            // link workitems to PR
+            // link workitems to PR (if there are duplicates from the branch association, the server deals with it)
             for (final int workItemId : workItems) {
                 createWorkItemLinks(workItemId, context, gitPullRequest.getPullRequestId());
             }

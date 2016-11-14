@@ -6,13 +6,13 @@ package com.microsoft.alm.plugin.context;
 import com.microsoft.alm.build.webapi.BuildHttpClient;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.authentication.AuthHelper;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.context.soap.SoapServices;
-import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
-import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
+import com.microsoft.alm.plugin.context.soap.SoapServices;
+import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import org.apache.commons.lang.StringUtils;
@@ -284,10 +284,10 @@ public class ServerContext {
         return httpClient;
     }
 
-    public synchronized GitHttpClient getGitHttpClient() {
+    public synchronized GitHttpClientEx getGitHttpClient() {
         final URI collectionUri = getCollectionURI();
         if (collectionUri != null) {
-            final GitHttpClient gitClient = new GitHttpClient(getClient(), collectionUri);
+            final GitHttpClientEx gitClient = new GitHttpClientEx(getClient(), collectionUri);
             return gitClient;
         }
 
