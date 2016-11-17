@@ -24,9 +24,7 @@ import com.intellij.util.PairConsumer;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
-import com.microsoft.alm.plugin.external.commands.AddCommand;
-import com.microsoft.alm.plugin.external.commands.CheckinCommand;
-import com.microsoft.alm.plugin.external.commands.Command;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
@@ -176,8 +174,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
         try {
             final ServerContext context = myVcs.getServerContext(true);
-            final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
-            final String changesetNumber = checkinCommand.runSynchronously();
+            final String changesetNumber = CommandUtils.checkinFiles(context, files, preparedComment);
 
             // notify user of success
             final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
@@ -234,8 +231,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             for (final VirtualFile file : files) {
                 filesToAddPaths.add(file.getPath());
             }
-            final Command<List<String>> addCommand = new AddCommand(myVcs.getServerContext(false), filesToAddPaths);
-            final List<String> successfullyAdded = addCommand.runSynchronously();
+            final List<String> successfullyAdded = CommandUtils.addFiles(myVcs.getServerContext(false), filesToAddPaths);
 
             // mark files as dirty so that they refresh in local changes tab
             for (final String path : successfullyAdded) {

@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.commands.AddCommand;
+import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
@@ -296,5 +298,30 @@ public class CommandUtils {
         }
 
         return true;
+    }
+
+    /**
+     * Adds the given files to the repo
+     *
+     * @param context
+     * @param filesToAddPaths
+     * @return
+     */
+    public static List<String> addFiles(final ServerContext context, final List<String> filesToAddPaths) {
+        final Command<List<String>> addCommand = new AddCommand(context, filesToAddPaths);
+        return addCommand.runSynchronously();
+    }
+
+    /**
+     * Checks in the list of files
+     *
+     * @param context
+     * @param files
+     * @param preparedComment
+     * @return
+     */
+    public static String checkinFiles(final ServerContext context, final List<String> files, final String preparedComment) {
+        final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
+        return checkinCommand.runSynchronously();
     }
 }
