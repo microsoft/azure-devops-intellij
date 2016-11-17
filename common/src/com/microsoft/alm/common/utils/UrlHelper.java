@@ -35,6 +35,7 @@ public class UrlHelper {
     private static final String URL_BUILD_DEFINITION_ID_SEGMENT = "&definitionid=%d";
     private static final String URL_BUILD_QUEUE_ACTION = "&action=queuebuild";
     private static final String URL_WIT_PATH_SEGMENT = "_workitems";
+    private static final String URL_WIT_REF_SEGMENT = "_apis/wit/workItems";
     private static final String URL_OPTIMIZED_REF_PATH_SEGMENT = "_optimized";
     private static final String URL_FULL_REF_PATH_SEGMENT = "_full";
     private static final String URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT = "?id=%d&_a=edit";
@@ -231,6 +232,10 @@ public class UrlHelper {
     public static URI getSpecificWorkItemURI(final URI projectUri, final int workItemId) {
         return UrlHelper.createUri(combine(projectUri.toString(), URL_WIT_PATH_SEGMENT)
                 .concat(String.format(URL_WIT_SPECIFIC_ITEM_PATH_SEGMENT, workItemId)));
+    }
+
+    public static URI getWorkItemRefURI(final URI teamProjectUri, final String workItemId) {
+        return UrlHelper.createUri(combine(teamProjectUri.toString(), URL_WIT_REF_SEGMENT, workItemId));
     }
 
     public static URI getMyWorkItemsURI(final URI projectUri) {

@@ -6,11 +6,13 @@ package com.microsoft.alm.plugin.idea.git.ui.pullrequest;
 import com.intellij.openapi.util.Pair;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.rest.GitPullRequestEx;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequestSearchCriteria;
 import com.microsoft.alm.sourcecontrol.webapi.model.PullRequestStatus;
+import com.microsoft.visualstudio.services.webapi.model.ResourceRef;
 import git4idea.GitCommit;
 import git4idea.GitRemoteBranch;
 import org.apache.commons.lang.StringUtils;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -135,15 +138,36 @@ public class PullRequestHelper {
         return String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, webAccessUrl, text);
     }
 
-    public GitPullRequest generateGitPullRequest(@NotNull final String title,
-                                                 @NotNull final String description,
-                                                 @NotNull final String branchNameOnRemoteServer,
-                                                 @NotNull final GitRemoteBranch targetBranch) {
-        final GitPullRequest pullRequest = new GitPullRequest();
+    public GitPullRequestEx generateGitPullRequest(@NotNull final String title,
+                                                   @NotNull final String description,
+                                                   @NotNull final String branchNameOnRemoteServer,
+                                                   @NotNull final GitRemoteBranch targetBranch,
+                                                   @NotNull final Set<Integer> workItems,
+                                                   @NotNull final ServerContext context) {
+        final GitPullRequestEx pullRequest = new GitPullRequestEx();
         pullRequest.setTitle(title);
         pullRequest.setDescription(description);
         pullRequest.setSourceRefName(getVSORefName(branchNameOnRemoteServer));
         pullRequest.setTargetRefName(getVSORefName(targetBranch.getNameForRemoteOperations()));
+
+        // add work items that are to be associated to the request
+        try {
+            if (!workItems.isEmpty()) {
+                final ResourceRef[] workItemRefs = new ResourceRef[workItems.size()];
+                int count = 0;
+                for (final int workItemId : workItems) {
+                    final ResourceRef ref = new ResourceRef();
+                    ref.setId(String.valueOf(workItemId));
+                    ref.setUrl(UrlHelper.getWorkItemRefURI(context.getTeamProjectURI(), String.valueOf(workItemId)).toString());
+                    workItemRefs[count] = ref;
+                    count++;
+                }
+
+                pullRequest.setWorkItemRefs(workItemRefs);
+            }
+        } catch (Exception e) {
+            logger.warn("Error while adding work items to pull request", e);
+        }
 
         return pullRequest;
     }

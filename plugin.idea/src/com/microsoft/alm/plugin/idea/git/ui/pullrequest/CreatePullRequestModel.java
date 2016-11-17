@@ -34,6 +34,7 @@ import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
+import com.microsoft.alm.plugin.context.rest.GitPullRequestEx;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
@@ -574,17 +575,12 @@ public class CreatePullRequestModel extends AbstractModel {
             final UUID repositoryId = context.getGitRepository().getId();
             final UUID projectId = context.getTeamProjectReference().getId();
 
-            final GitPullRequest pullRequestToBeCreated
-                    = pullRequestHelper.generateGitPullRequest(title, description, branchNameOnRemoteServer, targetBranch);
+            final GitPullRequestEx pullRequestToBeCreated
+                    = pullRequestHelper.generateGitPullRequest(title, description, branchNameOnRemoteServer, targetBranch, workItems, context);
 
             // creating pull request and associating work items with it (if that API is available)
             final GitPullRequest gitPullRequest
-                    = gitClient.createPullRequest(pullRequestToBeCreated, projectId, repositoryId, true);
-
-            // link workitems to PR (if there are duplicates from the branch association, the server deals with it)
-            for (final int workItemId : workItems) {
-                createWorkItemLinks(workItemId, context, gitPullRequest.getPullRequestId());
-            }
+                    = gitClient.createPullRequest(pullRequestToBeCreated, projectId, repositoryId, true, true);
 
             final String repositoryRemoteUrl = context.getGitRepository().getRemoteUrl();
             notifySuccess(project, TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_CREATED_TITLE),

@@ -30,23 +30,26 @@ public class GitHttpClientEx extends GitHttpClient {
      * @param gitPullRequestToCreate
      * @param repositoryId
      * @param linkBranchWorkitems
+     * @param linkCommitWorkitems
      * @return GitPullRequest
      */
     public GitPullRequest createPullRequest(
             final GitPullRequest gitPullRequestToCreate,
             final UUID project,
             final UUID repositoryId,
-            final Boolean linkBranchWorkitems) {
+            final Boolean linkBranchWorkitems,
+            final Boolean linkCommitWorkitems) {
 
-        final UUID locationId = UUID.fromString("9946fd70-0d40-406e-b686-b4744cbbcc37"); //$NON-NLS-1$
-        final ApiResourceVersion apiVersion = new ApiResourceVersion("3.1-preview.1"); //$NON-NLS-1$
+        final UUID locationId = UUID.fromString("9946fd70-0d40-406e-b686-b4744cbbcc37");
+        final ApiResourceVersion apiVersion = new ApiResourceVersion("3.1-preview.1");
 
         final Map<String, Object> routeValues = new HashMap<String, Object>();
-        routeValues.put("project", project); //$NON-NLS-1$
-        routeValues.put("repositoryId", repositoryId); //$NON-NLS-1$
+        routeValues.put("project", project);
+        routeValues.put("repositoryId", repositoryId);
 
         final NameValueCollection queryParameters = new NameValueCollection();
-        queryParameters.addIfNotNull("linkBranchWorkitems", linkBranchWorkitems); //$NON-NLS-1$
+        queryParameters.addIfNotNull("linkBranchWorkitems", linkBranchWorkitems);
+        queryParameters.addIfNotNull("linkCommitWorkitems", linkCommitWorkitems);
 
         final Object httpRequest = super.createRequest(AlmHttpClientBase.HttpMethod.POST,
                 locationId,
