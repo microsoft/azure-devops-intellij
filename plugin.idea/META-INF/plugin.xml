@@ -139,6 +139,8 @@
             <separator/ -->
             <separator/>
             <reference id="ChangesView.Revert"/>
+            <separator/>
+            <reference id="Vcs.ShowTabbedFileHistory"/>
             <!-- separator/>
             <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
             <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="_Branch..."/>
@@ -151,7 +153,6 @@
             <reference id="Compare.SameVersion"/>
             <reference id="Compare.LastVersion"/>
             <reference id="Compare.Selected"/>
-            <reference id="Vcs.ShowTabbedFileHistory"/>
             <reference id="Vcs.ShowHistoryForBlock"/>
             <reference id="Annotate"/>
             <reference id="ChangesView.Browse"/>

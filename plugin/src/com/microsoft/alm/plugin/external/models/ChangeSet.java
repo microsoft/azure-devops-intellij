@@ -32,6 +32,15 @@ public class ChangeSet {
         return id;
     }
 
+    public int getIdAsInt() {
+        try {
+            return Integer.parseInt(id);
+        } catch (NumberFormatException e) {
+            // TODO log this if it happens
+            return 0;
+        }
+    }
+
     public String getOwner() {
         return owner;
     }

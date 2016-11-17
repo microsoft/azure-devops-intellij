@@ -319,7 +319,7 @@ public class ResolveConflictHelper {
                     serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, Integer.parseInt(serverChange.getId()), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
                 } else {
                     final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
-                    serverChanges = TFSContentRevision.create(project, context, localPath, Integer.parseInt(serverChange.getId()), serverChange.getDate()).getContent();
+                    serverChanges = TFSContentRevision.create(project, context, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
                 }
 
                 contentTriplet.baseContent = original != null ? original : StringUtils.EMPTY;

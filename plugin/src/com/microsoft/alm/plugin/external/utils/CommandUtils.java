@@ -87,14 +87,14 @@ public class CommandUtils {
         return getLocalPathCommand.runSynchronously();
     }
 
-    public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String localPath, final String version,
+    public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String itemPath, final String version,
                                                     final int stopAfter, final boolean recursive, final String user) {
-        return getHistoryCommand(context, localPath, version, stopAfter, recursive, user, false);
+        return getHistoryCommand(context, itemPath, version, stopAfter, recursive, user, false);
     }
 
-    public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String localPath, final String version,
+    public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String itemPath, final String version,
                                                     final int stopAfter, final boolean recursive, final String user, final boolean itemMode) {
-        final Command<List<ChangeSet>> historyCommand = new HistoryCommand(context, localPath, version, stopAfter, recursive, user, itemMode);
+        final Command<List<ChangeSet>> historyCommand = new HistoryCommand(context, itemPath, version, stopAfter, recursive, user, itemMode);
         return historyCommand.runSynchronously();
     }
 

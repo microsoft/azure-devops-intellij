@@ -23,23 +23,23 @@ import java.util.List;
  * history [/version:<value>] [/stopafter:<value>] [/recursive] [/user:<value>] [/format:brief|detailed|xml] [/slotmode] [/itemmode] <itemSpec>
  */
 public class HistoryCommand extends Command<List<ChangeSet>> {
-    private final String localPath;
+    private final String itemPath;
     private final String version;
     private final String user;
     private final int stopAfter;
     private final boolean recursive;
     private final boolean itemMode;
 
-    public HistoryCommand(final ServerContext context, final String localPath, final String version,
+    public HistoryCommand(final ServerContext context, final String itemPath, final String version,
                           final int stopAfter, final boolean recursive, final String user) {
-        this(context, localPath, version, stopAfter, recursive, user, false);
+        this(context, itemPath, version, stopAfter, recursive, user, false);
     }
 
-    public HistoryCommand(final ServerContext context, final String localPath, final String version,
+    public HistoryCommand(final ServerContext context, final String itemPath, final String version,
                           final int stopAfter, final boolean recursive, final String user, final boolean itemMode) {
         super("history", context);
-        ArgumentHelper.checkNotEmptyString(localPath, "localPath");
-        this.localPath = localPath;
+        ArgumentHelper.checkNotEmptyString(itemPath, "itemPath");
+        this.itemPath = itemPath;
         this.version = version;
         this.user = user;
         this.stopAfter = stopAfter;
@@ -66,7 +66,7 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
         if (itemMode) {
             builder.addSwitch("itemmode");
         }
-        builder.add(localPath);
+        builder.add(itemPath);
         return builder;
     }
 

@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
@@ -68,6 +69,7 @@ public class TFSVcs extends AbstractVcs {
     private final VcsShowConfirmationOption myDeleteConfirmation;
     private final VcsShowSettingOption myCheckoutOptions;
 
+    private VcsHistoryProvider myHistoryProvider;
     private TFSCheckinEnvironment myCheckinEnvironment;
     private UpdateEnvironment myUpdateEnvironment;
 
@@ -166,7 +168,16 @@ public class TFSVcs extends AbstractVcs {
         }
         return null; //myCommittedChangesProvider;
     }
-     */
+    */
+
+    @Override
+    public VcsHistoryProvider getVcsHistoryProvider() {
+        if (myHistoryProvider == null) {
+            myHistoryProvider = new TFSHistoryProvider(myProject, getServerContext(true));
+        }
+        return myHistoryProvider;
+    }
+
 
     @Nullable
     public VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {
