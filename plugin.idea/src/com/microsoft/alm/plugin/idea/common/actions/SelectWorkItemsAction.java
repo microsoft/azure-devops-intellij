@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.SelectWorkItemsDialog;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.apache.commons.lang.StringUtils;
 
 
@@ -34,7 +35,7 @@ public class SelectWorkItemsAction extends InstrumentedAction {
 
         // only enable button if the repo is TFS
         final Project project = CommonDataKeys.PROJECT.getData(anActionEvent.getDataContext());
-        if ((TfGitHelper.getTfGitRepository(project) == null)) {
+        if (TfGitHelper.getTfGitRepository(project) == null && TFSVcs.getInstance(project) == null) {
             anActionEvent.getPresentation().setEnabled(false);
             // change hover text to explain why button is disabled
             anActionEvent.getPresentation().setText(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_NOT_TFS_REPO,

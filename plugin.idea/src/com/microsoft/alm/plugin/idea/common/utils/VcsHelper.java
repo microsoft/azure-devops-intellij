@@ -22,7 +22,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VcsHelper {
     private static final Logger logger = LoggerFactory.getLogger(VcsHelper.class);
@@ -30,6 +33,8 @@ public class VcsHelper {
     public static final String GIT_BRANCH_PREFIX = "refs/heads/";
     public static final String TFVC_ROOT = "$/";
     public static final String TFVC_SEPARATOR = "/";
+
+    private static Pattern pattern = null;
 
     /**
      * Use this method to see if the given project is using Git as its version control system.
@@ -139,6 +144,7 @@ public class VcsHelper {
      * Use this method to get the team project name from a TFVC server path.
      * The team project name is always the first folder in the path.
      * If no team project name is found an empty string is returned.
+     *
      * @param serverPath
      * @return
      */
@@ -157,5 +163,25 @@ public class VcsHelper {
 
         logger.info("getTeamProjectFromTfvcServerPath: No project was found.");
         return StringUtils.EMPTY;
+    }
+
+    public static List<Integer> getWorkItemIdsFromMessage(final String commitMessage) {
+        logger.info("getWorkItemIdsFromMessage: commitMessage = " + commitMessage);
+        final List<Integer> workItems = new ArrayList<Integer>(10);
+        // We cache the compiled pattern for later use
+        if (pattern == null) {
+            pattern = Pattern.compile("#(\\d+)");
+        }
+        final Matcher matcher = pattern.matcher(commitMessage);
+        // finds all matches in the string where it is a # followed by an int
+        while (matcher.find()) {
+            try {
+                final int workItemId = Integer.parseInt(StringUtils.removeStart(matcher.group(), "#"));
+                workItems.add(workItemId);
+            } catch (NumberFormatException e) {
+                logger.warn("Error converting work item id into integer: " + matcher.group(1));
+            }
+        }
+        return workItems;
     }
 }

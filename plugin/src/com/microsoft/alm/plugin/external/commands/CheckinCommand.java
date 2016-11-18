@@ -17,6 +17,10 @@ import java.util.regex.Pattern;
 
 /**
  * This command  checks in files into TFVC
+ *
+ * checkin [/all] [/author:<value>] [/comment:<value>|@valuefile] [/notes:"note"="value"[;"note2"="value2"[;...]]|@notefile]
+ *         [/override:<value>|@valuefile] [/recursive] [/validate] [/bypass] [/force] [/noautoresolve] [/associate:<workItemID>[,<workItemID>...]]
+ *         [/resolve:<workItemID>[,<workItemID>...]] [/saved] [<itemSpec>...]
  */
 public class CheckinCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(CheckinCommand.class);
@@ -27,12 +31,14 @@ public class CheckinCommand extends Command<String> {
 
     private final List<String> files;
     private final String comment;
+    private final List<Integer> workItemsToAssociate;
 
-    public CheckinCommand(final ServerContext context, final List<String> files, final String comment) {
+    public CheckinCommand(final ServerContext context, final List<String> files, final String comment, final List<Integer> workItemsToAssociate) {
         super("checkin", context);
         ArgumentHelper.checkNotNullOrEmpty(files, "files");
         this.files = files;
         this.comment = comment;
+        this.workItemsToAssociate = workItemsToAssociate;
     }
 
     @Override
@@ -42,9 +48,29 @@ public class CheckinCommand extends Command<String> {
             builder.add(file);
         }
         if (StringUtils.isNotEmpty(comment)) {
-            builder.addSwitch("comment", comment);
+            builder.addSwitch("comment", getComment());
+        }
+        if (workItemsToAssociate != null && workItemsToAssociate.size() > 0) {
+            builder.addSwitch("associate", getAssociatedWorkItems());
         }
         return builder;
+    }
+
+    // TODO: It would be nice if we could preserve the newlines somehow
+    private String getComment() {
+        // replace newlines with spaces
+        return comment.replace("\r\n", " ").replace("\n", " ");
+    }
+
+    private String getAssociatedWorkItems() {
+        final StringBuilder sb = new StringBuilder();
+        for(Integer i : workItemsToAssociate) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(i.toString());
+        }
+        return sb.toString();
     }
 
     /**

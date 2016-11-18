@@ -320,8 +320,8 @@ public class CommandUtils {
      * @param preparedComment
      * @return
      */
-    public static String checkinFiles(final ServerContext context, final List<String> files, final String preparedComment) {
-        final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment);
+    public static String checkinFiles(final ServerContext context, final List<String> files, final String preparedComment, final List<Integer> workItemsToAssociate) {
+        final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment, workItemsToAssociate);
         return checkinCommand.runSynchronously();
     }
 }

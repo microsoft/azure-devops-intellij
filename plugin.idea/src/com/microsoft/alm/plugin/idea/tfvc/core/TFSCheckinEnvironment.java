@@ -27,6 +27,7 @@ import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.apache.commons.lang.StringUtils;
@@ -174,7 +175,8 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
         try {
             final ServerContext context = myVcs.getServerContext(true);
-            final String changesetNumber = CommandUtils.checkinFiles(context, files, preparedComment);
+            final List<Integer> workItemIds = VcsHelper.getWorkItemIdsFromMessage(preparedComment);
+            final String changesetNumber = CommandUtils.checkinFiles(context, files, preparedComment, workItemIds);
 
             // notify user of success
             final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),

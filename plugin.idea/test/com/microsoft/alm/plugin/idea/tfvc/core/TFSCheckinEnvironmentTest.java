@@ -85,7 +85,7 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     public void testCommit_Happy() {
         setupCommit();
         when(CommandUtils.checkinFiles(mockServerContext, ImmutableList.of("/path/to/file1", "/path/to/file2", "/path/to/file3"),
-                comment)).thenReturn("12345");
+                comment, null)).thenReturn("12345");
 
         List<VcsException> exceptions =
                 tfsCheckinEnvironment.commit(changes, comment, mockNullableFunction, null);
@@ -95,7 +95,7 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     @Test
     public void testCommit_Exception() {
         setupCommit();
-        when(CommandUtils.checkinFiles(any(ServerContext.class), any(List.class), any(String.class))).
+        when(CommandUtils.checkinFiles(any(ServerContext.class), any(List.class), any(String.class), any(List.class))).
                 thenThrow(new RuntimeException("test exception"));
 
         List<VcsException> exceptions =

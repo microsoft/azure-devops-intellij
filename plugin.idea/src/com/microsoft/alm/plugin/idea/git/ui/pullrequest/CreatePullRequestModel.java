@@ -39,6 +39,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitPullRequest;
@@ -73,8 +74,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CreatePullRequestModel extends AbstractModel {
 
@@ -386,19 +385,9 @@ public class CreatePullRequestModel extends AbstractModel {
 
                                     // find workitems from commits
                                     workItems.clear();
-                                    final Pattern pattern = Pattern.compile("#(\\d+)");
                                     for (final GitCommit commit : commits) {
                                         final String commitMsg = commit.getFullMessage();
-                                        final Matcher matcher = pattern.matcher(commitMsg);
-                                        // finds all matches in the string where it is a # followed by an int
-                                        while (matcher.find()) {
-                                            try {
-                                                final int workItemId = Integer.parseInt(StringUtils.removeStart(matcher.group(), "#"));
-                                                workItems.add(workItemId);
-                                            } catch (NumberFormatException e) {
-                                                logger.warn("Error converting work item id into integer: " + matcher.group(1));
-                                            }
-                                        }
+                                        workItems.addAll(VcsHelper.getWorkItemIdsFromMessage(commitMsg));
                                     }
                                 }
 
