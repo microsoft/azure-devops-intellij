@@ -14,8 +14,8 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import com.microsoft.alm.plugin.external.commands.SyncCommand;
 import com.microsoft.alm.plugin.external.models.SyncResults;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironment;
@@ -62,8 +62,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 filesUpdatePaths.add(file.getPath());
             }
 
-            final SyncCommand command = new SyncCommand(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion);
-            final SyncResults results = command.runSynchronously();
+            final SyncResults results = CommandUtils.syncWorkspace(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion);
 
             // add the changed files to updatedFiles so user knows what has occurred in the workspace
             // TODO: determine the resolution numbers (probably need to call history on each file to get this)

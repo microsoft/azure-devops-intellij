@@ -140,7 +140,12 @@ public class CommandUtils {
      * This is a synchronous call so it should only be called on a background thread.
      */
     public static SyncResults syncWorkspace(final ServerContext context, final String rootPath) {
-        final SyncCommand command = new SyncCommand(context, Collections.singletonList(rootPath), true);
+        return syncWorkspace(context, Collections.singletonList(rootPath), true);
+    }
+
+    public static SyncResults syncWorkspace(final ServerContext context, final List<String> filesUpdatePaths,
+                                            final boolean needRecursion) {
+        final SyncCommand command = new SyncCommand(context, filesUpdatePaths, needRecursion);
         return command.runSynchronously();
     }
 

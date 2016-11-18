@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -128,7 +129,8 @@ public class ProjectConfigurableForm {
         return myContentPane;
     }
 
-    private String getCurrentExecutablePath() {
+    @VisibleForTesting
+    protected String getCurrentExecutablePath() {
         return tfExeField.getText().trim();
     }
 
