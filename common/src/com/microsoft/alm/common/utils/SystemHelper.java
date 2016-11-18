@@ -64,4 +64,17 @@ public class SystemHelper {
     public static boolean areFilePathsSame(final String path1, final String path2) {
         return PathFileComparator.PATH_SYSTEM_COMPARATOR.compare(new File(path1), new File(path2)) == 0 ? true : false;
     }
+
+    /**
+     * Convert a string value into an integer or a default value.
+     * @return
+     */
+    public static int toInt(final String value, final int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            logger.warn("Could not convert '" + value + "' into an integer.", e);
+            return defaultValue;
+        }
+    }
 }

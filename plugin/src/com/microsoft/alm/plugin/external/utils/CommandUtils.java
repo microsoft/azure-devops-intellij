@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
+import com.microsoft.alm.plugin.external.commands.InfoCommand;
 import com.microsoft.alm.plugin.external.commands.RenameCommand;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.StatusCommand;
@@ -25,6 +26,7 @@ import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -328,5 +330,16 @@ public class CommandUtils {
     public static String checkinFiles(final ServerContext context, final List<String> files, final String preparedComment, final List<Integer> workItemsToAssociate) {
         final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment, workItemsToAssociate);
         return checkinCommand.runSynchronously();
+    }
+
+    /**
+     * Returns the item info for a single item.
+     * @param context
+     * @param itemPath
+     * @return
+     */
+    public static ItemInfo getItemInfo(final ServerContext context, final String itemPath) {
+        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, Collections.singletonList(itemPath));
+        return infoCommand.runSynchronously().get(0);
     }
 }

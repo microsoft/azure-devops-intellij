@@ -141,6 +141,12 @@
             <reference id="ChangesView.Revert"/>
             <separator/>
             <reference id="Vcs.ShowTabbedFileHistory"/>
+            <reference id="Compare.SameVersion"/>
+            <reference id="Compare.LastVersion"/>
+            <reference id="Compare.Selected"/>
+            <reference id="Vcs.ShowHistoryForBlock"/>
+            <reference id="Annotate"/>
+            <reference id="ChangesView.Browse"/>
             <!-- separator/>
             <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
             <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="_Branch..."/>
@@ -150,12 +156,7 @@
             <separator/>
             <action id="Tfs.Lock" class="org.jetbrains.tfsIntegration.actions.LockAction" text="L_ock/Unlock..."/>
             <separator/>
-            <reference id="Compare.SameVersion"/>
-            <reference id="Compare.LastVersion"/>
-            <reference id="Compare.Selected"/>
-            <reference id="Vcs.ShowHistoryForBlock"/>
-            <reference id="Annotate"/>
-            <reference id="ChangesView.Browse"/>
+            < THIS IS WHERE HISTORY COMMANDS WERE >
             <separator/>
             <action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/>-->
             <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>
