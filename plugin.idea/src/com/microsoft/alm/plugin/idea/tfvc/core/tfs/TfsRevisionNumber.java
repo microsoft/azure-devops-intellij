@@ -30,10 +30,10 @@ public class TfsRevisionNumber extends VcsRevisionNumber.Int {
         return String.valueOf(getValue()) + SEPARATOR + fileName + SEPARATOR + modificationDate;
     }
 
-    public static VcsRevisionNumber tryParse(final String s) {
+    public static TfsRevisionNumber tryParse(final String s) {
         try {
             final String[] sections = StringUtils.split(s, SEPARATOR);
-            if (sections == null || sections.length < 3) {
+            if (sections == null || sections.length != 3) {
                 return null;
             }
             return new TfsRevisionNumber(Integer.parseInt(sections[0]), sections[1], sections[2]);
@@ -45,5 +45,13 @@ public class TfsRevisionNumber extends VcsRevisionNumber.Int {
 
     public String getChangesetString() {
         return String.valueOf(getValue());
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public String getModificationDate() {
+        return modificationDate;
     }
 }
