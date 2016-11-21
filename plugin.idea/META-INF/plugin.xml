@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.107.1</version>
+    <version>1.109.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -47,9 +47,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.107.1
+      v 1.109.0
       <br />
-      Settings bug fix.
+      Added ability to view file history and associate work items with commits for TFVC. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
