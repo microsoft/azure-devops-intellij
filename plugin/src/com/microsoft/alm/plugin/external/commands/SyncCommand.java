@@ -3,10 +3,10 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
-import com.intellij.openapi.vcs.VcsException;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -87,7 +87,7 @@ public class SyncCommand extends Command<SyncResults> {
         final List<String> updatedFiles = new ArrayList<String>();
         final List<String> newFiles = new ArrayList<String>();
         final List<String> deletedFiles = new ArrayList<String>();
-        final List<VcsException> exceptions = new ArrayList<VcsException>();
+        final List<SyncException> exceptions = new ArrayList<SyncException>();
 
         if (StringUtils.contains(stdout, UP_TO_DATE_MSG)) {
             return new SyncResults();
@@ -137,16 +137,16 @@ public class SyncCommand extends Command<SyncResults> {
      * @param stderr
      * @return
      */
-    private List<VcsException> parseException(final String stderr) {
-        final List<VcsException> exceptions = new ArrayList<VcsException>();
+    private List<SyncException> parseException(final String stderr) {
+        final List<SyncException> exceptions = new ArrayList<SyncException>();
 
         final String[] exceptionLines = getLines(stderr);
         for (int i = exceptionLines.length / 2; i < exceptionLines.length; i++) {
             // skip empty lines and don't treat conflicts as exceptions
             if (StringUtils.isNotEmpty(exceptionLines[i]) && !StringUtils.contains(exceptionLines[i], CONFLICT_MESSAGE)) {
                 //TODO: what if warning is that file was skipped (but only shows up when force was used)
-                final VcsException exception = new VcsException((exceptionLines[i]));
-                exception.setIsWarning(StringUtils.startsWith(exceptionLines[i], WARNING_PREFIX));
+                final SyncException exception = new SyncException(exceptionLines[i],
+                        StringUtils.startsWith(exceptionLines[i], WARNING_PREFIX));
                 exceptions.add(exception);
             }
         }

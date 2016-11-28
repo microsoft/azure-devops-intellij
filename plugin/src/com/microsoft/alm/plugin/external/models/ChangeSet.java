@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import com.microsoft.alm.common.utils.SystemHelper;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,12 +35,7 @@ public class ChangeSet {
     }
 
     public int getIdAsInt() {
-        try {
-            return Integer.parseInt(id);
-        } catch (NumberFormatException e) {
-            // TODO log this if it happens
-            return 0;
-        }
+        return SystemHelper.toInt(id, 0);
     }
 
     public String getOwner() {

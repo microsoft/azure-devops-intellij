@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
@@ -70,6 +71,7 @@ public class TFSVcs extends AbstractVcs {
     private final VcsShowSettingOption myCheckoutOptions;
 
     private VcsHistoryProvider myHistoryProvider;
+    private DiffProvider myDiffProvider;
     private TFSCheckinEnvironment myCheckinEnvironment;
     private UpdateEnvironment myUpdateEnvironment;
 
@@ -178,6 +180,13 @@ public class TFSVcs extends AbstractVcs {
         return myHistoryProvider;
     }
 
+    @Override
+    public DiffProvider getDiffProvider() {
+        if (myDiffProvider == null) {
+            myDiffProvider = new TFSDiffProvider(myProject);
+        }
+        return myDiffProvider;
+    }
 
     @Nullable
     public VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {

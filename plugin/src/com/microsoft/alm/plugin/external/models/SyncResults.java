@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.external.models;
 
-import com.intellij.openapi.vcs.VcsException;
+import com.microsoft.alm.plugin.external.exceptions.SyncException;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ public class SyncResults {
     private final List<String> updatedFiles;
     private final List<String> newFiles;
     private final List<String> deletedFiles;
-    private final List<VcsException> exceptions;
+    private final List<SyncException> exceptions;
 
     /**
      * Constructor for when all files are up-to-date
@@ -26,7 +26,7 @@ public class SyncResults {
     }
 
     public SyncResults(final boolean conflictsExist, final List<String> updatedFiles, final List<String> newFiles,
-                       final List<String> deletedFiles, final List<VcsException> exceptions) {
+                       final List<String> deletedFiles, final List<SyncException> exceptions) {
         this.conflictsExist = conflictsExist;
         this.updatedFiles = Collections.unmodifiableList(updatedFiles);
         this.newFiles = Collections.unmodifiableList(newFiles);
@@ -50,7 +50,7 @@ public class SyncResults {
         return deletedFiles;
     }
 
-    public List<VcsException> getExceptions() {
+    public List<SyncException> getExceptions() {
         return exceptions;
     }
 }
