@@ -8,7 +8,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.FileGroup;
@@ -16,6 +15,7 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
@@ -109,7 +109,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     @Test
     public void testUpdateDirectories_FilesStale() {
         SyncResults syncResults = new SyncResults(false, ImmutableList.of("/path/to/file1", "/path/to/directory"), ImmutableList.of("/path/to/newFile"),
-                ImmutableList.of("/path/to/file2"), ImmutableList.of(new VcsException("test exception")));
+                ImmutableList.of("/path/to/file2"), ImmutableList.of(new SyncException("test exception")));
         FilePath[] filePaths = setupUpdate(syncResults);
 
         UpdateSession session = updateEnvironment.updateDirectories(filePaths, mockUpdatedFiles, mockProgressIndicator, mockUpdatesContext);

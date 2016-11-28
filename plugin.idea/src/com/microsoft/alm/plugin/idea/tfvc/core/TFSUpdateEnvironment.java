@@ -14,6 +14,7 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -85,10 +86,12 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             }
 
             if (!results.getExceptions().isEmpty()) {
-                exceptions.addAll(results.getExceptions());
+                for(Exception e : results.getExceptions()) {
+                    exceptions.add(convertToVcsException(e));
+                }
             }
         } catch (Exception e) {
-            exceptions.add(new VcsException(e));
+            exceptions.add(convertToVcsException(e));
         }
 
         // TODO (Jetbrains) content roots can be renamed while executing
@@ -112,6 +115,14 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 return false;
             }
         };
+    }
+
+    private VcsException convertToVcsException(final Exception e) {
+        final VcsException exception = new VcsException(e.getMessage(), e);
+        if (e instanceof SyncException) {
+            exception.setIsWarning(((SyncException) e).isWarning());
+        }
+        return exception;
     }
 
     @Override

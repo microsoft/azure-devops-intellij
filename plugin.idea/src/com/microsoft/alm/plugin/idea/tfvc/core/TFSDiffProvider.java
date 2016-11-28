@@ -18,13 +18,16 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TFSDiffProvider implements DiffProvider {
-    private
-    @NotNull
-    final Project myProject;
+    private static final Logger logger = LoggerFactory.getLogger(TFSDiffProvider.class);
+
+    private final Project myProject;
 
     public TFSDiffProvider(@NotNull final Project project) {
         myProject = project;
@@ -44,13 +47,29 @@ public class TFSDiffProvider implements DiffProvider {
             final FilePath path = TfsFileUtil.getFilePath(virtualFile);
             try {
                 final ServerContext serverContext = TFSVcs.getInstance(myProject).getServerContext(true);
-                final TfsRevisionNumber revisionNumber = (TfsRevisionNumber) vcsRevisionNumber;
-                return TFSContentRevision.create(myProject, serverContext, path, revisionNumber.getValue(), revisionNumber.getModificationDate());
+                return TFSContentRevision.create(myProject, serverContext, path, getChangeset(vcsRevisionNumber), getModificationDate(vcsRevisionNumber));
             } catch (Exception e) {
+                logger.warn("Unable to create file content", e);
                 AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
                 return null;
             }
         }
+    }
+
+    private String getModificationDate(VcsRevisionNumber vcsRevisionNumber) {
+        if (vcsRevisionNumber instanceof TfsRevisionNumber) {
+            final TfsRevisionNumber revisionNumber = (TfsRevisionNumber) vcsRevisionNumber;
+            return revisionNumber.getModificationDate();
+        }
+        return StringUtils.EMPTY;
+    }
+
+    private int getChangeset(VcsRevisionNumber vcsRevisionNumber) {
+        if (vcsRevisionNumber instanceof VcsRevisionNumber.Int) {
+            final VcsRevisionNumber.Int revisionNumber = (VcsRevisionNumber.Int) vcsRevisionNumber;
+            return revisionNumber.getValue();
+        }
+        return 0;
     }
 
     @Nullable
