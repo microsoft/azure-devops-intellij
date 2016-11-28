@@ -27,10 +27,10 @@ import org.slf4j.LoggerFactory;
 public class TFSDiffProvider implements DiffProvider {
     private static final Logger logger = LoggerFactory.getLogger(TFSDiffProvider.class);
 
-    private final Project myProject;
+    private final Project project;
 
     public TFSDiffProvider(@NotNull final Project project) {
-        myProject = project;
+        this.project = project;
     }
 
     @Nullable
@@ -46,17 +46,17 @@ public class TFSDiffProvider implements DiffProvider {
         } else {
             final FilePath path = TfsFileUtil.getFilePath(virtualFile);
             try {
-                final ServerContext serverContext = TFSVcs.getInstance(myProject).getServerContext(true);
-                return TFSContentRevision.create(myProject, serverContext, path, getChangeset(vcsRevisionNumber), getModificationDate(vcsRevisionNumber));
+                final ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(true);
+                return TFSContentRevision.create(project, serverContext, path, getChangeset(vcsRevisionNumber), getModificationDate(vcsRevisionNumber));
             } catch (Exception e) {
                 logger.warn("Unable to create file content", e);
-                AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
+                AbstractVcsHelper.getInstance(project).showError(new VcsException(e), TFSVcs.TFVC_NAME);
                 return null;
             }
         }
     }
 
-    private String getModificationDate(VcsRevisionNumber vcsRevisionNumber) {
+    private String getModificationDate(final VcsRevisionNumber vcsRevisionNumber) {
         if (vcsRevisionNumber instanceof TfsRevisionNumber) {
             final TfsRevisionNumber revisionNumber = (TfsRevisionNumber) vcsRevisionNumber;
             return revisionNumber.getModificationDate();
@@ -64,7 +64,7 @@ public class TFSDiffProvider implements DiffProvider {
         return StringUtils.EMPTY;
     }
 
-    private int getChangeset(VcsRevisionNumber vcsRevisionNumber) {
+    private int getChangeset(final VcsRevisionNumber vcsRevisionNumber) {
         if (vcsRevisionNumber instanceof VcsRevisionNumber.Int) {
             final VcsRevisionNumber.Int revisionNumber = (VcsRevisionNumber.Int) vcsRevisionNumber;
             return revisionNumber.getValue();
@@ -76,12 +76,12 @@ public class TFSDiffProvider implements DiffProvider {
     public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
         try {
             // TODO: we may have an issue here with new files that don't exist on the server and have not been explicity added (NEED TO TEST)
-            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(myProject).getServerContext(true), virtualFile.getPath());
+            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(project).getServerContext(true), virtualFile.getPath());
             if (info != null) {
                 return new TfsRevisionNumber(info.getLocalVersionAsInt(), virtualFile.getName(), info.getLastModified());
             }
         } catch (Exception e) {
-            AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
+            AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
         }
         return VcsRevisionNumber.NULL;
     }
@@ -89,20 +89,20 @@ public class TFSDiffProvider implements DiffProvider {
     public ItemLatestState getLastRevision(final FilePath localPath) {
         try {
             // TODO: we may have an issue here with new files that don't exist on the server and have not been explicity added (NEED TO TEST)
-            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(myProject).getServerContext(true), localPath.getPath());
+            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(project).getServerContext(true), localPath.getPath());
             if (info != null) {
                 final VcsRevisionNumber.Int revisionNumber = new TfsRevisionNumber(info.getServerVersionAsInt(), localPath.getName(), info.getLastModified());
                 return new ItemLatestState(revisionNumber, info.getServerVersionAsInt() == 0, false);
             }
 
             /*
-            Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, myProject);
+            Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, project);
             if (workspaces.isEmpty()) {
                 return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
             }
             final WorkspaceInfo workspace = workspaces.iterator().next();
             final ExtendedItem extendedItem = workspace.getServer().getVCS()
-                    .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any, myProject,
+                    .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any, project,
                             TFSBundle.message("loading.item"));
             if (extendedItem == null) {
                 return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
@@ -111,7 +111,7 @@ public class TFSDiffProvider implements DiffProvider {
             // so we need to query item by name
             final Item item = workspace.getServer().getVCS()
                     .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
-                            false, myProject, TFSBundle.message("loading.item"));
+                            false, project, TFSBundle.message("loading.item"));
             if (item != null) {
                 VcsRevisionNumber.Int revisionNumber = new TfsRevisionNumber(item.getCs(), item.getItemid());
                 return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE, false);
@@ -121,13 +121,14 @@ public class TFSDiffProvider implements DiffProvider {
             }
             */
             return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
-        } catch (Exception e) {
-            AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
+        } catch (final Exception e) {
+            logger.warn("Unable to getLastRevision", e);
+            AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
             return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
         }
     }
 
-    public VcsRevisionNumber getLatestCommittedRevision(VirtualFile vcsRoot) {
+    public VcsRevisionNumber getLatestCommittedRevision(final VirtualFile vcsRoot) {
         // todo.
         return null;
     }

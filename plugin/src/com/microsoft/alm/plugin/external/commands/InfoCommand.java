@@ -82,7 +82,7 @@ public class InfoCommand extends Command<List<ItemInfo>> {
                 final int colonPos = line.indexOf(":");
                 if (colonPos > 0) {
                     final String key = prefix + line.substring(0, colonPos).trim().toLowerCase();
-                    final String value = line.substring(colonPos + 1).trim();
+                    final String value = colonPos + 1 < line.length() ? line.substring(colonPos + 1).trim() : StringUtils.EMPTY;
                     propertyMap.put(key, value);
                 }
             }

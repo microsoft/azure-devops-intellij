@@ -118,10 +118,15 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
     }
 
     private VcsException convertToVcsException(final Exception e) {
+        if (e instanceof VcsException) {
+            return (VcsException)e;
+        }
+
         final VcsException exception = new VcsException(e.getMessage(), e);
         if (e instanceof SyncException) {
             exception.setIsWarning(((SyncException) e).isWarning());
         }
+        
         return exception;
     }
 
