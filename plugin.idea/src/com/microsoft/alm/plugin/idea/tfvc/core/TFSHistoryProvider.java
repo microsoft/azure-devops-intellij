@@ -39,11 +39,9 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     public static final Logger logger = LoggerFactory.getLogger(TFSHistoryProvider.class);
 
     private final Project project;
-    private final ServerContext serverContext;
 
-    public TFSHistoryProvider(@NotNull final Project project, @NotNull final ServerContext serverContext) {
+    public TFSHistoryProvider(@NotNull final Project project) {
         this.project = project;
-        this.serverContext = serverContext;
     }
 
     public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, final JComponent forShortcutRegistration) {
@@ -68,7 +66,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
     public VcsHistorySession createSessionFor(final FilePath filePath) throws VcsException {
         try {
             final List<TfsFileRevision> revisions =
-                    getRevisions(project, serverContext, filePath, filePath.isDirectory());
+                    getRevisions(project, TFSVcs.getInstance(project).getServerContext(true), filePath, filePath.isDirectory());
             if (revisions.isEmpty()) {
                 return null;
             }

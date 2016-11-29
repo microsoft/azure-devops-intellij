@@ -175,7 +175,7 @@ public class TFSVcs extends AbstractVcs {
     @Override
     public VcsHistoryProvider getVcsHistoryProvider() {
         if (myHistoryProvider == null) {
-            myHistoryProvider = new TFSHistoryProvider(myProject, getServerContext(true));
+            myHistoryProvider = new TFSHistoryProvider(myProject);
         }
         return myHistoryProvider;
     }
@@ -220,12 +220,15 @@ public class TFSVcs extends AbstractVcs {
      */
     public ServerContext getServerContext(boolean throwIfNotFound) {
         final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(getProject());
+        logger.info("TFSVcs.getServerContext repositoryContext is null: " + (repositoryContext == null));
+
         final ServerContext serverContext = repositoryContext != null ?
                 ServerContextManager.getInstance().createContextFromTfvcServerUrl(
                         repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true)
                 : null;
 
         if (serverContext == null && throwIfNotFound) {
+            // TODO: throw a better error b/c this is what the user sees and it's confusing
             throw new NotAuthorizedException(repositoryContext != null ? repositoryContext.getUrl() : "");
         }
         return serverContext;

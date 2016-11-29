@@ -29,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.ArrayList;
@@ -378,12 +379,14 @@ public class ServerContextManager {
 
         // Get matching context from manager
         ServerContext context = get(tfvcServerUrl);
+        logger.info("createContextFromTfvcServerUrl context exists: " + (context != null));
         if (context == null || context.getServerUri() == null ||
                 context.getTeamProjectCollectionReference() == null ||
                 context.getTeamProjectCollectionReference().getName() == null ||
                 context.getTeamProjectReference() == null ||
                 context.getTeamProjectReference().getId() == null) {
             context = null;
+            logger.info("createContextFromTfvcServerUrl context fully populated: " + (context != null));
         }
 
         if (context == null) {
@@ -391,10 +394,30 @@ public class ServerContextManager {
             final AuthenticationInfo authenticationInfo = getAuthenticationInfo(tfvcServerUrl, prompt);
             if (authenticationInfo != null) {
                 final ServerContext.Type type = UrlHelper.isTeamServicesUrl(tfvcServerUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
+
                 final ServerContext contextToValidate = new ServerContextBuilder()
                         .type(type).uri(tfvcServerUrl).authentication(authenticationInfo)
                         .teamProject(teamProjectName).build();
-                context = validateServerConnection(contextToValidate);
+                logger.info("type = " + type + ", uri = " + tfvcServerUrl + ", projectName = " + teamProjectName);
+                try {
+                    context = validateServerConnection(contextToValidate);
+                } catch (NotAuthorizedException e) {
+                    logger.warn("createContextFromTfvcServerUrl: NotAuthorizedException occurred");
+                    if (prompt) {
+                        // refreshing creds
+                        logger.info("createContextFromTfvcServerUrl: refreshing creds");
+                        updateAuthenticationInfo(tfvcServerUrl);
+                        final AuthenticationInfo authenticationInfoRefreshed = getAuthenticationInfo(tfvcServerUrl, prompt);
+                        final ServerContext contextToValidateRefreshed = new ServerContextBuilder()
+                                .type(type).uri(tfvcServerUrl).authentication(authenticationInfoRefreshed)
+                                .teamProject(teamProjectName).build();
+                        context = validateServerConnection(contextToValidateRefreshed);
+                    } else {
+                        logger.info("createContextFromTfvcServerUrl: Stale creds detected but feature does not allow prompting for refresh");
+                    }
+                }
+            } else {
+                logger.warn("createContextFromTfvcServerUrl: authentication info returned null");
             }
         }
 
@@ -719,6 +742,11 @@ public class ServerContextManager {
                 // Get the Team Project object from the server
                 this.project = getProjectFromServer(context, UrlHelper.getCollectionURI(UrlHelper.createUri(serverUrl), collectionName), teamProjectName);
                 return true;
+            } catch (VstsHttpClient.VstsHttpClientException e) {
+                logger.warn("validate: unexpected VstsHttpClientException ", e);
+                if (e.getStatusCode() == 401) {
+                    throw new NotAuthorizedException("Unauthorized user", e);
+                }
             } catch (Throwable t) {
                 logger.warn("validate: {} of server url failed", collectionUrl);
                 logger.warn("validate: unexpected exception ", t);
@@ -762,7 +790,7 @@ public class ServerContextManager {
         private boolean validateTfvcCollectionUrl(final String collectionUrl) {
             //Try to query the server endpoint for branches to see if the collection url is correct
             try {
-                final String jsonResult = VstsHttpClient.sendRequest(context.getClient(), UrlHelper.combine(collectionUrl, TFVC_BRANCHES_URL_PATH), String.class);
+                VstsHttpClient.sendRequest(context.getClient(), UrlHelper.combine(collectionUrl, TFVC_BRANCHES_URL_PATH), String.class);
                 return true;
             } catch (VstsHttpClient.VstsHttpClientException e) {
                 if (e.getStatusCode() == 404) {

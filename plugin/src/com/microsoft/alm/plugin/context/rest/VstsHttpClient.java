@@ -4,6 +4,8 @@
 package com.microsoft.alm.plugin.context.rest;
 
 import com.microsoft.alm.client.model.VssException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
@@ -14,6 +16,7 @@ import javax.ws.rs.core.Response;
  * Class to handle REST calls that are not part of the VSTS Java REST SDK yet, can be removed once these methods are part of the REST SDK.
  */
 public class VstsHttpClient {
+    public static final Logger logger = LoggerFactory.getLogger(VstsHttpClient.class);
 
     /**
      * Send a HTTP GET request to a URI and read JSON response as object of specified class
@@ -31,6 +34,7 @@ public class VstsHttpClient {
         if (r.getStatus() == 200) {
             return r.readEntity(resultClass);
         } else {
+            logger.warn("sendRequest error: " + r.getStatus() + " : " + r.getStatusInfo().getReasonPhrase());
             throw new VstsHttpClientException(r.getStatus(), r.getStatusInfo().getReasonPhrase(), null);
         }
     }
