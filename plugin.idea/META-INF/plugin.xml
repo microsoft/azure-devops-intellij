@@ -140,6 +140,9 @@
             <separator/>
             <reference id="ChangesView.Revert"/>
             <separator/>
+            <action id="Tfs.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" />
+            <action id="Tfs.MergeChanges" class="com.microsoft.alm.plugin.idea.tfvc.actions.MergeBranchAction" text="_Merge Branch Changes..."/>
+            <separator/>
             <reference id="Vcs.ShowTabbedFileHistory"/>
             <reference id="Compare.SameVersion"/>
             <reference id="Compare.LastVersion"/>
@@ -149,8 +152,7 @@
             <reference id="ChangesView.Browse"/>
             <!-- separator/>
             <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
-            <action id="Tfs.Branch" class="org.jetbrains.tfsIntegration.actions.BranchAction" text="_Branch..."/>
-            <action id="Tfs.MergeChanges" class="org.jetbrains.tfsIntegration.actions.MergeBranchAction" text="_Merge Branch Changes..."/>
+            < THIS IS WHERE BRANCH COMMANDS WERE >
             <separator/>
             <action id="Tfs.Label" class="org.jetbrains.tfsIntegration.actions.LabelAction" text="Apply _Label..."/>
             <separator/>

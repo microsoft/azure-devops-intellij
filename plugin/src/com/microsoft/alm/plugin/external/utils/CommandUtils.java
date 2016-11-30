@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
+import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
@@ -33,6 +34,8 @@ import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +45,7 @@ import java.util.List;
  * Helper for running commands
  */
 public class CommandUtils {
+    protected static final Logger logger = LoggerFactory.getLogger(CommandUtils.class);
 
     /**
      * This method will return just the workspace name or empty string (never null)
@@ -89,6 +93,21 @@ public class CommandUtils {
         return getLocalPathCommand.runSynchronously();
     }
 
+    public static String tryGetLocalPath(final ServerContext context, final String serverPath, final String workspace) {
+        final Command<String> getLocalPathCommand = new GetLocalPathCommand(context, serverPath, workspace);
+        try {
+            final String result = getLocalPathCommand.runSynchronously();
+            if (StringUtils.startsWithIgnoreCase(result, "ERROR [main] Application - Unexpected exception:")) {
+                return null;
+            }
+            return result;
+        } catch (Throwable t) {
+            logger.warn("Failed to find local path for server path " + serverPath, t);
+            return null;
+        }
+    }
+
+
     public static List<ChangeSet> getHistoryCommand(final ServerContext context, final String itemPath, final String version,
                                                     final int stopAfter, final boolean recursive, final String user) {
         return getHistoryCommand(context, itemPath, version, stopAfter, recursive, user, false);
@@ -103,6 +122,23 @@ public class CommandUtils {
     public static ChangeSet getLastHistoryEntryForAnyUser(final ServerContext context, final String localPath) {
         final List<ChangeSet> results = getHistoryCommand(context, localPath, null, 1, false, StringUtils.EMPTY);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * Adds a workspace mapping to the workspace named
+     *
+     * @param serverContext
+     * @param workspaceName
+     * @param serverPath
+     * @param localPath
+     */
+    public static String addWorkspaceMapping(final ServerContext serverContext, final String workspaceName, final String serverPath, final String localPath) {
+        final UpdateWorkspaceMappingCommand updateMappingCommand = new UpdateWorkspaceMappingCommand(
+                serverContext,
+                workspaceName,
+                new Workspace.Mapping(serverPath, localPath, false),
+                false);
+        return updateMappingCommand.runSynchronously();
     }
 
     /**
@@ -334,12 +370,27 @@ public class CommandUtils {
 
     /**
      * Returns the item info for a single item.
+     *
      * @param context
      * @param itemPath
      * @return
      */
     public static ItemInfo getItemInfo(final ServerContext context, final String itemPath) {
         final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, Collections.singletonList(itemPath));
-        return infoCommand.runSynchronously().get(0);
+        List<ItemInfo> items = infoCommand.runSynchronously();
+        if (items != null && items.size() > 0) {
+            return items.get(0);
+        }
+
+        throw new RuntimeException("No items match " + itemPath);
+    }
+
+    public static String createBranch(final ServerContext context, final String workingFolder,
+                                      final boolean recursive,
+                                      final String comment, final String author,
+                                      final String existingItem, final String newBranchedItem) {
+        final CreateBranchCommand createBranchCommand = new CreateBranchCommand(context, workingFolder,
+                recursive, comment, author, existingItem, newBranchedItem);
+        return createBranchCommand.runSynchronously();
     }
 }

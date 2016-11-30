@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsConfiguration;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
@@ -32,6 +33,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -206,6 +208,19 @@ public class TFSVcs extends AbstractVcs {
     public static boolean isUnderTFS(FilePath path, Project project) {
         AbstractVcs vcs = VcsUtil.getVcsFor(project, path);
         return vcs != null && TFVC_NAME.equals(vcs.getName());
+    }
+
+    public static VcsException convertToVcsException(final Throwable throwable) {
+        if (throwable instanceof VcsException) {
+            return (VcsException)throwable;
+        }
+
+        final VcsException exception = new VcsException(throwable.getMessage(), throwable);
+        if (throwable instanceof SyncException) {
+            exception.setIsWarning(((SyncException) throwable).isWarning());
+        }
+
+        return exception;
     }
 
     @Override
