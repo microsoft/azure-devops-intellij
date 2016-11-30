@@ -7,7 +7,6 @@ import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -20,18 +19,31 @@ import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.ui.CreateBranchDialog;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BranchAction extends SingleItemAction implements DumbAware {
+/**
+ * This action allows the user to branch the selected file/folder to a new location.
+ */
+public class BranchAction extends SingleItemAction {
+    private static final Logger logger = LoggerFactory.getLogger(BranchAction.class);
+
+    public BranchAction() {
+        super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_TITLE),
+                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MSG));
+    }
 
     protected void execute(final @NotNull SingleItemActionContext actionContext) {
+        logger.info("executing...");
         try {
             final ServerContext serverContext = actionContext.getServerContext();
             final Project project = actionContext.getProject();
@@ -40,6 +52,8 @@ public class BranchAction extends SingleItemAction implements DumbAware {
             final String workingFolder = isFolder ?
                     actionContext.getItem().getLocalItem() :
                     Path.getDirectoryName(actionContext.getItem().getLocalItem());
+            logger.info("Working folder: " + workingFolder);
+            logger.info("Opening branch dialog for " + sourceServerPath);
             CreateBranchDialog d = new CreateBranchDialog(
                     project,
                     serverContext,
@@ -58,28 +72,35 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 
             // Get the current workspace
             final Workspace workspace = CommandUtils.getWorkspace(serverContext, actionContext.getProject());
-            // TODO do we need to check for null workspace here?
+            if (workspace == null) {
+                throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE));
+            }
 
             final String targetServerPath = d.getTargetPath();
-            String targetLocalPath = null;
+            logger.info("TargetServerPath from dialog: " + targetServerPath);
+            String targetLocalPath = StringUtils.EMPTY;
             if (d.isCreateWorkingCopies()) {
+                logger.info("User selected to sync the new branched copies");
                 // See if the target path is already mapped
                 targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
-                if (targetLocalPath == null) {
-                    FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-                    descriptor.setTitle("Select Local Folder");
+                logger.info("targetLocalPath: " + targetLocalPath);
+                if (StringUtils.isEmpty(targetLocalPath)) {
+                    logger.info("Opening the FileChooser dialog for the user to select where the unmapped branch should be mapped to.");
+                    final FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+                    descriptor.setTitle(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_TITLE));
                     descriptor.setShowFileSystemRoots(true);
-                    final String message = MessageFormat
-                            .format("Branch target folder ''{0}'' is not mapped. Select a local folder to create a mapping in workspace ''{1}''",
-                                    targetServerPath, workspace.getName());
+                    final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_DESCRIPTION,
+                            targetServerPath, workspace.getName());
                     descriptor.setDescription(message);
 
                     final VirtualFile selectedFile = FileChooser.chooseFile(descriptor, project, null);
                     if (selectedFile == null) {
+                        logger.info("User canceled");
                         return;
                     }
 
                     targetLocalPath = TfsFileUtil.getFilePath(selectedFile).getPath();
+                    logger.info("Adding workspace mapping: " + targetServerPath + " -> " + targetLocalPath);
                     CommandUtils.addWorkspaceMapping(serverContext, workspace.getName(),
                             targetServerPath, targetLocalPath);
                 }
@@ -96,16 +117,20 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 //                Messages.showErrorDialog(project, s.toString(), "Create Branch");
 //                return;
 //            }
+
+
             // Create the branch
-            final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
+            logger.info("Creating branch... isFolder: " + isFolder);
+            final String comment = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_COMMENT, sourceServerPath);
             CommandUtils.createBranch(serverContext, workingFolder, true, comment, null, sourceServerPath, targetServerPath);
 
             if (d.isCreateWorkingCopies()) {
-                // Get the latest for the branched folder
+                logger.info("Get the latest for the branched folder...");
                 final String localPath = targetLocalPath;
                 final List<VcsException> errors = new ArrayList<VcsException>();
                 ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
                     public void run() {
+                        logger.info("Syncing: " + localPath);
                         final SyncResults syncResults = CommandUtils.syncWorkspace(serverContext, localPath);
                         if (syncResults.getExceptions().size() > 0) {
                             for (final SyncException se : syncResults.getExceptions()) {
@@ -113,23 +138,28 @@ public class BranchAction extends SingleItemAction implements DumbAware {
                             }
                         }
                     }
-                }, "Syncing target branch location", false, project);
+                }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_SYNC_PROGRESS), false, project);
 
                 if (!errors.isEmpty()) {
-                    AbstractVcsHelper.getInstance(project).showErrors(errors, "Create Branch");
+                    logger.info("Errors found");
+                    AbstractVcsHelper.getInstance(project).showErrors(errors,
+                            TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
                 }
             }
 
             targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
-            if (targetLocalPath != null) {
+            logger.info("targetLocalPath: " + targetLocalPath);
+            if (StringUtils.isNotEmpty(targetLocalPath)) {
+                logger.info("Marking the target path dirty in the editor.");
                 TfsFileUtil.markDirtyRecursively(project, new LocalFilePath(targetLocalPath, isFolder));
             }
 
-            final String message = MessageFormat.format("''{0}'' branched successfully to ''{1}''.", sourceServerPath, targetServerPath);
-            Messages.showInfoMessage(project, message, "Create Branch");
+            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS, sourceServerPath, targetServerPath);
+            Messages.showInfoMessage(project, message, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
         } catch (final Throwable t) {
-            final String message = "Failed to create branch: " + t.getMessage();
-            Messages.showErrorDialog(actionContext.getProject(), message, "Create Branch");
+            logger.warn("Branching failed", t);
+            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE, t.getMessage());
+            Messages.showErrorDialog(actionContext.getProject(), message, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
         }
     }
 }

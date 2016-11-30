@@ -140,7 +140,7 @@
             <separator/>
             <reference id="ChangesView.Revert"/>
             <separator/>
-            <action id="Tfs.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" text="_Branch..."/>
+            <action id="Tfs.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" />
             <action id="Tfs.MergeChanges" class="com.microsoft.alm.plugin.idea.tfvc.actions.MergeBranchAction" text="_Merge Branch Changes..."/>
             <separator/>
             <reference id="Vcs.ShowTabbedFileHistory"/>

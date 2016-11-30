@@ -94,7 +94,12 @@ public class TfPluginBundle {
     // Common Git
     @NonNls
     public static final String KEY_GIT_HISTORY_ERRORS_NO_HISTORY_FOUND = "Git.History.Errors.NoHistoryFound";
-    
+
+    // Common TFVC
+    @NonNls
+    public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE= "Errors.UnableToDetermineWorkspace";
+
+
     // Checkout dialog ui and models
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TFS_TAB = "CheckoutDialog.TfsTab";
@@ -483,6 +488,26 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_MSG = "Actions.SelectWorkItems.Message";
     @NonNls
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION = "Actions.SelectWorkItems.Action";
+
+    //TFVC Branch Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_TITLE = "Actions.Tfvc.Branch.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_MSG = "Actions.Tfvc.Branch.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_TITLE = "Actions.Tfvc.Branch.FileChoose.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_DESCRIPTION = "Actions.Tfvc.Branch.FileChoose.Description";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_COMMENT = "Actions.Tfvc.Branch.Comment";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_SYNC_PROGRESS = "Actions.Tfvc.Branch.Sync.Progress";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE = "Actions.Tfvc.Branch.Message.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS = "Actions.Tfvc.Branch.Message.Success";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE = "Actions.Tfvc.Branch.Message.Failure";
 
     //starters
     @NonNls

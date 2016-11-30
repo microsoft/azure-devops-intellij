@@ -93,7 +93,7 @@ public class ItemInfo {
     }
 
     public boolean isFolder() {
-        return !StringUtils.equalsIgnoreCase(fileType, "file");
+        return !StringUtils.equalsIgnoreCase(type, "file");
     }
 
     public String getFileSize() {
