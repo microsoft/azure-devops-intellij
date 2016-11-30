@@ -14,6 +14,7 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
@@ -36,6 +37,9 @@ public class BranchAction extends SingleItemAction implements DumbAware {
             final Project project = actionContext.getProject();
             final String sourceServerPath = actionContext.getItem().getServerItem();
             final boolean isFolder = actionContext.getItem().isFolder();
+            final String workingFolder = isFolder ?
+                    actionContext.getItem().getLocalItem() :
+                    Path.getDirectoryName(actionContext.getItem().getLocalItem());
             CreateBranchDialog d = new CreateBranchDialog(
                     project,
                     serverContext,
@@ -57,9 +61,10 @@ public class BranchAction extends SingleItemAction implements DumbAware {
             // TODO do we need to check for null workspace here?
 
             final String targetServerPath = d.getTargetPath();
+            String targetLocalPath = null;
             if (d.isCreateWorkingCopies()) {
                 // See if the target path is already mapped
-                String targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
+                targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
                 if (targetLocalPath == null) {
                     FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
                     descriptor.setTitle("Select Local Folder");
@@ -93,14 +98,15 @@ public class BranchAction extends SingleItemAction implements DumbAware {
 //            }
             // Create the branch
             final String comment = MessageFormat.format("Branched from {0}", sourceServerPath);
-            CommandUtils.createBranch(serverContext, true, comment, null, sourceServerPath, targetServerPath);
+            CommandUtils.createBranch(serverContext, workingFolder, true, comment, null, sourceServerPath, targetServerPath);
 
             if (d.isCreateWorkingCopies()) {
                 // Get the latest for the branched folder
+                final String localPath = targetLocalPath;
                 final List<VcsException> errors = new ArrayList<VcsException>();
                 ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
                     public void run() {
-                        final SyncResults syncResults = CommandUtils.syncWorkspace(serverContext, targetServerPath);
+                        final SyncResults syncResults = CommandUtils.syncWorkspace(serverContext, localPath);
                         if (syncResults.getExceptions().size() > 0) {
                             for (final SyncException se : syncResults.getExceptions()) {
                                 errors.add(TFSVcs.convertToVcsException(se));
@@ -114,7 +120,7 @@ public class BranchAction extends SingleItemAction implements DumbAware {
                 }
             }
 
-            final String targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
+            targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
             if (targetLocalPath != null) {
                 TfsFileUtil.markDirtyRecursively(project, new LocalFilePath(targetLocalPath, isFolder));
             }

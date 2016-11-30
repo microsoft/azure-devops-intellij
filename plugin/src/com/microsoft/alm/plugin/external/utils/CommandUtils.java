@@ -96,7 +96,11 @@ public class CommandUtils {
     public static String tryGetLocalPath(final ServerContext context, final String serverPath, final String workspace) {
         final Command<String> getLocalPathCommand = new GetLocalPathCommand(context, serverPath, workspace);
         try {
-            return getLocalPathCommand.runSynchronously();
+            final String result = getLocalPathCommand.runSynchronously();
+            if (StringUtils.startsWithIgnoreCase(result, "ERROR [main] Application - Unexpected exception:")) {
+                return null;
+            }
+            return result;
         } catch (Throwable t) {
             logger.warn("Failed to find local path for server path " + serverPath, t);
             return null;
@@ -122,6 +126,7 @@ public class CommandUtils {
 
     /**
      * Adds a workspace mapping to the workspace named
+     *
      * @param serverContext
      * @param workspaceName
      * @param serverPath
@@ -380,10 +385,12 @@ public class CommandUtils {
         throw new RuntimeException("No items match " + itemPath);
     }
 
-    public static String createBranch(final ServerContext context, final boolean recursive,
+    public static String createBranch(final ServerContext context, final String workingFolder,
+                                      final boolean recursive,
                                       final String comment, final String author,
                                       final String existingItem, final String newBranchedItem) {
-        final CreateBranchCommand createBranchCommand = new CreateBranchCommand(context, recursive, comment, author, existingItem, newBranchedItem);
+        final CreateBranchCommand createBranchCommand = new CreateBranchCommand(context, workingFolder,
+                recursive, comment, author, existingItem, newBranchedItem);
         return createBranchCommand.runSynchronously();
     }
 }

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 public class CreateBranchCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(CreateBranchCommand.class);
 
+    private final String workingFolder;
     private final boolean recursive;
     private final String comment;
     private final String author;
@@ -30,12 +31,14 @@ public class CreateBranchCommand extends Command<String> {
      *
      * @param context This is the server context used for collection and login info (can be null)
      */
-    public CreateBranchCommand(final ServerContext context, final boolean recursive,
+    public CreateBranchCommand(final ServerContext context, final String workingFolder, final boolean recursive,
                                final String comment, final String author,
                                final String existingItem, final String newBranchedItem) {
         super("branch", context);
+        ArgumentHelper.checkNotEmptyString(workingFolder, "workingFolder");
         ArgumentHelper.checkNotEmptyString(existingItem, "existingItem");
         ArgumentHelper.checkNotEmptyString(newBranchedItem, "newBranchedItem");
+        this.workingFolder = workingFolder;
         this.recursive = recursive;
         this.comment = comment;
         this.author = author;
@@ -46,6 +49,7 @@ public class CreateBranchCommand extends Command<String> {
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
+                .setWorkingDirectory(workingFolder)
                 .addSwitch("checkin");
         if (recursive) {
             builder.addSwitch("recursive");
