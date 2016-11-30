@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.models;
 
 import com.microsoft.alm.common.utils.SystemHelper;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class represents the data returned by the TF command 'info'.
@@ -89,6 +90,10 @@ public class ItemInfo {
 
     public String getFileType() {
         return fileType;
+    }
+
+    public boolean isFolder() {
+        return !StringUtils.equalsIgnoreCase(fileType, "file");
     }
 
     public String getFileSize() {

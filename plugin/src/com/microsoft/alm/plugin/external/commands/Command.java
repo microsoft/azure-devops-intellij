@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Base class for all TF commands. This class provides an argument builder for the common arguments for all commmands:
@@ -43,6 +45,8 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class Command<T> {
     private static final Logger logger = LoggerFactory.getLogger(Command.class);
+
+    private static final Pattern CHANGESET_NUMBER_PATTERN = Pattern.compile("#(\\d+)");
 
     public static final int OUTPUT_TYPE_INFO = 0;
     public static final int OUTPUT_TYPE_WARNING = 1;
@@ -267,6 +271,24 @@ public abstract class Command<T> {
             }
         }
         return lines.toArray(new String[lines.size()]);
+    }
+
+    /**
+     * This method is used by Checkin and CreateBranch to parse out the changeset number.
+     * @param buffer
+     * @return
+     */
+    protected String getChangesetNumber(final String buffer) {
+        // parse output for changeset number
+        String changesetNumber = StringUtils.EMPTY;
+        final Matcher matcher = CHANGESET_NUMBER_PATTERN.matcher(buffer);
+        if (matcher.find()) {
+            changesetNumber = matcher.group(1);
+            logger.info("Changeset '" + changesetNumber + "' was created");
+        } else {
+            logger.info("Changeset pattern not found in buffer: " + buffer);
+        }
+        return changesetNumber;
     }
 
     /**

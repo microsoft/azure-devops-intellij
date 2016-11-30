@@ -12,22 +12,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This command  checks in files into TFVC
- *
+ * <p/>
  * checkin [/all] [/author:<value>] [/comment:<value>|@valuefile] [/notes:"note"="value"[;"note2"="value2"[;...]]|@notefile]
- *         [/override:<value>|@valuefile] [/recursive] [/validate] [/bypass] [/force] [/noautoresolve] [/associate:<workItemID>[,<workItemID>...]]
- *         [/resolve:<workItemID>[,<workItemID>...]] [/saved] [<itemSpec>...]
+ * [/override:<value>|@valuefile] [/recursive] [/validate] [/bypass] [/force] [/noautoresolve] [/associate:<workItemID>[,<workItemID>...]]
+ * [/resolve:<workItemID>[,<workItemID>...]] [/saved] [<itemSpec>...]
  */
 public class CheckinCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(CheckinCommand.class);
 
     private static final String CHECKIN_LINE_PREFIX = "Checking in";
     private static final String CHECKIN_FAILED_MSG = "No files checked in";
-    private static final Pattern CHANGESET_NUMBER_PATTERN = Pattern.compile("#(\\d+)");
 
     private final List<String> files;
     private final String comment;
@@ -64,7 +61,7 @@ public class CheckinCommand extends Command<String> {
 
     private String getAssociatedWorkItems() {
         final StringBuilder sb = new StringBuilder();
-        for(Integer i : workItemsToAssociate) {
+        for (Integer i : workItemsToAssociate) {
             if (sb.length() > 0) {
                 sb.append(',');
             }
@@ -114,13 +111,6 @@ public class CheckinCommand extends Command<String> {
             throw new TeamServicesException(TeamServicesException.KEY_ERROR_UNKNOWN);
         }
 
-        // parse output for changeset number
-        String changesetNumber = StringUtils.EMPTY;
-        final Matcher matcher = CHANGESET_NUMBER_PATTERN.matcher(stdout);
-        if (matcher.find()) {
-            changesetNumber = matcher.group(1);
-        }
-        logger.info("Changeset " + changesetNumber + " was created");
-        return changesetNumber;
+        return getChangesetNumber(stdout);
     }
 }
