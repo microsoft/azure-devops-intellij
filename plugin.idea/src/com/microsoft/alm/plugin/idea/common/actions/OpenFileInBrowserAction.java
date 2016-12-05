@@ -12,6 +12,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vfs.InvalidVirtualFileAccessException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
@@ -82,10 +83,15 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
 
         final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
 
-        final GitRepository repository = manager.getRepositoryForFile(vFile);
+        try {
+            final GitRepository repository = manager.getRepositoryForFile(vFile);
 
-        if (repository == null || !TfGitHelper.isTfGitRepository(repository)) {
-            presentation.setEnabledAndVisible(false);
+            if (repository == null || !TfGitHelper.isTfGitRepository(repository)) {
+                presentation.setEnabledAndVisible(false);
+                return;
+            }
+        } catch (InvalidVirtualFileAccessException e) {
+            logger.warn("Exception caught while trying to find file's repo", e);
             return;
         }
 

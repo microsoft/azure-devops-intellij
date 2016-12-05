@@ -8,14 +8,20 @@ import com.intellij.reference.SoftReference;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.PropertyKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.ref.Reference;
+import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 /**
  * This class allows static access to the plugins string resources.
  */
 public class TfPluginBundle {
+    private static final Logger logger = LoggerFactory.getLogger(TfPluginBundle.class);
+
     @NonNls
     public static final String BUNDLE_NAME = "com.microsoft.alm.plugin.idea.ui.tfplugin";
 
@@ -24,7 +30,12 @@ public class TfPluginBundle {
     private static ResourceBundle getBundle() {
         ResourceBundle bundle = com.intellij.reference.SoftReference.dereference(thisBundle);
         if (bundle == null) {
-            bundle = ResourceBundle.getBundle(BUNDLE_NAME);
+            try {
+                bundle = ResourceBundle.getBundle(BUNDLE_NAME);
+            } catch (MissingResourceException e) {
+                logger.warn("Locale could not be found for resource bundle so defaulting to english", e);
+                bundle = ResourceBundle.getBundle(BUNDLE_NAME, Locale.ENGLISH);
+            }
             thisBundle = new SoftReference<ResourceBundle>(bundle);
         }
         return bundle;
@@ -97,7 +108,7 @@ public class TfPluginBundle {
 
     // Common TFVC
     @NonNls
-    public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE= "Errors.UnableToDetermineWorkspace";
+    public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE = "Errors.UnableToDetermineWorkspace";
 
 
     // Checkout dialog ui and models
@@ -539,82 +550,82 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_CHECKIN_SUCCESSFUL_MSG = "Tfvc.Checkin.Successful.Msg";
     @NonNls
-    public static final String KEY_TFVC_CHECKIN_LINK_TEXT="Tfvc.Checkin.Link.Text";
+    public static final String KEY_TFVC_CHECKIN_LINK_TEXT = "Tfvc.Checkin.Link.Text";
     @NonNls
-    public static final String KEY_TFVC_CHECKIN_STATUS="Tfvc.Checkin.Status";
+    public static final String KEY_TFVC_CHECKIN_STATUS = "Tfvc.Checkin.Status";
     @NonNls
-    public static final String KEY_TFVC_UPDATE_STATUS_MSG="Tfvc.Update.Status.Msg";
+    public static final String KEY_TFVC_UPDATE_STATUS_MSG = "Tfvc.Update.Status.Msg";
     @NonNls
-    public static final String KEY_TFVC_TF_VERSION_WARNING_PROGRESS="Tfvc.tf.VersionWarning.Progress";
+    public static final String KEY_TFVC_TF_VERSION_WARNING_PROGRESS = "Tfvc.tf.VersionWarning.Progress";
     @NonNls
-    public static final String KEY_TFVC_TF_VERSION_WARNING_TITLE="Tfvc.tf.VersionWarning.Title";
+    public static final String KEY_TFVC_TF_VERSION_WARNING_TITLE = "Tfvc.tf.VersionWarning.Title";
 
     //TFVC Conflicts
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_COLUMN_NAME="Tfvc.Conflict.Column.Name";
+    public static final String KEY_TFVC_CONFLICT_COLUMN_NAME = "Tfvc.Conflict.Column.Name";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_DIALOG_TITLE="Tfvc.Conflict.Dialog.Title";
+    public static final String KEY_TFVC_CONFLICT_DIALOG_TITLE = "Tfvc.Conflict.Dialog.Title";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_DIALOG_LATER="Tfvc.Conflict.Dialog.Later";
+    public static final String KEY_TFVC_CONFLICT_DIALOG_LATER = "Tfvc.Conflict.Dialog.Later";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_DIALOG_MERGE="Tfvc.Conflict.Dialog.Merge";
+    public static final String KEY_TFVC_CONFLICT_DIALOG_MERGE = "Tfvc.Conflict.Dialog.Merge";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_THEIRS="Tfvc.Conflict.Dialog.AcceptTheirs";
+    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_THEIRS = "Tfvc.Conflict.Dialog.AcceptTheirs";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_YOURS="Tfvc.Conflict.Dialog.AcceptYours";
+    public static final String KEY_TFVC_CONFLICT_DIALOG_ACCEPT_YOURS = "Tfvc.Conflict.Dialog.AcceptYours";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_LOADING_CONFLICTS="Tfvc.Conflict.Loading.Conflicts";
+    public static final String KEY_TFVC_CONFLICT_LOADING_CONFLICTS = "Tfvc.Conflict.Loading.Conflicts";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR="Tfvc.Conflict.Loading.ProgressBar";
+    public static final String KEY_TFVC_CONFLICT_LOADING_PROGRESS_BAR = "Tfvc.Conflict.Loading.ProgressBar";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR="Tfvc.Conflict.Resolving.ProgressBar";
+    public static final String KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR = "Tfvc.Conflict.Resolving.ProgressBar";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_RESOLVING_STATUS="Tfvc.Conflict.Resolving.Status";
+    public static final String KEY_TFVC_CONFLICT_RESOLVING_STATUS = "Tfvc.Conflict.Resolving.Status";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_RESOLVING_REFRESH="Tfvc.Conflict.Resolving.Refresh";
+    public static final String KEY_TFVC_CONFLICT_RESOLVING_REFRESH = "Tfvc.Conflict.Resolving.Refresh";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_LOAD_FAILED="Tfvc.Conflict.Load.Failed";
+    public static final String KEY_TFVC_CONFLICT_LOAD_FAILED = "Tfvc.Conflict.Load.Failed";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_MERGE_ORIGINAL="Tfvc.Conflict.Merge.Original";
+    public static final String KEY_TFVC_CONFLICT_MERGE_ORIGINAL = "Tfvc.Conflict.Merge.Original";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_MERGE_SERVER="Tfvc.Conflict.Merge.Server";
+    public static final String KEY_TFVC_CONFLICT_MERGE_SERVER = "Tfvc.Conflict.Merge.Server";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_MERGE_LOADING="Tfvc.Conflict.Merge.Loading";
+    public static final String KEY_TFVC_CONFLICT_MERGE_LOADING = "Tfvc.Conflict.Merge.Loading";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_MERGE_LOAD_FAILED="Tfvc.Conflict.Merge.LoadFailed";
+    public static final String KEY_TFVC_CONFLICT_MERGE_LOAD_FAILED = "Tfvc.Conflict.Merge.LoadFailed";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_NAME_DIALOG="Tfvc.Conflict.Name.DialogTitle";
+    public static final String KEY_TFVC_CONFLICT_NAME_DIALOG = "Tfvc.Conflict.Name.DialogTitle";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_NAME_KEEP_LOCAL="Tfvc.Conflict.Name.KeepLocal";
+    public static final String KEY_TFVC_CONFLICT_NAME_KEEP_LOCAL = "Tfvc.Conflict.Name.KeepLocal";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_NAME_ACCEPT_SERVER="Tfvc.Conflict.Name.AcceptServer";
+    public static final String KEY_TFVC_CONFLICT_NAME_ACCEPT_SERVER = "Tfvc.Conflict.Name.AcceptServer";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_NAME_USE_SPECIFED="Tfvc.Conflict.Name.UseSpecified";
+    public static final String KEY_TFVC_CONFLICT_NAME_USE_SPECIFED = "Tfvc.Conflict.Name.UseSpecified";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_LOAD_ERROR="Tfvc.Conflict.Load.Error";
+    public static final String KEY_TFVC_CONFLICT_LOAD_ERROR = "Tfvc.Conflict.Load.Error";
     @NonNls
-    public static final String KEY_TFVC_CONFLICT_MERGE_ERROR="Tfvc.Conflict.Merge.Error";
+    public static final String KEY_TFVC_CONFLICT_MERGE_ERROR = "Tfvc.Conflict.Merge.Error";
 
     //TFVC Settings
     @NonNls
-    public static final String KEY_TFVC_SETTINGS_TITLE="Tfvc.Settings.Title";
+    public static final String KEY_TFVC_SETTINGS_TITLE = "Tfvc.Settings.Title";
     @NonNls
-    public static final String KEY_TFVC_SETTINGS_DESCRIPTION="Tfvc.Settings.Description";
+    public static final String KEY_TFVC_SETTINGS_DESCRIPTION = "Tfvc.Settings.Description";
     @NonNls
-    public static final String KEY_TFVC_SETTINGS_FOUND_EXE="Tfvc.Settings.FoundExe";
+    public static final String KEY_TFVC_SETTINGS_FOUND_EXE = "Tfvc.Settings.FoundExe";
 
 
     //Workspace dialog
-    public static final String KEY_WORKSPACE_DIALOG_TITLE="WorkspaceDialog.Title";
-    public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON="WorkspaceDialog.SaveButton";
-    public static final String KEY_WORKSPACE_DIALOG_LOADING="WorkspaceDialog.Loading";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_LOCAL_PATH_EMPTY="WorkspaceDialog.Errors.LocalPathEmpty";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_EMPTY="WorkspaceDialog.Errors.ServerPathEmpty";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_INVALID="WorkspaceDialog.Errors.ServerPathInvalid";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_NAME_EMPTY="WorkspaceDialog.Errors.NameEmpty";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_MAPPINGS_EMPTY="WorkspaceDialog.Errors.MappingsEmpty";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED="WorkspaceDialog.Errors.ContextFailed";
-    public static final String KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED="WorkspaceDialog.Errors.AuthenticationFailed";
+    public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";
+    public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON = "WorkspaceDialog.SaveButton";
+    public static final String KEY_WORKSPACE_DIALOG_LOADING = "WorkspaceDialog.Loading";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_LOCAL_PATH_EMPTY = "WorkspaceDialog.Errors.LocalPathEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_EMPTY = "WorkspaceDialog.Errors.ServerPathEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_SERVER_PATH_INVALID = "WorkspaceDialog.Errors.ServerPathInvalid";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_NAME_EMPTY = "WorkspaceDialog.Errors.NameEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_MAPPINGS_EMPTY = "WorkspaceDialog.Errors.MappingsEmpty";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED = "WorkspaceDialog.Errors.ContextFailed";
+    public static final String KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED = "WorkspaceDialog.Errors.AuthenticationFailed";
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_STATUS = "WorkspaceDialog.ColumnHeaders.Status";
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_SERVER_PATH = "WorkspaceDialog.ColumnHeaders.ServerPath";
     public static final String KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_LOCAL_PATH = "WorkspaceDialog.ColumnHeaders.LocalPath";

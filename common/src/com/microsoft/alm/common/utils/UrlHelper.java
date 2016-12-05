@@ -48,6 +48,7 @@ public class UrlHelper {
 
     private static final String HTTP_PROTOCOL = "http";
     private static final String HTTPS_PROTOCOL = "https";
+    private static final String DEFAULT_TEAM_SERVICES_LINK = "https://www.visualstudio.com/team-services/";
 
     public static URI createUri(final String url) {
         return URI.create(getCmdLineFriendlyUrl(url));
@@ -183,6 +184,7 @@ public class UrlHelper {
             return sshGitRemoteUrl;
         } else {
             // unsure what this url is
+            logger.warn("getHttpsGitUrlFromSshUrl: can't determine https url from " + sshGitRemoteUrl);
             return null;
         }
     }
@@ -219,9 +221,9 @@ public class UrlHelper {
     public static URI getQueueBuildURI(final URI serverUri, final String collectionId, final String projectName, final int buildDefinitionId) {
         return UrlHelper.createUri(
                 combine(serverUri.toString(), String.format(URL_BUILD_ASPX_SEGMENT, collectionId))
-                .concat(String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)))
-                .concat(String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId))
-                .concat(URL_BUILD_QUEUE_ACTION));
+                        .concat(String.format(URL_BUILD_TEAM_PROJECT_SEGMENT, encode(projectName)))
+                        .concat(String.format(URL_BUILD_DEFINITION_ID_SEGMENT, buildDefinitionId))
+                        .concat(URL_BUILD_QUEUE_ACTION));
     }
 
     public static URI getCreateWorkItemURI(final URI projectUri) {
@@ -253,6 +255,11 @@ public class UrlHelper {
 
     public static URI getFileURI(final String remoteUrl, final String filePath, final String gitRemoteBranchName) {
         String uri = getHttpsGitUrlFromSshUrl(remoteUrl).concat(URL_PATH_SEGMENT).concat(filePath);
+
+        if (uri == null) {
+            //could not determine uri so open default link
+            return UrlHelper.createUri(DEFAULT_TEAM_SERVICES_LINK);
+        }
 
         if (StringUtils.isNotEmpty(gitRemoteBranchName)) {
             uri = uri.concat(URL_GIT_VERSION_SEGMENT).concat(gitRemoteBranchName);
