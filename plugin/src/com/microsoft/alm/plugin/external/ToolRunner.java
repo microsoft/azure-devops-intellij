@@ -184,7 +184,7 @@ public class ToolRunner {
             processWaiter.start();
             return toolProcess;
         } catch (final IOException e) {
-            logger.error("Failed to start tool process or redirect output.", e);
+            logger.warn("Failed to start tool process or redirect output.", e);
             listenerProxy.processException(e);
         }
 
@@ -248,7 +248,7 @@ public class ToolRunner {
                 standardOutProcessor = null;
             }
         } catch (final InterruptedException e) {
-            logger.error("Failed to dispose ToolRunner.", e);
+            logger.warn("Failed to dispose ToolRunner.", e);
         }
     }
 
@@ -326,7 +326,7 @@ public class ToolRunner {
                 // Call the completed event on the listener with the exit code
                 listener.completed(process.exitValue());
             } catch (Throwable e) {
-                logger.error("Failed to wait for process exit.", e);
+                logger.warn("Failed to wait for process exit.", e);
                 listener.processException(e);
             }
         }
@@ -390,7 +390,7 @@ public class ToolRunner {
                     }
                 }
             } catch (Throwable e) {
-                logger.error("Failed to process output.", e);
+                logger.warn("Failed to process output.", e);
                 listener.processException(e);
             } finally {
                 // Don't let exceptions escape from this top level method
@@ -401,7 +401,7 @@ public class ToolRunner {
                     }
                     flushed.set(true);
                 } catch (Throwable e) {
-                    logger.error("Failed to close buffer.", e);
+                    logger.warn("Failed to close buffer.", e);
                     listener.processException(e);
                 }
             }
