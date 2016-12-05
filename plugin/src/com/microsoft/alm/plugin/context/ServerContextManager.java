@@ -45,6 +45,14 @@ import java.util.Map;
 public class ServerContextManager {
     private static final Logger logger = LoggerFactory.getLogger(ServerContextManager.class);
 
+    private final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=IncludeServices&lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
+    private final String TFS2015_NEW_SERVICE = "distributedtask";
+    private final String TELEMETRY_CONNECTION_EVENT = "TfsConnection";
+    private final String TELEMETRY_TFS_VERSION = "TFS.Version";
+    private final String TELEMETRY_TFS2012_OR_OLDER = "TFS2012_or_older";
+    private final String TELEMETRY_TFS2013 = "TFS2013";
+    private final String TELEMETRY_TFS2015_OR_LATER = "TFS2015_or_later";
+
     private Map<String, ServerContext> contextMap = new HashMap<String, ServerContext>();
 
     private static class Holder {
@@ -236,14 +244,6 @@ public class ServerContextManager {
     }
 
     private ServerContext checkTfsVersionAndConnection(final ServerContext context) throws TeamServicesException {
-        final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=IncludeServices&lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
-        final String TFS2015_NEW_SERVICE = "distributedtask";
-        final String TELEMETRY_CONNECTION_EVENT = "TfsConnection";
-        final String TELEMETRY_TFS_VERSION = "TFS.Version";
-        final String TELEMETRY_TFS2012_OR_OLDER = "TFS2012_or_older";
-        final String TELEMETRY_TFS2013 = "TFS2013";
-        final String TELEMETRY_TFS2015_OR_LATER = "TFS2015_or_later";
-
         if (context == null || context.getServerUri() == null) {
             throw new TeamServicesException(TeamServicesException.KEY_TFS_AUTH_FAILED);
         }
@@ -291,8 +291,8 @@ public class ServerContextManager {
             }
         } catch (com.microsoft.alm.plugin.context.rest.VstsHttpClient.VstsHttpClientException e) {
             if (e.getStatusCode() == 404) {
-                //HTTP not found, so server does not have this endpoint i.e. TFS 2012 or older
-                logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2012 or older version server");
+                //HTTP not found, so server does not have this endpoint (TFS 2012 or older) or the URL is incorrect
+                logger.warn("checkTfsVersionAndConnection: 404 while trying to connect to server so either bad url or unsupported server version");
                 TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
                         new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2012_OR_OLDER).build());
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);

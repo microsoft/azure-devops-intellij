@@ -10,7 +10,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.helpers.Path;
@@ -22,6 +21,7 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import com.microsoft.alm.plugin.idea.tfvc.ui.CreateBranchDialog;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -151,7 +151,7 @@ public class BranchAction extends SingleItemAction {
             logger.info("targetLocalPath: " + targetLocalPath);
             if (StringUtils.isNotEmpty(targetLocalPath)) {
                 logger.info("Marking the target path dirty in the editor.");
-                TfsFileUtil.markDirtyRecursively(project, new LocalFilePath(targetLocalPath, isFolder));
+                TfsFileUtil.markDirtyRecursively(project, VersionControlPath.getFilePath(targetLocalPath, isFolder));
             }
 
             final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS, sourceServerPath, targetServerPath);
