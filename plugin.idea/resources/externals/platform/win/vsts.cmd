@@ -55,7 +55,7 @@ GOTO launch
 :searchPath
 echo "There was nothing found in the registry for this IDE so searching for the exe" >> %logfile%
 if "%ide%"=="studio" (
-    set directory=Android
+    set "directory=Android\Android Studio"
 ) else (
     set directory=JetBrains
 )
@@ -87,7 +87,6 @@ GOTO end
 :: ----------------------------
 :findIdeDirectory
 if "%ide%"=="studio" (
-    set exePath="%exePath:~1,-1%\Android Studio"
     GOTO setAndroidExe
 )
 
