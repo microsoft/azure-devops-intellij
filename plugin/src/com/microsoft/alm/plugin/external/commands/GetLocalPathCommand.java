@@ -39,6 +39,6 @@ public class GetLocalPathCommand extends Command<String> {
     @Override
     public String parseOutput(final String stdout, final String stderr) {
         super.throwIfError(stderr);
-        return stdout;
+        return stdout.trim();
     }
 }

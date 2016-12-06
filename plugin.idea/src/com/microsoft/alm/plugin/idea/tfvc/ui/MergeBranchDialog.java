@@ -1,90 +1,95 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
-/*
-package org.jetbrains.tfsIntegration.ui;
+package com.microsoft.alm.plugin.idea.tfvc.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.microsoft.alm.plugin.context.ServerContext;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.tfsIntegration.core.tfs.WorkspaceInfo;
-import org.jetbrains.tfsIntegration.core.tfs.version.VersionSpecBase;
 
-import javax.swing.*;
+import javax.swing.JComponent;
+import java.util.List;
 
 public class MergeBranchDialog extends DialogWrapper {
-  private final String mySourcePath;
-  private final boolean mySourceIsDirectory;
-  private final Project myProject;
-  private final WorkspaceInfo myWorkspace;
-  private MergeBranchForm myMergeBranchForm;
+    private final String sourcePath;
+    private final boolean sourceIsDirectory;
+    private final Project project;
+    private final ServerContext serverContext;
+    private MergeBranchForm mergeBranchForm;
+    private final BranchListProvider branchListProvider;
 
-  public MergeBranchDialog(Project project,
-                           final WorkspaceInfo workspace,
-                           final String sourcePath,
-                           final boolean sourceIsDirectory,
-                           String title) {
-    super(project, true);
-    myProject = project;
-    myWorkspace = workspace;
-    mySourcePath = sourcePath;
-    mySourceIsDirectory = sourceIsDirectory;
+    public interface BranchListProvider {
+        List<String> getBranches(final String source);
+    }
 
-    setTitle(title);
-    setResizable(true);
-    init();
-  }
+    public MergeBranchDialog(Project project,
+                             final ServerContext serverContext,
+                             final String sourcePath,
+                             final boolean sourceIsDirectory,
+                             final String title,
+                             final BranchListProvider branchListProvider) {
+        super(project, true);
+        this.project = project;
+        this.serverContext = serverContext;
+        this.sourcePath = sourcePath;
+        this.sourceIsDirectory = sourceIsDirectory;
+        this.branchListProvider = branchListProvider;
 
-  public String getSourcePath() {
-    return myMergeBranchForm.getSourcePath();
-  }
+        setTitle(title);
+        setResizable(true);
+        init();
+    }
 
-  public String getTargetPath() {
-    return myMergeBranchForm.getTargetPath();
+    public String getSourcePath() {
+        return mergeBranchForm.getSourcePath();
+    }
 
-  }
+    public String getTargetPath() {
+        return mergeBranchForm.getTargetPath();
 
-  @Nullable
-  public VersionSpecBase getFromVersion() {
-    return myMergeBranchForm.getFromVersion();
-  }
+    }
 
-  @Nullable
-  public VersionSpecBase getToVersion() {
-    return myMergeBranchForm.getToVersion();
-  }
+//  @Nullable
+//  public VersionSpecBase getFromVersion() {
+//    return mergeBranchForm.getFromVersion();
+//  }
+//
+//  @Nullable
+//  public VersionSpecBase getToVersion() {
+//    return mergeBranchForm.getToVersion();
+//  }
 
-  @Nullable
-  protected JComponent createCenterPanel() {
-    myMergeBranchForm = new MergeBranchForm(myProject, myWorkspace, mySourcePath, mySourceIsDirectory, getTitle());
+    @Nullable
+    protected JComponent createCenterPanel() {
+        mergeBranchForm = new MergeBranchForm(project, serverContext, sourcePath, sourceIsDirectory, getTitle(), branchListProvider);
 
-    myMergeBranchForm.addListener(new MergeBranchForm.Listener() {
-      public void stateChanged(final boolean canFinish) {
-        setOKActionEnabled(canFinish);
-      }
-    });
+        mergeBranchForm.addListener(new MergeBranchForm.Listener() {
+            public void stateChanged(final boolean canFinish) {
+                setOKActionEnabled(canFinish);
+            }
+        });
 
-    return myMergeBranchForm.getContentPanel();
-  }
+        return mergeBranchForm.getContentPanel();
+    }
 
-  protected void doOKAction() {
-    myMergeBranchForm.close();
-    super.doOKAction();
-  }
+    protected void doOKAction() {
+        mergeBranchForm.close();
+        super.doOKAction();
+    }
 
-  public void doCancelAction() {
-    myMergeBranchForm.close();
-    super.doCancelAction();
-  }
+    public void doCancelAction() {
+        mergeBranchForm.close();
+        super.doCancelAction();
+    }
 
-  @Override
-  protected String getDimensionServiceKey() {
-    return "TFS.MergeBranch";
-  }
+    @Override
+    protected String getDimensionServiceKey() {
+        return "TFVC.MergeBranch";
+    }
 
-  @Override
-  public JComponent getPreferredFocusedComponent() {
-    return myMergeBranchForm.getPreferredFocusedComponent();
-  }
+    @Override
+    public JComponent getPreferredFocusedComponent() {
+        return mergeBranchForm.getPreferredFocusedComponent();
+    }
 }
-*/

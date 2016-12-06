@@ -64,7 +64,7 @@ public class CreateBranchDialog extends DialogWrapper {
 
     @Override
     protected String getDimensionServiceKey() {
-        return "TFS.CreateBranch";
+        return "TFVC.CreateBranch";
     }
 
 }

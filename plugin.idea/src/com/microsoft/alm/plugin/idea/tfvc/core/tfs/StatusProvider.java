@@ -82,6 +82,9 @@ public class StatusProvider {
         } else if (types.contains(ServerStatusType.BRANCH)) {
             // treat branch like an addition
             return new ServerStatus.ScheduledForAddition(pendingChange);
+        } else if (types.contains(ServerStatusType.MERGE)) {
+            // treat merge like an edit
+            return new ServerStatus.CheckedOutForEdit(pendingChange);
         } else {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;

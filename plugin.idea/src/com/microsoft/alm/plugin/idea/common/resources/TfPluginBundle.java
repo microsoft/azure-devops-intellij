@@ -520,6 +520,20 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE = "Actions.Tfvc.Branch.Message.Failure";
 
+    //TFVC Merge Branch Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_TITLE = "Actions.Tfvc.MergeBranch.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_MSG = "Actions.Tfvc.MergeBranch.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_MAPPING_FOUND = "Actions.Tfvc.MergeBranch.Errors.NoMappingFound";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_CHANGES_TO_MERGE = "Actions.Tfvc.MergeBranch.Errors.NoChangesToMerge";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_PROGRESS_MERGING = "Actions.Tfvc.MergeBranch.Progress.Merging";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_SUCCESS = "Actions.Tfvc.MergeBranch.Success";
+
     //starters
     @NonNls
     public static final String STARTER_COMMAND_LINE_USAGE_MSG = "Starter.Usage.Message";

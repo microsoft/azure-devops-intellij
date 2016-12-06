@@ -21,6 +21,7 @@ public enum ServerStatusType {
     UNDELETE,
     LOCK,
     BRANCH,
+    MERGE,
     UNKNOWN;
 
     public static final Logger logger = LoggerFactory.getLogger(ServerStatusType.class);
@@ -51,6 +52,8 @@ public enum ServerStatusType {
                 types.add(LOCK);
             } else if (StringUtils.containsIgnoreCase(args[i].trim(), BRANCH.name())) {
                 types.add(BRANCH);
+            } else if (StringUtils.containsIgnoreCase(args[i].trim(), MERGE.name())) {
+                types.add(MERGE);
             } else {
                 logger.error("Undocumented status from server: " + args[i]);
                 types.add(UNKNOWN);

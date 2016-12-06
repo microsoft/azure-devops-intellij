@@ -13,10 +13,12 @@ import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.GetBranchesCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
 import com.microsoft.alm.plugin.external.commands.InfoCommand;
+import com.microsoft.alm.plugin.external.commands.MergeCommand;
 import com.microsoft.alm.plugin.external.commands.RenameCommand;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.StatusCommand;
@@ -28,10 +30,12 @@ import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.models.SyncResults;
+import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -385,6 +389,17 @@ public class CommandUtils {
         throw new RuntimeException("No items match " + itemPath);
     }
 
+    /**
+     * Calls the branch command and returns the changeset number of the changeset created.
+     * @param context
+     * @param workingFolder
+     * @param recursive
+     * @param comment
+     * @param author
+     * @param existingItem
+     * @param newBranchedItem
+     * @return
+     */
     public static String createBranch(final ServerContext context, final String workingFolder,
                                       final boolean recursive,
                                       final String comment, final String author,
@@ -392,5 +407,31 @@ public class CommandUtils {
         final CreateBranchCommand createBranchCommand = new CreateBranchCommand(context, workingFolder,
                 recursive, comment, author, existingItem, newBranchedItem);
         return createBranchCommand.runSynchronously();
+    }
+
+    /**
+     * Calls the merge command and returns the results
+     * @param context
+     * @param source
+     * @param destination
+     * @param versionSpec
+     * @param recursive
+     * @return
+     */
+    public static MergeResults merge(final ServerContext context, final String workingFolder, final String source, final String destination,
+                                     final VersionSpec versionSpec, final boolean recursive) {
+        final MergeCommand mergeCommand = new MergeCommand(context, workingFolder, source, destination, versionSpec, recursive);
+        return mergeCommand.runSynchronously();
+    }
+
+    /**
+     * Calls the get branches command and returns the list of branched items associated with the source item.
+     * @param context
+     * @param sourceItem
+     * @return
+     */
+    public static List<String> getBranches(final ServerContext context, final String workingFolder, final String sourceItem) {
+        final GetBranchesCommand getBranchesCommand = new GetBranchesCommand(context, workingFolder, sourceItem);
+        return getBranchesCommand.runSynchronously();
     }
 }
