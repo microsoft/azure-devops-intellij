@@ -62,6 +62,15 @@ public class TfsFileUtil {
         return VcsContextFactory.SERVICE.getInstance().createFilePathOn(f);
     }
 
+    public static List<String> getFilePathStrings(@NotNull final Collection<VirtualFile> files) {
+        List<String> paths = new ArrayList<String>(files.size());
+        for (VirtualFile f : files) {
+            final FilePath filePath = getFilePath(f);
+            paths.add(filePath.getPath());
+        }
+        return paths;
+    }
+
     public static void setReadOnly(final VirtualFile file, final boolean status) throws IOException {
         setReadOnly(Collections.singletonList(file), status);
     }

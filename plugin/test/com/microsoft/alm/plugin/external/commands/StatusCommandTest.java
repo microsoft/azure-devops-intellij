@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.google.common.collect.ImmutableList;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -24,9 +25,13 @@ public class StatusCommandTest extends AbstractCommandTest {
     }
 
     @Test
-    public void testConstructor_nullArgs() {
-        // This should be fine for the status command
-        final StatusCommand cmd = new StatusCommand(null, null);
+    public void testConstructor_nullArgsString() {
+        final StatusCommand cmd = new StatusCommand(null, (String) null);
+    }
+
+    @Test
+    public void testConstructor_nullArgsList() {
+        final StatusCommand cmd = new StatusCommand(null, (List) null);
     }
 
     @Test
@@ -41,6 +46,20 @@ public class StatusCommandTest extends AbstractCommandTest {
         final StatusCommand cmd = new StatusCommand(null, "/localpath");
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("status -noprompt -format:xml -recursive /localpath", builder.toString());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_nullPath() {
+        final StatusCommand cmd = new StatusCommand(null, (String) null);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("status -noprompt -format:xml -recursive", builder.toString());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_multipleFiles() {
+        final StatusCommand cmd = new StatusCommand(null, ImmutableList.of("/localpath1/file1.txt", "/localpath2/file2.txt"));
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("status -noprompt -format:xml -recursive /localpath1/file1.txt /localpath2/file2.txt", builder.toString());
     }
 
     @Test

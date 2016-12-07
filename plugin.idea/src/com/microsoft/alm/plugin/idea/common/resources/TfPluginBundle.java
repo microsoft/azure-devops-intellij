@@ -560,6 +560,14 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_ADD_ERROR = "Tfvc.Add.Error";
     @NonNls
+    public static final String KEY_TFVC_ADD_ITEM = "Tfvc.Add.Item";
+    @NonNls
+    public static final String KEY_TFVC_ADD_ITEMS = "Tfvc.Add.Items";
+    @NonNls
+    public static final String KEY_TFVC_ADD_PROMPT = "Tfvc.Add.Prompt";
+    @NonNls
+    public static final String KEY_TFVC_ADD_PROGRESS = "Tfvc.Add.Progress";
+    @NonNls
     public static final String KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE = "Tfvc.Checkin.Successful.Title";
     @NonNls
     public static final String KEY_TFVC_CHECKIN_SUCCESSFUL_MSG = "Tfvc.Checkin.Successful.Msg";

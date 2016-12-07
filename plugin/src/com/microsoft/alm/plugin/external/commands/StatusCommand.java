@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import jersey.repackaged.com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -23,11 +24,15 @@ import java.util.List;
 public class StatusCommand extends Command<List<PendingChange>> {
     private static final String CANDIDATE_TAG = "candidate-pending-changes";
 
-    private final String localPath;
+    private final List<String> localPaths;
 
-    public StatusCommand(ServerContext context, String localPath) {
+    public StatusCommand(final ServerContext context, final String localPath) {
+        this(context, localPath == null ? null : ImmutableList.of(localPath));
+    }
+
+    public StatusCommand(final ServerContext context, final List<String> localPaths) {
         super("status", context);
-        this.localPath = localPath;
+        this.localPaths = localPaths;
     }
 
     @Override
@@ -35,9 +40,13 @@ public class StatusCommand extends Command<List<PendingChange>> {
         ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .addSwitch("format", "xml")
                 .addSwitch("recursive");
-        if (localPath != null) {
-            builder.add(localPath);
+
+        if (localPaths != null) {
+            for (final String file : localPaths) {
+                builder.add(file);
+            }
         }
+
         return builder;
     }
 

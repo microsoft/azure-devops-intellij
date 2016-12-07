@@ -13,6 +13,7 @@ import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.FilePath;
@@ -23,6 +24,7 @@ import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
+import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
@@ -76,6 +78,7 @@ public class TFSVcs extends AbstractVcs {
     private DiffProvider myDiffProvider;
     private TFSCheckinEnvironment myCheckinEnvironment;
     private UpdateEnvironment myUpdateEnvironment;
+    private VcsVFSListener fileListener;
 
     public TFSVcs(@NotNull Project project) {
         super(project, TFVC_NAME);
@@ -98,17 +101,16 @@ public class TFSVcs extends AbstractVcs {
         return new TFSProjectConfigurable(myProject);
     }
 
-
     @Override
     public void activate() {
-//    TODO: myFileListener = new TFSFileListener(getProject(), this);
+        fileListener = new TFSFileListener(getProject(), this);
 //    TODO: TfsSdkManager.activate();
         checkCommandLineVersion();
     }
 
     @Override
     public void deactivate() {
-//    TODO: Disposer.dispose(myFileListener);
+        Disposer.dispose(fileListener);
     }
 
     public VcsShowConfirmationOption getAddConfirmation() {
@@ -212,7 +214,7 @@ public class TFSVcs extends AbstractVcs {
 
     public static VcsException convertToVcsException(final Throwable throwable) {
         if (throwable instanceof VcsException) {
-            return (VcsException)throwable;
+            return (VcsException) throwable;
         }
 
         final VcsException exception = new VcsException(throwable.getMessage(), throwable);

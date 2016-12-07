@@ -214,6 +214,18 @@ public class CommandUtils {
     }
 
     /**
+     * Get the status for a list of files
+     *
+     * @param context
+     * @param files
+     * @return
+     */
+    public static List<PendingChange> getStatusForFiles(final ServerContext context, final List<String> files) {
+        final Command<List<PendingChange>> command = new StatusCommand(context, files);
+        return command.runSynchronously();
+    }
+
+    /**
      * Renames a file
      *
      * @param context
