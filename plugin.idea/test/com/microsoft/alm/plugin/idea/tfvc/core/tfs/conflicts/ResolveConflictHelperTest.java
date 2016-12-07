@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
+import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -69,7 +70,7 @@ import static org.mockito.Mockito.when;
 public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public final Conflict CONFLICT_RENAME = new RenameConflict("/path/to/fileRename.txt", "$/server/path", "/old/path");
     public final Conflict CONFLICT_CONTEXT = new Conflict("/path/to/fileContent.txt", Conflict.ConflictType.CONTENT);
-    public final Conflict CONFLICT_BOTH = new RenameConflict("/path/to/fileBoth.txt", "$/server/path", "/old/path", Conflict.ConflictType.BOTH);
+    public final Conflict CONFLICT_BOTH = new RenameConflict("/path/to/fileBoth.txt", "$/server/path", "/old/path", Conflict.ConflictType.NAME_AND_CONTENT);
 
     public ResolveConflictHelper helper;
     public final List<String> updateRoots = Arrays.asList("/path");
@@ -335,7 +336,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testIsNameConflict_TrueBoth() {
-        assertTrue(helper.isNameConflict(new Conflict("/path/to/file1", Conflict.ConflictType.BOTH)));
+        assertTrue(helper.isNameConflict(new Conflict("/path/to/file1", Conflict.ConflictType.NAME_AND_CONTENT)));
     }
 
     @Test
@@ -350,7 +351,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testIsContentConflict_TrueBoth() {
-        assertTrue(helper.isContentConflict(new Conflict("/path/to/file1", Conflict.ConflictType.BOTH)));
+        assertTrue(helper.isContentConflict(new Conflict("/path/to/file1", Conflict.ConflictType.NAME_AND_CONTENT)));
     }
 
     @Test
@@ -360,7 +361,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testAcceptChange_GetConflictsException() {
-        when(CommandUtils.getConflicts(any(ServerContext.class), anyString())).thenThrow(new RuntimeException("Test Error"));
+        when(CommandUtils.getConflicts(any(ServerContext.class), anyString(), any(MergeResults.class))).thenThrow(new RuntimeException("Test Error"));
         when(CommandUtils.resolveConflictsByConflict(any(ServerContext.class), eq(Arrays.asList(CONFLICT_RENAME)), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs))).thenReturn(Arrays.asList(CONFLICT_RENAME));
         helper.acceptChange(Arrays.asList(CONFLICT_RENAME), mock(ProgressIndicator.class), mockProject, ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockResolveConflictsModel);
 
@@ -371,7 +372,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testAcceptChange_ResolveConflictException() {
-        when(CommandUtils.getConflicts(any(ServerContext.class), anyString())).thenReturn(Arrays.asList(CONFLICT_RENAME));
+        when(CommandUtils.getConflicts(any(ServerContext.class), anyString(), any(MergeResults.class))).thenReturn(Arrays.asList(CONFLICT_RENAME));
         when(CommandUtils.resolveConflictsByConflict(any(ServerContext.class), eq(Arrays.asList(CONFLICT_RENAME)), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs))).thenThrow(new RuntimeException("Test Error"));
         helper.acceptChange(Arrays.asList(CONFLICT_RENAME), mock(ProgressIndicator.class), mockProject, ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockResolveConflictsModel);
 
@@ -382,7 +383,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testAcceptChange_Happy() {
-        when(CommandUtils.getConflicts(any(ServerContext.class), anyString())).thenReturn(Arrays.asList(CONFLICT_RENAME, CONFLICT_CONTEXT));
+        when(CommandUtils.getConflicts(any(ServerContext.class), anyString(), any(MergeResults.class))).thenReturn(Arrays.asList(CONFLICT_RENAME, CONFLICT_CONTEXT));
         when(CommandUtils.resolveConflictsByConflict(any(ServerContext.class), eq(Arrays.asList(CONFLICT_CONTEXT)), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs))).thenReturn(Arrays.asList(CONFLICT_CONTEXT));
         when(CommandUtils.resolveConflictsByConflict(any(ServerContext.class), eq(Arrays.asList(CONFLICT_RENAME)), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs))).thenReturn(Arrays.asList(CONFLICT_RENAME));
         helper.acceptChange(Arrays.asList(CONFLICT_RENAME, CONFLICT_CONTEXT), mock(ProgressIndicator.class), mockProject, ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockResolveConflictsModel);
@@ -395,7 +396,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test
     public void testAcceptChange_Skipped() {
-        when(CommandUtils.getConflicts(any(ServerContext.class), anyString())).thenReturn(Arrays.asList(CONFLICT_RENAME));
+        when(CommandUtils.getConflicts(any(ServerContext.class), anyString(), any(MergeResults.class))).thenReturn(Arrays.asList(CONFLICT_RENAME));
         // return empty lit since nothing was resolved and instead skipped
         when(CommandUtils.resolveConflictsByConflict(any(ServerContext.class), eq(Arrays.asList(CONFLICT_RENAME)), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs))).thenReturn(Collections.EMPTY_LIST);
         helper.acceptChange(Arrays.asList(CONFLICT_RENAME), mock(ProgressIndicator.class), mockProject, ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockResolveConflictsModel);

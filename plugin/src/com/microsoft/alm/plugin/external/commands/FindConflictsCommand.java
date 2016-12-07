@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
 import org.apache.commons.lang.StringUtils;
 
@@ -23,6 +24,7 @@ public class FindConflictsCommand extends Command<ConflictResults> {
     public static final String WARNING_PREFIX = "Warning";
     public static final String BOTH_CONFLICTS_SUFFIX = "The item name and content have changed";
     public static final String RENAME_CONFLICT_SUFFIX = "The item name has changed";
+    public static final String MERGE_CONFLICT_SUFFIX = "The source and target both have changes";
 
     private final String basePath;
 
@@ -53,26 +55,43 @@ public class FindConflictsCommand extends Command<ConflictResults> {
      */
     @Override
     public ConflictResults parseOutput(final String stdout, final String stderr) {
-        final List<String> contentConflicts = new ArrayList<String>();
-        final List<String> renameConflicts = new ArrayList<String>();
-        final List<String> bothConflicts = new ArrayList<String>();
+        final List<Conflict> conflicts = new ArrayList<Conflict>();
         final String[] lines = getLines(stderr);
 
         for (final String line : lines) {
-            // find last ue of colon because it can be included in the file path (i.e. C:\\Users\\user\\tfvc\\file.txt: The item content has changed)
+            // find last use of colon because it can be included in the file path (i.e. C:\\Users\\user\\tfvc\\file.txt: The item content has changed)
             final int index = line.lastIndexOf(":");
             if (index != -1) {
+                final String localPath = line.substring(0, index);
                 if (StringUtils.endsWith(line, BOTH_CONFLICTS_SUFFIX)) {
-                    bothConflicts.add(line.substring(0, index));
+                    conflicts.add(createNameAndContentConflict(localPath));
                 } else if (StringUtils.endsWith(line, RENAME_CONFLICT_SUFFIX)) {
-                    renameConflicts.add(line.substring(0, index));
+                    conflicts.add(createRenameConflict(localPath));
+                } else if (StringUtils.endsWith(line, MERGE_CONFLICT_SUFFIX)) {
+                    conflicts.add(createMergeConflict(localPath));
                 } else {
-                    contentConflicts.add(line.substring(0, index));
+                    conflicts.add(createContentConflict(localPath));
                 }
             }
         }
 
-        return new ConflictResults(contentConflicts, renameConflicts, bothConflicts);
+        return new ConflictResults(conflicts);
+    }
+
+    private Conflict createRenameConflict(final String localPath) {
+        return new Conflict(localPath, Conflict.ConflictType.RENAME);
+    }
+
+    private Conflict createContentConflict(final String localPath) {
+        return new Conflict(localPath, Conflict.ConflictType.CONTENT);
+    }
+
+    private Conflict createNameAndContentConflict(final String localPath) {
+        return new Conflict(localPath, Conflict.ConflictType.NAME_AND_CONTENT);
+    }
+
+    private Conflict createMergeConflict(final String localPath) {
+        return new Conflict(localPath, Conflict.ConflictType.MERGE);
     }
 
     /**

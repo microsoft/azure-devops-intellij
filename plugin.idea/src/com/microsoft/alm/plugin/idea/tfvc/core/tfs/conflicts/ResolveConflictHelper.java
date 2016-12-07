@@ -18,12 +18,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
+import com.microsoft.alm.plugin.external.models.MergeConflict;
+import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
+import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
@@ -60,13 +65,23 @@ public class ResolveConflictHelper {
     private final UpdatedFiles updatedFiles;
     @NotNull
     private final List<String> updateRoots;
+    @Nullable
+    private final MergeResults mergeResults;
 
     public ResolveConflictHelper(final Project project,
                                  final UpdatedFiles updatedFiles,
                                  final List<String> updateRoots) {
+        this(project, updatedFiles, updateRoots, null);
+    }
+
+    public ResolveConflictHelper(final Project project,
+                                 final UpdatedFiles updatedFiles,
+                                 final List<String> updateRoots,
+                                 final MergeResults mergeResults) {
         this.project = project;
         this.updatedFiles = updatedFiles;
         this.updateRoots = updateRoots;
+        this.mergeResults = mergeResults;
     }
 
     /**
@@ -238,7 +253,7 @@ public class ResolveConflictHelper {
         try {
             CommandUtils.resolveConflictsByPath(context, Arrays.asList(localPath), type);
 
-            if (updateFiles) {
+            if (updateFiles && updatedFiles != null) {
                 // use local path from conflict to update list because results from command gives server name even if you keep your own change
                 updatedFiles.getGroupById(FileGroup.MERGED_ID).add(updatedPath, TFSVcs.getKey(), null);
             }
@@ -291,35 +306,55 @@ public class ResolveConflictHelper {
         try {
             // only get diff contents if it is an edited file
             if (conflictPath.isFile()) {
-                // get original contents of file
-                final PendingChange originalChange = CommandUtils.getStatusForFile(context, conflict.getLocalPath());
-                String original = null;
-                if (originalChange != null) {
-                    if (isNameConflict(conflict)) {
-                        final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                        original = TFSContentRevision.createRenameRevision(project, context, renamePath,
-                                Integer.parseInt(originalChange.getVersion()), originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
-                    } else {
-                        original = TFSContentRevision.create(project, context, localPath,
-                                Integer.parseInt(originalChange.getVersion()), originalChange.getDate()).getContent();
-                    }
-                }
-
-                // update progress
-                IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_SERVER));
-
-                // get content from local file
-                final String myLocalChanges = CurrentContentRevision.create(localPath).getContent();
-
-                // get content from server
+                final String original;
                 final String serverChanges;
-                if (isNameConflict(conflict)) {
-                    final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
-                    final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                    serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, Integer.parseInt(serverChange.getId()), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
+                final String myLocalChanges;
+
+                final PendingChange originalChange = CommandUtils.getStatusForFile(context, conflict.getLocalPath());
+                if (isMergeConflict(conflict, null)) {
+                    final String workingFolder = localPath.isDirectory() ?
+                            localPath.getPath() :
+                            localPath.getParentPath().getPath();
+                    final MergeConflict mergeConflict = (MergeConflict) conflict;
+                    final VersionSpec baseVersion = CommandUtils.getBaseVersion(
+                            context, workingFolder, mergeConflict.getOldPath(), mergeConflict.getServerPath());
+
+                    original = TFSContentRevision.createRenameRevision(project, context, localPath,
+                            SystemHelper.toInt(baseVersion.getValue(), 1), originalChange.getDate(), mergeConflict.getOldPath()).getContent();
+                    serverChanges = TFSContentRevision.createRenameRevision(project, context, localPath,
+                            getMergeFromVersion(mergeConflict), originalChange.getDate(), mergeConflict.getOldPath()).getContent();
+                    myLocalChanges = CurrentContentRevision.create(localPath).getContent();
                 } else {
-                    final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
-                    serverChanges = TFSContentRevision.create(project, context, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
+                    // get original contents of file
+                    if (originalChange != null) {
+                        final int version = Integer.parseInt(originalChange.getVersion());
+                        if (isNameConflict(conflict)) {
+                            final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                            original = TFSContentRevision.createRenameRevision(project, context, renamePath,
+                                    version, originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
+                        } else {
+                            original = TFSContentRevision.create(project, context, localPath,
+                                    version, originalChange.getDate()).getContent();
+                        }
+                    } else {
+                        original = null;
+                    }
+
+                    // update progress
+                    IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.5, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_SERVER));
+
+                    // get content from local file
+                    myLocalChanges = CurrentContentRevision.create(localPath).getContent();
+
+                    // get content from server
+                    if (isNameConflict(conflict)) {
+                        final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
+                        final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                        serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, serverChange.getIdAsInt(), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
+                    } else {
+                        final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
+                        serverChanges = TFSContentRevision.create(project, context, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
+                    }
                 }
 
                 contentTriplet.baseContent = original != null ? original : StringUtils.EMPTY;
@@ -367,11 +402,39 @@ public class ResolveConflictHelper {
     }
 
     public static boolean isNameConflict(final @NotNull Conflict conflict) {
-        return Conflict.ConflictType.RENAME.equals(conflict.getType()) || Conflict.ConflictType.BOTH.equals(conflict.getType());
+        // Return true if this is a Rename conflict, Name and Content conflict, or a Merge(with rename) conflict
+        return Conflict.ConflictType.RENAME.equals(conflict.getType()) ||
+                Conflict.ConflictType.NAME_AND_CONTENT.equals(conflict.getType()) ||
+                isMergeConflict(conflict, ServerStatusType.RENAME);
     }
 
     public static boolean isContentConflict(final @NotNull Conflict conflict) {
-        return Conflict.ConflictType.CONTENT.equals(conflict.getType()) || Conflict.ConflictType.BOTH.equals(conflict.getType());
+        // Return true if this is a content conflict, Name and Content conflict, or a Merge(with edit) conflict
+        return Conflict.ConflictType.CONTENT.equals(conflict.getType()) ||
+                Conflict.ConflictType.NAME_AND_CONTENT.equals(conflict.getType()) ||
+                isMergeConflict(conflict, ServerStatusType.EDIT);
+    }
+
+    public static boolean isMergeConflict(final @NotNull Conflict conflict, final @Nullable ServerStatusType matchingChangeType) {
+        if (Conflict.ConflictType.MERGE.equals(conflict.getType())) {
+            final MergeConflict mergeConflict = (MergeConflict) conflict;
+            if (matchingChangeType != null) {
+                return mergeConflict.getMapping().getChangeTypes().contains(matchingChangeType);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    public static int getMergeFromVersion(final MergeConflict mergeConflict) {
+        if (mergeConflict == null || mergeConflict.getMapping() == null ||
+                mergeConflict.getMapping().getFromServerItemVersion() == null ||
+                mergeConflict.getMapping().getFromServerItemVersion().getEnd().getType() != VersionSpec.Type.Changeset) {
+            logger.warn("The merge conflict does not contain the correct From Version Range (End).");
+            throw new IllegalArgumentException("mergeConflict");
+        }
+        return SystemHelper.toInt(mergeConflict.getMapping().getFromServerItemVersion().getEnd().getValue(), 0);
     }
 
     /**
@@ -436,7 +499,7 @@ public class ResolveConflictHelper {
         final List<Conflict> conflicts = new ArrayList<Conflict>();
         try {
             for (final String updatePath : updateRoots) {
-                conflicts.addAll(CommandUtils.getConflicts(TFSVcs.getInstance(project).getServerContext(false), updatePath));
+                conflicts.addAll(CommandUtils.getConflicts(TFSVcs.getInstance(project).getServerContext(false), updatePath, mergeResults));
             }
         } catch (Exception e) {
             logger.error("Error while finding conflicts: " + e.getMessage());
