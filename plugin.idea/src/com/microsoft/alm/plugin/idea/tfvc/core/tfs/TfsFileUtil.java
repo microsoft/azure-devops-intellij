@@ -7,6 +7,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -304,5 +306,29 @@ public class TfsFileUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Recursively look for files that have a status UNKNOWN
+     *
+     * @param files
+     * @param fileStatusManager
+     * @return
+     */
+    public static boolean findUnknownFiles(final VirtualFile[] files, final FileStatusManager fileStatusManager) {
+        for (VirtualFile file : files) {
+            // if directory then check children
+            if (file.isDirectory()) {
+                if (findUnknownFiles(file.getChildren(), fileStatusManager)) {
+                    return true;
+                }
+            } else {
+                final FileStatus fileStatus = fileStatusManager.getStatus(file);
+                if (fileStatus == FileStatus.UNKNOWN) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

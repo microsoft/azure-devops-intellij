@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -16,6 +15,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,13 +65,6 @@ public class AddAction extends InstrumentedAction {
         }
 
         final FileStatusManager fileStatusManager = FileStatusManager.getInstance(project);
-        for (VirtualFile file : files) {
-            final FileStatus fileStatus = fileStatusManager.getStatus(file);
-            if (fileStatus != FileStatus.UNKNOWN) {
-                return false;
-            }
-        }
-
-        return true;
+        return TfsFileUtil.findUnknownFiles(files, fileStatusManager);
     }
 }
