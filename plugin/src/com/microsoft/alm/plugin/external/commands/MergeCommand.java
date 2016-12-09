@@ -151,7 +151,8 @@ public class MergeCommand extends Command<MergeResults> {
         parts = StringUtils.split(target, VERSION_SEPARATOR);
         final String targetFilename = parts.length > 0 ? parts[0] : StringUtils.EMPTY;
         final String targetVersion = parts.length > 1 ? parts[1] : StringUtils.EMPTY;
-        return new MergeMapping(sourceFilename, targetFilename, VersionSpec.Range.create(sourceVersionRange),
+        final VersionSpec.Range range = VersionSpec.Range.create(sourceVersionRange);
+        return new MergeMapping(sourceFilename, targetFilename, range,
                 VersionSpec.create(targetVersion), serverStatusTypes, isConflict);
     }
 }

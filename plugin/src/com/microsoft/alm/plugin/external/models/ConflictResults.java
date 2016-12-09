@@ -3,33 +3,19 @@
 
 package com.microsoft.alm.plugin.external.models;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Types of conflicts found from resolve command
+ * List of conflicts found from resolve command
  */
 public class ConflictResults {
-    final List<String> contentConflicts;
-    final List<String> renameConflicts;
-    final List<String> bothConflicts;
+    final List<Conflict> conflicts;
 
-    public ConflictResults(final List<String> contentConflicts, final List<String> renameConflicts,
-                           final List<String> bothConflicts) {
-        this.contentConflicts = Collections.unmodifiableList(contentConflicts);
-        this.renameConflicts = Collections.unmodifiableList(renameConflicts);
-        this.bothConflicts = Collections.unmodifiableList(bothConflicts);
+    public ConflictResults(final List<Conflict> conflicts) {
+        this.conflicts = conflicts;
     }
 
-    public List<String> getContentConflicts() {
-        return contentConflicts;
-    }
-
-    public List<String> getRenameConflicts() {
-        return renameConflicts;
-    }
-
-    public List<String> getBothConflicts() {
-        return bothConflicts;
+    public List<Conflict> getConflicts() {
+        return conflicts;
     }
 }

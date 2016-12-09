@@ -95,7 +95,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
                     if (mergeResults.doConflictsExists()) {
                         logger.info("Conflicts found; launching the conflict resolution ui...");
                         ResolveConflictHelper resolveConflictHelper =
-                                new ResolveConflictHelper(project, null, Collections.singletonList(targetLocalPath));
+                                new ResolveConflictHelper(project, null, Collections.singletonList(targetLocalPath), mergeResults);
                         try {
                             ConflictsEnvironment.getConflictsHandler().resolveConflicts(project, resolveConflictHelper);
                         } catch (TfsException e) {

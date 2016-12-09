@@ -13,6 +13,7 @@ import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
 import com.microsoft.alm.plugin.external.commands.GetBranchesCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
@@ -30,6 +31,8 @@ import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.MergeConflict;
+import com.microsoft.alm.plugin.external.models.MergeMapping;
 import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
@@ -266,31 +269,58 @@ public class CommandUtils {
      * @param root
      * @return
      */
-    public static List<Conflict> getConflicts(final ServerContext context, final String root) {
-        final List<Conflict> conflicts = new ArrayList<Conflict>();
-
+    public static List<Conflict> getConflicts(final ServerContext context, final String root, final MergeResults mergeResults) {
         final Command<ConflictResults> conflictsCommand = new FindConflictsCommand(context, root);
         final ConflictResults conflictResults = conflictsCommand.runSynchronously();
+        final List<Conflict> conflicts = new ArrayList<Conflict>(conflictResults.getConflicts().size());
 
-        for (final String contentConflict : conflictResults.getContentConflicts()) {
-            conflicts.add(new Conflict(contentConflict, Conflict.ConflictType.CONTENT));
-        }
-
-        for (final String renameConflict : conflictResults.getRenameConflicts()) {
-            final RenameConflict rename = findLocalRename(context, renameConflict, root, Conflict.ConflictType.RENAME);
-            if (rename != null) {
-                conflicts.add(rename);
-            }
-        }
-
-        for (final String bothConflict : conflictResults.getBothConflicts()) {
-            final RenameConflict rename = findLocalRename(context, bothConflict, root, Conflict.ConflictType.BOTH);
-            if (rename != null) {
-                conflicts.add(rename);
+        for (final Conflict conflict : conflictResults.getConflicts()) {
+            if (conflict.getType() == Conflict.ConflictType.CONTENT) {
+                conflicts.add(conflict);
+            } else if (conflict.getType() == Conflict.ConflictType.RENAME ||
+                    conflict.getType() == Conflict.ConflictType.NAME_AND_CONTENT) {
+                // For renames we have to find the old name and the new name which creates a different type of conflict instance
+                final RenameConflict rename = findLocalRename(context, conflict.getLocalPath(), root, Conflict.ConflictType.RENAME);
+                if (rename != null) {
+                    conflicts.add(rename);
+                } else {
+                    logger.warn("Unable to convert Rename conflict in getConflicts");
+                }
+            } else if (conflict.getType() == Conflict.ConflictType.MERGE) {
+                // For merge conflicts we have to find get the "from" path and the to "path" similar to renames using the MergeResult
+                final MergeConflict merge = findMergeConflict(context, conflict, mergeResults);
+                if (merge != null) {
+                    conflicts.add(merge);
+                } else {
+                    logger.warn("Unable to convert Merge conflict in getConflicts");
+                }
             }
         }
 
         return conflicts;
+    }
+
+    private static MergeConflict findMergeConflict(final ServerContext context, final Conflict originalConflict, final MergeResults mergeResults) {
+        final ItemInfo conflictInfo = getItemInfo(context, originalConflict.getLocalPath());
+        if (mergeResults == null || conflictInfo == null) {
+            return null;
+        }
+
+        // Find the matching merge mapping from the merge results
+        MergeMapping conflictMapping = null;
+        final String serverPath = conflictInfo.getServerItem();
+        for(final MergeMapping mapping : mergeResults.getMappings()) {
+            if (StringUtils.equalsIgnoreCase(mapping.getToServerItem(), serverPath)) {
+                conflictMapping = mapping;
+                break;
+            }
+        }
+
+        if (conflictMapping != null) {
+            return new MergeConflict(originalConflict.getLocalPath(), conflictMapping);
+        }
+
+        return null;
     }
 
     /**
@@ -445,5 +475,10 @@ public class CommandUtils {
     public static List<String> getBranches(final ServerContext context, final String workingFolder, final String sourceItem) {
         final GetBranchesCommand getBranchesCommand = new GetBranchesCommand(context, workingFolder, sourceItem);
         return getBranchesCommand.runSynchronously();
+    }
+
+    public static VersionSpec getBaseVersion(final ServerContext context, final String workingFolder, final String source, final String destination) {
+        final GetBaseVersionCommand getBaseVersionCommand = new GetBaseVersionCommand(context, workingFolder, source, destination);
+        return getBaseVersionCommand.runSynchronously();
     }
 }
