@@ -112,7 +112,8 @@ public class CatalogServiceImpl implements CatalogService {
     public TeamProjectCollectionReference getProjectCollection(final String collectionName) {
         final List<TeamProjectCollectionReference> collections = getProjectCollections();
         for (final TeamProjectCollectionReference collection : collections) {
-            if (StringUtils.equalsIgnoreCase(collection.getName(), collectionName)) {
+            // the collection name is a display name so there are spaces while the collection name is encoded
+            if (StringUtils.equalsIgnoreCase(collection.getName().replace(" ", "%20"), collectionName)) {
                 return collection;
             }
         }
