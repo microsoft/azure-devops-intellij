@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.utils;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
@@ -275,49 +276,83 @@ public class CommandUtils {
         final List<Conflict> conflicts = new ArrayList<Conflict>(conflictResults.getConflicts().size());
 
         for (final Conflict conflict : conflictResults.getConflicts()) {
+            Conflict newConflict = null;
             if (conflict.getType() == Conflict.ConflictType.CONTENT) {
-                conflicts.add(conflict);
+                newConflict = conflict;
             } else if (conflict.getType() == Conflict.ConflictType.RENAME ||
                     conflict.getType() == Conflict.ConflictType.NAME_AND_CONTENT) {
                 // For renames we have to find the old name and the new name which creates a different type of conflict instance
-                final RenameConflict rename = findLocalRename(context, conflict.getLocalPath(), root, Conflict.ConflictType.RENAME);
-                if (rename != null) {
-                    conflicts.add(rename);
-                } else {
-                    logger.warn("Unable to convert Rename conflict in getConflicts");
+                newConflict = findLocalRename(context, conflict.getLocalPath(), root, Conflict.ConflictType.RENAME);
+                if (newConflict == null) {
+                    // For the rare case where there is a rename done on both sides of a merge we can end up here
+                    // So, try to find the merge conflict
+                    newConflict = findMergeConflict(context, conflict, mergeResults, root);
                 }
             } else if (conflict.getType() == Conflict.ConflictType.MERGE) {
                 // For merge conflicts we have to find get the "from" path and the to "path" similar to renames using the MergeResult
-                final MergeConflict merge = findMergeConflict(context, conflict, mergeResults);
-                if (merge != null) {
-                    conflicts.add(merge);
-                } else {
-                    logger.warn("Unable to convert Merge conflict in getConflicts");
-                }
+                newConflict = findMergeConflict(context, conflict, mergeResults, root);
             }
+
+            if (newConflict != null) {
+                conflicts.add(newConflict);
+            } else {
+                logger.warn("Unable to convert Merge conflict in getConflicts");
+            }
+
         }
 
         return conflicts;
     }
 
-    private static MergeConflict findMergeConflict(final ServerContext context, final Conflict originalConflict, final MergeResults mergeResults) {
-        final ItemInfo conflictInfo = getItemInfo(context, originalConflict.getLocalPath());
+    private static MergeConflict findMergeConflict(final ServerContext context, final Conflict originalConflict, final MergeResults mergeResults, final String workingFolder) {
+        final ItemInfo conflictInfo = getItemInfo(context, workingFolder, originalConflict.getLocalPath());
         if (mergeResults == null || conflictInfo == null) {
             return null;
         }
 
-        // Find the matching merge mapping from the merge results
+        // Find the matching merge mapping (and local path) from the merge results
         MergeMapping conflictMapping = null;
-        final String serverPath = conflictInfo.getServerItem();
-        for(final MergeMapping mapping : mergeResults.getMappings()) {
-            if (StringUtils.equalsIgnoreCase(mapping.getToServerItem(), serverPath)) {
-                conflictMapping = mapping;
-                break;
+        String localPath = originalConflict.getLocalPath();
+
+        // Check for the rename case (signified by the fact that the local path didn't provide legitimate info)
+        if (StringUtils.isEmpty(conflictInfo.getServerItem())) {
+            // To handle the rename in both branches case we have to find the matching mapping in a very complex way
+            // We have a local path in the original conflict that doesn't actually exist and no way to construct the correct
+            // server path to match. The only way to find the mapping is use the Resolve command to get the local path from
+            // the server paths we already have.
+
+            // We will loop thru our mappings looking for a RENAME and then try to use resolve to get the "new" local path
+            for (final MergeMapping mapping : mergeResults.getMappings()) {
+                if (mapping.getChangeTypes().contains(ServerStatusType.RENAME)) {
+                    final Command<ConflictResults> conflictsCommand = new FindConflictsCommand(context, workingFolder, mapping.getToServerItem());
+                    final ConflictResults conflictResults = conflictsCommand.runSynchronously();
+                    if (conflictResults.getConflicts().size() == 1) {
+                        final Conflict mappingConflict = conflictResults.getConflicts().get(0);
+                        final String mappingLocalPath = Path.combine(workingFolder, mappingConflict.getLocalPath());
+                        // If the local paths match, then we have the right mapping
+                        if (StringUtils.equalsIgnoreCase(mappingLocalPath, originalConflict.getLocalPath())) {
+                            // Now that we have the right mapping, let's figure out the right local path
+                            final ItemInfo info = getItemInfo(context, workingFolder, mapping.getToServerItem());
+                            localPath = info.getLocalItem();
+                            conflictMapping = mapping;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Use the server path to find the matching mapping
+            final String serverPath = conflictInfo.getServerItem();
+            for (final MergeMapping mapping : mergeResults.getMappings()) {
+                if (StringUtils.equalsIgnoreCase(mapping.getToServerItem(), serverPath)) {
+                    conflictMapping = mapping;
+                    break;
+                }
             }
         }
 
         if (conflictMapping != null) {
-            return new MergeConflict(originalConflict.getLocalPath(), conflictMapping);
+            return new MergeConflict(localPath, conflictMapping);
         }
 
         return null;
@@ -416,13 +451,17 @@ public class CommandUtils {
 
     /**
      * Returns the item info for a single item.
-     *
-     * @param context
-     * @param itemPath
-     * @return
      */
     public static ItemInfo getItemInfo(final ServerContext context, final String itemPath) {
-        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, Collections.singletonList(itemPath));
+        return getItemInfo(context, null, itemPath);
+    }
+
+    /**
+     * Returns the item info for a single item. Specify a working folder in the workspace if you want info for a server
+     * path.
+     */
+    public static ItemInfo getItemInfo(final ServerContext context, final String workingFolder, final String itemPath) {
+        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, Collections.singletonList(itemPath));
         List<ItemInfo> items = infoCommand.runSynchronously();
         if (items != null && items.size() > 0) {
             return items.get(0);

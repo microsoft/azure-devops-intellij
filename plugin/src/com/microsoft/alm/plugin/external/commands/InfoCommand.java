@@ -21,16 +21,23 @@ import java.util.Map;
  */
 public class InfoCommand extends Command<List<ItemInfo>> {
     private final List<String> itemPaths;
+    private final String workingFolder;
 
     public InfoCommand(final ServerContext context, final List<String> itemPaths) {
+        this(context, null, itemPaths);
+    }
+
+    public InfoCommand(final ServerContext context, final String workingFolder, final List<String> itemPaths) {
         super("info", context);
         ArgumentHelper.checkNotNullOrEmpty(itemPaths, "itemPaths");
         this.itemPaths = itemPaths;
+        this.workingFolder = workingFolder;
     }
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
-        ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
+        ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
+                .setWorkingDirectory(workingFolder);
         for (final String file : itemPaths) {
             builder.add(file);
         }

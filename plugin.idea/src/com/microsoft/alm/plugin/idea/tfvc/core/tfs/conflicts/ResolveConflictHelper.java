@@ -38,6 +38,7 @@ import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ContentTriplet;
+import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.NameMergerResolution;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ResolveConflictsModel;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +99,7 @@ public class ResolveConflictHelper {
 
         final FilePath localPath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
         ContentTriplet contentTriplet = null;
+        NameMergerResolution nameMergerResolution = null;
 
         // only get file contents if a content conflict exists
         // need to do this before any rename changes take place b/c it could overwrite the contents of the file
@@ -106,15 +108,24 @@ public class ResolveConflictHelper {
             contentTriplet = populateThreeWayDiffWithProgress(conflict, conflictPath, localPath, context);
         }
 
+        if (isNameConflict(conflict)) {
+            logger.info("Rename conflict have been found so getting new name from user");
+            nameMergerResolution = getMergedNameFromUser((RenameConflict)conflict);
+            if (nameMergerResolution == null) {
+                // User canceled
+                return;
+            }
+        }
+
         if (isNameConflict(conflict) && isContentConflict(conflict)) {
             logger.info("Both conflict types found");
-            processBothConflicts(conflict, context, model, conflictPath, contentTriplet);
+            processBothConflicts(conflict, context, model, conflictPath, contentTriplet, nameMergerResolution);
         } else if (isNameConflict(conflict)) {
             logger.info("Naming conflict found");
-            processRenameConflict(conflict, context, model);
+            processRenameConflict(conflict, context, model, nameMergerResolution);
         } else if (isContentConflict(conflict)) {
             logger.info("Content conflict found");
-            processContentConflict(context, model, contentTriplet, localPath);
+            processContentConflict(context, model, contentTriplet, localPath, nameMergerResolution);
         } else {
             logger.error("Unknown conflict state");
         }
@@ -131,27 +142,52 @@ public class ResolveConflictHelper {
      * @throws VcsException
      */
     @VisibleForTesting
-    protected void processBothConflicts(final Conflict conflict, final ServerContext context, final ResolveConflictsModel model, final File conflictPath, @Nullable final ContentTriplet contentTriplet) throws VcsException {
-        final RenameConflict renameConflict = (RenameConflict) conflict;
-        final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
-        if (mergedServerPath == null) {
-            // user cancelled
-            logger.warn("User canceled rename merge");
-            return;
-        }
-
+    protected void processBothConflicts(final Conflict conflict, final ServerContext context,
+                                        final ResolveConflictsModel model, final File conflictPath,
+                                        @Nullable final ContentTriplet contentTriplet,
+                                        final NameMergerResolution nameMergerResolution) throws VcsException {
         // take their name
-        if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
+        if (nameMergerResolution != null && nameMergerResolution.userChoseTheirs()) {
             logger.debug("Taking their name before processing content conflict");
             // resolve name conflict but do not update updatedFiles yet because content conflict still needs resolved
-            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, false);
-            processContentConflict(context, model, contentTriplet, VersionControlPath.getFilePath(mergedServerPath, conflictPath.isDirectory()));
+            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, false, nameMergerResolution);
+            processContentConflict(context, model, contentTriplet,
+                    VersionControlPath.getFilePath(nameMergerResolution.getResolvedLocalPath(), conflictPath.isDirectory()),
+                    nameMergerResolution);
         } else {
             // keep your name so just skip to content resolution which will do the resolve for you (it always does KeepYours)
             logger.debug("Keeping your name so continue to content conflict");
-            processContentConflict(context, model, contentTriplet, VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory()));
+            processContentConflict(context, model, contentTriplet,
+                    VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory()), nameMergerResolution);
         }
     }
+
+    private NameMergerResolution getMergedNameFromUser(final RenameConflict renameConflict) {
+        logger.info("Ask the user which name choice they want: theirs or mine");
+        final String theirNameChoice;
+        final String myNameChoice;
+        if (renameConflict instanceof MergeConflict) {
+            final MergeConflict mergeConflict = (MergeConflict) renameConflict;
+            theirNameChoice = mergeConflict.getMapping().getFromServerItem();
+            myNameChoice = mergeConflict.getMapping().getToServerItem();
+        } else {
+            theirNameChoice = renameConflict.getServerPath();
+            myNameChoice = renameConflict.getLocalPath();
+        }
+        logger.info(" - theirNameChoice: " + theirNameChoice);
+        logger.info(" - myNameChoice: " + myNameChoice);
+
+        final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(myNameChoice, theirNameChoice, project);
+        if (mergedServerPath == null) {
+            // user cancelled
+            logger.warn("User canceled rename merge");
+            return null;
+        }
+        logger.info("User chose: " + mergedServerPath);
+
+        return new NameMergerResolution(theirNameChoice, myNameChoice, mergedServerPath);
+    }
+
 
     /**
      * Process a rename conflict specifically
@@ -162,23 +198,18 @@ public class ResolveConflictHelper {
      * @throws VcsException
      */
     @VisibleForTesting
-    protected void processRenameConflict(final Conflict conflict, final ServerContext context, final ResolveConflictsModel model) throws VcsException {
-        final RenameConflict renameConflict = (RenameConflict) conflict;
-        final String mergedServerPath = ConflictsEnvironment.getNameMerger().mergeName(renameConflict, project);
-        if (mergedServerPath == null) {
-            // user cancelled
-            logger.warn("User canceled rename merge");
-            return;
-        }
-
+    protected void processRenameConflict(final Conflict conflict, final ServerContext context, final ResolveConflictsModel model,
+                                         final NameMergerResolution nameMergerResolution) throws VcsException {
         // take their name
-        if (StringUtils.equals(mergedServerPath, renameConflict.getServerPath())) {
+        if (nameMergerResolution != null && nameMergerResolution.userChoseTheirs()) {
             logger.debug("Taking their name");
-            resolveConflictWithProgress(conflict.getLocalPath(), mergedServerPath, ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, true);
+            resolveConflictWithProgress(conflict.getLocalPath(), nameMergerResolution.getTheirNameChoice(),
+                    ResolveConflictsCommand.AutoResolveType.TakeTheirs, context, model, true, nameMergerResolution);
         } else {
             // keep your name
             logger.debug("Keeping your name");
-            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, context, model, true);
+            resolveConflictWithProgress(conflict.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours,
+                    context, model, true, nameMergerResolution);
         }
     }
 
@@ -192,7 +223,9 @@ public class ResolveConflictHelper {
      * @throws VcsException
      */
     @VisibleForTesting
-    protected void processContentConflict(final ServerContext context, final ResolveConflictsModel model, final ContentTriplet contentTriplet, final FilePath localPath) throws VcsException {
+    protected void processContentConflict(final ServerContext context, final ResolveConflictsModel model,
+                                          final ContentTriplet contentTriplet, final FilePath localPath,
+                                          final NameMergerResolution nameMergerResolution) throws VcsException {
         boolean resolved = true;
         if (contentTriplet != null) {
             final File localFile = new File(localPath.getPath());
@@ -213,25 +246,38 @@ public class ResolveConflictHelper {
         }
 
         if (resolved) {
-            resolveConflictWithProgress(localPath.getPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, context, model, true);
+            resolveConflictWithProgress(localPath.getPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, context, model, true, nameMergerResolution);
         } else {
             logger.warn("Conflict merge was aborted by user");
         }
     }
 
     @VisibleForTesting
-    protected void resolveConflictWithProgress(final String localPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
-        resolveConflictWithProgress(localPath, localPath, type, context, model, updateFiles);
+    protected void resolveConflictWithProgress(final String localPath, final ResolveConflictsCommand.AutoResolveType type,
+                                               final ServerContext context, final ResolveConflictsModel model,
+                                               final boolean updateFiles, final NameMergerResolution nameMergerResolution) throws VcsException {
+        resolveConflictWithProgress(localPath, localPath, type, context, model, updateFiles, nameMergerResolution);
     }
 
     @VisibleForTesting
-    protected void resolveConflictWithProgress(final String localPath, final String updatedPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
+    protected void resolveConflictWithProgress(final String localPath, final String updatedPath,
+                                               final ResolveConflictsCommand.AutoResolveType type,
+                                               final ServerContext context,
+                                               final ResolveConflictsModel model,
+                                               final boolean updateFiles,
+                                               final NameMergerResolution nameMergerResolution) throws VcsException {
         final VcsRunnable resolveRunnable = new VcsRunnable() {
             public void run() throws VcsException {
-                resolveConflict(localPath, updatedPath, type, context, model, updateFiles);
+                resolveConflict(localPath, updatedPath, type, context, model, updateFiles, nameMergerResolution);
             }
         };
         VcsUtil.runVcsProcessWithProgress(resolveRunnable, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_PROGRESS_BAR), false, project);
+
+        // The following code is in this method instead of resolveConflict so that it will be called from tests
+        if (nameMergerResolution != null && StringUtils.isEmpty(nameMergerResolution.getResolvedLocalPath())) {
+            // If we didn't get back what we expected from resolving the conflict, just default to the path we have
+            nameMergerResolution.setResolvedLocalPath(nameMergerResolution.getUserSelection());
+        }
     }
 
     /**
@@ -247,11 +293,19 @@ public class ResolveConflictHelper {
      * @throws VcsException
      */
     @VisibleForTesting
-    protected void resolveConflict(final String localPath, final String updatedPath, final ResolveConflictsCommand.AutoResolveType type, final ServerContext context, final ResolveConflictsModel model, final boolean updateFiles) throws VcsException {
+    protected void resolveConflict(final String localPath, final String updatedPath,
+                                   final ResolveConflictsCommand.AutoResolveType type, final ServerContext context,
+                                   final ResolveConflictsModel model, final boolean updateFiles,
+                                   final NameMergerResolution nameMergerResolution) throws VcsException {
         IdeaHelper.setProgress(ProgressManager.getInstance().getProgressIndicator(), 0.1, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_RESOLVING_STATUS, localPath));
 
         try {
-            CommandUtils.resolveConflictsByPath(context, Arrays.asList(localPath), type);
+            final List<Conflict> resolvedConflicts = CommandUtils.resolveConflictsByPath(context, Arrays.asList(localPath), type);
+            if (resolvedConflicts.size() == 1 && nameMergerResolution != null) {
+                // Use the local path returned by the Resolve command for future needs.
+                // We need this in cases where their is a MERGE and a RENAME
+                nameMergerResolution.setResolvedLocalPath(resolvedConflicts.get(0).getLocalPath());
+            }
 
             if (updateFiles && updatedFiles != null) {
                 // use local path from conflict to update list because results from command gives server name even if you keep your own change
@@ -316,13 +370,14 @@ public class ResolveConflictHelper {
                             localPath.getPath() :
                             localPath.getParentPath().getPath();
                     final MergeConflict mergeConflict = (MergeConflict) conflict;
-                    final VersionSpec baseVersion = CommandUtils.getBaseVersion(
-                            context, workingFolder, mergeConflict.getOldPath(), mergeConflict.getServerPath());
+                    final String sourcePath = mergeConflict.getMapping().getFromServerItem();
+                    final String targetPath = mergeConflict.getMapping().getToServerItem();
+                    final VersionSpec baseVersion = CommandUtils.getBaseVersion(context, workingFolder, sourcePath, targetPath);
 
                     original = TFSContentRevision.createRenameRevision(project, context, localPath,
-                            SystemHelper.toInt(baseVersion.getValue(), 1), originalChange.getDate(), mergeConflict.getOldPath()).getContent();
+                            SystemHelper.toInt(baseVersion.getValue(), 1), originalChange.getDate(), sourcePath).getContent();
                     serverChanges = TFSContentRevision.createRenameRevision(project, context, localPath,
-                            getMergeFromVersion(mergeConflict), originalChange.getDate(), mergeConflict.getOldPath()).getContent();
+                            getMergeFromVersion(mergeConflict), originalChange.getDate(), sourcePath).getContent();
                     myLocalChanges = CurrentContentRevision.create(localPath).getContent();
                 } else {
                     // get original contents of file

@@ -27,4 +27,9 @@ public class RenameConflict extends Conflict {
     public String getOldPath() {
         return oldPath;
     }
+
+    @Override
+    public String toString() {
+        return "Rename conflict: " + oldPath + " -> " + serverPath + " {" + super.toString() + "}";
+    }
 }
