@@ -26,6 +26,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,7 +94,13 @@ public abstract class Command<T> {
                 .add(name)
                 .addSwitch("noprompt");
         if (context != null && context.getCollectionURI() != null) {
-            builder.addSwitch("collection", context.getCollectionURI().toString());
+            // decode URI since CLC does not expect encoded collection urls
+            try {
+                builder.addSwitch("collection", URLDecoder.decode(context.getCollectionURI().toString(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                logger.warn("Error while decoding collection url. Using encoded url instead", e);
+                builder.addSwitch("collection", context.getCollectionURI().toString());
+            }
             if (context.getAuthenticationInfo() != null) {
                 builder.addSwitch("login", context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword(), true);
             }
@@ -275,6 +283,7 @@ public abstract class Command<T> {
 
     /**
      * This method is used by Checkin and CreateBranch to parse out the changeset number.
+     *
      * @param buffer
      * @return
      */

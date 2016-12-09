@@ -201,8 +201,9 @@ public class ServerContextManager {
                 }
             }
         } else if (context.getTeamProjectReference() != null) {
+            final String collectionName = context.getTeamProjectCollectionReference() == null ? StringUtils.EMPTY : context.getTeamProjectCollectionReference().getName();
             // Assume this is a TFVC url and parse the TFVC url to get collection information
-            if (validator.validateTfvcUrl(context.getUri().toString(), context.getTeamProjectReference().getName())) {
+            if (validator.validateTfvcUrl(context.getUri().toString(), context.getTeamProjectReference().getName(), collectionName)) {
                 contextToValidate = new ServerContextBuilder(context)
                         .serverUri(validator.getServerUrl())
                         .collection(validator.getCollection())
@@ -695,9 +696,11 @@ public class ServerContextManager {
          * This method queries the server with the given TFVC URL for collection information
          *
          * @param collectionUrl
+         * @param teamProjectName
+         * @param possibleCollectionName
          * @return true if server information is determined
          */
-        public boolean validateTfvcUrl(final String collectionUrl, final String teamProjectName) {
+        public boolean validateTfvcUrl(final String collectionUrl, final String teamProjectName, final String possibleCollectionName) {
             try {
                 final String collectionName;
                 final String serverUrl;
@@ -721,6 +724,11 @@ public class ServerContextManager {
                         final String[] parts = splitTfvcCollectionUrl(collectionUrl);
                         serverUrl = parts[0];
                         collectionName = parts[1];
+                    } else if (StringUtils.isNotEmpty(possibleCollectionName)
+                            && validateTfvcCollectionUrl(UrlHelper.getCollectionURI(UrlHelper.createUri(collectionUrl),
+                            possibleCollectionName).toString())) {
+                        serverUrl = collectionUrl;
+                        collectionName = possibleCollectionName;
                     } else {
                         serverUrl = collectionUrl;
                         collectionName = UrlHelper.DEFAULT_COLLECTION;
@@ -791,6 +799,7 @@ public class ServerContextManager {
             //Try to query the server endpoint for branches to see if the collection url is correct
             try {
                 VstsHttpClient.sendRequest(context.getClient(), UrlHelper.combine(collectionUrl, TFVC_BRANCHES_URL_PATH), String.class);
+                logger.info("validateTfvcCollectionUrl: validated url: " + collectionUrl);
                 return true;
             } catch (VstsHttpClient.VstsHttpClientException e) {
                 if (e.getStatusCode() == 404) {
