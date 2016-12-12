@@ -10,11 +10,20 @@ public class MergeConflict extends RenameConflict {
     private final MergeMapping mapping;
 
     public MergeConflict(final String localPath, final MergeMapping mapping) {
-        super(localPath, mapping.getToServerItem(), mapping.getFromServerItem(), ConflictType.MERGE);
+        // We are treating merge conflicts as renames where needed
+        // The name of the file we are branched from is the new name from the the server
+        // The name of the file we are branching to is the old name
+        // The conflict type is still always MERGE
+        super(localPath, mapping.getFromServerItem(), mapping.getToServerItem(), ConflictType.MERGE);
         this.mapping = mapping;
     }
 
     public MergeMapping getMapping() {
         return mapping;
+    }
+
+    @Override
+    public String toString() {
+        return "Merge conflict " + mapping.toString() + " {" + super.toString() + "}";
     }
 }

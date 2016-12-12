@@ -24,4 +24,9 @@ public class Conflict {
     public ConflictType getType() {
         return type;
     }
+
+    @Override
+    public String toString() {
+        return "Conflict (" + type.toString() + "): " + localPath;
+    }
 }

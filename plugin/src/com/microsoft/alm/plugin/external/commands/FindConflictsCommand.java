@@ -27,16 +27,23 @@ public class FindConflictsCommand extends Command<ConflictResults> {
     public static final String MERGE_CONFLICT_SUFFIX = "The source and target both have changes";
 
     private final String basePath;
+    private final String workingFolder;
 
     public FindConflictsCommand(final ServerContext context, final String basePath) {
+        this(context, null, basePath);
+    }
+
+    public FindConflictsCommand(final ServerContext context, final String workingFolder, final String basePath) {
         super("resolve", context);
         ArgumentHelper.checkNotNull(basePath, "basePath");
         this.basePath = basePath;
+        this.workingFolder = workingFolder;
     }
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
-        ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
+        ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
+                .setWorkingDirectory(workingFolder);
         builder.add(basePath);
         builder.addSwitch("recursive");
         builder.addSwitch("preview");

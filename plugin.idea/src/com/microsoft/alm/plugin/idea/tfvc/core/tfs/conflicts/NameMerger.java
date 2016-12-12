@@ -4,16 +4,16 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts;
 
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.external.models.RenameConflict;
 import org.jetbrains.annotations.Nullable;
 
 public interface NameMerger {
 
     /**
-     * @param conflict
+     * @param nameChoice1
+     * @param nameChoice2
      * @param project
      * @return null if user cancelled
      */
     @Nullable
-    String mergeName(final RenameConflict conflict, Project project);
+    String mergeName(final String nameChoice1, final String nameChoice2, final Project project);
 }

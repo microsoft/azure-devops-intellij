@@ -19,6 +19,7 @@ import com.intellij.ui.GuiUtils;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,10 @@ public class TfsFileUtil {
 
     public interface ContentWriter {
         void write(OutputStream outputStream) throws TfsException;
+    }
+
+    public static boolean isServerItem(final String itemPath) {
+        return StringUtils.startsWithIgnoreCase(itemPath, "$/");
     }
 
     public static List<FilePath> getFilePaths(@NotNull final VirtualFile[] files) {

@@ -31,12 +31,14 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ConflictsTableModel;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ContentTriplet;
+import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.NameMergerResolution;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ResolveConflictsModel;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
@@ -127,7 +129,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public ContentTriplet mockContentTriplet;
 
     @Before
-    public void setUp() {
+    public void setUp() throws VcsException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, ProgressManager.class, VcsUtil.class,
                 TFSVcs.class, TfsFileUtil.class, TFSContentRevision.class, CurrentContentRevision.class, VersionControlPath.class);
@@ -150,25 +152,25 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     @Test
     public void testMerge_Rename_TakeTheirs() throws Exception {
         renameTest(((RenameConflict) CONFLICT_RENAME).getServerPath());
-        verify(helper).resolveConflictWithProgress(CONFLICT_RENAME.getLocalPath(), ((RenameConflict) CONFLICT_RENAME).getServerPath(), ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockServerContext, mockResolveConflictsModel, true);
+        verify(helper).resolveConflictWithProgress(Matchers.eq(CONFLICT_RENAME.getLocalPath()), Matchers.eq(((RenameConflict) CONFLICT_RENAME).getServerPath()), Matchers.eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs), Matchers.eq(mockServerContext), Matchers.eq(mockResolveConflictsModel), Matchers.eq(true), any(NameMergerResolution.class));
     }
 
     @Test
     public void testMerge_Rename_KeepYours() throws Exception {
         renameTest(CONFLICT_RENAME.getLocalPath());
-        verify(helper).resolveConflictWithProgress(CONFLICT_RENAME.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true);
+        verify(helper).resolveConflictWithProgress(Matchers.eq(CONFLICT_RENAME.getLocalPath()), Matchers.eq(ResolveConflictsCommand.AutoResolveType.KeepYours), Matchers.eq(mockServerContext), Matchers.eq(mockResolveConflictsModel), Matchers.eq(true), any(NameMergerResolution.class));
     }
 
     public void renameTest(final String selectedName) throws Exception {
         helper = spy(new ResolveConflictHelper(mockProject, mockUpdatedFiles, updateRoots));
         FilePath mockRenameFilePath = mock(FilePath.class);
         when(VersionControlPath.getFilePath(CONFLICT_RENAME.getLocalPath(), false)).thenReturn(mockRenameFilePath);
-        when(mockNameMerger.mergeName((RenameConflict) CONFLICT_RENAME, mockProject)).thenReturn(selectedName);
+        when(mockNameMerger.mergeName(anyString(), anyString(), Matchers.eq(mockProject))).thenReturn(selectedName);
 
         helper.acceptMerge(CONFLICT_RENAME, mockResolveConflictsModel);
-        verify(mockNameMerger).mergeName((RenameConflict) CONFLICT_RENAME, mockProject);
-        verify(helper, never()).processBothConflicts(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class), any(File.class), any(ContentTriplet.class));
-        verify(helper, never()).processContentConflict(any(ServerContext.class), any(ResolveConflictsModel.class), any(ContentTriplet.class), any(FilePath.class));
+        verify(mockNameMerger).mergeName(anyString(), anyString(), Matchers.eq(mockProject));
+        verify(helper, never()).processBothConflicts(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class), any(File.class), any(ContentTriplet.class), any(NameMergerResolution.class));
+        verify(helper, never()).processContentConflict(any(ServerContext.class), any(ResolveConflictsModel.class), any(ContentTriplet.class), any(FilePath.class), any(NameMergerResolution.class));
     }
 
     @Test
@@ -184,9 +186,9 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         helper.acceptMerge(CONFLICT_CONTEXT, mockResolveConflictsModel);
         verify(helper).populateThreeWayDiffWithProgress(CONFLICT_CONTEXT, new File(CONFLICT_CONTEXT.getLocalPath()), mockLocalPath, mockServerContext);
         verify(mockContentMerger).mergeContent(any(ContentTriplet.class), eq(mockProject), eq(mockVirtualFile), isNull(VcsRevisionNumber.class));
-        verify(helper).resolveConflictWithProgress(CONFLICT_CONTEXT.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true);
-        verify(helper, never()).processBothConflicts(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class), any(File.class), any(ContentTriplet.class));
-        verify(helper, never()).processRenameConflict(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class));
+        verify(helper).resolveConflictWithProgress(Matchers.eq(CONFLICT_CONTEXT.getLocalPath()), Matchers.eq(ResolveConflictsCommand.AutoResolveType.KeepYours), Matchers.eq(mockServerContext), Matchers.eq(mockResolveConflictsModel), Matchers.eq(true), any(NameMergerResolution.class));
+        verify(helper, never()).processBothConflicts(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class), any(File.class), any(ContentTriplet.class), any(NameMergerResolution.class));
+        verify(helper, never()).processRenameConflict(any(Conflict.class), any(ServerContext.class), any(ResolveConflictsModel.class), any(NameMergerResolution.class));
     }
 
     @Test(expected = VcsException.class)
@@ -202,7 +204,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     @Test
     public void testMerge_Both_TakeTheirs() throws Exception {
         bothTest(((RenameConflict) CONFLICT_BOTH).getServerPath());
-        verify(helper).resolveConflictWithProgress(CONFLICT_BOTH.getLocalPath(), ResolveConflictsCommand.AutoResolveType.TakeTheirs, mockServerContext, mockResolveConflictsModel, false);
+        verify(helper).resolveConflictWithProgress(eq(CONFLICT_BOTH.getLocalPath()), eq(ResolveConflictsCommand.AutoResolveType.TakeTheirs), eq(mockServerContext), eq(mockResolveConflictsModel), eq(false), any(NameMergerResolution.class));
     }
 
     @Test
@@ -222,7 +224,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         VirtualFile mockVirtualFile = mock(VirtualFile.class);
         when(VcsUtil.getVirtualFileWithRefresh(any(File.class))).thenReturn(mockVirtualFile);
 
-        when(mockNameMerger.mergeName((RenameConflict) CONFLICT_BOTH, mockProject)).thenReturn(selectedName);
+        when(mockNameMerger.mergeName(anyString(), anyString(), Matchers.eq(mockProject))).thenReturn(selectedName);
 
         when(VersionControlPath.getFilePath(eq(((RenameConflict) CONFLICT_BOTH).getServerPath()), anyBoolean())).thenReturn(mockServerPath);
 
@@ -231,15 +233,15 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
         helper.acceptMerge(CONFLICT_BOTH, mockResolveConflictsModel);
         verify(helper).populateThreeWayDiffWithProgress(CONFLICT_BOTH, new File(CONFLICT_BOTH.getLocalPath()), mockLocalPath, mockServerContext);
-        verify(mockNameMerger).mergeName((RenameConflict) CONFLICT_BOTH, mockProject);
+        verify(mockNameMerger).mergeName(anyString(), anyString(), eq(mockProject));
         verify(mockContentMerger).mergeContent(any(ContentTriplet.class), eq(mockProject), eq(mockVirtualFile), isNull(VcsRevisionNumber.class));
-        verify(helper).resolveConflictWithProgress(selectedName, ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true);
+        verify(helper).resolveConflictWithProgress(eq(selectedName), eq(ResolveConflictsCommand.AutoResolveType.KeepYours), eq(mockServerContext), eq(mockResolveConflictsModel), eq(true), any(NameMergerResolution.class));
     }
 
     @Test
     public void testResolveConflict_Happy() throws Exception {
         when(CommandUtils.resolveConflictsByPath(mockServerContext, Arrays.asList(CONFLICT_BOTH.getLocalPath()), ResolveConflictsCommand.AutoResolveType.KeepYours)).thenReturn(Arrays.asList(CONFLICT_BOTH));
-        helper.resolveConflict(CONFLICT_BOTH.getLocalPath(), ((RenameConflict) CONFLICT_BOTH).getServerPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true);
+        helper.resolveConflict(CONFLICT_BOTH.getLocalPath(), ((RenameConflict) CONFLICT_BOTH).getServerPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true, null);
 
         verify(mockUpdatedFiles).getGroupById(FileGroup.MERGED_ID);
         verify(mockFileGroup).add(((RenameConflict) CONFLICT_BOTH).getServerPath(), TFSVcs.getKey(), null);
@@ -248,7 +250,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     @Test(expected = VcsException.class)
     public void testResolveConflict_Exception() throws Exception {
         when(CommandUtils.resolveConflictsByPath(mockServerContext, Arrays.asList(CONFLICT_BOTH.getLocalPath()), ResolveConflictsCommand.AutoResolveType.KeepYours)).thenThrow(new RuntimeException("Test Error"));
-        helper.resolveConflict(CONFLICT_BOTH.getLocalPath(), CONFLICT_BOTH.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true);
+        helper.resolveConflict(CONFLICT_BOTH.getLocalPath(), CONFLICT_BOTH.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true, null);
     }
 
     @Test
