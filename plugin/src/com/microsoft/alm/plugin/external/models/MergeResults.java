@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -11,17 +13,36 @@ import java.util.List;
  */
 public class MergeResults {
     private final List<MergeMapping> mappings;
+    private final List<String> errors;
+    private final List<String> warnings;
 
-    public MergeResults(final List<MergeMapping> mappings) {
+    public MergeResults() {
+        this(Collections.<MergeMapping>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList());
+    }
+
+    public MergeResults(final List<MergeMapping> mappings, final List<String> errors, final List<String> warnings) {
+        ArgumentHelper.checkNotNull(mappings, "mappings");
+        ArgumentHelper.checkNotNull(mappings, "errors");
+        ArgumentHelper.checkNotNull(warnings, "warnings");
         this.mappings = Collections.unmodifiableList(mappings);
+        this.errors = errors;
+        this.warnings = warnings;
     }
 
     public List<MergeMapping> getMappings() {
         return mappings;
     }
 
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public List<String> getWarnings() {
+        return warnings;
+    }
+
     public boolean noChangesToMerge() {
-        return mappings.size() == 0;
+        return mappings.size() == 0 && errors.size() == 0 && warnings.size() == 0;
     }
 
     public boolean doConflictsExists() {
@@ -31,5 +52,13 @@ public class MergeResults {
             }
         }
         return false;
+    }
+
+    public boolean errorsExist() {
+        return errors.size() > 0;
+    }
+
+    public boolean warningsExist() {
+        return warnings.size() > 0;
     }
 }

@@ -27,6 +27,7 @@ public class MergeCommand extends Command<MergeResults> {
     private static final Logger logger = LoggerFactory.getLogger(MergeCommand.class);
 
     private static final String NOTHING_TO_MERGE_MSG = "There are no changes to merge.";
+    private static final String WARNING_CHANGES_IGNORED_PREFIX = "TF14121:";
     private static final String CONFLICT_PREFIX = "Conflict (";
     private static final String CHANGES_SEPARATOR = ":";
     private static final String FILE_SEPARATOR = "->";
@@ -81,20 +82,27 @@ public class MergeCommand extends Command<MergeResults> {
      */
     @Override
     public MergeResults parseOutput(final String stdout, final String stderr) {
-        final List<MergeMapping> mappings = new ArrayList<MergeMapping>();
-
         if (StringUtils.contains(stdout, NOTHING_TO_MERGE_MSG)) {
-            return new MergeResults(mappings);
+            return new MergeResults();
         }
 
+        final List<MergeMapping> mappings = new ArrayList<MergeMapping>();
+        final List<String> errors = new ArrayList<String>();
+        final List<String> warnings = new ArrayList<String>();
         final List<String> lines = new ArrayList<String>();
-        if (StringUtils.startsWithIgnoreCase(stderr, CONFLICT_PREFIX)) {
-            // The errors are not errors just conflict lines
-            for (final String line : getLines(stderr)) {
+
+        // Go thru stderr and parse out the conflicts/errors/warnings
+        for (final String line : getLines(stderr)) {
+            if (StringUtils.startsWithIgnoreCase(line, CONFLICT_PREFIX)) {
+                // Just a conflict - add it to the lines
                 lines.add(line);
+            } else if (StringUtils.startsWithIgnoreCase(line, WARNING_CHANGES_IGNORED_PREFIX)) {
+                // This "error" is really just a warning that previously made changes are being ignored because the merge is a delete
+                warnings.add(line);
+            } else if (StringUtils.isNotEmpty(line)){
+                // Any other problem written to stderr is considered an error
+                errors.add(line);
             }
-        } else {
-            throwIfError(stderr);
         }
 
         // Add in the lines from stdout
@@ -128,7 +136,7 @@ public class MergeCommand extends Command<MergeResults> {
             }
         }
 
-        return new MergeResults(mappings);
+        return new MergeResults(mappings, errors, warnings);
     }
 
     /**

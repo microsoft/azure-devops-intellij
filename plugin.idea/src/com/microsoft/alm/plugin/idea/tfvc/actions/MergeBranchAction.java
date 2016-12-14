@@ -45,7 +45,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
         final String title = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_TITLE);
         final ServerContext serverContext = actionContext.getServerContext();
         final Project project = actionContext.getProject();
-        final String sourceServerPath = actionContext.getItem().getServerItem();
+        final String sourceDialogInput = actionContext.getItem().getServerItem();
         final boolean isFolder = actionContext.getItem().isFolder();
         final String workingFolder = isFolder ?
                 actionContext.getItem().getLocalItem() :
@@ -53,72 +53,86 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
 
         // Create the branch provider and prepopulate it
         InternalBranchListProvider branchListProvider = new InternalBranchListProvider(serverContext, workingFolder);
-        branchListProvider.getBranches(sourceServerPath);
+        branchListProvider.getBranches(sourceDialogInput);
 
-        final MergeBranchDialog d = new MergeBranchDialog(project, serverContext, sourceServerPath, isFolder,
+        final MergeBranchDialog d = new MergeBranchDialog(project, serverContext, sourceDialogInput, isFolder,
                 title, branchListProvider);
         if (!d.showAndGet()) {
             logger.info("User canceled");
             return;
         }
 
+        // Set local vars for source and target paths to what the user entered on the dialog (source could have been changed)
+        final String sourceServerPath = d.getSourcePath();
+        logger.info("sourceServerPath: " + sourceServerPath);
+        final String targetServerPath = d.getTargetPath();
+        logger.info("targetServerPath: " + targetServerPath);
+
         try {
             VcsUtil.runVcsProcessWithProgress(new VcsRunnable() {
                 @Override
                 public void run() throws VcsException {
-                    // Get the current workspace
-                    final Workspace workspace = CommandUtils.getWorkspace(serverContext, actionContext.getProject());
-                    if (workspace == null) {
-                        logger.info("Workspace not found");
-                        throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE));
-                    }
-
-                    // Make sure we have a mapping for the target
-                    final String targetServerPath = d.getTargetPath();
-                    logger.info("targetServerPath: " + targetServerPath);
-                    final String targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
-                    logger.info("targetLocalPath: " + targetLocalPath);
-                    if (StringUtils.isEmpty(targetLocalPath)) {
-                        logger.info("Target path not mapped in current workspace.");
-                        throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_MAPPING_FOUND, d.getTargetPath(), workspace.getName()));
-                    }
-
-                    // Perform the merge operation
-                    final MergeResults mergeResults = CommandUtils.merge(serverContext, workingFolder, sourceServerPath, targetServerPath, null, true);
-
-                    // Check to see if there is anything to actually do. If not, return.
-                    if (mergeResults.noChangesToMerge()) {
-                        logger.info("No changes to merge.");
-                        throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_CHANGES_TO_MERGE, d.getSourcePath(), d.getTargetPath()));
-                    }
-
-                    if (mergeResults.doConflictsExists()) {
-                        logger.info("Conflicts found; launching the conflict resolution ui...");
-                        ResolveConflictHelper resolveConflictHelper =
-                                new ResolveConflictHelper(project, null, Collections.singletonList(targetLocalPath), mergeResults);
-                        try {
-                            ConflictsEnvironment.getConflictsHandler().resolveConflicts(project, resolveConflictHelper);
-                        } catch (TfsException e) {
-                            throw TFSVcs.convertToVcsException(e);
+                    try {
+                        // Get the current workspace
+                        final Workspace workspace = CommandUtils.getWorkspace(serverContext, actionContext.getProject());
+                        if (workspace == null) {
+                            logger.info("Workspace not found");
+                            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE));
                         }
-                    }
 
-                    // Refresh the virtual files inside IntelliJ
-                    logger.info("Refreshing the virtual files...");
-                    final FilePath targetFilePath = VersionControlPath.getFilePath(targetLocalPath, isFolder);
-                    for (VirtualFile root : ProjectRootManager.getInstance(project).getContentRoots()) {
-                        if (targetFilePath.isUnder(TfsFileUtil.getFilePath(root), false)) {
-                            TfsFileUtil.refreshAndInvalidate(project, new FilePath[]{targetFilePath}, true);
-                            break;
+                        // Make sure we have a mapping for the target
+                        final String targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
+                        logger.info("targetLocalPath: " + targetLocalPath);
+                        if (StringUtils.isEmpty(targetLocalPath)) {
+                            logger.info("Target path not mapped in current workspace.");
+                            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_MAPPING_FOUND, targetServerPath, workspace.getName()));
                         }
+
+                        // Perform the merge operation
+                        final MergeResults mergeResults = CommandUtils.merge(serverContext, workingFolder, sourceServerPath, targetServerPath, null, true);
+
+                        // Check to see if there is anything to actually do. If not, return.
+                        if (mergeResults.noChangesToMerge()) {
+                            logger.info("No changes to merge.");
+                            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_NO_CHANGES_TO_MERGE, sourceServerPath, targetServerPath));
+                        } else if (mergeResults.errorsExist()) {
+                            //TODO show warnings to users?
+                            final String errorString = StringUtils.join(mergeResults.getErrors(), "; ");
+                            logger.warn("Merge errors exist: " + errorString);
+                            throw new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_FOUND, errorString));
+                        }
+
+                        if (mergeResults.doConflictsExists()) {
+                            logger.info("Conflicts found; launching the conflict resolution ui...");
+                            ResolveConflictHelper resolveConflictHelper =
+                                    new ResolveConflictHelper(project, null, Collections.singletonList(targetLocalPath), mergeResults);
+                            try {
+                                ConflictsEnvironment.getConflictsHandler().resolveConflicts(project, resolveConflictHelper);
+                            } catch (TfsException e) {
+                                throw TFSVcs.convertToVcsException(e);
+                            }
+                        }
+
+                        // Refresh the virtual files inside IntelliJ
+                        logger.info("Refreshing the virtual files...");
+                        final FilePath targetFilePath = VersionControlPath.getFilePath(targetLocalPath, isFolder);
+                        for (VirtualFile root : ProjectRootManager.getInstance(project).getContentRoots()) {
+                            if (targetFilePath.isUnder(TfsFileUtil.getFilePath(root), false)) {
+                                TfsFileUtil.refreshAndInvalidate(project, new FilePath[]{targetFilePath}, true);
+                                break;
+                            }
+                        }
+                    } catch (final Throwable t) {
+                        throw TFSVcs.convertToVcsException(t);
                     }
                 }
             }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_PROGRESS_MERGING), false, project);
 
             // All done
-            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_SUCCESS, d.getSourcePath(), d.getTargetPath());
-            Messages.showInfoMessage(project, message, message);
-        } catch (Throwable t) {
+            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_MERGE_BRANCH_SUCCESS, sourceServerPath, targetServerPath);
+            Messages.showInfoMessage(project, message, title);
+        } catch (final Throwable t) {
+            logger.warn("Merge Branches failed", t);
             Messages.showErrorDialog(project, t.getMessage(), title);
         }
     }

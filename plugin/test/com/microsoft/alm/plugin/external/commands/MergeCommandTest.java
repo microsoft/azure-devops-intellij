@@ -120,9 +120,12 @@ public class MergeCommandTest extends AbstractCommandTest {
         }
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testParseOutput_errors() {
         final MergeCommand cmd = new MergeCommand(null, workingFolder, source, destination, null, true);
-        final MergeResults result = cmd.parseOutput("", "error");
+        final MergeResults result = cmd.parseOutput("", "\n\n\nerror\n\n\n");
+        Assert.assertTrue(result.getMappings().size() == 0);
+        Assert.assertTrue(result.getWarnings().size() == 0);
+        Assert.assertTrue(result.getErrors().size() == 1);
     }
 }

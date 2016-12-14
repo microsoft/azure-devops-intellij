@@ -25,6 +25,9 @@ public class FindConflictsCommand extends Command<ConflictResults> {
     public static final String BOTH_CONFLICTS_SUFFIX = "The item name and content have changed";
     public static final String RENAME_CONFLICT_SUFFIX = "The item name has changed";
     public static final String MERGE_CONFLICT_SUFFIX = "The source and target both have changes";
+    public static final String DELETE_CONFLICT_SUFFIX = "The item has already been deleted";
+    public static final String MERGE_DELETE_SOURCE_CONFLICT_SUFFIX = "The item has been deleted in the source branch";
+    public static final String MERGE_DELETE_TARGET_CONFLICT_SUFFIX = "The item has been deleted in the target branch";
 
     private final String basePath;
     private final String workingFolder;
@@ -76,6 +79,11 @@ public class FindConflictsCommand extends Command<ConflictResults> {
                     conflicts.add(createRenameConflict(localPath));
                 } else if (StringUtils.endsWith(line, MERGE_CONFLICT_SUFFIX)) {
                     conflicts.add(createMergeConflict(localPath));
+                } else if (StringUtils.endsWith(line, DELETE_CONFLICT_SUFFIX)
+                        || StringUtils.endsWith(line, MERGE_DELETE_SOURCE_CONFLICT_SUFFIX)) {
+                    conflicts.add(createDeleteConflict(localPath, false));
+                } else if (StringUtils.endsWith(line, MERGE_DELETE_TARGET_CONFLICT_SUFFIX)) {
+                    conflicts.add(createDeleteConflict(localPath, true));
                 } else {
                     conflicts.add(createContentConflict(localPath));
                 }
@@ -99,6 +107,10 @@ public class FindConflictsCommand extends Command<ConflictResults> {
 
     private Conflict createMergeConflict(final String localPath) {
         return new Conflict(localPath, Conflict.ConflictType.MERGE);
+    }
+
+    private Conflict createDeleteConflict(final String localPath, final boolean targetDeleted) {
+        return new Conflict(localPath, targetDeleted ? Conflict.ConflictType.DELETE_TARGET : Conflict.ConflictType.DELETE);
     }
 
     /**

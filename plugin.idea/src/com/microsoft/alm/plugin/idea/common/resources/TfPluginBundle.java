@@ -533,6 +533,8 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_PROGRESS_MERGING = "Actions.Tfvc.MergeBranch.Progress.Merging";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_SUCCESS = "Actions.Tfvc.MergeBranch.Success";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_FOUND = "Actions.Tfvc.MergeBranch.Errors.Found";
 
     //starters
     @NonNls
@@ -586,6 +588,22 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_CONFLICT_COLUMN_NAME = "Tfvc.Conflict.Column.Name";
     @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE = "Tfvc.Conflict.Column.Type";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_CONTENT = "Tfvc.Conflict.Column.Type.Content";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_RENAME = "Tfvc.Conflict.Column.Type.Rename";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_NAME_AND_CONTENT = "Tfvc.Conflict.Column.Type.NameAndContent";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_MERGE = "Tfvc.Conflict.Column.Type.Merge";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_DELETE = "Tfvc.Conflict.Column.Type.Delete";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_DELETE_TARGET = "Tfvc.Conflict.Column.Type.DeleteTarget";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_COLUMN_TYPE_RESOLVED = "Tfvc.Conflict.Column.Type.Resolved";
+    @NonNls
     public static final String KEY_TFVC_CONFLICT_DIALOG_TITLE = "Tfvc.Conflict.Dialog.Title";
     @NonNls
     public static final String KEY_TFVC_CONFLICT_DIALOG_LATER = "Tfvc.Conflict.Dialog.Later";
@@ -627,6 +645,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_CONFLICT_LOAD_ERROR = "Tfvc.Conflict.Load.Error";
     @NonNls
     public static final String KEY_TFVC_CONFLICT_MERGE_ERROR = "Tfvc.Conflict.Merge.Error";
+    @NonNls
+    public static final String KEY_TFVC_CONFLICT_MERGE_ERROR_CANNOT_MERGE_DELETION = "Tfvc.Conflict.Merge.Error.CannotMergeDeletion";
 
     //TFVC Settings
     @NonNls

@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,17 +21,21 @@ import java.io.IOException;
  * print [/version:<value>] <itemSpec>
  */
 public class DownloadCommand extends Command<String> {
+    private static final String FILE_NOT_FOUND_ERROR = "The specified file does not exist at the specified version";
+
     private final String localPath;
     private final int version;
     private final String destination;
+    private final boolean ignoreFileNotFound;
 
-    public DownloadCommand(final ServerContext context, final String localPath, final int version, final String destination) {
+    public DownloadCommand(final ServerContext context, final String localPath, final int version, final String destination, final boolean ignoreFileNotFound) {
         super("print", context);
         ArgumentHelper.checkNotEmptyString(localPath, "localPath");
         ArgumentHelper.checkNotEmptyString(destination, "destination");
         this.localPath = localPath;
         this.version = version;
         this.destination = destination;
+        this.ignoreFileNotFound = ignoreFileNotFound;
     }
 
     @Override
@@ -48,14 +53,23 @@ public class DownloadCommand extends Command<String> {
      */
     @Override
     public String parseOutput(final String stdout, final String stderr) {
-        super.throwIfError(stderr);
+        final String fileContents;
+
+        // Check for "The specified file does not exist at the specified version" and write out empty string
+        if (ignoreFileNotFound && StringUtils.containsIgnoreCase(stderr, FILE_NOT_FOUND_ERROR)) {
+            fileContents = StringUtils.EMPTY;
+        } else {
+            super.throwIfError(stderr);
+            fileContents = stdout;
+        }
+
         // Write the contents of stdout to the destination file
-        File file = new File(destination);
+        final File file = new File(destination);
         if (file.exists()) {
             file.delete();
         }
         try {
-            FileUtils.writeStringToFile(file, stdout);
+            FileUtils.writeStringToFile(file, fileContents);
         } catch (IOException e) {
             // throw any errors that occur
             throw new ToolParseFailureException(e);

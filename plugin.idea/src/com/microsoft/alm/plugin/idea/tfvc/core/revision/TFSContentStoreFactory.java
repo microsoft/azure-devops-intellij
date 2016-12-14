@@ -7,10 +7,13 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.DownloadCommand;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class TFSContentStoreFactory {
+    private static final Logger logger = LoggerFactory.getLogger(TFSContentStoreFactory.class);
 
     public static TFSContentStore create(final String localPath, final int revision) throws IOException {
         return new TFSTmpFileStore(localPath, revision);
@@ -33,9 +36,16 @@ public class TFSContentStoreFactory {
     public static TFSContentStore findOrCreate(final String localPath, final int revision, final String actualPath, final ServerContext serverContext) throws IOException {
         TFSContentStore store = TFSContentStoreFactory.find(localPath, revision);
         if (store == null) {
-            store = TFSContentStoreFactory.create(localPath, revision);
-            final Command<String> command = new DownloadCommand(serverContext, actualPath, revision, store.getTmpFile().getPath());
-            command.runSynchronously();
+            try {
+                store = TFSContentStoreFactory.create(localPath, revision);
+                // By setting the IgnoreFileNotFound flag to true in DownloadCommand, we will get back an empty file if the file was deleted on the server or
+                // for some other reason doesn't exist.
+                final Command<String> command = new DownloadCommand(serverContext, actualPath, revision, store.getTmpFile().getPath(), true);
+                command.runSynchronously();
+            } catch(final Throwable t) {
+                // Can't let exceptions bubble out here to the caller. This method is called by the VCS provider code in various places.
+                logger.warn("Unable to download content for a TFVC file.", t);
+            }
         }
         return store;
     }

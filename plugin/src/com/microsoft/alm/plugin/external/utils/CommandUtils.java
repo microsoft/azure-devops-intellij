@@ -277,7 +277,9 @@ public class CommandUtils {
 
         for (final Conflict conflict : conflictResults.getConflicts()) {
             Conflict newConflict = null;
-            if (conflict.getType() == Conflict.ConflictType.CONTENT) {
+            if (conflict.getType() == Conflict.ConflictType.CONTENT ||
+                    conflict.getType() == Conflict.ConflictType.DELETE ||
+                    conflict.getType() == Conflict.ConflictType.DELETE_TARGET) {
                 newConflict = conflict;
             } else if (conflict.getType() == Conflict.ConflictType.RENAME ||
                     conflict.getType() == Conflict.ConflictType.NAME_AND_CONTENT) {
@@ -291,6 +293,8 @@ public class CommandUtils {
             } else if (conflict.getType() == Conflict.ConflictType.MERGE) {
                 // For merge conflicts we have to find get the "from" path and the to "path" similar to renames using the MergeResult
                 newConflict = findMergeConflict(context, conflict, mergeResults, root);
+            } else {
+                logger.warn("Unable to determine conflict type from: " + conflict.getType());
             }
 
             if (newConflict != null) {

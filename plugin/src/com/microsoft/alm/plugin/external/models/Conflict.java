@@ -7,7 +7,7 @@ package com.microsoft.alm.plugin.external.models;
  * Conflict object
  */
 public class Conflict {
-    public enum ConflictType {CONTENT, RENAME, NAME_AND_CONTENT, MERGE, RESOLVED}
+    public enum ConflictType {CONTENT, RENAME, DELETE, DELETE_TARGET, NAME_AND_CONTENT, MERGE, RESOLVED}
 
     private final String localPath;
     private final ConflictType type;

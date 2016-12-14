@@ -15,11 +15,13 @@ import org.jetbrains.annotations.NonNls;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Color;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
@@ -77,6 +79,13 @@ public class ResolveConflictsForm implements BasicForm {
 
     public void setModelForView(final ConflictsTableModel conflictsTableModel) {
         myItemsTable.setModel(conflictsTableModel);
+
+        if (myItemsTable.getColumnModel() != null && myItemsTable.getColumnModel().getColumnCount() > 1) {
+            // Set the alignment up for Type column in the table
+            final DefaultTableCellRenderer typeRenderer = new DefaultTableCellRenderer();
+            typeRenderer.setHorizontalAlignment(JLabel.CENTER);
+            myItemsTable.getColumnModel().getColumn(1).setCellRenderer(typeRenderer);
+        }
     }
 
     public void setLoading(final boolean isLoading) {

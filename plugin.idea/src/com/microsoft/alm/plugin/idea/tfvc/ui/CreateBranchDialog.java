@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
@@ -27,8 +28,7 @@ public class CreateBranchDialog extends DialogWrapper {
             }
         });
 
-        // TODO localize
-        setTitle("Create Branch");
+        setTitle(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_TITLE));
         setSize(JBUI.scale(380), JBUI.scale(450));
 
         init();

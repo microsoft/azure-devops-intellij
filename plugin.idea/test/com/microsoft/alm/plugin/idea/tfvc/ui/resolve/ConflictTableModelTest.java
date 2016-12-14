@@ -58,6 +58,6 @@ public class ConflictTableModelTest extends IdeaAbstractTest {
         model.setConflicts(CONFLICTS);
 
         assertEquals(CONFLICTS.size(), model.getRowCount());
-        assertEquals(1, model.getColumnCount());
+        assertEquals(2, model.getColumnCount());
     }
 }

@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.PageModelImpl;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
+import com.microsoft.alm.plugin.idea.tfvc.exceptions.MergeFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,8 +88,12 @@ public class ResolveConflictsModel extends PageModelImpl {
         for (final Conflict conflict : conflicts) {
             try {
                 conflictHelper.acceptMerge(conflict, this);
-            } catch (VcsException e) {
-                logger.error("Error while merging conflicts: " + e.getMessage());
+            } catch (final MergeFailedException e) {
+                // MergeFailedExceptions already have the right message and do not require a prefix
+                logger.warn("MergeFailedException found", e);
+                addError(ModelValidationInfo.createWithMessage(e.getMessage()));
+            } catch (final VcsException e) {
+                logger.warn("Error while merging conflicts", e);
                 addError(ModelValidationInfo.createWithMessage(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR, conflict.getLocalPath(), e.getMessage())));
             }
         }

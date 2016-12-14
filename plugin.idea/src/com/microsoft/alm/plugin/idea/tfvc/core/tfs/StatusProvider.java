@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
@@ -83,8 +84,12 @@ public class StatusProvider {
             // treat branch like an addition
             return new ServerStatus.ScheduledForAddition(pendingChange);
         } else if (types.contains(ServerStatusType.MERGE)) {
-            // treat merge like an edit
-            return new ServerStatus.CheckedOutForEdit(pendingChange);
+            // treat merge like an edit unless the file is gone, then it must have been a delete
+            if (Path.fileExists(pendingChange.getLocalItem())) {
+                return new ServerStatus.CheckedOutForEdit(pendingChange);
+            } else {
+                return new ServerStatus.ScheduledForDeletion(pendingChange);
+            }
         } else {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;

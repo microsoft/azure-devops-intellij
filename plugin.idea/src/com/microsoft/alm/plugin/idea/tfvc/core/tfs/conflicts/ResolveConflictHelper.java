@@ -37,6 +37,7 @@ import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
+import com.microsoft.alm.plugin.idea.tfvc.exceptions.MergeFailedException;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ContentTriplet;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.NameMergerResolution;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ResolveConflictsModel;
@@ -97,6 +98,11 @@ public class ResolveConflictHelper {
         final File conflictPath = new File(conflict.getLocalPath());
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
 
+        // Make sure that a merge is allowed
+        if (isDeleteConflict(conflict)) {
+            throw new MergeFailedException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CONFLICT_MERGE_ERROR_CANNOT_MERGE_DELETION), true);
+        }
+
         final FilePath localPath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
         ContentTriplet contentTriplet = null;
         NameMergerResolution nameMergerResolution = null;
@@ -110,7 +116,7 @@ public class ResolveConflictHelper {
 
         if (isNameConflict(conflict)) {
             logger.info("Rename conflict have been found so getting new name from user");
-            nameMergerResolution = getMergedNameFromUser((RenameConflict)conflict);
+            nameMergerResolution = getMergedNameFromUser((RenameConflict) conflict);
             if (nameMergerResolution == null) {
                 // User canceled
                 return;
@@ -468,6 +474,14 @@ public class ResolveConflictHelper {
         return Conflict.ConflictType.CONTENT.equals(conflict.getType()) ||
                 Conflict.ConflictType.NAME_AND_CONTENT.equals(conflict.getType()) ||
                 isMergeConflict(conflict, ServerStatusType.EDIT);
+    }
+
+    public static boolean isDeleteConflict(final @NotNull Conflict conflict) {
+        // Return true if this is a Rename conflict, Name and Content conflict, or a Merge(with rename) conflict
+        return Conflict.ConflictType.DELETE.equals(conflict.getType()) ||
+                Conflict.ConflictType.DELETE_TARGET.equals(conflict.getType()) ||
+                isMergeConflict(conflict, ServerStatusType.DELETE) ||
+                isMergeConflict(conflict, ServerStatusType.UNDELETE);
     }
 
     public static boolean isMergeConflict(final @NotNull Conflict conflict, final @Nullable ServerStatusType matchingChangeType) {
