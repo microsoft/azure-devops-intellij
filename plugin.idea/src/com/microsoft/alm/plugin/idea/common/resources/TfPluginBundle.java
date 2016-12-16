@@ -517,6 +517,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_TITLE = "Tfvc.Label.Dialog.Title";
     @NonNls
+    public static final String KEY_TFVC_LABEL_DIALOG_APPLY_LABEL = "Tfvc.Label.Dialog.ApplyLabel";
+    @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_ITEM_COLUMN = "Tfvc.Label.Dialog.ItemColumn";
     @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_VERSION_COLUMN = "Tfvc.Label.Dialog.VersionColumn";

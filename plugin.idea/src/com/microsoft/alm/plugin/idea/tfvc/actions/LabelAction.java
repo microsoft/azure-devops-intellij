@@ -120,8 +120,7 @@ public class LabelAction extends InstrumentedAction {
                             Path.getDirectoryName(defaultLocalPath);
                     final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
 
-                    //TODO Get recursive from the dialog instead of assuming true
-                    final boolean labelCreated = CommandUtils.createLabel(context, workingFolder, d.getLabelName(), d.getLabelComment(), true, d.getLabelItemSpecs());
+                    final boolean labelCreated = CommandUtils.createLabel(context, workingFolder, d.getLabelName(), d.getLabelComment(), d.isRecursiveChecked(), d.getLabelItemSpecs());
                     if (labelCreated) {
                         successMessage.append(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_SUCCESS_CREATED, d.getLabelName()));
                     } else {
