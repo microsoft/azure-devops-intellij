@@ -110,7 +110,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE = "Errors.UnableToDetermineWorkspace";
 
-
     // Checkout dialog ui and models
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TFS_TAB = "CheckoutDialog.TfsTab";
@@ -499,6 +498,28 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_MSG = "Actions.SelectWorkItems.Message";
     @NonNls
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION = "Actions.SelectWorkItems.Action";
+
+    // TFVC Apply Label
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_TITLE = "Actions.Tfvc.Label.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_MSG = "Actions.Tfvc.Label.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_PROGRESS_GATHERING_INFORMATION = "Actions.Tfvc.Label.Progress.GatheringInformation";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_PROGRESS_CREATING_LABEL = "Actions.Tfvc.Label.Progress.CreatingLabel";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_SUCCESS_CREATED = "Actions.Tfvc.Label.Success.Created";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_SUCCESS_UPDATED = "Actions.Tfvc.Label.Success.Updated";
+
+    // TFVC Apply Label Dialog
+    @NonNls
+    public static final String KEY_TFVC_LABEL_DIALOG_TITLE = "Tfvc.Label.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_LABEL_DIALOG_ITEM_COLUMN = "Tfvc.Label.Dialog.ItemColumn";
+    @NonNls
+    public static final String KEY_TFVC_LABEL_DIALOG_VERSION_COLUMN = "Tfvc.Label.Dialog.VersionColumn";
 
     //TFVC Branch Action
     @NonNls

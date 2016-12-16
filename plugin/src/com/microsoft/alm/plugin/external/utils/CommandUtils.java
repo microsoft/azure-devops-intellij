@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
+import com.microsoft.alm.plugin.external.commands.CreateLabelCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
@@ -523,5 +524,18 @@ public class CommandUtils {
     public static VersionSpec getBaseVersion(final ServerContext context, final String workingFolder, final String source, final String destination) {
         final GetBaseVersionCommand getBaseVersionCommand = new GetBaseVersionCommand(context, workingFolder, source, destination);
         return getBaseVersionCommand.runSynchronously();
+    }
+
+    /**
+     * Creates (or updates) a label for the provided items.
+     * @return returns true if the label was created and false if it was updated.
+     */
+    public static boolean createLabel(final ServerContext context, final String workingFolder, final String name,
+                                     final String comment, final boolean recursive,
+                                     final List<String> itemSpecs) {
+        final CreateLabelCommand createLabelCommand = new CreateLabelCommand(context, workingFolder,
+                name, comment, recursive, itemSpecs);
+        final String result = createLabelCommand.runSynchronously();
+        return StringUtils.equalsIgnoreCase(result, CreateLabelCommand.LABEL_CREATED);
     }
 }

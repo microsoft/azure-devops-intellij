@@ -100,7 +100,7 @@ public abstract class SingleItemAction extends InstrumentedAction {
         return project != null && file != null && getAllowedStatuses().contains(FileStatusManager.getInstance(project).getStatus(file));
     }
 
-    public class SingleItemActionContext {
+    public static class SingleItemActionContext {
         private final Project project;
         private final FilePath filePath;
         private ServerContext serverContext;
