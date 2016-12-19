@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
 import com.microsoft.alm.plugin.external.commands.GetBranchesCommand;
+import com.microsoft.alm.plugin.external.commands.GetLabelsCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
@@ -41,6 +42,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.models.SyncResults;
+import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
@@ -547,6 +549,18 @@ public class CommandUtils {
                 name, comment, recursive, itemSpecs);
         final String result = createLabelCommand.runSynchronously();
         return StringUtils.equalsIgnoreCase(result, CreateLabelCommand.LABEL_CREATED);
+    }
+
+    /**
+     * Returns a list of labels from the server.
+     * @param context
+     * @param workingFolder
+     * @param nameFilter
+     * @return
+     */
+    public static List<TfvcLabel> getLabels(final ServerContext context, final String workingFolder, final String nameFilter) {
+        final GetLabelsCommand getLabelsCommand = new GetLabelsCommand(context, workingFolder, nameFilter);
+        return getLabelsCommand.runSynchronously();
     }
 
     /**

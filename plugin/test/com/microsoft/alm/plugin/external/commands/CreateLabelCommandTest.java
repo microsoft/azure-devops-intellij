@@ -57,11 +57,10 @@ public class CreateLabelCommandTest extends AbstractCommandTest {
         Assert.assertEquals("label -noprompt label1 -recursive -comment:comment1 $/item/to/label $/item/to/label2 $/item/to/label3", builder.toString());
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void testParseOutput_noOutput() {
         final CreateLabelCommand cmd = new CreateLabelCommand(null, "/working/folder", "label1", "comment1", false, itemSpecs);
         final String message = cmd.parseOutput("", "");
-        Assert.assertEquals("", message);
     }
 
     @Test

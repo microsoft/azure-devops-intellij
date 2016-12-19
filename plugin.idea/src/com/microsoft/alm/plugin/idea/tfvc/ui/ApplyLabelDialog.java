@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.DialogWrapper;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialogImpl;
@@ -12,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 public class ApplyLabelDialog extends BaseDialogImpl {
