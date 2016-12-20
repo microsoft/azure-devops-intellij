@@ -1,0 +1,138 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
+package com.microsoft.alm.plugin.idea.tfvc.core.tfs.operations;
+
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Deletes a list of files through TFVC
+ */
+public class ScheduleForDeletion {
+    public static final Logger logger = LoggerFactory.getLogger(ScheduleForDeletion.class);
+
+    public static Collection<VcsException> execute(final Project project, final List<FilePath> files) {
+        // choose roots
+        // find if changes need reverted and revert them
+        // schedule roots for deletion using their original names
+
+        final Collection<VcsException> errors = new ArrayList<VcsException>();
+
+        final List<String> filePaths = new ArrayList<String>(files.size());
+        for (final FilePath filePath : files) {
+            filePaths.add(filePath.getPath());
+        }
+
+        try {
+            final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
+            final List<String> revert = new ArrayList<String>();
+            final Set<String> scheduleForDeletion = new HashSet<String>();
+            final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+
+            pendingChanges.addAll(CommandUtils.getStatusForFiles(context, filePaths));
+
+            for (final PendingChange pendingChange : pendingChanges) {
+                StatusProvider.visitByStatus(new StatusVisitor() {
+
+                    public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists,
+                                            final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // if an unversioned delete, IDE has already deleted the file and now TFVC has to delete it
+                        if (pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
+                            logger.info("ScheduleForDeletion: unversioned deleted file " + localPath.getPath());
+                            scheduleForDeletion.add(StringUtils.isNotEmpty(pendingChange.getSourceItem()) ? pendingChange.getSourceItem() : pendingChange.getLocalItem());
+                        } else {
+                            // do nothing because file isn't recognized
+                            logger.info("ScheduleForDeletion: do nothing for unversioned file " + localPath.getPath());
+                        }
+                    }
+
+                    public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                        logger.info("ScheduleForDeletion: checkedOutForEdit file " + localPath.getPath());
+                        revert.add(pendingChange.getLocalItem());
+                        scheduleForDeletion.add(pendingChange.getLocalItem());
+                    }
+
+                    public void scheduledForAddition(final @NotNull FilePath localPath, final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) {
+                        logger.info("ScheduleForDeletion: scheduledForAddition file " + localPath.getPath());
+                        revert.add(pendingChange.getLocalItem());
+                    }
+
+                    public void scheduledForDeletion(final @NotNull FilePath localPath, final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) {
+                        logger.warn("ScheduleForDeletion: " + localPath + " already is deleted");
+                    }
+
+                    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists,
+                                        final @NotNull ServerStatus serverStatus) throws TfsException {
+                        logger.info("ScheduleForDeletion: renamed file " + localPath.getPath());
+                        // revert local path but delete the source path since that is the original path before the rename
+                        revert.add(pendingChange.getLocalItem());
+                        scheduleForDeletion.add(pendingChange.getSourceItem());
+                    }
+
+                    public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                        logger.info("ScheduleForDeletion: renamedCheckedOut file " + localPath.getPath());
+                        // revert local path but delete the source path since that is the original path before the rename
+                        revert.add(pendingChange.getLocalItem());
+                        scheduleForDeletion.add(pendingChange.getSourceItem());
+                    }
+
+                    public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists,
+                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+                        logger.info("ScheduleForDeletion: undeleted file " + localPath.getPath());
+                        revert.add(pendingChange.getLocalItem());
+                    }
+                }, pendingChange);
+            }
+
+            if (!revert.isEmpty()) {
+                CommandUtils.undoLocalFiles(context, revert);
+            }
+
+            final List<String> confirmedDeletedFiles = new ArrayList<String>();
+            if (!scheduleForDeletion.isEmpty()) {
+                // a workspace is needed since some paths are server paths, all changes will have the same workspace so
+                // just get it from the first change (list isn't empty since deletes were found)
+                final String workspace = pendingChanges.get(0).getWorkspace();
+                confirmedDeletedFiles.addAll(CommandUtils.deleteFiles(context,
+                        new ArrayList<String>(scheduleForDeletion), workspace, false));
+            }
+
+            for (final FilePath expectedDeletedFile : files) {
+                if (confirmedDeletedFiles.contains(expectedDeletedFile.getPath())) {
+                    TfsFileUtil.markFileDirty(project, expectedDeletedFile);
+                }
+            }
+
+        } catch (Throwable t) {
+            logger.warn("executeDelete experienced a failure while looking for altered files to delete", t);
+            errors.add(TFSVcs.convertToVcsException(t));
+        }
+        return errors;
+    }
+}

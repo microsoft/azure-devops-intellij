@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -94,7 +95,13 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
 
     public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
-            changelistBuilder.processUnversionedFile(localPath.getVirtualFile());
+            final VirtualFile filePath = localPath.getVirtualFile();
+            if (filePath == null) {
+                // for files that were deleted w/o using the VCS
+                changelistBuilder.processLocallyDeletedFile(localPath);
+            } else {
+                changelistBuilder.processUnversionedFile(filePath);
+            }
         }
     }
 

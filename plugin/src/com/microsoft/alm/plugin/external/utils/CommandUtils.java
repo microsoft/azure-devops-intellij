@@ -13,6 +13,7 @@ import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.CreateLabelCommand;
+import com.microsoft.alm.plugin.external.commands.DeleteCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
@@ -449,7 +450,8 @@ public class CommandUtils {
      * @param preparedComment
      * @return
      */
-    public static String checkinFiles(final ServerContext context, final List<String> files, final String preparedComment, final List<Integer> workItemsToAssociate) {
+    public static String checkinFiles(final ServerContext context, final List<String> files,
+                                      final String preparedComment, final List<Integer> workItemsToAssociate) {
         final Command<String> checkinCommand = new CheckinCommand(context, files, preparedComment, workItemsToAssociate);
         return checkinCommand.runSynchronously();
     }
@@ -465,7 +467,8 @@ public class CommandUtils {
      * Returns the item info for a single item. Specify a working folder in the workspace if you want info for a server
      * path.
      */
-    public static ItemInfo getItemInfo(final ServerContext context, final String workingFolder, final String itemPath) {
+    public static ItemInfo getItemInfo(final ServerContext context, final String workingFolder,
+                                       final String itemPath) {
         final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, Collections.singletonList(itemPath));
         List<ItemInfo> items = infoCommand.runSynchronously();
         if (items != null && items.size() > 0) {
@@ -477,6 +480,7 @@ public class CommandUtils {
 
     /**
      * Calls the branch command and returns the changeset number of the changeset created.
+     *
      * @param context
      * @param workingFolder
      * @param recursive
@@ -497,6 +501,7 @@ public class CommandUtils {
 
     /**
      * Calls the merge command and returns the results
+     *
      * @param context
      * @param source
      * @param destination
@@ -504,7 +509,8 @@ public class CommandUtils {
      * @param recursive
      * @return
      */
-    public static MergeResults merge(final ServerContext context, final String workingFolder, final String source, final String destination,
+    public static MergeResults merge(final ServerContext context, final String workingFolder, final String source,
+                                     final String destination,
                                      final VersionSpec versionSpec, final boolean recursive) {
         final MergeCommand mergeCommand = new MergeCommand(context, workingFolder, source, destination, versionSpec, recursive);
         return mergeCommand.runSynchronously();
@@ -512,30 +518,49 @@ public class CommandUtils {
 
     /**
      * Calls the get branches command and returns the list of branched items associated with the source item.
+     *
      * @param context
      * @param sourceItem
      * @return
      */
-    public static List<String> getBranches(final ServerContext context, final String workingFolder, final String sourceItem) {
+    public static List<String> getBranches(final ServerContext context, final String workingFolder,
+                                           final String sourceItem) {
         final GetBranchesCommand getBranchesCommand = new GetBranchesCommand(context, workingFolder, sourceItem);
         return getBranchesCommand.runSynchronously();
     }
 
-    public static VersionSpec getBaseVersion(final ServerContext context, final String workingFolder, final String source, final String destination) {
+    public static VersionSpec getBaseVersion(final ServerContext context, final String workingFolder,
+                                             final String source, final String destination) {
         final GetBaseVersionCommand getBaseVersionCommand = new GetBaseVersionCommand(context, workingFolder, source, destination);
         return getBaseVersionCommand.runSynchronously();
     }
 
     /**
      * Creates (or updates) a label for the provided items.
+     *
      * @return returns true if the label was created and false if it was updated.
      */
     public static boolean createLabel(final ServerContext context, final String workingFolder, final String name,
-                                     final String comment, final boolean recursive,
-                                     final List<String> itemSpecs) {
+                                      final String comment, final boolean recursive,
+                                      final List<String> itemSpecs) {
         final CreateLabelCommand createLabelCommand = new CreateLabelCommand(context, workingFolder,
                 name, comment, recursive, itemSpecs);
         final String result = createLabelCommand.runSynchronously();
         return StringUtils.equalsIgnoreCase(result, CreateLabelCommand.LABEL_CREATED);
+    }
+
+    /**
+     * Deletes a list of files
+     *
+     * @param context
+     * @param filePaths
+     * @param workingFolder
+     * @param recursive
+     * @return
+     */
+    public static List<String> deleteFiles(final ServerContext context, final List<String> filePaths,
+                                           final String workingFolder, final boolean recursive) {
+        final DeleteCommand deleteCommand = new DeleteCommand(context, filePaths, workingFolder, recursive);
+        return deleteCommand.runSynchronously();
     }
 }

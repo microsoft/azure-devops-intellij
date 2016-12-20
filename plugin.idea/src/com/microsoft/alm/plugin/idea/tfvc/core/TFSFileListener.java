@@ -12,15 +12,21 @@ import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.operations.ScheduleForDeletion;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 public class TFSFileListener extends VcsVFSListener {
+    public static final Logger logger = LoggerFactory.getLogger(TFSFileListener.class);
 
     public TFSFileListener(Project project, TFSVcs vcs) {
         super(project, vcs);
@@ -48,6 +55,7 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     protected void executeAdd() {
+        logger.info("executeAdd executing...");
         try {
             final List<String> filePaths = TfsFileUtil.getFilePathStrings(myAddedFiles);
             final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
@@ -131,113 +139,118 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     protected void executeDelete() {
+        logger.info("executeDelete executing...");
+
         // choose roots
         // revert all pending schedules for addition recursively
         // throw out all the unversioned items
 
-        List<FilePath> deletedFiles = new ArrayList<FilePath>(myDeletedFiles);
-        deletedFiles.addAll(myDeletedWithoutConfirmFiles);
-// TODO: finish deletes
-//    try {
-//      WorkstationHelper.processByWorkspaces(deletedFiles, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
-//        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-//          RootsCollection.ItemPathRootsCollection roots = new RootsCollection.ItemPathRootsCollection(paths);
-//
-//          final Collection<PendingChange> pendingChanges = workspace.getServer().getVCS()
-//            .queryPendingSetsByLocalPaths(workspace.getName(), workspace.getOwnerName(), roots, RecursionType.Full, myProject,
-//                                          TFSBundle.message("loading.changes"));
-//
-//          final List<String> revertImmediately = new ArrayList<String>();
-//
-//          final List<ItemPath> pathsToProcess = new ArrayList<ItemPath>(paths);
-//
-//          for (PendingChange pendingChange : pendingChanges) {
-//            final ChangeTypeMask changeType = new ChangeTypeMask(pendingChange.getChg());
-//            if (changeType.containsAny(ChangeType_type0.Add, ChangeType_type0.Undelete)) {
-//              // TODO (Jetbrains): assert that only Edit, Encoding can be here
-//              revertImmediately.add(pendingChange.getItem());
-//              final FilePath localPath =
-//                VersionControlPath.getFilePath(pendingChange.getLocal(), pendingChange.getType() == ItemType.Folder);
-//              excludeFromFurtherProcessing(localPath);
-//              final ItemPath itemPath = new ItemPath(localPath, pendingChange.getItem());
-//              pathsToProcess.remove(itemPath);
-//            }
-//          }
-//
-//          UndoPendingChanges.UndoPendingChangesResult undoResult =
-//            UndoPendingChanges.execute(myProject, workspace, revertImmediately, true, ApplyProgress.EMPTY, false);
-//
-//          if (!undoResult.errors.isEmpty()) {
-//            // TODO (Jetbrains) list -> collection
-//            AbstractVcsHelper.getInstance(myProject).showErrors(new ArrayList<VcsException>(undoResult.errors), TFSVcs.TFS_NAME);
-//          }
-//
-//          StatusProvider.visitByStatus(workspace, pathsToProcess, false, null, new StatusVisitor() {
-//            public void scheduledForAddition(final @NotNull FilePath localPath,
-//                                             final boolean localItemExists,
-//                                             final @NotNull ServerStatus serverStatus) {
-//              TFSVcs.error("Cannot revert an item scheduled for addition: " + localPath.getPresentableUrl());
-//            }
-//
-//            public void unversioned(final @NotNull FilePath localPath,
-//                                    final boolean localItemExists,
-//                                    final @NotNull ServerStatus serverStatus) {
-//              excludeFromFurtherProcessing(localPath);
-//            }
-//
-//            public void deleted(final @NotNull FilePath localPath,
-//                                final boolean localItemExists,
-//                                final @NotNull ServerStatus serverStatus) {
-//              excludeFromFurtherProcessing(localPath);
-//            }
-//
-//            public void scheduledForDeletion(final @NotNull FilePath localPath,
-//                                             final boolean localItemExists,
-//                                             final @NotNull ServerStatus serverStatus) {
-//              excludeFromFurtherProcessing(localPath);
-//            }
-//
-//            public void checkedOutForEdit(final @NotNull FilePath localPath,
-//                                          final boolean localItemExists,
-//                                          final @NotNull ServerStatus serverStatus) {
-//              // keep for further processing
-//            }
-//
-//            public void outOfDate(final @NotNull FilePath localPath,
-//                                  final boolean localItemExists,
-//                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-//              // keep for further processing
-//            }
-//
-//            public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-//              throws TfsException {
-//              // keep for further processing
-//            }
-//
-//            public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-//              throws TfsException {
-//              // keep for further processing
-//            }
-//
-//            public void renamedCheckedOut(final @NotNull FilePath localPath,
-//                                          final boolean localItemExists,
-//                                          final @NotNull ServerStatus serverStatus) throws TfsException {
-//              // keep for further processing
-//            }
-//
-//            public void undeleted(final @NotNull FilePath localPath,
-//                                  final boolean localItemExists,
-//                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-//              TFSVcs.error("Cannot revert undeleted: " + localPath.getPresentableUrl());
-//            }
-//          }, myProject);
-//        }
-//      });
-//    }
-//    catch (TfsException e) {
-//      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFS_NAME);
-//    }
+        final List<String> filePaths = new ArrayList<String>();
+        for (final FilePath filePath : myDeletedFiles) {
+            filePaths.add(filePath.getPath());
+        }
+        for (final FilePath filePath : myDeletedWithoutConfirmFiles) {
+            filePaths.add(filePath.getPath());
+        }
 
+
+        final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
+        final List<VcsException> exceptions = new ArrayList<VcsException>();
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+            public void run() {
+                try {
+                    ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+                    pendingChanges.addAll(CommandUtils.getStatusForFiles(TFSVcs.getInstance(myProject).getServerContext(true), filePaths));
+
+                    final List<String> revertFilePaths = new ArrayList<String>();
+                    final List<PendingChange> revertPendingChanges = new ArrayList<PendingChange>();
+
+                    for (final PendingChange pendingChange : pendingChanges) {
+                        if (pendingChange.getChangeTypes().contains(ServerStatusType.ADD) || pendingChange.getChangeTypes().contains(ServerStatusType.UNDELETE)) {
+                            // TODO (Jetbrains): assert that only Edit, Encoding can be here
+                            logger.info("executeDelete: need to revert " + pendingChange.getLocalItem());
+                            revertFilePaths.add(pendingChange.getLocalItem());
+                            revertPendingChanges.add(pendingChange);
+                            final FilePath localPath = VersionControlPath.getFilePath(pendingChange.getLocalItem(),
+                                    (new File(pendingChange.getLocalItem()).isDirectory()));
+                            excludeFromFurtherProcessing(localPath);
+                        }
+                    }
+
+                    if (!revertFilePaths.isEmpty()) {
+                        CommandUtils.undoLocalFiles(TFSVcs.getInstance(myProject).getServerContext(true), revertFilePaths);
+                        pendingChanges.removeAll(revertPendingChanges);
+                    }
+                } catch (Exception e) {
+                    logger.warn("executeDelete experienced a failure while looking for altered files to delete", e);
+                    exceptions.add(TFSVcs.convertToVcsException(e));
+                }
+            }
+        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_DELETE_SCHEDULING), false, myProject);
+
+
+        if (!exceptions.isEmpty()) {
+            AbstractVcsHelper.getInstance(myProject).showErrors(exceptions, TFSVcs.TFVC_NAME);
+            logger.warn("Errors experienced while rolling back changes to delete a file. Aborting delete.", exceptions);
+            return;
+        }
+
+        try {
+            for (final PendingChange pendingChange : pendingChanges) {
+                StatusProvider.visitByStatus(new StatusVisitor() {
+                    public void scheduledForAddition(final @NotNull FilePath localPath,
+                                                     final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // should never get here since already reverted
+                        throw new TfsException("Cannot revert an item scheduled for addition: " + localPath.getPresentableUrl());
+                    }
+
+                    public void unversioned(final @NotNull FilePath localPath,
+                                            final boolean localItemExists,
+                                            final @NotNull ServerStatus serverStatus) {
+                        // if the file is not an unversioned delete, it doesn't need anything done it it
+                        if (!pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
+                            excludeFromFurtherProcessing(localPath);
+                        }
+                    }
+
+                    public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                                     final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) {
+                        // already deleted
+                        excludeFromFurtherProcessing(localPath);
+                    }
+
+                    public void checkedOutForEdit(final @NotNull FilePath localPath,
+                                                  final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) {
+                        // keep for further processing
+                    }
+
+                    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+                            throws TfsException {
+                        // keep for further processing
+                    }
+
+                    public void renamedCheckedOut(final @NotNull FilePath localPath,
+                                                  final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // keep for further processing
+                    }
+
+                    public void undeleted(final @NotNull FilePath localPath,
+                                          final boolean localItemExists,
+                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // should never get here since already reverted
+                        throw new TfsException("Cannot revert undeleted: " + localPath.getPresentableUrl());
+                    }
+                }, pendingChange);
+            }
+        } catch (TfsException e) {
+            AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
+        }
+
+        // deletes files that were new but not added (VCS can't delete these since they don't exist to it)
         if (!myDeletedFiles.isEmpty() || !myDeletedWithoutConfirmFiles.isEmpty()) {
             super.executeDelete();
         }
@@ -245,23 +258,18 @@ public class TFSFileListener extends VcsVFSListener {
 
     protected void performDeletion(final List<FilePath> filesToDelete) {
         final List<VcsException> errors = new ArrayList<VcsException>();
-        // TODO: finish deletes
-//    try {
-//      WorkstationHelper.processByWorkspaces(filesToDelete, false, myProject, new WorkstationHelper.VoidProcessDelegate() {
-//        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-//          Collection<VcsException> scheduleErrors = ScheduleForDeletion.execute(myProject, workspace, paths);
-//          errors.addAll(scheduleErrors);
-//        }
-//      });
-//    }
-//    catch (TfsException e) {
-//      errors.add(new VcsException(e));
-//    }
+
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+            public void run() {
+                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+                errors.addAll(ScheduleForDeletion.execute(myProject, filesToDelete));
+            }
+        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_DELETE_SCHEDULING), false, myProject);
+
         if (!errors.isEmpty()) {
             AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFVC_NAME);
         }
     }
-
 
     private void excludeFromFurtherProcessing(final FilePath localPath) {
         if (!myDeletedFiles.remove(localPath)) {

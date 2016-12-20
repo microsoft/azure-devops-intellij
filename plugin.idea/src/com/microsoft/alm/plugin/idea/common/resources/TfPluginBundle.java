@@ -581,6 +581,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_ADD_SCHEDULING = "Tfvc.Add.Scheduling";
     @NonNls
+    public static final String KEY_TFVC_DELETE_SCHEDULING = "Tfvc.Delete.Scheduling";
+    @NonNls
     public static final String KEY_TFVC_ADD_ERROR = "Tfvc.Add.Error";
     @NonNls
     public static final String KEY_TFVC_ADD_ITEM = "Tfvc.Add.Item";

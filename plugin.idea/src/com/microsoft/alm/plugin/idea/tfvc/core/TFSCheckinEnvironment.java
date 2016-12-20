@@ -30,6 +30,7 @@ import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.operations.ScheduleForDeletion;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -209,18 +210,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     @Nullable
     public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
         final List<VcsException> errors = new ArrayList<VcsException>();
-//    try {
-//      WorkstationHelper.processByWorkspaces(files, false, myVcs.getProject(), new WorkstationHelper.VoidProcessDelegate() {
-//        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) {
-//          Collection<VcsException> schedulingErrors = ScheduleForDeletion.execute(myVcs.getProject(), workspace, paths);
-//          errors.addAll(schedulingErrors);
-//        }
-//      });
-//    }
-//    catch (TfsException e) {
-//      //noinspection ThrowableInstanceNeverThrown
-//      errors.add(new VcsException(e));
-//    }
+
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+            public void run() {
+                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+                errors.addAll(ScheduleForDeletion.execute(myVcs.getProject(), files));
+            }
+        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_DELETE_SCHEDULING), false, myVcs.getProject());
+
         return errors;
     }
 
