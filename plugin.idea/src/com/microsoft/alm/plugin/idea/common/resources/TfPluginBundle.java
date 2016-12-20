@@ -585,6 +585,13 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE = "Actions.Tfvc.Branch.Message.Failure";
 
+    //TFVC Branch Dialog
+    @NonNls
+    public static final String KEY_TFVC_BRANCH_DIALOG_TITLE = "Tfvc.Branch.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_BRANCH_DIALOG_OK_BUTTON = "Tfvc.Branch.Dialog.OkButton";
+
+
     //TFVC Merge Branch Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_TITLE = "Actions.Tfvc.MergeBranch.Title";
