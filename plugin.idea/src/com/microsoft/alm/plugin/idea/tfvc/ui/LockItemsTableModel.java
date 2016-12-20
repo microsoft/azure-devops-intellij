@@ -24,19 +24,19 @@ public class LockItemsTableModel extends AbstractTableModel {
     }
 
     enum Column {
-        //        Selection("", 5) {
-//            public Boolean getValue(final ItemInfo item) {
-//                return item.getSelectionStatus();
-//            }
-//        },
+        Selection("", 25) {
+            public Boolean getValue(final ExtendedItemInfo item) {
+                return item.selected;
+            }
+        },
         Item(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_ITEM_COLUMN), 550) {
-            public String getValue(final ItemInfo item) {
-                return item.getServerItem();
+            public String getValue(final ExtendedItemInfo item) {
+                return item.info.getServerItem();
             }
         },
         Lock(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCK_COLUMN), 110) {
-            public String getValue(final ItemInfo item) {
-                final LockCommand.LockLevel level = LockCommand.LockLevel.fromString(item.getLock());
+            public String getValue(final ExtendedItemInfo item) {
+                final LockCommand.LockLevel level = LockCommand.LockLevel.fromString(item.info.getLock());
                 switch (level) {
                     case CHECKIN:
                         return TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCK_LEVEL_CHECKIN);
@@ -48,8 +48,8 @@ public class LockItemsTableModel extends AbstractTableModel {
             }
         },
         LockOwner(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCKED_BY_COLUMN), 130) {
-            public String getValue(final ItemInfo item) {
-                return item.getLockOwner();
+            public String getValue(final ExtendedItemInfo item) {
+                return item.info.getLockOwner();
             }
         };
 
@@ -70,15 +70,42 @@ public class LockItemsTableModel extends AbstractTableModel {
         }
 
         @Nullable
-        public abstract Object getValue(final ItemInfo item);
+        public abstract Object getValue(final ExtendedItemInfo item);
     }
 
-    private final List<ItemInfo> items;
+    private final List<ExtendedItemInfo> items;
     private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
     public LockItemsTableModel(final @NotNull List<ItemInfo> items) {
-        this.items = items;
-        //Collections.sort(items, ItemInfo.LOCK_ITEM_PARENT_FIRST);
+        this.items = new ArrayList<ExtendedItemInfo>(items.size());
+        for (final ItemInfo item : items) {
+            this.items.add(new ExtendedItemInfo(item));
+        }
+        setInitialSelection();
+    }
+
+    /**
+     * This method looks at the first item in the list and selects all items that are like it.
+     * I.e. if the first item is not locked then select all items that are not locked
+     * OR if the first item IS locked, select all items that are also locked.
+     * This assures that the one of the Lock or Unlock buttons will be enabled.
+     */
+    private void setInitialSelection() {
+        if (items != null && items.size() > 0) {
+            final LockCommand.LockLevel firstItemLevel = LockCommand.LockLevel.fromString(items.get(0).info.getLock());
+            final boolean selectIfNone = firstItemLevel == LockCommand.LockLevel.NONE;
+
+            for (final ExtendedItemInfo item : items) {
+                final LockCommand.LockLevel currentLevel = LockCommand.LockLevel.fromString(item.info.getLock());
+                if (currentLevel == LockCommand.LockLevel.NONE && selectIfNone) {
+                    item.selected = true;
+                } else if (currentLevel != LockCommand.LockLevel.NONE && !selectIfNone) {
+                    item.selected = true;
+                } else {
+                    item.selected = false;
+                }
+            }
+        }
     }
 
     public int getRowCount() {
@@ -94,8 +121,7 @@ public class LockItemsTableModel extends AbstractTableModel {
     }
 
     public boolean isCellEditable(final int rowIndex, final int columnIndex) {
-        //return Column.values()[columnIndex] == Column.Selection && items.get(rowIndex).getSelectionStatus() != null;
-        return false;
+        return Column.values()[columnIndex] == Column.Selection;
     }
 
     @Nullable
@@ -103,20 +129,20 @@ public class LockItemsTableModel extends AbstractTableModel {
         return Column.values()[columnIndex].getValue(items.get(rowIndex));
     }
 
-//    @Override
-//    public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
-//        if (Column.values()[columnIndex] == Column.Selection) {
-//            items.get(rowIndex).setSelectionStatus((Boolean) aValue);
-//            myEventDispatcher.getMulticaster().selectionChanged();
-//        }
-//    }
+    @Override
+    public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
+        if (Column.values()[columnIndex] == Column.Selection) {
+            items.get(rowIndex).selected = (Boolean) aValue;
+            myEventDispatcher.getMulticaster().selectionChanged();
+        }
+    }
 
     public List<ItemInfo> getSelectedItems() {
         final List<ItemInfo> result = new ArrayList<ItemInfo>();
-        for (ItemInfo item : items) {
-            //if (item.getSelectionStatus() == Boolean.TRUE) {
-            result.add(item);
-            //}
+        for (ExtendedItemInfo item : items) {
+            if (item.selected) {
+                result.add(item.info);
+            }
         }
         return result;
     }
@@ -131,12 +157,19 @@ public class LockItemsTableModel extends AbstractTableModel {
 
     @Override
     public Class<?> getColumnClass(final int columnIndex) {
-//        if (columnIndex == Column.Selection.ordinal()) {
-//            return Boolean.class;
-//        } else if (columnIndex == Column.Item.ordinal()) {
-//            return ExtendedItem.class;
-//        } else {
-        return super.getColumnClass(columnIndex);
-        //}
+        if (columnIndex == Column.Selection.ordinal()) {
+            return Boolean.class;
+        } else {
+            return super.getColumnClass(columnIndex);
+        }
+    }
+
+    private class ExtendedItemInfo {
+        public final ItemInfo info;
+        public boolean selected;
+
+        public ExtendedItemInfo(final ItemInfo info) {
+            this.info = info;
+        }
     }
 }

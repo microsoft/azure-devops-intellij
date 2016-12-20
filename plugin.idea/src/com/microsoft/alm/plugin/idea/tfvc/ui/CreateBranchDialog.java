@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -42,8 +41,8 @@ public class CreateBranchDialog extends BaseDialogImpl {
 
     @Nullable
     protected JComponent createCenterPanel() {
-        form = new CreateBranchForm(getProject(), (ServerContext)getProperty(PROP_SERVER_CONTEXT),
-                (String)getProperty(PROP_SERVER_PATH), (Boolean)getProperty(PROP_IS_DIR));
+        form = new CreateBranchForm(getProject(), (ServerContext) getProperty(PROP_SERVER_CONTEXT),
+                (String) getProperty(PROP_SERVER_PATH), (Boolean) getProperty(PROP_IS_DIR));
         form.addListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {

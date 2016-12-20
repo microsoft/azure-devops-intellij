@@ -41,7 +41,7 @@ public class LockItemsDialog extends BaseDialogImpl {
 
     @Nullable
     protected JComponent createCenterPanel() {
-        form = new LockItemsForm((List<ItemInfo>)getProperty(PROP_ITEMS));
+        form = new LockItemsForm((List<ItemInfo>) getProperty(PROP_ITEMS));
         form.addListener(new LockItemsTableModel.Listener() {
             public void selectionChanged() {
                 updateControls();
