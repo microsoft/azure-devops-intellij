@@ -41,7 +41,7 @@ public class LockItemsDialog extends BaseDialogImpl {
 
     @Nullable
     protected JComponent createCenterPanel() {
-        form = new LockItemsForm((List<ItemInfo>)getProperty(PROP_ITEMS));
+        form = new LockItemsForm((List<ItemInfo>) getProperty(PROP_ITEMS));
         form.addListener(new LockItemsTableModel.Listener() {
             public void selectionChanged() {
                 updateControls();
@@ -103,6 +103,10 @@ public class LockItemsDialog extends BaseDialogImpl {
 
     public LockCommand.LockLevel getLockLevel() {
         return form.getLockLevel();
+    }
+
+    public boolean getRecursive() {
+        return form.getRecursive();
     }
 
     private class LockAction extends AbstractAction {

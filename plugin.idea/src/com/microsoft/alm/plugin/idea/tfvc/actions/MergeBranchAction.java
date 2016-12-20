@@ -56,7 +56,7 @@ public class MergeBranchAction extends SingleItemAction implements DumbAware {
         branchListProvider.getBranches(sourceDialogInput);
 
         final MergeBranchDialog d = new MergeBranchDialog(project, serverContext, sourceDialogInput, isFolder,
-                title, branchListProvider);
+                branchListProvider);
         if (!d.showAndGet()) {
             logger.info("User canceled");
             return;

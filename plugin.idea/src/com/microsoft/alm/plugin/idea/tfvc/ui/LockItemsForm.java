@@ -13,6 +13,7 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -29,6 +30,7 @@ public class LockItemsForm {
     private JTable lockItemsTable;
     private JRadioButton lockCheckOutRadioButton;
     private JRadioButton lockCheckInRadioButton;
+    private JCheckBox recursiveCheckBox;
 
     private final LockItemsTableModel lockItemsTableModel;
 
@@ -83,6 +85,10 @@ public class LockItemsForm {
         return LockCommand.LockLevel.NONE;
     }
 
+    public boolean getRecursive() {
+        return recursiveCheckBox.isSelected();
+    }
+
     public void addListener(final LockItemsTableModel.Listener listener) {
         lockItemsTableModel.addListener(listener);
     }
@@ -109,7 +115,7 @@ public class LockItemsForm {
         contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout(0, 0));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         contentPane.add(panel1, BorderLayout.SOUTH);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("LockDialog.LockBox")));
         lockCheckInRadioButton = new JRadioButton();
@@ -118,6 +124,10 @@ public class LockItemsForm {
         lockCheckOutRadioButton = new JRadioButton();
         this.$$$loadButtonText$$$(lockCheckOutRadioButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("LockDialog.CheckoutRadio"));
         panel1.add(lockCheckOutRadioButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        recursiveCheckBox = new JCheckBox();
+        recursiveCheckBox.setSelected(true);
+        this.$$$loadButtonText$$$(recursiveCheckBox, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("LockDialog.RecursiveCheck"));
+        panel1.add(recursiveCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
         contentPane.add(panel2, BorderLayout.CENTER);

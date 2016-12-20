@@ -42,13 +42,15 @@ public class LockAction extends MultipleItemAction {
         runWithProgress(actionContext, new Runnable() {
             public void run() {
                 ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                final List<String> itemSpecs = new ArrayList<String>(actionContext.itemInfos.size());
-                for (final ItemInfo item : actionContext.itemInfos) {
+                final List<ItemInfo> selectedItems = d.getSelectedItems();
+                final List<String> itemSpecs = new ArrayList<String>(selectedItems.size());
+                for (final ItemInfo item : selectedItems) {
                     itemSpecs.add(item.getServerItem());
                 }
 
                 logger.info("Calling the lock command");
-                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder, d.getLockLevel(), true, itemSpecs);
+                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
+                        d.getLockLevel(), d.getRecursive(), itemSpecs);
             }
         }, title);
 
