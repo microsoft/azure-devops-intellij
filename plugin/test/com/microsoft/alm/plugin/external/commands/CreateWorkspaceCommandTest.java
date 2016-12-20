@@ -28,56 +28,56 @@ public class CreateWorkspaceCommandTest extends AbstractCommandTest {
     public void testGetArgumentBuilder_withContext() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(context, "ws1", "comment2", null, null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -collection:http://server:8080/tfs/defaultcollection ******** -new ws1 -comment:comment2", builder.toString());
+        Assert.assertEquals("workspace -noprompt -collection:http://server:8080/tfs/defaultcollection ******** -new -location:local ws1 -comment:comment2", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_nullContext() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", null, null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_private_checkin() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -filetime:checkin -permission:Private", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -filetime:checkin -permission:Private", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_public_checkin() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PUBLIC);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -filetime:checkin -permission:Public", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -filetime:checkin -permission:Public", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_limited_checkin() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", Workspace.FileTime.CHECKIN, Workspace.Permission.PUBLIC_LIMITED);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -filetime:checkin -permission:PublicLimited", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -filetime:checkin -permission:PublicLimited", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_private_current() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", Workspace.FileTime.CURRENT, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -filetime:current -permission:Private", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -filetime:current -permission:Private", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_current() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", Workspace.FileTime.CURRENT, null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -filetime:current", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -filetime:current", builder.toString());
     }
 
     @Test
     public void testGetArgumentBuilder_private() {
         final CreateWorkspaceCommand cmd = new CreateWorkspaceCommand(null, "ws1", "comment2", null, Workspace.Permission.PRIVATE);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workspace -noprompt -new ws1 -comment:comment2 -permission:Private", builder.toString());
+        Assert.assertEquals("workspace -noprompt -new -location:local ws1 -comment:comment2 -permission:Private", builder.toString());
     }
 
     @Test

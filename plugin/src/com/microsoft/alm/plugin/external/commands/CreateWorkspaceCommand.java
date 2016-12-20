@@ -48,6 +48,7 @@ public class CreateWorkspaceCommand extends Command<String> {
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .addSwitch("new")
+                .addSwitch("location", "local") // make local default for now
                 .add(workspaceName);
         if (StringUtils.isNotEmpty(comment)) {
             builder.addSwitch("comment", comment);
