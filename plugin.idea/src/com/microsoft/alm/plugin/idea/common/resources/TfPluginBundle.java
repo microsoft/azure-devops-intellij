@@ -563,8 +563,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_LOCK_DIALOG_UNLOCK_BUTTON = "Tfvc.Lock.Dialog.UnlockButton";
 
-
-
     //TFVC Branch Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_TITLE = "Actions.Tfvc.Branch.Title";
@@ -591,7 +589,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_BRANCH_DIALOG_OK_BUTTON = "Tfvc.Branch.Dialog.OkButton";
 
-
     //TFVC Merge Branch Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_TITLE = "Actions.Tfvc.MergeBranch.Title";
@@ -607,6 +604,12 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_SUCCESS = "Actions.Tfvc.MergeBranch.Success";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_MERGE_BRANCH_ERRORS_FOUND = "Actions.Tfvc.MergeBranch.Errors.Found";
+
+    //TFVC Merge Branch Dialog
+    @NonNls
+    public static final String KEY_TFVC_MERGE_BRANCH_DIALOG_TITLE = "Tfvc.MergeBranch.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_MERGE_BRANCH_DIALOG_OK_BUTTON = "Tfvc.MergeBranch.Dialog.OkButton";
 
     //starters
     @NonNls
