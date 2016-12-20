@@ -48,7 +48,8 @@ public class LockAction extends MultipleItemAction {
                 }
 
                 logger.info("Calling the lock command");
-                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder, d.getLockLevel(), true, itemSpecs);
+                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
+                        d.getLockLevel(), d.getRecursive(), itemSpecs);
             }
         }, title);
 

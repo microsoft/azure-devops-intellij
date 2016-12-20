@@ -105,6 +105,10 @@ public class LockItemsDialog extends BaseDialogImpl {
         return form.getLockLevel();
     }
 
+    public boolean getRecursive() {
+        return form.getRecursive();
+    }
+
     private class LockAction extends AbstractAction {
         public LockAction() {
             super(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCK_BUTTON));
