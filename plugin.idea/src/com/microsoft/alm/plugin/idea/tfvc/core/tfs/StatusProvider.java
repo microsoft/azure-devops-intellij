@@ -90,6 +90,8 @@ public class StatusProvider {
             } else {
                 return new ServerStatus.ScheduledForDeletion(pendingChange);
             }
+        } else if (types.contains(ServerStatusType.LOCK)) {
+            return new ServerStatus.Locked(pendingChange);
         } else {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;

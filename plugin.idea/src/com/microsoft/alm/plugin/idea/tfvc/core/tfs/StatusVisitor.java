@@ -12,6 +12,9 @@ public interface StatusVisitor {
     void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException;
 
+    void locked(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+            throws TfsException;
+
     void scheduledForAddition(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException;
 

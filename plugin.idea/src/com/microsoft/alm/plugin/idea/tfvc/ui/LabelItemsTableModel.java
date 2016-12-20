@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui;
 
+import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +31,7 @@ public class LabelItemsTableModel extends AbstractTableModel {
 
         Column(final String name, final int width) {
             this.name = name;
-            this.width = width;
+            this.width = JBUI.scale(width);
         }
 
         public String getName() {

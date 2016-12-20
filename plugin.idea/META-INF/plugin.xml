@@ -139,11 +139,14 @@
             <separator/ -->
             <separator/>
             <reference id="ChangesView.Revert"/>
+            <!-- action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/ -->
             <separator/>
             <action id="Tfs.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" />
             <action id="Tfs.MergeChanges" class="com.microsoft.alm.plugin.idea.tfvc.actions.MergeBranchAction" />
             <separator/>
             <action id="Tfs.Label" class="com.microsoft.alm.plugin.idea.tfvc.actions.LabelAction" />
+            <separator/>
+            <action id="Tfs.Lock" class="com.microsoft.alm.plugin.idea.tfvc.actions.LockAction" />
             <separator/>
             <reference id="Vcs.ShowTabbedFileHistory"/>
             <reference id="Compare.SameVersion"/>
@@ -152,17 +155,8 @@
             <reference id="Vcs.ShowHistoryForBlock"/>
             <reference id="Annotate"/>
             <reference id="ChangesView.Browse"/>
-            <!-- separator/>
-            <action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/>
-            < THIS IS WHERE BRANCH COMMANDS WERE >
             <separator/>
-            < THIS IS WHERE LABEL COMMANDS WERE >
-            <separator/>
-            <action id="Tfs.Lock" class="org.jetbrains.tfsIntegration.actions.LockAction" text="L_ock/Unlock..."/>
-            <separator/>
-            < THIS IS WHERE HISTORY COMMANDS WERE >
-            <separator/>
-            <action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/>-->
+            <!--action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/-->
             <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>
             <add-to-group group-id="TfvcFilePopupGroup" anchor="last"/>
             <separator/>

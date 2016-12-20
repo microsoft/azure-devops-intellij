@@ -23,6 +23,7 @@ import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.HistoryCommand;
 import com.microsoft.alm.plugin.external.commands.InfoCommand;
+import com.microsoft.alm.plugin.external.commands.LockCommand;
 import com.microsoft.alm.plugin.external.commands.MergeCommand;
 import com.microsoft.alm.plugin.external.commands.RenameCommand;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
@@ -553,6 +554,7 @@ public class CommandUtils {
 
     /**
      * Returns a list of labels from the server.
+     *
      * @param context
      * @param workingFolder
      * @param nameFilter
@@ -576,5 +578,21 @@ public class CommandUtils {
                                            final String workingFolder, final boolean recursive) {
         final DeleteCommand deleteCommand = new DeleteCommand(context, filePaths, workingFolder, recursive);
         return deleteCommand.runSynchronously();
+    }
+
+    /**
+     * Locks/Unlocks the items passed in.
+     * Note: Lock::Checkout doesn't work on local workspaces.
+     *       Lock::None is how you unlock a file (cannot unlock errors are ignored)
+     * @param context
+     * @param workingFolder
+     * @param lockLevel
+     * @param recursive
+     * @param itemSpecs
+     */
+    public static void lock(final ServerContext context, final String workingFolder, final LockCommand.LockLevel lockLevel,
+                            final boolean recursive, final List<String> itemSpecs) {
+        final LockCommand lockCommand = new LockCommand(context, workingFolder, lockLevel, recursive, itemSpecs);
+        lockCommand.runSynchronously();
     }
 }

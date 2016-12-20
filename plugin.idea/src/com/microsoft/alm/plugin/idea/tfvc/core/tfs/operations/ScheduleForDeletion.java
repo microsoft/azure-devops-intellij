@@ -75,6 +75,11 @@ public class ScheduleForDeletion {
                         scheduleForDeletion.add(pendingChange.getLocalItem());
                     }
 
+                    @Override
+                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+                        // nothing to do
+                    }
+
                     public void scheduledForAddition(final @NotNull FilePath localPath, final boolean localItemExists,
                                                      final @NotNull ServerStatus serverStatus) {
                         logger.info("ScheduleForDeletion: scheduledForAddition file " + localPath.getPath());

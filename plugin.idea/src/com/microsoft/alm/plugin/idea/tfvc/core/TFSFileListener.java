@@ -81,6 +81,11 @@ public class TFSFileListener extends VcsVFSListener {
                         // TODO (Jetbrains): add local conflict
                     }
 
+                    @Override
+                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+                        // ignore
+                    }
+
                     public void scheduledForAddition(final @NotNull FilePath localPath,
                                                      final boolean localItemExists,
                                                      final @NotNull ServerStatus serverStatus) {
@@ -225,6 +230,11 @@ public class TFSFileListener extends VcsVFSListener {
                                                   final boolean localItemExists,
                                                   final @NotNull ServerStatus serverStatus) {
                         // keep for further processing
+                    }
+
+                    @Override
+                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+                        // nothing to do
                     }
 
                     public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)

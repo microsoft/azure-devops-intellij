@@ -64,6 +64,17 @@ public abstract class ServerStatus {
         }
     }
 
+    public static class Locked extends ServerStatus {
+        protected Locked(final @NotNull PendingChange pendingChange) {
+            super(pendingChange);
+        }
+
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
+                throws TfsException {
+            statusVisitor.locked(localPath, localItemExists, this);
+        }
+    }
+
     public static class ScheduledForAddition extends ServerStatus {
         protected ScheduledForAddition(final @NotNull PendingChange pendingChange) {
             super(pendingChange);

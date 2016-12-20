@@ -529,6 +529,42 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_VERSION_COLUMN = "Tfvc.Label.Dialog.VersionColumn";
 
+
+
+    // TFVC Apply Label Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_TITLE = "Actions.Tfvc.Lock.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_MSG = "Actions.Tfvc.Lock.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_PROGRESS_LOCKING = "Actions.Tfvc.Lock.Progress.Locking";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_PROGRESS_UNLOCKING = "Actions.Tfvc.Lock.Progress.Unlocking";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_SUCCESS_LOCKED = "Actions.Tfvc.Label.Success.Locked";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LOCK_SUCCESS_UNLOCKED = "Actions.Tfvc.Label.Success.Unlocked";
+
+    // TFVC Apply Label Dialog
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_TITLE = "Tfvc.Lock.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_ITEM_COLUMN = "Tfvc.Lock.Dialog.ItemColumn";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_LOCK_COLUMN = "Tfvc.Lock.Dialog.LockColumn";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_LOCKED_BY_COLUMN = "Tfvc.Lock.Dialog.LockedByColumn";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_LOCK_LEVEL_CHECKIN = "Tfvc.Lock.Dialog.LockLevel.Checkin";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_LOCK_LEVEL_CHECKOUT = "Tfvc.Lock.Dialog.LockLevel.Checkout";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_LOCK_BUTTON = "Tfvc.Lock.Dialog.LockButton";
+    @NonNls
+    public static final String KEY_TFVC_LOCK_DIALOG_UNLOCK_BUTTON = "Tfvc.Lock.Dialog.UnlockButton";
+
+
+
     //TFVC Branch Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_TITLE = "Actions.Tfvc.Branch.Title";

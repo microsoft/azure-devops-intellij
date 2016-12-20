@@ -53,6 +53,11 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         }
     }
 
+    @Override
+    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+        // Nothing to do
+    }
+
     public void scheduledForAddition(final @NotNull FilePath localPath,
                                      final boolean localItemExists,
                                      final @NotNull ServerStatus serverStatus) {
