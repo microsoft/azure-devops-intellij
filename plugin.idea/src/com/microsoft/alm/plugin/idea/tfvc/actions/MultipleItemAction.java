@@ -72,11 +72,17 @@ public abstract class MultipleItemAction extends InstrumentedAction {
             public void run() {
                 ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
                 context.serverContext = TFSVcs.getInstance(context.project).getServerContext(true);
+
+                // Get the local paths
+                final List<String> localPaths = new ArrayList<String>(files.length);
                 for (final VirtualFile file : files) {
                     final FilePath localPath = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
-                    final ItemInfo info = CommandUtils.getItemInfo(context.serverContext, localPath.getPath());
-                    context.itemInfos.add(info);
+                    localPaths.add(localPath.getPath());
                 }
+
+                // Get the item infos (no need for a working folder since these are local paths)
+                final List<ItemInfo> infos = CommandUtils.getItemInfos(context.serverContext, null, localPaths);
+                context.itemInfos.addAll(infos);
 
                 // Set the default path and additional parameters
                 if (context.itemInfos.size() > 0) {

@@ -482,6 +482,16 @@ public class CommandUtils {
     }
 
     /**
+     * Returns the item infos for the item paths provided. Specify a working folder in the workspace if you want info for
+     * server paths.
+     */
+    public static List<ItemInfo> getItemInfos(final ServerContext context, final String workingFolder,
+                                       final List<String> itemPaths) {
+        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, itemPaths);
+        return infoCommand.runSynchronously();
+    }
+
+    /**
      * Calls the branch command and returns the changeset number of the changeset created.
      *
      * @param context
