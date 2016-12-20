@@ -29,6 +29,10 @@ import java.util.List;
 public class AddAction extends InstrumentedAction {
     private static final Logger logger = LoggerFactory.getLogger(AddAction.class);
 
+    protected AddAction() {
+        super(false);
+    }
+
     @Override
     public void doActionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);

@@ -41,7 +41,7 @@ public abstract class MultipleItemAction extends InstrumentedAction {
     public static final Logger logger = LoggerFactory.getLogger(MultipleItemAction.class);
 
     public MultipleItemAction(final String title, final String message) {
-        super(title, message, null);
+        super(title, message, null, false);
     }
 
     /**

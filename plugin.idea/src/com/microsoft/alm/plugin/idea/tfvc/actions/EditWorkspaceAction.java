@@ -13,6 +13,10 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
  */
 public class EditWorkspaceAction extends InstrumentedAction {
 
+    protected EditWorkspaceAction() {
+        super(false);
+    }
+
     @Override
     public void doActionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();

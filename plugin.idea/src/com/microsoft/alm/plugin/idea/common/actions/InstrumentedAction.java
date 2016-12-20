@@ -26,6 +26,15 @@ public abstract class InstrumentedAction extends DumbAwareAction {
     }
 
     /**
+     * Use this constructor to set the actionUsesGitExe variable (default is true)
+     *
+     * @param usesGitExe
+     */
+    protected InstrumentedAction(final boolean usesGitExe) {
+        actionUsesGitExe = usesGitExe;
+    }
+
+    /**
      * Use this constructor to set the text of the action that is presented to the user
      */
     protected InstrumentedAction(final String text) {
@@ -98,7 +107,7 @@ public abstract class InstrumentedAction extends DumbAwareAction {
      */
     @Override
     public final void actionPerformed(final AnActionEvent anActionEvent) {
-        if(anActionEvent != null && anActionEvent.getProject() != null) {
+        if (anActionEvent != null && anActionEvent.getProject() != null) {
             if (actionUsesGitExe && !IdeaHelper.isGitExeConfigured(anActionEvent.getProject())) {
                 //git.exe is required for this action but not correctly configured
                 return;
