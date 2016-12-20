@@ -20,6 +20,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -49,95 +50,108 @@ public class LabelAction extends InstrumentedAction {
 
     @Override
     public void doActionPerformed(final AnActionEvent anActionEvent) {
-        final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
+        final InternalContext context = new InternalContext();
+        context.project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
 
         // Find the list of selected files and get itemInfos for each one
-        final List<VcsException> errors = new ArrayList<VcsException>();
-        final List<ItemInfo> itemInfos = new ArrayList<ItemInfo>(files.length);
-
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
             public void run() {
                 try {
                     ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                    final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+                    context.serverContext = TFSVcs.getInstance(context.project).getServerContext(true);
                     for (final VirtualFile file : files) {
                         final FilePath localPath = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
-                        final ItemInfo info = CommandUtils.getItemInfo(context, localPath.getPath());
-                        itemInfos.add(info);
+                        final ItemInfo info = CommandUtils.getItemInfo(context.serverContext, localPath.getPath());
+                        context.itemInfos.add(info);
                     }
                 } catch (Throwable t) {
                     logger.warn("Errors occurred trying to get info for files in ApplyLabel", t);
-                    errors.add(TFSVcs.convertToVcsException(t));
+                    context.errors.add(TFSVcs.convertToVcsException(t));
                 }
             }
-        }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_PROGRESS_GATHERING_INFORMATION), false, project);
+        }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_PROGRESS_GATHERING_INFORMATION), false, context.project);
 
-        if (!errors.isEmpty()) {
-            AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFVC_NAME);
+        if (!context.errors.isEmpty()) {
+            AbstractVcsHelper.getInstance(context.project).showErrors(context.errors, TFSVcs.TFVC_NAME);
             return;
         }
 
-        if (itemInfos.size() == 0) {
+        if (context.itemInfos.size() == 0) {
             // Somehow we got here without items selected or we couldn't find the info for them.
             // This shouldn't happen, but just in case we won't continue
             return;
         }
 
         // Open the Apply Label dialog and allow the user to enter label name and description
-        final ApplyLabelDialog d = new ApplyLabelDialog(project, itemInfos);
+        final ApplyLabelDialog d = new ApplyLabelDialog(context.project, context.itemInfos);
         if (!d.showAndGet()) {
             return;
         }
 
-        //TODO Handle updating existing label
-//                    try {
-//                        List<VersionControlLabel> labels = myWorkspace.getServer().getVCS()
-//                                .queryLabels(getLabelName(), null, null, false, null, null, false, form.getContentPane(),
-//                                        TFSBundle.message("checking.existing.labels"));
-//                        if (!labels.isEmpty()) {
-//                            String message = MessageFormat.format("Label ''{0}'' already exists.\nDo you want to update it?", getLabelName());
-//                            if (Messages.showOkCancelDialog(project, message, getTitle(), "Update Label", "Cancel", Messages.getQuestionIcon()) !=
-//                                    Messages.OK) {
-//                                return;
-//                            }
-//                        }
-//                    }
-//                    catch (TfsException e) {
-//                        Messages.showErrorDialog(project, e.getMessage(), getTitle());
-//                        return;
-//                    }
+        // Check to see if the label name already exists
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+            public void run() {
+                try {
+
+                    // TODO create a common class to hold this logic (repeated in several places)
+                    context.defaultLocalPath = context.itemInfos.get(0).getLocalItem();
+                    context.isFolder = Path.directoryExists(context.defaultLocalPath);
+                    context.workingFolder = context.isFolder ?
+                            context.defaultLocalPath :
+                            Path.getDirectoryName(context.defaultLocalPath);
+                    context.labelName = d.getLabelName();
+                    context.labels = CommandUtils.getLabels(context.serverContext, context.workingFolder, context.labelName);
+                } catch (final Throwable t) {
+                    context.errors.add(TFSVcs.convertToVcsException(t));
+                    AbstractVcsHelper.getInstance(context.project).showErrors(context.errors, TFSVcs.TFVC_NAME);
+                }
+            }
+        }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_PROGRESS_GATHERING_INFORMATION), false, context.project);
+
+        if (!context.errors.isEmpty()) {
+            AbstractVcsHelper.getInstance(context.project).showErrors(context.errors, TFSVcs.TFVC_NAME);
+            return;
+        }
+
+        if (!context.labels.isEmpty()) {
+            logger.info("There is a label on the server already with the name " + context.labelName);
+            if (Messages.showOkCancelDialog(context.project,
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_OVERWRITE, context.labelName),
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_TITLE),
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_OVERWRITE_OK_TEXT),
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_OVERWRITE_CANCEL_TEXT),
+                    Messages.getQuestionIcon()) !=
+                    Messages.OK) {
+                // The user chose not to overwrite the label
+                logger.info("User canceled Update Label action");
+                return;
+            }
+        }
+
 
         final StringBuilder successMessage = new StringBuilder();
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
             public void run() {
                 try {
-                    // TODO create a common class to hold this logic (repeated in several places)
-                    final String defaultLocalPath = itemInfos.get(0).getLocalItem();
-                    final boolean isFolder = Path.directoryExists(defaultLocalPath);
-                    final String workingFolder = isFolder ?
-                            defaultLocalPath :
-                            Path.getDirectoryName(defaultLocalPath);
-                    final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
-
-                    //TODO Get recursive from the dialog instead of assuming true
-                    final boolean labelCreated = CommandUtils.createLabel(context, workingFolder, d.getLabelName(), d.getLabelComment(), true, d.getLabelItemSpecs());
+                    final boolean labelCreated = CommandUtils.createLabel(context.serverContext, context.workingFolder,
+                            context.labelName, d.getLabelComment(), d.isRecursiveChecked(), d.getLabelItemSpecs());
                     if (labelCreated) {
-                        successMessage.append(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_SUCCESS_CREATED, d.getLabelName()));
+                        successMessage.append(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_SUCCESS_CREATED, context.labelName));
                     } else {
-                        successMessage.append(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_SUCCESS_UPDATED, d.getLabelName()));
+                        successMessage.append(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_SUCCESS_UPDATED, context.labelName));
                     }
                 } catch (Throwable t) {
                     logger.warn("Errors occurred trying to get info for files in ApplyLabel", t);
-                    errors.add(TFSVcs.convertToVcsException(t));
+                    context.errors.add(TFSVcs.convertToVcsException(t));
                 }
             }
-        }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_PROGRESS_CREATING_LABEL), false, project);
+        }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_PROGRESS_CREATING_LABEL), false, context.project);
 
-        if (!errors.isEmpty()) {
-            AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFVC_NAME);
+        if (!context.errors.isEmpty()) {
+            AbstractVcsHelper.getInstance(context.project).showErrors(context.errors, TFSVcs.TFVC_NAME);
         } else {
-            Messages.showInfoMessage(project, successMessage.toString(), TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_TITLE));
+            Messages.showInfoMessage(context.project, successMessage.toString(), TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_TITLE));
         }
     }
 
@@ -155,5 +169,20 @@ public class LabelAction extends InstrumentedAction {
         }
 
         return true;
+    }
+
+    /**
+     * This internal class is used to keep track of our context thru all the runnables above.
+     */
+    private static class InternalContext {
+        Project project;
+        ServerContext serverContext;
+        String defaultLocalPath;
+        boolean isFolder;
+        String workingFolder;
+        String labelName;
+        final List<VcsException> errors = new ArrayList<VcsException>();
+        final List<ItemInfo> itemInfos = new ArrayList<ItemInfo>();
+        List<TfvcLabel> labels;
     }
 }

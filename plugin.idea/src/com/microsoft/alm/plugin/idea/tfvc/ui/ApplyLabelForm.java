@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -24,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ public class ApplyLabelForm {
      */
     private void $$$setupUI$$$() {
         contentPane = new JPanel();
-        contentPane.setLayout(new GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
+        contentPane.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ApplyLabelDialog.NameLabel"));
         contentPane.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -60,10 +62,10 @@ public class ApplyLabelForm {
         contentPane.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ApplyLabelDialog.ItemsLabel"));
-        contentPane.add(label3, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        contentPane.add(label3, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        contentPane.add(panel1, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        contentPane.add(panel1, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         addButton = new JButton();
         this.$$$loadButtonText$$$(addButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ApplyLabelDialog.AddButton"));
         panel1.add(addButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -74,7 +76,7 @@ public class ApplyLabelForm {
         this.$$$loadButtonText$$$(removeButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ApplyLabelDialog.RemoveButton"));
         panel1.add(removeButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JBScrollPane jBScrollPane1 = new JBScrollPane();
-        contentPane.add(jBScrollPane1, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(-1, 250), null, 0, false));
+        contentPane.add(jBScrollPane1, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(-1, 250), null, 0, false));
         itemsTable = new JBTable();
         jBScrollPane1.setViewportView(itemsTable);
         final JBScrollPane jBScrollPane2 = new JBScrollPane();
@@ -82,6 +84,10 @@ public class ApplyLabelForm {
         commentTextArea = new JTextArea();
         commentTextArea.setRows(4);
         jBScrollPane2.setViewportView(commentTextArea);
+        recursiveCheckBox = new JCheckBox();
+        recursiveCheckBox.setSelected(true);
+        this.$$$loadButtonText$$$(recursiveCheckBox, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ApplyLabelDialog.RecursiveCheckBox"));
+        contentPane.add(recursiveCheckBox, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         label1.setLabelFor(nameText);
     }
 
@@ -161,6 +167,7 @@ public class ApplyLabelForm {
 
     private JButton addButton;
     private JButton removeButton;
+    private JCheckBox recursiveCheckBox;
 
     private LabelItemsTableModel itemsTableModel;
     //private final LabelModel myLabelModel;
@@ -197,12 +204,22 @@ public class ApplyLabelForm {
         updateButtons();
     }
 
+    public JComponent getPreferredFocusedComponent() {
+        return nameText;
+    }
+
     private void initTable() {
         itemsTableModel = new LabelItemsTableModel();
         itemsTableModel.setItems(itemInfos);
         itemsTable.setModel(itemsTableModel);
         for (int i = 0; i < LabelItemsTableModel.Column.values().length; i++) {
             itemsTable.getColumnModel().getColumn(i).setPreferredWidth(LabelItemsTableModel.Column.values()[i].getWidth());
+            // Center all columns except the first
+            if (i > 0) {
+                final DefaultTableCellRenderer typeRenderer = new DefaultTableCellRenderer();
+                typeRenderer.setHorizontalAlignment(JLabel.CENTER);
+                itemsTable.getColumnModel().getColumn(i).setCellRenderer(typeRenderer);
+            }
         }
         itemsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -265,6 +282,10 @@ public class ApplyLabelForm {
 
     public String getLabelComment() {
         return commentTextArea.getText();
+    }
+
+    public boolean isRecursiveChecked() {
+        return recursiveCheckBox.isSelected();
     }
 
     public List<String> getLabelItemSpecs() {

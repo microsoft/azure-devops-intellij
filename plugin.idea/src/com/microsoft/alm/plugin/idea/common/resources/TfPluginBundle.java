@@ -499,7 +499,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION = "Actions.SelectWorkItems.Action";
 
-    // TFVC Apply Label
+    // TFVC Apply Label Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_LABEL_TITLE = "Actions.Tfvc.Label.Title";
     @NonNls
@@ -512,10 +512,18 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_LABEL_SUCCESS_CREATED = "Actions.Tfvc.Label.Success.Created";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_LABEL_SUCCESS_UPDATED = "Actions.Tfvc.Label.Success.Updated";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_OVERWRITE = "Actions.Tfvc.Label.Overwrite";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_OVERWRITE_OK_TEXT = "Actions.Tfvc.Label.Overwrite.OkText";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_LABEL_OVERWRITE_CANCEL_TEXT = "Actions.Tfvc.Label.Overwrite.CancelText";
 
     // TFVC Apply Label Dialog
     @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_TITLE = "Tfvc.Label.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_LABEL_DIALOG_APPLY_LABEL = "Tfvc.Label.Dialog.ApplyLabel";
     @NonNls
     public static final String KEY_TFVC_LABEL_DIALOG_ITEM_COLUMN = "Tfvc.Label.Dialog.ItemColumn";
     @NonNls
