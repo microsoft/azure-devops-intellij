@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.google.common.collect.ImmutableList;
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import org.junit.Assert;
 import org.junit.Test;
@@ -54,8 +55,8 @@ public class DeleteCommandTest extends AbstractCommandTest {
         final DeleteCommand cmd = new DeleteCommand(context, filePaths, "workspaceName", true);
         final List<String> output = cmd.parseOutput("/path/to:\nfile.txt\nfile2.txt\n\n/path/to/another:\nfile2.txt", "");
         Assert.assertEquals(3, output.size());
-        Assert.assertEquals("/path/to/file.txt", output.get(0));
-        Assert.assertEquals("/path/to/file2.txt", output.get(1));
-        Assert.assertEquals("/path/to/another/file2.txt", output.get(2));
+        Assert.assertEquals(Path.combine("/path/to", "file.txt"), output.get(0));
+        Assert.assertEquals(Path.combine("/path/to", "file2.txt"), output.get(1));
+        Assert.assertEquals(Path.combine("/path/to/another", "file2.txt"), output.get(2));
     }
 }
