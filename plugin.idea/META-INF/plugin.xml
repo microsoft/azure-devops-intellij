@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.109.0</version>
+    <version>1.111.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -27,7 +27,7 @@
         <li>Create a new branch and associate it with the work item you are working on.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
-        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes.</li>
+        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes along with adding, deleting, locking and labeling files.</li>
       </ul>
       <br />
       <br />
@@ -47,7 +47,7 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.109.0
+      v 1.111.0
       <br />
       Added ability to view file history and associate work items with commits for TFVC. This release also contains incremental fixes and updates.
       <br />
