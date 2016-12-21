@@ -49,7 +49,7 @@
     <change-notes><![CDATA[
       v 1.111.0
       <br />
-      Added ability to view file history and associate work items with commits for TFVC. This release also contains incremental fixes and updates.
+      Added ability to add, delete, label and lock files for TFVC. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
