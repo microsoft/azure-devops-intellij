@@ -7,6 +7,8 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
  * take a server context object in the constructor)
  */
 public class FindWorkspaceCommand extends Command<Workspace> {
+    protected static final Logger logger = LoggerFactory.getLogger(FindWorkspaceCommand.class);
     private final String localPath;
 
     public FindWorkspaceCommand(final String localPath) {
@@ -39,6 +42,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
     /**
      * Parses the output of the workfold command. (NOT XML)
      * SAMPLE
+     * Access denied connecting to TFS server https://account.visualstudio.com/ (authenticating as Personal Access Token)  <-- line is optional
      * =====================================================================================================================================================
      * Workspace:  MyNewWorkspace2
      * Collection: http://java-tfs2015:8081/tfs/
@@ -48,21 +52,23 @@ public class FindWorkspaceCommand extends Command<Workspace> {
     public Workspace parseOutput(final String stdout, final String stderr) {
         super.throwIfError(stderr);
 
-        // look for the ==== line to see if the command was successful
         final String[] lines = getLines(stdout);
-        if (lines.length > 2 && lines[0].contains("==========")) {
-            // Get the name and url from the next 2 lines
-            final String workspaceName = getValue(lines[1]);
-            final String collectionURL = getValue(lines[2]);
-            // Finally, parse the workspace mappings
-            final List<Workspace.Mapping> mappings = new ArrayList<Workspace.Mapping>(10);
-            for (int i = 3; i < lines.length; i++) {
-                Workspace.Mapping mapping = getMapping(lines[i]);
-                if (mapping != null) {
-                    mappings.add(mapping);
+
+        for (int x = 0; x < lines.length; x++) {
+            if (lines.length > x + 2 && lines[x].contains("==========")) {
+                // Get the name and url from the next 2 lines
+                final String workspaceName = getValue(lines[x + 1]);
+                final String collectionURL = getValue(lines[x + 2]);
+                // Finally, parse the workspace mappings
+                final List<Workspace.Mapping> mappings = new ArrayList<Workspace.Mapping>(10);
+                for (int i = x + 3; i < lines.length; i++) {
+                    Workspace.Mapping mapping = getMapping(lines[i]);
+                    if (mapping != null) {
+                        mappings.add(mapping);
+                    }
                 }
+                return new Workspace(collectionURL, workspaceName, "", "", "", mappings);
             }
-            return new Workspace(collectionURL, workspaceName, "", "", "", mappings);
         }
 
         return null;

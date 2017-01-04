@@ -36,6 +36,24 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     }
 
     @Test
+    public void testParseOutput_warningOutput() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
+        final String output = "Warnings\n" +
+                "Access denied connecting to TFS server https://laa018-test.visualstudio.com/ (authenticating as Personal Access Token)\n" +
+                "=====================================================================================================================================================\n" +
+                "Workspace:  MyWorkspace\n" +
+                "Collection: http://server:8080/tfs/\n" +
+                "$/project1: /path";
+        final Workspace workspace = cmd.parseOutput(output, "");
+        Assert.assertEquals("MyWorkspace", workspace.getName());
+        Assert.assertEquals("http://server:8080/tfs/", workspace.getServer());
+        Assert.assertEquals("", workspace.getComment());
+        Assert.assertEquals("", workspace.getComputer());
+        Assert.assertEquals("", workspace.getOwner());
+        Assert.assertEquals(1, workspace.getMappings().size());
+    }
+
+    @Test
     public void testParseOutput_noErrors() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
         final String output = "=====================================================================================================================================================\n" +
@@ -49,6 +67,16 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
         Assert.assertEquals("", workspace.getComputer());
         Assert.assertEquals("", workspace.getOwner());
         Assert.assertEquals(1, workspace.getMappings().size());
+    }
+
+    @Test
+    public void testParseOutput_badOutput() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
+        final String output = "Workspace:  MyWorkspace\n" +
+                "Collection: http://server:8080/tfs/\n" +
+                "$/project1: /path";
+        final Workspace workspace = cmd.parseOutput(output, "");
+        Assert.assertNull(workspace);
     }
 
     @Test(expected = RuntimeException.class)

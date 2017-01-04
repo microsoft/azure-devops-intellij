@@ -7,6 +7,9 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.extensions.ExtensionPoint;
+import com.intellij.openapi.extensions.Extensions;
+import com.intellij.openapi.extensions.LoadingOrder;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
@@ -43,6 +46,7 @@ import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
+import com.microsoft.alm.plugin.idea.tfvc.extensions.TFSRenamePsiElementProcessor;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -69,10 +73,10 @@ public class TFSVcs extends AbstractVcs {
     public static final String SETTINGS_URL_EVENT = "settings";
     private static final VcsKey ourKey = createKey(TFVC_NAME);
 
-    //  TODO: private VcsVFSListener myFileListener;
     private final VcsShowConfirmationOption myAddConfirmation;
     private final VcsShowConfirmationOption myDeleteConfirmation;
     private final VcsShowSettingOption myCheckoutOptions;
+    private final TFSRenamePsiElementProcessor tfsRenamePsiElementProcessor;
 
     private VcsHistoryProvider myHistoryProvider;
     private DiffProvider myDiffProvider;
@@ -86,6 +90,7 @@ public class TFSVcs extends AbstractVcs {
         myAddConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.ADD, this);
         myDeleteConfirmation = vcsManager.getStandardConfirmation(VcsConfiguration.StandardConfirmation.REMOVE, this);
         myCheckoutOptions = vcsManager.getStandardOption(VcsConfiguration.StandardOption.CHECKOUT, this);
+        tfsRenamePsiElementProcessor = new TFSRenamePsiElementProcessor();
     }
 
     public static TFSVcs getInstance(Project project) {
@@ -106,11 +111,13 @@ public class TFSVcs extends AbstractVcs {
         fileListener = new TFSFileListener(getProject(), this);
 //    TODO: TfsSdkManager.activate();
         checkCommandLineVersion();
+        addExtensionPoints();
     }
 
     @Override
     public void deactivate() {
         Disposer.dispose(fileListener);
+        removeExtensionPoints();
     }
 
     public VcsShowConfirmationOption getAddConfirmation() {
@@ -312,5 +319,21 @@ public class TFSVcs extends AbstractVcs {
                 }).queue();
             }
         });
+    }
+
+    /**
+     * Register custom extension points that need it's ordering to be specified
+     */
+    private void addExtensionPoints() {
+        final ExtensionPoint renamePsiElementProcessorExtensionPoint = Extensions.getRootArea().getExtensionPoint(TFSRenamePsiElementProcessor.getExtensionPointName());
+        renamePsiElementProcessorExtensionPoint.registerExtension(tfsRenamePsiElementProcessor, LoadingOrder.FIRST);
+    }
+
+    /**
+     * Remove the custom extension points added
+     */
+    private void removeExtensionPoints() {
+        final ExtensionPoint renamePsiElementProcessorExtensionPoint = Extensions.getRootArea().getExtensionPoint(TFSRenamePsiElementProcessor.getExtensionPointName());
+        renamePsiElementProcessorExtensionPoint.unregisterExtension(tfsRenamePsiElementProcessor);
     }
 }

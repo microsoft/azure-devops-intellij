@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -314,12 +313,13 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     protected void performMoveRename(final List<MovedFileInfo> movedFiles) {
-        final Map<FilePath, FilePath> movedPaths = new HashMap<FilePath, FilePath>(movedFiles.size());
-        for (MovedFileInfo movedFileInfo : movedFiles) {
-            movedPaths.put(VcsUtil.getFilePath(movedFileInfo.myOldPath), VcsUtil.getFilePath(movedFileInfo.myNewPath));
-        }
+        // TODO: commenting out for now until we see if Move needs to use it
+//        final Map<FilePath, FilePath> movedPaths = new HashMap<FilePath, FilePath>(movedFiles.size());
+//        for (MovedFileInfo movedFileInfo : movedFiles) {
+//            movedPaths.put(VcsUtil.getFilePath(movedFileInfo.myOldPath), VcsUtil.getFilePath(movedFileInfo.myNewPath));
+//        }
         final List<VcsException> errors = new ArrayList<VcsException>();
-        final Map<FilePath, FilePath> scheduleMove = new HashMap<FilePath, FilePath>();
+//        final Map<FilePath, FilePath> scheduleMove = new HashMap<FilePath, FilePath>();
         // TODO: finish renames
 //    try {
 //      WorkstationHelper.processByWorkspaces(movedPaths.keySet(), false, myProject, new WorkstationHelper.VoidProcessDelegate() {
@@ -392,13 +392,13 @@ public class TFSFileListener extends VcsVFSListener {
 //              .renameAndUpdateLocalVersion(workspace.getName(), workspace.getOwnerName(), scheduleMove, myProject,
 //                                           TFSBundle.message("renaming"));
 //          errors.addAll(TfsUtil.getVcsExceptions(renameResult.getFailures()));
-//
-//          Collection<FilePath> invalidate = new ArrayList<FilePath>(renameResult.getResult().size());
-//          for (GetOperation getOperation : renameResult.getResult()) {
-//            invalidate.add(VersionControlPath.getFilePath(getOperation.getTlocal(), getOperation.getType() == ItemType.Folder));
-//            //invalidate.add(VcsUtil.getFilePath(getOperation.getSlocal()));
-//          }
-//          TfsFileUtil.markDirtyRecursively(myProject, invalidate);
+
+        // Refreshes the files so that the changes show up in the Local Changes tab
+        final Collection<FilePath> invalidate = new ArrayList<FilePath>(movedFiles.size());
+        for (final MovedFileInfo info : movedFiles) {
+            invalidate.add(VcsUtil.getFilePath(info.myOldPath));
+        }
+        TfsFileUtil.markDirtyRecursively(myProject, invalidate);
 //        }
 //      });
 //    }
