@@ -15,6 +15,7 @@ import com.intellij.refactoring.listeners.RefactoringElementListener;
 import com.intellij.refactoring.rename.RenameUtil;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
+import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -50,8 +51,8 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     private String NEW_FILE_NAME = "newName.txt";
     private String NEW_DIRECTORY_NAME = "newDirectory";
     private String PARENT_PATH = "/path/to/the";
-    private String CURRENT_FILE_PATH = PARENT_PATH + "/file.txt";
-    private String NEW_FILE_PATH = PARENT_PATH + "/" + NEW_FILE_NAME;
+    private String CURRENT_FILE_PATH = Path.combine(PARENT_PATH, "file.txt");
+    private String NEW_FILE_PATH = Path.combine(PARENT_PATH, NEW_FILE_NAME);
 
     @Mock
     private PsiFile mockPsiFile;
@@ -125,14 +126,15 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
 
     @Test
     public void testExecute_RenameDirectoryNoChanges() {
-        when(mockVirtualFile.getPath()).thenReturn("/path/to/the/directory");
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of("/path/to/the/directory")))
+        String dirName = Path.combine("/path/to/the", "directory");
+        when(mockVirtualFile.getPath()).thenReturn(dirName);
+        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(dirName)))
                 .thenReturn(Collections.EMPTY_LIST);
 
         RenameFileDirectory.execute(mockPsiFile, NEW_DIRECTORY_NAME, usageInfos, mockListener);
 
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq("/path/to/the/directory"), eq("/path/to/the/newDirectory"));
+        CommandUtils.renameFile(eq(mockServerContext), eq(dirName), eq(Path.combine("/path/to/the", "newDirectory")));
         PersistentFS.getInstance().processEvents(any(List.class));
         verify(mockListener).elementRenamed(mockPsiFile);
 
