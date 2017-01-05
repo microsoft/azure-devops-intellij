@@ -9,8 +9,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.ui.common.LookupHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.operations.ServerContextLookupOperation;
@@ -47,18 +45,17 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
             authenticationProvider = TfsAuthenticationProvider.getInstance();
             // If we have authenticated before, just use that one
             if (authenticationProvider.isAuthenticated()) {
-                final ServerContext authenticatedContext = ServerContextManager.getInstance().getAuthenticatedContext(
-                        authenticationProvider.getAuthenticationInfo().getServerUri().toString(), false);
-                if (authenticatedContext != null) {
-                    setServerNameInternal(authenticatedContext.getServerUri().toString());
-                    LookupHelper.loadTfsContexts(this, this,
-                            authenticationProvider, getRepositoryProvider(),
-                            scope);
-                }
+                logger.info("TFS auth info already found so reusing that for loading repos");
+                final AuthenticationInfo info = authenticationProvider.getAuthenticationInfo();
+                setServerNameInternal(info.getServerUri());
+                LookupHelper.loadTfsContexts(this, this,
+                        authenticationProvider, getRepositoryProvider(),
+                        scope);
             }
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
             if (authenticationProvider.isAuthenticated()) {
+                logger.info("VSTS auth info already found so reusing that for loading repos");
                 setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getRepositoryProvider(),
