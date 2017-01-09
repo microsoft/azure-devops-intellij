@@ -19,6 +19,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.operations;
 
+import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -67,7 +68,16 @@ public class ScheduleForDeletion {
             final Set<String> scheduleForDeletion = new HashSet<String>();
             final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
 
-            pendingChanges.addAll(CommandUtils.getStatusForFiles(context, filePaths));
+            for (final String path : filePaths) {
+                final List<PendingChange> fileChanges = CommandUtils.getStatusForFiles(context, ImmutableList.of(path));
+
+                // deleting a file that has no changes
+                if (fileChanges.isEmpty()) {
+                    scheduleForDeletion.add(path);
+                } else {
+                    pendingChanges.addAll(fileChanges);
+                }
+            }
 
             for (final PendingChange pendingChange : pendingChanges) {
                 StatusProvider.visitByStatus(new StatusVisitor() {
@@ -139,7 +149,13 @@ public class ScheduleForDeletion {
             if (!scheduleForDeletion.isEmpty()) {
                 // a workspace is needed since some paths are server paths, all changes will have the same workspace so
                 // just get it from the first change (list isn't empty since deletes were found)
-                final String workspace = pendingChanges.get(0).getWorkspace();
+                // if no pending changes exist a workspace isn't needed b/c a local path is being used
+                final String workspace;
+                if (!pendingChanges.isEmpty()) {
+                    workspace = pendingChanges.get(0).getWorkspace();
+                } else {
+                    workspace = StringUtils.EMPTY;
+                }
                 confirmedDeletedFiles.addAll(CommandUtils.deleteFiles(context,
                         new ArrayList<String>(scheduleForDeletion), workspace, false));
             }
