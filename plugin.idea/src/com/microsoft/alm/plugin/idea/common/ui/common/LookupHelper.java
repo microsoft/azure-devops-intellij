@@ -6,14 +6,14 @@ package com.microsoft.alm.plugin.idea.common.ui.common;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.microsoft.alm.common.utils.UrlHelper;
-import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
-import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
+import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
@@ -146,8 +146,10 @@ public class LookupHelper {
             //Check if the server name is a valid VSO account URL, user can get here by entering account URL on TFS tab
             if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
                     UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
-                    UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName()))) {
-                vsoServerUrl = loginPageModel.getServerName();
+                    UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName())) &&
+                    UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()) != null) {
+                // ensure https is being used
+                vsoServerUrl = UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName());
             } else {
                 //User didn't type in account Url, so use the common auth URL for Team services
                 vsoServerUrl = VsoAuthenticationProvider.VSO_AUTH_URL;
@@ -232,9 +234,10 @@ public class LookupHelper {
         //user can get here by entering account URL on TFS tab
         if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
                 UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
-                UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName()))) {
+                UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName())) &&
+                UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()) != null) {
             final ServerContext vsoAccountContext = new ServerContextBuilder()
-                    .uri(loginPageModel.getServerName())
+                    .uri(UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()))
                     .type(ServerContext.Type.VSO)
                     .authentication(authenticationProvider.getAuthenticationInfo()).build();
             final List<ServerContext> vsoContexts = new ArrayList<ServerContext>();
