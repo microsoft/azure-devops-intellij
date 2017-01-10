@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.111.0</version>
+    <version>1.111.1</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -27,7 +27,7 @@
         <li>Create a new branch and associate it with the work item you are working on.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
-        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes along with adding, deleting, locking and labeling files.</li>
+        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes along with adding, deleting, renaming, moving, locking and labeling files.</li>
       </ul>
       <br />
       <br />
@@ -41,15 +41,16 @@
       <i>Compatible with IntelliJ Ultimate and Community editions versions 14 and later and Android Studio 1.2 and later</i>
       <br />
       <br />
-      <b>Privacy Policy</b>
+      <b>End User License Agreement & Privacy Policy</b>
       <br />
-      For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Visual Studio Product Family Privacy Statement</a>
+      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Visual Studio Product Family Privacy Statement</a>
+      <br /><i>Note</i>: When using the TFVC support, this plugin will pass your Team Foundation credentials securely to the TF command line tool. That tool is installed separately and it is up to the user to verify that it is in a secure location on disk and has not been tampered with.
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.111.0
+      v 1.111.1
       <br />
-      Added ability to add, delete, label and lock files for TFVC. This release also contains incremental fixes and updates.
+      Added ability to rename and move files for TFVC. This release also contains incremental fixes and updates, including a fix for freezing during checkout.
       <br />
     ]]>
     </change-notes>
