@@ -22,6 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 
 /**
@@ -30,7 +31,9 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 public class EditWorkspaceAction extends InstrumentedAction {
 
     protected EditWorkspaceAction() {
-        super(false);
+        super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_EDIT_WORKSPACE_TITLE),
+                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_EDIT_WORKSPACE_MSG),
+                null, false);
     }
 
     @Override

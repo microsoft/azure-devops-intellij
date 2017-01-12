@@ -36,7 +36,11 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     public void setProperty(final String propertyName, final String value) {
         ensureRestored();
-        map.put(propertyName, value);
+        if (value == null && map.containsKey(propertyName)) {
+            map.remove(propertyName);
+        } else {
+            map.put(propertyName, value);
+        }
     }
 
     public Map<String, String> getProperties() {

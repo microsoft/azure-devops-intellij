@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.external.utils;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -169,5 +170,41 @@ public class WorkspaceHelper {
      */
     public static boolean isOneLevelMapping(final String serverPath) {
         return StringUtils.endsWith(serverPath, ONE_LEVEL_MAPPING_SUFFIX);
+    }
+
+    /**
+     * Retrieves the proxy URI from the property service using the serverURI as a key.
+     * @param serverURI
+     * @return
+     */
+    public static String getProxyServer(final String serverURI) {
+        if (StringUtils.isEmpty(serverURI)) {
+            return null;
+        }
+        final String propertyName = getProxyPropertyName(serverURI);
+        final String currentProxy = PluginServiceProvider.getInstance().getPropertyService().getProperty(propertyName);
+        if (StringUtils.isEmpty(currentProxy)) {
+            return null;
+        }
+
+        return currentProxy;
+    }
+
+    /**
+     * Sets the proxy URI for the server URI provided. The Property service is used as the backing store.
+     * @param serverURI
+     * @param proxyURI
+     */
+    public static void setProxyServer(final String serverURI, final String proxyURI) {
+        if (StringUtils.isEmpty(serverURI)) {
+            return;
+        }
+        final String propertyName = getProxyPropertyName(serverURI);
+        PluginServiceProvider.getInstance().getPropertyService().setProperty(propertyName, proxyURI);
+    }
+
+    private static String getProxyPropertyName(final String serverURI) {
+        // add prefix, remove any trailing slash, uppercase
+        return "PROXY_" + StringUtils.upperCase(StringUtils.stripEnd(serverURI, "/"));
     }
 }

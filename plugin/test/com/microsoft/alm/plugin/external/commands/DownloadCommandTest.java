@@ -4,10 +4,18 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class DownloadCommandTest extends AbstractCommandTest {
+    @After
+    public void cleanUp() {
+        // One of the tests adds a proxy so let's make sure to remove it here
+        WorkspaceHelper.setProxyServer(context.getCollectionURI().toString(), null);
+    }
+
     @Test
     public void testConstructor_nullContext() {
         final DownloadCommand cmd = new DownloadCommand(null, "/path/localfile.txt", 12, "/path2/newfile;12.txt", false);
@@ -28,6 +36,14 @@ public class DownloadCommandTest extends AbstractCommandTest {
         final DownloadCommand cmd = new DownloadCommand(context, "/path/localfile.txt", 12, "/path2/newfile;12.txt", false);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("print -noprompt -collection:http://server:8080/tfs/defaultcollection ******** /path/localfile.txt -version:12", builder.toString());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_withProxy() {
+        WorkspaceHelper.setProxyServer(context.getCollectionURI().toString(), "http://proxy:8888");
+        final DownloadCommand cmd = new DownloadCommand(context, "/path/localfile.txt", 12, "/path2/newfile;12.txt", false);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("print -noprompt -collection:http://server:8080/tfs/defaultcollection ******** -proxy:http://proxy:8888 /path/localfile.txt -version:12", builder.toString());
     }
 
     @Test

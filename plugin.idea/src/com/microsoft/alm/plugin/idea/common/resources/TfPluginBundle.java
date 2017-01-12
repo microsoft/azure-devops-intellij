@@ -611,6 +611,19 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_MERGE_BRANCH_DIALOG_OK_BUTTON = "Tfvc.MergeBranch.Dialog.OkButton";
 
+    //TFVC Proxy Settings Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_PROXY_TITLE = "Actions.Tfvc.Proxy.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_PROXY_MSG = "Actions.Tfvc.Proxy.Message";
+
+    //TFVC Proxy Settings Dialog
+    @NonNls
+    public static final String KEY_TFVC_PROXY_DIALOG_TITLE = "Tfvc.Proxy.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_PROXY_DIALOG_OK_BUTTON = "Tfvc.Proxy.Dialog.OkButton";
+    @NonNls
+    public static final String KEY_TFVC_PROXY_DIALOG_ERRORS_INVALID_URI = "Tfvc.Proxy.Dialog.Errors.InvalidURI";
     //starters
     @NonNls
     public static final String STARTER_COMMAND_LINE_USAGE_MSG = "Starter.Usage.Message";
@@ -733,6 +746,11 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_SETTINGS_FOUND_EXE = "Tfvc.Settings.FoundExe";
 
+    //TFVC Edit Workspace Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_EDIT_WORKSPACE_TITLE = "Actions.Tfvc.EditWorkspace.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_EDIT_WORKSPACE_MSG = "Actions.Tfvc.EditWorkspace.Message";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";

@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.external.ToolRunnerCache;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
+import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ public abstract class Command<T> {
     private static final String XML_PREFIX = "<?xml ";
 
     private final String name;
+    private final boolean useProxyIfAvailable;
 
     // The server context provides the server url and credentials for commands
     // Note that this may be null in some cases
@@ -85,8 +87,13 @@ public abstract class Command<T> {
     }
 
     public Command(final String name, final ServerContext context) {
+        this(name, context, true);
+    }
+
+    public Command(final String name, final ServerContext context, final boolean useProxyIfAvailable) {
         this.name = name;
         this.context = context;
+        this.useProxyIfAvailable = useProxyIfAvailable;
     }
 
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
@@ -94,15 +101,22 @@ public abstract class Command<T> {
                 .add(name)
                 .addSwitch("noprompt");
         if (context != null && context.getCollectionURI() != null) {
+            final String collectionURI = context.getCollectionURI().toString();
             // decode URI since CLC does not expect encoded collection urls
             try {
-                builder.addSwitch("collection", URLDecoder.decode(context.getCollectionURI().toString(), "UTF-8"));
+                builder.addSwitch("collection", URLDecoder.decode(collectionURI, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 logger.warn("Error while decoding collection url. Using encoded url instead", e);
-                builder.addSwitch("collection", context.getCollectionURI().toString());
+                builder.addSwitch("collection", collectionURI);
             }
             if (context.getAuthenticationInfo() != null) {
                 builder.addSwitch("login", context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword(), true);
+            }
+            if (useProxyIfAvailable) {
+                final String proxyURI = WorkspaceHelper.getProxyServer(collectionURI);
+                if (StringUtils.isNotEmpty(proxyURI)) {
+                    builder.addSwitch("proxy", proxyURI);
+                }
             }
         }
 

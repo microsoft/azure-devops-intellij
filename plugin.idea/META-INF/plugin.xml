@@ -161,9 +161,8 @@
             <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>
             <add-to-group group-id="TfvcFilePopupGroup" anchor="last"/>
             <separator/>
-            <action id="Tfvc.EditWorkspace" text="Edit _Workspace..."
-                    description="Change workspace mappings for this project"
-                    class="com.microsoft.alm.plugin.idea.tfvc.actions.EditWorkspaceAction"/>
+            <action id="Tfvc.EditWorkspace" class="com.microsoft.alm.plugin.idea.tfvc.actions.EditWorkspaceAction"/>
+            <action id="Tfvc.ConfigureProxy" class="com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction"/>
         </group>
 
         <!--<group id="TfsTreePopupMenu">
