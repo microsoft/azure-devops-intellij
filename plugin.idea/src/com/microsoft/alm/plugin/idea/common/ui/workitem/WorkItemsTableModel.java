@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
 
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
@@ -107,44 +108,12 @@ public class WorkItemsTableModel extends AbstractTableModel implements FilteredM
         final List<WorkItem> items = new ArrayList<WorkItem>(this.getRowCount());
         for (int i = 0; i < this.getRowCount(); i++) {
             if (getSelectionModel().isSelectedIndex(i)) {
-                items.add(getWorkItem(i));
+                final int modelIndex = getSelectionConverter().convertRowIndexToModel(i);
+                items.add(getWorkItem(modelIndex));
             }
         }
         return items;
     }
-
-    /* TODO
-    public int getSelectedIndex() {
-        final int viewSelectedIndex;
-        // Check both the max and min selected indexes to see which one is really selected
-        if (selectionModel.isSelectedIndex(selectionModel.getMinSelectionIndex())) {
-            viewSelectedIndex = selectionModel.getMinSelectionIndex();
-        } else {
-            viewSelectedIndex = selectionModel.getMaxSelectionIndex();
-        }
-        final int selectedIndex = getSelectionConverter().convertRowIndexToModel(viewSelectedIndex);
-        return selectedIndex;
-    }
-
-    public ServerContext getSelectedContext() {
-        final ServerContext selectedContext = getServerContext(getSelectedIndex());
-        return selectedContext;
-    }
-
-    private void select(final ServerContext context) {
-        final List<ServerContext> localRows;
-        if (filteredRows != null) {
-            localRows = filteredRows;
-        } else {
-            localRows = rows;
-        }
-
-        final int index = localRows.indexOf(context);
-        if (index >= 0) {
-            selectionModel.setSelectionInterval(index, index);
-        }
-    }
-    */
 
     public void clearRows() {
         filteredRows = null;
@@ -163,7 +132,13 @@ public class WorkItemsTableModel extends AbstractTableModel implements FilteredM
     @Override
     public Object getValueAt(final int rowIndex, final int columnIndex) {
         final WorkItem item = getWorkItem(rowIndex);
-        return getValueFor(item, columnIndex);
+        final String val = getValueFor(item, columnIndex);
+        if (getColumnClass(columnIndex) == Integer.class) {
+            // Return the value as an integer to allow proper sorting
+            return SystemHelper.toInt(val, 0);
+        } else {
+            return val;
+        }
     }
 
     private String getValueFor(final WorkItem item, final int columnIndex) {
@@ -219,6 +194,16 @@ public class WorkItemsTableModel extends AbstractTableModel implements FilteredM
             default:
                 return "";
         }
+    }
+
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        if (columnIndex == Column.ID.ordinal()) {
+            // Return the ID column as an integer to allow proper sorting
+            return Integer.class;
+        }
+
+        return String.class;
     }
 
     @Override

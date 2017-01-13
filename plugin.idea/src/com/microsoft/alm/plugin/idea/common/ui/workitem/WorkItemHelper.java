@@ -28,7 +28,7 @@ public class WorkItemHelper {
     public static String getAssignedToMeQuery() {
         return "select system.id, system.workitemtype, system.title, system.assignedto, system.state, system.changeddate " +
                 "from workitems " +
-                "where system.assignedto = @me and system.teamproject = @project " +
+                "where system.assignedto = @me and system.teamproject = @project and microsoft.vsts.common.closedby = '' " +
                 "order by system.changeddate desc, system.id desc";
     }
 
