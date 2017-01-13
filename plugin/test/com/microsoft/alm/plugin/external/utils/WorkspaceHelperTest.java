@@ -218,7 +218,40 @@ public class WorkspaceHelperTest extends AbstractTest {
         final Workspace workspace2 = new Workspace("server1", "ws2", "computer", "owner", "comment2", mappings2);
         Assert.assertEquals(3, WorkspaceHelper.getMappingsToChange(workspace1, workspace2).size());
         Assert.assertEquals(3, WorkspaceHelper.getMappingsToChange(workspace2, workspace1).size());
-
     }
 
+    @Test
+    public void testGetSetProxyServer() {
+        final String serverUri1 = "http://server1:9090/path";
+        final String serverUri2 = "http://server2:9090/path";
+        final String proxyUri1 = "http://proxy:8888";
+
+        //Verify that calling get with null or empty doesn't thow
+        String proxy = WorkspaceHelper.getProxyServer(null);
+        Assert.assertNull(proxy);
+        proxy = WorkspaceHelper.getProxyServer("");
+        Assert.assertNull(proxy);
+
+        // Verify that no proxy is set currently
+        proxy = WorkspaceHelper.getProxyServer(serverUri1);
+        Assert.assertNull(proxy);
+
+        // Verify that setter and getter work as expected
+        WorkspaceHelper.setProxyServer(serverUri1, proxyUri1);
+        proxy = WorkspaceHelper.getProxyServer(serverUri1);
+        Assert.assertEquals(proxyUri1, proxy);
+
+        // Verify that no proxy is set for server 2
+        proxy = WorkspaceHelper.getProxyServer(serverUri2);
+        Assert.assertNull(proxy);
+
+        // Verify that calling setting with null removes proxy
+        WorkspaceHelper.setProxyServer(serverUri1, null);
+        proxy = WorkspaceHelper.getProxyServer(serverUri1);
+        Assert.assertNull(proxy);
+
+        // Verify that calling set with empty or null doesn't do anything
+        WorkspaceHelper.setProxyServer(null, null);
+        WorkspaceHelper.setProxyServer("", "");
+    }
 }

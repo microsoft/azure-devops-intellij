@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.actions;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.RepositoryContext;
@@ -19,7 +20,8 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
  */
 public class ConfigureProxyAction extends InstrumentedAction {
 
-    protected ConfigureProxyAction() {
+    @VisibleForTesting
+    public ConfigureProxyAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_PROXY_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_PROXY_MSG),
                 null, false);

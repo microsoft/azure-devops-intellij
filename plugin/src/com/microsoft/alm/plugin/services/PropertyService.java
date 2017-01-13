@@ -11,4 +11,6 @@ public interface PropertyService {
     String getProperty(String propertyName);
 
     void setProperty(String propertyName, String value);
+
+    void removeProperty(String propertyName);
 }
