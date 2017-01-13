@@ -200,7 +200,11 @@ public class WorkspaceHelper {
             return;
         }
         final String propertyName = getProxyPropertyName(serverURI);
-        PluginServiceProvider.getInstance().getPropertyService().setProperty(propertyName, proxyURI);
+        if (StringUtils.isEmpty(proxyURI)) {
+            PluginServiceProvider.getInstance().getPropertyService().removeProperty(propertyName);
+        } else {
+            PluginServiceProvider.getInstance().getPropertyService().setProperty(propertyName, proxyURI);
+        }
     }
 
     private static String getProxyPropertyName(final String serverURI) {

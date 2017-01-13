@@ -16,12 +16,15 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.TestLoggerFactory;
 import com.intellij.testFramework.UsefulTestCase;
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -57,13 +60,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class})
+@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class, VcsHelper.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -95,7 +99,8 @@ public abstract class L2Test extends UsefulTestCase {
     protected Git myGit;
     protected GitVcs myVcs;
 
-    private IdeaProjectTestFixture myProjectFixture;
+    protected IdeaProjectTestFixture myProjectFixture;
+    protected CodeInsightTestFixture myCodeInsightFixture;
     private String myTestStartedIndicator;
 
     public String getServerUrl() {
@@ -125,6 +130,11 @@ public abstract class L2Test extends UsefulTestCase {
     private AuthenticationInfo getAuthenticationInfo() {
         final AuthenticationInfo authenticationInfo = new AuthenticationInfo(user, pass, serverUrl, user);
         return authenticationInfo;
+    }
+
+    public void mockRepositoryContextForProject(final String serverUri) {
+        PowerMockito.mockStatic(VcsHelper.class);
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", serverUri));
     }
 
     private void loadContext() {
@@ -162,7 +172,7 @@ public abstract class L2Test extends UsefulTestCase {
     public void verifyEnvironment() {
         if (!"true".equalsIgnoreCase(System.getenv("MSVSTS_INTELLIJ_RUN_L2_TESTS"))) {
             Debug.println("***** SKIP ******", "Skipping this test because MSVSTS_INTELLIJ_RUN_L2_TESTS is not set to 'true'.");
-            Assume.assumeTrue(false);
+            //Assume.assumeTrue(false);
         }
 
         // Load context info from the environment
@@ -202,6 +212,8 @@ public abstract class L2Test extends UsefulTestCase {
         try {
             myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getTestName(true)).getFixture();
             myProjectFixture.setUp();
+
+            myCodeInsightFixture = IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(myProjectFixture);
 
             // Use the context info loaded earlier to setup the environment for TF work
             initializeTfEnvironment();

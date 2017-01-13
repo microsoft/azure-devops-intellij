@@ -9,15 +9,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MockPropertyService implements PropertyService {
-    private Map<String, String> map = new HashMap<String, String>();
+    private final Map<String, String> map = new HashMap<String, String>();
 
     @Override
-    public String getProperty(String propertyName) {
+    public String getProperty(final String propertyName) {
         return map.get(propertyName);
     }
 
     @Override
-    public void setProperty(String propertyName, String value) {
+    public void setProperty(final String propertyName, final String value) {
         map.put(propertyName, value);
+    }
+
+    @Override
+    public void removeProperty(final String propertyName) {
+        if (map.containsKey(propertyName)) {
+            map.remove(propertyName);
+        }
     }
 }
