@@ -172,7 +172,7 @@ public abstract class L2Test extends UsefulTestCase {
     public void verifyEnvironment() {
         if (!"true".equalsIgnoreCase(System.getenv("MSVSTS_INTELLIJ_RUN_L2_TESTS"))) {
             Debug.println("***** SKIP ******", "Skipping this test because MSVSTS_INTELLIJ_RUN_L2_TESTS is not set to 'true'.");
-            //Assume.assumeTrue(false);
+            Assume.assumeTrue(false);
         }
 
         // Load context info from the environment

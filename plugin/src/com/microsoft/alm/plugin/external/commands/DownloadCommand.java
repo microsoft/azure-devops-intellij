@@ -53,14 +53,17 @@ public class DownloadCommand extends Command<String> {
      */
     @Override
     public String parseOutput(final String stdout, final String stderr) {
-        final String fileContents;
+        final StringBuilder fileContents = new StringBuilder();
 
         // Check for "The specified file does not exist at the specified version" and write out empty string
         if (ignoreFileNotFound && StringUtils.containsIgnoreCase(stderr, FILE_NOT_FOUND_ERROR)) {
-            fileContents = StringUtils.EMPTY;
+            fileContents.append(StringUtils.EMPTY);
         } else {
             super.throwIfError(stderr);
-            fileContents = stdout;
+            for (final String line : getLines(stdout, true)) {
+                fileContents.append(line);
+                fileContents.append(System.lineSeparator());
+            }
         }
 
         // Write the contents of stdout to the destination file
@@ -69,7 +72,7 @@ public class DownloadCommand extends Command<String> {
             file.delete();
         }
         try {
-            FileUtils.writeStringToFile(file, fileContents);
+            FileUtils.writeStringToFile(file, fileContents.toString());
         } catch (IOException e) {
             // throw any errors that occur
             throw new ToolParseFailureException(e);
