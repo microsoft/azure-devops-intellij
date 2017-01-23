@@ -6,6 +6,7 @@ package com.microsoft.alm.L2.git;
 import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
@@ -18,7 +19,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import sun.security.util.Debug;
 
 import java.io.File;
@@ -84,7 +84,7 @@ public class GitCheckoutTest extends L2Test {
 
         // clone it (we need to run this method with a progress indicator)
         // Everything happens synchronously, so no need to worry
-        ProgressIndicator indicator = Mockito.mock(ProgressIndicator.class);
+        ProgressIndicator indicator = new ProgressIndicatorBase();
         ProgressManager.getInstance().runProcess(new Runnable() {
             @Override
             public void run() {

@@ -20,6 +20,7 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
@@ -37,6 +38,7 @@ import git4idea.commands.GitHandler;
 import git4idea.config.GitVcsSettings;
 import git4idea.repo.GitRepositoryManager;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -67,7 +69,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class, VcsHelper.class})
+@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class, VcsHelper.class, AuthHelper.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -159,13 +161,18 @@ public abstract class L2Test extends UsefulTestCase {
     protected void initializeTfEnvironment() {
         // Make sure that we can find the location of tf command line
         PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfExe);
+        AuthenticationInfo info = getAuthenticationInfo();
 
         // Make sure that the authentication info we found above is used
         final VsoAuthenticationProvider authenticationProvider = Mockito.mock(VsoAuthenticationProvider.class);
         PowerMockito.mockStatic(VsoAuthenticationProvider.class);
         when(VsoAuthenticationProvider.getInstance()).thenReturn(authenticationProvider);
-        when(authenticationProvider.getAuthenticationInfo()).thenReturn(getAuthenticationInfo());
+        when(authenticationProvider.getAuthenticationInfo()).thenReturn(info);
         when(authenticationProvider.isAuthenticated()).thenReturn(true);
+
+        PowerMockito.mockStatic(AuthHelper.class);
+        when(AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, getRepoUrl())).thenReturn(info);
+        when(AuthHelper.getCredentials(ServerContext.Type.VSO, info)).thenReturn(new UsernamePasswordCredentials(info.getUserName(), info.getPassword()));
     }
 
     @Before

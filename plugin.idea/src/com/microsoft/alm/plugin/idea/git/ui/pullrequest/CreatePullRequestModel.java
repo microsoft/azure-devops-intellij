@@ -371,7 +371,7 @@ public class CreatePullRequestModel extends AbstractModel {
                                     final GitLocalBranch sourceBranch = getSourceBranch();
                                     final GitRemoteBranch targetBranch = getTargetBranch();
 
-                                    if (commits != null && sourceBranch.getName() != null
+                                    if (StringUtils.isEmpty(getTitle()) && commits != null && sourceBranch.getName() != null
                                             && targetBranch.getNameForRemoteOperations() != null) {
                                         final String defaultTitle = pullRequestHelper.createDefaultTitle(commits,
                                                 sourceBranch.getName(),
