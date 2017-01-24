@@ -9,10 +9,10 @@ import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ex.ApplicationInfoEx;
 import com.intellij.openapi.extensions.PluginId;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.services.PluginContextInitializer;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryInstrumentationInfo;
-import com.microsoft.applicationinsights.extensibility.ContextInitializer;
 import com.microsoft.applicationinsights.extensibility.context.ComponentContext;
 import com.microsoft.applicationinsights.extensibility.context.ContextTagKeys;
 import com.microsoft.applicationinsights.extensibility.context.DeviceContext;
@@ -36,7 +36,7 @@ import java.util.Map;
 /**
  * This class is provided as a ContextInitializer for the application insights TelemetryClient.
  */
-public class TelemetryContextInitializer implements ContextInitializer {
+public class TelemetryContextInitializer implements PluginContextInitializer {
     private static final Logger logger = LoggerFactory.getLogger(TelemetryContextInitializer.class);
 
     private static final String DEFAULT_VERSION = "0";
@@ -49,6 +49,7 @@ public class TelemetryContextInitializer implements ContextInitializer {
     private static final String SYS_PROP_USER_NAME = "user.name";
     private static final String SYS_PROP_JAVA_RUNTIME = "java.runtime.name";
     private static final String SYS_PROP_JAVA_VERSION = "java.version";
+    private static final String USER_AGENT_FORMAT = "Team Services/{0} ({1}; {2}; {3}/{4}) {5}";
 
     private String linuxDistribution = StringUtils.EMPTY;
 
@@ -60,6 +61,22 @@ public class TelemetryContextInitializer implements ContextInitializer {
         initializeComponent(context.getComponent());
         initializeDevice(context.getDevice());
         initializeTags(context.getTags());
+    }
+
+    @Override
+    public String getUserAgent(final String defaultUserAgent) {
+        try {
+            return MessageFormat.format(USER_AGENT_FORMAT,
+                    getPluginVersion(),
+                    getApplicationIdentifier(),
+                    getPlatformFullName(),
+                    getJavaName(),
+                    getJavaVersion(),
+                    defaultUserAgent);
+        } catch (final Throwable t) {
+            logger.warn("Error getting UserAgent", t);
+            return defaultUserAgent;
+        }
     }
 
     private void initializeDevice(final DeviceContext device) {
@@ -135,6 +152,12 @@ public class TelemetryContextInitializer implements ContextInitializer {
         // TODO do we need this information (Eclipse plugin provides it)
         //properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_FRAMEWORK_NAME, getFrameworkName());
         //properties.put(TfsTelemetryConstants.CONTEXT_PROPERTY_FRAMEWORK_VERSION, getFrameworkVersion());
+    }
+
+    private String getApplicationIdentifier() {
+        final ApplicationInfoEx appInfo = (ApplicationInfoEx) ApplicationInfo.getInstance();
+        return MessageFormat.format("{0}/{1}.{2}.{3}", appInfo.getFullApplicationName(),
+                appInfo.getMajorVersion(), appInfo.getMinorVersion(), appInfo.getBuild().asString());
     }
 
     private String getSystemProperty(final String propertyName) {
