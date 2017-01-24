@@ -26,6 +26,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.VersionInfo;
 import org.glassfish.jersey.SslConfigurator;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
@@ -37,6 +38,9 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
@@ -199,6 +203,19 @@ public class ServerContext {
         if (isSSLEnabledOnPrem(type, authenticationInfo.getServerUri())) {
             clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
         }
+
+        // register a filter to set the User Agent header
+        clientConfig.register(new ClientRequestFilter() {
+            @Override
+            public void filter(final ClientRequestContext requestContext) throws IOException {
+                // The default user agent is something like "Jersey/2.6"
+                final String defaultUserAgent = VersionInfo.getUserAgent("Apache-HttpClient", "org.apache.http.client", HttpClientBuilder.class);
+                // We get the user agent string from the Telemetry context
+                final String userAgent = PluginServiceProvider.getInstance().getTelemetryContextInitializer().getUserAgent(defaultUserAgent);
+                // Finally, we can add the header
+                requestContext.getHeaders().add(HttpHeaders.USER_AGENT, userAgent);
+            }
+        });
 
         return clientConfig;
     }

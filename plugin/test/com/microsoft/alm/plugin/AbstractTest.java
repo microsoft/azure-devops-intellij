@@ -8,9 +8,9 @@ import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
 import com.microsoft.alm.plugin.mocks.MockLocalizationService;
 import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
+import com.microsoft.alm.plugin.services.PluginContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import com.microsoft.applicationinsights.extensibility.ContextInitializer;
 import com.microsoft.applicationinsights.telemetry.TelemetryContext;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -31,7 +31,12 @@ public class AbstractTest {
         logger.addAppender(appender);
 
         // Attach appropriate test services
-        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null, new ContextInitializer() {
+        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null, new PluginContextInitializer() {
+            @Override
+            public String getUserAgent(String defaultUserAgent) {
+                return defaultUserAgent;
+            }
+
             @Override
             public void initialize(TelemetryContext context) {
             }

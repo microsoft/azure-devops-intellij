@@ -3,8 +3,6 @@
 
 package com.microsoft.alm.plugin.services;
 
-import com.microsoft.applicationinsights.extensibility.ContextInitializer;
-
 /**
  * This class is a singleton that holds all of the services that must be provided by the plugin that uses this module.
  * When the plugin is loaded for the first time, this class must be initialized. It may only be initialized once.
@@ -18,7 +16,7 @@ public class PluginServiceProvider {
     private ServerContextStore contextStore;
     private CredentialsPrompt credentialsPrompt;
     private DeviceFlowResponsePrompt deviceFlowResponsePrompt;
-    private ContextInitializer telemetryContextInitializer;
+    private PluginContextInitializer telemetryContextInitializer;
     private PropertyService propertyService;
     private LocalizationService localizationSerivce;
     private HttpProxyService httpProxyService;
@@ -34,7 +32,7 @@ public class PluginServiceProvider {
     public void initialize(final ServerContextStore contextStore,
                            final CredentialsPrompt credentialsPrompt,
                            final DeviceFlowResponsePrompt deviceFlowResponsePrompt,
-                           final ContextInitializer telemetryContextInitializer,
+                           final PluginContextInitializer telemetryContextInitializer,
                            final PropertyService propertyService,
                            final LocalizationService localizationService,
                            final HttpProxyService httpProxyService,
@@ -74,7 +72,7 @@ public class PluginServiceProvider {
         return credentialsPrompt;
     }
 
-    public ContextInitializer getTelemetryContextInitializer() {
+    public PluginContextInitializer getTelemetryContextInitializer() {
         assert initialized;
         assert telemetryContextInitializer != null;
 
