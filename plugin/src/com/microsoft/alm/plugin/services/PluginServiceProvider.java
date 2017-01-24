@@ -21,6 +21,7 @@ public class PluginServiceProvider {
     private ContextInitializer telemetryContextInitializer;
     private PropertyService propertyService;
     private LocalizationService localizationSerivce;
+    private HttpProxyService httpProxyService;
 
     private static class ProviderHolder {
         private static PluginServiceProvider INSTANCE = new PluginServiceProvider();
@@ -36,6 +37,7 @@ public class PluginServiceProvider {
                            final ContextInitializer telemetryContextInitializer,
                            final PropertyService propertyService,
                            final LocalizationService localizationService,
+                           final HttpProxyService httpProxyService,
                            final boolean insideIDE) {
         if (!initialized) {
             this.contextStore = contextStore;
@@ -44,6 +46,7 @@ public class PluginServiceProvider {
             this.telemetryContextInitializer = telemetryContextInitializer;
             this.propertyService = propertyService;
             this.localizationSerivce = localizationService;
+            this.httpProxyService = httpProxyService;
             this.insideIDE = insideIDE;
             initialized = true;
         }
@@ -90,6 +93,13 @@ public class PluginServiceProvider {
         assert localizationSerivce != null;
 
         return localizationSerivce;
+    }
+
+    public HttpProxyService getHttpProxyService() {
+        assert initialized;
+        assert httpProxyService != null;
+
+        return httpProxyService;
     }
 
     public DeviceFlowResponsePrompt getDeviceFlowResponsePrompt() {

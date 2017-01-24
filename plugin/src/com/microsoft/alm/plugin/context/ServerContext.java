@@ -13,11 +13,14 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
+import com.microsoft.alm.plugin.services.HttpProxyService;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -155,7 +158,7 @@ public class ServerContext {
 
     public static Client getClient(final Type type, final AuthenticationInfo authenticationInfo) {
         final ClientConfig clientConfig = getClientConfig(type, authenticationInfo,
-                System.getProperty("proxySet") != null && System.getProperty("proxySet").equals("true"));
+                PluginServiceProvider.getInstance().getHttpProxyService().useHttpProxy());
         final Client localClient = ClientBuilder.newClient(clientConfig);
         return localClient;
     }
@@ -179,23 +182,17 @@ public class ServerContext {
 
         //Define a local HTTP proxy
         if (includeProxySettings) {
-            final String proxyHost;
-            if (System.getProperty("proxyHost") != null) {
-                proxyHost = System.getProperty("proxyHost");
-            } else {
-                proxyHost = "127.0.0.1";
-            }
-
-            final String proxyPort;
-            if (System.getProperty("proxyPort") != null) {
-                proxyPort = System.getProperty("proxyPort");
-            } else {
-                proxyPort = "8888";
-            }
-
-            final String proxyUrl = String.format("http://%s:%s", proxyHost, proxyPort);
-
+            final HttpProxyService proxyService = PluginServiceProvider.getInstance().getHttpProxyService();
+            final String proxyUrl = proxyService.getProxyURL();
             clientConfig.property(ClientProperties.PROXY_URI, proxyUrl);
+            if (proxyService.isAuthenticationRequired()) {
+                // To work with authenticated proxies and TFS, we provide the proxy credentials if they are registered
+                final AuthScope ntlmAuthScope =
+                        new AuthScope(proxyService.getProxyHost(), proxyService.getProxyPort(),
+                                AuthScope.ANY_REALM, AuthScope.ANY_SCHEME);
+                credentialsProvider.setCredentials(ntlmAuthScope,
+                        new UsernamePasswordCredentials(proxyService.getUserName(), proxyService.getPassword()));
+            }
         }
 
         // if this is a onPrem server and the uri starts with https, we need to setup ssl

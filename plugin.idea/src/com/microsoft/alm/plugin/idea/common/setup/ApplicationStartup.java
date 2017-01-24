@@ -10,6 +10,7 @@ import com.intellij.util.containers.HashMap;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
 import com.microsoft.alm.plugin.idea.common.services.CredentialsPromptImpl;
 import com.microsoft.alm.plugin.idea.common.services.DeviceFlowResponsePromptImpl;
+import com.microsoft.alm.plugin.idea.common.services.HttpProxyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
@@ -58,6 +59,7 @@ public class ApplicationStartup implements ApplicationComponent {
                 new TelemetryContextInitializer(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
+                new HttpProxyServiceImpl(),
                 true);
 
         final File vstsDirectory = setupPreferenceDir(USER_HOME_DIR);

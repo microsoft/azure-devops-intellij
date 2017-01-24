@@ -79,7 +79,7 @@ public class ServerContextLookupOperation extends Operation {
                             }
                         } catch (Throwable t) {
                             operationExceptions.add(t);
-                            logger.error("doWork: Unable to do lookup on context: " + context.getUri().toString());
+                            logger.warn("doWork: Unable to do lookup on context: " + context.getUri().toString());
                             logger.warn("doWork: Exception", t);
                             if (AuthHelper.isNotAuthorizedError(t)) {
                                 ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
@@ -175,7 +175,7 @@ public class ServerContextLookupOperation extends Operation {
                     if (e.getMessage().contains(HTTP_503_EXCEPTION)) {
                         logger.warn("Collection " + teamProjectCollectionReference.getName() + " is unavailable.", e);
                     } else {
-                        logger.error("Failure while trying to find collection repos", e);
+                        logger.warn("Failure while trying to find collection repos", e);
                     }
                 }
             }

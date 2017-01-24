@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin;
 
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
+import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
 import com.microsoft.alm.plugin.mocks.MockLocalizationService;
 import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
@@ -34,7 +35,7 @@ public class AbstractTest {
             @Override
             public void initialize(TelemetryContext context) {
             }
-        }, new MockPropertyService(), new MockLocalizationService(), false);
+        }, new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(), false);
     }
 
     public static void assertLogged(final String s) {
