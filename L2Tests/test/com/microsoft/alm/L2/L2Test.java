@@ -25,6 +25,11 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
+import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
+import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
+import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
@@ -69,7 +74,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class, VcsHelper.class, AuthHelper.class})
+@PrepareForTest({VsoAuthenticationProvider.class, SelectFilesDialog.class, VcsHelper.class, AuthHelper.class, TeamServicesSecrets.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -158,7 +163,7 @@ public abstract class L2Test extends UsefulTestCase {
         Assert.assertFalse(String.format(message, "tfExe", "MSVSTS_INTELLIJ_TF_EXE"), StringUtils.isEmpty(tfExe));
     }
 
-    protected void initializeTfEnvironment() {
+    protected void initializeTfEnvironment() throws Exception {
         // Make sure that we can find the location of tf command line
         PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfExe);
         AuthenticationInfo info = getAuthenticationInfo();
@@ -173,6 +178,33 @@ public abstract class L2Test extends UsefulTestCase {
         PowerMockito.mockStatic(AuthHelper.class);
         when(AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, getRepoUrl())).thenReturn(info);
         when(AuthHelper.getCredentials(ServerContext.Type.VSO, info)).thenReturn(new UsernamePasswordCredentials(info.getUserName(), info.getPassword()));
+
+        PowerMockito.mockStatic(TeamServicesSecrets.class);
+        when(TeamServicesSecrets.load(anyString())).thenReturn(info);
+    }
+
+    protected void mockTeamServicesSettingsService() {
+        // create a context to use as the "saved context" but remove it like you're starting from scratch
+        final ServerContext context = ServerContextManager.getInstance().getUpdatedContext(getRepoUrl(), false);
+        ServerContextManager.getInstance().remove(context.getKey());
+        assertTrue(ServerContextManager.getInstance().getAllServerContexts().isEmpty());
+
+        // create the needed objects to restore a previous state
+        final ServerContextState completeContextState = new ServerContextState(context);
+        final ServerContextState appContextState = new ServerContextState();
+        appContextState.type = ServerContext.Type.VSO_DEPLOYMENT;
+        appContextState.uri = VsoAuthenticationProvider.VSO_AUTH_URL;
+        appContextState.serverUri = VsoAuthenticationProvider.VSO_AUTH_URL;
+        final SettingsState settingsState = new SettingsState();
+        settingsState.serverContexts = new ServerContextState[]{completeContextState, appContextState};
+        final TeamServicesSettingsService settingsService = new TeamServicesSettingsService();
+        settingsService.loadState(settingsState);
+
+        // mimic restoring the state since it's already happened
+        for (final ServerContext storedContext : settingsService.restoreServerContexts()) {
+            ServerContextManager.getInstance().add(storedContext, false);
+        }
+        assertEquals(2, ServerContextManager.getInstance().getAllServerContexts().size());
     }
 
     @Before

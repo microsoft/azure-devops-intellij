@@ -23,7 +23,7 @@ public class TeamServicesSettingsController extends AbstractController {
     }
 
     @VisibleForTesting
-    protected TeamServicesSettingsController(final TeamServicesSettingsForm form, final TeamServicesSettingsModel model) {
+    public TeamServicesSettingsController(final TeamServicesSettingsForm form, final TeamServicesSettingsModel model) {
         this.form = form;
         this.model = model;
 
