@@ -475,6 +475,48 @@ public class ServerContextManager {
     }
 
     /**
+     * Takes existing contexts, creates new auth info for them, and creates a new context with that info and
+     * removes the old context from use
+     *
+     * @param contexts
+     * @return
+     */
+    public List<ServerContext> updateServerContextsAuthInfo(final List<ServerContext> contexts) {
+        logger.info("updateServerContextsAuthInfo: starting with context count: " + contexts.size() + ", contextMap size: " + contextMap.size());
+        final List<ServerContext> newContexts = new ArrayList<ServerContext>(contexts.size());
+        for (final ServerContext context : contexts) {
+            final ServerContext newContext = getContextWithNewAuthInfo(context);
+            remove(context.getKey());
+            add(newContext);
+            newContexts.add(newContext);
+        }
+        logger.info("updateServerContextsAuthInfo: ending with context count: " + newContexts.size() + ", contextMap size: " + contextMap.size());
+        return newContexts;
+    }
+
+    /**
+     * Takes an existing server context and creates a new server context from it with everything the same except
+     * it prompts the user for new authentication info
+     *
+     * @param context
+     * @return
+     */
+    private ServerContext getContextWithNewAuthInfo(final ServerContext context) {
+        logger.info("Updating context auth info");
+        final AuthenticationProvider authenticationProvider = ServerContext.Type.TFS.equals(context.getType()) ?
+                TfsAuthenticationProvider.getInstance() : VsoAuthenticationProvider.getInstance();
+        // can't determine if TFVC or Git from context so check for a Git URL
+        String url = context.getUsableGitUrl() == null ? context.getUri().toString() : context.getUsableGitUrl();
+        // if the URL is the default value we give for last used get it from the auth info instead
+        if (StringUtils.equals(url, TfsAuthenticationProvider.TFS_LAST_USED_URL) && context.getAuthenticationInfo() != null) {
+            url = context.getAuthenticationInfo().getServerUri();
+        }
+        logger.info("Updating auth info with url: " + url);
+        final AuthenticationInfo authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, url);
+        return new ServerContextBuilder(context).authentication(authenticationInfo).build();
+    }
+
+    /**
      * Gets back the most updated context with auth info possible. It first checks to see if an existing context exists
      * and if not it tries to create one. If the create fails (possibility auth info used was stale) then the auth info
      * is updated and then we try to create the context again

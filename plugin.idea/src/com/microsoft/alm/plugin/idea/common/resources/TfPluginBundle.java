@@ -752,6 +752,20 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_TFVC_EDIT_WORKSPACE_MSG = "Actions.Tfvc.EditWorkspace.Message";
 
+    //General Settings
+    @NonNls
+    public static final String KEY_SETTINGS_MENU_TITLE = "Settings.Menu.Title";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_TITLE = "Settings.Password.Mgt.Title";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DELETE_BUTTON = "Settings.Password.Mgt.DeleteButton";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_UPDATE_BUTTON = "Settings.Password.Mgt.UpdateButton";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE = "Settings.Password.Mgt.Update.Title";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_MSG = "Settings.Password.Mgt.Update.Msg";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE = "Settings.Password.Mgt.Delete.Title";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG = "Settings.Password.Mgt.Delete.Msg";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED = "Settings.Password.Mgt.NoRowsSelected";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_UPDATING = "Settings.Password.Mgt.Updating";
+    public static final String KEY_SETTINGS_PASSWORD_MGT_NA = "Settings.Password.Mgt.NA";
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON = "WorkspaceDialog.SaveButton";

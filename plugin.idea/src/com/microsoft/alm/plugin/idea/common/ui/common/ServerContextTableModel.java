@@ -4,10 +4,10 @@
 package com.microsoft.alm.plugin.idea.common.ui.common;
 
 
-import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import jersey.repackaged.com.google.common.base.Predicate;
@@ -24,7 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ServerContextTableModel extends AbstractTableModel {
-    public enum Column {GIT_REPOSITORY, TFVC_REPOSITORY, PROJECT, COLLECTION, ACCOUNT}
+    public enum Column {GIT_REPOSITORY, TFVC_REPOSITORY, PROJECT, COLLECTION, ACCOUNT, GENERAL_REPOSITORY, ACCOUNT_URL}
 
     public final static Column[] VSO_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.ACCOUNT};
     public final static Column[] TFS_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.COLLECTION};
@@ -32,6 +32,7 @@ public class ServerContextTableModel extends AbstractTableModel {
     public final static Column[] TFS_TFVC_REPO_COLUMNS = new Column[]{Column.TFVC_REPOSITORY, Column.PROJECT, Column.COLLECTION};
     public final static Column[] VSO_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.ACCOUNT};
     public final static Column[] TFS_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.COLLECTION};
+    public final static Column[] GENERAL_COLUMNS = new Column[]{Column.GENERAL_REPOSITORY, Column.PROJECT, Column.ACCOUNT_URL};
 
     /**
      * The default converter simply returns the index given.
@@ -50,10 +51,14 @@ public class ServerContextTableModel extends AbstractTableModel {
     private final Column[] columns;
     private TableModelSelectionConverter converter;
 
-    public ServerContextTableModel(Column[] columns) {
+    public ServerContextTableModel(final Column[] columns) {
+        this(columns, ListSelectionModel.SINGLE_SELECTION);
+    }
+
+    public ServerContextTableModel(final Column[] columns, final int selectionType) {
         assert columns != null;
         this.columns = columns.clone();
-        selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        selectionModel.setSelectionMode(selectionType);
     }
 
     public ListSelectionModel getSelectionModel() {
@@ -115,6 +120,11 @@ public class ServerContextTableModel extends AbstractTableModel {
         }
     }
 
+    public void removeContexts(final List<ServerContext> contexts) {
+        rows.removeAll(contexts);
+        super.fireTableDataChanged();
+    }
+
     public int getSelectedIndex() {
         final int viewSelectedIndex;
         // Check both the max and min selected indexes to see which one is really selected
@@ -127,9 +137,28 @@ public class ServerContextTableModel extends AbstractTableModel {
         return selectedIndex;
     }
 
+    public List<Integer> getSelectedIndices() {
+        final List<Integer> indices = new ArrayList<Integer>(this.getRowCount());
+        for (int i = 0; i < this.getRowCount(); i++) {
+            if (getSelectionModel().isSelectedIndex(i)) {
+                indices.add(i);
+            }
+        }
+        return indices;
+    }
+
     public ServerContext getSelectedContext() {
         final ServerContext selectedContext = getServerContext(getSelectedIndex());
         return selectedContext;
+    }
+
+    public List<ServerContext> getSelectedContexts() {
+        final List<Integer> indices = getSelectedIndices();
+        final List<ServerContext> contexts = new ArrayList<ServerContext>(indices.size());
+        for (final int index : indices) {
+            contexts.add(getServerContext(index));
+        }
+        return contexts;
     }
 
     private void select(final ServerContext context) {
@@ -185,7 +214,7 @@ public class ServerContextTableModel extends AbstractTableModel {
             }
             case PROJECT: {
                 final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
-                return (teamProject != null) ? teamProject.getName() : "";
+                return (teamProject != null) ? teamProject.getName() : TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA);
             }
             case COLLECTION: {
                 final TeamProjectCollectionReference collection = serverContext.getTeamProjectCollectionReference();
@@ -193,6 +222,21 @@ public class ServerContextTableModel extends AbstractTableModel {
             }
             case ACCOUNT:
                 return serverContext.getUri().getHost();
+            case GENERAL_REPOSITORY: {
+                if (serverContext.getGitRepository() != null) {
+                    return serverContext.getGitRepository().getName();
+                } else {
+                    final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
+                    return (teamProject != null) ? VcsHelper.TFVC_ROOT + teamProject.getName() : TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA);
+                }
+            }
+            case ACCOUNT_URL: {
+                if (ServerContext.Type.TFS.equals(serverContext.getType())) {
+                    return serverContext.getAuthenticationInfo() == null ? TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA) : serverContext.getAuthenticationInfo().getServerUri();
+                } else {
+                    return serverContext.getUri().getHost();
+                }
+            }
             default:
                 return "";
         }
@@ -212,6 +256,10 @@ public class ServerContextTableModel extends AbstractTableModel {
             case COLLECTION:
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_COLLECTION_COLUMN);
             case ACCOUNT:
+                return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_ACCOUNT_COLUMN);
+            case GENERAL_REPOSITORY:
+                return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_REPO_COLUMN);
+            case ACCOUNT_URL:
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_ACCOUNT_COLUMN);
             default:
                 return "";
