@@ -107,7 +107,7 @@ public class TeamServicesSettingsForm {
     private void $$$setupUI$$$() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.setBorder(BorderFactory.createTitledBorder(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Password.Mgt.Title")));
+        mainPanel.setBorder(BorderFactory.createTitledBorder(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.Title")));
         passwordPanel = new JPanel();
         passwordPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(passwordPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -120,12 +120,12 @@ public class TeamServicesSettingsForm {
         panel1.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         passwordPanel.add(panel1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         deletePasswordButton = new JButton();
-        this.$$$loadButtonText$$$(deletePasswordButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Password.Mgt.DeleteButton"));
+        this.$$$loadButtonText$$$(deletePasswordButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.DeleteButton"));
         panel1.add(deletePasswordButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel1.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         updatePasswordButton = new JButton();
-        this.$$$loadButtonText$$$(updatePasswordButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Password.Mgt.UpdateButton"));
+        this.$$$loadButtonText$$$(updatePasswordButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.UpdateButton"));
         panel1.add(updatePasswordButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         mainPanel.add(spacer2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));

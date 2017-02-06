@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.ListSelectionModel;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Hashtable;
 import java.util.List;
 
 /**
@@ -56,12 +57,38 @@ public class TeamServicesSettingsModel extends AbstractModel {
     }
 
     /**
-     * Finds the saved server contexts and populates the table with them
+     * Finds the saved server contexts, filters them for ones that are repo specific, and populates the table with them
      */
     private void populateContextTable() {
-        final Collection<ServerContext> serverContexts = ServerContextManager.getInstance().getAllServerContexts();
+        final List<ServerContext> serverContexts = new ArrayList<ServerContext>(ServerContextManager.getInstance().getAllServerContexts());
+        final Hashtable contextTable = new Hashtable<String, ServerContext>(serverContexts.size());
+        for (final ServerContext context : serverContexts) {
+            final String repoName;
+            final String accountUrl;
+
+            // find only contexts that have a repo
+            if (context.getGitRepository() != null) {
+                repoName = context.getGitRepository().getName();
+            } else if (context.getTeamProjectReference() != null) {
+                repoName = context.getTeamProjectReference().getName();
+            } else {
+                continue;
+            }
+
+            // find the URL with the repo
+            if (!context.getUri().toString().equals(TfsAuthenticationProvider.TFS_LAST_USED_URL)) {
+                accountUrl = context.getUri().toString();
+            } else {
+                continue;
+            }
+
+            final String key = repoName.concat(accountUrl).toLowerCase();
+            if (!contextTable.containsKey(key) && !deleteContexts.contains(context)) {
+                contextTable.put(key, context);
+            }
+        }
         tableModel.clearRows();
-        tableModel.addServerContexts(new ArrayList<ServerContext>(serverContexts));
+        tableModel.addServerContexts(new ArrayList<ServerContext>(contextTable.values()));
     }
 
     /**
@@ -91,7 +118,7 @@ public class TeamServicesSettingsModel extends AbstractModel {
             if (Messages.showYesNoDialog(project, TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE), Messages.getQuestionIcon()) == Messages.YES) {
                 // only delete contexts from the table at the moment and not for good (when Apply is used that is when we actually delete the contexts in deleteContexts)
                 deleteContexts.addAll(tableModel.getSelectedContexts());
-                tableModel.removeContexts(tableModel.getSelectedContexts());
+                populateContextTable();
             }
         } else {
             Messages.showWarningDialog(project, TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE));
@@ -110,10 +137,8 @@ public class TeamServicesSettingsModel extends AbstractModel {
                     @Override
                     public void run(final ProgressIndicator indicator) {
                         logger.info("Updating passwords for user. Selected: " + contexts.size());
-                        final List<ServerContext> newContexts = ServerContextManager.getInstance().updateServerContextsAuthInfo(contexts);
-                        tableModel.removeContexts(contexts);
-                        tableModel.addServerContexts(newContexts);
-                        logger.info("Passwords updated. New context count: " + newContexts.size());
+                        ServerContextManager.getInstance().updateServerContextsAuthInfo(contexts);
+                        populateContextTable();
                     }
                 };
                 updateAuthTask.queue();

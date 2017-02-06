@@ -475,23 +475,37 @@ public class ServerContextManager {
     }
 
     /**
-     * Takes existing contexts, creates new auth info for them, and creates a new context with that info and
-     * removes the old context from use
+     * Takes existing contexts, creates new auth info for them, and creates new contexts with that info and all
+     * other contexts that share that auth info and removes the old contexts from use
      *
      * @param contexts
      * @return
      */
-    public List<ServerContext> updateServerContextsAuthInfo(final List<ServerContext> contexts) {
+    public void updateServerContextsAuthInfo(final List<ServerContext> contexts) {
         logger.info("updateServerContextsAuthInfo: starting with context count: " + contexts.size() + ", contextMap size: " + contextMap.size());
-        final List<ServerContext> newContexts = new ArrayList<ServerContext>(contexts.size());
+        final HashMap<AuthenticationInfo, AuthenticationInfo> authInfoMap = new HashMap<AuthenticationInfo, AuthenticationInfo>(contexts.size());
         for (final ServerContext context : contexts) {
-            final ServerContext newContext = getContextWithNewAuthInfo(context);
-            remove(context.getKey());
-            add(newContext);
-            newContexts.add(newContext);
+            authInfoMap.put(context.getAuthenticationInfo(), getNewAuthInfo(context));
         }
-        logger.info("updateServerContextsAuthInfo: ending with context count: " + newContexts.size() + ", contextMap size: " + contextMap.size());
-        return newContexts;
+        refreshAuthInfo(authInfoMap);
+        logger.info("updateServerContextsAuthInfo: ending with contextMap size: " + contextMap.size());
+    }
+
+    /**
+     * Checks all contexts for old auth info and creates new contexts with the new auth info
+     *
+     * @param authInfoMap: keys are old auth infos and the values are the new auth infos
+     */
+    private void refreshAuthInfo(final HashMap<AuthenticationInfo, AuthenticationInfo> authInfoMap) {
+        logger.info("refreshAuthInfo: refreshing auth info");
+        for (final ServerContext context : getAllServerContexts()) {
+            final AuthenticationInfo contextAuthInfo = context.getAuthenticationInfo();
+            if (authInfoMap.containsKey(contextAuthInfo)) {
+                logger.info("refreshAuthInfo: Refreshing context auth info for: " + context.getKey());
+                remove(context.getKey());
+                add(new ServerContextBuilder(context).authentication(authInfoMap.get(contextAuthInfo)).build());
+            }
+        }
     }
 
     /**
@@ -501,7 +515,7 @@ public class ServerContextManager {
      * @param context
      * @return
      */
-    private ServerContext getContextWithNewAuthInfo(final ServerContext context) {
+    private AuthenticationInfo getNewAuthInfo(final ServerContext context) {
         logger.info("Updating context auth info");
         final AuthenticationProvider authenticationProvider = ServerContext.Type.TFS.equals(context.getType()) ?
                 TfsAuthenticationProvider.getInstance() : VsoAuthenticationProvider.getInstance();
@@ -512,8 +526,7 @@ public class ServerContextManager {
             url = context.getAuthenticationInfo().getServerUri();
         }
         logger.info("Updating auth info with url: " + url);
-        final AuthenticationInfo authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, url);
-        return new ServerContextBuilder(context).authentication(authenticationInfo).build();
+        return AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, url);
     }
 
     /**

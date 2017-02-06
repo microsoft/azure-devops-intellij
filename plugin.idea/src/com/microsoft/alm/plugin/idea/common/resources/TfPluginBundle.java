@@ -755,16 +755,24 @@ public class TfPluginBundle {
     //General Settings
     @NonNls
     public static final String KEY_SETTINGS_MENU_TITLE = "Settings.Menu.Title";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_TITLE = "Settings.Password.Mgt.Title";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_DELETE_BUTTON = "Settings.Password.Mgt.DeleteButton";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_UPDATE_BUTTON = "Settings.Password.Mgt.UpdateButton";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE = "Settings.Password.Mgt.Update.Title";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_MSG = "Settings.Password.Mgt.Update.Msg";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE = "Settings.Password.Mgt.Delete.Title";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG = "Settings.Password.Mgt.Delete.Msg";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED = "Settings.Password.Mgt.NoRowsSelected";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_UPDATING = "Settings.Password.Mgt.Updating";
-    public static final String KEY_SETTINGS_PASSWORD_MGT_NA = "Settings.Password.Mgt.NA";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_TITLE = "Settings.Config.Mgt.Title";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE = "Settings.Config.Mgt.Update.Title";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_MSG = "Settings.Config.Mgt.Update.Msg";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE = "Settings.Config.Mgt.Delete.Title";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG = "Settings.Config.Mgt.Delete.Msg";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED = "Settings.Config.Mgt.NoRowsSelected";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_UPDATING = "Settings.Config.Mgt.Updating";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_USER_NAME = "Settings.Config.Mgt.UserName";
+    @NonNls
+    public static final String KEY_SETTINGS_PASSWORD_MGT_REPO_URL = "Settings.Config.Mgt.RepoUrl";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";

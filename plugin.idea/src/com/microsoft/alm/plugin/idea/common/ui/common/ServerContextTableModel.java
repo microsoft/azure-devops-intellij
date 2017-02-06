@@ -24,7 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ServerContextTableModel extends AbstractTableModel {
-    public enum Column {GIT_REPOSITORY, TFVC_REPOSITORY, PROJECT, COLLECTION, ACCOUNT, GENERAL_REPOSITORY, ACCOUNT_URL}
+    public enum Column {GIT_REPOSITORY, TFVC_REPOSITORY, PROJECT, COLLECTION, ACCOUNT, GENERAL_REPOSITORY, USER_NAME, ACCOUNT_URL}
 
     public final static Column[] VSO_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.ACCOUNT};
     public final static Column[] TFS_GIT_REPO_COLUMNS = new Column[]{Column.GIT_REPOSITORY, Column.PROJECT, Column.COLLECTION};
@@ -32,7 +32,7 @@ public class ServerContextTableModel extends AbstractTableModel {
     public final static Column[] TFS_TFVC_REPO_COLUMNS = new Column[]{Column.TFVC_REPOSITORY, Column.PROJECT, Column.COLLECTION};
     public final static Column[] VSO_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.ACCOUNT};
     public final static Column[] TFS_PROJECT_COLUMNS = new Column[]{Column.PROJECT, Column.COLLECTION};
-    public final static Column[] GENERAL_COLUMNS = new Column[]{Column.GENERAL_REPOSITORY, Column.PROJECT, Column.ACCOUNT_URL};
+    public final static Column[] GENERAL_COLUMNS = new Column[]{Column.GENERAL_REPOSITORY, Column.ACCOUNT_URL, Column.USER_NAME};
 
     /**
      * The default converter simply returns the index given.
@@ -118,11 +118,6 @@ public class ServerContextTableModel extends AbstractTableModel {
         } else {
             return converter;
         }
-    }
-
-    public void removeContexts(final List<ServerContext> contexts) {
-        rows.removeAll(contexts);
-        super.fireTableDataChanged();
     }
 
     public int getSelectedIndex() {
@@ -214,7 +209,7 @@ public class ServerContextTableModel extends AbstractTableModel {
             }
             case PROJECT: {
                 final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
-                return (teamProject != null) ? teamProject.getName() : TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA);
+                return (teamProject != null) ? teamProject.getName() : "";
             }
             case COLLECTION: {
                 final TeamProjectCollectionReference collection = serverContext.getTeamProjectCollectionReference();
@@ -227,16 +222,18 @@ public class ServerContextTableModel extends AbstractTableModel {
                     return serverContext.getGitRepository().getName();
                 } else {
                     final TeamProjectReference teamProject = serverContext.getTeamProjectReference();
-                    return (teamProject != null) ? VcsHelper.TFVC_ROOT + teamProject.getName() : TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA);
+                    return (teamProject != null) ? VcsHelper.TFVC_ROOT + teamProject.getName() : "";
                 }
             }
-            case ACCOUNT_URL: {
-                if (ServerContext.Type.TFS.equals(serverContext.getType())) {
-                    return serverContext.getAuthenticationInfo() == null ? TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NA) : serverContext.getAuthenticationInfo().getServerUri();
+            case USER_NAME: {
+                if (serverContext.getAuthenticationInfo() != null) {
+                    return serverContext.getAuthenticationInfo().getUserNameForDisplay();
                 } else {
-                    return serverContext.getUri().getHost();
+                    return "";
                 }
             }
+            case ACCOUNT_URL:
+                return serverContext.getUri().toString();
             default:
                 return "";
         }
@@ -259,8 +256,10 @@ public class ServerContextTableModel extends AbstractTableModel {
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_ACCOUNT_COLUMN);
             case GENERAL_REPOSITORY:
                 return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_REPO_COLUMN);
+            case USER_NAME:
+                return TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_USER_NAME);
             case ACCOUNT_URL:
-                return TfPluginBundle.message(TfPluginBundle.KEY_SERVER_CONTEXT_TABLE_ACCOUNT_COLUMN);
+                return TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_REPO_URL);
             default:
                 return "";
         }
