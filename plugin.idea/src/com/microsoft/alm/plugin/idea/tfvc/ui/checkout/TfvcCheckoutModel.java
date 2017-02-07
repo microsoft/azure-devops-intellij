@@ -33,6 +33,7 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.CreateWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.DeleteWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceAlreadyExistsException;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -93,9 +94,24 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
 
                 // Map the project root to the local folder
                 final String serverPath = VcsHelper.TFVC_ROOT + teamProjectName;
-                final UpdateWorkspaceMappingCommand mappingCommand = new UpdateWorkspaceMappingCommand(context, workspaceName,
-                        new Workspace.Mapping(serverPath, localPath, false), false);
-                mappingCommand.runSynchronously();
+                try {
+                    final UpdateWorkspaceMappingCommand mappingCommand = new UpdateWorkspaceMappingCommand(context, workspaceName,
+                            new Workspace.Mapping(serverPath, localPath, false), false);
+                    mappingCommand.runSynchronously();
+                } catch (final RuntimeException e) {
+                    logger.warn("Error while mapping workspace during creation", e);
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Messages.showErrorDialog(project, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_FAILED_TITLE));
+                        }
+                    });
+
+                    // mapping failed so delete the workspace to clean up and return
+                    final DeleteWorkspaceCommand deleteWorkspaceCommand = new DeleteWorkspaceCommand(context, workspaceName);
+                    deleteWorkspaceCommand.runSynchronously();
+                    return;
+                }
 
                 IdeaHelper.setProgress(indicator, 0.30, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_PROGRESS_CREATE_FOLDER));
 

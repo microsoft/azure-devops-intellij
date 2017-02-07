@@ -47,7 +47,7 @@ public class PRTreeCellRenderer extends DefaultTreeCellRenderer {
             prViewForm = new PRTreeNodeForm(selected, hasFocus);
             prViewForm.setSummary(TfPluginBundle.message(TfPluginBundle.KEY_VCS_PR_SUMMARY,
                     pullRequest.getCreatedBy().getDisplayName(),
-                    pullRequest.getPullRequestId(),
+                    String.valueOf(pullRequest.getPullRequestId()),
                     DateHelper.getFriendlyDateTimeString(pullRequest.getCreationDate()),
                     pullRequest.getSourceRefName().replace(GIT_REFS_HEADS, ""),
                     pullRequest.getTargetRefName().replace(GIT_REFS_HEADS, "")));
