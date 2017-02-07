@@ -129,7 +129,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
 
                             logger.info("Work item association " + (wasWorkItemAssociated ? "succeeded" : "failed"));
                             final String notificationMsg = TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_DESCRIPTION : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_DESCRIPTION,
-                                    UrlHelper.getSpecificWorkItemURI(context.getTeamProjectURI(), workItem.getId()), workItem.getId(), UrlHelper.getBranchURI(context.getUri(), branchName), branchName);
+                                    UrlHelper.getSpecificWorkItemURI(context.getTeamProjectURI(), workItem.getId()), String.valueOf(workItem.getId()), UrlHelper.getBranchURI(context.getUri(), branchName), branchName);
 
                             VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(wasWorkItemAssociated ? TfPluginBundle.KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE : TfPluginBundle.KEY_WIT_ASSOCIATION_FAILED_TITLE),
                                     notificationMsg, new NotificationListener() {

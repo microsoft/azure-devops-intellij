@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.common.services;
 
 import com.intellij.util.net.HttpConfigurable;
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.alm.plugin.idea.common.utils.BackCompatibleUtils;
 import com.microsoft.alm.plugin.services.HttpProxyService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.commons.lang.StringUtils;
@@ -97,7 +98,7 @@ public class HttpProxyServiceImpl implements HttpProxyService {
         initialize();
         final String result;
         if (useHttpProxyViaIntelliJProperties) {
-            result = HttpConfigurable.getInstance().getProxyLogin();
+            result = BackCompatibleUtils.getProxyLogin();
         } else {
             result = null;
         }

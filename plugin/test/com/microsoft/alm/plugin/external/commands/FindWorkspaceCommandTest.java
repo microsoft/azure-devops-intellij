@@ -24,7 +24,7 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     public void testGetArgumentBuilder() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        Assert.assertEquals("workfold -noprompt", builder.toString());
+        Assert.assertEquals("workfold -noprompt ********", builder.toString());
         Assert.assertEquals("/path/localfile.txt", builder.getWorkingDirectory());
     }
 

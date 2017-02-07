@@ -67,9 +67,9 @@ public class TeamServicesSettingsModel extends AbstractModel {
             final String accountUrl;
 
             // find only contexts that have a repo
-            if (context.getGitRepository() != null) {
+            if (context.getGitRepository() != null && context.getGitRepository().getName() != null) {
                 repoName = context.getGitRepository().getName();
-            } else if (context.getTeamProjectReference() != null) {
+            } else if (context.getTeamProjectReference() != null && context.getTeamProjectReference().getName() != null) {
                 repoName = context.getTeamProjectReference().getName();
             } else {
                 continue;

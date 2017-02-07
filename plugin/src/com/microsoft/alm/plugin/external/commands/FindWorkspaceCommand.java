@@ -36,6 +36,8 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         // NOTE Calling workfold with the localPath forces it to refresh the workspace from the server. Calling it with
         //      no arguments does not refresh it from the server.
         builder.setWorkingDirectory(localPath);
+        // TODO: fix CLC to not need login creds for this command. It never validates them so we pass anything
+        builder.addSwitch("login", "username,pw", true);
         return builder;
     }
 

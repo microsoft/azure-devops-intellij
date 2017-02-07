@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.111.1</version>
+    <version>1.113.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -27,6 +27,8 @@
         <li>Create a new branch and associate it with the work item you are working on.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
+        <li>Supports proxy settings configured in the IDE's System Settings section.</li>
+        <li>Edit cached project information through configuration management.</li>
         <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes along with adding, deleting, renaming, moving, locking and labeling files.</li>
       </ul>
       <br />
@@ -48,9 +50,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.111.1
+      v 1.113.0
       <br />
-      Added ability to rename and move files for TFVC. This release also contains incremental fixes and updates, including a fix for freezing during checkout.
+      Added ability to use the proxies set through the IDE along with a Settings page to manage configurations. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
