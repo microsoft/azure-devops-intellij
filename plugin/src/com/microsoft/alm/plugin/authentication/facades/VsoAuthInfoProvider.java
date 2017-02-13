@@ -117,6 +117,9 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         try {
             AuthenticationInfo authenticationInfo = null;
             String errorMessage = null;
+            if (PluginServiceProvider.getInstance().getHttpProxyService().useHttpProxy()) {
+                PluginServiceProvider.getInstance().getHttpProxyService().setSystemProperties();
+            }
             final Client client = jaxrsClientProvider.getClient();
 
             if (client != null) {

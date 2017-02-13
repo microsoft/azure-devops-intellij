@@ -117,4 +117,14 @@ public class HttpProxyServiceImpl implements HttpProxyService {
             return null;
         }
     }
+
+    @Override
+    public void setSystemProperties() {
+        if (useHttpProxyViaIntelliJProperties) {
+            System.setProperty("http.proxyHost", getProxyHost());
+            System.setProperty("http.proxyPort", String.valueOf(getProxyPort()));
+        }
+        logger.info("Proxy host set to " + System.getProperty("http.proxyHost"));
+        logger.info("Proxy port set to " + System.getProperty("http.proxyPort"));
+    }
 }

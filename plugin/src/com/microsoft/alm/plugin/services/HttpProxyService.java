@@ -14,4 +14,5 @@ public interface HttpProxyService {
     int getProxyPort();
     String getUserName();
     String getPassword();
+    void setSystemProperties();
 }

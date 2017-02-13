@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.mocks;
 
 import com.microsoft.alm.plugin.services.HttpProxyService;
 
-public class MockHttpProxyService implements HttpProxyService{
+public class MockHttpProxyService implements HttpProxyService {
 
     @Override
     public boolean useHttpProxy() {
@@ -40,5 +40,9 @@ public class MockHttpProxyService implements HttpProxyService{
     @Override
     public String getPassword() {
         return null;
+    }
+
+    @Override
+    public void setSystemProperties() {
     }
 }
