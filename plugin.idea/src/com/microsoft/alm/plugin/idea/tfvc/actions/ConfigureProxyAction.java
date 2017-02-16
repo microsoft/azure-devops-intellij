@@ -12,6 +12,8 @@ import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This action allows the user to add/remove/edit the proxy url for the current TFVC server.
@@ -19,6 +21,7 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
  * The key for the property is PROXY_repository_server_url
  */
 public class ConfigureProxyAction extends InstrumentedAction {
+    private static final Logger logger = LoggerFactory.getLogger(ConfigureProxyAction.class);
 
     @VisibleForTesting
     public ConfigureProxyAction() {
@@ -31,11 +34,16 @@ public class ConfigureProxyAction extends InstrumentedAction {
     public void doActionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
         final RepositoryContext context = VcsHelper.getRepositoryContext(project);
-        final String currentProxy = getProxy(context);
-        final ProxySettingsDialog dialog = new ProxySettingsDialog(project, context.getUrl(), currentProxy);
-        if (dialog.showAndGet()) {
-            final String newProxy = dialog.getProxyUri();
-            setProxy(context, newProxy);
+
+        if (context != null) {
+            final String currentProxy = getProxy(context);
+            final ProxySettingsDialog dialog = new ProxySettingsDialog(project, context.getUrl(), currentProxy);
+            if (dialog.showAndGet()) {
+                final String newProxy = dialog.getProxyUri();
+                setProxy(context, newProxy);
+            }
+        } else {
+            logger.warn("RepositoryContext returned null");
         }
     }
 

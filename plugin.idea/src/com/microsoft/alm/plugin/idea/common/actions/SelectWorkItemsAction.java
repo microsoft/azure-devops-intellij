@@ -15,6 +15,7 @@ import com.intellij.openapi.vcs.ui.Refreshable;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.SelectWorkItemsDialog;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.apache.commons.lang.StringUtils;
@@ -43,7 +44,8 @@ public class SelectWorkItemsAction extends InstrumentedAction {
         try {
             // project might be null or in an unexpected state if it not a TFS repo which causes exceptions to be thrown
             // this is a weird situation since the Commit dialog can be brought up in many situations
-            disableButton = (project == null || (TfGitHelper.getTfGitRepository(project) == null && TFSVcs.getInstance(project) == null));
+            disableButton = (project == null || (TfGitHelper.getTfGitRepository(project) == null && TFSVcs.getInstance(project) == null) ||
+                    VcsHelper.getRepositoryContext(project) == null);
         } catch (Exception e) {
             logger.warn("Exception finding if project is TFS for work item association", e);
             disableButton = true;
