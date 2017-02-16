@@ -3,12 +3,14 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.ToolRunnerCache;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
+import com.microsoft.alm.plugin.external.exceptions.ToolMemoryException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
@@ -169,12 +171,31 @@ public abstract class Command<T> {
                             TfTool.throwBadExitCode(interpretReturnCode(returnCode));
                         } catch (Throwable throwable) {
                             logger.warn("CMD: parsing output failed", throwable);
-                            error = throwable;
+                            if (isMemoryException(stdout.toString())) {
+                                error = new ToolMemoryException(TfTool.getLocation());
+                            } else {
+                                error = throwable;
+                            }
                         }
                         listener.progress("", OUTPUT_TYPE_INFO, 100);
                         listener.completed(result, error);
                     }
                 });
+    }
+
+    /**
+     * Checks for the tf memory error
+     *
+     * @param output
+     * @return
+     */
+    @VisibleForTesting
+    protected boolean isMemoryException(final String output) {
+        if (output.replace("\r\n", "\n").contains(ToolMemoryException.getErrorMsg())) {
+            logger.warn("Memory error found for TF tool");
+            return true;
+        }
+        return false;
     }
 
     /**

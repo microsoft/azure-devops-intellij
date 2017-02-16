@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.exceptions.ToolMemoryException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import org.apache.commons.lang.StringUtils;
@@ -20,6 +21,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -91,5 +94,23 @@ public class CommandTest extends AbstractCommandTest {
         public String parseOutput(String stdout, String stderr) {
             return stdout;
         }
+    }
+
+    @Test
+    public void testIsMemoryException_TrueWindows() {
+        MyCommand command = new MyCommand(null);
+        assertTrue(ToolMemoryException.getErrorMsg(), command.isMemoryException("Error occurred during initialization of VM\r\nCould not reserve enough space for"));
+    }
+
+    @Test
+    public void testIsMemoryException_TrueLinux() {
+        MyCommand command = new MyCommand(null);
+        assertTrue(ToolMemoryException.getErrorMsg(), command.isMemoryException("Error occurred during initialization of VM\nCould not reserve enough space for"));
+    }
+
+    @Test
+    public void testIsMemoryException_False() {
+        MyCommand command = new MyCommand(null);
+        assertFalse(ToolMemoryException.getErrorMsg(), command.isMemoryException("Other error"));
     }
 }

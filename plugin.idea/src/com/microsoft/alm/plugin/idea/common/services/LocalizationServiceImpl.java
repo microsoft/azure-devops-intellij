@@ -97,6 +97,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(ToolException.KEY_TF_PARSE_FAILURE, "ToolException.TF.ParseFailure");
             put(ToolException.KEY_TF_MIN_VERSION_WARNING, "ToolException.TF.MinVersionWarning");
             put(ToolException.KEY_TF_WORKSPACE_EXISTS, "ToolException.TF.WorkspaceExists");
+            put(ToolException.KEY_TF_OOM, "ToolException.TF.OOM");
         }
     };
 
