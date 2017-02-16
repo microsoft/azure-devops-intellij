@@ -9,6 +9,10 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryChangeListener;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +29,8 @@ public class ProjectRepoEventManager {
     private static final Logger logger = LoggerFactory.getLogger(ProjectRepoEventManager.class);
 
     private static boolean repositoryChanging = false;
+    private static String TELEMETRY_PROJECT_OPENED_EVENT = "projectOpened";
+    private static String TELEMETRY_REPO_TYPE = "repoType";
 
     private ProjectEventListener projectEventListener;
 
@@ -64,6 +70,13 @@ public class ProjectRepoEventManager {
     private static class ProjectEventListener implements ProjectManagerListener {
         @Override
         public void projectOpened(final Project project) {
+            // Send telemetry on what type of repo is being opened
+            TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_PROJECT_OPENED_EVENT,
+                    new TfsTelemetryHelper.PropertyMapBuilder()
+                            .activeServerContext()
+                            .pair(TELEMETRY_REPO_TYPE, VcsHelper.isGitVcs(project) ? GitVcs.NAME : TFSVcs.TFVC_NAME)
+                            .build());
+
             ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_OPENED, project, null);
             subscribeToRepoChangeEvents(project);
         }
@@ -91,8 +104,7 @@ public class ProjectRepoEventManager {
                         // We are already in the middle of a change, so ignore the event
                         // There is a case where we get into an infinite loop here if we don't ignore the message
                         logger.info("Ignoring repository changed event since we are already in the middle of a change.");
-                    }
-                    else {
+                    } else {
                         try {
                             repositoryChanging = true;
                             logger.info("repository changed");
