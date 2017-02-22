@@ -28,6 +28,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.ui.servertree.ServerBrowserDialog;
+import com.microsoft.alm.plugin.idea.tfvc.ui.servertree.TfsTreeForm;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -186,21 +189,19 @@ public class MergeBranchForm {
         sourceText.setText(initialSourcePath);
         mySourceIsDirectory = initialSourcePathIsDirectory;
 
-        //TODO enable button and allow dynamic lookup of server paths
-        sourceText.setButtonEnabled(false);
-        //sourceText.getButton().addActionListener(new ActionListener() {
-        //    public void actionPerformed(final ActionEvent e) {
-        //        ServerBrowserDialog d =
-        //          new ServerBrowserDialog(TFSBundle.message("choose.source.item.dialog.title"), project, workspace.getServer(),
-        //                                  sourceText.getText(), false, false);
-        //        if (d.showAndGet()) {
-        //          final TfsTreeForm.SelectedItem selectedItem = d.getSelectedItem();
-        //          sourceText.setText(selectedItem != null ? selectedItem.path : null);
-        //          mySourceIsDirectory = selectedItem == null || selectedItem.isDirectory;
-        //        }
-        //        updateOnSourceChange();
-        //    }
-        //});
+        sourceText.getButton().addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                final ServerBrowserDialog dialog =
+                        new ServerBrowserDialog(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MERGE_BRANCH_BROWSE_TITLE),
+                                project, serverContext, sourceText.getText(), false, false);
+                if (dialog.showAndGet()) {
+                    final TfsTreeForm.SelectedItem selectedItem = dialog.getSelectedItem();
+                    sourceText.setText(selectedItem != null ? selectedItem.path : null);
+                    mySourceIsDirectory = selectedItem == null || selectedItem.isDirectory;
+                }
+                updateOnSourceChange();
+            }
+        });
 
         mySourceFieldFocusListener = new FocusAdapter() {
             public void focusLost(final FocusEvent e) {

@@ -27,6 +27,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.EventDispatcher;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.ui.servertree.ServerBrowserDialog;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -40,6 +43,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 public class CreateBranchForm {
@@ -59,23 +64,19 @@ public class CreateBranchForm {
                             boolean isDirectory) {
         sourceText.setText(serverPath);
 
-        // We need to add a browser dialog before we enable the button
-        targetText.setButtonEnabled(false);
+        targetLabel.setLabelFor(targetText.getChildComponent());
+        targetText.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                final String serverPath = StringUtils.isNotEmpty(targetText.getText()) ? targetText.getText() : sourceText.getText();
+                final ServerBrowserDialog dialog =
+                        new ServerBrowserDialog(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_BROWSE_TITLE),
+                                project, serverContext, serverPath, true, true);
+                if (dialog.showAndGet()) {
+                    targetText.setText(dialog.getSelectedPath());
+                }
+            }
+        });
 
-//    targetLabel.setLabelFor(targetText.getChildComponent());
-//    targetText.addActionListener(new ActionListener() {
-//      public void actionPerformed(final ActionEvent e) {
-//        String serverPath =
-//          targetText.getText() != null && targetText.getText().length() > 0 ? targetText.getText() : sourceText.getText();
-//        ServerBrowserDialog d =
-//          new ServerBrowserDialog(TFSBundle.message("choose.branch.target.folder.dialog.title"), project, workspace.getServer(),
-//                                  serverPath, true, true);
-//        if (d.showAndGet()) {
-//          targetText.setText(d.getSelectedPath());
-//        }
-//      }
-//    });
-//
         targetText.getChildComponent().getDocument().addDocumentListener(new DocumentAdapter() {
             @Override
             protected void textChanged(DocumentEvent e) {

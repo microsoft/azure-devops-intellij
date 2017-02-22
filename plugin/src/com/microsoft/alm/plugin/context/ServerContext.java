@@ -11,6 +11,7 @@ import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
+import com.microsoft.alm.plugin.context.rest.TfvcHttpClientEx;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
 import com.microsoft.alm.plugin.services.HttpProxyService;
@@ -328,6 +329,17 @@ public class ServerContext {
         }
 
         // We don't have enough context to create a BuildHttpClient
+        return null;
+    }
+
+    public synchronized TfvcHttpClientEx getTfvcHttpClient() {
+        final URI collectionUri = getCollectionURI();
+        if (collectionUri != null) {
+            final TfvcHttpClientEx tfvcHttpClient = new TfvcHttpClientEx(getClient(), collectionUri);
+            return tfvcHttpClient;
+        }
+
+        // We don't have enough context to create a TfvcHttpClient
         return null;
     }
 

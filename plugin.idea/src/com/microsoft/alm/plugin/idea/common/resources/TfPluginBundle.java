@@ -582,6 +582,16 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS = "Actions.Tfvc.Branch.Message.Success";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE = "Actions.Tfvc.Branch.Message.Failure";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_BRANCH_BROWSE_TITLE = "Actions.Tfvc.Branch.Browse.Title";
+
+    // TFVC Server Tree
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_CREATE_FOLDER_TITLE = "Tfvc.Server.Tree.Create.Folder.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_CREATE_FOLDER_MSG = "Tfvc.Server.Tree.Create.Folder.Msg";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_SELECT_BUTTON = "Tfvc.Server.Tree.Select.Button";
 
     //TFVC Branch Dialog
     @NonNls
@@ -610,6 +620,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_MERGE_BRANCH_DIALOG_TITLE = "Tfvc.MergeBranch.Dialog.Title";
     @NonNls
     public static final String KEY_TFVC_MERGE_BRANCH_DIALOG_OK_BUTTON = "Tfvc.MergeBranch.Dialog.OkButton";
+    @NonNls
+    public static final String KEY_TFVC_MERGE_BRANCH_BROWSE_TITLE = "Tfvc.MergeBranch.Browse.Title";
 
     //TFVC Proxy Settings Action
     @NonNls

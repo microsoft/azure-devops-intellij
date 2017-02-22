@@ -168,12 +168,12 @@
             <action id="Tfvc.ConfigureProxy" class="com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction"/>
         </group>
 
-        <!--<group id="TfsTreePopupMenu">
+        <group id="TfsTreePopupMenu">
         </group>
 
         <action id="TFS.CreateVirtualFolder" text="Create _Folder..." description="Create folder on server"
-                class="org.jetbrains.tfsIntegration.ui.servertree.CreateVirtualFolderAction" icon="AllIcons.Actions.NewFolder">
+                class="com.microsoft.alm.plugin.idea.tfvc.ui.servertree.CreateVirtualFolderAction" icon="AllIcons.Actions.NewFolder">
             <add-to-group group-id="TfsTreePopupMenu" anchor="first"/>
-        </action> -->
+        </action>
     </actions>
 </idea-plugin>
