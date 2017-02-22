@@ -71,7 +71,7 @@ public class CreateBranchDialog extends BaseDialogImpl {
     }
 
     private void revalidate() {
-        setOKActionEnabled(StringUtil.isNotEmpty(form.getTargetPath()));
+        setOkEnabled(StringUtil.isNotEmpty(form.getTargetPath()));
     }
 
     //@Nullable

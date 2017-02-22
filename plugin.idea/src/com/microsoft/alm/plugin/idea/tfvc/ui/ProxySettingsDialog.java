@@ -51,7 +51,7 @@ public class ProxySettingsDialog extends BaseDialogImpl {
     private void updateButtons() {
         final String errorMessage = form.isValid() ? null : TfPluginBundle.message(TfPluginBundle.KEY_TFVC_PROXY_DIALOG_ERRORS_INVALID_URI);
         form.setMessage(errorMessage);
-        setOKActionEnabled(form.isValid());
+        setOkEnabled(form.isValid());
     }
 
     @Override

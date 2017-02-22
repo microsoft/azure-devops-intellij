@@ -49,7 +49,7 @@ public class ApplyLabelDialog extends BaseDialogImpl {
     @Nullable
     protected JComponent createCenterPanel() {
         form = new ApplyLabelForm(this.getProject(), (List<ItemInfo>) getProperty(PROP_ITEMS));
-        setOKActionEnabled(false);
+        setOkEnabled(false);
 
 //    getWindow().addComponentListener(new ComponentAdapter() {
 //      public void componentShown(final ComponentEvent e) {
@@ -59,7 +59,7 @@ public class ApplyLabelDialog extends BaseDialogImpl {
 
         form.addListener(new ApplyLabelForm.Listener() {
             public void dataChanged(final String labelName, final int visibleItemsCount) {
-                setOKActionEnabled(visibleItemsCount > 0 && labelName.length() > 0);
+                setOkEnabled(visibleItemsCount > 0 && labelName.length() > 0);
             }
         });
 

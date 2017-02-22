@@ -70,7 +70,7 @@ public class SimpleCheckoutDialog extends BaseDialogImpl {
 
     @Override
     public void setOkEnabled(final boolean enabled) {
-        super.setOKActionEnabled(enabled);
+        super.setOkEnabled(enabled);
     }
 
     @Override

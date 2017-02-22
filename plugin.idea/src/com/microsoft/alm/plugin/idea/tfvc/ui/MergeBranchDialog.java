@@ -93,7 +93,7 @@ public class MergeBranchDialog extends BaseDialogImpl {
                 (BranchListProvider) getProperty(PROP_BRANCH_LIST_PROVIDER));
         mergeBranchForm.addListener(new MergeBranchForm.Listener() {
             public void stateChanged(final boolean canFinish) {
-                setOKActionEnabled(canFinish);
+                setOkEnabled(canFinish);
             }
         });
 
