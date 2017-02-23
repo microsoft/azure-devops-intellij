@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.servertree;
 import com.intellij.openapi.util.Condition;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.rest.VersionControlRecursionTypeCaseSensitive;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.alm.sourcecontrol.webapi.model.TfvcItem;
 import com.microsoft.alm.sourcecontrol.webapi.model.TfvcVersionDescriptor;
@@ -15,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class TfsTreeContext {
@@ -37,9 +37,9 @@ public class TfsTreeContext {
     }
 
     public List<TfvcItem> getChildItems(final String path) throws TfsException {
-        if (serverContext.getTeamProjectReference() == null) {
-            logger.warn("Project cannot be determined so can't get server tree");
-            return Collections.emptyList();
+        if (serverContext == null || serverContext.getTeamProjectReference() == null) {
+            logger.warn("Context and/or project could not be determined so can't get server tree | context is null: " + (serverContext == null));
+            throw new TfsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_ERROR));
         }
 
         final List<TfvcItem> items = serverContext.getTfvcHttpClient().getItems(serverContext.getTeamProjectReference().getId(),

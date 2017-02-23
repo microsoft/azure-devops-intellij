@@ -18,7 +18,6 @@ import com.intellij.util.ui.EmptyIcon;
 import com.intellij.util.ui.UIUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
@@ -102,7 +101,7 @@ public class TfsTreeForm implements Disposable, DataProvider {
         return o instanceof TfsTreeNode ? new SelectedItem(((TfsTreeNode) o)) : null;
     }
 
-    public void initialize(@NotNull final ServerContext serverContext,
+    public void initialize(final ServerContext serverContext,
                            @Nullable final String initialSelection,
                            final boolean foldersOnly,
                            final boolean canCreateVirtualFolders,

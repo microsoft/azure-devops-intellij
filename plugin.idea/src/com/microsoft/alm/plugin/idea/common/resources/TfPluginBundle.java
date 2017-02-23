@@ -592,6 +592,8 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_SERVER_TREE_CREATE_FOLDER_MSG = "Tfvc.Server.Tree.Create.Folder.Msg";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_SERVER_TREE_SELECT_BUTTON = "Tfvc.Server.Tree.Select.Button";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_ERROR = "Tfvc.Server.Tree.Error";
 
     //TFVC Branch Dialog
     @NonNls

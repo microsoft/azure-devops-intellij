@@ -29,12 +29,17 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.LocalPathCellEditor;
 import com.intellij.util.ui.StatusText;
 import com.intellij.util.ui.ValidatingTableEditor;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.ui.ServerPathCellEditor;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.JTable;
@@ -44,8 +49,12 @@ import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath.ROOT_FOLDER;
+
 //TODO: This class is currently not very testable. We could reimplement it and avoid deriving from the IntelliJ class
 public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<WorkspaceMappingsTableEditor.Row> {
+    public static Logger logger = LoggerFactory.getLogger(WorkspaceMappingsTableEditor.class);
+
     private final Project project;
     private final String defaultLocalPath;
     private final ValidationDispatcher validationDispatcher;
@@ -90,7 +99,7 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
                 rows.add(new Row(mapping.getServerPath(), mapping.getLocalPath(),
                         mapping.isCloaked() ? MappingType.CLOAKED : MappingType.MAPPED));
             }
-            setModel(new ColumnInfo[]{new MappingTypeColumn(), new ServerPathColumn(), new LocalPathColumn(project)}, rows);
+            setModel(new ColumnInfo[]{new MappingTypeColumn(), new ServerPathColumn(project), new LocalPathColumn(project)}, rows);
         }
     }
 
@@ -110,7 +119,20 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
 
     @Override
     protected Row createItem() {
-        return new Row(StringUtils.EMPTY, defaultLocalPath, MappingType.MAPPED);
+        final List<Row> items = getItems();
+        // make the new row a copy of the last row
+        if (items != null && items.size() > 0) {
+            return new Row(items.get(items.size() - 1));
+        } else {
+            // if no rows exist then get the path from the team project
+            final ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(false);
+            if (serverContext != null && serverContext.getTeamProjectReference() != null && StringUtils.isNotEmpty(serverContext.getTeamProjectReference().getName())) {
+                return new Row(ROOT_FOLDER.concat(serverContext.getTeamProjectReference().getName()), defaultLocalPath, MappingType.MAPPED);
+            }
+            // not great if we get here but browse will still work except the root name won't populate
+            logger.info("No rows or team project could be found so passing in empty root to new row");
+            return new Row(StringUtils.EMPTY, defaultLocalPath, MappingType.MAPPED);
+        }
     }
 
     public String getFirstValidationError() {
@@ -237,8 +259,11 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
     }
 
     private static class ServerPathColumn extends ColumnInfo<Row, String> {
-        public ServerPathColumn() {
+        private final Project project;
+
+        public ServerPathColumn(final Project project) {
             super(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_SERVER_PATH));
+            this.project = project;
         }
 
         @Override
@@ -256,11 +281,9 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
             return true;
         }
 
-        //TODO we really need a server path editor here (see the one that JetBrains did)
-        //@Override
-        //public TableCellEditor getEditor(final Row item) {
-        //  return new ServerPathCellEditor(this.getName(), myProject, myServer);
-        //}
+        @Override
+        public TableCellEditor getEditor(final Row item) {
+            return new ServerPathCellEditor(this.getName(), project, TFSVcs.getInstance(project).getServerContext(false));
+        }
     }
-
 }
