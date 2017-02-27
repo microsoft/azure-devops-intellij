@@ -594,6 +594,14 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_TFVC_SERVER_TREE_SELECT_BUTTON = "Tfvc.Server.Tree.Select.Button";
     @NonNls
     public static final String KEY_ACTIONS_TFVC_SERVER_TREE_ERROR = "Tfvc.Server.Tree.Error";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_DIRECTORY_NOT_FOUND = "Tfvc.Server.Tree.Directory.Not.Found";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_LOADING_TREE = "Tfvc.Server.Tree.Loading.Tree";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_TITLE = "Tfvc.Server.Tree.No.Root.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_MSG = "Tfvc.Server.Tree.No.Root.Msg";
 
     //TFVC Branch Dialog
     @NonNls

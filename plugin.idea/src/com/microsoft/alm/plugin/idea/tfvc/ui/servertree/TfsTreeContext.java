@@ -42,32 +42,40 @@ public class TfsTreeContext {
             throw new TfsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_ERROR));
         }
 
-        final List<TfvcItem> items = serverContext.getTfvcHttpClient().getItems(serverContext.getTeamProjectReference().getId(),
-                path, VersionControlRecursionTypeCaseSensitive.ONE_LEVEL, new TfvcVersionDescriptor());
-
-        // API returns the parent along with its children so remove the parent from the list
-        TfvcItem parentItem = null;
-        for (final TfvcItem item : items) {
-            if (StringUtils.equals(item.getPath(), path)) {
-                logger.info("Parent item found and being removed from children list");
-                parentItem = item;
-                break;
-            }
-        }
-        items.remove(parentItem);
-
-        // if only folders needed then filter them out of the list else just return
-        if (foldersOnly) {
-            logger.info("Filter out children for only folders");
-            final List<TfvcItem> folderItems = new ArrayList<TfvcItem>(items.size());
+        try {
+            final List<TfvcItem> items = serverContext.getTfvcHttpClient().getItems(serverContext.getTeamProjectReference().getId(),
+                    path, VersionControlRecursionTypeCaseSensitive.ONE_LEVEL, new TfvcVersionDescriptor());
+            // API returns the parent along with its children so remove the parent from the list
+            TfvcItem parentItem = null;
             for (final TfvcItem item : items) {
-                if (item.isFolder()) {
-                    folderItems.add(item);
+                if (StringUtils.equals(item.getPath(), path)) {
+                    logger.info("Parent item found and being removed from children list");
+                    parentItem = item;
+                    break;
                 }
             }
-            return folderItems;
-        } else {
-            return items;
+            items.remove(parentItem);
+
+            // if only folders needed then filter them out of the list else just return
+            if (foldersOnly) {
+                logger.info("Filter out children for only folders");
+                final List<TfvcItem> folderItems = new ArrayList<TfvcItem>(items.size());
+                for (final TfvcItem item : items) {
+                    if (item.isFolder()) {
+                        folderItems.add(item);
+                    }
+                }
+                return folderItems;
+            } else {
+                return items;
+            }
+        } catch (AssertionError e) {
+            // this occurs when the incorrect root has been given to the getItems API to start
+            logger.warn("Directory was not found on the server: " + path, e);
+            throw new TfsException(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_DIRECTORY_NOT_FOUND));
+        } catch (RuntimeException e) {
+            logger.warn("Error while getting a directories children", e);
+            throw new TfsException(e);
         }
     }
 }
