@@ -21,6 +21,8 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.util.containers.HashMap;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialogImpl;
@@ -29,15 +31,23 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.JComponent;
 import java.util.List;
+import java.util.Map;
 
 public class WorkspaceDialog extends BaseDialogImpl {
+    private static final String PROP_SERVER_CONTEXT = "server_context";
 
     private WorkspaceForm workspaceForm;
 
-    public WorkspaceDialog(final Project project) {
+    public WorkspaceDialog(final Project project, final ServerContext serverContext) {
         super(project, TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_SAVE_BUTTON),
-                TfPluginBundle.KEY_WORKSPACE_DIALOG_TITLE);
+                TfPluginBundle.KEY_WORKSPACE_DIALOG_TITLE, true, createProperties(serverContext));
+    }
+
+    private static Map<String, Object> createProperties(final ServerContext serverContext) {
+        final Map<String, Object> properties = new HashMap<String, Object>(4);
+        properties.put(PROP_SERVER_CONTEXT, serverContext);
+        return properties;
     }
 
     public JComponent getComponent(final String componentPropName) {
@@ -58,13 +68,14 @@ public class WorkspaceDialog extends BaseDialogImpl {
     protected JComponent createCenterPanel() {
         if (workspaceForm == null) {
             // When we create the form we give it a validationListener so that the table can trigger our validate method
-            workspaceForm = new WorkspaceForm(getProject(), new ValidationListener() {
-                @Override
-                public ValidationInfo doValidate() {
-                    validate();
-                    return null;
-                }
-            });
+            workspaceForm = new WorkspaceForm(getProject(), (ServerContext) getProperty(PROP_SERVER_CONTEXT),
+                    new ValidationListener() {
+                        @Override
+                        public ValidationInfo doValidate() {
+                            validate();
+                            return null;
+                        }
+                    });
         }
         return workspaceForm.getContentPane();
     }

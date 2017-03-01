@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import org.apache.commons.lang.StringUtils;
@@ -22,6 +23,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
@@ -32,6 +34,8 @@ public class ServerPathCellEditorTest {
     private Project mockProject;
     @Mock
     private ServerContext mockContext;
+    @Mock
+    private TeamProjectReference mockTeamProjectReference;
 
     @Before
     public void setUp() {
@@ -45,6 +49,33 @@ public class ServerPathCellEditorTest {
         ServerPathCellEditor spy = spy(editor);
         doReturn("$/root/dir/file").when(spy).getCellEditorValue();
         assertEquals("$/root/dir/file", spy.getServerPath());
+    }
+
+    @Test
+    public void testCreateBrowserDialog_NullContext() {
+        ServerPathCellEditor editor = new ServerPathCellEditor("title", mockProject, null);
+        ServerPathCellEditor spy = spy(editor);
+        doReturn(StringUtils.EMPTY).when(spy).getCellEditorValue();
+        assertEquals(StringUtils.EMPTY, spy.getServerPath());
+    }
+
+    @Test
+    public void testCreateBrowserDialog_NullTeamProjectReference() {
+        when(mockContext.getTeamProjectReference()).thenReturn(null);
+        ServerPathCellEditor editor = new ServerPathCellEditor("title", mockProject, mockContext);
+        ServerPathCellEditor spy = spy(editor);
+        doReturn(StringUtils.EMPTY).when(spy).getCellEditorValue();
+        assertEquals(StringUtils.EMPTY, spy.getServerPath());
+    }
+
+    @Test
+    public void testCreateBrowserDialog_PathFromContext() {
+        when(mockTeamProjectReference.getName()).thenReturn("projectRoot");
+        when(mockContext.getTeamProjectReference()).thenReturn(mockTeamProjectReference);
+        ServerPathCellEditor editor = new ServerPathCellEditor("title", mockProject, mockContext);
+        ServerPathCellEditor spy = spy(editor);
+        doReturn(StringUtils.EMPTY).when(spy).getCellEditorValue();
+        assertEquals("$/projectRoot", spy.getServerPath());
     }
 
     @Test

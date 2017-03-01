@@ -22,14 +22,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.ui.AbstractTableCellEditor;
 import com.intellij.util.ui.CellEditorComponentWithBrowseButton;
-import com.intellij.vcsUtil.VcsRunnable;
-import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.servertree.ServerBrowserDialog;
 import org.apache.commons.lang.StringUtils;
 
@@ -94,21 +91,9 @@ public class ServerPathCellEditor extends AbstractTableCellEditor {
     protected String getServerPath() {
         String serverPath = (String) getCellEditorValue();
 
-        // if there is no entry in the cell to find the root server path with then find it using the CLC
-        if (StringUtils.isEmpty(serverPath)) {
-            // need to use an array since a String can't be altered inside of the runnable
-            final String[] pathFromCommand = {StringUtils.EMPTY};
-            try {
-                VcsUtil.runVcsProcessWithProgress(new VcsRunnable() {
-                    @Override
-                    public void run() throws VcsException {
-                        pathFromCommand[0] = CommandUtils.getItemInfo(serverContext, project.getBasePath()).getServerItem();
-                    }
-                }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_LOADING_TREE), false, project);
-            } catch (VcsException e) {
-                // just swallow and let the path being empty be handled in the next check
-            }
-            serverPath = pathFromCommand[0];
+        // if there is no entry in the cell to find the root server path with then find it from the server context
+        if (StringUtils.isEmpty(serverPath) && serverContext != null && serverContext.getTeamProjectReference() != null) {
+            serverPath = VcsHelper.TFVC_ROOT.concat(serverContext.getTeamProjectReference().getName());
         }
         return serverPath;
     }

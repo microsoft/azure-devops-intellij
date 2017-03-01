@@ -56,6 +56,7 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
     public static Logger logger = LoggerFactory.getLogger(WorkspaceMappingsTableEditor.class);
 
     private final Project project;
+    private final ServerContext serverContext;
     private final String defaultLocalPath;
     private final ValidationDispatcher validationDispatcher;
 
@@ -86,9 +87,11 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
         public String localPath;
     }
 
-    public WorkspaceMappingsTableEditor(final Project project, final String defaultLocalPath, final ValidationDispatcher validationDispatcher) {
+    public WorkspaceMappingsTableEditor(final Project project, final ServerContext serverContext,
+                                        final String defaultLocalPath, final ValidationDispatcher validationDispatcher) {
         this.defaultLocalPath = defaultLocalPath;
         this.project = project;
+        this.serverContext = serverContext;
         this.validationDispatcher = validationDispatcher;
     }
 
@@ -99,7 +102,7 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
                 rows.add(new Row(mapping.getServerPath(), mapping.getLocalPath(),
                         mapping.isCloaked() ? MappingType.CLOAKED : MappingType.MAPPED));
             }
-            setModel(new ColumnInfo[]{new MappingTypeColumn(), new ServerPathColumn(project), new LocalPathColumn(project)}, rows);
+            setModel(new ColumnInfo[]{new MappingTypeColumn(), new ServerPathColumn(project, serverContext), new LocalPathColumn(project)}, rows);
         }
     }
 
@@ -260,10 +263,12 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
 
     private static class ServerPathColumn extends ColumnInfo<Row, String> {
         private final Project project;
+        private final ServerContext serverContext;
 
-        public ServerPathColumn(final Project project) {
+        public ServerPathColumn(final Project project, final ServerContext serverContext) {
             super(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_COLUMN_HEADERS_SERVER_PATH));
             this.project = project;
+            this.serverContext = serverContext;
         }
 
         @Override
@@ -283,7 +288,7 @@ public class WorkspaceMappingsTableEditor extends ValidatingTableEditor<Workspac
 
         @Override
         public TableCellEditor getEditor(final Row item) {
-            return new ServerPathCellEditor(this.getName(), project, TFSVcs.getInstance(project).getServerContext(false));
+            return new ServerPathCellEditor(this.getName(), project, serverContext);
         }
     }
 }

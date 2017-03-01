@@ -22,6 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.apache.commons.lang.StringUtils;
@@ -45,8 +46,8 @@ public class WorkspaceController implements Observer, ActionListener {
      *
      * @param project
      */
-    public WorkspaceController(final Project project) {
-        this(project, new WorkspaceDialog(project), new WorkspaceModel());
+    public WorkspaceController(final Project project, final ServerContext serverContext) {
+        this(project, new WorkspaceDialog(project, serverContext), new WorkspaceModel());
         this.model.loadWorkspace(project);
     }
 
@@ -58,8 +59,8 @@ public class WorkspaceController implements Observer, ActionListener {
      * @param repositoryContext
      * @param workspaceName
      */
-    public WorkspaceController(final Project project, final RepositoryContext repositoryContext, final String workspaceName) {
-        this(project, new WorkspaceDialog(project), new WorkspaceModel());
+    public WorkspaceController(final Project project, final RepositoryContext repositoryContext, final ServerContext serverContext, final String workspaceName) {
+        this(project, new WorkspaceDialog(project, serverContext), new WorkspaceModel());
         this.model.loadWorkspace(repositoryContext, workspaceName);
     }
 

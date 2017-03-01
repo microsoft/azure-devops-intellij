@@ -25,6 +25,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
@@ -53,6 +54,7 @@ public class WorkspaceForm {
     private JLabel workingFoldersLabel;
     private ComboBox location;
     private final Project project;
+    private final ServerContext serverContext;
     private final ValidationListener validationListener;
 
     /**
@@ -158,7 +160,7 @@ public class WorkspaceForm {
 
     private void createUIComponents() {
         final String defaultPath = project != null ? project.getBasePath() : "";
-        tableEditor = new WorkspaceMappingsTableEditor(project, defaultPath, new WorkspaceMappingsTableEditor.ValidationDispatcher() {
+        tableEditor = new WorkspaceMappingsTableEditor(project, serverContext, defaultPath, new WorkspaceMappingsTableEditor.ValidationDispatcher() {
             @Override
             public void showValidationError(String errorMessage) {
                 if (validationListener != null) {
@@ -178,8 +180,9 @@ public class WorkspaceForm {
         location.setEnabled(false);
     }
 
-    public WorkspaceForm(final Project project, final ValidationListener validationListener) {
+    public WorkspaceForm(final Project project, final ServerContext serverContext, final ValidationListener validationListener) {
         this.project = project;
+        this.serverContext = serverContext;
         this.validationListener = validationListener;
 
         $$$setupUI$$$();

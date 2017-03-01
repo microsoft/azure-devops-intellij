@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 
 /**
@@ -39,7 +40,7 @@ public class EditWorkspaceAction extends InstrumentedAction {
     @Override
     public void doActionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
-        final WorkspaceController controller = new WorkspaceController(project);
+        final WorkspaceController controller = new WorkspaceController(project, TFSVcs.getInstance(project).getServerContext(false));
         controller.showModalDialog(true);
     }
 
