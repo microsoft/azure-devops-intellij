@@ -3,22 +3,22 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableFocusListener;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.plugin.idea.common.ui.controls.BusySpinnerPanel;
+import com.microsoft.alm.plugin.idea.common.ui.controls.FormattedTable;
 import com.microsoft.alm.plugin.idea.common.ui.controls.HelpPanel;
 import com.microsoft.alm.plugin.idea.common.ui.controls.HintTextFieldUI;
 import com.microsoft.alm.plugin.idea.common.ui.controls.Hyperlink;
-import com.microsoft.alm.plugin.idea.common.ui.common.SwingHelper;
-import com.microsoft.alm.plugin.idea.common.ui.controls.FormattedTable;
 import org.jetbrains.annotations.NonNls;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -94,10 +94,10 @@ public class SelectWorkItemsForm {
             // Set hint text
             filter.setUI(new HintTextFieldUI(TfPluginBundle.message(TfPluginBundle.KEY_WIT_SELECT_DIALOG_FILTER_HINT_TEXT)));
 
-            // Align the busy spinner and the refresh button with the height of the text box
-            refreshButton.putClientProperty("JButton.buttonType", "square"); // This is a magical property that tells IntelliJ to draw the button like an image button
-            final int textBoxHeight = (int) filter.getPreferredSize().getHeight();
-            final Dimension size = new Dimension(textBoxHeight, textBoxHeight);
+            // Align the busy spinner with the height of the refresh button (has to be the refresh button height so the image isn't squashed and then disappears)
+            // Also change the refresh button width so that the button is a perfect square
+            final int refreshButtonHeight = (int) refreshButton.getMinimumSize().getHeight();
+            final Dimension size = new Dimension(refreshButtonHeight, refreshButtonHeight);
             refreshButton.setMinimumSize(size);
             refreshButton.setPreferredSize(size);
             busySpinner.setMinimumSize(size);
@@ -198,6 +198,7 @@ public class SelectWorkItemsForm {
 
     private void createUIComponents() {
         workItemTable = new FormattedTable(WorkItemsTableModel.Column.TITLE.toString());
+        refreshButton = new JButton(AllIcons.Actions.Refresh);
     }
 
     /**
@@ -219,9 +220,8 @@ public class SelectWorkItemsForm {
         contentPanel.add(serverName, new GridConstraints(0, 1, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         filter = new JTextField();
         contentPanel.add(filter, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        refreshButton = new JButton();
-        refreshButton.setIcon(new ImageIcon(getClass().getResource("/actions/refresh.png")));
         refreshButton.setText("");
+        refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CheckoutDialog.RefreshButton.ToolTip"));
         contentPanel.add(refreshButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         contentPanel.add(scrollPane, new GridConstraints(3, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));

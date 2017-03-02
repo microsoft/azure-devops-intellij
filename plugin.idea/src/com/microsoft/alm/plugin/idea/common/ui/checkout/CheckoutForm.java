@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -24,7 +25,6 @@ import com.microsoft.alm.plugin.idea.common.ui.controls.UserAccountPanel;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -114,10 +114,10 @@ public class CheckoutForm implements BasicForm {
                     TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_PARENT_FOLDER_DIALOG_TITLE), null, null,
                     new FileChooserDescriptor(false, true, false, false, false, false));
 
-            // Align the busy spinner and the refresh button with the height of the text box
-            refreshButton.putClientProperty("JButton.buttonType", "square"); // This is a magical property that tells IntelliJ to draw the button like an image button
-            final int textBoxHeight = (int) repositoryFilter.getPreferredSize().getHeight();
-            final Dimension size = new Dimension(textBoxHeight, textBoxHeight);
+            // Align the busy spinner with the height of the refresh button (has to be the refresh button height so the image isn't squashed and then disappears)
+            // Also change the refresh button width so that the button is a perfect square
+            final int refreshButtonHeight = (int) refreshButton.getMinimumSize().getHeight();
+            final Dimension size = new Dimension(refreshButtonHeight, refreshButtonHeight);
             refreshButton.setMinimumSize(size);
             refreshButton.setPreferredSize(size);
             busySpinner.setMinimumSize(size);
@@ -268,6 +268,7 @@ public class CheckoutForm implements BasicForm {
     private void createUIComponents() {
         // Create user account panel
         userAccountPanel = new UserAccountPanel();
+        refreshButton = new JButton(AllIcons.Actions.Refresh);
 
         // Create timer for filtering the list
         timer = new Timer(400, null);
@@ -325,13 +326,6 @@ public class CheckoutForm implements BasicForm {
         repositoryTableScrollPane.setViewportView(repositoryTable);
         parentDirectory = new TextFieldWithBrowseButton();
         contentPanel.add(parentDirectory, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        refreshButton = new JButton();
-        refreshButton.setIcon(new ImageIcon(getClass().getResource("/actions/refresh.png")));
-        refreshButton.setText("");
-        refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CheckoutDialog.RefreshButton.ToolTip"));
-        contentPanel.add(refreshButton, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        busySpinner = new BusySpinnerPanel();
-        contentPanel.add(busySpinner, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         helpPanel = new HelpPanel();
         helpPanel.setHelpText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.helpText"));
         helpPanel.setPopupText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("VsoLookupHelp.Instructions"));
@@ -339,6 +333,10 @@ public class CheckoutForm implements BasicForm {
         advancedCheckBox = new JCheckBox();
         advancedCheckBox.setText("example text");
         contentPanel.add(advancedCheckBox, new GridConstraints(9, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        busySpinner = new BusySpinnerPanel();
+        contentPanel.add(busySpinner, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("CheckoutDialog.RefreshButton.ToolTip"));
+        contentPanel.add(refreshButton, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

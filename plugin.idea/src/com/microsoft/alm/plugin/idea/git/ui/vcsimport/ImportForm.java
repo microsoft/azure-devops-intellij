@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
 
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.icons.AllIcons;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
@@ -22,7 +23,6 @@ import com.microsoft.alm.plugin.idea.common.ui.controls.UserAccountPanel;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -99,10 +99,10 @@ public class ImportForm implements BasicForm {
             teamProjectFilter.setUI(new HintTextFieldUI(
                     TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_DIALOG_FILTER_HINT)));
 
-            // Align the busy spinner and the refresh button with the height of the text box
-            refreshButton.putClientProperty("JButton.buttonType", "square"); // This is a magical property that tells IntelliJ to draw the button like an image button
-            final int textBoxHeight = (int) teamProjectFilter.getPreferredSize().getHeight();
-            final Dimension size = new Dimension(textBoxHeight, textBoxHeight);
+            // Align the busy spinner with the height of the refresh button (has to be the refresh button height so the image isn't squashed and then disappears)
+            // Also change the refresh button width so that the button is a perfect square
+            final int refreshButtonHeight = (int) refreshButton.getMinimumSize().getHeight();
+            final Dimension size = new Dimension(refreshButtonHeight, refreshButtonHeight);
             refreshButton.setMinimumSize(size);
             refreshButton.setPreferredSize(size);
             busySpinner.setMinimumSize(size);
@@ -223,6 +223,7 @@ public class ImportForm implements BasicForm {
 
     private void createUIComponents() {
         userAccountPanel = new UserAccountPanel();
+        refreshButton = new JButton(AllIcons.Actions.Refresh);
 
         // Create timer for filtering the list
         timer = new Timer(400, null);
@@ -270,8 +271,6 @@ public class ImportForm implements BasicForm {
         contentPanel.add(label2, new GridConstraints(5, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         repositoryName = new JTextField();
         contentPanel.add(repositoryName, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        refreshButton = new JButton();
-        refreshButton.setIcon(new ImageIcon(getClass().getResource("/actions/refresh.png")));
         refreshButton.setText("");
         refreshButton.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("ImportDialog.RefreshButton.ToolTip"));
         contentPanel.add(refreshButton, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

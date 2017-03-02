@@ -84,22 +84,6 @@
         </constraints>
         <properties/>
       </component>
-      <component id="2ce1a" class="javax.swing.JButton" binding="refreshButton">
-        <constraints>
-          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <icon value="actions/refresh.png"/>
-          <text value=""/>
-          <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="CheckoutDialog.RefreshButton.ToolTip"/>
-        </properties>
-      </component>
-      <component id="e010e" class="com.microsoft.alm.plugin.idea.common.ui.controls.BusySpinnerPanel" binding="busySpinner">
-        <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-      </component>
       <component id="2b3b3" class="com.microsoft.alm.plugin.idea.common.ui.controls.HelpPanel" binding="helpPanel">
         <constraints>
           <grid row="4" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
@@ -115,6 +99,20 @@
         </constraints>
         <properties>
           <text value="example text"/>
+        </properties>
+      </component>
+      <component id="e010e" class="com.microsoft.alm.plugin.idea.common.ui.controls.BusySpinnerPanel" binding="busySpinner">
+        <constraints>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="2ce1a" class="javax.swing.JButton" binding="refreshButton" custom-create="true">
+        <constraints>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="CheckoutDialog.RefreshButton.ToolTip"/>
         </properties>
       </component>
     </children>
