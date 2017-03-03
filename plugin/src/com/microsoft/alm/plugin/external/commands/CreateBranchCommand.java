@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.BranchAlreadyExistsException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
  */
 public class CreateBranchCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(CreateBranchCommand.class);
+
+    private static String BRANCH_EXISTS_ERROR = "An error occurred: The item %s already exists.";
 
     private final String workingFolder;
     private final boolean recursive;
@@ -77,5 +80,22 @@ public class CreateBranchCommand extends Command<String> {
     public String parseOutput(final String stdout, final String stderr) {
         throwIfError(stderr);
         return getChangesetNumber(stdout);
+    }
+
+    /**
+     * Parse for specific error messages from CreateBranchCommand command
+     *
+     * @param stderr
+     */
+    @Override
+    protected void throwIfError(final String stderr) {
+        if (StringUtils.isNotEmpty(stderr)) {
+            final String[] errors = getLines(stderr);
+            for (final String line : errors) {
+                if (StringUtils.equalsIgnoreCase(String.format(BRANCH_EXISTS_ERROR, newBranchedItem), line))
+                    throw new BranchAlreadyExistsException(newBranchedItem);
+            }
+        }
+        super.throwIfError(stderr);
     }
 }

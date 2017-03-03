@@ -26,15 +26,19 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.exceptions.BranchAlreadyExistsException;
 import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
@@ -44,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,7 +75,7 @@ public class BranchAction extends SingleItemAction {
                     Path.getDirectoryName(actionContext.getItem().getLocalItem());
             logger.info("Working folder: " + workingFolder);
             logger.info("Opening branch dialog for " + sourceServerPath);
-            CreateBranchDialog d = new CreateBranchDialog(
+            final CreateBranchDialog d = new CreateBranchDialog(
                     project,
                     serverContext,
                     sourceServerPath,
@@ -86,42 +91,48 @@ public class BranchAction extends SingleItemAction {
             //    return;
             //}
 
-            // Get the current workspace
-            final Workspace workspace = CommandUtils.getWorkspace(serverContext, actionContext.getProject());
-            if (workspace == null) {
-                throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE));
-            }
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+                public void run() {
+                    ProgressManager.getInstance().getProgressIndicator().setFraction(.1);
+                    // Get the current workspace
+                    final Workspace workspace = CommandUtils.getWorkspace(serverContext, actionContext.getProject());
+                    if (workspace == null) {
+                        throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE));
+                    }
+                    ProgressManager.getInstance().getProgressIndicator().setFraction(.3);
 
-            final String targetServerPath = d.getTargetPath();
-            logger.info("TargetServerPath from dialog: " + targetServerPath);
-            String targetLocalPath = StringUtils.EMPTY;
-            if (d.isCreateWorkingCopies()) {
-                logger.info("User selected to sync the new branched copies");
-                // See if the target path is already mapped
-                targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
-                logger.info("targetLocalPath: " + targetLocalPath);
-                if (StringUtils.isEmpty(targetLocalPath)) {
-                    logger.info("Opening the FileChooser dialog for the user to select where the unmapped branch should be mapped to.");
-                    final FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-                    descriptor.setTitle(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_TITLE));
-                    descriptor.setShowFileSystemRoots(true);
-                    final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_DESCRIPTION,
-                            targetServerPath, workspace.getName());
-                    descriptor.setDescription(message);
+                    final String targetServerPath = d.getTargetPath();
+                    logger.info("TargetServerPath from dialog: " + targetServerPath);
+                    String targetLocalPath = StringUtils.EMPTY;
+                    if (d.isCreateWorkingCopies()) {
+                        logger.info("User selected to sync the new branched copies");
+                        // See if the target path is already mapped
+                        targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
+                        ProgressManager.getInstance().getProgressIndicator().setFraction(.5);
+                        logger.info("targetLocalPath: " + targetLocalPath);
+                        if (StringUtils.isEmpty(targetLocalPath)) {
+                            logger.info("Opening the FileChooser dialog for the user to select where the unmapped branch should be mapped to.");
+                            final FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+                            descriptor.setTitle(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_TITLE));
+                            descriptor.setShowFileSystemRoots(true);
+                            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_FILE_CHOOSE_DESCRIPTION,
+                                    targetServerPath, workspace.getName());
+                            descriptor.setDescription(message);
 
-                    final VirtualFile selectedFile = FileChooser.chooseFile(descriptor, project, null);
-                    if (selectedFile == null) {
-                        logger.info("User canceled");
-                        return;
+                            final VirtualFile selectedFile = FileChooser.chooseFile(descriptor, project, null);
+                            if (selectedFile == null) {
+                                logger.info("User canceled");
+                                return;
+                            }
+
+                            targetLocalPath = TfsFileUtil.getFilePath(selectedFile).getPath();
+                            logger.info("Adding workspace mapping: " + targetServerPath + " -> " + targetLocalPath);
+                            CommandUtils.addWorkspaceMapping(serverContext, workspace.getName(),
+                                    targetServerPath, targetLocalPath);
+                        }
                     }
 
-                    targetLocalPath = TfsFileUtil.getFilePath(selectedFile).getPath();
-                    logger.info("Adding workspace mapping: " + targetServerPath + " -> " + targetLocalPath);
-                    CommandUtils.addWorkspaceMapping(serverContext, workspace.getName(),
-                            targetServerPath, targetLocalPath);
-                }
-            }
-
+                    ProgressManager.getInstance().getProgressIndicator().setFraction(.6);
 //            final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
 //                    .createBranch(workspace.getName(), workspace.getOwnerName(), sourceServerPath, version, targetServerPath, project,
 //                            TFSBundle.message("creating.branch"));
@@ -134,44 +145,67 @@ public class BranchAction extends SingleItemAction {
 //                return;
 //            }
 
+                    // Create the branch
+                    logger.info("Creating branch... isFolder: " + isFolder);
+                    final String comment = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_COMMENT, sourceServerPath);
+                    try {
+                        CommandUtils.createBranch(serverContext, workingFolder, true, comment, null, sourceServerPath, targetServerPath);
+                    } catch (final BranchAlreadyExistsException e) {
+                        logger.warn("Branch already exists");
+                        IdeaHelper.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Messages.showErrorDialog(actionContext.getProject(), LocalizationServiceImpl.getInstance().getExceptionMessage(e),
+                                        TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
+                            }
+                        });
+                        return;
+                    }
+                    ProgressManager.getInstance().getProgressIndicator().setFraction(.7);
 
-            // Create the branch
-            logger.info("Creating branch... isFolder: " + isFolder);
-            final String comment = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_COMMENT, sourceServerPath);
-            CommandUtils.createBranch(serverContext, workingFolder, true, comment, null, sourceServerPath, targetServerPath);
+                    if (d.isCreateWorkingCopies()) {
+                        logger.info("Get the latest for the branched folder...");
+                        final String localPath = targetLocalPath;
+                        final List<VcsException> errors = new ArrayList<VcsException>();
 
-            if (d.isCreateWorkingCopies()) {
-                logger.info("Get the latest for the branched folder...");
-                final String localPath = targetLocalPath;
-                final List<VcsException> errors = new ArrayList<VcsException>();
-                ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-                    public void run() {
                         logger.info("Syncing: " + localPath);
                         final SyncResults syncResults = CommandUtils.syncWorkspace(serverContext, localPath);
+                        ProgressManager.getInstance().getProgressIndicator().setFraction(.8);
                         if (syncResults.getExceptions().size() > 0) {
                             for (final SyncException se : syncResults.getExceptions()) {
                                 errors.add(TFSVcs.convertToVcsException(se));
                             }
                         }
+
+                        if (!errors.isEmpty()) {
+                            logger.info("Errors found");
+                            AbstractVcsHelper.getInstance(project).showErrors(errors,
+                                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
+                        }
                     }
-                }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_SYNC_PROGRESS), false, project);
 
-                if (!errors.isEmpty()) {
-                    logger.info("Errors found");
-                    AbstractVcsHelper.getInstance(project).showErrors(errors,
-                            TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
+                    targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
+                    ProgressManager.getInstance().getProgressIndicator().setFraction(.9);
+                    logger.info("targetLocalPath: " + targetLocalPath);
+                    if (StringUtils.isNotEmpty(targetLocalPath)) {
+                        logger.info("Refresh target parent directory to display in the editor.");
+                        // need to refresh the parent directory to see the new branch show up
+                        final File targetFile = new File(targetLocalPath);
+                        final FilePath[] parent = {VersionControlPath.getFilePath(targetFile.getParent(), true)};
+                        TfsFileUtil.refreshAndInvalidate(project, parent, false);
+                    }
+
+                    final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS, sourceServerPath, targetServerPath);
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Messages.showInfoMessage(project, message, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
+                        }
+                    });
+
                 }
-            }
+            }, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_SYNC_PROGRESS), false, project);
 
-            targetLocalPath = CommandUtils.tryGetLocalPath(serverContext, targetServerPath, workspace.getName());
-            logger.info("targetLocalPath: " + targetLocalPath);
-            if (StringUtils.isNotEmpty(targetLocalPath)) {
-                logger.info("Marking the target path dirty in the editor.");
-                TfsFileUtil.markDirtyRecursively(project, VersionControlPath.getFilePath(targetLocalPath, isFolder));
-            }
-
-            final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_SUCCESS, sourceServerPath, targetServerPath);
-            Messages.showInfoMessage(project, message, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
         } catch (final Throwable t) {
             logger.warn("Branching failed", t);
             final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE, t.getMessage());
