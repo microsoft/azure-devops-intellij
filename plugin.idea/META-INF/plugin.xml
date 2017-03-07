@@ -6,12 +6,12 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.113.0</version>
+    <version>1.115.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
-      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services or Team Foundation Server 2015.
+      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services or Team Foundation Server 2015+.
       <br />
       <a href="https://github.com/Microsoft/vso-intellij">GitHub</a> | <a href="https://github.com/Microsoft/vso-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
       <br />
@@ -19,17 +19,29 @@
       <b>Features</b>
       <br />
       <ul>
-        <li>Supports authenticating with Visual Studio Team Services and Team Foundation Server 2015 to work with source code in Git repositories.</li>
-        <li>Checkout code from Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
-        <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015.</li>
-        <li>Create pull requests and view your active pull requests.</li>
-        <li>View work items based on queries and select one or more work items to associate with your commits.</li>
-        <li>Create a new branch and associate it with the work item you are working on.</li>
+        <li>Supports authenticating with Visual Studio Team Services and Team Foundation Server 2015+ to work with source code in Git and TFVC repositories.</li>
+        <li>Checkout code from Git and TFVC repositories on Visual Studio Team Services and Team Foundation Server 2015+.</li>
+        <li>Git specific features:</li>
+        <ul>
+            <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015+.</li>
+            <li>Create pull requests and view your active pull requests.</li>
+            <li>Create a new branch and associate it with the work item you are working on.</li>
+            <li>Quickly browse to file history or commit details on the web from the IDE.</li>
+        </ul>
+        <li>TFVC specific features:</li>
+        <ul>
+            <li>Execute all basic version control actions such as add, delete, rename, move, etc.</li>
+            <li>View local changes and history for your files.</li>
+            <li>Lock and unlock files and directories.</li>
+            <li>Add labels to files and directories.</li>
+            <li>Create, view, and edit a workspace.</li>
+            <li>Supports using a TFS proxy.</li>
+            <li>Local workspace support only.</li>
+        </ul>
+        <li>View work items based on queries and select one or more work items to associate with your commits or checkins.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
-        <li>Quickly browse to file history or commit details on the web from the IntelliJ project.</li>
         <li>Supports proxy settings configured in the IDE's System Settings section.</li>
         <li>Edit cached project information through configuration management.</li>
-        <li>TFVC support <i>(in preview)</i>: Ability to checkout, update, and checkin local changes along with adding, deleting, renaming, moving, locking and labeling files.</li>
       </ul>
       <br />
       <br />
@@ -50,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.113.0
+      v 1.115.0
       <br />
-      Added ability to use the proxies set through the IDE along with a Settings page to manage configurations. This release also contains incremental fixes and updates.
+      Taking TFVC support out of preview mode. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
@@ -125,15 +137,15 @@
         </action>
 
         <!-- TFVC Action -->
-        <group id="TfvcGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC (Preview)">
+        <group id="TfvcGlobalGroup" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" popup="true" text="TFVC">
             <add-to-group group-id="VcsGroups" anchor="last"/>
         </group>
 
-        <group id="TfvcFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC (Preview)">
+        <group id="TfvcFilePopupGroup" popup="true" class="com.microsoft.alm.plugin.idea.tfvc.core.TFSGroup" text="TFVC">
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
 
-        <group id="TfvcGroup" text="TFVC (Preview)">
+        <group id="TfvcGroup" text="TFVC">
             <separator/>
             <action id="Tfvc.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
             <reference id="CheckinFiles"/>
@@ -156,9 +168,9 @@
             <reference id="Compare.SameVersion"/>
             <reference id="Compare.LastVersion"/>
             <reference id="Compare.Selected"/>
-            <reference id="Vcs.ShowHistoryForBlock"/>
+           <!-- <reference id="Vcs.ShowHistoryForBlock"/>
             <reference id="Annotate"/>
-            <reference id="ChangesView.Browse"/>
+            <reference id="ChangesView.Browse"/>-->
             <separator/>
             <!--action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/-->
             <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>
