@@ -6,6 +6,9 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.LocalFileOperationsHandler;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -14,6 +17,12 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +30,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Listener that intercepts file system actions and executes the appropriate TFVC command if needed
@@ -44,7 +55,110 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
     @Override
     public boolean delete(final VirtualFile virtualFile) throws IOException {
-        return false;
+        logger.info("Deleting file with TFVC: " + virtualFile.getPath());
+
+        final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
+
+        pendingChanges.addAll(CommandUtils.getStatusForFiles(TFSVcs.getInstance(project).getServerContext(true),
+                Arrays.asList(virtualFile.getPath())));
+
+        // if 0 pending changes then just delete the file and return
+        if (pendingChanges.isEmpty()) {
+            logger.info("No changes to file so deleting though TFVC");
+            CommandUtils.deleteFiles(TFSVcs.getInstance(project).getServerContext(true), Arrays.asList(virtualFile.getPath()), null, true);
+            return true;
+        }
+
+        // start with assuming you don't need to revert but look at the pending changes to see if that's incorrect
+        final AtomicBoolean revert = new AtomicBoolean(false);
+        // assume false until we know we need to delete from TFVC
+        final AtomicBoolean success = new AtomicBoolean(false);
+        final AtomicBoolean isUndelete = new AtomicBoolean(false);
+        try {
+            for (final PendingChange pendingChange : pendingChanges) {
+                StatusProvider.visitByStatus(new StatusVisitor() {
+                    public void scheduledForAddition(final @NotNull FilePath localPath,
+                                                     final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // revert the file and then let the IDE delete it
+                        revert.set(true);
+                        success.set(false);
+                    }
+
+                    public void unversioned(final @NotNull FilePath localPath,
+                                            final boolean localItemExists,
+                                            final @NotNull ServerStatus serverStatus) {
+                        // only do something if it's an unversioned delete, the IDE will take care of it otherwise
+                        if (pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
+                            revert.set(true);
+                            success.set(true);
+                        }
+                    }
+
+                    public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                                     final boolean localItemExists,
+                                                     final @NotNull ServerStatus serverStatus) {
+                        // already deleted on server so let IDE take care of it
+                        success.set(false);
+                    }
+
+                    public void checkedOutForEdit(final @NotNull FilePath localPath,
+                                                  final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) {
+                        // revert it and then delete it
+                        revert.set(true);
+                        success.set(true);
+                    }
+
+                    @Override
+                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+                        // nothing to do if it's locked
+                        success.set(false);
+                    }
+
+                    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
+                            throws TfsException {
+                        // revert it and then delete it
+                        revert.set(true);
+                        success.set(true);
+                    }
+
+                    public void renamedCheckedOut(final @NotNull FilePath localPath,
+                                                  final boolean localItemExists,
+                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // revert it and then delete it
+                        revert.set(true);
+                        success.set(true);
+                    }
+
+                    public void undeleted(final @NotNull FilePath localPath,
+                                          final boolean localItemExists,
+                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+                        // revert it and it will be deleted
+                        revert.set(true);
+                        isUndelete.set(true);
+                    }
+                }, pendingChange);
+            }
+        } catch (TfsException e) {
+            logger.warn("Error while checking delete candidate's pending changes");
+            AbstractVcsHelper.getInstance(project).showError(new VcsException(e), TFSVcs.TFVC_NAME);
+        }
+
+        if (revert.get()) {
+            logger.info("Reverting pending changes for delete candidate");
+            CommandUtils.undoLocalFiles(TFSVcs.getInstance(project).getServerContext(true), Arrays.asList(virtualFile.getPath()));
+        }
+
+        if (success.get() && !isUndelete.get()) {
+            logger.info("Deleting file with TFVC after undoing pending changes");
+            // PendingChnages will always have at least 1 element or else we wouldn't have gotten this far
+            final String filePath = StringUtils.isNotEmpty(pendingChanges.get(0).getSourceItem()) ? pendingChanges.get(0).getSourceItem() : pendingChanges.get(0).getLocalItem();
+            CommandUtils.deleteFiles(TFSVcs.getInstance(project).getServerContext(true),
+                    Arrays.asList(filePath), pendingChanges.get(0).getWorkspace(), true);
+        }
+        logger.info("File was deleted using TFVC: " + success.get());
+        return success.get();
     }
 
     @Override
@@ -99,10 +213,10 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
                     ImmutableList.of(oldPath)));
 
             // ** Rename logic **
-            // If 1 change and it's an add that means it's a new unversioned file so rename thru the file system
+            // If 1 change and it's a candidate add that means it's a new unversioned file so rename thru the file system
             // Anything else can be renamed
             // Deleted files should not be at this point since IDE disables rename option for them
-            if (pendingChanges.size() == 1 && pendingChanges.get(0).getChangeTypes().contains(ServerStatusType.ADD)) {
+            if (pendingChanges.size() == 1 && pendingChanges.get(0).isCandidate() && pendingChanges.get(0).getChangeTypes().contains(ServerStatusType.ADD)) {
                 logger.info("Renaming unversioned file thru file system");
                 return false;
             } else {
