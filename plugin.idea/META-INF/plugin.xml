@@ -11,7 +11,7 @@
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
-      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services or Team Foundation Server 2015+.
+      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services or Team Foundation Server (TFS) 2015+.
       <br />
       <a href="https://github.com/Microsoft/vso-intellij">GitHub</a> | <a href="https://github.com/Microsoft/vso-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/JavaALM">@JavaALM</a>
       <br />
@@ -19,11 +19,11 @@
       <b>Features</b>
       <br />
       <ul>
-        <li>Supports authenticating with Visual Studio Team Services and Team Foundation Server 2015+ to work with source code in Git and TFVC repositories.</li>
-        <li>Checkout code from Git and TFVC repositories on Visual Studio Team Services and Team Foundation Server 2015+.</li>
+        <li>Supports authenticating with Team Services and TFS 2015+ to work with source code in Git and TFVC repositories.</li>
+        <li>Checkout code from Git and TFVC repositories on Visual Studio Team Services and TFS 2015+.</li>
         <li>Git specific features:</li>
         <ul>
-            <li>Import IntelliJ projects into Git repositories on Visual Studio Team Services and Team Foundation Server 2015+.</li>
+            <li>Import IntelliJ projects into Git repositories on Team Services and TFS 2015+.</li>
             <li>Create pull requests and view your active pull requests.</li>
             <li>Create a new branch and associate it with the work item you are working on.</li>
             <li>Quickly browse to file history or commit details on the web from the IDE.</li>
