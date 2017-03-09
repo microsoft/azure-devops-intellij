@@ -3,11 +3,14 @@
 
 package com.microsoft.alm.plugin.idea.common.utils;
 
+import com.intellij.ide.ui.laf.darcula.DarculaUIUtil;
 import com.intellij.util.net.HttpConfigurable;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -39,6 +42,32 @@ public class BackCompatibleUtils {
             } catch (Exception oldImplementationException) {
                 logger.warn("Failed to get proxy login using PROXY_LOGIN field", oldImplementationException);
                 return StringUtils.EMPTY;
+            }
+        }
+    }
+
+    /**
+     * Executing the DarculaUIUtil.paintFocusRing() method independent of the IDEA version we are on
+     *
+     * @param g
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     */
+    public static void paintFocusRing(final Graphics g, final int x, final int y, final int width, final int height) {
+        try {
+            // trying to paint focus using the IDEA 2017 method
+            final Method paintFocusRingMethodNew = DarculaUIUtil.class.getDeclaredMethod("paintFocusRing", Graphics.class, Rectangle.class);
+            paintFocusRingMethodNew.invoke(null, g, new Rectangle(x, y, width, height));
+        } catch (Exception newImplementationException) {
+            try {
+                logger.warn("Failed to get DarculaUIUtil.paintFocusRing() new implementation so attempting old way", newImplementationException);
+                final Method paintFocusRingMethodOld = DarculaUIUtil.class.getDeclaredMethod("paintFocusRing", Graphics.class,
+                        Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE);
+                paintFocusRingMethodOld.invoke(null, g, x, y, width, height);
+            } catch (Exception oldImplementationException) {
+                logger.warn("Failed to find DarculaUIUtil.paintFocusRing() method", oldImplementationException);
             }
         }
     }

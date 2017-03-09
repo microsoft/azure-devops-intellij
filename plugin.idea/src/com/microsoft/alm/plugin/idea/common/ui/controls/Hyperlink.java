@@ -3,10 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.controls;
 
-import com.intellij.ide.ui.laf.darcula.DarculaUIUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.ui.components.labels.LinkListener;
+import com.microsoft.alm.plugin.idea.common.utils.BackCompatibleUtils;
 
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
@@ -77,7 +77,7 @@ public class Hyperlink extends LinkLabel<Object> {
         super.paintComponent(g);
         if (hasFocus()) {
             g.setColor(JBColor.black);
-            DarculaUIUtil.paintFocusRing(g, 0, 0, getWidth(), getHeight());
+            BackCompatibleUtils.paintFocusRing(g, 0, 0, getWidth(), getHeight());
         }
     }
 
