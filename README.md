@@ -2,7 +2,7 @@
 
 An IntelliJ plugin for working with Git repositories on Visual Studio Team Services and Team Foundation Server (TFS) 2015+ inside IntelliJ.
 Supported on Linux, Mac OS X, and Windows.
-Compatible with IntelliJ IDEA Community and Ultimate editions (version 14+) and Android Studio (version 1.2+).
+Compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
 
 To learn more about installing and using our Team Services IntelliJ plug-in, visit: http://java.visualstudio.com/Docs/tools/intelliJ
 

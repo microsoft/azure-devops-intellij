@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.115.0</version>
+    <version>1.115.1</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -52,7 +52,7 @@
       <br />
       <i>Compiled with Java 1.6</i>
       <br />
-      <i>Compatible with IntelliJ Ultimate and Community editions versions 14 and later and Android Studio 1.2 and later</i>
+      <i>Compatible with IntelliJ Ultimate and Community editions versions 14.1.7 and later and Android Studio 1.2 and later</i>
       <br />
       <br />
       <b>End User License Agreement & Privacy Policy</b>
@@ -62,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.115.0
+      v 1.115.1
       <br />
-      Taking TFVC support out of preview mode. This release also contains incremental fixes and updates.
+      Fixing compatibility issue with IntelliJ 2017.1 EAP.
       <br />
     ]]>
     </change-notes>
