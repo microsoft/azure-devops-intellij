@@ -49,7 +49,7 @@ public class TelemetryContextInitializer implements PluginContextInitializer {
     private static final String SYS_PROP_USER_NAME = "user.name";
     private static final String SYS_PROP_JAVA_RUNTIME = "java.runtime.name";
     private static final String SYS_PROP_JAVA_VERSION = "java.version";
-    private static final String USER_AGENT_FORMAT = "Team Services/{0} ({1}; {2}; {3}/{4}) {5}";
+    private static final String USER_AGENT_FORMAT = "VSTSIntelliJ/{0} ({1}; {2}; {3}/{4}) {5}";
 
     private String linuxDistribution = StringUtils.EMPTY;
 
