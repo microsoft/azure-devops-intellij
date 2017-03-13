@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.statusBar;
 
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.StatusBar;
@@ -14,6 +15,7 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.BuildStatusLookupOperation;
 import com.microsoft.alm.plugin.operations.OperationFactory;
@@ -43,7 +45,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WindowManager.class, ProjectManager.class, GitBranchUtil.class, OperationFactory.class, VcsHelper.class})
+@PrepareForTest({WindowManager.class, ProjectManager.class, GitBranchUtil.class, OperationFactory.class, VcsHelper.class,
+        ApplicationNamesInfo.class})
 public class StatusBarManagerTest extends IdeaAbstractTest {
 
     @Mock
@@ -55,11 +58,9 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
     @Mock
     public Project project;
     @Mock
-    public GitBranchUtil gitBranchUtil;
-    @Mock
     public GitRepository gitRepository;
     @Mock
-    public OperationFactory operationFactory;
+    public ApplicationNamesInfo applicationNamesInfo;
 
     // Mocked via subclass below
     public MyBuildStatusLookupOperation buildStatusLookupOperation;
@@ -89,6 +90,10 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
         when(GitBranchUtil.getCurrentRepository(any(Project.class))).thenReturn(gitRepository);
         when(GitBranchUtil.getDisplayableBranchText(any(GitRepository.class))).thenReturn("branch");
 
+        when(applicationNamesInfo.getProductName()).thenReturn("IDEA");
+        PowerMockito.mockStatic(ApplicationNamesInfo.class);
+        when(ApplicationNamesInfo.getInstance()).thenReturn(applicationNamesInfo);
+
         when(gitRepository.getRemotes()).thenReturn(Collections.singletonList(
                 new GitRemote("origin", Collections.singletonList("https://test.visualstudio.com/"),
                         Collections.singletonList("https://test.visualstudio.com/"),
@@ -106,7 +111,7 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testProjectOpenedEvent() {
+    public void testProjectOpenedEvent_NotRider() {
         StatusBarManager.setupStatusBar();
         Map<String, Object> map = EventContextHelper.createContext(EventContextHelper.SENDER_PROJECT_OPENED);
         EventContextHelper.setProject(map, project);
@@ -117,6 +122,41 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
                 new ServerContextBuilder().uri("https://test.visualstudio.com/").type(ServerContext.Type.VSO).build(),
                 new ArrayList<BuildStatusLookupOperation.BuildStatusRecord>()));
         verify(statusBar, VerificationModeFactory.times(1)).updateWidget(anyString());
+    }
+
+    @Test
+    public void testProjectOpenedEvent_RiderVsts() {
+        when(applicationNamesInfo.getProductName()).thenReturn(IdeaHelper.RIDER_PRODUCT_NAME);
+        PowerMockito.mockStatic(ApplicationNamesInfo.class);
+        when(ApplicationNamesInfo.getInstance()).thenReturn(applicationNamesInfo);
+        when(VcsHelper.isVstsRepo(project)).thenReturn(true);
+
+        StatusBarManager.setupStatusBar();
+        Map<String, Object> map = EventContextHelper.createContext(EventContextHelper.SENDER_PROJECT_OPENED);
+        EventContextHelper.setProject(map, project);
+        ServerEventManager.getInstance().triggerAllEvents(map);
+        verify(statusBar, VerificationModeFactory.times(1)).addWidget(any(BuildWidget.class), Matchers.eq(project));
+        buildStatusLookupOperation.onLookupStarted();
+        buildStatusLookupOperation.onLookupResults(new BuildStatusLookupOperation.BuildStatusResults(
+                new ServerContextBuilder().uri("https://test.visualstudio.com/").type(ServerContext.Type.VSO).build(),
+                new ArrayList<BuildStatusLookupOperation.BuildStatusRecord>()));
+        verify(statusBar, VerificationModeFactory.times(1)).updateWidget(anyString());
+    }
+
+    @Test
+    public void testProjectOpenedEvent_RiderNotVsts() {
+        when(applicationNamesInfo.getProductName()).thenReturn(IdeaHelper.RIDER_PRODUCT_NAME);
+        PowerMockito.mockStatic(ApplicationNamesInfo.class);
+        when(ApplicationNamesInfo.getInstance()).thenReturn(applicationNamesInfo);
+        when(VcsHelper.isVstsRepo(project)).thenReturn(false);
+        when(statusBar.getWidget(anyString())).thenReturn(new BuildWidget());
+
+        StatusBarManager.setupStatusBar();
+        Map<String, Object> map = EventContextHelper.createContext(EventContextHelper.SENDER_PROJECT_OPENED);
+        EventContextHelper.setProject(map, project);
+        ServerEventManager.getInstance().triggerAllEvents(map);
+        verify(statusBar, VerificationModeFactory.times(0)).addWidget(any(BuildWidget.class), Matchers.eq(project));
+        verify(statusBar, VerificationModeFactory.times(1)).removeWidget(any(String.class));
     }
 
     @Test

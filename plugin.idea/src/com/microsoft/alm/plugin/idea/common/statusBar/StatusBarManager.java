@@ -51,7 +51,7 @@ public class StatusBarManager {
                                         // Just update all the status bars for all the projects
                                         updateStatusBar();
                                     }
-                                } catch(final Throwable t) {
+                                } catch (final Throwable t) {
                                     logger.warn("Unable to update the status bar.", t);
                                 }
                             }
@@ -72,9 +72,14 @@ public class StatusBarManager {
     }
 
     public static void updateStatusBar(final Project project, final boolean allowPrompt) {
-        final StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
-        if (statusBar != null) {
-            updateWidgets(statusBar, project, allowPrompt);
+        // remove widget if not a VSTS project in Rider
+        if (IdeaHelper.isRider() && !VcsHelper.isVstsRepo(project)) {
+            removeWidgets(project);
+        } else {
+            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
+            if (statusBar != null) {
+                updateWidgets(statusBar, project, allowPrompt);
+            }
         }
     }
 

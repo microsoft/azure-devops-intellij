@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -33,6 +34,7 @@ public class IdeaHelper {
     private static final String CHARSET_UTF8 = "utf-8";
     public static final String TEST_RESOURCES_SUB_PATH = "/externals/platform/";
     private static final String PROD_RESOURCES_SUB_PATH = "platform";
+    public static final String RIDER_PRODUCT_NAME = "Rider";
 
     public IdeaHelper() {
     }
@@ -226,4 +228,12 @@ public class IdeaHelper {
         return frame == null || frame.getProject() == null ? ProjectManager.getInstance().getDefaultProject() : frame.getProject();
     }
 
+    /**
+     * Checks if the IDE is Rider
+     *
+     * @return
+     */
+    public static boolean isRider() {
+        return StringUtils.equalsIgnoreCase(ApplicationNamesInfo.getInstance().getProductName(), RIDER_PRODUCT_NAME);
+    }
 }

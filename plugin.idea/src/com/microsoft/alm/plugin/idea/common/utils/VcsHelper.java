@@ -55,6 +55,23 @@ public class VcsHelper {
     }
 
     /**
+     * Use this method to check if the given project is a VSTS/TFS project
+     *
+     * @param project
+     * @return
+     */
+    public static boolean isVstsRepo(final Project project) {
+        if (isTfVcs(project)) {
+            return true;
+        }
+        if (!isGitVcs(project)) {
+            return false;
+        }
+        final GitRepository repo = GitUtil.getRepositoryManager(project).getRepositoryForFile(project.getBaseDir());
+        return repo != null && TfGitHelper.isTfGitRepository(repo);
+    }
+
+    /**
      * Returns the Git repository object for the project or null if this is not a Git repo project.
      *
      * @param project

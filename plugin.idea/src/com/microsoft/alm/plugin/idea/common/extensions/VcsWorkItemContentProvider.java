@@ -6,8 +6,11 @@ package com.microsoft.alm.plugin.idea.common.extensions;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ui.ChangesViewContentProvider;
+import com.intellij.util.NotNullFunction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.VcsWorkItemsController;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -40,8 +43,8 @@ public class VcsWorkItemContentProvider implements ChangesViewContentProvider {
         if (controller != null) {
             return controller.getPanel();
         } else {
-                return new JLabel(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_UNEXPECTED_ERRORS, t != null ? t.getMessage() : StringUtils.EMPTY),
-                        AllIcons.General.Warning, 0);
+            return new JLabel(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_UNEXPECTED_ERRORS, t != null ? t.getMessage() : StringUtils.EMPTY),
+                    AllIcons.General.Warning, 0);
         }
     }
 
@@ -49,6 +52,20 @@ public class VcsWorkItemContentProvider implements ChangesViewContentProvider {
     public void disposeContent() {
         if (controller != null) {
             controller.dispose();
+        }
+    }
+
+    /**
+     * Check to see if the Wor Item tab should be visible for (Rider only)
+     */
+    public static class VcsWorkItemVisibilityPredicate implements NotNullFunction<Project, Boolean> {
+        @NotNull
+        @Override
+        public Boolean fun(final Project project) {
+            if (!IdeaHelper.isRider()) {
+                return true;
+            }
+            return VcsHelper.isVstsRepo(project);
         }
     }
 }

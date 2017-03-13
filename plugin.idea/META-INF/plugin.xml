@@ -84,8 +84,10 @@
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.git.extensions.GitCheckoutProvider"/>
         <checkoutProvider implementation="com.microsoft.alm.plugin.idea.tfvc.extensions.TfvcCheckoutProvider"/>
         <!-- TODO: can tabName be localized ?-->
-        <changesViewContent className="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"/>
-        <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"/>
+        <changesViewContent className="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider" tabName="Pull Requests"
+                            predicateClassName="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider$VcsPullRequestVisibilityPredicate"/>
+        <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"
+                            predicateClassName="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider$VcsWorkItemVisibilityPredicate"/>
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
         <vcsConfigurableProvider implementation="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesConfigurable"/>
