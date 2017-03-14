@@ -81,7 +81,6 @@ public class TFSVcs extends AbstractVcs {
     @NonNls
     public static final String TFVC_NAME = "TFVC";
     public static final String TFVC_ONLINE_HELP_URL = "http://java.visualstudio.com/Docs/tools/intelliJ#_tfvc-support-preview";
-    public static final String HELP_URL_EVENT = "url";
     public static final String SETTINGS_URL_EVENT = "settings";
     private static final VcsKey ourKey = createKey(TFVC_NAME);
 
@@ -319,10 +318,8 @@ public class TFSVcs extends AbstractVcs {
                                             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
                                                 if (SETTINGS_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
                                                     ShowSettingsUtil.getInstance().showSettingsDialog(myProject, getConfigurable().getDisplayName());
-                                                } else if (HELP_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
-                                                    BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
                                                 } else {
-                                                    logger.warn("Unknown hyperlinkEvent triggered: " + hyperlinkEvent.getDescription());
+                                                    BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
                                                 }
                                             }
                                         });

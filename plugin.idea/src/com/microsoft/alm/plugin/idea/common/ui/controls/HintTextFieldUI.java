@@ -27,7 +27,7 @@ public class HintTextFieldUI extends BasicTextFieldUI implements FocusListener {
         super.paintSafely(g);
         JTextComponent component = getComponent();
         if (hintText != null && component.getText().length() == 0 && !component.hasFocus()) {
-            g.setColor(JBColor.LIGHT_GRAY);
+            g.setColor(JBColor.GRAY);
             final int fontSize = component.getFont().getSize();
             final int padding = (component.getHeight() - fontSize) / 2;
             final int x = component.getInsets().left;
