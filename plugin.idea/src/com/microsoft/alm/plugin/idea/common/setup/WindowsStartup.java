@@ -4,6 +4,9 @@
 package com.microsoft.alm.plugin.idea.common.setup;
 
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.sun.jna.platform.win32.Advapi32Util;
+import com.sun.jna.platform.win32.Win32Exception;
+import com.sun.jna.platform.win32.WinReg;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -14,16 +17,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import com.sun.jna.platform.win32.Advapi32Util;
-import com.sun.jna.platform.win32.WinReg;
-import com.sun.jna.platform.win32.Win32Exception;
-
 /**
  * This class contains the startup steps for when the plugin is launched from a Windows OS. Registry keys must be checked and created if missing.
  */
 public final class WindowsStartup {
     private static final Logger logger = LoggerFactory.getLogger(WindowsStartup.class);
-    public static final String VSOI_KEY = "vsoi\\Shell\\Open\\Command";
+    public static final String VSOI_KEY = "SOFTWARE\\Classes\\vsoi\\Shell\\Open\\Command";
     protected static final String CMD_NAME = "vsts.cmd";
     protected static final String WIN_DIR = "win";
 
@@ -37,7 +36,7 @@ public final class WindowsStartup {
 
             if (cmdFile.exists() && doesKeyNeedUpdated(cmdFile)) {
                 final File regeditFile = createRegeditFile(cmdFile);
-                launchElevatedCreation(regeditFile.getPath());
+                launchCreation(regeditFile.getPath());
                 regeditFile.delete();
             }
         } catch (IOException e) {
@@ -57,7 +56,7 @@ public final class WindowsStartup {
      */
     protected static boolean doesKeyNeedUpdated(final File newCmd) throws IOException {
         try {
-            final String existingKey = Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, VSOI_KEY, StringUtils.EMPTY);
+            final String existingKey = Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, VSOI_KEY, StringUtils.EMPTY);
             final File existingCmd = new File(existingKey.replace("\"%1\"", "").trim());
             if (!existingCmd.exists()) {
                 logger.debug("The registry key needs updated because the old key cmd file doesn't exist.");
@@ -82,13 +81,13 @@ public final class WindowsStartup {
     }
 
     /**
-     * Run script to launch elevated process to create registry keys
+     * Run script to create registry keys
      *
      * @param regeditFilePath
      */
-    private static void launchElevatedCreation(final String regeditFilePath) {
+    private static void launchCreation(final String regeditFilePath) {
         try {
-            final String[] cmd = {"cmd", "/C", "regedit", "/s", regeditFilePath};
+            final String[] cmd = {"cmd", "/C", "reg.exe", "import", regeditFilePath};
             final ProcessBuilder processBuilder = new ProcessBuilder(cmd);
             final Process process = processBuilder.start();
             process.waitFor();
@@ -113,10 +112,10 @@ public final class WindowsStartup {
         try {
             bufferedWriter.write(
                     "Windows Registry Editor Version 5.00\r\n\r\n" +
-                            "[-HKEY_CLASSES_ROOT\\vsoi]\r\n\r\n" +
-                            "[HKEY_CLASSES_ROOT\\vsoi]\r\n" +
+                            "[-HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi]\r\n\r\n" +
+                            "[HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi]\r\n" +
                             "\"URL Protocol\"=\"\"\r\n\r\n" +
-                            "[HKEY_CLASSES_ROOT\\vsoi\\Shell\\Open\\Command]\r\n" +
+                            "[HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi\\Shell\\Open\\Command]\r\n" +
                             "\"\"=\"" + newCmd.getPath().replace("\\", "\\\\") + " \\\"%1\\\" \"");
         } finally {
             if (bufferedWriter != null) {

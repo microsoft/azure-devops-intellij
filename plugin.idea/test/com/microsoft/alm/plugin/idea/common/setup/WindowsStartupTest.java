@@ -48,14 +48,14 @@ public class WindowsStartupTest extends IdeaAbstractTest {
 
     @Test
     public void testDoesKeyNeedUpdated_NoKeyExists() throws Exception {
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenThrow(Win32Exception.class);
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenThrow(Win32Exception.class);
         Assert.assertTrue(WindowsStartup.doesKeyNeedUpdated(mockCmdFile));
     }
 
     @Test
     public void testDoesKeyNeedUpdated_ExistingCmdGone() throws Exception {
         Mockito.when(mockCmdFile.getPath()).thenReturn(TEST_CMD_NAME);
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_CMD_NAME + " \"%1\"");
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_CMD_NAME + " \"%1\"");
         Assert.assertTrue(WindowsStartup.doesKeyNeedUpdated(mockCmdFile));
     }
 
@@ -65,7 +65,7 @@ public class WindowsStartupTest extends IdeaAbstractTest {
         Mockito.when(FileUtils.contentEquals(TEST_EXE, mockCmdFile)).thenReturn(false);
         Mockito.when(mockCmdFile.getPath()).thenReturn(TEST_CMD_NAME);
         Mockito.when(mockCmdFile.lastModified()).thenReturn(TEST_EXE.lastModified() + 1000);
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
         Assert.assertTrue(WindowsStartup.doesKeyNeedUpdated(mockCmdFile));
     }
 
@@ -75,14 +75,14 @@ public class WindowsStartupTest extends IdeaAbstractTest {
         Mockito.when(FileUtils.contentEquals(TEST_EXE, mockCmdFile)).thenReturn(false);
         Mockito.when(mockCmdFile.getPath()).thenReturn(TEST_CMD_NAME);
         Mockito.when(mockCmdFile.lastModified()).thenReturn(TEST_EXE.lastModified() - 1000);
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
         Assert.assertFalse(WindowsStartup.doesKeyNeedUpdated(mockCmdFile));
     }
 
     @Test
     public void testDoesKeyNeedUpdated_SameFile() throws Exception {
         TEST_EXE = File.createTempFile(TEST_CMD_NAME, ".cmd");
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
         Assert.assertFalse(WindowsStartup.doesKeyNeedUpdated(TEST_EXE));
     }
 
@@ -91,7 +91,7 @@ public class WindowsStartupTest extends IdeaAbstractTest {
         TEST_EXE = File.createTempFile(TEST_CMD_NAME, ".cmd");
         Mockito.when(FileUtils.contentEquals(TEST_EXE, mockCmdFile)).thenReturn(true);
         Mockito.when(mockCmdFile.getPath()).thenReturn(TEST_CMD_NAME);
-        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CLASSES_ROOT, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
+        Mockito.when(Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, WindowsStartup.VSOI_KEY, "")).thenReturn(TEST_EXE.getPath() + " \"%1\"");
         Assert.assertFalse(WindowsStartup.doesKeyNeedUpdated(mockCmdFile));
     }
 
@@ -104,12 +104,12 @@ public class WindowsStartupTest extends IdeaAbstractTest {
         BufferedReader br = new BufferedReader(new FileReader(regeditFile));
         Assert.assertEquals("Windows Registry Editor Version 5.00", br.readLine());
         Assert.assertEquals("", br.readLine());
-        Assert.assertEquals("[-HKEY_CLASSES_ROOT\\vsoi]", br.readLine());
+        Assert.assertEquals("[-HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi]", br.readLine());
         Assert.assertEquals("", br.readLine());
-        Assert.assertEquals("[HKEY_CLASSES_ROOT\\vsoi]", br.readLine());
+        Assert.assertEquals("[HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi]", br.readLine());
         Assert.assertEquals("\"URL Protocol\"=\"\"", br.readLine());
         Assert.assertEquals("", br.readLine());
-        Assert.assertEquals("[HKEY_CLASSES_ROOT\\vsoi\\Shell\\Open\\Command]", br.readLine());
+        Assert.assertEquals("[HKEY_CURRENT_USER\\SOFTWARE\\Classes\\vsoi\\Shell\\Open\\Command]", br.readLine());
         Assert.assertEquals("\"\"=\"" + TEST_EXE.getPath().replace("\\", "\\\\") + " \\\"%1\\\" \"", br.readLine());
     }
 }
