@@ -159,12 +159,12 @@
             <reference id="ChangesView.Revert"/>
             <!-- action id="Tfs.Checkout" class="org.jetbrains.tfsIntegration.actions.CheckoutAction" text="_Edit"/ -->
             <separator/>
-            <action id="Tfs.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" />
-            <action id="Tfs.MergeChanges" class="com.microsoft.alm.plugin.idea.tfvc.actions.MergeBranchAction" />
+            <action id="Tfvc.Branch" class="com.microsoft.alm.plugin.idea.tfvc.actions.BranchAction" />
+            <action id="Tfvc.MergeChanges" class="com.microsoft.alm.plugin.idea.tfvc.actions.MergeBranchAction" />
             <separator/>
-            <action id="Tfs.Label" class="com.microsoft.alm.plugin.idea.tfvc.actions.LabelAction" />
+            <action id="Tfvc.Label" class="com.microsoft.alm.plugin.idea.tfvc.actions.LabelAction" />
             <separator/>
-            <action id="Tfs.Lock" class="com.microsoft.alm.plugin.idea.tfvc.actions.LockAction" />
+            <action id="Tfvc.Lock" class="com.microsoft.alm.plugin.idea.tfvc.actions.LockAction" />
             <separator/>
             <reference id="Vcs.ShowTabbedFileHistory"/>
             <reference id="Compare.SameVersion"/>
@@ -182,12 +182,12 @@
             <action id="Tfvc.ConfigureProxy" class="com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction"/>
         </group>
 
-        <group id="TfsTreePopupMenu">
+        <group id="TfvcTreePopupMenu">
         </group>
 
-        <action id="TFS.CreateVirtualFolder" text="Create _Folder..." description="Create folder on server"
+        <action id="Tfvc.CreateVirtualFolder" text="Create _Folder..." description="Create folder on server"
                 class="com.microsoft.alm.plugin.idea.tfvc.ui.servertree.CreateVirtualFolderAction" icon="AllIcons.Actions.NewFolder">
-            <add-to-group group-id="TfsTreePopupMenu" anchor="first"/>
+            <add-to-group group-id="TfvcTreePopupMenu" anchor="first"/>
         </action>
     </actions>
 </idea-plugin>
