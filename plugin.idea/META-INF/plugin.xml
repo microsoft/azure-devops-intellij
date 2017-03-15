@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.115.1</version>
+    <version>1.115.2</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -62,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.115.1
+      v 1.115.2
       <br />
-      Fixing compatibility issue with IntelliJ 2017.1 EAP.
+      Fixing compatibility issue with JetBrains TFS plugin along with other incremental bug fixes.
       <br />
     ]]>
     </change-notes>
