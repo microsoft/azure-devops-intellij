@@ -15,6 +15,7 @@ import com.intellij.openapi.vcs.ui.Refreshable;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.SelectWorkItemsDialog;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
@@ -32,14 +33,18 @@ public class SelectWorkItemsAction extends InstrumentedAction {
                 Icons.WIT_ADD);
     }
 
-
     @Override
     public void doUpdate(AnActionEvent anActionEvent) {
-        anActionEvent.getPresentation().setVisible(true);
-
-        // only enable button if the repo is TFS
         final Project project = CommonDataKeys.PROJECT.getData(anActionEvent.getDataContext());
 
+        // if this is a non-VSTS repo and is in Rider then hide the button
+        if (IdeaHelper.isRider() && !VcsHelper.isVstsRepo(project)) {
+            anActionEvent.getPresentation().setVisible(false);
+            return;
+        }
+
+        // for all other IDEs make the button visible but disable it if a repo can't be detected or critical information is missing
+        anActionEvent.getPresentation().setVisible(true);
         boolean disableButton;
         try {
             // project might be null or in an unexpected state if it not a TFS repo which causes exceptions to be thrown
