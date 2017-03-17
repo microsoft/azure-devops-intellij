@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static com.microsoft.alm.plugin.authentication.AuthenticationInfo.CredsType.NTLM;
+
 /**
  * Use this AuthenticationProvider to authenticate with a TFS server.
  */
@@ -37,7 +39,12 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo() {
+    public AuthenticationInfo getAuthenticationInfo(final String ignored) {
+        /* Ignore this argument
+         * This is ignored because the on the loginPage we default the server to https://app.vssps.visualstudio.com,
+         * and we have no idea what the tfs server is.  So we need to use this global URL to maintain the "logged in"
+         * state to avoid user type in the server url again.
+         */
         return ServerContextManager.getInstance().getBestAuthenticationInfo(TFS_LAST_USED_URL, false);
     }
 
@@ -49,13 +56,18 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public void clearAuthenticationDetails() {
+    public void clearAuthenticationDetails(final String ignored) {
+        /* Ignore this argument
+         * This is ignored because the on the loginPage we default the server to https://app.vssps.visualstudio.com,
+         * and we have no idea what the tfs server is.  So we need to use this global URL to maintain the "logged in"
+         * state to avoid user type in the server url again.
+         */
         ServerContextManager.getInstance().remove(TFS_LAST_USED_URL);
     }
 
     @Override
-    public boolean isAuthenticated() {
-        return getAuthenticationInfo() != null;
+    public boolean isAuthenticated(final String serverUri) {
+        return getAuthenticationInfo(serverUri) != null;
     }
 
     private static class TfsAuthenticator extends Thread {
@@ -95,11 +107,11 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
 
                 try {
                     // Test the authenticatedContext against the server
-                    newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials);
+                    newAuthenticationInfo = AuthHelper.createAuthenticationInfo(serverUrl, credentials, NTLM);
                     final CredentialsPrompt prompt = PluginServiceProvider.getInstance().getCredentialsPrompt();
                     final String authenticatedUrl = prompt.validateCredentials(serverUrl, newAuthenticationInfo);
                     // recreate the auth info with the url that we validated against
-                    newAuthenticationInfo = AuthHelper.createAuthenticationInfo(authenticatedUrl, credentials);
+                    newAuthenticationInfo = AuthHelper.createAuthenticationInfo(authenticatedUrl, credentials, NTLM);
                     result = true;
                     break;
                 } catch (RuntimeException ex) {
@@ -118,7 +130,7 @@ public class TfsAuthenticationProvider implements AuthenticationProvider {
 
             logger.info("Async authentication done - result: " + result);
             if (!result) {
-                TfsAuthenticationProvider.getInstance().clearAuthenticationDetails();
+                TfsAuthenticationProvider.getInstance().clearAuthenticationDetails(TFS_LAST_USED_URL);
                 AuthenticationListener.Helper.authenticated(listener, null, error);
             } else {
                 AuthenticationListener.Helper.authenticated(listener, newAuthenticationInfo, null);

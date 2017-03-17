@@ -26,8 +26,6 @@ import java.util.concurrent.Future;
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
 
-    private Future innerOperation;
-
     public static class AccountLookupResults extends ResultsImpl {
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
 
@@ -52,7 +50,7 @@ public class AccountLookupOperation extends Operation {
             }
 
             final ServerContext vsoDeploymentContext = ServerContextManager.getInstance().get(VsoAuthenticationProvider.VSO_AUTH_URL);
-            if (!VsoAuthenticationProvider.getInstance().isAuthenticated() ||
+            if (!VsoAuthenticationProvider.getInstance().isAuthenticated(VsoAuthenticationProvider.VSO_AUTH_URL) ||
                     vsoDeploymentContext == null || vsoDeploymentContext.getType() == ServerContext.Type.TFS) {
                 // We aren't authenticated, or we couldn't find the VSO context
                 logger.warn("doWork unexpected server context, expected type VSO or VSO_DEPLOYMENT. Found: {}", vsoDeploymentContext);
@@ -67,7 +65,7 @@ public class AccountLookupOperation extends Operation {
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
                                 .accountUri(a)
-                                .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo())
+                                .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo(VsoAuthenticationProvider.VSO_AUTH_URL))
                                 .userId(vsoDeploymentContext.getUserId())
                                 .build();
                 results.serverContexts.add(accountContext);
@@ -92,10 +90,6 @@ public class AccountLookupOperation extends Operation {
     @Override
     public void cancel() {
         super.cancel();
-
-        if (innerOperation != null && !innerOperation.isDone()) {
-            innerOperation.cancel(true);
-        }
 
         final AccountLookupResults results = new AccountLookupResults();
         results.isCancelled = true;

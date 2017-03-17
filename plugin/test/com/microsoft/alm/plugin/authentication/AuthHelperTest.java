@@ -11,6 +11,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static com.microsoft.alm.plugin.authentication.AuthenticationInfo.CredsType.NTLM;
+
 public class AuthHelperTest {
     @Test
     public void getCredentials() {
@@ -49,7 +51,7 @@ public class AuthHelperTest {
     @Test
     public void createAuthInfo() {
         final Credentials credentials = new UsernamePasswordCredentials("userName", "password");
-        final AuthenticationInfo info = AuthHelper.createAuthenticationInfo("server", credentials);
+        final AuthenticationInfo info = AuthHelper.createAuthenticationInfo("server", credentials, NTLM);
         Assert.assertEquals("userName", info.getUserName());
         Assert.assertEquals("password", info.getPassword());
         Assert.assertEquals("server", info.getServerUri());
