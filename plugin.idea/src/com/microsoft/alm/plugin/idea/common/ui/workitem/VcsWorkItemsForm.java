@@ -52,7 +52,7 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
                 TOOLBAR_LOCATION);
 
         this.isGitRepo = VcsHelper.isGitVcs(project);
-        this.queryDropDown = new WorkItemQueryDropDown(project, VcsHelper.getRepositoryContext(project));
+        this.queryDropDown = new WorkItemQueryDropDown(project);
         ensureInitialized();
     }
 
@@ -182,8 +182,8 @@ public class VcsWorkItemsForm extends TabFormImpl<WorkItemsTableModel> {
         return new WorkItemLookupOperation.WitInputs(queryDropDown.getSelectedResults());
     }
 
-    public void refresh() {
-        queryDropDown.refreshDropDown();
+    public void refresh(final boolean isTeamServicesRepository) {
+        queryDropDown.refreshDropDown(isTeamServicesRepository);
     }
 
     @VisibleForTesting

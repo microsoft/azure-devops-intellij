@@ -48,11 +48,12 @@ public class TabControllerImplTest extends IdeaAbstractTest {
 
     @Test
     public void testActionListener_Refresh() {
+        when(mockModel.isTeamServicesRepository()).thenReturn(true);
         when(mockModel.getTabStatus()).thenReturn(VcsTabStatus.LOADING_COMPLETED);
         underTest.actionPerformed(new ActionEvent(this, 0, TabForm.CMD_REFRESH));
         underTest.update(null, TabForm.CMD_REFRESH);
         verify(mockModel).loadData();
-        verify(mockTab).refresh();
+        verify(mockTab).refresh(true);
     }
 
     @Test

@@ -165,7 +165,7 @@ public class VcsPullRequestsForm extends TabFormImpl<PullRequestsTreeModel> {
         return new Operation.CredInputsImpl();
     }
 
-    public void refresh() {
+    public void refresh(final boolean isTeamServicesRepository) {
         // nothing to refresh in this tab
     }
 

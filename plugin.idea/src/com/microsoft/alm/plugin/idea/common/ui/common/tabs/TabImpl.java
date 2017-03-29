@@ -66,7 +66,7 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         return form.getOperationInputs();
     }
 
-    public void refresh() {
-        form.refresh();
+    public void refresh(final boolean isTeamServicesRepository) {
+        form.refresh(isTeamServicesRepository);
     }
 }

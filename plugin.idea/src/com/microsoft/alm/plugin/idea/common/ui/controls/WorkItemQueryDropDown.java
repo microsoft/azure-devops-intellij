@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.controls;
 
-import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Constraints;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -16,6 +15,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.workitem.WorkItemHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.WorkItemQueriesLookupOperation;
 import com.microsoft.alm.workitemtracking.webapi.models.QueryHierarchyItem;
@@ -26,23 +26,21 @@ import javax.swing.JLabel;
 import java.awt.event.ActionEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
+public class WorkItemQueryDropDown extends FilterDropDown {
     private static final Logger logger = LoggerFactory.getLogger(WorkItemQueryDropDown.class);
 
     public static final String CMD_QUERY_COMBO_BOX_CHANGED = "cmdQueryComboBoxChanged";
 
     private final QueryAction defaultQuery;
-    private final RepositoryContext repositoryContext;
     private final Project project;
     private final LoadingAction loadingAction;
     private final WorkItemQueriesLookupOperation.QueryInputs queryOperationInput;
 
     private QueryAction selectedQuery;
 
-    public WorkItemQueryDropDown(final Project project, final RepositoryContext repositoryContext) {
+    public WorkItemQueryDropDown(final Project project) {
         super();
         this.project = project;
-        this.repositoryContext = repositoryContext;
         this.defaultQuery = new QueryAction(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_QUERY_DEFAULT_QUERY), WorkItemHelper.getAssignedToMeQuery());
         this.loadingAction = new LoadingAction();
         this.queryOperationInput = new WorkItemQueriesLookupOperation.QueryInputs(WorkItemQueriesLookupOperation.QueryRootDirectories.MY_QUERIES);
@@ -54,6 +52,8 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
         this.selectedQuery = defaultQuery;
 
         initializeUI();
+        // default to false
+        enableDropDown(false);
     }
 
     protected void initializeUI() {
@@ -65,22 +65,20 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
         });
     }
 
-    protected ActionGroup populateDropDownMenu() {
-        if (!isInitialized) {
-            // add initial items to menu
-            group.add(defaultQuery, Constraints.FIRST);
-            group.addSeparator(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_QUERY_SEPARATOR_MY_QUERIES));
-            group.add(loadingAction, Constraints.LAST);
+    protected void populateDropDownMenu() {
+        isLoading = true;
+        group.removeAll();
 
-            // persist an existing selected query if there is one
-            selectedQuery = selectedQuery == null ? defaultQuery : selectedQuery;
+        // add initial items to menu
+        group.add(defaultQuery, Constraints.FIRST);
+        group.addSeparator(TfPluginBundle.message(TfPluginBundle.KEY_VCS_WIT_QUERY_SEPARATOR_MY_QUERIES));
+        group.add(loadingAction, Constraints.LAST);
 
-            // add menu items from server
-            addQueriesFromServer(group);
+        // persist an existing selected query if there is one
+        selectedQuery = selectedQuery == null ? defaultQuery : selectedQuery;
 
-            isInitialized = true;
-        }
-        return group;
+        // add menu items from server
+        addQueriesFromServer(group);
     }
 
     public String getSelectedResults() {
@@ -89,6 +87,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
 
     private void addQueriesFromServer(final DefaultActionGroup group) {
         final AtomicBoolean isContextFound = new AtomicBoolean(true);
+        final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(project);
         WorkItemQueriesLookupOperation operation = new WorkItemQueriesLookupOperation(repositoryContext);
         operation.addListener(new Operation.Listener() {
             @Override
@@ -109,6 +108,7 @@ public class WorkItemQueryDropDown extends FilterDropDown { //JPanel
                         }
                     });
                 }
+                isLoading = false;
             }
 
             @Override

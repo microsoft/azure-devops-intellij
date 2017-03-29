@@ -50,7 +50,7 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
     @Override
     public void update(final Observable observable, final Object arg) {
         if (VcsWorkItemsModel.CONTEXT_FOUND.equals(arg)) {
-            tab.refresh();
+            tab.refresh(model.isTeamServicesRepository());
         }
 
         super.update(observable, arg);

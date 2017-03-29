@@ -33,5 +33,5 @@ public interface Tab<T extends FilteredModel> {
 
     Operation.CredInputsImpl getOperationInputs();
 
-    void refresh();
+    void refresh(final boolean isTeamServicesRepository);
 }

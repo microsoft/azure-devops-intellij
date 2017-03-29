@@ -17,13 +17,13 @@ import com.intellij.openapi.ui.JBPopupMenu;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.idea.common.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.common.ui.common.ActionListenerContainer;
 import com.microsoft.alm.plugin.idea.common.ui.common.FeedbackAction;
 import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.ToolbarToggleButton;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
+import com.microsoft.alm.plugin.idea.common.ui.controls.Hyperlink;
 import com.microsoft.alm.plugin.idea.common.ui.controls.SearchFilter;
 import com.microsoft.alm.plugin.operations.Operation;
 import org.apache.commons.lang.StringUtils;
@@ -362,7 +362,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
 
     public abstract Operation.CredInputsImpl getOperationInputs();
 
-    public abstract void refresh();
+    public abstract void refresh(final boolean isTeamServicesRepository);
 
     @VisibleForTesting
     String getStatusText() {

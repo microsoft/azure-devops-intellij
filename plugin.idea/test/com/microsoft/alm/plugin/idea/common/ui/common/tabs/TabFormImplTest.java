@@ -74,7 +74,7 @@ public class TabFormImplTest extends IdeaAbstractTest {
             }
 
             @Override
-            public void refresh() {
+            public void refresh(boolean isTeamServicesRepository) {
 
             }
         });

@@ -54,4 +54,6 @@ public interface TabModel<T extends FilteredModel> {
     void dispose();
 
     void addObserver(final Observer observer);
+
+    boolean isTeamServicesRepository();
 }

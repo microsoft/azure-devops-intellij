@@ -68,7 +68,7 @@ public abstract class TabModelImpl<T extends FilteredModel> extends AbstractMode
         return viewForModel;
     }
 
-    protected boolean isTeamServicesRepository() {
+    public boolean isTeamServicesRepository() {
         repositoryContext = VcsHelper.getRepositoryContext(project);
         if (repositoryContext == null) {
             setTabStatus(VcsTabStatus.NOT_TF_GIT_REPO);

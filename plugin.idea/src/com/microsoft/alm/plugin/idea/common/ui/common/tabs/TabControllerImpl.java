@@ -95,7 +95,7 @@ public abstract class TabControllerImpl<T extends TabModel> implements TabContro
             model.createNewItem();
         } else if (TabForm.CMD_REFRESH.equals(e.getActionCommand())) {
             model.loadData();
-            tab.refresh();
+            tab.refresh(model.isTeamServicesRepository());
         } else if (TabForm.CMD_OPEN_SELECTED_ITEM_IN_BROWSER.equals(e.getActionCommand())) {
             model.openSelectedItemsLink();
         } else if (TabForm.CMD_STATUS_LINK.equals(e.getActionCommand())) {

@@ -5,13 +5,13 @@ package com.microsoft.alm.plugin.idea.common.ui.controls;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.DataManager;
-import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.ui.ClickListener;
+import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 
@@ -30,17 +30,38 @@ import java.awt.event.MouseEvent;
  */
 public abstract class FilterDropDown extends JPanel {
     protected final DefaultActionGroup group;
+    private final ClickListener clickListener;
+    private final KeyAdapter keyAdapter;
+
     protected JLabel titleLabel;
     protected JLabel pickerLabel;
     protected ActionListener listener;
-    protected boolean isInitialized = false;
+    protected boolean isLoading = false;
+    private boolean isEnabled = false;
+
 
     public FilterDropDown() {
         this.group = new DefaultActionGroup();
-        addListeners();
+
+        this.clickListener = new ClickListener() {
+            @Override
+            public boolean onClick(MouseEvent event, int clickCount) {
+                showDropDownMenu();
+                return true;
+            }
+        };
+
+        this.keyAdapter = new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent keyEvent) {
+                if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER || keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
+                    showDropDownMenu();
+                }
+            }
+        };
     }
 
-    protected abstract ActionGroup populateDropDownMenu();
+    protected abstract void populateDropDownMenu();
 
     public abstract String getSelectedResults();
 
@@ -66,20 +87,27 @@ public abstract class FilterDropDown extends JPanel {
     }
 
     /**
-     * Refreshes the dropdown list
+     * Refreshes the dropdown list (always called on tab initialization from the controller)
      */
-    public void refreshDropDown() {
-        group.removeAll();
-        isInitialized = false;
-        populateDropDownMenu();
+    public void refreshDropDown(final boolean isTeamServicesRepository) {
+        // checks to see if dorpdown state needs to be changed
+        if (isTeamServicesRepository != isEnabled) {
+            enableDropDown(isTeamServicesRepository);
+        }
+
+        if (isEnabled && !isLoading) {
+            populateDropDownMenu();
+        }
     }
 
     /**
      * Displays the dropdown menu with the latest items
      */
     private void showDropDownMenu() {
-        final ListPopup popup = JBPopupFactory.getInstance().createActionGroupPopup(null, populateDropDownMenu(), DataManager.getInstance().getDataContext(this), JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, true);
-        popup.showUnderneathOf(this);
+        if (isEnabled) {
+            final ListPopup popup = JBPopupFactory.getInstance().createActionGroupPopup(null, group, DataManager.getInstance().getDataContext(this), JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, true);
+            popup.showUnderneathOf(this);
+        }
     }
 
     /**
@@ -87,27 +115,33 @@ public abstract class FilterDropDown extends JPanel {
      */
     protected void addListeners() {
         // adds listener for mouse click
-        new ClickListener() {
-            @Override
-            public boolean onClick(MouseEvent event, int clickCount) {
-                showDropDownMenu();
-                return true;
-            }
-        }.installOn(this);
+        clickListener.installOn(this);
 
         // adds listener for keyboard shortcut (mimics IntelliJ's Log tab shortcuts)
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent keyEvent) {
-                if (keyEvent.getKeyCode() == KeyEvent.VK_ENTER || keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
-                    showDropDownMenu();
-                }
-            }
-        });
+        addKeyListener(keyAdapter);
+    }
+
+    /**
+     * Remove listeners from the component
+     */
+    protected void removeListeners() {
+        clickListener.uninstall(this);
+        removeKeyListener(keyAdapter);
     }
 
     public void addActionListener(final ActionListener listener) {
         this.listener = listener;
+    }
+
+    protected void enableDropDown(final boolean isTeamServicesRepository) {
+        if (isTeamServicesRepository) {
+            addListeners();
+            pickerLabel.setForeground(JBColor.BLACK);
+        } else {
+            removeListeners();
+            pickerLabel.setForeground(JBColor.GRAY);
+        }
+        isEnabled = isTeamServicesRepository;
     }
 
     /**

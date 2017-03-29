@@ -73,7 +73,7 @@ public class VcsWorkItemsFormTest extends IdeaAbstractTest {
 
     @Test
     public void testRefresh() {
-        underTest.refresh();
-        verify(mockWorkItemQueryDropDown).refreshDropDown();
+        underTest.refresh(true);
+        verify(mockWorkItemQueryDropDown).refreshDropDown(true);
     }
 }

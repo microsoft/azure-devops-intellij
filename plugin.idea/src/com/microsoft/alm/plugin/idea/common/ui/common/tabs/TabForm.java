@@ -41,5 +41,5 @@ public interface TabForm<T extends FilteredModel> {
 
     Operation.CredInputsImpl getOperationInputs();
 
-    void refresh();
+    void refresh(final boolean isTeamServicesRepository);
 }
