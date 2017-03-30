@@ -23,8 +23,8 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
                 .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
         ServerContextManager.getInstance().add(tfsContext);
         final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
-        Assert.assertEquals(info, provider.getAuthenticationInfo());
-        Assert.assertTrue(provider.isAuthenticated());
+        Assert.assertEquals(info, provider.getAuthenticationInfo(TfsAuthenticationProvider.TFS_LAST_USED_URL));
+        Assert.assertTrue(provider.isAuthenticated(TfsAuthenticationProvider.TFS_LAST_USED_URL));
     }
 
     @Test
@@ -34,11 +34,11 @@ public class TfsAuthenticationProviderTest extends AbstractTest {
                 .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).authentication(info).build();
         ServerContextManager.getInstance().add(tfsContext);
         final TfsAuthenticationProvider provider = TfsAuthenticationProvider.getInstance();
-        Assert.assertEquals(info, provider.getAuthenticationInfo());
-        Assert.assertTrue(provider.isAuthenticated());
-        provider.clearAuthenticationDetails();
-        Assert.assertEquals(null, provider.getAuthenticationInfo());
-        Assert.assertFalse(provider.isAuthenticated());
+        Assert.assertEquals(info, provider.getAuthenticationInfo(TfsAuthenticationProvider.TFS_LAST_USED_URL));
+        Assert.assertTrue(provider.isAuthenticated(TfsAuthenticationProvider.TFS_LAST_USED_URL));
+        provider.clearAuthenticationDetails(TfsAuthenticationProvider.TFS_LAST_USED_URL);
+        Assert.assertEquals(null, provider.getAuthenticationInfo(TfsAuthenticationProvider.TFS_LAST_USED_URL));
+        Assert.assertFalse(provider.isAuthenticated(TfsAuthenticationProvider.TFS_LAST_USED_URL));
     }
 
     @Test

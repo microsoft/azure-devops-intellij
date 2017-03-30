@@ -12,7 +12,7 @@ public interface AuthenticationProvider {
      * Use this method to get the current authenticationInfo object.
      * This returns null if isAuthenticated returns false.
      */
-    AuthenticationInfo getAuthenticationInfo();
+    AuthenticationInfo getAuthenticationInfo(final String serverUri);
 
     /**
      * Use this method to initiate the background authentication.
@@ -24,11 +24,11 @@ public interface AuthenticationProvider {
     /**
      * Use this method to clear all authentication information and set isAuthenticated to false.
      */
-    void clearAuthenticationDetails();
+    void clearAuthenticationDetails(final String serverUri);
 
     /**
      * This method returns true if the Authentication has completed and was successful.
      */
-    boolean isAuthenticated();
+    boolean isAuthenticated(final String serverUri);
 
 }

@@ -57,7 +57,7 @@ public class LookupHelper {
             return;
         }
 
-        if (authenticationProvider.isAuthenticated()) {
+        if (authenticationProvider.isAuthenticated(serverName)) {
             loadTfsContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
         } else {
             authenticationProvider.authenticateAsync(serverName, new AuthenticationListener() {
@@ -111,7 +111,7 @@ public class LookupHelper {
                                        final AuthenticationProvider authenticationProvider,
                                        final ServerContextLookupListener lookupListener,
                                        final ServerContextLookupOperation.ContextScope scope) {
-        if (!authenticationProvider.isAuthenticated()) {
+        if (!authenticationProvider.isAuthenticated(loginPageModel.getServerName())) {
             loginPageModel.addError(ModelValidationInfo.createWithResource(LoginPageModel.PROP_SERVER_NAME,
                     TfPluginBundle.KEY_LOGIN_PAGE_ERRORS_TFS_CONNECT_FAILED, loginPageModel.getServerName()));
             loginPageModel.signOut();
@@ -121,14 +121,14 @@ public class LookupHelper {
         // Update the model properties (and the UI)
         loginPageModel.setConnected(true);
         lookupPageModel.setLoading(true);
-        loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
+        loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo(loginPageModel.getServerName()).getUserNameForDisplay());
         lookupPageModel.clearContexts();
 
         // Create the main tfs context and load other contexts
         final URI serverUrl = UrlHelper.createUri(loginPageModel.getServerName());
         final ServerContext context =
                 new ServerContextBuilder().type(ServerContext.Type.TFS)
-                        .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo()).build();
+                        .uri(serverUrl).authentication(authenticationProvider.getAuthenticationInfo(loginPageModel.getServerName())).build();
 
         lookupListener.loadContexts(Collections.singletonList(context), scope);
     }
@@ -139,15 +139,15 @@ public class LookupHelper {
                                                       final ServerContextLookupListener lookupListener,
                                                       final ServerContextLookupOperation.ContextScope scope) {
         loginPageModel.clearErrors();
-        if (authenticationProvider.isAuthenticated()) {
+
+        final String serverUri = getVsspsUrlFromDisplayName(loginPageModel.getServerName());
+
+        if (authenticationProvider.isAuthenticated(serverUri)) {
             loadVsoContexts(loginPageModel, lookupPageModel, authenticationProvider, lookupListener, scope);
         } else {
             final String vsoServerUrl;
             //Check if the server name is a valid VSO account URL, user can get here by entering account URL on TFS tab
-            if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
-                    UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
-                    UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName())) &&
-                    UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()) != null) {
+            if (isValidVsoURL(loginPageModel.getServerName())) {
                 // ensure https is being used
                 vsoServerUrl = UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName());
             } else {
@@ -219,7 +219,9 @@ public class LookupHelper {
                                        final AuthenticationProvider authenticationProvider,
                                        final ServerContextLookupListener lookupListener,
                                        final ServerContextLookupOperation.ContextScope scope) {
-        if (!authenticationProvider.isAuthenticated()) {
+        String serverUri = getVsspsUrlFromDisplayName(loginPageModel.getServerName());
+
+        if (!authenticationProvider.isAuthenticated(serverUri)) {
             loginPageModel.addError(ModelValidationInfo.createWithResource(TfPluginBundle.KEY_LOGIN_PAGE_ERRORS_VSO_SIGN_IN_FAILED));
             loginPageModel.signOut();
             return;
@@ -227,19 +229,16 @@ public class LookupHelper {
 
         loginPageModel.setConnected(true);
         lookupPageModel.setLoading(true);
-        loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo().getUserNameForDisplay());
+        loginPageModel.setUserName(authenticationProvider.getAuthenticationInfo(serverUri).getUserNameForDisplay());
         lookupPageModel.clearContexts();
 
         //If the server name is a valid VSO account URL, only query for repositories/projects in the specified account
         //user can get here by entering account URL on TFS tab
-        if (!StringUtils.equals(loginPageModel.getServerName(), TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME)) &&
-                UrlHelper.isValidUrl(loginPageModel.getServerName()) &&
-                UrlHelper.isVSO(UrlHelper.createUri(loginPageModel.getServerName())) &&
-                UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()) != null) {
+        if (isValidVsoURL(loginPageModel.getServerName())) {
             final ServerContext vsoAccountContext = new ServerContextBuilder()
                     .uri(UrlHelper.getHttpsUrlFromHttpUrl(loginPageModel.getServerName()))
                     .type(ServerContext.Type.VSO)
-                    .authentication(authenticationProvider.getAuthenticationInfo()).build();
+                    .authentication(authenticationProvider.getAuthenticationInfo(loginPageModel.getServerName())).build();
             final List<ServerContext> vsoContexts = new ArrayList<ServerContext>();
             vsoContexts.add(vsoAccountContext);
             lookupListener.loadContexts(vsoContexts, scope);
@@ -289,6 +288,20 @@ public class LookupHelper {
             // Start the operation
             accountLookupOperation.doWorkAsync(Operation.EMPTY_INPUTS);
         }
+    }
+
+    private static boolean isValidVsoURL(final String serverName) {
+        return !StringUtils.equals(serverName,
+                        TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME))
+                    && UrlHelper.isValidUrl(serverName)
+                    && UrlHelper.isVSO(UrlHelper.createUri(serverName))
+                    && UrlHelper.getHttpsUrlFromHttpUrl(serverName) != null;
+    }
+
+    public static String getVsspsUrlFromDisplayName(final String displayName) {
+        return StringUtils.equals(TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME), displayName)
+                    ? VsoAuthenticationProvider.VSO_AUTH_URL
+                    : displayName;
     }
 
 }

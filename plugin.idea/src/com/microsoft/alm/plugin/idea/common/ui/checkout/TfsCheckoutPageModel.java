@@ -40,13 +40,14 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
                 ServerContextLookupOperation.ContextScope.REPOSITORY :
                 ServerContextLookupOperation.ContextScope.PROJECT;
 
+        final String serverName = this.getServerName();
         //check if the url is a TFS server url or team services account url
-        if (!UrlHelper.isTeamServicesUrl(getServerName())) {
+        if (!UrlHelper.isTeamServicesUrl(serverName)) {
             authenticationProvider = TfsAuthenticationProvider.getInstance();
             // If we have authenticated before, just use that one
-            if (authenticationProvider.isAuthenticated()) {
+            if (authenticationProvider.isAuthenticated(serverName)) {
                 logger.info("TFS auth info already found so reusing that for loading repos");
-                final AuthenticationInfo info = authenticationProvider.getAuthenticationInfo();
+                final AuthenticationInfo info = authenticationProvider.getAuthenticationInfo(serverName);
                 setServerNameInternal(info.getServerUri());
                 LookupHelper.loadTfsContexts(this, this,
                         authenticationProvider, getRepositoryProvider(),
@@ -54,9 +55,9 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
             }
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
-            if (authenticationProvider.isAuthenticated()) {
+            if (authenticationProvider.isAuthenticated(serverName)) {
                 logger.info("VSTS auth info already found so reusing that for loading repos");
-                setServerNameInternal(authenticationProvider.getAuthenticationInfo().getServerUri());
+                setServerNameInternal(authenticationProvider.getAuthenticationInfo(serverName).getServerUri());
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getRepositoryProvider(),
                         scope);
@@ -67,26 +68,26 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
 
     @Override
     protected AuthenticationInfo getAuthenticationInfo() {
-        return authenticationProvider.getAuthenticationInfo();
+        return authenticationProvider.getAuthenticationInfo(this.getServerName());
     }
 
     @Override
     public void signOut() {
         super.signOut();
-        authenticationProvider.clearAuthenticationDetails();
+        authenticationProvider.clearAuthenticationDetails(this.getServerName());
     }
 
     @Override
     public void loadRepositories() {
         //check if the url is a TFS server url or team services account url
-        if (!UrlHelper.isTeamServicesUrl(getServerName())) {
-            authenticationProvider = TfsAuthenticationProvider.getInstance();
-            LookupHelper.authenticateAndLoadTfsContexts(this, this,
+        if (UrlHelper.isTeamServicesUrl(getServerName())) {
+            authenticationProvider = VsoAuthenticationProvider.getInstance();
+            LookupHelper.authenticateAndLoadVsoContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
                     scope);
         } else {
-            authenticationProvider = VsoAuthenticationProvider.getInstance();
-            LookupHelper.authenticateAndLoadVsoContexts(this, this,
+            authenticationProvider = TfsAuthenticationProvider.getInstance();
+            LookupHelper.authenticateAndLoadTfsContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
                     scope);
         }

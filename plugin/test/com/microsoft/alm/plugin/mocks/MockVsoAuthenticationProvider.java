@@ -15,7 +15,7 @@ public class MockVsoAuthenticationProvider extends VsoAuthenticationProvider {
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo() {
+    public AuthenticationInfo getAuthenticationInfo(final String serverUri) {
         return authenticationInfo;
     }
 
@@ -28,12 +28,12 @@ public class MockVsoAuthenticationProvider extends VsoAuthenticationProvider {
     }
 
     @Override
-    public void clearAuthenticationDetails() {
+    public void clearAuthenticationDetails(final String serverUri) {
         authenticationInfo = null;
     }
 
     @Override
-    public boolean isAuthenticated() {
+    public boolean isAuthenticated(final String serverUri) {
         return authenticationInfo != null;
     }
 }

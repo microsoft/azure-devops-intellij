@@ -31,12 +31,16 @@ public class AuthHelper {
      */
     private static final String TOKEN_DESCRIPTION_FORMATTER = "VSTS IntelliJ Plugin: %s from: %s on: %s";
 
-    public static AuthenticationInfo createAuthenticationInfo(final String serverUri, final Credentials credentials) {
+    public static AuthenticationInfo createAuthenticationInfo(final String serverUri,
+                                                              final Credentials credentials,
+                                                              AuthenticationInfo.CredsType type) {
         return new AuthenticationInfo(
                 credentials.getUserPrincipal().getName(),
                 credentials.getPassword(),
                 serverUri,
-                credentials.getUserPrincipal().getName()
+                credentials.getUserPrincipal().getName(),
+                type,
+                null
         );
     }
 

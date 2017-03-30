@@ -77,24 +77,41 @@ public class ServerContextLookupOperation extends Operation {
                             } else { // VSO_DEPLOYMENT || VSO
                                 doRestCollectionLookup(context);
                             }
-                        } catch (Throwable t) {
-                            operationExceptions.add(t);
+                        } catch (final Throwable t) {
+                            boolean shouldReportError = true;
                             logger.warn("doWork: Unable to do lookup on context: " + context.getUri().toString());
                             logger.warn("doWork: Exception", t);
                             if (AuthHelper.isNotAuthorizedError(t)) {
-                                ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
+                                final ServerContext newContext
+                                        = ServerContextManager.getInstance().updateAuthenticationInfo(context.getUri().toString());
+                                // try again with updated authentication info
+                                try {
+                                    if (context.getType() == ServerContext.Type.TFS) {
+                                        doSoapCollectionLookup(newContext);
+                                    } else { // VSO_DEPLOYMENT || VSO
+                                        doRestCollectionLookup(newContext);
+                                    }
+                                    // auth issue has been handled properly, no need to report this error anymore
+                                    shouldReportError = false;
+                                } catch (final Throwable tAgain) {
+                                    logger.warn("Failed to lookup repositories even after re-authentication.", tAgain);
+                                }
                             }
 
-                            // If there's only one context we need to bubble the exception out
-                            // But if there's more than one let's just continue
-                            if (throwOnError) {
-                                // check if error is due to the server URI not being found after a valid authentication
-                                // this is an indication that the server URI contains more than just the base URI
-                                if (t instanceof VssResourceNotFoundException) {
-                                    logger.warn(String.format("User authenticated but 404 on server so URI (%s) is malformed", context.getServerUri().toString()));
-                                    terminate(new TeamServicesException(TeamServicesException.KEY_TFS_MALFORMED_SERVER_URI, t));
-                                } else {
-                                    terminate(t);
+                            if (shouldReportError) {
+                                operationExceptions.add(t);
+
+                                // If there's only one context we need to bubble the exception out
+                                // But if there's more than one let's just continue
+                                if (throwOnError) {
+                                    // check if error is due to the server URI not being found after a valid authentication
+                                    // this is an indication that the server URI contains more than just the base URI
+                                    if (t instanceof VssResourceNotFoundException) {
+                                        logger.warn(String.format("User authenticated but 404 on server so URI (%s) is malformed", context.getServerUri().toString()));
+                                        terminate(new TeamServicesException(TeamServicesException.KEY_TFS_MALFORMED_SERVER_URI, t));
+                                    } else {
+                                        terminate(t);
+                                    }
                                 }
                             }
                         }

@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.client.utils.StringUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.core.webapi.CoreHttpClient;
@@ -118,11 +119,26 @@ public class ServerContextManager {
         if (context != null) {
             final String key = context.getKey();
             contextMap.put(key, context);
-            getStore().saveServerContext(context);
+            // Only persist PATs, not access tokens
+            if (shouldBeSaved(context)) {
+                getStore().saveServerContext(context);
+            }
             if (updateLastUsedContext) {
                 setLastUsedContextKey(key);
             }
         }
+    }
+
+    private boolean shouldBeSaved(final ServerContext context) {
+        boolean result = true;
+        if (context != null && context.getAuthenticationInfo() != null) {
+            // do not save access tokens
+            if (AuthenticationInfo.CredsType.AccessToken.equals(context.getAuthenticationInfo().getType())) {
+                result = false;
+            }
+        }
+
+        return result;
     }
 
     public synchronized ServerContext get(final String uri) {
@@ -314,7 +330,7 @@ public class ServerContextManager {
      */
     public ServerContext getAuthenticatedContext(final String gitRemoteUrl, final boolean setAsActiveContext) {
         try {
-            // get context from builder, create PAT if needed, and store in active context
+            // get context from builder, create PersonalAccessToken if needed, and store in active context
             final ServerContext context = createContextFromGitRemoteUrl(gitRemoteUrl);
             if (context != null && setAsActiveContext) {
                 //nothing to do
@@ -581,6 +597,7 @@ public class ServerContextManager {
                     logger.info("auth info updateAuthenticationInfo prompting");
                     //prompt user
                     final AuthenticationProvider authenticationProvider = getAuthenticationProvider(remoteUrl);
+                    authenticationProvider.clearAuthenticationDetails(context.getServerUri().toString());
                     newAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, remoteUrl);
                     promptUser = false;
                 }

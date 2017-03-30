@@ -40,23 +40,27 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo() {
-        return ServerContextManager.getInstance().getBestAuthenticationInfo(VSO_AUTH_URL, false);
+    public AuthenticationInfo getAuthenticationInfo(final String serverUri) {
+        final AuthenticationInfo authenticationInfo =
+                ServerContextManager.getInstance().getBestAuthenticationInfo(serverUri, false);
+
+        return authenticationInfo;
     }
 
     @Override
-    public boolean isAuthenticated() {
-        return getAuthenticationInfo() != null;
+    public boolean isAuthenticated(final String serverUri) {
+        return getAuthenticationInfo(serverUri) != null;
     }
 
     @Override
-    public void clearAuthenticationDetails() {
-        ServerContextManager.getInstance().remove(VSO_AUTH_URL);
-        getAuthenticationInfoProvider().clearAuthenticationInfo(VSO_AUTH_URL);
+    public void clearAuthenticationDetails(final String serverUri) {
+        ServerContextManager.getInstance().remove(serverUri);
+        getAuthenticationInfoProvider().clearAuthenticationInfo(serverUri);
     }
 
     @Override
     public void authenticateAsync(final String serverUri, final AuthenticationListener listener) {
+        logger.info("authenticateAsync for server: {}", serverUri);
         //clear in memory cache, otherwise user is not prompted, TOOD: handle in auth library since it can be an issue for TFS also
         getAuthenticationInfoProvider().clearAuthenticationInfo(VSO_AUTH_URL);
 
@@ -68,13 +72,13 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
                 logger.info("getAuthenticationInfoAsync succeeded");
                 try {
                     //save for VSO_Deployment
-                    ServerContextManager.getInstance().validateServerConnection(
-                            new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
-                                    .uri(VSO_AUTH_URL)
-                                    .authentication(authenticationInfo)
-                                    .build());
-
-                    if (!StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
+                    if (StringUtils.equalsIgnoreCase(serverUri, VSO_AUTH_URL)) {
+                        ServerContextManager.getInstance().validateServerConnection(
+                                new ServerContextBuilder().type(ServerContext.Type.VSO_DEPLOYMENT)
+                                        .uri(VSO_AUTH_URL)
+                                        .authentication(authenticationInfo)
+                                        .build());
+                    } else {
                         //save for the specific server url
                         ServerContextManager.getInstance().validateServerConnection(
                                 new ServerContextBuilder().type(ServerContext.Type.VSO)
@@ -94,7 +98,7 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
             @Override
             public void onFailure(Throwable t) {
                 logger.error("getAuthenticationInfoAsync failed", t);
-                clearAuthenticationDetails();
+                clearAuthenticationDetails(serverUri);
                 AuthenticationListener.Helper.authenticated(listener, AuthenticationInfo.NONE, t);
             }
         });

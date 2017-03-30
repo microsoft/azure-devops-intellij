@@ -4,9 +4,13 @@
 package com.microsoft.alm.plugin.idea.common.ui.common;
 
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.facades.VsoAuthInfoProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.secret.TokenPair;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -36,9 +40,23 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
             //get authenticated user for the collection since user Id is different when authenticated to server vs collection
             return ServerContextManager.getInstance().validateServerConnection(context);
         } else {
-            //TODO: generate account level PAT for VSO
-            ServerContextManager.getInstance().add(context);
-            return context;
+            final ServerContext effectiveContext;
+
+            final AuthenticationInfo authenticationInfo = context.getAuthenticationInfo();
+            if (AuthenticationInfo.CredsType.AccessToken.equals(authenticationInfo.getType())) {
+                final TokenPair tokenPair
+                        = new TokenPair(authenticationInfo.getPassword(), authenticationInfo.getRefreshToken());
+
+                final AuthenticationInfo patBackedAuthenticationInfo
+                        = VsoAuthInfoProvider.getProvider().getAuthenticationInfo(context.getServerUri(), tokenPair);
+
+                effectiveContext = new ServerContextBuilder(context).authentication(patBackedAuthenticationInfo).build();
+            } else {
+                effectiveContext = context;
+            }
+
+            ServerContextManager.getInstance().add(effectiveContext);
+            return effectiveContext;
         }
     }
 
