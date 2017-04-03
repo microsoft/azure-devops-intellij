@@ -56,16 +56,18 @@ public class VcsWorkItemContentProvider implements ChangesViewContentProvider {
     }
 
     /**
-     * Check to see if the Wor Item tab should be visible for (Rider only)
+     * Check to see if the Work Item tab should be visible (TFVC/Git only and in Rider it must be a VSTS repo)
      */
     public static class VcsWorkItemVisibilityPredicate implements NotNullFunction<Project, Boolean> {
         @NotNull
         @Override
         public Boolean fun(final Project project) {
-            if (!IdeaHelper.isRider()) {
-                return true;
+            // has to be TFVC or Git to be visible
+            if (!VcsHelper.isGitVcs(project) && !VcsHelper.isTfVcs(project)) {
+                return false;
             }
-            return VcsHelper.isVstsRepo(project);
+
+            return IdeaHelper.isRider() ? VcsHelper.isVstsRepo(project) : true;
         }
     }
 }

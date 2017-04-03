@@ -131,6 +131,16 @@ public class IdeaHelper {
     }
 
     /**
+     * Invoke a runnable and wait on it. It runs in the background but allows for UI to come to the forefront
+     *
+     * @param runnable
+     */
+    public static void invokeAndWait(final Runnable runnable) {
+        ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
+        // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransaction(project, null, onSuccess);
+    }
+
+    /**
      * Shows a dialog with OK and cancel actions to prompt for confirmation from user
      *
      * @return true if user clicks on ok action and false if user clicks on cancel action

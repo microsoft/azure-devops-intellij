@@ -303,7 +303,7 @@ public class WorkspaceModel extends AbstractModel {
 
             if (onSuccess != null) {
                 // Trigger the onSuccess callback on the UI thread (it is up to the success handler to notify the user)
-                IdeaHelper.runOnUIThread(onSuccess);
+                IdeaHelper.invokeAndWait(onSuccess);
             } else {
                 // Notify the user of success and provide a link to sync the workspace
                 // (It doesn't make sense to tell the user we are done here if there is another thread still doing work)

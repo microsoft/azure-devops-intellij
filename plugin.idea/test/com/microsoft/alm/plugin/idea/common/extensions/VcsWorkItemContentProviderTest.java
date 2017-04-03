@@ -36,13 +36,32 @@ public class VcsWorkItemContentProviderTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testTabEnabled_NotRider() {
+    public void testTabEnabled_NotGitNotVsts() {
+        when(IdeaHelper.isRider()).thenReturn(false);
+        when(VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
+        when(VcsHelper.isTfVcs(mockProject)).thenReturn(false);
+        assertFalse(vcsWorkItemVisibilityPredicate.fun(mockProject));
+    }
+
+    @Test
+    public void testTabEnabled_NotRiderGit() {
+        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
+        when(VcsHelper.isTfVcs(mockProject)).thenReturn(false);
+        when(IdeaHelper.isRider()).thenReturn(false);
+        assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
+    }
+
+    @Test
+    public void testTabEnabled_NotRiderTfvc() {
+        when(VcsHelper.isGitVcs(mockProject)).thenReturn(false);
+        when(VcsHelper.isTfVcs(mockProject)).thenReturn(true);
         when(IdeaHelper.isRider()).thenReturn(false);
         assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
     }
 
     @Test
     public void testTabEnabled_RiderVsts() {
+        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
         when(IdeaHelper.isRider()).thenReturn(true);
         when(VcsHelper.isVstsRepo(mockProject)).thenReturn(true);
         assertTrue(vcsWorkItemVisibilityPredicate.fun(mockProject));
@@ -50,6 +69,7 @@ public class VcsWorkItemContentProviderTest extends IdeaAbstractTest {
 
     @Test
     public void testTabEnabled_RiderNotVsts() {
+        when(VcsHelper.isGitVcs(mockProject)).thenReturn(true);
         when(IdeaHelper.isRider()).thenReturn(true);
         when(VcsHelper.isVstsRepo(mockProject)).thenReturn(false);
         assertFalse(vcsWorkItemVisibilityPredicate.fun(mockProject));
