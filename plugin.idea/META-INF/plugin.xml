@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.115.2</version>
+    <version>1.116.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -62,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.115.2
+      v 1.116.0
       <br />
-      Fixing compatibility issue with JetBrains TFS plugin along with other incremental bug fixes.
+      Made performance improvements along with updates to the authentication behavior. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>

@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
@@ -33,6 +34,7 @@ public class VcsHelper {
     public static final String GIT_BRANCH_PREFIX = "refs/heads/";
     public static final String TFVC_ROOT = "$/";
     public static final String TFVC_SEPARATOR = "/";
+    private static final String UNKNOWN = "Unknown";
 
     private static Pattern pattern = null;
 
@@ -52,6 +54,19 @@ public class VcsHelper {
         ArgumentHelper.checkNotNull(project, "project");
         final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
         return projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME);
+    }
+
+    /**
+     * Find the VCS type of the given project
+     *
+     * @param project
+     * @return
+     */
+    public static String getVcsType(final Project project) {
+        ArgumentHelper.checkNotNull(project, "project");
+        final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
+        final AbstractVcs vcs = projectLevelVcsManager.getVcsFor(project.getBaseDir());
+        return vcs != null && StringUtils.isNotEmpty(vcs.getName()) ? vcs.getName() : UNKNOWN;
     }
 
     /**

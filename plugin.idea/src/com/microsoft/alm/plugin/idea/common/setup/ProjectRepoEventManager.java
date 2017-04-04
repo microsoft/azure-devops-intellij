@@ -11,9 +11,7 @@ import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
-import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryChangeListener;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +30,7 @@ public class ProjectRepoEventManager {
     private static boolean repositoryChanging = false;
     private static String TELEMETRY_PROJECT_OPENED_EVENT = "projectOpened";
     private static String TELEMETRY_REPO_TYPE = "repoType";
+    private static String TELEMETRY_IS_VSTS = "isVsts";
 
     private ProjectEventListener projectEventListener;
 
@@ -77,12 +76,17 @@ public class ProjectRepoEventManager {
             IdeaHelper.executeOnPooledThread(new Runnable() {
                 @Override
                 public void run() {
-                    // Send telemetry on what type of repo is being opened
-                    TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_PROJECT_OPENED_EVENT,
-                            new TfsTelemetryHelper.PropertyMapBuilder()
-                                    .activeServerContext()
-                                    .pair(TELEMETRY_REPO_TYPE, VcsHelper.isGitVcs(project) ? GitVcs.NAME : TFSVcs.TFVC_NAME)
-                                    .build());
+                    try {
+                        // Send telemetry on what type of repo is being opened
+                        TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_PROJECT_OPENED_EVENT,
+                                new TfsTelemetryHelper.PropertyMapBuilder()
+                                        .activeServerContext()
+                                        .pair(TELEMETRY_REPO_TYPE, VcsHelper.getVcsType(project))
+                                        .pair(TELEMETRY_IS_VSTS, String.valueOf(VcsHelper.isVstsRepo(project)))
+                                        .build());
+                    } catch (Exception e) {
+                        logger.warn("Error logging metrics upon projectOpened", e);
+                    }
                 }
             });
 
