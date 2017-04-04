@@ -48,7 +48,8 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
                 ServerContextLookupOperation.ContextScope.REPOSITORY :
                 ServerContextLookupOperation.ContextScope.PROJECT;
 
-        if (autoLoad && authenticationProvider.isAuthenticated()) {
+        final String serverUri = LookupHelper.getVsspsUrlFromDisplayName(this.getServerName());
+        if (autoLoad && authenticationProvider.isAuthenticated(serverUri)) {
             logger.info("Loading contexts in constructor");
             LookupHelper.loadVsoContexts(this, this,
                     authenticationProvider, getRepositoryProvider(),
@@ -60,14 +61,16 @@ public class VsoCheckoutPageModel extends CheckoutPageModelImpl {
 
     @Override
     protected AuthenticationInfo getAuthenticationInfo() {
-        return authenticationProvider.getAuthenticationInfo();
+        return authenticationProvider.getAuthenticationInfo(this.getServerName());
     }
 
     @Override
     public void signOut() {
         logger.info("signOut called");
+        String serverUri = LookupHelper.getVsspsUrlFromDisplayName(this.getServerName());
+        authenticationProvider.clearAuthenticationDetails(serverUri);
+
         super.signOut();
-        authenticationProvider.clearAuthenticationDetails();
     }
 
     @Override

@@ -30,9 +30,9 @@ public class TfsImportPageModel extends ImportPageModelImpl {
 
         if (!UrlHelper.isTeamServicesUrl(getServerName())) {
             authenticationProvider = TfsAuthenticationProvider.getInstance();
-            if (authenticationProvider.isAuthenticated()) {
+            if (authenticationProvider.isAuthenticated(this.getServerName())) {
                 logger.info("TFS auth info already found so reusing that for loading repos");
-                final AuthenticationInfo info = authenticationProvider.getAuthenticationInfo();
+                final AuthenticationInfo info = authenticationProvider.getAuthenticationInfo(this.getServerName());
                 setServerNameInternal(info.getServerUri());
                 LookupHelper.loadTfsContexts(this, this,
                         authenticationProvider, getTeamProjectProvider(),
@@ -40,9 +40,9 @@ public class TfsImportPageModel extends ImportPageModelImpl {
             }
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
-            if (authenticationProvider.isAuthenticated()) {
+            if (authenticationProvider.isAuthenticated(this.getServerName())) {
                 logger.info("VSTS auth info already found so reusing that for loading repos");
-                setServerNameInternal((authenticationProvider.getAuthenticationInfo().getServerUri()));
+                setServerNameInternal((authenticationProvider.getAuthenticationInfo(this.getServerName()).getServerUri()));
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getTeamProjectProvider(),
                         ServerContextLookupOperation.ContextScope.PROJECT);
@@ -52,13 +52,13 @@ public class TfsImportPageModel extends ImportPageModelImpl {
 
     @Override
     protected AuthenticationInfo getAuthenticationInfo() {
-        return authenticationProvider.getAuthenticationInfo();
+        return authenticationProvider.getAuthenticationInfo(this.getServerName());
     }
 
     @Override
     public void signOut() {
         super.signOut();
-        authenticationProvider.clearAuthenticationDetails();
+        authenticationProvider.clearAuthenticationDetails(this.getServerName());
     }
 
     @Override

@@ -7,6 +7,12 @@ package com.microsoft.alm.plugin.authentication;
  * Immutable
  */
 public class AuthenticationInfo {
+
+    public enum CredsType {
+        AccessToken,
+        PersonalAccessToken,
+        NTLM
+    }
     // If we all use this constant, it provides future type safely if we ever decided to change NONE to a
     // typed variable instead of 'null'
     public static AuthenticationInfo NONE = null;
@@ -15,6 +21,8 @@ public class AuthenticationInfo {
     private final String password;
     private final String serverUri;
     private final String userNameForDisplay;
+    private final String refreshToken;
+    private final CredsType type;
 
     /**
      * Empty constructor for JSON deserialization only.  Do not use this otherwise (which is why it is marked deprecated).
@@ -22,17 +30,28 @@ public class AuthenticationInfo {
      * @deprecated
      */
     public AuthenticationInfo() {
-        userName = null;
-        password = null;
-        serverUri = null;
-        userNameForDisplay = null;
+        this(null, null, null, null, null, null);
     }
 
-    public AuthenticationInfo(final String userName, final String password, final String serverUri, final String userNameForDisplay) {
+    public AuthenticationInfo(final String userName,
+                              final String password,
+                              final String serverUri,
+                              final String userNameForDisplay) {
+        this(userName, password, serverUri, userNameForDisplay, null, null);
+    }
+
+    public AuthenticationInfo(final String userName,
+                              final String password,
+                              final String serverUri,
+                              final String userNameForDisplay,
+                              final CredsType type,
+                              final String refreshToken) {
         this.userName = userName;
         this.password = password;
         this.serverUri = serverUri;
         this.userNameForDisplay = userNameForDisplay;
+        this.type = type;
+        this.refreshToken = refreshToken;
     }
 
     public String getServerUri() {
@@ -51,4 +70,11 @@ public class AuthenticationInfo {
         return userNameForDisplay;
     }
 
+    public CredsType getType() {
+        return type;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
 }

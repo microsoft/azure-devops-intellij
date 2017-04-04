@@ -22,6 +22,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -172,8 +173,8 @@ public abstract class L2Test extends UsefulTestCase {
         final VsoAuthenticationProvider authenticationProvider = Mockito.mock(VsoAuthenticationProvider.class);
         PowerMockito.mockStatic(VsoAuthenticationProvider.class);
         when(VsoAuthenticationProvider.getInstance()).thenReturn(authenticationProvider);
-        when(authenticationProvider.getAuthenticationInfo()).thenReturn(info);
-        when(authenticationProvider.isAuthenticated()).thenReturn(true);
+        when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(info);
+        when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(true);
 
         PowerMockito.mockStatic(AuthHelper.class);
         when(AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, getRepoUrl())).thenReturn(info);

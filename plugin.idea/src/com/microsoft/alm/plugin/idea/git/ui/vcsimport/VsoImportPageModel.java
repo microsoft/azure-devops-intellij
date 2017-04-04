@@ -29,7 +29,8 @@ public class VsoImportPageModel extends ImportPageModelImpl {
         setConnected(false);
         setAuthenticating(false);
 
-        if (autoLoad && authenticationProvider.isAuthenticated()) {
+        final String serverName = LookupHelper.getVsspsUrlFromDisplayName(this.getServerName());
+        if (autoLoad && authenticationProvider.isAuthenticated(serverName)) {
             // Load the projects from all accounts into the list
             LookupHelper.loadVsoContexts(this, this,
                     authenticationProvider, getTeamProjectProvider(),
@@ -38,13 +39,13 @@ public class VsoImportPageModel extends ImportPageModelImpl {
     }
 
     protected AuthenticationInfo getAuthenticationInfo() {
-        return authenticationProvider.getAuthenticationInfo();
+        return authenticationProvider.getAuthenticationInfo(this.getServerName());
     }
 
     @Override
     public void signOut() {
         super.signOut();
-        authenticationProvider.clearAuthenticationDetails();
+        authenticationProvider.clearAuthenticationDetails(this.getServerName());
     }
 
     @Override

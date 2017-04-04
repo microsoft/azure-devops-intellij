@@ -4,11 +4,8 @@
 package com.microsoft.alm.plugin.authentication.facades;
 
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.auth.PromptBehavior;
-import com.microsoft.alm.auth.oauth.AzureAuthority;
 import com.microsoft.alm.auth.oauth.OAuth2Authenticator;
 import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
 import com.microsoft.alm.common.utils.UrlHelper;
@@ -16,10 +13,11 @@ import com.microsoft.alm.helpers.Action;
 import com.microsoft.alm.oauth2.useragent.AuthorizationException;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo.CredsType;
+import com.microsoft.alm.plugin.context.RestClientHelper;
 import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.services.DeviceFlowResponsePrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import com.microsoft.alm.provider.JaxrsClientProvider;
 import com.microsoft.alm.secret.Token;
 import com.microsoft.alm.secret.TokenPair;
 import com.microsoft.alm.secret.VsoTokenScope;
@@ -34,8 +32,6 @@ import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Executors;
 
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     private final static Logger logger = LoggerFactory.getLogger(VsoAuthInfoProvider.class);
@@ -43,7 +39,6 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     private static final String CLIENT_ID = "97877f11-0fc6-4aee-b1ff-febb0519dd00";
     private static final String REDIRECT_URL = "https://java.visualstudio.com";
 
-    private final ListeningExecutorService executorService;
     private final SecretStore<TokenPair> accessTokenStore;
     private final SecretStore<Token> tokenStore;
     private final DeviceFlowResponsePrompt deviceFlowResponsePrompt;
@@ -52,9 +47,6 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     private VsoAuthInfoProvider() {
         accessTokenStore = new InsecureInMemoryStore<TokenPair>();
         tokenStore = new InsecureInMemoryStore<Token>();
-
-        //Only allow 5 threads to start polling
-        executorService = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(5));
 
         deviceFlowResponsePrompt = PluginServiceProvider.getInstance().getDeviceFlowResponsePrompt();
 
@@ -70,7 +62,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     }
 
     @Override
-    public void getAuthenticationInfoAsync(final String serverUri, final AuthenticationInfoCallback callback) {
+    public void getAuthenticationInfoAsync(String serverUri, final AuthenticationInfoCallback callback) {
         final SettableFuture<AuthenticationInfo> authenticationInfoFuture = SettableFuture.<AuthenticationInfo>create();
 
         // Callback for the Device Flow dialog to cancel the current authenticating process.
@@ -84,68 +76,23 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         };
 
         // Must share the same accessTokenStore with the member variable vstsPatAuthenticator to avoid prompt the user
-        // when we generate PAT
+        // when we generate PersonalAccessToken
         final OAuth2Authenticator.OAuth2AuthenticatorBuilder oAuth2AuthenticatorBuilder = new OAuth2Authenticator.OAuth2AuthenticatorBuilder()
                 .withClientId(CLIENT_ID)
                 .redirectTo(REDIRECT_URL)
                 .backedBy(accessTokenStore)
+                .manage(OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE)
                 .withDeviceFlowCallback(deviceFlowResponsePrompt.getCallback(cancellationCallback));
-
-        // Check if common url was passed or if a specific url was given
-        // If a specific url is being used and a tenant id is found use the tenant id with the authenticator
-        String resourceId = OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE;
-        final URI encodedServerUri = UrlHelper.createUri(serverUri);
-        if (!OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO.getAuthority().equals(encodedServerUri.getAuthority())) {
-            try {
-                final UUID tenantId = AzureAuthority.detectTenantId(encodedServerUri);
-                if (tenantId != null) {
-                    logger.info(String.format("Adding tenant id %s to oAuth2Authenticator builder for url %s",
-                            tenantId.toString(), serverUri));
-                    resourceId = OAuth2Authenticator.VSTS_RESOURCE;
-                    oAuth2AuthenticatorBuilder.withTenantId(tenantId);
-                }
-            } catch (Error e) {
-                logger.warn("Error while trying to get tenant id", e);
-                // ok to continue without using tenant id
-            }
-        }
-        oAuth2AuthenticatorBuilder.manage(resourceId);
-
         final OAuth2Authenticator oAuth2Authenticator = oAuth2AuthenticatorBuilder.build();
-        final JaxrsClientProvider jaxrsClientProvider = new JaxrsClientProvider(oAuth2Authenticator);
+
+        final URI encodedServerUri = UrlHelper.createUri(serverUri);
+        final TokenPair tokenPair = oAuth2Authenticator.getOAuth2TokenPair(encodedServerUri, PromptBehavior.AUTO);
 
         try {
             AuthenticationInfo authenticationInfo = null;
             String errorMessage = null;
-            final Client client = jaxrsClientProvider.getClient();
 
-            if (client != null) {
-                //Or we could reconsider the name of the token.  Now we call Profile endpoint just to get the email address
-                //which is used in token description, but do we need it?  User can only view PATs after they login, and
-                //at that time user knows which account/email they are logged in under already.  So the email provides
-                //no additional value.
-                final AccountHttpClient accountHttpClient
-                        = new MyHttpClient(client, OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO);
-
-                final Profile me = accountHttpClient.getMyProfile();
-                final String emailAddress = me.getCoreAttributes().getEmailAddress().getValue();
-
-                final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
-
-                final Token token = vstsPatAuthenticator.getPersonalAccessToken(
-                        VsoTokenScope.AllScopes,
-                        tokenDescription,
-                        PromptBehavior.AUTO);
-
-                if (token != null) {
-                    authenticationInfo = new AuthenticationInfo(me.getId().toString(),
-                            token.Value, serverUri, emailAddress);
-                } else {
-                    errorMessage = "Failed to get a Personal Access Token";
-                }
-            } else {
-                errorMessage = "Failed to get authenticated jaxrs client.";
-            }
+            authenticationInfo = getAuthenticationInfo(encodedServerUri, tokenPair);
 
             if (authenticationInfo != null) {
                 authenticationInfoFuture.set(authenticationInfo);
@@ -160,10 +107,67 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         Futures.addCallback(authenticationInfoFuture, callback);
     }
 
+    public AuthenticationInfo getAuthenticationInfo(final URI serverUri, final TokenPair tokenPair) {
+
+        if (tokenPair != null) {
+            final Client client = RestClientHelper.getClient(serverUri.toString(), tokenPair.AccessToken.Value);
+
+            if (client != null) {
+                //Or we could reconsider the name of the token.  Now we call Profile endpoint just to get the email address
+                //which is used in token description, but do we need it?  User can only view PATs after they login, and
+                //at that time user knows which account/email they are logged in under already.  So the email provides
+                //no additional value.
+                final AccountHttpClient accountHttpClient
+                        = new MyHttpClient(client, OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO);
+
+                final Profile me = accountHttpClient.getMyProfile();
+                final String emailAddress = me.getCoreAttributes().getEmailAddress().getValue();
+                final String tokenDescription = AuthHelper.getTokenDescription(emailAddress);
+
+                if (serverUri.equals(OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO)) {
+                    logger.debug("Creating authenticationInfo backed by AccessToken for: {}", serverUri);
+                    return new AuthenticationInfo (
+                            me.getId().toString(),
+                            tokenPair.AccessToken.Value,
+                            serverUri.toString(),
+                            emailAddress,
+                            CredsType.AccessToken,
+                            tokenPair.RefreshToken.Value);
+                } else {
+                    logger.debug("Getting a PersonalAccessToken for: {}", serverUri);
+                    final Token token = vstsPatAuthenticator.getPersonalAccessToken(
+                            serverUri,
+                            VsoTokenScope.AllScopes,
+                            tokenDescription,
+                            PromptBehavior.AUTO,
+                            tokenPair);
+
+                    if (token != null) {
+                        logger.debug("Creating authenticationInfo backed by PersonalAccessToken for: {}", serverUri);
+                        return new AuthenticationInfo(
+                                me.getId().toString(),
+                                token.Value,
+                                serverUri.toString(),
+                                emailAddress,
+                                CredsType.PersonalAccessToken,
+                                null);
+                    } else {
+                        logger.warn("Failed to get a Personal Access Token");
+                    }
+                }
+            } else {
+                logger.warn("Failed to get authenticated jaxrs client.");
+            }
+        } else {
+            logger.warn("Failed to get AuthenticationInfo because AccessToken is null.");
+        }
+
+        return null;
+    }
+
     @Override
     public void clearAuthenticationInfo(final String serverUri) {
-        // Only generates global PAT currently, so ignore serverUri and clear global PAT only
-        this.vstsPatAuthenticator.signOut();
+        this.vstsPatAuthenticator.signOut(URI.create(serverUri));
     }
 
     // We are subclassing the AccountHttpClient here in order to add mapped exceptions
