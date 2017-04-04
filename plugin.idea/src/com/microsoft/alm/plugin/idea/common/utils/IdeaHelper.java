@@ -120,24 +120,16 @@ public class IdeaHelper {
         if (ApplicationManager.getApplication() != null && !ApplicationManager.getApplication().isDispatchThread()) {
             if (wait) {
                 ApplicationManager.getApplication().invokeAndWait(runnable, modalityState);
+                // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransactionAndWait(runnable);
             } else {
                 ApplicationManager.getApplication().invokeLater(runnable, modalityState);
+                // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransaction(runnable);
             }
         } else {
             // If we are already on the dispatch thread then we can run it here
             // If we don't have an application then we are testing, just run the runnable here
             runnable.run();
         }
-    }
-
-    /**
-     * Invoke a runnable and wait on it. It runs in the background but allows for UI to come to the forefront
-     *
-     * @param runnable
-     */
-    public static void invokeAndWait(final Runnable runnable) {
-        ApplicationManager.getApplication().invokeAndWait(runnable, ModalityState.defaultModalityState());
-        // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransaction(project, null, onSuccess);
     }
 
     /**
@@ -245,5 +237,14 @@ public class IdeaHelper {
      */
     public static boolean isRider() {
         return StringUtils.equalsIgnoreCase(ApplicationNamesInfo.getInstance().getProductName(), RIDER_PRODUCT_NAME);
+    }
+
+    /**
+     * Runs a task async in IntelliJ (shows no status so not for user actions that need to show progress)
+     *
+     * @param runnable
+     */
+    public static void executeOnPooledThread(final Runnable runnable) {
+        ApplicationManager.getApplication().executeOnPooledThread(runnable);
     }
 }

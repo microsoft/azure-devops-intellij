@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.telemetry.TfsTelemetryInstrumentationInfo;
 import com.microsoft.applicationinsights.extensibility.context.ComponentContext;
 import com.microsoft.applicationinsights.extensibility.context.ContextTagKeys;
 import com.microsoft.applicationinsights.extensibility.context.DeviceContext;
+import com.microsoft.applicationinsights.extensibility.context.SessionContext;
 import com.microsoft.applicationinsights.extensibility.context.UserContext;
 import com.microsoft.applicationinsights.telemetry.TelemetryContext;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -31,7 +32,7 @@ import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
-
+import java.util.UUID;
 
 /**
  * This class is provided as a ContextInitializer for the application insights TelemetryClient.
@@ -52,15 +53,19 @@ public class TelemetryContextInitializer implements PluginContextInitializer {
     private static final String USER_AGENT_FORMAT = "VSTSIntelliJ/{0} ({1}; {2}; {3}/{4}) {5}";
 
     private String linuxDistribution = StringUtils.EMPTY;
+    private String hostname = StringUtils.EMPTY;
 
     @Override
     public void initialize(final TelemetryContext context) {
+        logger.info("Starting TelemetryContext initialization");
         initializeInstrumentationKey(context);
         initializeProperties(context.getProperties());
         initializeUser(context.getUser());
         initializeComponent(context.getComponent());
         initializeDevice(context.getDevice());
         initializeTags(context.getTags());
+        initializeSession(context.getSession());
+        logger.info("Ending TelemetryContext initialization");
     }
 
     @Override
@@ -102,13 +107,16 @@ public class TelemetryContextInitializer implements PluginContextInitializer {
     }
 
     private String getComputerName() {
-        String hostname = TfsTelemetryHelper.UNKNOWN;
+        if (StringUtils.isEmpty(hostname)) {
+            hostname = TfsTelemetryHelper.UNKNOWN;
 
-        try {
-            final InetAddress address = InetAddress.getLocalHost();
-            hostname = address.getHostName();
-        } catch (UnknownHostException ex) {
-            // This case is covered by the initial value of hostname above
+            try {
+                // on Mac this call can take > 10 secs so don't call multiple times
+                final InetAddress address = InetAddress.getLocalHost();
+                hostname = address.getHostName();
+            } catch (UnknownHostException ex) {
+                // This case is covered by the initial value of hostname above
+            }
         }
 
         return hostname;
@@ -122,6 +130,10 @@ public class TelemetryContextInitializer implements PluginContextInitializer {
         tags.put(ContextTagKeys.getKeys().getApplicationId(), TfPluginBundle.BUNDLE_NAME);
         tags.put(ContextTagKeys.getKeys().getDeviceOS(), getPlatformName());
         tags.put(ContextTagKeys.getKeys().getDeviceOSVersion(), getPlatformVersion());
+    }
+
+    private void initializeSession(final SessionContext sessionContext) {
+        sessionContext.setId(UUID.randomUUID().toString());
     }
 
     private void initializeProperties(final Map<String, String> properties) {

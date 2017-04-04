@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * The TfsTelemetryHelper class is a singleton that allows the plugin to capture
@@ -90,7 +89,6 @@ public class TfsTelemetryHelper {
                 "    Production Environment: {0}", !TfsTelemetryInstrumentationInfo.getInstance().isTestKey()));
 
         telemetryClient = new TelemetryClient();
-        telemetryClient.getContext().getSession().setId(UUID.randomUUID().toString());
     }
 
     /**

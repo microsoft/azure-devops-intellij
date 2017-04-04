@@ -14,6 +14,7 @@ import com.intellij.ui.ClickListener;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -134,13 +135,24 @@ public abstract class FilterDropDown extends JPanel {
     }
 
     protected void enableDropDown(final boolean isTeamServicesRepository) {
+        final JBColor color;
         if (isTeamServicesRepository) {
             addListeners();
-            pickerLabel.setForeground(JBColor.BLACK);
+            color = JBColor.BLACK;
+
         } else {
             removeListeners();
-            pickerLabel.setForeground(JBColor.GRAY);
+            color = JBColor.GRAY;
         }
+
+        // update color on UI thread
+        IdeaHelper.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                pickerLabel.setForeground(color);
+            }
+        });
+
         isEnabled = isTeamServicesRepository;
     }
 
