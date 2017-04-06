@@ -125,7 +125,7 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
     }
 
     private static void logMetrics(final boolean isSuccess, final String errorName) {
-        TfsTelemetryHelper.getInstance().sendEvent(ACTION_NAME,
+        TfsTelemetryHelper.sendEventAsync(ACTION_NAME,
                 new TfsTelemetryHelper.PropertyMapBuilder()
                         .activeServerContext()
                         .actionName(ACTION_NAME)

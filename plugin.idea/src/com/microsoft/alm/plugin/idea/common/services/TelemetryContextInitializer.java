@@ -54,18 +54,22 @@ public class TelemetryContextInitializer implements PluginContextInitializer {
 
     private String linuxDistribution = StringUtils.EMPTY;
     private String hostname = StringUtils.EMPTY;
+    private boolean isInitialized = false;
 
     @Override
     public void initialize(final TelemetryContext context) {
-        logger.info("Starting TelemetryContext initialization");
-        initializeInstrumentationKey(context);
-        initializeProperties(context.getProperties());
-        initializeUser(context.getUser());
-        initializeComponent(context.getComponent());
-        initializeDevice(context.getDevice());
-        initializeTags(context.getTags());
-        initializeSession(context.getSession());
-        logger.info("Ending TelemetryContext initialization");
+        if (!isInitialized) {
+            logger.info("Starting TelemetryContext initialization");
+            initializeInstrumentationKey(context);
+            initializeProperties(context.getProperties());
+            initializeUser(context.getUser());
+            initializeComponent(context.getComponent());
+            initializeDevice(context.getDevice());
+            initializeTags(context.getTags());
+            initializeSession(context.getSession());
+            isInitialized = true;
+            logger.info("Ending TelemetryContext initialization");
+        }
     }
 
     @Override

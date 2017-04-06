@@ -54,7 +54,7 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
         super.init();
 
         // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.getInstance().sendDialogOpened(this.getClass().getName(),
+        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(),
                 new TfsTelemetryHelper.PropertyMapBuilder()
                         .activeServerContext()
                         .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, title)

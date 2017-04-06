@@ -140,7 +140,7 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                                     });
                         }
 
-                        TfsTelemetryHelper.getInstance().sendEvent(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
+                        TfsTelemetryHelper.sendEventAsync(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                                 .currentOrActiveContext(context)
                                 .actionName(ASSOCIATE_WORK_ITEM_ACTION)
                                 .success(wasWorkItemAssociated).build());

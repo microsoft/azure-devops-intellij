@@ -32,7 +32,7 @@ public class LoginPageImpl extends JPanel implements LoginPage {
         setLoginShowing(true);
 
         // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.getInstance().sendDialogOpened(this.getClass().getName(), TfsTelemetryHelper.PropertyMapBuilder.EMPTY);
+        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(), TfsTelemetryHelper.PropertyMapBuilder.EMPTY);
     }
 
     @Override

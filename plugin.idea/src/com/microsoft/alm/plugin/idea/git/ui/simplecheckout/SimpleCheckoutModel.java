@@ -189,7 +189,7 @@ public class SimpleCheckoutModel extends AbstractModel {
                     cloneResult.set(git4idea.checkout.GitCheckoutProvider.doClone(project, git, getDirectoryName(), getParentDirectory(), gitRepositoryStr));
 
                     // Add Telemetry for the clone call along with it's success/failure
-                    TfsTelemetryHelper.getInstance().sendEvent(COMMANDLINE_CLONE_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
+                    TfsTelemetryHelper.sendEventAsync(COMMANDLINE_CLONE_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                             .currentOrActiveContext(context)
                             .actionName(COMMANDLINE_CLONE_ACTION)
                             .success(cloneResult.get()).build());

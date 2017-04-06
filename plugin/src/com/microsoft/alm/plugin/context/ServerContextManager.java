@@ -291,7 +291,7 @@ public class ServerContextManager {
                                 .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).build();
                         add(lastUsedTfsContext);
 
-                        TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                        TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
                                 new TfsTelemetryHelper.PropertyMapBuilder().success(true).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2015_OR_LATER).build());
 
                         return contextWithUserId;
@@ -300,7 +300,7 @@ public class ServerContextManager {
 
                 //This is TFS 2013
                 logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2013 server");
-                TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
                         new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2013).build());
 
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
@@ -309,7 +309,7 @@ public class ServerContextManager {
             if (e.getStatusCode() == 404) {
                 //HTTP not found, so server does not have this endpoint (TFS 2012 or older) or the URL is incorrect
                 logger.warn("checkTfsVersionAndConnection: 404 while trying to connect to server so either bad url or unsupported server version");
-                TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_CONNECTION_EVENT,
+                TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
                         new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2012_OR_OLDER).build());
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
             } else {

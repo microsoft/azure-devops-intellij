@@ -9,7 +9,6 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
-import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import git4idea.repo.GitRepository;
@@ -73,22 +72,11 @@ public class ProjectRepoEventManager {
         public void projectOpened(final Project project) {
             // Run first telemetry call async since it can take longer because the telemetry client needs to initialize.
             // This will always be the first telemetry call since a project needs to be opened for any telemetry to sent.
-            // TODO: Move executeOnPooledThread into sendEvent so that all events sent are run async
-            IdeaHelper.executeOnPooledThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        // Send telemetry on what type of repo is being opened
-                        TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_PROJECT_OPENED_EVENT,
-                                new TfsTelemetryHelper.PropertyMapBuilder()
-                                        .activeServerContext()
-                                        .pair(TELEMETRY_REPO_TYPE, VcsHelper.getVcsType(project))
-                                        .build());
-                    } catch (Exception e) {
-                        logger.warn("Error logging metrics upon projectOpened", e);
-                    }
-                }
-            });
+            TfsTelemetryHelper.sendEventAsync(TELEMETRY_PROJECT_OPENED_EVENT,
+                    new TfsTelemetryHelper.PropertyMapBuilder()
+                            .activeServerContext()
+                            .pair(TELEMETRY_REPO_TYPE, VcsHelper.getVcsType(project))
+                            .build());
 
             ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_PROJECT_OPENED, project, null);
             subscribeToRepoChangeEvents(project);
@@ -123,22 +111,11 @@ public class ProjectRepoEventManager {
                             logger.info("repository changed");
                             ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
 
-                            // TODO: Move executeOnPooledThread into sendEvent so that all events sent are run async
-                            IdeaHelper.executeOnPooledThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        // Send telemetry on what type of repo is being opened
-                                        TfsTelemetryHelper.getInstance().sendEvent(TELEMETRY_REPO_CHANGED_EVENT,
-                                                new TfsTelemetryHelper.PropertyMapBuilder()
-                                                        .activeServerContext()
-                                                        .pair(TELEMETRY_IS_VSTS, String.valueOf(VcsHelper.isVstsRepo(project)))
-                                                        .build());
-                                    } catch (Exception e) {
-                                        logger.warn("Error logging metrics upon projectOpened", e);
-                                    }
-                                }
-                            });
+                            TfsTelemetryHelper.sendEventAsync(TELEMETRY_REPO_CHANGED_EVENT,
+                                    new TfsTelemetryHelper.PropertyMapBuilder()
+                                            .activeServerContext()
+                                            .pair(TELEMETRY_IS_VSTS, String.valueOf(VcsHelper.isVstsRepo(project)))
+                                            .build());
                         } finally {
                             repositoryChanging = false;
                         }

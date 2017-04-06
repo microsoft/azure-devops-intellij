@@ -283,7 +283,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                                 NotificationListener.URL_OPENING_LISTENER);
 
                         // Add Telemetry for a successful import
-                        TfsTelemetryHelper.getInstance().sendEvent(ACTION_NAME,
+                        TfsTelemetryHelper.sendEventAsync(ACTION_NAME,
                                 new TfsTelemetryHelper.PropertyMapBuilder()
                                         .currentOrActiveContext(localContext)
                                         .actionName(ACTION_NAME)
@@ -466,7 +466,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         project.getName(), rootVirtualFile.getUrl());
                 logger.warn("doFirstCommitIfRequired", ve);
                 // Log the exact exception here
-                TfsTelemetryHelper.getInstance().sendException(ve,
+                TfsTelemetryHelper.sendExceptionAsync(ve,
                         new TfsTelemetryHelper.PropertyMapBuilder()
                                 .currentOrActiveContext(localContext)
                                 .actionName(ACTION_NAME)
@@ -632,7 +632,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
     private void notifyImportError(final Project project, final String message, final String action, ServerContext context) {
         // Add Telemetry for a failed import
-        TfsTelemetryHelper.getInstance().sendEvent(action,
+        TfsTelemetryHelper.sendEventAsync(action,
                 new TfsTelemetryHelper.PropertyMapBuilder()
                         .currentOrActiveContext(context)
                         .actionName(action)

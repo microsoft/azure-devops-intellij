@@ -23,7 +23,7 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
         this.form = form;
 
         // Make a telemetry entry for this UI tab opening
-        TfsTelemetryHelper.getInstance().sendDialogOpened(this.getClass().getName(),
+        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(),
                 new TfsTelemetryHelper.PropertyMapBuilder()
                         .activeServerContext()
                         .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, eventName)

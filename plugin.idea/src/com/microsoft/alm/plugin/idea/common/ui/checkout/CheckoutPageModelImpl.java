@@ -272,7 +272,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
             // TODO: need a way to tell if/when the clone actually succeeded or failed
             // Add Telemetry for a successful clone
             final String action = parentModel.getTelemetryAction();
-            TfsTelemetryHelper.getInstance().sendEvent(action, new TfsTelemetryHelper.PropertyMapBuilder()
+            TfsTelemetryHelper.sendEventAsync(action, new TfsTelemetryHelper.PropertyMapBuilder()
                     .currentOrActiveContext(context)
                     .actionName(action)
                     .success(true).build());

@@ -33,7 +33,7 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
             model.openSelectedItemsLink();
         } else if (VcsWorkItemsForm.CMD_CREATE_BRANCH.equals(e.getActionCommand())) {
             // record initial menu selection for metrics
-            TfsTelemetryHelper.getInstance().sendEvent(WIT_TAB_CREATE_BRANCH_SELECTED_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
+            TfsTelemetryHelper.sendEventAsync(WIT_TAB_CREATE_BRANCH_SELECTED_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                     .activeServerContext()
                     .actionName(WIT_TAB_CREATE_BRANCH_SELECTED_ACTION).build());
 

@@ -280,7 +280,7 @@ public class CreateBranchModel extends AbstractModel {
             }
 
             // Add Telemetry for the create call along with it's success/failure
-            TfsTelemetryHelper.getInstance().sendEvent(CREATE_BRANCH_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
+            TfsTelemetryHelper.sendEventAsync(CREATE_BRANCH_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
                     .currentOrActiveContext(context)
                     .actionName(CREATE_BRANCH_ACTION)
                     .success(StringUtils.isEmpty(errorMessage))

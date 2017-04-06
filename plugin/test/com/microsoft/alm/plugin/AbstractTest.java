@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
 import com.microsoft.alm.plugin.mocks.MockLocalizationService;
 import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
+import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
@@ -40,7 +41,12 @@ public class AbstractTest {
             @Override
             public void initialize(TelemetryContext context) {
             }
-        }, new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(), false);
+        }, new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(), new AsyncService() {
+            @Override
+            public void executeOnPooledThread(Runnable runnable) {
+                runnable.run();
+            }
+        }, false);
     }
 
     public static void assertLogged(final String s) {

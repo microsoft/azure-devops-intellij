@@ -47,7 +47,7 @@ public class TfsTelemetryHelper {
     /**
      * The getInstance method returns the singleton instance. Creating it if necessary
      */
-    public static TfsTelemetryHelper getInstance() {
+    private static TfsTelemetryHelper getInstance() {
         // Using the Initialization-on-demand holder pattern to make sure this is thread-safe
         return TfsTelemetryHelperHolder.INSTANCE;
     }
@@ -143,20 +143,6 @@ public class TfsTelemetryHelper {
         if (telemetryClient != null) {
             telemetryClient.trackEvent(eventName, builder.build(), null);
         }
-    }
-
-    /**
-     * Call sendSessionBegins when the plugin is loaded.
-     */
-    public void sendSessionBegins() {
-        sendSessionState(SessionState.Start);
-    }
-
-    /**
-     * Call sendSessionEnds when the plugin is unloaded.
-     */
-    public void sendSessionEnds() {
-        sendSessionState(SessionState.End);
     }
 
     /**
@@ -290,6 +276,58 @@ public class TfsTelemetryHelper {
         @Override
         public String toString() {
             return properties.toString();
+        }
+    }
+
+    public static void sendEventAsync(final String name, final Map<String, String> properties) {
+        try {
+            PluginServiceProvider.getInstance().getAsyncService().executeOnPooledThread(new Runnable() {
+                @Override
+                public void run() {
+                    getInstance().sendEvent(name, properties);
+                }
+            });
+        } catch (Exception e) {
+            logger.warn("Error sending event telemetry", e);
+        }
+    }
+
+    public static void sendDialogOpenedAsync(final String name, final Map<String, String> properties) {
+        try {
+            PluginServiceProvider.getInstance().getAsyncService().executeOnPooledThread(new Runnable() {
+                @Override
+                public void run() {
+                    getInstance().sendDialogOpened(name, properties);
+                }
+            });
+        } catch (Exception e) {
+            logger.warn("Error sending dialog telemetry", e);
+        }
+    }
+
+    public static void sendMetricAsync(final String name, final double value) {
+        try {
+            PluginServiceProvider.getInstance().getAsyncService().executeOnPooledThread(new Runnable() {
+                @Override
+                public void run() {
+                    getInstance().sendMetric(name, value);
+                }
+            });
+        } catch (Exception e) {
+            logger.warn("Error sending metric telemetry", e);
+        }
+    }
+
+    public static void sendExceptionAsync(final Exception exception, final Map<String, String> properties) {
+        try {
+            PluginServiceProvider.getInstance().getAsyncService().executeOnPooledThread(new Runnable() {
+                @Override
+                public void run() {
+                    getInstance().sendException(exception, properties);
+                }
+            });
+        } catch (Exception e) {
+            logger.warn("Error sending exception telemetry", e);
         }
     }
 }

@@ -97,7 +97,7 @@ public abstract class InstrumentedAction extends DumbAwareAction {
         } catch (Exception ex) {
             // An unhandled exception leaked all the way out to here
             // Let's log the exception and stop letting it bubble up
-            TfsTelemetryHelper.getInstance().sendException(ex, getContextProperties().build());
+            TfsTelemetryHelper.sendExceptionAsync(ex, getContextProperties().build());
         }
     }
 
@@ -120,13 +120,13 @@ public abstract class InstrumentedAction extends DumbAwareAction {
         } catch (Exception ex) {
             // An unhandled exception leaked all the way out to here
             // Let's log the exception and stop letting it bubble up
-            TfsTelemetryHelper.getInstance().sendException(ex, getContextProperties().build());
+            TfsTelemetryHelper.sendExceptionAsync(ex, getContextProperties().build());
         }
     }
 
     private void SendStartActionEvent() {
         final String eventName = getActionName();
-        TfsTelemetryHelper.getInstance().sendEvent(eventName, getContextProperties().build());
+        TfsTelemetryHelper.sendEventAsync(eventName, getContextProperties().build());
     }
 
 

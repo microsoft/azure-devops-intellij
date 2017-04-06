@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.idea.common.services.TelemetryContextInitializer;
+import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.junit.BeforeClass;
 
@@ -32,6 +33,12 @@ public class IdeaAbstractTest extends AbstractTest {
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
                 new HttpProxyServiceImpl(),
+                new AsyncService() {
+                    @Override
+                    public void executeOnPooledThread(Runnable runnable) {
+                        runnable.run();
+                    }
+                },
                 false);
 
         // ensure the AbstractTest's setup method is called as well.

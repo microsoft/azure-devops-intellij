@@ -20,6 +20,7 @@ public class PluginServiceProvider {
     private PropertyService propertyService;
     private LocalizationService localizationSerivce;
     private HttpProxyService httpProxyService;
+    private AsyncService asyncService;
 
     private static class ProviderHolder {
         private static PluginServiceProvider INSTANCE = new PluginServiceProvider();
@@ -36,6 +37,7 @@ public class PluginServiceProvider {
                            final PropertyService propertyService,
                            final LocalizationService localizationService,
                            final HttpProxyService httpProxyService,
+                           final AsyncService asyncService,
                            final boolean insideIDE) {
         if (!initialized) {
             this.contextStore = contextStore;
@@ -45,6 +47,7 @@ public class PluginServiceProvider {
             this.propertyService = propertyService;
             this.localizationSerivce = localizationService;
             this.httpProxyService = httpProxyService;
+            this.asyncService = asyncService;
             this.insideIDE = insideIDE;
             initialized = true;
         }
@@ -105,5 +108,12 @@ public class PluginServiceProvider {
         assert deviceFlowResponsePrompt != null;
 
         return deviceFlowResponsePrompt;
+    }
+
+    public AsyncService getAsyncService() {
+        assert initialized;
+        assert asyncService != null;
+
+        return asyncService;
     }
 }

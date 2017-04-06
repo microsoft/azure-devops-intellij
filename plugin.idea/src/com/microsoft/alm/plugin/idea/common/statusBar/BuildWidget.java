@@ -86,7 +86,7 @@ public class BuildWidget implements StatusBarWidget, StatusBarWidget.IconPresent
 
             // Make a telemetry entry for this Click
             final String eventName = String.format(TfsTelemetryConstants.PLUGIN_ACTION_EVENT_NAME_FORMAT, "BuildStatusBarClick");
-            TfsTelemetryHelper.getInstance().sendEvent(eventName,
+            TfsTelemetryHelper.sendEventAsync(eventName,
                     new TfsTelemetryHelper.PropertyMapBuilder()
                             .activeServerContext()
                             .build());
