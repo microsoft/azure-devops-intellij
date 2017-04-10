@@ -260,7 +260,9 @@ public class TFSVcs extends AbstractVcs {
         final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(getProject());
         logger.info("TFSVcs.getServerContext repositoryContext is null: " + (repositoryContext == null));
 
-        final ServerContext serverContext = repositoryContext != null ?
+        final ServerContext serverContext = repositoryContext != null
+                && StringUtils.isNotEmpty(repositoryContext.getTeamProjectName())
+                && StringUtils.isNotEmpty(repositoryContext.getUrl()) ?
                 ServerContextManager.getInstance().createContextFromTfvcServerUrl(
                         repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true)
                 : null;

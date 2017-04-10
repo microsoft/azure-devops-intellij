@@ -151,7 +151,7 @@ public class IdeaHelper {
      * @param throwable
      */
     public static void showErrorDialog(@NotNull final Project project, final Throwable throwable) {
-        if (throwable != null) {
+        if (throwable != null && StringUtils.isNotEmpty(throwable.getMessage())) {
             showErrorDialog(project, throwable.getMessage());
         } else {
             showErrorDialog(project, TfPluginBundle.message(TfPluginBundle.KEY_MESSAGE_TEAM_SERVICES_UNEXPECTED_ERROR));

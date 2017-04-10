@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -320,12 +321,79 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         taskArgument.getValue().run();
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testLoadWorkspace_withNullRepo() {
+        final WorkspaceModel m = new WorkspaceModel();
+        final Project localMockProject = Mockito.mock(Project.class);
+        when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(null);
+        m.loadWorkspace(localMockProject);
+
+        // make sure the runnable task was submitted
+        ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).submitOperationTask(taskArgument.capture());
+
+        // Make sure we starting loading
+        Assert.assertEquals(true, m.isLoading());
+
+        // Now force the runnable to run
+        taskArgument.getValue().run();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testLoadWorkspace_withNoRepoUrl() {
+        final WorkspaceModel m = new WorkspaceModel();
+        final Project localMockProject = Mockito.mock(Project.class);
+        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        when(repositoryContext.getUrl()).thenReturn(StringUtils.EMPTY);
+        when(repositoryContext.getTeamProjectName()).thenReturn("TeamProjectName");
+        when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
+        m.loadWorkspace(localMockProject);
+
+        // make sure the runnable task was submitted
+        ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).submitOperationTask(taskArgument.capture());
+
+        // Make sure we starting loading
+        Assert.assertEquals(true, m.isLoading());
+
+        // Now force the runnable to run
+        taskArgument.getValue().run();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testLoadWorkspace_withNoTeamProjectName() {
+        final WorkspaceModel m = new WorkspaceModel();
+        final Project localMockProject = Mockito.mock(Project.class);
+        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        when(mockRepositoryContext.getUrl()).thenReturn("URL");
+        when(mockRepositoryContext.getTeamProjectName()).thenReturn(StringUtils.EMPTY);
+        when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
+        m.loadWorkspace(localMockProject);
+
+        // make sure the runnable task was submitted
+        ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).submitOperationTask(taskArgument.capture());
+
+        // Make sure we starting loading
+        Assert.assertEquals(true, m.isLoading());
+
+        // Now force the runnable to run
+        taskArgument.getValue().run();
+    }
+
     @Test(expected = NotAuthorizedException.class)
-    public void testLoadWorkspace_withProject_userCanceled() {
+    public void testLoadWorkspace_NoRepoContextFound() {
         final WorkspaceModel m = new WorkspaceModel();
         // mockProject2 will return a repository context that does not have a project
         // this will in turn call a null server context to be returned
-        m.loadWorkspace(mockProject2);
+        when(serverContextManager.createContextFromTfvcServerUrl("bad url", "bad team name", true))
+                .thenReturn(null);
+        final Project localMockProject = Mockito.mock(Project.class);
+        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        when(mockRepositoryContext.getUrl()).thenReturn("bad url");
+        when(mockRepositoryContext.getTeamProjectName()).thenReturn("bad team name");
+        when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
+        m.loadWorkspace(localMockProject);
 
         // make sure the runnable task was submitted
         ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);

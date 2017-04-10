@@ -180,7 +180,7 @@ public class WorkspaceModel extends AbstractModel {
                 try {
                     logger.info("loadWorkspace: getting repository context");
                     final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(project);
-                    if (repositoryContext == null) {
+                    if (repositoryContext == null || StringUtils.isEmpty(repositoryContext.getUrl()) || StringUtils.isEmpty(repositoryContext.getTeamProjectName())) {
                         logger.warn("loadWorkspace: Could not determine repositoryContext for project");
                         throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED));
                     }

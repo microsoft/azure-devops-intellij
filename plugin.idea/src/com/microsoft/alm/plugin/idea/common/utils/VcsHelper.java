@@ -76,14 +76,17 @@ public class VcsHelper {
      * @return
      */
     public static boolean isVstsRepo(final Project project) {
-        if (isTfVcs(project)) {
-            return true;
+        if (project != null) {
+            if (isTfVcs(project)) {
+                return true;
+            }
+            if (!isGitVcs(project)) {
+                return false;
+            }
+            final GitRepository repo = GitUtil.getRepositoryManager(project).getRepositoryForFile(project.getBaseDir());
+            return repo != null && TfGitHelper.isTfGitRepository(repo);
         }
-        if (!isGitVcs(project)) {
-            return false;
-        }
-        final GitRepository repo = GitUtil.getRepositoryManager(project).getRepositoryForFile(project.getBaseDir());
-        return repo != null && TfGitHelper.isTfGitRepository(repo);
+        return false;
     }
 
     /**

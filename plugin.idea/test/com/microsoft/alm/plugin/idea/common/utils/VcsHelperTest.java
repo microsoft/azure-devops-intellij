@@ -120,6 +120,11 @@ public class VcsHelperTest extends IdeaAbstractTest {
         assertTrue(VcsHelper.isVstsRepo(mockProject));
     }
 
+    @Test
+    public void testIsVstsRepo_NullProject() {
+        assertFalse(VcsHelper.isVstsRepo(null));
+    }
+
     private void setupVcs(final boolean isGit, final boolean isTfvc) {
         when(mockProjectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)).thenReturn(isGit);
         when(mockProjectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)).thenReturn(isTfvc);
