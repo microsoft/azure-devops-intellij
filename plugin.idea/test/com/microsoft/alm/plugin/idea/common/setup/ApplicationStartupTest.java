@@ -4,6 +4,8 @@
 package com.microsoft.alm.plugin.idea.common.setup;
 
 import com.intellij.openapi.application.ApplicationNamesInfo;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.sun.jna.Platform;
 import org.apache.commons.io.FileUtils;
@@ -22,8 +24,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
+import static org.mockito.Mockito.when;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WindowsStartup.class, Platform.class, MacStartup.class, ApplicationNamesInfo.class})
+@PrepareForTest({WindowsStartup.class, Platform.class, MacStartup.class, ApplicationNamesInfo.class, AuthHelper.class})
 public class ApplicationStartupTest extends IdeaAbstractTest {
     public File VSTS_DIR = new File(System.getProperty("java.io.tmpdir"), ".vsts");
     public String TEST_IDE_LOCATION = "/test/idea/location/";
@@ -36,12 +40,9 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
     @Before
     public void localSetup() {
-        Mockito.when(mockApplicationNamesInfo.getProductName()).thenReturn(IDEA_NAME);
-        PowerMockito.mockStatic(Platform.class);
-        PowerMockito.mockStatic(WindowsStartup.class);
-        PowerMockito.mockStatic(MacStartup.class);
-        PowerMockito.mockStatic(ApplicationNamesInfo.class);
-        Mockito.when(ApplicationNamesInfo.getInstance()).thenReturn(mockApplicationNamesInfo);
+        when(mockApplicationNamesInfo.getProductName()).thenReturn(IDEA_NAME);
+        PowerMockito.mockStatic(Platform.class, WindowsStartup.class, MacStartup.class, ApplicationNamesInfo.class, AuthHelper.class);
+        when(ApplicationNamesInfo.getInstance()).thenReturn(mockApplicationNamesInfo);
         VSTS_DIR.mkdir();
     }
 
@@ -118,15 +119,54 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
         Assert.assertTrue(FileUtils.contentEquals(expectedFile, new File(LOCATIONS_CSV_PATH)));
     }
 
+    @Test
+    public void testConfigureAuthType_SettingsFile() {
+        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(true);
+
+        ApplicationStartup appStartup = new ApplicationStartup();
+        appStartup.configureAuthType();
+        PowerMockito.verifyStatic(Mockito.times(1));
+        AuthHelper.setDeviceFlowEnvFromSettingsFile();
+        PowerMockito.verifyStatic(Mockito.times(0));
+        AuthHelper.isDeviceFlowEnvSetTrue();
+    }
+
+    @Test
+    public void testConfigureAuthType_EnvVariable() {
+        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(false);
+        when(AuthHelper.isDeviceFlowEnvSetTrue()).thenReturn(true);
+
+        ApplicationStartup appStartup = new ApplicationStartup();
+        appStartup.configureAuthType();
+        PowerMockito.verifyStatic(Mockito.times(0));
+        AuthHelper.setDeviceFlowEnvFromSettingsFile();
+        PowerMockito.verifyStatic(Mockito.times(1));
+        AuthHelper.isDeviceFlowEnvSetTrue();
+        AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
+    }
+
+    @Test
+    public void testConfigureAuthType_None() {
+        when(AuthHelper.isAuthTypeFromSettingsFileSet()).thenReturn(false);
+        when(AuthHelper.isDeviceFlowEnvSetTrue()).thenReturn(false);
+
+        ApplicationStartup appStartup = new ApplicationStartup();
+        appStartup.configureAuthType();
+        PowerMockito.verifyStatic(Mockito.times(0));
+        AuthHelper.setDeviceFlowEnvFromSettingsFile();
+        AuthHelper.isDeviceFlowEnvSetTrue();
+        AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
+    }
+
     public void osSetup() {
         ApplicationStartup appStartup = new ApplicationStartup();
         appStartup.doOsSetup(VSTS_DIR, TEST_IDE_LOCATION);
     }
 
     public void setOsResponses(boolean windowsResponse, boolean macResponse, boolean linuxResponse) {
-        Mockito.when(Platform.isWindows()).thenReturn(windowsResponse);
-        Mockito.when(Platform.isMac()).thenReturn(macResponse);
-        Mockito.when(Platform.isLinux()).thenReturn(linuxResponse);
+        when(Platform.isWindows()).thenReturn(windowsResponse);
+        when(Platform.isMac()).thenReturn(macResponse);
+        when(Platform.isLinux()).thenReturn(linuxResponse);
     }
 
     public void verifyStatics(int winRuns, int macRuns, int linuxRuns) {

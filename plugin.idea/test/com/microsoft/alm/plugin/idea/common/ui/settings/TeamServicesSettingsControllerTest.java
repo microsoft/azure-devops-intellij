@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.ui.settings;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
@@ -55,6 +56,7 @@ public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
         when(IdeaHelper.getCurrentProject()).thenReturn(mockProject);
         when(mockTeamServicesSettingsModel.getTableModel()).thenReturn(mockTableModel);
         when(mockTeamServicesSettingsModel.getTableSelectionModel()).thenReturn(mockListSelectionModel);
+        when(mockTeamServicesSettingsModel.getOriginalAuthType()).thenReturn(AuthTypes.DEVICE_FLOW);
 
         controller = new TeamServicesSettingsController(mockTeamServicesSettingsForm, mockTeamServicesSettingsModel);
     }
@@ -65,6 +67,7 @@ public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
         verify(mockTeamServicesSettingsForm, times(1)).addActionListener(controller);
         verify(mockTeamServicesSettingsForm, times(1)).setContextTable(mockTableModel, mockListSelectionModel);
         verify(mockTeamServicesSettingsModel, times(1)).loadSettings();
+        verify(mockTeamServicesSettingsForm, times(1)).setAuthType(AuthTypes.DEVICE_FLOW);
     }
 
     @Test
@@ -87,6 +90,8 @@ public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
         controller.actionPerformed(mockEvent);
 
         verify(mockTeamServicesSettingsModel, times(1)).reset();
+        verify(mockTeamServicesSettingsModel, times(1)).getOriginalAuthType();
+        verify(mockTeamServicesSettingsForm, times(1)).setAuthType(AuthTypes.DEVICE_FLOW);
         verifyNoMoreInteractions(mockTeamServicesSettingsModel);
     }
 
@@ -120,6 +125,18 @@ public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
         controller.actionPerformed(mockEvent);
 
         verify(mockTeamServicesSettingsModel, times(1)).updatePasswords();
+        verifyNoMoreInteractions(mockTeamServicesSettingsModel);
+    }
+
+    @Test
+    public void testActionPerformed_AuthChanged() {
+        reset(mockTeamServicesSettingsModel);
+        when(mockTeamServicesSettingsForm.getSelectAuthType()).thenReturn(AuthTypes.DEVICE_FLOW);
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getActionCommand()).thenReturn(TeamServicesSettingsForm.CMD_AUTH_CHANGED);
+        controller.actionPerformed(mockEvent);
+
+        verify(mockTeamServicesSettingsModel, times(1)).setUpdatedAuthType(AuthTypes.DEVICE_FLOW);
         verifyNoMoreInteractions(mockTeamServicesSettingsModel);
     }
 }

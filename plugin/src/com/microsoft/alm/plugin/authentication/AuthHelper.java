@@ -7,6 +7,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.client.model.VssServiceResponseException;
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -25,6 +27,9 @@ import java.util.concurrent.TimeoutException;
  */
 public class AuthHelper {
     private final static Logger logger = LoggerFactory.getLogger(AuthHelper.class);
+
+    private static String DEVICE_FLOW_PROPERTY = "userAgentProvider";
+    private static String ENABLE_DEVICE_FLOW_VALUE = "none";
 
     /**
      * Personal Access Token description string formatter
@@ -166,6 +171,54 @@ public class AuthHelper {
             return true;
         }
 
+        return false;
+    }
+
+    public static void setDeviceFlowEnvFromSettingsFile() {
+        final String savedAuthMethod = getAuthTypeInSettingsFile();
+
+        if (StringUtils.isEmpty(savedAuthMethod)) {
+            return;
+        }
+
+        if (AuthTypes.DEVICE_FLOW == AuthTypes.getEnum(savedAuthMethod.toUpperCase())) {
+            setDeviceFlowEnvVariableTrue();
+        } else {
+            setDeviceFlowEnvVariableFalse();
+        }
+    }
+
+    public static boolean isAuthTypeFromSettingsFileSet() {
+        return StringUtils.isNotEmpty(getAuthTypeInSettingsFile());
+    }
+
+    public static String getAuthTypeInSettingsFile() {
+        return PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_AUTH_TYPE);
+    }
+
+    public static void setAuthTypeInSettingsFile(final AuthTypes authType) {
+        if (authType != null) {
+            PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_AUTH_TYPE, authType.name().toUpperCase());
+        }
+    }
+
+    public static void setDeviceFlowEnvVariableTrue() {
+        setDeviceFlowEnvVariable(ENABLE_DEVICE_FLOW_VALUE);
+    }
+
+    public static void setDeviceFlowEnvVariableFalse() {
+        setDeviceFlowEnvVariable(StringUtils.EMPTY);
+    }
+
+    private static void setDeviceFlowEnvVariable(final String value) {
+        System.setProperty(DEVICE_FLOW_PROPERTY, value);
+    }
+
+    public static boolean isDeviceFlowEnvSetTrue() {
+        final String property = System.getProperty(DEVICE_FLOW_PROPERTY, StringUtils.EMPTY);
+        if (StringUtils.isNotEmpty(property) && StringUtils.equals(ENABLE_DEVICE_FLOW_VALUE, property)) {
+            return true;
+        }
         return false;
     }
 }

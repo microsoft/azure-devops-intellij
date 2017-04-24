@@ -9,12 +9,15 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +35,8 @@ public class TeamServicesSettingsModel extends AbstractModel {
     private final Project project;
     private final ServerContextTableModel tableModel;
     private final List<ServerContext> deleteContexts;
+    private AuthTypes updatedAuthType;
+    private AuthTypes originalAuthType;
 
     public TeamServicesSettingsModel(final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
@@ -46,14 +51,24 @@ public class TeamServicesSettingsModel extends AbstractModel {
      * @return
      */
     public boolean isModified() {
-        return !deleteContexts.isEmpty();
+        return !deleteContexts.isEmpty() || originalAuthType != updatedAuthType;
     }
 
     /**
      * Load the settings for the page
      */
     public void loadSettings() {
+        loadAuthMethod();
         populateContextTable();
+    }
+
+    /**
+     * Loads the auth type if it's been saved before
+     */
+    private void loadAuthMethod() {
+        final String savedAuthMethod = AuthHelper.getAuthTypeInSettingsFile();
+        originalAuthType = StringUtils.isNotEmpty(savedAuthMethod) ? AuthTypes.getEnum(savedAuthMethod.toUpperCase()) : AuthTypes.CREDS;
+        updatedAuthType = originalAuthType;
     }
 
     /**
@@ -99,6 +114,18 @@ public class TeamServicesSettingsModel extends AbstractModel {
             ServerContextManager.getInstance().remove(context.getKey());
         }
         deleteContexts.clear();
+
+        // save auth method
+        if (originalAuthType != updatedAuthType) {
+            AuthHelper.setAuthTypeInSettingsFile(updatedAuthType);
+            originalAuthType = updatedAuthType;
+
+            if (updatedAuthType == AuthTypes.DEVICE_FLOW) {
+                AuthHelper.setDeviceFlowEnvVariableTrue();
+            } else {
+                AuthHelper.setDeviceFlowEnvVariableFalse();
+            }
+        }
     }
 
     /**
@@ -107,6 +134,7 @@ public class TeamServicesSettingsModel extends AbstractModel {
     public void reset() {
         deleteContexts.clear();
         populateContextTable();
+        updatedAuthType = originalAuthType;
     }
 
     /**
@@ -150,6 +178,14 @@ public class TeamServicesSettingsModel extends AbstractModel {
 
     public ServerContextTableModel getTableModel() {
         return tableModel;
+    }
+
+    public AuthTypes getOriginalAuthType() {
+        return originalAuthType;
+    }
+
+    public void setUpdatedAuthType(final AuthTypes updatedAuthType) {
+        this.updatedAuthType = updatedAuthType;
     }
 
     public ListSelectionModel getTableSelectionModel() {

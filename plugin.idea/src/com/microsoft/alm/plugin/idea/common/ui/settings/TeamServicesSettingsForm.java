@@ -7,7 +7,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.JBUI;
-import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.SwingHelper;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableFocusListener;
@@ -15,14 +15,15 @@ import com.microsoft.alm.plugin.idea.common.ui.common.TableModelSelectionConvert
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowSorter;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.Dimension;
@@ -36,6 +37,7 @@ import java.util.ResourceBundle;
 public class TeamServicesSettingsForm {
     public static final String CMD_DELETE_PASSWORD = "deletePassword";
     public static final String CMD_UPDATE_PASSWORD = "updatePasword";
+    public static final String CMD_AUTH_CHANGED = "authChanged";
 
     private JPanel mainPanel;
     private JButton updatePasswordButton;
@@ -43,12 +45,11 @@ public class TeamServicesSettingsForm {
     private JTable contextTable;
     private JScrollPane contextScrollPane;
     private JButton deletePasswordButton;
+    private JRadioButton credsOption;
+    private JRadioButton deviceFlowOption;
+    private JPanel authTypePanel;
 
     public TeamServicesSettingsForm() {
-        // initialize border with padding
-        passwordPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder(
-                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_TITLE)),
-                new EmptyBorder(JBUI.scale(10), JBUI.scale(10), JBUI.scale(5), JBUI.scale(10))));
         // Fix HiDPI scaling for table
         SwingHelper.scaleTableRowHeight(contextTable);
         // Fix tabbing in table
@@ -58,6 +59,8 @@ public class TeamServicesSettingsForm {
 
         updatePasswordButton.setActionCommand(CMD_UPDATE_PASSWORD);
         deletePasswordButton.setActionCommand(CMD_DELETE_PASSWORD);
+        credsOption.setActionCommand(CMD_AUTH_CHANGED);
+        deviceFlowOption.setActionCommand(CMD_AUTH_CHANGED);
     }
 
     public JComponent getContentPane() {
@@ -84,10 +87,29 @@ public class TeamServicesSettingsForm {
         });
     }
 
+    public void setAuthType(final AuthTypes authType) {
+        if (AuthTypes.DEVICE_FLOW == authType) {
+            credsOption.setSelected(false);
+            deviceFlowOption.setSelected(true);
+        } else {
+            credsOption.setSelected(true);
+            deviceFlowOption.setSelected(false);
+        }
+    }
+
+    public AuthTypes getSelectAuthType() {
+        if (deviceFlowOption.isSelected()) {
+            return AuthTypes.DEVICE_FLOW;
+        }
+        return AuthTypes.CREDS;
+    }
+
     public void addActionListener(final ActionListener listener) {
         // Hook up listener to all actions
         deletePasswordButton.addActionListener(listener);
         updatePasswordButton.addActionListener(listener);
+        deviceFlowOption.addActionListener(listener);
+        credsOption.addActionListener(listener);
     }
 
     {
@@ -106,11 +128,11 @@ public class TeamServicesSettingsForm {
      */
     private void $$$setupUI$$$() {
         mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.setBorder(BorderFactory.createTitledBorder(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.Title")));
+        mainPanel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
         passwordPanel = new JPanel();
-        passwordPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        passwordPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         mainPanel.add(passwordPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        passwordPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.Title")));
         contextScrollPane = new JScrollPane();
         passwordPanel.add(contextScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         contextTable = new JTable();
@@ -127,8 +149,28 @@ public class TeamServicesSettingsForm {
         updatePasswordButton = new JButton();
         this.$$$loadButtonText$$$(updatePasswordButton, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Config.Mgt.UpdateButton"));
         panel1.add(updatePasswordButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        authTypePanel = new JPanel();
+        authTypePanel.setLayout(new GridLayoutManager(1, 3, new Insets(5, 5, 5, 5), -1, -1));
+        mainPanel.add(authTypePanel, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        authTypePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Auth.Method.Title")));
+        credsOption = new JRadioButton();
+        credsOption.setEnabled(true);
+        credsOption.setSelected(true);
+        this.$$$loadButtonText$$$(credsOption, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Auth.Method.Creds.Button"));
+        credsOption.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Auth.Method.Creds.ToolTip"));
+        authTypePanel.add(credsOption, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 2, false));
+        deviceFlowOption = new JRadioButton();
+        this.$$$loadButtonText$$$(deviceFlowOption, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Auth.Method.DeviceFlow.Button"));
+        deviceFlowOption.setToolTipText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("Settings.Auth.Method.DeviceFlow.ToolTip"));
+        authTypePanel.add(deviceFlowOption, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 2, false));
         final Spacer spacer2 = new Spacer();
-        mainPanel.add(spacer2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        authTypePanel.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer3 = new Spacer();
+        mainPanel.add(spacer3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        ButtonGroup buttonGroup;
+        buttonGroup = new ButtonGroup();
+        buttonGroup.add(deviceFlowOption);
+        buttonGroup.add(credsOption);
     }
 
     /**

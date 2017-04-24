@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesSettingsForm">
-  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="500" height="400"/>
     </constraints>
     <properties/>
-    <border type="none" title-resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" title-key="Settings.Config.Mgt.Title"/>
+    <border type="none"/>
     <children>
       <grid id="fc17e" binding="passwordPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
+        <margin top="10" left="10" bottom="10" right="10"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
-        <border type="none"/>
+        <border type="etched" title-resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" title-key="Settings.Config.Mgt.Title"/>
         <children>
           <scrollpane id="58a53" binding="contextScrollPane">
             <constraints>
@@ -64,11 +64,52 @@
           </grid>
         </children>
       </grid>
+      <grid id="a316d" binding="authTypePanel" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="5" left="5" bottom="5" right="5"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="etched" title-resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" title-key="Settings.Auth.Method.Title"/>
+        <children>
+          <component id="86bd6" class="javax.swing.JRadioButton" binding="credsOption">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <enabled value="true"/>
+              <selected value="true"/>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Settings.Auth.Method.Creds.Button"/>
+              <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Settings.Auth.Method.Creds.ToolTip"/>
+            </properties>
+          </component>
+          <component id="c3d7d" class="javax.swing.JRadioButton" binding="deviceFlowOption">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Settings.Auth.Method.DeviceFlow.Button"/>
+              <toolTipText resource-bundle="com/microsoft/alm/plugin/idea/ui/tfplugin" key="Settings.Auth.Method.DeviceFlow.ToolTip"/>
+            </properties>
+          </component>
+          <hspacer id="8e097">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+        </children>
+      </grid>
       <vspacer id="93be5">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="authMethodGroup">
+      <member id="c3d7d"/>
+      <member id="86bd6"/>
+    </group>
+  </buttonGroups>
 </form>

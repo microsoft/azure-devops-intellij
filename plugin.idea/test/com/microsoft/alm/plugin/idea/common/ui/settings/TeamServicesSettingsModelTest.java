@@ -8,6 +8,8 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -38,7 +40,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ServerContextManager.class, Messages.class, ProgressManager.class})
+@PrepareForTest({ServerContextManager.class, Messages.class, ProgressManager.class, AuthHelper.class})
 public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
     private TeamServicesSettingsModel teamServicesSettingsModel;
 
@@ -66,7 +68,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ServerContextManager.class, Messages.class, ProgressManager.class);
+        PowerMockito.mockStatic(ServerContextManager.class, Messages.class, ProgressManager.class, AuthHelper.class);
 
         when(mockRepo1.getName()).thenReturn("repo1");
         when(mockProfRef2.getName()).thenReturn("repo2");
@@ -91,7 +93,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testIsModified_True() {
+    public void testIsModifiedContexts_True() {
         teamServicesSettingsModel.setDeleteContexts(ImmutableList.of(mockServerContext_GitRepo));
 
         assertTrue(teamServicesSettingsModel.isModified());
@@ -99,7 +101,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testIsModified_False() {
+    public void testIsModifiedContexts_False() {
         teamServicesSettingsModel.setDeleteContexts(Collections.EMPTY_LIST);
 
         assertFalse(teamServicesSettingsModel.isModified());
@@ -107,34 +109,62 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
     }
 
     @Test
+    public void testIsModifiedAuthType_True() {
+        when(AuthHelper.getAuthTypeInSettingsFile()).thenReturn(AuthTypes.DEVICE_FLOW.name());
+        teamServicesSettingsModel.setUpdatedAuthType(AuthTypes.CREDS);
+
+        assertTrue(teamServicesSettingsModel.isModified());
+    }
+
+    @Test
+    public void testIsModifiedAuthType_False() {
+        when(AuthHelper.getAuthTypeInSettingsFile()).thenReturn(AuthTypes.DEVICE_FLOW.name());
+
+        assertFalse(teamServicesSettingsModel.isModified());
+    }
+
+    @Test
     public void testLoadSettings() {
+        when(AuthHelper.getAuthTypeInSettingsFile()).thenReturn(AuthTypes.DEVICE_FLOW.name());
+
         // running it twice to test we clear contexts
         teamServicesSettingsModel.loadSettings();
+        assertEquals(AuthTypes.DEVICE_FLOW, teamServicesSettingsModel.getOriginalAuthType());
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
+        assertFalse(teamServicesSettingsModel.isModified());
 
         teamServicesSettingsModel.loadSettings();
+        assertEquals(AuthTypes.DEVICE_FLOW, teamServicesSettingsModel.getOriginalAuthType());
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
+        assertFalse(teamServicesSettingsModel.isModified());
     }
 
     @Test
     public void testApply() {
+        when(AuthHelper.getAuthTypeInSettingsFile()).thenReturn(AuthTypes.DEVICE_FLOW.name());
         teamServicesSettingsModel.setDeleteContexts(ImmutableList.of(mockServerContext_GitRepo, mockServerContext_TfvcRepo));
+        teamServicesSettingsModel.setUpdatedAuthType(AuthTypes.CREDS);
         teamServicesSettingsModel.apply();
 
         assertEquals(0, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(0, teamServicesSettingsModel.getDeleteContexts().size());
+        assertEquals(AuthTypes.CREDS, teamServicesSettingsModel.getOriginalAuthType());
         verifyStatic(times(1));
         mockServerContextManager.remove("mockServerContext_GitRepo");
         mockServerContextManager.remove("mockServerContext_TfvcRepo");
+        AuthHelper.setDeviceFlowEnvVariableFalse();
     }
 
     @Test
     public void testReset() {
+        when(AuthHelper.getAuthTypeInSettingsFile()).thenReturn(AuthTypes.DEVICE_FLOW.name());
+        teamServicesSettingsModel.setUpdatedAuthType(AuthTypes.CREDS);
         teamServicesSettingsModel.setDeleteContexts(ImmutableList.of(mockServerContext_GitRepo, mockServerContext_TfvcRepo));
         teamServicesSettingsModel.reset();
 
         assertEquals(0, teamServicesSettingsModel.getDeleteContexts().size());
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
+        assertFalse(teamServicesSettingsModel.isModified());
     }
 
     @Test

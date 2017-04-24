@@ -47,6 +47,7 @@ public class TeamServicesSettingsController extends AbstractController {
     public void update(final Observable o, final Object arg) {
         if (arg == null) {
             form.setContextTable(model.getTableModel(), model.getTableSelectionModel());
+            form.setAuthType(model.getOriginalAuthType());
         }
     }
 
@@ -57,12 +58,15 @@ public class TeamServicesSettingsController extends AbstractController {
         if (TeamServicesConfigurable.CMD_RESET_CHANGES.equals(e.getActionCommand())) {
             // Reload the table
             model.reset();
+            form.setAuthType(model.getOriginalAuthType());
         } else if (TeamServicesConfigurable.CMD_APPLY_CHANGES.equals(e.getActionCommand())) {
             model.apply();
         } else if (TeamServicesSettingsForm.CMD_DELETE_PASSWORD.equals(e.getActionCommand())) {
             model.deletePasswords();
         } else if (TeamServicesSettingsForm.CMD_UPDATE_PASSWORD.equals(e.getActionCommand())) {
             model.updatePasswords();
+        } else if (TeamServicesSettingsForm.CMD_AUTH_CHANGED.equals(e.getActionCommand())) {
+            model.setUpdatedAuthType(form.getSelectAuthType());
         }
     }
 

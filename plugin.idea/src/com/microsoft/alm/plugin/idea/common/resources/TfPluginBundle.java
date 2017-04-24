@@ -528,7 +528,6 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_LABEL_DIALOG_VERSION_COLUMN = "Tfvc.Label.Dialog.VersionColumn";
 
 
-
     // TFVC Apply Label Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_LOCK_TITLE = "Actions.Tfvc.Lock.Title";
@@ -773,8 +772,6 @@ public class TfPluginBundle {
     //General Settings
     @NonNls
     public static final String KEY_SETTINGS_MENU_TITLE = "Settings.Menu.Title";
-    @NonNls
-    public static final String KEY_SETTINGS_PASSWORD_MGT_TITLE = "Settings.Config.Mgt.Title";
     @NonNls
     public static final String KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE = "Settings.Config.Mgt.Update.Title";
     @NonNls

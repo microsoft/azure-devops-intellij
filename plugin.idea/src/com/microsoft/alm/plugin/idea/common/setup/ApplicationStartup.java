@@ -3,10 +3,13 @@
 
 package com.microsoft.alm.plugin.idea.common.setup;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.idea.Main;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.util.containers.HashMap;
+import com.microsoft.alm.plugin.authentication.AuthHelper;
+import com.microsoft.alm.plugin.authentication.AuthTypes;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
 import com.microsoft.alm.plugin.idea.common.services.CredentialsPromptImpl;
 import com.microsoft.alm.plugin.idea.common.services.DeviceFlowResponsePromptImpl;
@@ -76,6 +79,9 @@ public class ApplicationStartup implements ApplicationComponent {
 
         // Start polling for server events
         ServerPollingManager.getInstance().startPolling();
+
+        // Check for auth type settings
+        configureAuthType();
     }
 
     public void disposeComponent() {
@@ -206,6 +212,21 @@ public class ApplicationStartup implements ApplicationComponent {
             logger.debug("Linux operating system detected ");
             cacheIdeLocation(vstsDirectory, ideLocation + LINUX_EXE_DIR);
             LinuxStartup.startup();
+        }
+    }
+
+    /**
+     * Check if the auth type is set in the settings file or by the VM options
+     */
+    @VisibleForTesting
+    protected void configureAuthType() {
+        // if settings file has the auth type saved then set it for the session
+        if (AuthHelper.isAuthTypeFromSettingsFileSet()) {
+            AuthHelper.setDeviceFlowEnvFromSettingsFile();
+        } else if (AuthHelper.isDeviceFlowEnvSetTrue()) {
+            // this is the case where users are using the VM option to set device flow (legacy way)
+            // update the settings file to do device flow and then we will just look at the settings value going further
+            AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
         }
     }
 }
