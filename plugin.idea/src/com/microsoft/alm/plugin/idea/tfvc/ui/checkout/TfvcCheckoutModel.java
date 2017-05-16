@@ -29,6 +29,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -74,7 +75,8 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                 try {
                     // Create the workspace with default values
                     final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
-                            context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
+                            context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT),
+                            null, null, SystemHelper.getComputerNameShort());
                     command.runSynchronously();
                 } catch (final WorkspaceAlreadyExistsException e) {
                     logger.warn("Error creating workspace: " + LocalizationServiceImpl.getInstance().getExceptionMessage(e));

@@ -26,6 +26,7 @@ public class CreateWorkspaceCommand extends Command<String> {
     private final String comment;
     private final Workspace.FileTime fileTime;
     private final Workspace.Permission permission;
+    private final String computerName;
 
     /**
      * Constructor
@@ -35,13 +36,14 @@ public class CreateWorkspaceCommand extends Command<String> {
      */
     public CreateWorkspaceCommand(final ServerContext context, final String workspaceName,
                                   final String comment, final Workspace.FileTime fileTime,
-                                  final Workspace.Permission permission) {
+                                  final Workspace.Permission permission, final String computerName) {
         super("workspace", context);
         ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
         this.comment = comment;
         this.fileTime = fileTime;
         this.permission = permission;
+        this.computerName = computerName;
     }
 
     @Override
@@ -58,6 +60,9 @@ public class CreateWorkspaceCommand extends Command<String> {
         }
         if (permission != null) {
             builder.addSwitch("permission", permission.toString());
+        }
+        if (StringUtils.isNotEmpty(computerName)) {
+            builder.addSwitch("computer", computerName);
         }
 
         return builder;

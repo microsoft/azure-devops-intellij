@@ -9,25 +9,51 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class SystemHelper {
     private static Logger logger = LoggerFactory.getLogger(SystemHelper.class);
     private final static String COMPUTER_NAME = "computername";
 
+    private static String computerName;
+    private static String shortComputerName;
+
     /**
      * Gets the computer name
      *
      * @return local host name if found, falls back to computername env variable otherwise
      */
-    public static String getComputerName() {
-        try {
-            java.net.InetAddress localMachine = java.net.InetAddress.getLocalHost();
-            return localMachine.getHostName();
-        } catch (UnknownHostException e) {
-            logger.warn("getComputerName failed", e);
-            return System.getenv(COMPUTER_NAME);
+    public synchronized static String getComputerName() {
+        if (computerName == null) {
+            try {
+                final InetAddress localMachine = InetAddress.getLocalHost();
+                computerName = localMachine.getHostName();
+            } catch (UnknownHostException e) {
+                logger.warn("getComputerName failed", e);
+                computerName = System.getenv(COMPUTER_NAME);
+            }
         }
+        return computerName;
+    }
+
+    /**
+     * Gets the short name of the computer
+     *
+     * @return
+     */
+    public static String getComputerNameShort() {
+        if (shortComputerName == null) {
+            String shortName = getComputerName();
+
+            // Form the short name the same way Jetbrains does
+            int i = shortName.indexOf('.');
+            if (i != -1) {
+                shortName = shortName.substring(0, i);
+            }
+            shortComputerName = shortName;
+        }
+        return shortComputerName;
     }
 
     /**
@@ -67,6 +93,7 @@ public class SystemHelper {
 
     /**
      * Convert a string value into an integer or a default value.
+     *
      * @return
      */
     public static int toInt(final String value, final int defaultValue) {
