@@ -3,9 +3,11 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.services.HttpProxyService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.commons.lang.StringUtils;
@@ -61,8 +63,11 @@ public class RestClientHelper {
         credentialsProvider.setCredentials(AuthScope.ANY, credentials);
 
         final ConnectorProvider connectorProvider = new ApacheConnectorProvider();
+        // custom json provider ignores new fields that aren't recognized
+        final JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        final ClientConfig clientConfig = new ClientConfig().connectorProvider(connectorProvider);
+        final ClientConfig clientConfig = new ClientConfig(jacksonJsonProvider).connectorProvider(connectorProvider);
         clientConfig.property(ApacheClientProperties.CREDENTIALS_PROVIDER, credentialsProvider);
         clientConfig.property(ClientProperties.REQUEST_ENTITY_PROCESSING, RequestEntityProcessing.BUFFERED);
 
