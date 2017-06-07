@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.118.0</version>
+    <version>1.119.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -62,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.118.0
+      v 1.119.0
       <br />
-      Adding device flow as an authentication option in the Settings menu. This release also contains incremental fixes and updates.
+      Updated Application Insights package to fix offline CPU usage issue. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>

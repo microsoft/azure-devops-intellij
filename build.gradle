@@ -162,7 +162,10 @@ subprojects {
         toolsLib fileTree(dir: toolsLocation, include: 'tools.jar')
 
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
-        compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.7'
+        compile group: 'commons-io', name: 'commons-io', version: '2.4'
+        // TODO: remove local jars and use Maven jars once uploaded
+        // compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.7'
+        compile files('/usr/local/bin/applicationinsights-web-1.0.8.jar', '/usr/local/bin/applicationinsights-core-1.0.8.jar')
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1') {
