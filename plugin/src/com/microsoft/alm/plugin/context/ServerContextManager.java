@@ -137,7 +137,7 @@ public class ServerContextManager {
             shouldBeSaved = false;
         }
 
-        return shouldBeSaved ;
+        return shouldBeSaved;
     }
 
     public synchronized ServerContext get(final String uri) {
@@ -355,23 +355,25 @@ public class ServerContextManager {
 
     public ServerContext createContextFromGitRemoteUrl(final String gitRemoteUrl, final boolean prompt) {
         ArgumentHelper.checkNotEmptyString(gitRemoteUrl, "gitRemoteUrl");
+        // need to make sure not using an SSH url for authentication
+        final String httpsGitRemoteUrl = UrlHelper.getHttpsGitUrlFromSshUrl(gitRemoteUrl);
 
         // Get matching context from manager
-        ServerContext context = get(gitRemoteUrl);
+        ServerContext context = get(httpsGitRemoteUrl);
         if (context == null ||
                 context.getGitRepository() == null ||
                 context.getServerUri() == null ||
-                !StringUtils.equalsIgnoreCase(context.getUsableGitUrl(), gitRemoteUrl)) {
+                !StringUtils.equalsIgnoreCase(context.getUsableGitUrl(), httpsGitRemoteUrl)) {
             context = null;
         }
 
         if (context == null) {
             // Manager didn't have a matching context, so try to look up the auth info
-            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(gitRemoteUrl, prompt);
+            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(httpsGitRemoteUrl, prompt);
             if (authenticationInfo != null) {
-                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(gitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
+                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(httpsGitRemoteUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
                 final ServerContext contextToValidate = new ServerContextBuilder()
-                        .type(type).uri(gitRemoteUrl).authentication(authenticationInfo).build();
+                        .type(type).uri(httpsGitRemoteUrl).authentication(authenticationInfo).build();
                 try {
                     context = validateServerConnection(contextToValidate);
                 } catch (TeamServicesException e) {
