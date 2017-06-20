@@ -171,7 +171,7 @@ public abstract class MultipleItemAction extends InstrumentedAction {
      * @return
      */
     protected boolean isEnabled(final Project project, final VirtualFile[] files) {
-        if (files.length == 0) {
+        if (files.length == 0 || project == null) {
             return false;
         }
 

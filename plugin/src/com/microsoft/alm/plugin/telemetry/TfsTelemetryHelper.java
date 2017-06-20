@@ -33,6 +33,9 @@ public class TfsTelemetryHelper {
 
     public static final String UNIQUE_PREFIX = "ai-log";
     public static final String BASE_FOLDER = "AppInsights";
+    private static String TELEMETRY_REPO_CHANGED_EVENT = "repoChanged";
+    private static String TELEMETRY_REPO_TYPE = "repoType";
+    private static String TELEMETRY_IS_VSTS = "isVsts";
 
     public static final String UNKNOWN = "unknown";
 
@@ -329,5 +332,15 @@ public class TfsTelemetryHelper {
         } catch (Exception e) {
             logger.warn("Error sending exception telemetry", e);
         }
+    }
+
+    public static void sendRepoChangedEvent(final String repoType, final boolean isVstsRepo) {
+        sendEventAsync(TELEMETRY_REPO_CHANGED_EVENT,
+                new TfsTelemetryHelper.PropertyMapBuilder()
+                        .activeServerContext()
+                        .pair(TELEMETRY_REPO_TYPE, repoType)
+                        .pair(TELEMETRY_IS_VSTS, String.valueOf(isVstsRepo))
+                        .build());
+
     }
 }

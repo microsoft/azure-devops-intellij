@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.events.ServerEventManager;
 import com.microsoft.alm.plugin.idea.common.utils.EventContextHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
+import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryChangeListener;
 import org.jetbrains.annotations.NotNull;
@@ -28,9 +29,7 @@ public class ProjectRepoEventManager {
 
     private static boolean repositoryChanging = false;
     private static String TELEMETRY_PROJECT_OPENED_EVENT = "projectOpened";
-    private static String TELEMETRY_REPO_CHANGED_EVENT = "repoChanged";
     private static String TELEMETRY_REPO_TYPE = "repoType";
-    private static String TELEMETRY_IS_VSTS = "isVsts";
 
     private ProjectEventListener projectEventListener;
 
@@ -110,12 +109,7 @@ public class ProjectRepoEventManager {
                             repositoryChanging = true;
                             logger.info("repository changed");
                             ProjectRepoEventManager.getInstance().triggerServerEvents(EventContextHelper.SENDER_REPO_CHANGED, project, repository);
-
-                            TfsTelemetryHelper.sendEventAsync(TELEMETRY_REPO_CHANGED_EVENT,
-                                    new TfsTelemetryHelper.PropertyMapBuilder()
-                                            .activeServerContext()
-                                            .pair(TELEMETRY_IS_VSTS, String.valueOf(VcsHelper.isVstsRepo(project)))
-                                            .build());
+                            TfsTelemetryHelper.sendRepoChangedEvent(GitVcs.NAME, VcsHelper.isVstsRepo(project));
                         } finally {
                             repositoryChanging = false;
                         }
