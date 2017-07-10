@@ -177,26 +177,27 @@ public class ServerContextLookupOperation extends Operation {
 
             final URI collectionURI = UrlHelper.getCollectionURI(context.getUri(), teamProjectCollectionReference.getName());
 
-            if (resultScope == ContextScope.PROJECT) {
-                final CoreHttpClient client = new CoreHttpClient(context.getClient(), collectionURI);
-                final List<TeamProjectReference> projects = client.getProjects();
-
-                addTeamProjectResults(projects, context, teamProjectCollectionReference);
-            } else {
-                final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
-                try {
+            try {
+                if (resultScope == ContextScope.PROJECT) {
+                    final CoreHttpClient client = new CoreHttpClient(context.getClient(), collectionURI);
+                    final List<TeamProjectReference> projects = client.getProjects();
+                    logger.debug("doLookup: found {} projects in collection: {} on server: {}.", projects.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
+                    addTeamProjectResults(projects, context, teamProjectCollectionReference);
+                } else {
+                    final GitHttpClient gitClient = new GitHttpClient(context.getClient(), collectionURI);
                     final List<GitRepository> gitRepositories = gitClient.getRepositories();
                     logger.debug("doLookup: found {} Git repositories in collection: {} on server: {}.", gitRepositories.size(), teamProjectCollectionReference.getName(), context.getUri().toString());
                     addRepositoryResults(gitRepositories, context, teamProjectCollectionReference);
-                } catch (VssResourceNotFoundException e) {
-                    if (e.getMessage().contains(HTTP_503_EXCEPTION)) {
-                        logger.warn("Collection " + teamProjectCollectionReference.getName() + " is unavailable.", e);
-                    } else {
-                        logger.warn("Failure while trying to find collection repos", e);
-                    }
+                }
+            } catch (VssResourceNotFoundException e) {
+                if (e.getMessage().contains(HTTP_503_EXCEPTION)) {
+                    logger.warn("Collection " + teamProjectCollectionReference.getName() + " is unavailable.", e);
+                } else {
+                    logger.warn("Failure while trying to find collection repos", e);
                 }
             }
         }
+
     }
 
     protected void addTeamProjectResults(final List<TeamProjectReference> projects, final ServerContext context, final TeamProjectCollectionReference teamProjectCollectionReference) {
