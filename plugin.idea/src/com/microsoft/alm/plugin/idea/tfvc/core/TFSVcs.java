@@ -123,7 +123,7 @@ public class TFSVcs extends AbstractVcs {
 
         fileListener = new TFSFileListener(getProject(), this);
         if (tfsFileSystemListener == null) {
-            tfsFileSystemListener = new TFSFileSystemListener(myProject);
+            tfsFileSystemListener = new TFSFileSystemListener();
         }
 
 //    TODO: TfsSdkManager.activate();

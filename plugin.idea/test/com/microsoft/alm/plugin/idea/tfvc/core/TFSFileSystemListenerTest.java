@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.helpers.Path;
@@ -14,6 +15,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +43,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class})
+@PrepareForTest({CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class})
 public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private String CURRENT_FILE_NAME = "file.txt";
     private String NEW_FILE_NAME = "newName.txt";
@@ -77,11 +79,18 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Mock
     private LocalFileSystem mockLocalFileSystem;
 
+    @Mock
+    private VcsShowConfirmationOption mockVcsShowConfirmationOption;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class);
+        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class);
 
+        when(mockTFSVcs.getProject()).thenReturn(mockProject);
+        when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
+        when(mockTFSVcs.getDeleteConfirmation()).thenReturn(mockVcsShowConfirmationOption);
+        when(VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(mockTFSVcs);
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
         when(mockVirtualFile.getName()).thenReturn(CURRENT_FILE_NAME);
@@ -96,7 +105,18 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockPendingChange.getLocalItem()).thenReturn(CURRENT_FILE_PATH);
         when(mockPendingChange.getVersion()).thenReturn("5");
 
-        tfsFileSystemListener = new TFSFileSystemListener(mockProject);
+        tfsFileSystemListener = new TFSFileSystemListener();
+    }
+
+    @Test
+    public void testRename_FileNotTfvc() throws Exception {
+        when(VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(null);
+
+        boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
+
+        assertFalse(result);
+        verifyStatic(never());
+        CommandUtils.renameFile(any(ServerContext.class), any(String.class), any(String.class));
     }
 
     @Test
@@ -229,6 +249,30 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         assertTrue(result);
         verifyStatic(times(1));
         CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(MOVED_FILE_PATH));
+    }
+
+    @Test
+    public void testDelete_FileNotTfvc() throws Exception {
+        when(VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(null);
+
+        boolean result = tfsFileSystemListener.delete(mockVirtualFile);
+
+        assertFalse(result);
+        verifyStatic(never());
+        CommandUtils.undoLocalFiles(any(ServerContext.class), any(List.class));
+        CommandUtils.deleteFiles(any(ServerContext.class), any(List.class), any(String.class), any(Boolean.class));
+    }
+
+    @Test
+    public void testDelete_NonVcsDelete() throws Exception {
+        when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY);
+
+        boolean result = tfsFileSystemListener.delete(mockVirtualFile);
+
+        assertFalse(result);
+        verifyStatic(never());
+        CommandUtils.undoLocalFiles(any(ServerContext.class), any(List.class));
+        CommandUtils.deleteFiles(any(ServerContext.class), any(List.class), any(String.class), any(Boolean.class));
     }
 
     @Test

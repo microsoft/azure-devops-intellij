@@ -4,8 +4,10 @@
 package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.RepositoryContextManager;
@@ -218,5 +220,29 @@ public class VcsHelper {
             }
         }
         return workItems;
+    }
+
+    /**
+     * Finds the TFSVcs instance associated with the given file path
+     * or null if the file isn't under a TFVC repo
+     *
+     * @param file
+     * @return
+     */
+    public static TFSVcs getTFSVcsByPath(final VirtualFile file) {
+        final ProjectManager projectManager = ProjectManager.getInstance();
+        if (projectManager != null) {
+            final Project[] projects = projectManager.getOpenProjects();
+            for (final Project project : projects) {
+                final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
+                if (projectLevelVcsManager != null) {
+                    final AbstractVcs vcs = projectLevelVcsManager.getVcsFor(file);
+                    if (vcs instanceof TFSVcs) {
+                        return (TFSVcs) vcs;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
