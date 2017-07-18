@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -37,6 +36,7 @@ import java.util.List;
 
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,15 +61,15 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
 
     @Before
     public void mockObjects() {
-        mockProject = Mockito.mock(Project.class);
-        executor = Mockito.mock(OperationExecutor.class);
+        mockProject = mock(Project.class);
+        executor = mock(OperationExecutor.class);
         PowerMockito.mockStatic(OperationExecutor.class);
         when(OperationExecutor.getInstance()).thenReturn(executor);
 
-        authenticatedContext = Mockito.mock(ServerContext.class);
+        authenticatedContext = mock(ServerContext.class);
         when(authenticatedContext.getTeamProjectReference()).thenReturn(new TeamProjectReference());
 
-        serverContextManager = Mockito.mock(ServerContextManager.class);
+        serverContextManager = mock(ServerContextManager.class);
         when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
         when(serverContextManager.createContextFromTfvcServerUrl(anyString(), anyString(), anyBoolean()))
                 .thenReturn(authenticatedContext);
@@ -92,7 +92,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         when(VcsHelper.getRepositoryContext(mockProject)).thenReturn(repositoryContext);
         when(VcsHelper.getRepositoryContext(mockProject2)).thenReturn(repositoryContext_noProject);
 
-        mockVcsNotifier = Mockito.mock(VcsNotifier.class);
+        mockVcsNotifier = mock(VcsNotifier.class);
         PowerMockito.mockStatic(VcsNotifier.class);
         when(VcsNotifier.getInstance(Matchers.any(Project.class))).thenReturn(mockVcsNotifier);
     }
@@ -307,7 +307,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     @Test(expected = RuntimeException.class)
     public void testLoadWorkspace_withInvalidProject() {
         final WorkspaceModel m = new WorkspaceModel();
-        final Project localMockProject = Mockito.mock(Project.class);
+        final Project localMockProject = mock(Project.class);
         m.loadWorkspace(localMockProject);
 
         // make sure the runnable task was submitted
@@ -324,7 +324,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     @Test(expected = RuntimeException.class)
     public void testLoadWorkspace_withNullRepo() {
         final WorkspaceModel m = new WorkspaceModel();
-        final Project localMockProject = Mockito.mock(Project.class);
+        final Project localMockProject = mock(Project.class);
         when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(null);
         m.loadWorkspace(localMockProject);
 
@@ -342,8 +342,8 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     @Test(expected = RuntimeException.class)
     public void testLoadWorkspace_withNoRepoUrl() {
         final WorkspaceModel m = new WorkspaceModel();
-        final Project localMockProject = Mockito.mock(Project.class);
-        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        final Project localMockProject = mock(Project.class);
+        final RepositoryContext mockRepositoryContext = mock(RepositoryContext.class);
         when(repositoryContext.getUrl()).thenReturn(StringUtils.EMPTY);
         when(repositoryContext.getTeamProjectName()).thenReturn("TeamProjectName");
         when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
@@ -363,8 +363,8 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     @Test(expected = RuntimeException.class)
     public void testLoadWorkspace_withNoTeamProjectName() {
         final WorkspaceModel m = new WorkspaceModel();
-        final Project localMockProject = Mockito.mock(Project.class);
-        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        final Project localMockProject = mock(Project.class);
+        final RepositoryContext mockRepositoryContext = mock(RepositoryContext.class);
         when(mockRepositoryContext.getUrl()).thenReturn("URL");
         when(mockRepositoryContext.getTeamProjectName()).thenReturn(StringUtils.EMPTY);
         when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
@@ -388,8 +388,8 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         // this will in turn call a null server context to be returned
         when(serverContextManager.createContextFromTfvcServerUrl("bad url", "bad team name", true))
                 .thenReturn(null);
-        final Project localMockProject = Mockito.mock(Project.class);
-        final RepositoryContext mockRepositoryContext = Mockito.mock(RepositoryContext.class);
+        final Project localMockProject = mock(Project.class);
+        final RepositoryContext mockRepositoryContext = mock(RepositoryContext.class);
         when(mockRepositoryContext.getUrl()).thenReturn("bad url");
         when(mockRepositoryContext.getTeamProjectName()).thenReturn("bad team name");
         when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
@@ -410,6 +410,41 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     public void testLoadWorkspace_noProject() {
         final WorkspaceModel m = new WorkspaceModel();
         m.loadWorkspace(repositoryContext, name);
+
+        // make sure the runnable task was submitted
+        ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);
+        verify(executor).submitOperationTask(taskArgument.capture());
+
+        // Make sure we starting loading
+        Assert.assertEquals(true, m.isLoading());
+
+        // Now force the runnable to run
+        taskArgument.getValue().run();
+
+        // Check the values in model now to make sure the match the workspace we created
+        Assert.assertEquals(comment, m.getComment());
+        Assert.assertEquals(computer, m.getComputer());
+        Assert.assertEquals(name, m.getName());
+        Assert.assertEquals(owner, m.getOwner());
+        Assert.assertEquals(server, m.getServer());
+        Assert.assertEquals(mappings, m.getMappings());
+
+        // Make sure loading got turned off
+        Assert.assertEquals(false, m.isLoading());
+    }
+
+    @Test
+    public void testLoadWorkspace_withWorkspace() {
+        Workspace mockWorkspace = mock(Workspace.class);
+        when(mockWorkspace.getComment()).thenReturn(comment);
+        when(mockWorkspace.getComputer()).thenReturn(computer);
+        when(mockWorkspace.getName()).thenReturn(name);
+        when(mockWorkspace.getOwner()).thenReturn(owner);
+        when(mockWorkspace.getServer()).thenReturn(server);
+        when(mockWorkspace.getMappings()).thenReturn(mappings);
+
+        final WorkspaceModel m = new WorkspaceModel();
+        m.loadWorkspace(authenticatedContext, mockWorkspace);
 
         // make sure the runnable task was submitted
         ArgumentCaptor<Runnable> taskArgument = ArgumentCaptor.forClass(Runnable.class);

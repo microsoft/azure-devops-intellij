@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
 /*
  * Copyright 2000-2008 JetBrains s.r.o.
  *
@@ -14,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui.treetable;
+package com.microsoft.alm.plugin.idea.common.ui.common.treetable;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -22,8 +25,8 @@ import java.util.Collection;
 
 public interface ContentProvider<T> {
 
-  Collection<? extends T> getRoots();
+    Collection<? extends T> getRoots();
 
-  Collection<? extends T> getChildren(final @NotNull T parent);
+    Collection<? extends T> getChildren(final @NotNull T parent);
 
 }

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
 /*
  * Copyright 2000-2008 JetBrains s.r.o.
  *
@@ -14,24 +17,24 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui.treetable;
+package com.microsoft.alm.plugin.idea.common.ui.common.treetable;
 
 public abstract class TreeTableColumn<T> {
-  private final String myCaption;
-  private final int myWidth;
+    private final String caption;
+    private final int width;
 
-  public TreeTableColumn(String caption, final int width) {
-    myCaption = caption;
-    myWidth = width;
-  }
+    public TreeTableColumn(final String caption, final int width) {
+        this.caption = caption;
+        this.width = width;
+    }
 
-  public abstract String getPresentableString(T value);
+    public abstract String getPresentableString(final T value);
 
-  public String getCaption() {
-    return myCaption;
-  }
+    public String getCaption() {
+        return caption;
+    }
 
-  public int getWidth() {
-    return myWidth;
-  }
+    public int getWidth() {
+        return width;
+    }
 }

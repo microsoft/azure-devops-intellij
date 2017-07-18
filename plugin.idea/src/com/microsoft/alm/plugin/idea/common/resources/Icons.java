@@ -34,4 +34,9 @@ public class Icons {
     public static final Icon BUILD_STATUS_FAILED = load("/icons/build-status-failed.png");
     public static final Icon BUILD_STATUS_SUCCEEDED = load("/icons/build-status-succeeded.png");
     public static final Icon BUILD_STATUS_UNKNOWN = load("/icons/build-status-unknown.png");
+
+    //manage workspaces icons
+    public static final Icon CLOUD = load("/icons/cloud.png");
+    public static final Icon SERVER = load("/icons/server.png");
+    public static final Icon TFVC_LOGO = load("/icons/tfvc-logo.png");
 }

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
 /*
  * Copyright 2000-2008 JetBrains s.r.o.
  *
@@ -14,12 +17,12 @@
  * limitations under the License.
  */
 
-package org.jetbrains.tfsIntegration.ui.treetable;
+package com.microsoft.alm.plugin.idea.common.ui.common.treetable;
 
-import javax.swing.*;
+import javax.swing.JLabel;
 
 public class CellRenderer<T> {
-  protected void render(final CustomTreeTable<T> treeTable, TreeTableColumn<T> column, T value, JLabel cell) {
-    cell.setText(column.getPresentableString(value));
-  }
+    protected void render(final CustomTreeTable<T> treeTable, final TreeTableColumn<T> column, final T value, final JLabel cell) {
+        cell.setText(column.getPresentableString(value));
+    }
 }

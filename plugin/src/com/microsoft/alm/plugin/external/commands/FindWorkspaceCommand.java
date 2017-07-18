@@ -22,22 +22,41 @@ import java.util.List;
 public class FindWorkspaceCommand extends Command<Workspace> {
     protected static final Logger logger = LoggerFactory.getLogger(FindWorkspaceCommand.class);
     private final String localPath;
+    private final String collection;
+    private final String workspace;
 
     public FindWorkspaceCommand(final String localPath) {
         super("workfold", null);
         ArgumentHelper.checkNotEmptyString(localPath, "localPath");
         this.localPath = localPath;
+        this.collection = StringUtils.EMPTY;
+        this.workspace = StringUtils.EMPTY;
+    }
+
+    public FindWorkspaceCommand(final String collection, final String workspace) {
+        super("workfold", null);
+        ArgumentHelper.checkNotEmptyString(collection, "collection");
+        ArgumentHelper.checkNotEmptyString(workspace, "workspace");
+        this.collection = collection;
+        this.workspace = workspace;
+        this.localPath = StringUtils.EMPTY;
     }
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
-        // To find the workspace we set the working directory to the localPath and call workfold with no arguments
-        // NOTE Calling workfold with the localPath forces it to refresh the workspace from the server. Calling it with
-        //      no arguments does not refresh it from the server.
-        builder.setWorkingDirectory(localPath);
-        // TODO: fix CLC to not need login creds for this command. It never validates them so we pass anything
-        builder.addSwitch("login", "username,pw", true);
+        if (StringUtils.isNotEmpty(localPath)) {
+            // To find the workspace we set the working directory to the localPath and call workfold with no arguments
+            // NOTE Calling workfold with the localPath forces it to refresh the workspace from the server. Calling it with
+            //      no arguments does not refresh it from the server.
+            builder.setWorkingDirectory(localPath);
+            // TODO: fix CLC to not need login creds for this command. It never validates them so we pass anything
+            builder.addSwitch("login", "username,pw", true);
+        } else if (StringUtils.isNotEmpty(collection) && StringUtils.isNotEmpty(workspace)) {
+            // need both collection and workspace name to make this call local
+            builder.addSwitch("collection", collection);
+            builder.addSwitch("workspace", workspace);
+        }
         return builder;
     }
 

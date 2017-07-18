@@ -789,6 +789,36 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_SETTINGS_PASSWORD_MGT_REPO_URL = "Settings.Config.Mgt.RepoUrl";
 
+    // Manage Workspaces
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MANAGE_WORKSPACES_TITLE = "Actions.Tfvc.ManageWorkspaces.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_MANAGE_WORKSPACES_MSG = "Actions.Tfvc.ManageWorkspaces.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DIALOG_TITLE = "Tfvc.ManageWorkspaces.Dialog.Title";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_RELOAD_MSG = "Tfvc.ManageWorkspaces.Reload.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_EDIT_MSG = "Tfvc.ManageWorkspaces.Edit.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_TITLE = "Tfvc.ManageWorkspaces.Edit.Error.Title";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG = "Tfvc.ManageWorkspaces.Edit.Error.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_CONFIRM_TITLE = "Tfvc.ManageWorkspaces.Delete.Confirm.Title";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_CONFIRM_MSG = "Tfvc.ManageWorkspaces.Delete.Confirm.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_MSG = "Tfvc.ManageWorkspaces.Delete.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_CLOSE_BUTTON = "Tfvc.ManageWorkspaces.Close.Button";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_MIXED_COLUMN = "Tfvc.ManageWorkspaces.Mixed.Column";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_SERVER_COLUMN = "Tfvc.ManageWorkspaces.Server.Column";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_COMMENT_COLUMN = "Tfvc.ManageWorkspaces.Comment.Column";
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON = "WorkspaceDialog.SaveButton";

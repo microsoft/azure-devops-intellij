@@ -11,21 +11,44 @@ import org.junit.Test;
 public class FindWorkspaceCommandTest extends AbstractCommandTest {
 
     @Test
-    public void testConstructor() {
+    public void testConstructor_localPath() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructor_nullArgs() {
+    public void testConstructor_nullLocalPath() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null);
     }
 
     @Test
-    public void testGetArgumentBuilder() {
+    public void testConstructor_collectionWorkspace() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_nullCollection() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null, "workspaceName");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor_nullWorkspace() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", null);
+    }
+
+    @Test
+    public void testGetArgumentBuilder_localPath() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workfold -noprompt ********", builder.toString());
         Assert.assertEquals("/path/localfile.txt", builder.getWorkingDirectory());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_collectionWorkspace() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName");
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("workfold -noprompt -collection:collectionName -workspace:workspaceName", builder.toString());
+        Assert.assertEquals(null, builder.getWorkingDirectory());
     }
 
     @Test

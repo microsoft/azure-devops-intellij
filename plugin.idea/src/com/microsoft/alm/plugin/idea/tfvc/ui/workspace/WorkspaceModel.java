@@ -232,6 +232,25 @@ public class WorkspaceModel extends AbstractModel {
         });
     }
 
+    public void loadWorkspace(final ServerContext serverContext, final Workspace workspace) {
+        logger.info("loadWorkspace starting");
+        ArgumentHelper.checkNotNull(serverContext, "serverContext");
+        ArgumentHelper.checkNotNull(workspace, "workspace");
+
+        setLoading(true);
+        // Load
+        OperationExecutor.getInstance().submitOperationTask(new Runnable() {
+            @Override
+            public void run() {
+                logger.info("loadWorkspace: already have context so load workspace");
+                currentServerContext = serverContext;
+                loadWorkspaceInternal(workspace);
+                // Make sure to fire events only on the UI thread
+                loadWorkspaceComplete();
+            }
+        });
+    }
+
     private void loadWorkspaceInternal(final Workspace workspace) {
         oldWorkspace = workspace;
         if (oldWorkspace != null) {

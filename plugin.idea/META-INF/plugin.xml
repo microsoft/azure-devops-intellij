@@ -180,6 +180,8 @@
             <separator/>
             <action id="Tfvc.EditWorkspace" class="com.microsoft.alm.plugin.idea.tfvc.actions.EditWorkspaceAction"/>
             <action id="Tfvc.ConfigureProxy" class="com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction"/>
+            <separator/>
+            <action id="Tfvc.ManageWorkspaces" class="com.microsoft.alm.plugin.idea.tfvc.actions.ManageWorkspacesAction"/>
         </group>
 
         <group id="TfvcTreePopupMenu">

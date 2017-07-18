@@ -3,6 +3,9 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import jersey.repackaged.com.google.common.base.Objects;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +53,40 @@ public class Workspace {
 
     public List<Mapping> getMappings() {
         return Collections.unmodifiableList(mappings);
+    }
+
+    /**
+     * Compare only name, computer, owner, and server to see if it's the same workspace
+     * The comment and mappings don't make the workspace unique
+     *
+     * @param object
+     * @return
+     */
+    @Override
+    public boolean equals(final Object object) {
+        if (object == null || !(object instanceof Workspace)) {
+            return false;
+        }
+
+        final Workspace workspace = (Workspace) object;
+        if (!StringUtils.equals(this.name, workspace.getName())) {
+            return false;
+        }
+        if (!StringUtils.equals(this.computer, workspace.getComputer())) {
+            return false;
+        }
+        if (!StringUtils.equals(this.owner, workspace.getOwner())) {
+            return false;
+        }
+        if (!StringUtils.equals(this.server, workspace.getServer())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, computer, owner, server);
     }
 
     /**

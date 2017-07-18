@@ -14,8 +14,10 @@ import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.CreateLabelCommand;
 import com.microsoft.alm.plugin.external.commands.DeleteCommand;
+import com.microsoft.alm.plugin.external.commands.DeleteWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.FindConflictsCommand;
 import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.GetAllWorkspacesCommand;
 import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
 import com.microsoft.alm.plugin.external.commands.GetBranchesCommand;
 import com.microsoft.alm.plugin.external.commands.GetLabelsCommand;
@@ -41,6 +43,7 @@ import com.microsoft.alm.plugin.external.models.MergeMapping;
 import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.RenameConflict;
+import com.microsoft.alm.plugin.external.models.Server;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
@@ -78,12 +81,27 @@ public class CommandUtils {
     }
 
     /**
+     * This method will return a partially populated Workspace object that includes just the name, server, and mappings
+     *
+     * @param collectionName
+     * @param workspaceName
+     * @return
+     */
+    public static Workspace getPartialWorkspace(final String collectionName, final String workspaceName) {
+        ArgumentHelper.checkNotNull(collectionName, "collectionName");
+        ArgumentHelper.checkNotNull(workspaceName, "workspaceName");
+        final FindWorkspaceCommand command = new FindWorkspaceCommand(collectionName, workspaceName);
+        return command.runSynchronously();
+    }
+
+    /**
      * This method determines the workspace name from the project and then calls getWorkspace with the name.
      *
      * @param context
      * @param project
      * @return
      */
+
     public static Workspace getWorkspace(final ServerContext context, final Project project) {
         final String workspaceName = getWorkspaceName(context, project);
         return getWorkspace(context, workspaceName);
@@ -99,6 +117,39 @@ public class CommandUtils {
     public static Workspace getWorkspace(final ServerContext context, final String workspaceName) {
         final GetWorkspaceCommand command = new GetWorkspaceCommand(context, workspaceName);
         return command.runSynchronously();
+    }
+
+    /**
+     * This method returns a list of server that have workspaces locally
+     *
+     * @param context
+     * @return
+     */
+    public static List<Server> getAllWorkspaces(final ServerContext context) {
+        final GetAllWorkspacesCommand command = new GetAllWorkspacesCommand(context);
+        return command.runSynchronously();
+    }
+
+    /**
+     * This method refreshes the cache for a server to pul in any remote changes
+     *
+     * @param context
+     * @return
+     */
+    public static void refreshWorkspacesForServer(final ServerContext context) {
+        final GetAllWorkspacesCommand command = new GetAllWorkspacesCommand(context);
+        command.runSynchronously();
+    }
+
+    /**
+     * This method deletes a given workspace
+     *
+     * @param context
+     * @param workspaceName
+     */
+    public static void deleteWorkspace(final ServerContext context, final String workspaceName) {
+        final DeleteWorkspaceCommand command = new DeleteWorkspaceCommand(context, workspaceName);
+        command.runSynchronously();
     }
 
     public static String getLocalPathSynchronously(final ServerContext context, final String serverPath, final String workspace) {
@@ -486,7 +537,7 @@ public class CommandUtils {
      * server paths.
      */
     public static List<ItemInfo> getItemInfos(final ServerContext context, final String workingFolder,
-                                       final List<String> itemPaths) {
+                                              final List<String> itemPaths) {
         final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, itemPaths);
         return infoCommand.runSynchronously();
     }
@@ -593,7 +644,8 @@ public class CommandUtils {
     /**
      * Locks/Unlocks the items passed in.
      * Note: Lock::Checkout doesn't work on local workspaces.
-     *       Lock::None is how you unlock a file (cannot unlock errors are ignored)
+     * Lock::None is how you unlock a file (cannot unlock errors are ignored)
+     *
      * @param context
      * @param workingFolder
      * @param lockLevel

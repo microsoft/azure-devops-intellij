@@ -23,6 +23,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.apache.commons.lang.StringUtils;
@@ -62,6 +63,18 @@ public class WorkspaceController implements Observer, ActionListener {
     public WorkspaceController(final Project project, final RepositoryContext repositoryContext, final ServerContext serverContext, final String workspaceName) {
         this(project, new WorkspaceDialog(project, serverContext), new WorkspaceModel());
         this.model.loadWorkspace(repositoryContext, workspaceName);
+    }
+
+    /**
+     * This constructor is used by Manage Workspaces when we already know the context and the workspace info
+     *
+     * @param project
+     * @param context
+     * @param workspace
+     */
+    public WorkspaceController(final Project project, final ServerContext context, final Workspace workspace) {
+        this(project, new WorkspaceDialog(project, context), new WorkspaceModel());
+        this.model.loadWorkspace(context, workspace);
     }
 
     protected WorkspaceController(final Project project, final WorkspaceDialog dialog, final WorkspaceModel model) {
