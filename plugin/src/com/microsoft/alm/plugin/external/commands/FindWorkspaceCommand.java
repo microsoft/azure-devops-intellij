@@ -4,7 +4,9 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -21,9 +23,13 @@ import java.util.List;
  */
 public class FindWorkspaceCommand extends Command<Workspace> {
     protected static final Logger logger = LoggerFactory.getLogger(FindWorkspaceCommand.class);
+
+    protected static final String AUTH_ERROR_PREFIX = "An error occurred: Access denied connecting to TFS server";
+
     private final String localPath;
     private final String collection;
     private final String workspace;
+    private final AuthenticationInfo authInfo;
 
     public FindWorkspaceCommand(final String localPath) {
         super("workfold", null);
@@ -31,14 +37,16 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         this.localPath = localPath;
         this.collection = StringUtils.EMPTY;
         this.workspace = StringUtils.EMPTY;
+        this.authInfo = null;
     }
 
-    public FindWorkspaceCommand(final String collection, final String workspace) {
+    public FindWorkspaceCommand(final String collection, final String workspace, final AuthenticationInfo authInfo) {
         super("workfold", null);
         ArgumentHelper.checkNotEmptyString(collection, "collection");
         ArgumentHelper.checkNotEmptyString(workspace, "workspace");
         this.collection = collection;
         this.workspace = workspace;
+        this.authInfo = authInfo;
         this.localPath = StringUtils.EMPTY;
     }
 
@@ -57,6 +65,11 @@ public class FindWorkspaceCommand extends Command<Workspace> {
             builder.addSwitch("collection", collection);
             builder.addSwitch("workspace", workspace);
         }
+
+        if (authInfo != null) {
+            builder.addAuthInfo(authInfo);
+        }
+
         return builder;
     }
 
@@ -71,7 +84,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
      */
     @Override
     public Workspace parseOutput(final String stdout, final String stderr) {
-        super.throwIfError(stderr);
+        throwIfError(stderr);
 
         final String[] lines = getLines(stdout);
 
@@ -121,5 +134,19 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         }
 
         return null;
+    }
+
+    /**
+     * Check specifically to see if an authentication exception is thrown
+     *
+     * @param stderr
+     */
+    @Override
+    protected void throwIfError(final String stderr) {
+        if (StringUtils.startsWith(stderr, AUTH_ERROR_PREFIX)) {
+            logger.warn("Authentication exception hit when running 'tf workfold'");
+            throw new ToolAuthenticationException();
+        }
+        super.throwIfError(stderr);
     }
 }

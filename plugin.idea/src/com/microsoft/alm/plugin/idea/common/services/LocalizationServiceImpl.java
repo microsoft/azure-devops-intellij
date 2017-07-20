@@ -49,10 +49,10 @@ public class LocalizationServiceImpl implements LocalizationService {
         String message = t.getLocalizedMessage();
 
         if (t instanceof LocalizedException) {
-            final LocalizedException localizedException = (LocalizedException)t;
+            final LocalizedException localizedException = (LocalizedException) t;
             final String key = localizedException.getMessageKey();
             if (keysMap.containsKey(key)) {
-                message = getLocalizedMessage(keysMap.get(key), (Object[])localizedException.getMessageParameters());
+                message = getLocalizedMessage(keysMap.get(key), (Object[]) localizedException.getMessageParameters());
             }
         }
 
@@ -60,10 +60,10 @@ public class LocalizationServiceImpl implements LocalizationService {
         //Use the message on the cause if there is one
         if (StringUtils.isEmpty(message) && t.getCause() != null) {
             if (t.getCause() instanceof LocalizedException) {
-                final LocalizedException localizedException = (LocalizedException)t.getCause();
+                final LocalizedException localizedException = (LocalizedException) t.getCause();
                 final String key = localizedException.getMessageKey();
                 if (keysMap.containsKey(key)) {
-                    message = getLocalizedMessage(keysMap.get(key), (Object[])localizedException.getMessageParameters());
+                    message = getLocalizedMessage(keysMap.get(key), (Object[]) localizedException.getMessageParameters());
                 }
             } else {
                 message = t.getCause().getLocalizedMessage();
@@ -99,6 +99,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(ToolException.KEY_TF_WORKSPACE_EXISTS, "ToolException.TF.WorkspaceExists");
             put(ToolException.KEY_TF_BRANCH_EXISTS, "ToolException.TF.BranchExists");
             put(ToolException.KEY_TF_OOM, "ToolException.TF.OOM");
+            put(ToolException.KEY_TF_AUTH_FAIL, "ToolException.TF.Auth.Fail");
         }
     };
 

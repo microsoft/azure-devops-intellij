@@ -3,7 +3,9 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,17 +24,17 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
 
     @Test
     public void testConstructor_collectionWorkspace() {
-        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName");
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nullCollection() {
-        final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null, "workspaceName");
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null, "workspaceName" , null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nullWorkspace() {
-        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", null);
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", null, null);
     }
 
     @Test
@@ -45,9 +47,18 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
 
     @Test
     public void testGetArgumentBuilder_collectionWorkspace() {
-        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName");
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName", null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("workfold -noprompt -collection:collectionName -workspace:workspaceName", builder.toString());
+        Assert.assertEquals(null, builder.getWorkingDirectory());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_authInfo() {
+        final AuthenticationInfo authInfo = new AuthenticationInfo("userName", "password", "serverUri", "user");
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName", authInfo);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("workfold -noprompt -collection:collectionName -workspace:workspaceName ********", builder.toString());
         Assert.assertEquals(null, builder.getWorkingDirectory());
     }
 
@@ -106,5 +117,11 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     public void testParseOutput_errors() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
         final Workspace workspace = cmd.parseOutput("", "error");
+    }
+
+    @Test(expected = ToolAuthenticationException.class)
+    public void testParseOutput_authError() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
+        final Workspace workspace = cmd.parseOutput("", FindWorkspaceCommand.AUTH_ERROR_PREFIX + " http://serverName:8080/tfs");
     }
 }

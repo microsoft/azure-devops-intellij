@@ -112,7 +112,7 @@ public abstract class Command<T> {
                 builder.addSwitch("collection", collectionURI);
             }
             if (context.getAuthenticationInfo() != null) {
-                builder.addSwitch("login", context.getAuthenticationInfo().getUserName() + "," + context.getAuthenticationInfo().getPassword(), true);
+                builder.addAuthInfo(context.getAuthenticationInfo());
             }
             if (useProxyIfAvailable) {
                 final String proxyURI = WorkspaceHelper.getProxyServer(collectionURI);

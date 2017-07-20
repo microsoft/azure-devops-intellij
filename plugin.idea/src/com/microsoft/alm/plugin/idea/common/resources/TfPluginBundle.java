@@ -818,6 +818,14 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_MANAGE_WORKSPACES_SERVER_COLUMN = "Tfvc.ManageWorkspaces.Server.Column";
     @NonNls
     public static final String KEY_TFVC_MANAGE_WORKSPACES_COMMENT_COLUMN = "Tfvc.ManageWorkspaces.Comment.Column";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_TITLE = "Tfvc.ManageWorkspaces.Reload.Error.Title";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_MSG = "Tfvc.ManageWorkspaces.Reload.Error.Msg";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_TITLE = "Tfvc.ManageWorkspaces.Delete.Error.Title";
+    @NonNls
+    public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_MSG = "Tfvc.ManageWorkspaces.Delete.Error.Msg";
 
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";

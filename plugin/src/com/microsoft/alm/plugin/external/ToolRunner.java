@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.external;
 
 import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -114,6 +115,11 @@ public class ToolRunner {
         public ArgumentBuilder addSecret(final String argument) {
             add(argument);
             secretArgumentIndexes.add(arguments.size() - 1);
+            return this;
+        }
+
+        public ArgumentBuilder addAuthInfo(final AuthenticationInfo authInfo) {
+            addSwitch("login", authInfo.getUserName() + "," + authInfo.getPassword(), true);
             return this;
         }
 

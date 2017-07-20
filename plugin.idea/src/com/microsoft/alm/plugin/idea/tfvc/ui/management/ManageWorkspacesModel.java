@@ -3,11 +3,15 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.management;
 
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsRunnable;
+import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.Server;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -15,9 +19,11 @@ import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.AbstractModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.treetable.ContentProvider;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
+import com.microsoft.applicationinsights.core.dependencies.googlecommon.annotations.VisibleForTesting;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -53,32 +59,54 @@ public class ManageWorkspacesModel extends AbstractModel {
         return contentProvider;
     }
 
-    public void reloadWorkspaces(final Server selectedServer) {
+    public void reloadWorkspacesWithProgress(final Server selectedServer) {
         logger.info("Reloading workspaces for server " + selectedServer.getName());
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                // server always has at least 1 workspace with it or else it wouldn't be listed
-                final Workspace workspace = CommandUtils.getPartialWorkspace(selectedServer.getName(), selectedServer.getWorkspaces().get(0).getName());
-                if (workspace != null) {
-                    final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
-                            workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
 
-                    final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
-                    // will refresh the cache which populates the menu
-                    CommandUtils.refreshWorkspacesForServer(context);
+        try {
+            VcsUtil.runVcsProcessWithProgress(new VcsRunnable() {
+                public void run() throws VcsException {
+                    reloadWorkspaces(selectedServer);
                 }
-            }
-        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_MSG, selectedServer.getName()), false, project);
-        setChangedAndNotify(REFRESH_SERVER);
+            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_MSG, selectedServer.getName()), true, project);
+        } catch (VcsException e) {
+            logger.warn("Exception while trying to reload workspaces", e);
+            Messages.showErrorDialog(project, e.getMessage(),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_TITLE));
+        } finally {
+            // always refresh list
+            setChangedAndNotify(REFRESH_SERVER);
+        }
     }
 
     /**
-     * Delete the given workspace
+     * Reload the workspaces for the given server
      *
-     * @param selectedWorkspace
+     * @param selectedServer
+     * @throws VcsException
      */
-    public void deleteWorkspace(final Workspace selectedWorkspace) {
+    @VisibleForTesting
+    protected void reloadWorkspaces(final Server selectedServer) throws VcsException {
+        try {
+            // server always has at least 1 workspace with it or else it wouldn't be listed
+            final Workspace workspace = getPartialWorkspace(selectedServer.getName(), selectedServer.getWorkspaces().get(0).getName());
+            if (workspace != null) {
+                final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
+                        workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
+
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
+                // will refresh the cache which populates the menu
+                CommandUtils.refreshWorkspacesForServer(context);
+            } else {
+                logger.warn("Couldn't find partial workspace so aborting reload command");
+                throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_MSG,
+                        selectedServer.getName()));
+            }
+        } catch (RuntimeException e) {
+            throw new VcsException(e);
+        }
+    }
+
+    public void deleteWorkspaceWithProgress(final Workspace selectedWorkspace) {
         logger.info("Deleting workspace " + selectedWorkspace.getName());
         // confirm with the user the deletion
         if (Messages.showYesNoDialog(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_CONFIRM_MSG, selectedWorkspace.getName()),
@@ -87,20 +115,62 @@ public class ManageWorkspacesModel extends AbstractModel {
             return;
         }
 
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                final Workspace workspace = CommandUtils.getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
-                if (workspace != null) {
-                    final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
-                            workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
-
-                    final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
-                    CommandUtils.deleteWorkspace(context, selectedWorkspace.getName());
+        try {
+            VcsUtil.runVcsProcessWithProgress(new VcsRunnable() {
+                public void run() throws VcsException {
+                    deleteWorkspace(selectedWorkspace);
                 }
+            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_MSG, selectedWorkspace.getName()), true, project);
+        } catch (VcsException e) {
+            logger.warn("Exception while trying to delete workspace", e);
+            Messages.showErrorDialog(project, e.getMessage(),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_TITLE));
+        } finally {
+            // always refresh list
+            setChangedAndNotify(REFRESH_WORKSPACE);
+        }
+    }
+
+    /**
+     * Delete the given workspace
+     *
+     * @param selectedWorkspace
+     */
+    @VisibleForTesting
+    protected void deleteWorkspace(final Workspace selectedWorkspace) throws VcsException {
+        try {
+            final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
+            if (workspace != null) {
+                final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
+                        workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
+
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
+                CommandUtils.deleteWorkspace(context, selectedWorkspace.getName());
+            } else {
+                logger.warn("Couldn't find partial workspace so aborting delete command");
+                throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_MSG,
+                        selectedWorkspace.getName())));
             }
-        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_MSG, selectedWorkspace.getName()), false, project);
-        setChangedAndNotify(REFRESH_WORKSPACE);
+        } catch (RuntimeException e) {
+            throw new VcsException(e);
+        }
+    }
+
+    public void editWorkspaceWithProgress(final Workspace selectedWorkspace, final Runnable update) {
+        logger.info("Editing workspace " + selectedWorkspace.getName());
+
+        try {
+            VcsUtil.runVcsProcessWithProgress(new VcsRunnable() {
+                public void run() throws VcsException {
+                    editWorkspace(selectedWorkspace, update);
+                }
+            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_MSG, selectedWorkspace.getName()), true, project);
+        } catch (VcsException e) {
+            logger.warn("Exception while trying to edit workspace", e);
+            Messages.showErrorDialog(project, e.getMessage(),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_TITLE));
+        }
+        // no refresh needs to be called here because we pass it to the edit workspace dialog to run after the save is complete
     }
 
     /**
@@ -109,43 +179,42 @@ public class ManageWorkspacesModel extends AbstractModel {
      * @param selectedWorkspace
      * @param update
      */
-    public void editWorkspace(final Workspace selectedWorkspace, final Runnable update) {
-        logger.info("Editing workspace " + selectedWorkspace.getName());
-        // only retrieving one context and workspace
-        final List<ServerContext> contexts = new ArrayList<ServerContext>(1);
-        final List<Workspace> workspaces = new ArrayList<Workspace>(1);
+    @VisibleForTesting
+    protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
+        try {
+            final Workspace partialWorkspace = getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
+            if (partialWorkspace != null) {
+                final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
+                        partialWorkspace.getMappings().size() > 0 ? partialWorkspace.getMappings().get(0).getServerPath() : null);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(partialWorkspace.getServer(), projectName, true);
+                // use info from the 2 incomplete workspace objects to create a complete one
+                final Workspace workspace = new Workspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), selectedWorkspace.getComputer(),
+                        selectedWorkspace.getOwner(), selectedWorkspace.getComment(), partialWorkspace.getMappings());
 
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                final Workspace partialWorkspace = CommandUtils.getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
-                if (partialWorkspace != null) {
-                    final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
-                            partialWorkspace.getMappings().size() > 0 ? partialWorkspace.getMappings().get(0).getServerPath() : null);
-                    contexts.add(ServerContextManager.getInstance().createContextFromTfvcServerUrl(partialWorkspace.getServer(), projectName, true));
-                    // use info from the 2 incomplete workspace objects to create a complete one
-                    workspaces.add(new Workspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), selectedWorkspace.getComputer(),
-                            selectedWorkspace.getOwner(), selectedWorkspace.getComment(), partialWorkspace.getMappings()));
+                if (context == null || workspace == null) {
+                    logger.warn(String.format("Can't edit workspace because context is null: %s or workspace is null: %s",
+                            context == null, workspace == null));
+                    throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG,
+                            selectedWorkspace.getName())));
                 }
-            }
-        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_MSG, selectedWorkspace.getName()), false, project);
 
-        // if no context is found then show error
-        if (contexts.size() < 1 || contexts.get(0) == null) {
-            Messages.showErrorDialog(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG, selectedWorkspace.getName()),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_TITLE));
-            logger.warn("Did not find the context for the workspace to edit");
-        } else if (workspaces.size() < 1 || workspaces.get(0) == null) {
-            // no workspace found to edit
-            Messages.showErrorDialog(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG, selectedWorkspace.getName()),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_TITLE));
-            logger.warn("Did not find the workspace to edit");
-        } else {
-            // open edit dialog
-            final WorkspaceController controller = new WorkspaceController(project, contexts.get(0), workspaces.get(0));
-            if (controller.showModalDialog(false)) {
-                controller.saveWorkspace(StringUtils.EMPTY, false, update);
+                IdeaHelper.runOnUIThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // open edit dialog
+                        final WorkspaceController controller = new WorkspaceController(project, context, workspace);
+                        if (controller.showModalDialog(false)) {
+                            controller.saveWorkspace(StringUtils.EMPTY, false, update);
+                        }
+                    }
+                }, true);
+            } else {
+                logger.warn("Couldn't find partial workspace so aborting edit command");
+                throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG,
+                        selectedWorkspace.getName())));
             }
+        } catch (RuntimeException e) {
+            throw new VcsException(e);
         }
     }
 
@@ -212,6 +281,25 @@ public class ManageWorkspacesModel extends AbstractModel {
                 return workspaces;
             }
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get the partially populated workspace object
+     *
+     * @param serverName
+     * @param workspaceName
+     * @return
+     */
+    @VisibleForTesting
+    protected Workspace getPartialWorkspace(final String serverName, final String workspaceName) {
+        try {
+            return CommandUtils.getPartialWorkspace(serverName, workspaceName);
+        } catch (final ToolAuthenticationException e) {
+            // if auth error occurs it most likely is because the workspace is a server workspace so pass credentials with the call
+            logger.warn("Authentication failed while trying to get the partial workspace. Trying again with credentials");
+            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(serverName, true);
+            return CommandUtils.getPartialWorkspace(serverName, workspaceName, authInfo);
         }
     }
 }

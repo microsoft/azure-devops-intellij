@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.helpers.Path;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
@@ -88,9 +89,13 @@ public class CommandUtils {
      * @return
      */
     public static Workspace getPartialWorkspace(final String collectionName, final String workspaceName) {
+        return getPartialWorkspace(collectionName, workspaceName, null);
+    }
+
+    public static Workspace getPartialWorkspace(final String collectionName, final String workspaceName, final AuthenticationInfo authInfo) {
         ArgumentHelper.checkNotNull(collectionName, "collectionName");
         ArgumentHelper.checkNotNull(workspaceName, "workspaceName");
-        final FindWorkspaceCommand command = new FindWorkspaceCommand(collectionName, workspaceName);
+        final FindWorkspaceCommand command = new FindWorkspaceCommand(collectionName, workspaceName, authInfo);
         return command.runSynchronously();
     }
 
