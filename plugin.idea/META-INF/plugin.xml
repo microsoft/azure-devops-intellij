@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.120.0</version>
+    <version>1.121.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -35,6 +35,7 @@
             <li>Lock and unlock files and directories.</li>
             <li>Add labels to files and directories.</li>
             <li>Create, view, and edit a workspace.</li>
+            <li>Manage all workspaces on your local machine.</li>
             <li>Supports using a TFS proxy.</li>
             <li>Local workspace support only.</li>
         </ul>
@@ -62,9 +63,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.120.0
+      v 1.121.0
       <br />
-      This release contains incremental fixes and updates.
+      Added a Manage Workspaces dialog to manage all TFVC workspaces on your local machine. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
