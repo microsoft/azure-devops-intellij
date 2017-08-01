@@ -142,6 +142,9 @@ public class WorkspaceController implements Observer, ActionListener {
         if (arg == null || arg.equals(WorkspaceModel.PROP_SERVER)) {
             dialog.setServer(model.getServer());
         }
+        if (arg == null || arg.equals(WorkspaceModel.PROP_LOCATION)) {
+            dialog.setLocation(model.getLocation());
+        }
 
         // Loading is special we only want to update it when it is the only thing changing
         if (arg != null && arg.equals(WorkspaceModel.PROP_LOADING)) {

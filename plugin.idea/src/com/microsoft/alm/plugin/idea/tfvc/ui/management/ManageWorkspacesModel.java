@@ -182,14 +182,15 @@ public class ManageWorkspacesModel extends AbstractModel {
     @VisibleForTesting
     protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
         try {
-            final Workspace partialWorkspace = getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
-            if (partialWorkspace != null) {
+            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(selectedWorkspace.getServer(), true);
+            final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), authInfo);
+            if (detailedWorkspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
-                        partialWorkspace.getMappings().size() > 0 ? partialWorkspace.getMappings().get(0).getServerPath() : null);
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(partialWorkspace.getServer(), projectName, true);
+                        detailedWorkspace.getMappings().size() > 0 ? detailedWorkspace.getMappings().get(0).getServerPath() : null);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(detailedWorkspace.getServer(), projectName, true);
                 // use info from the 2 incomplete workspace objects to create a complete one
                 final Workspace workspace = new Workspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), selectedWorkspace.getComputer(),
-                        selectedWorkspace.getOwner(), selectedWorkspace.getComment(), partialWorkspace.getMappings());
+                        selectedWorkspace.getOwner(), selectedWorkspace.getComment(), detailedWorkspace.getMappings(), detailedWorkspace.getLocation());
 
                 if (context == null || workspace == null) {
                     logger.warn(String.format("Can't edit workspace because context is null: %s or workspace is null: %s",

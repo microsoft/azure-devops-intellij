@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.external.ToolRunnerCache;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolMemoryException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
@@ -400,4 +401,22 @@ public abstract class Command<T> {
         }
     }
 
+    /**
+     * This method parses a single line of output returning the mapping if one was found
+     * Examples:
+     * "$/TFVC_11/folder1: D:\tmp\notdefault\folder1"
+     * "(cloaked) $/TFVC_11/folder1:"
+     */
+    protected Workspace.Mapping getMapping(final String line) {
+        final boolean isCloaked = StringUtils.startsWithIgnoreCase(line.trim(), "(cloaked)");
+        final int endIndex = line.indexOf(":");
+        final int startIndex = isCloaked ? line.indexOf(")") + 1 : 0;
+        if (endIndex >= 0) {
+            final String serverPath = line.substring(startIndex, endIndex).trim();
+            final String localPath = line.substring(endIndex + 1).trim();
+            return new Workspace.Mapping(serverPath, localPath, isCloaked);
+        }
+
+        return null;
+    }
 }

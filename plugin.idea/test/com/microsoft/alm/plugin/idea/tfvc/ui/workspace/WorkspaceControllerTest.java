@@ -88,6 +88,7 @@ public class WorkspaceControllerTest extends IdeaAbstractTest {
         when(mockModel.getComputer()).thenReturn(computer);
         when(mockModel.getMappings()).thenReturn(mappings);
         when(mockModel.getOwner()).thenReturn(owner);
+        when(mockModel.getLocation()).thenReturn(Workspace.Location.SERVER);
         when(mockModel.isLoading()).thenReturn(isLoading);
     }
 
@@ -174,6 +175,14 @@ public class WorkspaceControllerTest extends IdeaAbstractTest {
         final WorkspaceController c = getController();
         c.update(mockModel, WorkspaceModel.PROP_SERVER);
         Mockito.verify(mockDialog).setServer(server);
+        Mockito.verifyNoMoreInteractions(mockDialog);
+    }
+
+    @Test
+    public void testUpdate_location() {
+        final WorkspaceController c = getController();
+        c.update(mockModel, WorkspaceModel.PROP_LOCATION);
+        Mockito.verify(mockDialog).setLocation(Workspace.Location.SERVER);
         Mockito.verifyNoMoreInteractions(mockDialog);
     }
 

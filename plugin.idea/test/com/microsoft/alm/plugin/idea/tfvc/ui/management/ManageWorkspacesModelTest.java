@@ -233,7 +233,9 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
 
     @Test
     public void testEditWorkspace_Happy() throws Exception {
-        doReturn(workspace1).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
+        final AuthenticationInfo mockAuthInfo = mock(AuthenticationInfo.class);
+        when(mockServerContextManager.getAuthenticationInfo(server.getName(), true)).thenReturn(mockAuthInfo);
+        when(CommandUtils.getDetailedWorkspace(server.getName(), workspace1.getName(), mockAuthInfo)).thenReturn(workspace1);
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
         verifyStatic(times(1));
@@ -242,7 +244,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
 
     @Test(expected = VcsException.class)
     public void testEditWorkspace_NullWorkspace() throws Exception {
-        doReturn(null).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
+        when(CommandUtils.getDetailedWorkspace(eq(server.getName()), eq(workspace1.getName()), any(AuthenticationInfo.class))).thenReturn(null);
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
     }

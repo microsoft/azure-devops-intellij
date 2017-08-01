@@ -21,6 +21,7 @@ import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetAllWorkspacesCommand;
 import com.microsoft.alm.plugin.external.commands.GetBaseVersionCommand;
 import com.microsoft.alm.plugin.external.commands.GetBranchesCommand;
+import com.microsoft.alm.plugin.external.commands.GetDetailedWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.GetLabelsCommand;
 import com.microsoft.alm.plugin.external.commands.GetLocalPathCommand;
 import com.microsoft.alm.plugin.external.commands.GetWorkspaceCommand;
@@ -96,6 +97,23 @@ public class CommandUtils {
         ArgumentHelper.checkNotNull(collectionName, "collectionName");
         ArgumentHelper.checkNotNull(workspaceName, "workspaceName");
         final FindWorkspaceCommand command = new FindWorkspaceCommand(collectionName, workspaceName, authInfo);
+        return command.runSynchronously();
+    }
+
+    /**
+     * This method will return the detailed results of a workspace
+     * <p>
+     * The collection is needed for sever workspaces but not local
+     *
+     * @param collectionName
+     * @param workspaceName
+     * @param authInfo
+     * @return
+     */
+    public static Workspace getDetailedWorkspace(final String collectionName, final String workspaceName, final AuthenticationInfo authInfo) {
+        ArgumentHelper.checkNotNull(workspaceName, "workspaceName");
+        ArgumentHelper.checkNotNull(authInfo, "authInfo");
+        final GetDetailedWorkspaceCommand command = new GetDetailedWorkspaceCommand(collectionName, workspaceName, authInfo);
         return command.runSynchronously();
     }
 

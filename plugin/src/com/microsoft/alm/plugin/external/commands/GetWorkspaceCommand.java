@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This command returns a fully filled out workspace object.
+ * This command returns a fully filled out workspace object except for location.
  */
 public class GetWorkspaceCommand extends Command<Workspace> {
     private final String workspaceName;
@@ -75,7 +75,7 @@ public class GetWorkspaceCommand extends Command<Workspace> {
                 owner = getXPathAttributeValue(workspaceAttributes, "owner");
             }
 
-
+            // defaults location to LOCAL with this constructor
             final Workspace workspace = new Workspace(
                     getXPathAttributeValue(workspaceAttributes, "server"),
                     getXPathAttributeValue(workspaceAttributes, "name"),

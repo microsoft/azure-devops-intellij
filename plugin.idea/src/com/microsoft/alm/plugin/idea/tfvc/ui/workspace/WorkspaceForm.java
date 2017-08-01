@@ -175,11 +175,6 @@ public class WorkspaceForm {
         workingFolderPanel.add(tableEditor.getContentPane());
     }
 
-    private void setupLocations() {
-        location.addItem(Location.LOCAL);
-        location.setEnabled(false);
-    }
-
     public WorkspaceForm(final Project project, final ServerContext serverContext, final ValidationListener validationListener) {
         this.project = project;
         this.serverContext = serverContext;
@@ -187,8 +182,6 @@ public class WorkspaceForm {
 
         $$$setupUI$$$();
         workingFoldersLabel.setLabelFor(tableEditor.getPreferredFocusedComponent());
-
-        setupLocations();
     }
 
     public JPanel getContentPane() {
@@ -235,6 +228,11 @@ public class WorkspaceForm {
         return tableEditor.getFirstValidationError();
     }
 
+    public void setLocation(final Workspace.Location locationOption) {
+        this.location.removeAllItems(); // clear previous item since we only have one item in there with it disabled
+        this.location.addItem(locationOption);
+    }
+
     public void setLoading(final boolean loading) {
         if (loading) {
             // TODO Localize or come up with a nicer way to show loading (see JLayer in 1.7)
@@ -249,6 +247,8 @@ public class WorkspaceForm {
             server.setText(loadingMessage);
             computer.setEnabled(false);
             computer.setText(loadingMessage);
+            location.setEnabled(false); // always disabled
+            location.addItem(loadingMessage);
         } else {
             name.setEnabled(true);
             comment.setEnabled(true);

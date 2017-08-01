@@ -20,15 +20,22 @@ public class Workspace {
     private final String comment;
     private final String server;
     private final List<Mapping> mappings;
+    private final Location location;
 
     public Workspace(final String server, final String name, final String computer, final String owner,
                      final String comment, final List<Mapping> mappings) {
+        this(server, name, computer, owner, comment, mappings, Location.LOCAL);
+    }
+
+    public Workspace(final String server, final String name, final String computer, final String owner,
+                     final String comment, final List<Mapping> mappings, final Location location) {
         this.server = server;
         this.name = name;
         this.computer = computer;
         this.owner = owner;
         this.comment = comment;
         this.mappings = new ArrayList<Mapping>(mappings);
+        this.location = location;
     }
 
     public String getServer() {
@@ -53,6 +60,10 @@ public class Workspace {
 
     public List<Mapping> getMappings() {
         return Collections.unmodifiableList(mappings);
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     /**
@@ -150,6 +161,25 @@ public class Workspace {
 
         public boolean isCloaked() {
             return cloaked;
+        }
+    }
+
+    /**
+     * This enum represents the location of the workspace or if it's unknown
+     */
+    public enum Location {
+        LOCAL,
+        SERVER,
+        UNKNOWN;
+
+        public static Location fromString(final String location) {
+            if (StringUtils.equalsIgnoreCase(location, LOCAL.name())) {
+                return LOCAL;
+            } else if (StringUtils.equalsIgnoreCase(location, SERVER.name())) {
+                return SERVER;
+            } else {
+                return UNKNOWN;
+            }
         }
     }
 }

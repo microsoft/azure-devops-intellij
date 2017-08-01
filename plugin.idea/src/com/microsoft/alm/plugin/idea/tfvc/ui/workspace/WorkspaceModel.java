@@ -63,6 +63,7 @@ public class WorkspaceModel extends AbstractModel {
     public static final String PROP_SERVER = "server";
     public static final String PROP_MAPPINGS = "mappings";
     public static final String PROP_LOADING = "loading";
+    public static final String PROP_LOCATION = "location";
 
     private boolean loading;
     private String name;
@@ -71,6 +72,7 @@ public class WorkspaceModel extends AbstractModel {
     private String comment;
     private String server;
     private List<Workspace.Mapping> mappings;
+    private Workspace.Location location;
 
     private Workspace oldWorkspace;
     private ServerContext currentServerContext;
@@ -154,6 +156,17 @@ public class WorkspaceModel extends AbstractModel {
         if (WorkspaceHelper.areMappingsDifferent(this.mappings, mappings)) {
             this.mappings = mappings;
             super.setChangedAndNotify(PROP_MAPPINGS);
+        }
+    }
+
+    public Workspace.Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(final Workspace.Location location) {
+        if (this.location != location) {
+            this.location = location;
+            super.setChangedAndNotify(PROP_LOCATION);
         }
     }
 
@@ -261,6 +274,7 @@ public class WorkspaceModel extends AbstractModel {
             name = oldWorkspace.getName();
             comment = oldWorkspace.getComment();
             mappings = new ArrayList<Workspace.Mapping>(oldWorkspace.getMappings());
+            location = workspace.getLocation() == Workspace.Location.UNKNOWN ? Workspace.Location.LOCAL : workspace.getLocation();
         } else {
             // This shouldn't happen, so we will log this case, but not throw
             logger.warn("loadWorkspace: workspace was returned as null");

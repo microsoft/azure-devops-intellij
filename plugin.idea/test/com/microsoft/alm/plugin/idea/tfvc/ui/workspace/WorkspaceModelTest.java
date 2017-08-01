@@ -79,7 +79,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         PowerMockito.mockStatic(ServerContextManager.class);
         when(ServerContextManager.getInstance()).thenReturn(serverContextManager);
 
-        final Workspace workspace = new Workspace(server, name, computer, owner, comment, mappings);
+        final Workspace workspace = new Workspace(server, name, computer, owner, comment, mappings, Workspace.Location.SERVER);
         PowerMockito.mockStatic(CommandUtils.class);
         when(CommandUtils.getWorkspace(Matchers.any(ServerContext.class), anyString())).thenReturn(workspace);
         when(CommandUtils.getWorkspace(Matchers.any(ServerContext.class), Matchers.any(Project.class))).thenReturn(workspace);
@@ -268,6 +268,28 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     }
 
     @Test
+    public void testLocation() {
+        final WorkspaceModel m = new WorkspaceModel();
+        final MockObserver observer = new MockObserver(m);
+        Assert.assertEquals(null, m.getLocation());
+
+        // Set it to a value and make sure the event is fired and the value changes
+        m.setLocation(Workspace.Location.LOCAL);
+        Assert.assertEquals(Workspace.Location.LOCAL, m.getLocation());
+        observer.assertAndClearLastUpdate(m, WorkspaceModel.PROP_LOCATION);
+
+        // Set it to the same value and make sure the event is NOT fired
+        m.setLocation(Workspace.Location.LOCAL);
+        Assert.assertEquals(Workspace.Location.LOCAL, m.getLocation());
+        observer.assertAndClearLastUpdate(null, null);
+
+        // Set it back to server and make sure the event is fired
+        m.setLocation(Workspace.Location.SERVER);
+        Assert.assertEquals(Workspace.Location.SERVER, m.getLocation());
+        observer.assertAndClearLastUpdate(m, WorkspaceModel.PROP_LOCATION);
+    }
+
+    @Test
     public void testValidate() {
         final WorkspaceModel m = new WorkspaceModel();
         Assert.assertEquals(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_NAME_EMPTY, m.validate().getValidationMessageKey());
@@ -299,6 +321,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         Assert.assertEquals(owner, m.getOwner());
         Assert.assertEquals(server, m.getServer());
         Assert.assertEquals(mappings, m.getMappings());
+        Assert.assertEquals(Workspace.Location.SERVER, m.getLocation());
 
         // Make sure loading got turned off
         Assert.assertEquals(false, m.isLoading());
@@ -428,6 +451,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         Assert.assertEquals(owner, m.getOwner());
         Assert.assertEquals(server, m.getServer());
         Assert.assertEquals(mappings, m.getMappings());
+        Assert.assertEquals(Workspace.Location.SERVER, m.getLocation());
 
         // Make sure loading got turned off
         Assert.assertEquals(false, m.isLoading());
@@ -442,6 +466,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         when(mockWorkspace.getOwner()).thenReturn(owner);
         when(mockWorkspace.getServer()).thenReturn(server);
         when(mockWorkspace.getMappings()).thenReturn(mappings);
+        when(mockWorkspace.getLocation()).thenReturn(Workspace.Location.SERVER);
 
         final WorkspaceModel m = new WorkspaceModel();
         m.loadWorkspace(authenticatedContext, mockWorkspace);
@@ -463,6 +488,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         Assert.assertEquals(owner, m.getOwner());
         Assert.assertEquals(server, m.getServer());
         Assert.assertEquals(mappings, m.getMappings());
+        Assert.assertEquals(Workspace.Location.SERVER, m.getLocation());
 
         // Make sure loading got turned off
         Assert.assertEquals(false, m.isLoading());

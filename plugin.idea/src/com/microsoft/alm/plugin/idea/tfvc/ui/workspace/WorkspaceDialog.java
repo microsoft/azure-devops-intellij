@@ -123,4 +123,8 @@ public class WorkspaceDialog extends BaseDialogImpl {
     public void setServer(final String server) {
         workspaceForm.setServer(server);
     }
+
+    public void setLocation(final Workspace.Location location) {
+        workspaceForm.setLocation(location);
+    }
 }
