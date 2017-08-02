@@ -97,14 +97,18 @@ public class CheckinCommand extends Command<String> {
     public String parseOutput(final String stdout, final String stderr) {
         // check for failed checkin
         if (StringUtils.isNotEmpty(stderr)) {
-            logger.error("Checkin failed with the following stdout: " + stdout);
+            logger.error("Checkin failed with the following stdout:\n" + stdout);
             final String[] output = getLines(stdout);
+            final StringBuilder errorMessage = new StringBuilder();
             for (int i = 0; i < output.length; i++) {
                 // finding error message by eliminating all other known output lines since we can't parse for the error line itself (it's unknown to us)
                 // TODO: figure out a better way to get the error message instead of parsing
-                if (isOutputLineExpected(output[i], new String[]{CHECKIN_LINE_PREFIX, CHECKIN_FAILED_MSG}, true)) {
-                    throw new RuntimeException(output[i]);
+                if (!isOutputLineExpected(output[i], new String[]{CHECKIN_LINE_PREFIX, CHECKIN_FAILED_MSG}, true)) {
+                    errorMessage.append(output[i]).append("\n");
                 }
+            }
+            if (StringUtils.isNotEmpty(errorMessage.toString())) {
+                throw new RuntimeException(StringUtils.chomp(errorMessage.toString()));
             }
             // couldn't figure out error message parsing so returning generic error
             logger.error("Parsing of the stdout failed to get the error message");

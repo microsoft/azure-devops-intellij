@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,9 +93,26 @@ public class CheckinCommandTest extends AbstractCommandTest {
         Assert.assertEquals("20", message);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testParseOutput_errors() {
+    @Test
+    public void testParseOutput_errorsParsed() {
         final CheckinCommand cmd = new CheckinCommand(null, files, "comment", null);
-        final String message = cmd.parseOutput("/path/path", "error");
+        try {
+            cmd.parseOutput("/Users/user/workspaceHome:\n" +
+                    "Checking in edit: file1.txt\n" +
+                    "Checking in edit: file2.txt\n" +
+                    "Unable to perform operation on $/workspaceHome/file1.txt. The item $/workspaceHome/file1.txt is locked in workspace OtherWorkspace;User2.\n" +
+                    "A newer version of $/workspaceHome/file2.txt exists on the server.", "error");
+        } catch (RuntimeException e) {
+            Assert.assertEquals("Unable to perform operation on $/workspaceHome/file1.txt. The item $/workspaceHome/file1.txt is locked in workspace OtherWorkspace;User2.\n" +
+                    "A newer version of $/workspaceHome/file2.txt exists on the server.", e.getMessage());
+        }
+    }
+
+    @Test (expected = TeamServicesException.class)
+    public void testParseOutput_errorsUnknown() {
+        final CheckinCommand cmd = new CheckinCommand(null, files, "comment", null);
+        cmd.parseOutput("/Users/user/workspaceHome:\n" +
+                "Checking in edit: file1.txt\n" +
+                "Checking in edit: file2.txt\n", "error");
     }
 }
