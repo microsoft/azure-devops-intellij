@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.120.0</version>
+    <version>1.122.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -34,7 +34,7 @@
             <li>View local changes and history for your files.</li>
             <li>Lock and unlock files and directories.</li>
             <li>Add labels to files and directories.</li>
-            <li>Create, view, and edit a workspace.</li>
+            <li>Create, view, manage, and edit a workspace.</li>
             <li>Supports using a TFS proxy.</li>
             <li>Local workspace support only.</li>
         </ul>
@@ -62,9 +62,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.120.0
+      v 1.122.0
       <br />
-      This release contains incremental fixes and updates.
+      Added the ability to manage TFVC workspaces along with opening the TFVC annotate view for files. This release also contains incremental fixes and updates.
       <br />
     ]]>
     </change-notes>
@@ -170,8 +170,8 @@
             <reference id="Compare.SameVersion"/>
             <reference id="Compare.LastVersion"/>
             <reference id="Compare.Selected"/>
+            <action id="Tfvc.Annotate" class="com.microsoft.alm.plugin.idea.tfvc.actions.AnnotateAction"/>
            <!-- <reference id="Vcs.ShowHistoryForBlock"/>
-            <reference id="Annotate"/>
             <reference id="ChangesView.Browse"/>-->
             <separator/>
             <!--action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/-->

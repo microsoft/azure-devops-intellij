@@ -496,6 +496,16 @@ public class TfPluginBundle {
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_MSG = "Actions.SelectWorkItems.Message";
     @NonNls
     public static final String KEY_ACTIONS_SELECT_WORK_ITEMS_ACTION = "Actions.SelectWorkItems.Action";
+    @NonNls
+    public static final String KEY_ACTIONS_ANNOTATE_MSG = "Actions.Annotate.Message";
+    @NonNls
+    public static final String KEY_ACTIONS_ANNOTATE_TITLE = "Actions.Annotate.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_ANNOTATE_STATUS = "Actions.Annotate.Status";
+    @NonNls
+    public static final String KEY_ACTIONS_ANNOTATE_ERROR_TITLE = "Actions.Annotate.Error.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_ANNOTATE_ERROR_MSG = "Actions.Annotate.Error.Msg";
 
     // TFVC Apply Label Action
     @NonNls

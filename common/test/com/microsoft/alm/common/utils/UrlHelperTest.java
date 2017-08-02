@@ -280,7 +280,7 @@ public class UrlHelperTest {
     public void testGetFileURI_NoBranch() {
         String remoteUrl = "https://myaccount.visualstudio.com";
         String filePath = "path/to/file.txt";
-        
+
         final URI result = UrlHelper.getFileURI(remoteUrl, filePath, StringUtils.EMPTY);
         assertEquals(remoteUrl.concat(UrlHelper.URL_PATH_SEGMENT).concat(filePath), result.toString());
     }
@@ -293,6 +293,17 @@ public class UrlHelperTest {
 
         final URI result = UrlHelper.getFileURI(remoteUrl, filePath, branchName);
         assertEquals(remoteUrl.concat(UrlHelper.URL_PATH_SEGMENT).concat(filePath).concat(UrlHelper.URL_GIT_VERSION_SEGMENT).concat(branchName),
+                result.toString());
+    }
+
+    @Test
+    public void testGetTfvcAnnotateURI() {
+        final String collection = "https://server:8081/tfs/DefaultCollection/";
+        final String projectName = "Project Name";
+        final String filePath = "$/path/to/the/file.txt";
+
+        final URI result = UrlHelper.getTfvcAnnotateURI(collection, projectName, filePath);
+        assertEquals("https://server:8081/tfs/DefaultCollection/Project%20Name/_versionControl/?path=%24%2Fpath%2Fto%2Fthe%2Ffile.txt&_a=contents&annotate=true&hideComments=true",
                 result.toString());
     }
 }

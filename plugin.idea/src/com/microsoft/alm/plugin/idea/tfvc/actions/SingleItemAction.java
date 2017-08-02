@@ -95,7 +95,7 @@ public abstract class SingleItemAction extends InstrumentedAction {
                         errors.add(TFSVcs.convertToVcsException(t));
                     }
                 }
-            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_UPDATE_STATUS_MSG), false, project);
+            }, getProgressMessage(), false, project);
 
             if (!errors.isEmpty()) {
                 AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFVC_NAME);
@@ -110,6 +110,10 @@ public abstract class SingleItemAction extends InstrumentedAction {
 
     public void doUpdate(@NotNull final AnActionEvent e) {
         e.getPresentation().setEnabled(isEnabled(e.getProject(), VcsUtil.getOneVirtualFile(e)));
+    }
+
+    protected String getProgressMessage() {
+        return TfPluginBundle.message(TfPluginBundle.KEY_TFVC_UPDATE_STATUS_MSG);
     }
 
     protected final boolean isEnabled(@Nullable final Project project, @Nullable final VirtualFile file) {

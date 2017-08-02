@@ -44,6 +44,7 @@ public class UrlHelper {
     protected static final String URL_PATH_SEGMENT = "#path=";
     protected static final String URL_GIT_VERSION_SEGMENT = "&version=GB";
     protected static final String URL_TFVC_PATH_SEGMENT = "_versionControl";
+    protected static final String URL_TFVC_ANNOTATE_FILE_SEGMENT = "?path=%s&_a=contents&annotate=true&hideComments=true";
     protected static final String URL_TFVC_CHANGESET_SEGMENT = "changeset";
 
     private static final String HTTP_PROTOCOL = "http";
@@ -270,6 +271,11 @@ public class UrlHelper {
     public static URI getTfvcChangesetURI(final String remoteUrl, final String changesetNumber) {
         return UrlHelper.createUri(combine(getHttpsGitUrlFromSshUrl(remoteUrl), URL_TFVC_PATH_SEGMENT,
                 URL_TFVC_CHANGESET_SEGMENT, changesetNumber));
+    }
+
+    public static URI getTfvcAnnotateURI(final String collectionUrl, final String projectName, final String filePath) {
+        return createUri(combine(collectionUrl, projectName, URL_TFVC_PATH_SEGMENT,
+                String.format(URL_TFVC_ANNOTATE_FILE_SEGMENT, encode(filePath))));
     }
 
     public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
