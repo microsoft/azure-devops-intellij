@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Server;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 public class GetAllWorkspacesCommandTest extends AbstractCommandTest {
 
@@ -23,6 +25,13 @@ public class GetAllWorkspacesCommandTest extends AbstractCommandTest {
     @Test
     public void testConstructor_withContext() {
         final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(context);
+    }
+
+    @Test
+    public void testConstructor_withAuthInfo() {
+        final AuthenticationInfo authInfo = mock(AuthenticationInfo.class);
+        final String serverUrl = "http://account.visualstudio.com/";
+        final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(authInfo, serverUrl);
     }
 
     @Test
@@ -38,6 +47,16 @@ public class GetAllWorkspacesCommandTest extends AbstractCommandTest {
         final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(context);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         assertEquals("workspaces -noprompt -collection:http://server:8080/tfs/defaultcollection ********", builder.toString());
+        assertEquals(null, builder.getWorkingDirectory());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_withAuthInfo() {
+        final AuthenticationInfo authInfo = mock(AuthenticationInfo.class);
+        final String serverUrl = "http://account.visualstudio.com/";
+        final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(authInfo, serverUrl);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        assertEquals("workspaces -noprompt ******** -collection:http://account.visualstudio.com/", builder.toString());
         assertEquals(null, builder.getWorkingDirectory());
     }
 

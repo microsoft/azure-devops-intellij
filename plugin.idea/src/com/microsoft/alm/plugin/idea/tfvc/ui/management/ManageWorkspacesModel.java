@@ -87,17 +87,13 @@ public class ManageWorkspacesModel extends AbstractModel {
     @VisibleForTesting
     protected void reloadWorkspaces(final Server selectedServer) throws VcsException {
         try {
-            // server always has at least 1 workspace with it or else it wouldn't be listed
-            final Workspace workspace = getPartialWorkspace(selectedServer.getName(), selectedServer.getWorkspaces().get(0).getName());
-            if (workspace != null) {
-                final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
-                        workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
-
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
+            // get auth info for the server
+            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(selectedServer.getName(), true);
+            if (authInfo != null) {
                 // will refresh the cache which populates the menu
-                CommandUtils.refreshWorkspacesForServer(context);
+                CommandUtils.refreshWorkspacesForServer(authInfo, selectedServer.getName());
             } else {
-                logger.warn("Couldn't find partial workspace so aborting reload command");
+                logger.warn("Couldn't get auth info so aborting reload command");
                 throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_MSG,
                         selectedServer.getName()));
             }

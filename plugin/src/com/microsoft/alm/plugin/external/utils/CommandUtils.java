@@ -154,13 +154,13 @@ public class CommandUtils {
     }
 
     /**
-     * This method refreshes the cache for a server to pul in any remote changes
+     * This method refreshes the cache for a server to pull in any remote changes
      *
-     * @param context
-     * @return
+     * @param authInfo
+     * @param serverUrl
      */
-    public static void refreshWorkspacesForServer(final ServerContext context) {
-        final GetAllWorkspacesCommand command = new GetAllWorkspacesCommand(context);
+    public static void refreshWorkspacesForServer(final AuthenticationInfo authInfo, final String serverUrl) {
+        final GetAllWorkspacesCommand command = new GetAllWorkspacesCommand(authInfo, serverUrl);
         command.runSynchronously();
     }
 

@@ -127,16 +127,17 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
 
     @Test
     public void testReloadWorkspaces_Happy() throws Exception {
-        doReturn(workspace1).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
+        final AuthenticationInfo mockAuthInfo = mock(AuthenticationInfo.class);
+        when(mockServerContextManager.getAuthenticationInfo(server.getName(), true)).thenReturn(mockAuthInfo);
 
         manageWorkspacesModel.reloadWorkspaces(server);
         verifyStatic(times(1));
-        CommandUtils.refreshWorkspacesForServer(mockServerContext);
+        CommandUtils.refreshWorkspacesForServer(mockAuthInfo, server.getName());
     }
 
     @Test(expected = VcsException.class)
-    public void testReloadWorkspaces_NullWorkspace() throws Exception {
-        doReturn(null).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
+    public void testReloadWorkspaces_NullAuth() throws Exception {
+        when(mockServerContextManager.getAuthenticationInfo(server.getName(), true)).thenReturn(null);
 
         manageWorkspacesModel.reloadWorkspaces(server);
     }

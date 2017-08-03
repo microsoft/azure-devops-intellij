@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.Server;
@@ -22,6 +24,9 @@ import java.util.List;
 public class GetAllWorkspacesCommand extends Command<List<Server>> {
     private static final String COLLECTION_PREFIX = "Collection: ";
 
+    private final AuthenticationInfo authInfo;
+    private final String serverUrl;
+
     /**
      * Use this constructor if you want to get all the local workspaces stored
      * in the cache irregardless of the server
@@ -38,11 +43,35 @@ public class GetAllWorkspacesCommand extends Command<List<Server>> {
      */
     public GetAllWorkspacesCommand(final ServerContext context) {
         super("workspaces", context);
+        authInfo = null;
+        serverUrl = StringUtils.EMPTY;
+    }
+
+    /**
+     * Use this constructor if you want to get all the local workspaces
+     * from a specific server using a server call but don't have a server context
+     *
+     * @param authInfo
+     * @param serverUrl
+     */
+    public GetAllWorkspacesCommand(final AuthenticationInfo authInfo, final String serverUrl) {
+        super("workspaces", null);
+        ArgumentHelper.checkNotNull(authInfo, "authInfo");
+        ArgumentHelper.checkNotEmptyString(serverUrl, "serverUrl");
+        this.authInfo = authInfo;
+        this.serverUrl = serverUrl;
     }
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder();
+
+        // if you have one you should have the other based on the constructor checks
+        if (authInfo != null && StringUtils.isNotEmpty(serverUrl)) {
+            builder.addAuthInfo(authInfo);
+            builder.addSwitch("collection", serverUrl);
+        }
+
         return builder;
     }
 
