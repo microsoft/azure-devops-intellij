@@ -24,7 +24,8 @@ import java.util.List;
 public class FindWorkspaceCommand extends Command<Workspace> {
     protected static final Logger logger = LoggerFactory.getLogger(FindWorkspaceCommand.class);
 
-    protected static final String AUTH_ERROR_PREFIX = "An error occurred: Access denied connecting to TFS server";
+    protected static final String AUTH_ERROR_SERVER = "An error occurred: Access denied connecting to TFS server";
+    protected static final String AUTH_ERROR_FEDERATED = "Federated authentication to this server requires a username and password.";
 
     private final String localPath;
     private final String collection;
@@ -124,7 +125,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
      */
     @Override
     protected void throwIfError(final String stderr) {
-        if (StringUtils.startsWith(stderr, AUTH_ERROR_PREFIX)) {
+        if (StringUtils.startsWith(stderr, AUTH_ERROR_SERVER) || StringUtils.contains(stderr, AUTH_ERROR_FEDERATED)) {
             logger.warn("Authentication exception hit when running 'tf workfold'");
             throw new ToolAuthenticationException();
         }

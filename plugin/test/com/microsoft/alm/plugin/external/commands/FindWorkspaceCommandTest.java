@@ -29,7 +29,7 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nullCollection() {
-        final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null, "workspaceName" , null);
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand(null, "workspaceName", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -120,8 +120,14 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     }
 
     @Test(expected = ToolAuthenticationException.class)
-    public void testParseOutput_authError() {
+    public void testParseOutput_authServerError() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
-        final Workspace workspace = cmd.parseOutput("", FindWorkspaceCommand.AUTH_ERROR_PREFIX + " http://serverName:8080/tfs");
+        cmd.parseOutput("", FindWorkspaceCommand.AUTH_ERROR_SERVER + " http://serverName:8080/tfs");
+    }
+
+    @Test(expected = ToolAuthenticationException.class)
+    public void testParseOutput_authFederatedError() {
+        final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt");
+        cmd.parseOutput("", "An error occurred: " + FindWorkspaceCommand.AUTH_ERROR_FEDERATED + ": http://serverName:8080/tfs");
     }
 }
