@@ -17,6 +17,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.ResolveConflictsCommand;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
+import com.microsoft.alm.plugin.external.models.CheckedInChange;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.MergeResults;
 import com.microsoft.alm.plugin.external.models.PendingChange;
@@ -256,8 +257,8 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     @Test
     public void testPopulateThreeWayDiff_ContentsChangeOnly() throws Exception {
         PendingChange pendingChangeOriginal = new PendingChange("$/server/path/file.txt", "/path/to/file.txt", "10", "domain/user", "2016-09-14T16:10:08.487-0400", "none", "edit", "workspace1", "computer1", false, StringUtils.EMPTY);
-        PendingChange pendingChangeServer = new PendingChange("$/server/path/file.txt", "/path/to/file.txt", "9", "domain/user", "2016-09-10T16:10:08.487-0400", "none", "edit", "workspace1", "computer1", false, StringUtils.EMPTY);
-        ChangeSet changeSet = new ChangeSet("9", "domain/user", "domain/user", "2016-09-14T16:10:08.487-0400", "comment", Arrays.asList(pendingChangeServer));
+        CheckedInChange checkedInChange = new CheckedInChange("$/server/path/file.txt", "edit", "9", "2016-09-10T16:10:08.487-0400");
+        ChangeSet changeSet = new ChangeSet("9", "domain/user", "domain/user", "2016-09-14T16:10:08.487-0400", "comment", Arrays.asList(checkedInChange));
 
         when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(pendingChangeOriginal);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(changeSet);
@@ -279,8 +280,8 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public void testPopulateThreeWayDiff_ContentBothChange() throws Exception {
         FilePath mockRenameFilePath = mock(FilePath.class);
         PendingChange pendingChangeOriginal = new PendingChange("$/server/path/file.txt", "/path/to/file.txt", "10", "domain/user", "2016-09-14T16:10:08.487-0400", "none", "edit", "workspace1", "computer1", false, StringUtils.EMPTY);
-        PendingChange pendingChangeServer = new PendingChange("$/server/path/file.txt", "/path/to/file.txt", "9", "domain/user", "2016-09-10T16:10:08.487-0400", "none", "edit", "workspace1", "computer1", false, StringUtils.EMPTY);
-        ChangeSet changeSet = new ChangeSet("9", "domain/user", "domain/user", "2016-09-14T16:10:08.487-0400", "comment", Arrays.asList(pendingChangeServer));
+        CheckedInChange checkedInChange = new CheckedInChange("$/server/path/file.txt", "edit", "9", "2016-09-10T16:10:08.487-0400");
+        ChangeSet changeSet = new ChangeSet("9", "domain/user", "domain/user", "2016-09-14T16:10:08.487-0400", "comment", Arrays.asList(checkedInChange));
 
         when(VersionControlPath.getFilePath(CONFLICT_BOTH.getLocalPath(), false)).thenReturn(mockRenameFilePath);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(changeSet);

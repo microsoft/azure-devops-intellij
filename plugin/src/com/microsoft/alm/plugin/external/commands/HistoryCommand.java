@@ -7,7 +7,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
-import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.CheckedInChange;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * Use this command to get the history of any workspace item.
- *
+ * <p>
  * history [/version:<value>] [/stopafter:<value>] [/recursive] [/user:<value>] [/format:brief|detailed|xml] [/slotmode] [/itemmode] <itemSpec>
  */
 public class HistoryCommand extends Command<List<ChangeSet>> {
@@ -107,23 +107,26 @@ public class HistoryCommand extends Command<List<ChangeSet>> {
                 }
 
                 // Gather pending changes
-                final List<PendingChange> changes = new ArrayList<PendingChange>(100);
+                final List<CheckedInChange> changes = new ArrayList<CheckedInChange>(100);
                 final NodeList childNodes = changeset.getElementsByTagName("item");
+                final NamedNodeMap changesetAttributes = changeset.getAttributes();
+                final String id = changesetAttributes.getNamedItem("id").getNodeValue();
+                final String date = changesetAttributes.getNamedItem("date").getNodeValue();
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     final Node child = childNodes.item(j);
                     // Assume this is a change
                     final NamedNodeMap attributes = child.getAttributes();
-                    changes.add(new PendingChange(
+                    final CheckedInChange newchange = new CheckedInChange(
                             attributes.getNamedItem("server-item").getNodeValue(),
-                            attributes.getNamedItem("change-type").getNodeValue()));
+                            attributes.getNamedItem("change-type").getNodeValue(),
+                            id, date);
+                    changes.add(newchange);
                 }
 
-                final NamedNodeMap attributes = changeset.getAttributes();
-                changeSets.add(new ChangeSet(
-                        attributes.getNamedItem("id").getNodeValue(),
-                        attributes.getNamedItem("owner").getNodeValue(),
-                        attributes.getNamedItem("committer").getNodeValue(),
-                        attributes.getNamedItem("date").getNodeValue(),
+                changeSets.add(new ChangeSet(id,
+                        changesetAttributes.getNamedItem("owner").getNodeValue(),
+                        changesetAttributes.getNamedItem("committer").getNodeValue(),
+                        date,
                         comment,
                         changes));
             }

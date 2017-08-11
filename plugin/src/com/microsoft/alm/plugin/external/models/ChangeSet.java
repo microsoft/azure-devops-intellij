@@ -18,16 +18,16 @@ public class ChangeSet {
     private final String committer;
     private final String date;
     private final String comment;
-    private final List<PendingChange> changes;
+    private final List<CheckedInChange> changes;
 
     public ChangeSet(final String id, final String owner, final String committer, final String date,
-                     final String comment, final List<PendingChange> changes) {
+                     final String comment, final List<CheckedInChange> changes) {
         this.id = id;
         this.owner = owner;
         this.committer = committer;
         this.date = date;
         this.comment = comment;
-        this.changes = new ArrayList<PendingChange>(changes);
+        this.changes = new ArrayList<CheckedInChange>(changes);
     }
 
     public String getId() {
@@ -54,8 +54,7 @@ public class ChangeSet {
         return comment;
     }
 
-    public List<PendingChange> getChanges() {
+    public List<CheckedInChange> getChanges() {
         return Collections.unmodifiableList(changes);
     }
 }
-

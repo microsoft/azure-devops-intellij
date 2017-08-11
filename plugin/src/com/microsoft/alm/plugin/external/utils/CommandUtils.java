@@ -68,18 +68,27 @@ public class CommandUtils {
     /**
      * This method will return just the workspace name or empty string (never null)
      *
-     * @param context
      * @param project
      * @return
      */
-    public static String getWorkspaceName(final ServerContext context, final Project project) {
-        ArgumentHelper.checkNotNull(project, "project");
-        final FindWorkspaceCommand command = new FindWorkspaceCommand(project.getBasePath());
-        final Workspace workspace = command.runSynchronously();
+    public static String getWorkspaceName(final Project project) {
+        final Workspace workspace = getPartialWorkspace(project);
         if (workspace != null) {
             return workspace.getName();
         }
         return StringUtils.EMPTY;
+    }
+
+    /**
+     * This method will return a partially populated Workspace object that includes just the name, server, and mappings
+     *
+     * @param project
+     * @return
+     */
+    public static Workspace getPartialWorkspace(final Project project) {
+        ArgumentHelper.checkNotNull(project, "project");
+        final FindWorkspaceCommand command = new FindWorkspaceCommand(project.getBasePath());
+        return command.runSynchronously();
     }
 
     /**
@@ -126,7 +135,7 @@ public class CommandUtils {
      */
 
     public static Workspace getWorkspace(final ServerContext context, final Project project) {
-        final String workspaceName = getWorkspaceName(context, project);
+        final String workspaceName = getWorkspaceName(project);
         return getWorkspace(context, workspaceName);
     }
 

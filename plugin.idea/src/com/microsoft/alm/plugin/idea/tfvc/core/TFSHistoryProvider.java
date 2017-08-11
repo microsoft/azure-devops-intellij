@@ -37,10 +37,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
-import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TfsFileRevision;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,14 +85,13 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
                 return null;
             }
 
-            return createSession(revisions.get(0).getServerPath(), revisions.get(0).getRevisionNumber(), revisions, !filePath.isDirectory());
+            return createSession(revisions.get(0).getRevisionNumber(), revisions, !filePath.isDirectory());
         } catch (Exception e) {
             throw new VcsException(e);
         }
     }
 
-    private static VcsAbstractHistorySession createSession(final String serverPath,
-                                                           final VcsRevisionNumber currentRevisionNumber,
+    private static VcsAbstractHistorySession createSession(final VcsRevisionNumber currentRevisionNumber,
                                                            final List<TfsFileRevision> revisions,
                                                            final boolean isFile) {
         return new VcsAbstractHistorySession(revisions) {
@@ -108,7 +105,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
             @Override
             public VcsHistorySession copy() {
-                return createSession(serverPath, currentRevisionNumber, revisions, isFile);
+                return createSession(currentRevisionNumber, revisions, isFile);
             }
 
             @Override
@@ -133,23 +130,11 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
         final List<TfsFileRevision> revisions = new ArrayList<TfsFileRevision>(changesets.size());
         for (final ChangeSet changeSet : changesets) {
-            revisions.add(new TfsFileRevision(project, serverContext, getServerPath(changeSet, localPath), localPath, changeSet.getIdAsInt(),
+            revisions.add(new TfsFileRevision(project, serverContext, localPath, changeSet.getIdAsInt(),
                     changeSet.getCommitter(), changeSet.getComment(), changeSet.getDate()));
         }
 
         return revisions;
-    }
-
-    private static String getServerPath(final ChangeSet changeSet, final FilePath localPath) {
-        if (changeSet != null && changeSet.getChanges().size() > 0 && localPath != null) {
-            for (final PendingChange pc : changeSet.getChanges()) {
-                if (StringUtils.equalsIgnoreCase(pc.getLocalItem(), localPath.getPath())) {
-                    return pc.getServerItem();
-                }
-            }
-        }
-
-        return null;
     }
 
     public boolean supportsHistoryForDirectories() {

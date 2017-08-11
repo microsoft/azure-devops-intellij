@@ -146,7 +146,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         if (lastChangeSet != null && !lastChangeSet.getChanges().isEmpty()) {
             final String serverPath = lastChangeSet.getChanges().get(0).getServerItem();
             final String originalPath = CommandUtils.getLocalPathSynchronously(serverContext, serverPath,
-                    CommandUtils.getWorkspaceName(null, project));
+                    CommandUtils.getWorkspaceName(project));
 
             return TFSContentRevision.createRenameRevision(project,
                     serverContext,

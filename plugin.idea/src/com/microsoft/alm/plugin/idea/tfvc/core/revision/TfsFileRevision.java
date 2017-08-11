@@ -44,7 +44,6 @@ public class TfsFileRevision implements VcsFileRevision {
     private final Project project;
     private final ServerContext serverContext;
     private final FilePath localPath;
-    private final String serverPath;
     private final int changeset;
     private final String author;
     private final String commitMessage;
@@ -53,7 +52,6 @@ public class TfsFileRevision implements VcsFileRevision {
 
     public TfsFileRevision(final Project project,
                            final ServerContext serverContext,
-                           final String serverPath,
                            final @NotNull FilePath localPath,
                            final int changeset,
                            final String author,
@@ -65,7 +63,6 @@ public class TfsFileRevision implements VcsFileRevision {
         this.project = project;
         this.serverContext = serverContext;
         this.localPath = localPath;
-        this.serverPath = serverPath;
         this.changeset = changeset;
         this.author = author;
         this.commitMessage = commitMessage;
@@ -123,10 +120,6 @@ public class TfsFileRevision implements VcsFileRevision {
     @Override
     public String getCommitMessage() {
         return commitMessage;
-    }
-
-    public String getServerPath() {
-        return serverPath;
     }
 
     public TFSContentRevision createContentRevision() throws VcsException {
