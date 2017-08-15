@@ -7,6 +7,8 @@ import com.microsoft.alm.plugin.AbstractTest;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Date;
+
 public class VersionSpecTest extends AbstractTest {
     @Test
     public void testCreate_int() {
@@ -31,6 +33,11 @@ public class VersionSpecTest extends AbstractTest {
     @Test(expected = IndexOutOfBoundsException.class)
     public void testCreate_int_below0() {
         VersionSpec spec1 = VersionSpec.create(-100);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreate_null_date() {
+        VersionSpec spec1 = VersionSpec.create((Date) null);
     }
 
     @Test
@@ -58,7 +65,7 @@ public class VersionSpecTest extends AbstractTest {
 
     @Test
     public void testCreate_string_empty() {
-        VersionSpec spec = VersionSpec.create(null);
+        VersionSpec spec = VersionSpec.create((String) null);
         Assert.assertEquals(VersionSpec.Type.Latest, spec.getType());
         Assert.assertEquals("", spec.getValue());
 
@@ -97,6 +104,7 @@ public class VersionSpecTest extends AbstractTest {
         Assert.assertEquals("24", range.getEnd().getValue());
     }
 
+    @Test
     public void testRange_create_singleVersion() {
         VersionSpec.Range range = VersionSpec.Range.create("C23");
         Assert.assertEquals("C23~C23", range.toString());

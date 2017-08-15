@@ -34,6 +34,9 @@ import com.intellij.openapi.vfs.newvfs.RefreshQueue;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.plugin.versioncontrol.path.LocalPath;
+import com.microsoft.alm.plugin.versioncontrol.path.ServerPath;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -351,5 +354,124 @@ public class TfsFileUtil {
             }
         }
         return false;
+    }
+
+
+    /**
+     * Taken from team-explorer-everywhere: source/com.microsoft.tfs.core/src/com/microsoft/tfs/core/clients/versioncontrol/soapextensions/WorkingFolder.java
+     * <p>
+     * Translates a server path to a local path using the supplied working
+     * folder mappings.
+     * </p>
+     * <p>
+     * <code>null</code> will be returned for items that are cloaked.
+     * </p>
+     *
+     * @param serverPath the server path to translate into a local path (must not be
+     *                   <code>null</code> or empty)
+     * @param mappings   the {@link com.microsoft.alm.plugin.external.models.Workspace.Mapping} mappings to translate with; can be
+     *                   arranged in any order (must not be <code>null</code>)
+     * @return the {@link String} with the translation information (
+     * {@link String} is <code>null</code>
+     * for cloaked items), or <code>null</code> if no appropriate
+     * working folder mapping was found
+     */
+    public static String translateServerItemToLocalItem(final List<Workspace.Mapping> mappings, final String serverPath) {
+        ArgumentHelper.checkNotEmptyString(serverPath, "serverPath");
+        ArgumentHelper.checkNotNull(mappings, "mappings");
+
+        int mappingLength = 0;
+        Workspace.Mapping foundMapping = null;
+
+        for (final Workspace.Mapping mapping : mappings) {
+            if (mapping == null) {
+                continue;
+            }
+
+            if (ServerPath.isChild(mapping.getServerPath(), serverPath) && mapping.getServerPath().length() > mappingLength) {
+                // This is the closest new mapping.
+                foundMapping = mapping;
+                mappingLength = mapping.getServerPath().length();
+            }
+        }
+
+        if (foundMapping != null) {
+            final String localPath = foundMapping.isCloaked() ? null :
+                    ServerPath.makeLocal(serverPath, foundMapping.getServerPath(), foundMapping.getLocalPath());
+            return localPath;
+        }
+
+        return null;
+    }
+
+    /**
+     * Taken from team-explorer-everywhere: source/com.microsoft.tfs.core/src/com/microsoft/tfs/core/clients/versioncontrol/soapextensions/WorkingFolder.java
+     * <p>
+     * Translates a local path to a server path using the supplied working
+     * folder mappings.
+     * </p>
+     * <p>
+     * <code>null</code> is returned for items that are cloaked.
+     * </p>
+     *
+     * @param localPath the local path to translate into a server path (must not be
+     *                  <code>null</code> or empty)
+     * @param mappings  the {@link com.microsoft.alm.plugin.external.models.Workspace.Mapping} mappings to translate with; can be
+     *                  arranged in any order (must not be <code>null</code>)
+     * @return the working folder mapping that most precisely matches the given
+     * path, or <code>null</code> if the item is not mapped or cloaked
+     */
+    public static String translateLocalItemToServerItem(
+            final String localPath,
+            final List<Workspace.Mapping> mappings) {
+        ArgumentHelper.checkNotEmptyString(localPath, "localPath");
+        ArgumentHelper.checkNotNull(mappings, "mappings");
+
+        int mappingLength = 0;
+        Workspace.Mapping foundMapping = null;
+
+        for (final Workspace.Mapping wf : mappings) {
+            if (wf == null || wf.isCloaked()) {
+                continue;
+            }
+
+            final String wfLocalItem = wf.getLocalPath();
+
+            if (LocalPath.isChild(wfLocalItem, localPath) && wfLocalItem.length() > mappingLength) {
+                // This is the closest new mapping.
+                foundMapping = wf;
+                mappingLength = wfLocalItem.length();
+            }
+        }
+
+        if (foundMapping != null) {
+            final String mappingLocalItem = foundMapping.getLocalPath();
+            final String mappingServerItem = foundMapping.getServerPath();
+
+            final String serverPath = LocalPath.makeServer(localPath, mappingLocalItem, mappingServerItem);
+            boolean isCloaked = false;
+
+            /*
+             * We have the server path for the local path, but the server path
+             * could be cloaked.
+             */
+            final int mappingServerPathLength = mappingServerItem.length();
+            for (final Workspace.Mapping wf : mappings) {
+                if (wf == null || wf.isCloaked() == false) {
+                    continue;
+                }
+
+                final String wfServerItem = wf.getServerPath();
+
+                if (wfServerItem.length() > mappingServerPathLength && ServerPath.isChild(wfServerItem, serverPath)) {
+                    isCloaked = true;
+                    break;
+                }
+            }
+
+            return isCloaked ? null : serverPath;
+        }
+
+        return null;
     }
 }

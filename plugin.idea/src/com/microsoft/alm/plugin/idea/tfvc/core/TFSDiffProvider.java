@@ -29,21 +29,31 @@ import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.context.rest.VersionControlRecursionTypeCaseSensitive;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
+import com.microsoft.alm.sourcecontrol.webapi.model.TfvcItem;
+import com.microsoft.alm.sourcecontrol.webapi.model.TfvcVersionDescriptor;
+import com.microsoft.alm.sourcecontrol.webapi.model.TfvcVersionType;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Calendar;
+import java.util.List;
+
 public class TFSDiffProvider implements DiffProvider {
     private static final Logger logger = LoggerFactory.getLogger(TFSDiffProvider.class);
+    private static final int MINIMAL_WAIT_FOR_RETRY = 60 * 1000;
 
     private final Project project;
+    private List<Workspace.Mapping> mappings;
+    private Calendar lastUpdated;
 
     public TFSDiffProvider(@NotNull final Project project) {
         this.project = project;
@@ -91,11 +101,7 @@ public class TFSDiffProvider implements DiffProvider {
     @Nullable
     public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
         try {
-            // TODO: we may have an issue here with new files that don't exist on the server and have not been explicity added (NEED TO TEST)
-            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(project).getServerContext(true), virtualFile.getPath());
-            if (info != null) {
-                return new TfsRevisionNumber(info.getLocalVersionAsInt(), virtualFile.getName(), info.getLastModified());
-            }
+            return getRevisionNumber(virtualFile.getPath(), virtualFile.getName());
         } catch (Exception e) {
             AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
         }
@@ -104,48 +110,67 @@ public class TFSDiffProvider implements DiffProvider {
 
     public ItemLatestState getLastRevision(final FilePath localPath) {
         try {
-            // TODO: we may have an issue here with new files that don't exist on the server and have not been explicity added (NEED TO TEST)
-            final ItemInfo info = CommandUtils.getItemInfo(TFSVcs.getInstance(project).getServerContext(true), localPath.getPath());
-            if (info != null) {
-                final VcsRevisionNumber.Int revisionNumber = new TfsRevisionNumber(info.getServerVersionAsInt(), localPath.getName(), info.getLastModified());
-                return new ItemLatestState(revisionNumber, info.getServerVersionAsInt() == 0, false);
+            final VcsRevisionNumber revisionNumber = getRevisionNumber(localPath.getPath(), localPath.getName());
+            if (revisionNumber != VcsRevisionNumber.NULL) {
+                return new ItemLatestState(revisionNumber, true, false);
             }
-
-            /*
-            Collection<WorkspaceInfo> workspaces = Workstation.getInstance().findWorkspaces(localPath, false, project);
-            if (workspaces.isEmpty()) {
-                return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
-            }
-            final WorkspaceInfo workspace = workspaces.iterator().next();
-            final ExtendedItem extendedItem = workspace.getServer().getVCS()
-                    .getExtendedItem(workspace.getName(), workspace.getOwnerName(), localPath, RecursionType.None, DeletedState.Any, project,
-                            TFSBundle.message("loading.item"));
-            if (extendedItem == null) {
-                return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
-            }
-            // there may be several extended items for a given name (see VersionControlServer.chooseExtendedItem())
-            // so we need to query item by name
-            final Item item = workspace.getServer().getVCS()
-                    .queryItem(workspace.getName(), workspace.getOwnerName(), extendedItem.getSitem(), LatestVersionSpec.INSTANCE, DeletedState.Any,
-                            false, project, TFSBundle.message("loading.item"));
-            if (item != null) {
-                VcsRevisionNumber.Int revisionNumber = new TfsRevisionNumber(item.getCs(), item.getItemid());
-                return new ItemLatestState(revisionNumber, item.getDid() == Integer.MIN_VALUE, false);
-            }
-            else {
-                return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
-            }
-            */
-            return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
         } catch (final Exception e) {
             logger.warn("Unable to getLastRevision", e);
             AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
-            return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
         }
+        return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
     }
 
     public VcsRevisionNumber getLatestCommittedRevision(final VirtualFile vcsRoot) {
         // todo.
         return null;
+    }
+
+    /**
+     * Creates a revision number for the given file
+     *
+     * @param filePath
+     * @param fileName
+     * @return
+     */
+    private VcsRevisionNumber getRevisionNumber(final String filePath, final String fileName) {
+        final TfvcVersionDescriptor versionDescriptor = new TfvcVersionDescriptor();
+        versionDescriptor.setVersionType(TfvcVersionType.LATEST);
+        final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+        final List<TfvcItem> item = context.getTfvcHttpClient().getItems(context.getTeamProjectReference().getId(),
+                TfsFileUtil.translateLocalItemToServerItem(filePath, getUpdatedMappings()),
+                VersionControlRecursionTypeCaseSensitive.NONE, versionDescriptor);
+
+        if (!item.isEmpty() && item.get(0) != null) {
+            return new TfsRevisionNumber(item.get(0).getChangesetVersion(), fileName, item.get(0).getChangeDate().toString());
+        }
+        return VcsRevisionNumber.NULL;
+    }
+
+    /**
+     * Gets the mappings from the current workspaces based on the last minute. We want to cache this information
+     * because sometimes revision numbers are retrieved for all files in a repo at once and if we resolve the workspace
+     * mappings every time the performance is horrible
+     * <p>
+     * The mappings will update if more than a minute is passed to make sure the mapping is up-to-date
+     *
+     * @return
+     */
+    private List<Workspace.Mapping> getUpdatedMappings() {
+        if (mappings == null || lastUpdated == null || (Calendar.getInstance().getTimeInMillis() - lastUpdated.getTimeInMillis() > MINIMAL_WAIT_FOR_RETRY)) {
+            updateMappings();
+        }
+        return mappings;
+    }
+
+    /**
+     * Updates the cached mappings
+     * <p>
+     * TODO: call this from places where we know a mapping change has occurred
+     */
+    public void updateMappings() {
+        final Workspace workspace = CommandUtils.getPartialWorkspace(project);
+        mappings = workspace.getMappings();
+        lastUpdated = Calendar.getInstance();
     }
 }

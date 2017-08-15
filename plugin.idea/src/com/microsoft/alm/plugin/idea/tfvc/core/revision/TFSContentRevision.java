@@ -53,7 +53,7 @@ public abstract class TFSContentRevision implements ContentRevision {
         this.serverContext = serverContext;
     }
 
-    protected abstract int getChangeset() throws TfsException;
+    public abstract int getChangeset();
 
     protected abstract String getFilePath();
 
@@ -64,7 +64,7 @@ public abstract class TFSContentRevision implements ContentRevision {
                                             final String modificationDate) {
         return new TFSContentRevision(project, serverContext) {
 
-            protected int getChangeset() {
+            public int getChangeset() {
                 return changeset;
             }
 
@@ -75,6 +75,10 @@ public abstract class TFSContentRevision implements ContentRevision {
 
             protected String getFilePath() {
                 return localPath.getPath();
+            }
+
+            public String getModificationDate() {
+                return modificationDate;
             }
 
             @NotNull
@@ -103,7 +107,7 @@ public abstract class TFSContentRevision implements ContentRevision {
                                                           final String serverPath) {
         return new TFSContentRevision(project, serverContext) {
 
-            protected int getChangeset() {
+            public int getChangeset() {
                 return changeset;
             }
 
@@ -114,6 +118,10 @@ public abstract class TFSContentRevision implements ContentRevision {
 
             protected String getFilePath() {
                 return serverPath;
+            }
+
+            public String getModificationDate() {
+                return modificationDate;
             }
 
             @NotNull

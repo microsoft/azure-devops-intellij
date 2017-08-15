@@ -6,6 +6,8 @@ package com.microsoft.alm.plugin.external.models;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.Date;
+
 /**
  * This VersionSpec represents all the variations of a version string that TFVC supports.
  * Examples:
@@ -115,6 +117,13 @@ public class VersionSpec {
             throw new IndexOutOfBoundsException("changeset");
         }
         return new VersionSpec(Type.Changeset, Integer.toString(changeset));
+    }
+
+    public static VersionSpec create(final Date date) {
+        if (date == null) {
+            throw new RuntimeException("Date cannot be null");
+        }
+        return new VersionSpec(Type.DateTime, date.toString());
     }
 
     public Type getType() {
