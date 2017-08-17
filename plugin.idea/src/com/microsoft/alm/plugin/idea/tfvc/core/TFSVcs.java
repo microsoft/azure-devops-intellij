@@ -32,6 +32,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.CheckoutProvider;
+import com.intellij.openapi.vcs.CommittedChangesProvider;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsConfiguration;
@@ -47,6 +48,7 @@ import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -95,6 +97,7 @@ public class TFSVcs extends AbstractVcs {
     private UpdateEnvironment myUpdateEnvironment;
     private VcsVFSListener fileListener;
     private TFSFileSystemListener tfsFileSystemListener;
+    private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> committedChangesProvider;
 
     public TFSVcs(@NotNull Project project) {
         super(project, TFVC_NAME);
@@ -126,7 +129,6 @@ public class TFSVcs extends AbstractVcs {
             tfsFileSystemListener = new TFSFileSystemListener();
         }
 
-//    TODO: TfsSdkManager.activate();
         checkCommandLineVersion();
     }
 
@@ -190,15 +192,15 @@ public class TFSVcs extends AbstractVcs {
     public EditFileProvider getEditFileProvider() {
         return new TFSEditFileProvider(myProject);
     }
+    */
 
     @NotNull
     public CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> getCommittedChangesProvider() {
-        if (myCommittedChangesProvider == null) {
-            myCommittedChangesProvider = new TFSCommittedChangesProvider(myProject);
+        if (committedChangesProvider == null) {
+            committedChangesProvider = new TFSCommittedChangesProvider(myProject);
         }
-        return null; //myCommittedChangesProvider;
+        return committedChangesProvider;
     }
-    */
 
     @Override
     public VcsHistoryProvider getVcsHistoryProvider() {

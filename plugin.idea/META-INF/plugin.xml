@@ -171,8 +171,8 @@
             <reference id="Compare.LastVersion"/>
             <reference id="Compare.Selected"/>
             <action id="Tfvc.Annotate" class="com.microsoft.alm.plugin.idea.tfvc.actions.AnnotateAction"/>
-           <!-- <reference id="Vcs.ShowHistoryForBlock"/>
-            <reference id="ChangesView.Browse"/>-->
+           <!-- <reference id="Vcs.ShowHistoryForBlock"/>-->
+            <reference id="ChangesView.Browse"/>
             <separator/>
             <!--action id="Tfs.ItemInfo" class="org.jetbrains.tfsIntegration.actions.ItemInfoAction" text="V_ersion Control Information..."/-->
             <add-to-group group-id="TfvcGlobalGroup" anchor="last"/>

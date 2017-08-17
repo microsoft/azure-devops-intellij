@@ -837,6 +837,12 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_MSG = "Tfvc.ManageWorkspaces.Delete.Error.Msg";
 
+    //RepositoryView
+    @NonNls
+    public static final String KEY_TFVC_REPOSITORY_VIEW_CHANGELIST_TITLE = "Tfvc.RepositoryView.Changelist.Title";
+    @NonNls
+    public static final String KEY_TFVC_REPOSITORY_VIEW_COLUMN_REVISION = "Tfvc.RepositoryView.Column.Revision";
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON = "WorkspaceDialog.SaveButton";
