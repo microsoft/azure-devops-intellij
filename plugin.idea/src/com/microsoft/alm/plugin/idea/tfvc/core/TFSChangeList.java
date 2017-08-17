@@ -60,10 +60,10 @@ public class TFSChangeList implements CommittedChangeList {
     String comment;
     private String workspaceName;
     private List<Change> changes;
-    private List<FilePath> addedFiles = new ArrayList<FilePath>();
-    private List<FilePath> deletedFiles = new ArrayList<FilePath>();
-    private List<FilePath> renamedFiles = new ArrayList<FilePath>();
-    private List<FilePath> editedFiles = new ArrayList<FilePath>();
+    private final List<FilePath> addedFiles = new ArrayList<FilePath>();
+    private final List<FilePath> deletedFiles = new ArrayList<FilePath>();
+    private final List<FilePath> renamedFiles = new ArrayList<FilePath>();
+    private final List<FilePath> editedFiles = new ArrayList<FilePath>();
 
     public TFSChangeList(final TFSVcs vcs, final DataInput stream) {
         this.myVcs = vcs;
@@ -75,10 +75,10 @@ public class TFSChangeList implements CommittedChangeList {
                          final List<FilePath> editedFiles, final int changeSetId, final String author, final String comment,
                          final String changeSetDate, final int previousChangeSetId, final String previousChangeSetDate,
                          final TFSVcs vcs, final String workspaceName, final ServerContext context) {
-        this.addedFiles = new ArrayList<FilePath>(addedFiles);
-        this.deletedFiles = new ArrayList<FilePath>(deletedFiles);
-        this.renamedFiles = new ArrayList<FilePath>(renamedFiles);
-        this.editedFiles = new ArrayList<FilePath>(editedFiles);
+        this.addedFiles.addAll(addedFiles);
+        this.deletedFiles.addAll(deletedFiles);
+        this.renamedFiles.addAll(renamedFiles);
+        this.editedFiles.addAll(editedFiles);
 
         this.changeSetId = changeSetId;
         this.author = author;
@@ -169,7 +169,7 @@ public class TFSChangeList implements CommittedChangeList {
 
     @Override
     public void setDescription(final String newMessage) {
-        comment = newMessage;
+        comment = newMessage != null ? newMessage : StringUtils.EMPTY;
     }
 
     @NotNull
@@ -222,6 +222,14 @@ public class TFSChangeList implements CommittedChangeList {
             workspaceName = stream.readUTF();
         } catch (final IOException e) {
             logger.warn("Error reading changelist from stream", e);
+
+            // default Strings to empty to keep NPE from happening
+            author = StringUtils.isEmpty(author) ? StringUtils.EMPTY : author;
+            comment =  StringUtils.isEmpty(comment) ? StringUtils.EMPTY : comment;
+            changeSetDate = StringUtils.isEmpty(changeSetDate) ? StringUtils.EMPTY : changeSetDate;
+            previousChangeSetDate = StringUtils.isEmpty(previousChangeSetDate) ? StringUtils.EMPTY : previousChangeSetDate;
+            workspaceName = StringUtils.isEmpty(workspaceName) ? StringUtils.EMPTY : workspaceName;
+
             AbstractVcsHelper.getInstance(myVcs.getProject()).showError(new VcsException(e), TFSVcs.TFVC_NAME);
         }
     }
