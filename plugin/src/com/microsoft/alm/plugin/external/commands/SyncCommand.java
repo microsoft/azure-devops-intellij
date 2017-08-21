@@ -36,12 +36,19 @@ public class SyncCommand extends Command<SyncResults> {
 
     private final List<String> updatePaths;
     private final boolean recursive;
+    private final boolean shouldThrowBadExitCode;
 
     public SyncCommand(final ServerContext context, final List<String> updatePaths, final boolean recursive) {
+        this(context, updatePaths, recursive, false);
+    }
+
+
+    public SyncCommand(final ServerContext context, final List<String> updatePaths, final boolean recursive, final boolean shouldThrowBadExitCode) {
         super("get", context);
         ArgumentHelper.checkNotNullOrEmpty(updatePaths, "updatePaths");
         this.updatePaths = updatePaths;
         this.recursive = recursive;
+        this.shouldThrowBadExitCode = shouldThrowBadExitCode;
     }
 
     @Override
@@ -163,5 +170,16 @@ public class SyncCommand extends Command<SyncResults> {
     @Override
     public int interpretReturnCode(final int returnCode) {
         return returnCode == 1 ? 0 : returnCode;
+    }
+
+    /**
+     * Depending on the consumer of the results it may want to handle the exception from the command differently than
+     * just getting an error code exception (such as "Workspace not found" which can be an error from here)
+     *
+     * @return
+     */
+    @Override
+    protected boolean shouldThrowBadExitCode() {
+        return shouldThrowBadExitCode;
     }
 }

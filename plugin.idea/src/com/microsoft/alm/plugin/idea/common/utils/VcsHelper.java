@@ -67,7 +67,15 @@ public class VcsHelper {
     public static String getVcsType(final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
         final ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
-        final AbstractVcs vcs = projectLevelVcsManager.getVcsFor(project.getBaseDir());
+        AbstractVcs vcs = null;
+        try {
+            vcs = projectLevelVcsManager.getVcsFor(project.getBaseDir());
+        } catch (Throwable t) {
+            // This has been seen in PyCharm as a bug where it tries to open the site-packages as a source root
+            // It has been fixed here going forward:
+            // https://github.com/JetBrains/intellij-community/commit/7e459335eda7c90b6eb0c7e1c3b35e329dffe197
+            logger.warn("Error hit while trying to detect Vcs", t);
+        }
         return vcs != null && StringUtils.isNotEmpty(vcs.getName()) ? vcs.getName() : UNKNOWN;
     }
 

@@ -402,7 +402,8 @@ public class ServerContextManager {
                 context.getTeamProjectCollectionReference() == null ||
                 context.getTeamProjectCollectionReference().getName() == null ||
                 context.getTeamProjectReference() == null ||
-                context.getTeamProjectReference().getId() == null) {
+                context.getTeamProjectReference().getId() == null ||
+                !StringUtils.equalsIgnoreCase(context.getTeamProjectReference().getName(), teamProjectName)) {
             context = null;
             logger.info("createContextFromTfvcServerUrl context fully populated: " + (context != null));
         }

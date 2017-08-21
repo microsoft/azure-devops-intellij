@@ -78,7 +78,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                 filesUpdatePaths.add(file.getPath());
             }
 
-            final SyncResults results = CommandUtils.syncWorkspace(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion);
+            final SyncResults results = CommandUtils.syncWorkspace(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion, false);
 
             // add the changed files to updatedFiles so user knows what has occurred in the workspace
             // TODO: determine the resolution numbers (probably need to call history on each file to get this)

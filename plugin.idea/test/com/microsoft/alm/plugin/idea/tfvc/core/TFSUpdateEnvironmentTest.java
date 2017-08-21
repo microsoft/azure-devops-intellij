@@ -153,7 +153,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         FilePath[] filePaths = {filePath1, filePath2, filePath3};
 
         when(CommandUtils.syncWorkspace(mockServerContext, ImmutableList.of("/path/to/file1", "/path/to/directory",
-                "/path/to/file2"), true)).thenReturn(syncResults);
+                "/path/to/file2"), true, false)).thenReturn(syncResults);
 
         return filePaths;
     }

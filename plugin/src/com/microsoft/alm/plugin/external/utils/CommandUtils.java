@@ -274,12 +274,12 @@ public class CommandUtils {
      * This is a synchronous call so it should only be called on a background thread.
      */
     public static SyncResults syncWorkspace(final ServerContext context, final String rootPath) {
-        return syncWorkspace(context, Collections.singletonList(rootPath), true);
+        return syncWorkspace(context, Collections.singletonList(rootPath), true, true);
     }
 
     public static SyncResults syncWorkspace(final ServerContext context, final List<String> filesUpdatePaths,
-                                            final boolean needRecursion) {
-        final SyncCommand command = new SyncCommand(context, filesUpdatePaths, needRecursion);
+                                            final boolean needRecursion, final boolean shouldThrowBadExitCode) {
+        final SyncCommand command = new SyncCommand(context, filesUpdatePaths, needRecursion, shouldThrowBadExitCode);
         return command.runSynchronously();
     }
 

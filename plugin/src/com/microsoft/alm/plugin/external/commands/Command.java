@@ -169,7 +169,9 @@ public abstract class Command<T> {
                             //TODO there are some commands that write errors to stdout and simply return a non-zero exit code (i.e. when a workspace is not found by name)
                             //TODO we may want to pass in the return code to the parse method or something like that to allow the command to inspect this info as well.
                             result = parseOutput(stdout.toString(), stderr.toString());
-                            TfTool.throwBadExitCode(interpretReturnCode(returnCode));
+                            if (shouldThrowBadExitCode()) {
+                                TfTool.throwBadExitCode(interpretReturnCode(returnCode));
+                            }
                         } catch (Throwable throwable) {
                             logger.warn("CMD: parsing output failed", throwable);
                             if (isMemoryException(stdout.toString())) {
@@ -418,5 +420,15 @@ public abstract class Command<T> {
         }
 
         return null;
+    }
+
+    /**
+     * If a bad exit code is detected then we should throw an exception. In some instances though we want to throw a
+     * more specific message or we want the IDE to handle the error differently so subclasses can override this
+     *
+     * @return
+     */
+    protected boolean shouldThrowBadExitCode() {
+        return true;
     }
 }

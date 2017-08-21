@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo.CredsType;
 import com.microsoft.alm.plugin.context.RestClientHelper;
 import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
+import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.services.DeviceFlowResponsePrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.secret.Token;
@@ -89,15 +90,12 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
         final TokenPair tokenPair = oAuth2Authenticator.getOAuth2TokenPair(encodedServerUri, PromptBehavior.AUTO);
 
         try {
-            AuthenticationInfo authenticationInfo = null;
-            String errorMessage = null;
-
-            authenticationInfo = getAuthenticationInfo(encodedServerUri, tokenPair);
+            final AuthenticationInfo authenticationInfo = getAuthenticationInfo(encodedServerUri, tokenPair);
 
             if (authenticationInfo != null) {
                 authenticationInfoFuture.set(authenticationInfo);
             } else {
-                authenticationInfoFuture.setException(new AuthorizationException(errorMessage));
+                authenticationInfoFuture.setException(new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED));
             }
 
         } catch (Throwable t) {
@@ -126,7 +124,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
                 if (serverUri.equals(OAuth2Authenticator.APP_VSSPS_VISUALSTUDIO)) {
                     logger.debug("Creating authenticationInfo backed by AccessToken for: {}", serverUri);
-                    return new AuthenticationInfo (
+                    return new AuthenticationInfo(
                             me.getId().toString(),
                             tokenPair.AccessToken.Value,
                             serverUri.toString(),
