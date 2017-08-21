@@ -262,8 +262,8 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
         when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(pendingChangeOriginal);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(changeSet);
-        when(TFSContentRevision.create(mockProject, mockServerContext, mockFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate())).thenReturn(mockTFSContentRevision1);
-        when(TFSContentRevision.create(mockProject, mockServerContext, mockFilePath, changeSet.getIdAsInt(), changeSet.getDate())).thenReturn(mockTFSContentRevision2);
+        when(TFSContentRevision.create(mockProject, mockFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate())).thenReturn(mockTFSContentRevision1);
+        when(TFSContentRevision.create(mockProject, mockFilePath, changeSet.getIdAsInt(), changeSet.getDate())).thenReturn(mockTFSContentRevision2);
         when(CurrentContentRevision.create(mockFilePath)).thenReturn(mockCurrentContentRevision);
         when(mockTFSContentRevision1.getContent()).thenReturn("Content of the original file");
         when(mockTFSContentRevision2.getContent()).thenReturn("Content of the server file");
@@ -286,8 +286,8 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         when(VersionControlPath.getFilePath(CONFLICT_BOTH.getLocalPath(), false)).thenReturn(mockRenameFilePath);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(changeSet);
         when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_BOTH.getLocalPath())).thenReturn(pendingChangeOriginal);
-        when(TFSContentRevision.createRenameRevision(mockProject, mockServerContext, mockRenameFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate(), ((RenameConflict) CONFLICT_BOTH).getOldPath())).thenReturn(mockTFSContentRevision1);
-        when(TFSContentRevision.createRenameRevision(mockProject, mockServerContext, mockRenameFilePath, Integer.parseInt(changeSet.getId()), changeSet.getDate(), ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(mockTFSContentRevision2);
+        when(TFSContentRevision.createRenameRevision(mockProject, mockRenameFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate(), ((RenameConflict) CONFLICT_BOTH).getOldPath())).thenReturn(mockTFSContentRevision1);
+        when(TFSContentRevision.createRenameRevision(mockProject, mockRenameFilePath, Integer.parseInt(changeSet.getId()), changeSet.getDate(), ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(mockTFSContentRevision2);
         when(CurrentContentRevision.create(mockFilePath)).thenReturn(mockCurrentContentRevision);
         when(mockTFSContentRevision1.getContent()).thenReturn("Content of the original file");
         when(mockTFSContentRevision2.getContent()).thenReturn("Content of the server file");

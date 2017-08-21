@@ -19,9 +19,11 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.revision;
 
+import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.DownloadCommand;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,16 +51,17 @@ public class TFSContentStoreFactory {
      * @return
      * @throws IOException
      */
-    public static TFSContentStore findOrCreate(final String localPath, final int revision, final String actualPath, final ServerContext serverContext) throws IOException {
+    public static TFSContentStore findOrCreate(final String localPath, final int revision, final String actualPath, final Project project) throws IOException {
         TFSContentStore store = TFSContentStoreFactory.find(localPath, revision);
         if (store == null) {
             try {
                 store = TFSContentStoreFactory.create(localPath, revision);
+                final ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(false);
                 // By setting the IgnoreFileNotFound flag to true in DownloadCommand, we will get back an empty file if the file was deleted on the server or
                 // for some other reason doesn't exist.
                 final Command<String> command = new DownloadCommand(serverContext, actualPath, revision, store.getTmpFile().getPath(), true);
                 command.runSynchronously();
-            } catch(final Throwable t) {
+            } catch (final Throwable t) {
                 // Can't let exceptions bubble out here to the caller. This method is called by the VCS provider code in various places.
                 logger.warn("Unable to download content for a TFVC file.", t);
             }

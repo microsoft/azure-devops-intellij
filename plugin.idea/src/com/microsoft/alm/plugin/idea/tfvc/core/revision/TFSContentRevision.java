@@ -25,7 +25,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NonNls;
@@ -43,14 +42,12 @@ import java.io.IOException;
 public abstract class TFSContentRevision implements ContentRevision {
 
     private final Project project;
-    private final ServerContext serverContext;
 
     @Nullable
     private byte[] myContent;
 
-    protected TFSContentRevision(final Project project, final ServerContext serverContext) {
+    protected TFSContentRevision(final Project project) {
         this.project = project;
-        this.serverContext = serverContext;
     }
 
     public abstract int getChangeset();
@@ -58,11 +55,10 @@ public abstract class TFSContentRevision implements ContentRevision {
     protected abstract String getFilePath();
 
     public static TFSContentRevision create(final Project project,
-                                            final ServerContext serverContext,
                                             final @NotNull FilePath localPath,
                                             final int changeset,
                                             final String modificationDate) {
-        return new TFSContentRevision(project, serverContext) {
+        return new TFSContentRevision(project) {
 
             public int getChangeset() {
                 return changeset;
@@ -100,12 +96,11 @@ public abstract class TFSContentRevision implements ContentRevision {
      * @return
      */
     public static TFSContentRevision createRenameRevision(final Project project,
-                                                          final ServerContext serverContext,
                                                           final @NotNull FilePath orignalPath,
                                                           final int changeset,
                                                           final String modificationDate,
                                                           final String serverPath) {
-        return new TFSContentRevision(project, serverContext) {
+        return new TFSContentRevision(project) {
 
             public int getChangeset() {
                 return changeset;
@@ -153,7 +148,7 @@ public abstract class TFSContentRevision implements ContentRevision {
     @Nullable
     private byte[] loadContent() throws TfsException, IOException {
         ArgumentHelper.checkNotNull(getFile(), "localPath");
-        final TFSContentStore store = TFSContentStoreFactory.findOrCreate(getFile().getPath(), getChangeset(), getFilePath(), serverContext);
+        final TFSContentStore store = TFSContentStoreFactory.findOrCreate(getFile().getPath(), getChangeset(), getFilePath(), project);
         return store.loadContent();
     }
 

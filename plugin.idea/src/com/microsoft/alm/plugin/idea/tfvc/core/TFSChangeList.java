@@ -26,7 +26,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.vcsUtil.VcsUtil;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +49,6 @@ public class TFSChangeList implements CommittedChangeList {
     private static final SimpleDateFormat TFVC_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     private TFSVcs myVcs;
-    private ServerContext context;
     private int changeSetId;
     private String author;
     private String changeSetDate;
@@ -67,14 +65,13 @@ public class TFSChangeList implements CommittedChangeList {
 
     public TFSChangeList(final TFSVcs vcs, final DataInput stream) {
         this.myVcs = vcs;
-        this.context = myVcs.getServerContext(false);
         readFromStream(stream);
     }
 
     public TFSChangeList(final List<FilePath> addedFiles, final List<FilePath> deletedFiles, final List<FilePath> renamedFiles,
                          final List<FilePath> editedFiles, final int changeSetId, final String author, final String comment,
                          final String changeSetDate, final int previousChangeSetId, final String previousChangeSetDate,
-                         final TFSVcs vcs, final String workspaceName, final ServerContext context) {
+                         final TFSVcs vcs, final String workspaceName) {
         this.addedFiles.addAll(addedFiles);
         this.deletedFiles.addAll(deletedFiles);
         this.renamedFiles.addAll(renamedFiles);
@@ -88,7 +85,6 @@ public class TFSChangeList implements CommittedChangeList {
         this.previousChangeSetDate = previousChangeSetDate;
         this.myVcs = vcs;
         this.workspaceName = workspaceName;
-        this.context = context;
     }
 
     public String getCommitterName() {
@@ -140,18 +136,18 @@ public class TFSChangeList implements CommittedChangeList {
             logger.debug("Initializing the changes for the changeset: " + changeSetId);
 
             for (final FilePath path : addedFiles) {
-                changes.add(new Change(null, TFSContentRevision.create(myVcs.getProject(), context, path, changeSetId, changeSetDate)));
+                changes.add(new Change(null, TFSContentRevision.create(myVcs.getProject(), path, changeSetId, changeSetDate)));
             }
             for (final FilePath path : deletedFiles) {
-                changes.add(new Change(TFSContentRevision.create(myVcs.getProject(), context, path, previousChangeSetId, previousChangeSetDate), null));
+                changes.add(new Change(TFSContentRevision.create(myVcs.getProject(), path, previousChangeSetId, previousChangeSetDate), null));
             }
             for (final FilePath path : renamedFiles) {
                 // treated like an add (more on why above)
-                changes.add(new Change(null, TFSContentRevision.create(myVcs.getProject(), context, path, changeSetId, changeSetDate)));
+                changes.add(new Change(null, TFSContentRevision.create(myVcs.getProject(), path, changeSetId, changeSetDate)));
             }
             for (final FilePath path : editedFiles) {
-                final TFSContentRevision before = TFSContentRevision.create(myVcs.getProject(), context, path, previousChangeSetId, previousChangeSetDate);
-                final TFSContentRevision after = TFSContentRevision.create(myVcs.getProject(), context, path, changeSetId, changeSetDate);
+                final TFSContentRevision before = TFSContentRevision.create(myVcs.getProject(), path, previousChangeSetId, previousChangeSetDate);
+                final TFSContentRevision after = TFSContentRevision.create(myVcs.getProject(), path, changeSetId, changeSetDate);
                 changes.add(new Change(before, after));
             }
         }
@@ -225,7 +221,7 @@ public class TFSChangeList implements CommittedChangeList {
 
             // default Strings to empty to keep NPE from happening
             author = StringUtils.isEmpty(author) ? StringUtils.EMPTY : author;
-            comment =  StringUtils.isEmpty(comment) ? StringUtils.EMPTY : comment;
+            comment = StringUtils.isEmpty(comment) ? StringUtils.EMPTY : comment;
             changeSetDate = StringUtils.isEmpty(changeSetDate) ? StringUtils.EMPTY : changeSetDate;
             previousChangeSetDate = StringUtils.isEmpty(previousChangeSetDate) ? StringUtils.EMPTY : previousChangeSetDate;
             workspaceName = StringUtils.isEmpty(workspaceName) ? StringUtils.EMPTY : workspaceName;

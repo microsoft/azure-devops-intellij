@@ -48,21 +48,18 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     private final Project project;
     @NotNull
     private final ChangelistBuilder changelistBuilder;
-    private final ServerContext serverContext;
 
     public ChangelistBuilderStatusVisitor(final @NotNull Project project,
-                                          final ServerContext serverContext,
                                           final @NotNull ChangelistBuilder changelistBuilder) {
         this.project = project;
         this.changelistBuilder = changelistBuilder;
-        this.serverContext = serverContext;
     }
 
     public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException {
         if (localItemExists) {
             TFSContentRevision baseRevision =
-                    TFSContentRevision.create(project, serverContext, localPath, serverStatus.localVer, serverStatus.modicationDate);
+                    TFSContentRevision.create(project, localPath, serverStatus.localVer, serverStatus.modicationDate);
             changelistBuilder.processChange(new Change(baseRevision, CurrentContentRevision.create(localPath)), TFSVcs.getKey());
         } else {
             changelistBuilder.processLocallyDeletedFile(localPath);
@@ -88,7 +85,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                                      final boolean localItemExists,
                                      final @NotNull ServerStatus serverStatus) {
         TFSContentRevision baseRevision =
-                TFSContentRevision.create(project, serverContext, localPath, serverStatus.localVer, serverStatus.modicationDate);
+                TFSContentRevision.create(project, localPath, serverStatus.localVer, serverStatus.modicationDate);
         changelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
     }
 
@@ -140,6 +137,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
      */
     private TFSContentRevision getPreviousRenamedRevision(final FilePath localPath, final int revision) {
         // find the original name of file by getting the most recent history entry
+        final ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(false);
         final ChangeSet lastChangeSet = CommandUtils.getLastHistoryEntryForAnyUser(serverContext, localPath.getPath());
 
         // check that the history command returned an entry with a change
@@ -149,7 +147,6 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
                     CommandUtils.getWorkspaceName(project));
 
             return TFSContentRevision.createRenameRevision(project,
-                    serverContext,
                     VersionControlPath.getFilePath(originalPath, localPath.isDirectory()),
                     revision,
                     lastChangeSet.getDate(),

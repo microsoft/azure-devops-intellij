@@ -130,7 +130,7 @@ public class TFSHistoryProvider implements VcsHistoryProvider {
 
         final List<TfsFileRevision> revisions = new ArrayList<TfsFileRevision>(changesets.size());
         for (final ChangeSet changeSet : changesets) {
-            revisions.add(new TfsFileRevision(project, serverContext, localPath, changeSet.getIdAsInt(),
+            revisions.add(new TfsFileRevision(project, localPath, changeSet.getIdAsInt(),
                     changeSet.getCommitter(), changeSet.getComment(), changeSet.getDate()));
         }
 

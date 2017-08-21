@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.CheckedInChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -28,13 +27,11 @@ public class TFSChangeListBuilder {
     private static final Logger logger = LoggerFactory.getLogger(TFSChangeListBuilder.class);
 
     private final TFSVcs vcs;
-    private final ServerContext context;
     private final Workspace workspace;
     private final Map<String, FilePath> filePathCache;
 
-    public TFSChangeListBuilder(final TFSVcs vcs, final ServerContext context, final Workspace workspace) {
+    public TFSChangeListBuilder(final TFSVcs vcs, final Workspace workspace) {
         this.vcs = vcs;
-        this.context = context;
         this.workspace = workspace;
         this.filePathCache = new HashMap<String, FilePath>();
     }
@@ -77,6 +74,6 @@ public class TFSChangeListBuilder {
 
         return new TFSChangeList(addedFiles, deletedFiles, renamedFiles, editedFiles, changeSet.getIdAsInt(),
                 changeSet.getCommitter(), changeSet.getComment(), changeSet.getDate(), previousChangeSetId,
-                previousChangeSetDate, vcs, workspace.getName(), context);
+                previousChangeSetDate, vcs, workspace.getName());
     }
 }

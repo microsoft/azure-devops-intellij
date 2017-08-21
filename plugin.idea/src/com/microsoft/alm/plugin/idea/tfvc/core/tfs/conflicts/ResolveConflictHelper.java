@@ -396,9 +396,9 @@ public class ResolveConflictHelper {
                     final String targetPath = mergeConflict.getMapping().getToServerItem();
                     final VersionSpec baseVersion = CommandUtils.getBaseVersion(context, workingFolder, sourcePath, targetPath);
 
-                    original = TFSContentRevision.createRenameRevision(project, context, localPath,
+                    original = TFSContentRevision.createRenameRevision(project, localPath,
                             SystemHelper.toInt(baseVersion.getValue(), 1), originalChange.getDate(), sourcePath).getContent();
-                    serverChanges = TFSContentRevision.createRenameRevision(project, context, localPath,
+                    serverChanges = TFSContentRevision.createRenameRevision(project, localPath,
                             getMergeFromVersion(mergeConflict), originalChange.getDate(), sourcePath).getContent();
                     myLocalChanges = CurrentContentRevision.create(localPath).getContent();
                 } else {
@@ -407,10 +407,10 @@ public class ResolveConflictHelper {
                         final int version = Integer.parseInt(originalChange.getVersion());
                         if (isNameConflict(conflict)) {
                             final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                            original = TFSContentRevision.createRenameRevision(project, context, renamePath,
+                            original = TFSContentRevision.createRenameRevision(project, renamePath,
                                     version, originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
                         } else {
-                            original = TFSContentRevision.create(project, context, localPath,
+                            original = TFSContentRevision.create(project, localPath,
                                     version, originalChange.getDate()).getContent();
                         }
                     } else {
@@ -427,10 +427,10 @@ public class ResolveConflictHelper {
                     if (isNameConflict(conflict)) {
                         final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
                         final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
-                        serverChanges = TFSContentRevision.createRenameRevision(project, context, renamePath, serverChange.getIdAsInt(), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
+                        serverChanges = TFSContentRevision.createRenameRevision(project, renamePath, serverChange.getIdAsInt(), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
                     } else {
                         final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
-                        serverChanges = TFSContentRevision.create(project, context, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
+                        serverChanges = TFSContentRevision.create(project, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
                     }
                 }
 

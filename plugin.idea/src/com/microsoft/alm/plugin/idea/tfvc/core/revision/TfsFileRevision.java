@@ -26,7 +26,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.context.ServerContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -42,7 +41,6 @@ public class TfsFileRevision implements VcsFileRevision {
     public static final Logger logger = LoggerFactory.getLogger(TfsFileRevision.class);
 
     private final Project project;
-    private final ServerContext serverContext;
     private final FilePath localPath;
     private final int changeset;
     private final String author;
@@ -51,17 +49,14 @@ public class TfsFileRevision implements VcsFileRevision {
     private byte[] content;
 
     public TfsFileRevision(final Project project,
-                           final ServerContext serverContext,
                            final @NotNull FilePath localPath,
                            final int changeset,
                            final String author,
                            final String commitMessage,
                            final String modificationDate) {
         ArgumentHelper.checkNotNull(localPath, "localPath");
-        ArgumentHelper.checkNotNull(serverContext, "serverContext");
 
         this.project = project;
-        this.serverContext = serverContext;
         this.localPath = localPath;
         this.changeset = changeset;
         this.author = author;
@@ -124,7 +119,7 @@ public class TfsFileRevision implements VcsFileRevision {
 
     public TFSContentRevision createContentRevision() throws VcsException {
         try {
-            return TFSContentRevision.create(project, serverContext, localPath, changeset, modificationDate);
+            return TFSContentRevision.create(project, localPath, changeset, modificationDate);
         } catch (Exception e) {
             logger.warn("failed to create content revision", e);
             throw new VcsException("Cannot get revision content", e);

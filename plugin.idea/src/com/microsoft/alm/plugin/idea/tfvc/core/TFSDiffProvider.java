@@ -72,8 +72,7 @@ public class TFSDiffProvider implements DiffProvider {
         } else {
             final FilePath path = TfsFileUtil.getFilePath(virtualFile);
             try {
-                final ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(true);
-                return TFSContentRevision.create(project, serverContext, path, getChangeset(vcsRevisionNumber), getModificationDate(vcsRevisionNumber));
+                return TFSContentRevision.create(project, path, getChangeset(vcsRevisionNumber), getModificationDate(vcsRevisionNumber));
             } catch (Exception e) {
                 logger.warn("Unable to create file content", e);
                 AbstractVcsHelper.getInstance(project).showError(new VcsException(e), TFSVcs.TFVC_NAME);

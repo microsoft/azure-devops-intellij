@@ -29,7 +29,6 @@ import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.StatusCommand;
 import com.microsoft.alm.plugin.external.models.PendingChange;
@@ -81,9 +80,6 @@ public class TFSChangeProvider implements ChangeProvider {
 
         progress.setText("Processing changes");
 
-        // Get server context for this project
-        final ServerContext serverContext = TFSVcs.getInstance(myProject).getServerContext(false);
-
         // process only roots, filter out child items since requests are recursive anyway
         RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
         roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
@@ -100,7 +96,7 @@ public class TFSChangeProvider implements ChangeProvider {
             return;
         }
 
-        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, serverContext, builder);
+        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
 
         for (final FilePath root : roots) {
             // if we get a change notification in the $tf folder, we need to just ignore it
@@ -112,7 +108,7 @@ public class TFSChangeProvider implements ChangeProvider {
             List<PendingChange> changes;
             try {
                 // TODO: add the ability to pass multiple roots to the command line
-                final Command<List<PendingChange>> command = new StatusCommand(serverContext, root.getPath());
+                final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
                 changes = command.runSynchronously();
             } catch (final Throwable t) {
                 logger.warn("Failed to get changes from command line. root=" + root.getPath(), t);
