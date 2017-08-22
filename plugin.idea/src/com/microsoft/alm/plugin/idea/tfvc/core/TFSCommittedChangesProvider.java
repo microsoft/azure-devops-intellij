@@ -143,8 +143,16 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
         final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, tfsRepositoryLocation.getRoot().getPath(),
                 range.toString(), maxCount, true, settings.getUserFilter() == null ? StringUtils.EMPTY : settings.getUserFilter());
-        final TFSChangeListBuilder tfsChangeListBuilder = new TFSChangeListBuilder(vcs, tfsRepositoryLocation.getWorkspace());
 
+        // no changesets were found with the parameters
+        if (changeSets.isEmpty()) {
+            logger.info(String.format("No changesets were found in history for the range %s and user %s"
+                    , range.toString(), settings.getUserFilter() == null ? StringUtils.EMPTY : settings.getUserFilter()));
+            consumer.finished();
+            return;
+        }
+
+        final TFSChangeListBuilder tfsChangeListBuilder = new TFSChangeListBuilder(vcs, tfsRepositoryLocation.getWorkspace());
         // list is in order of newest to oldest so we can assume the next checkin in the list is the actual previous checkin in time
         for (int i = 0; i < changeSets.size() - 1; i++) {
             consumer.consume(tfsChangeListBuilder.createChangeList(changeSets.get(i), changeSets.get(i + 1).getIdAsInt(), changeSets.get(i + 1).getDate()));

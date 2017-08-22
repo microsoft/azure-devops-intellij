@@ -19,10 +19,10 @@ allprojects {
     repositories {
         mavenCentral()
         maven {
-            url "http://artifacts.cloudapp.net:8081/nexus/content/repositories/snapshots"
+            url "http://artifacts.eastus.cloudapp.azure.com:8081/nexus/content/repositories/snapshots"
         }
         maven {
-            url "http://artifacts.cloudapp.net:8081/nexus/content/repositories/releases"
+            url "http://artifacts.eastus.cloudapp.azure.com:8081/nexus/content/repositories/releases"
         }
     }
 }
