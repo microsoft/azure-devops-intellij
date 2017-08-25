@@ -138,7 +138,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         }
         final VersionSpec.Range range = new VersionSpec.Range(versionFrom, versionTo);
 
-        logger.info(String.format("Loading committed changes for range %s to %s", versionFrom.getValue(), versionTo.getValue()));
+        logger.info(String.format("Loading committed changes for range %s", range.toString()));
         final TFSRepositoryLocation tfsRepositoryLocation = (TFSRepositoryLocation) location;
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
         final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, tfsRepositoryLocation.getRoot().getPath(),

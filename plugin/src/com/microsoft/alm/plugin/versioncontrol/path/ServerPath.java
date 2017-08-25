@@ -160,7 +160,7 @@ public abstract class ServerPath {
 
         // the path must begin with one of: /, $/, \, $\
         if (position >= serverPathLength || ServerPath.isSeparator(serverPath.charAt(position)) == false) {
-            logger.warn("The server path is not absolute: ", serverPath);
+            logger.warn("The server path is not absolute: " + serverPath);
             throw new ServerPathFormatException(serverPath);
         }
 
@@ -224,8 +224,8 @@ public abstract class ServerPath {
             else {
                 char c = serverPath.charAt(position);
                 char c_safe = c < ' ' ? '?' : c;
-                logger.warn(String.format("At position %s, the character 0x%s (%s) is not permitted in server paths %s.",
-                        String.format("%04x", (int) c), c_safe, serverPath.replace(c, c_safe)));
+                logger.warn(String.format("The character (%s) is not permitted in server paths %s.",
+                        c_safe, serverPath.replace(c, c_safe)));
                 throw new ServerPathFormatException(serverPath.replace(c, c_safe));
             }
         }

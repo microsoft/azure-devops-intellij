@@ -27,11 +27,13 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.rest.VersionControlRecursionTypeCaseSensitive;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
@@ -44,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.List;
 
@@ -100,22 +103,29 @@ public class TFSDiffProvider implements DiffProvider {
     @Nullable
     public VcsRevisionNumber getCurrentRevision(final VirtualFile virtualFile) {
         try {
-            return getRevisionNumber(virtualFile.getPath(), virtualFile.getName());
+            // need to make a file because the VirtualFile object path is in system-independent format
+            final File localFile = VfsUtilCore.virtualToIoFile(virtualFile);
+            return getRevisionNumber(localFile.getPath(), localFile.getName());
         } catch (Exception e) {
-            AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
+            logger.warn("Unable to getCurrentRevision", e);
+            AbstractVcsHelper.getInstance(project).showError(
+                    new VcsException(LocalizationServiceImpl.getInstance().getExceptionMessage(e), e), TFSVcs.TFVC_NAME);
         }
         return VcsRevisionNumber.NULL;
     }
 
     public ItemLatestState getLastRevision(final FilePath localPath) {
         try {
-            final VcsRevisionNumber revisionNumber = getRevisionNumber(localPath.getPath(), localPath.getName());
+            // need to make a file because the FilePath object path is in system-independent format
+            final File localFile = localPath.getIOFile();
+            final VcsRevisionNumber revisionNumber = getRevisionNumber(localFile.getPath(), localFile.getName());
             if (revisionNumber != VcsRevisionNumber.NULL) {
                 return new ItemLatestState(revisionNumber, true, false);
             }
         } catch (final Exception e) {
             logger.warn("Unable to getLastRevision", e);
-            AbstractVcsHelper.getInstance(project).showError(new VcsException(e.getMessage(), e), TFSVcs.TFVC_NAME);
+            AbstractVcsHelper.getInstance(project).showError(
+                    new VcsException(LocalizationServiceImpl.getInstance().getExceptionMessage(e), e), TFSVcs.TFVC_NAME);
         }
         return new ItemLatestState(VcsRevisionNumber.NULL, false, false);
     }

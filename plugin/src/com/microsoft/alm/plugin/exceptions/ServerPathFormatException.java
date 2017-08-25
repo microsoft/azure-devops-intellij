@@ -3,14 +3,10 @@
 
 package com.microsoft.alm.plugin.exceptions;
 
-import com.microsoft.alm.client.model.VssServiceException;
-
-import static com.microsoft.alm.plugin.exceptions.TeamServicesException.KEY_TFS_SERVER_PATH_INVALID;
-
 /**
  * Exception for invalid server paths
  */
-public class ServerPathFormatException extends VssServiceException implements LocalizedException {
+public class ServerPathFormatException extends TeamServicesException {
     final String serverPath;
 
     public ServerPathFormatException(final String serverPath) {
