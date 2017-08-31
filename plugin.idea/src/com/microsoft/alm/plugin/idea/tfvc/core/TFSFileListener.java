@@ -110,24 +110,6 @@ public class TFSFileListener extends VcsVFSListener {
                         // TODO (Jetbrains): add local conflict
                     }
 
-                    public void outOfDate(final @NotNull FilePath localPath,
-                                          final boolean localItemExists,
-                                          final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // TODO (Jetbrains): add local conflict
-                    }
-
-                    public void deleted(final @NotNull FilePath localPath,
-                                        final boolean localItemExists,
-                                        final @NotNull ServerStatus serverStatus) {
-                        // ignore
-                    }
-
-                    public void upToDate(final @NotNull FilePath localPath,
-                                         final boolean localItemExists,
-                                         final @NotNull ServerStatus serverStatusm) throws TfsException {
-                        // TODO (Jetbrains): add local conflict
-                    }
-
                     public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
                             throws TfsException {
                         // TODO (Jetbrains): add local conflict

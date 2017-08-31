@@ -47,12 +47,4 @@ public interface StatusVisitor {
 
     void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
             throws TfsException;
-
-    /* TODO:
-    void outOfDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException;
-
-    void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException;
-    */
 }

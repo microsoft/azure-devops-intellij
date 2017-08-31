@@ -131,19 +131,7 @@ public class BranchAction extends SingleItemAction {
                                     targetServerPath, targetLocalPath);
                         }
                     }
-
                     ProgressManager.getInstance().getProgressIndicator().setFraction(.6);
-//            final ResultWithFailures<GetOperation> createBranchResult = workspace.getServer().getVCS()
-//                    .createBranch(workspace.getName(), workspace.getOwnerName(), sourceServerPath, version, targetServerPath, project,
-//                            TFSBundle.message("creating.branch"));
-//            if (!createBranchResult.getFailures().isEmpty()) {
-//                StringBuilder s = new StringBuilder("Failed to create branch:\n");
-//                for (Failure failure : createBranchResult.getFailures()) {
-//                    s.append(failure.getMessage()).append("\n");
-//                }
-//                Messages.showErrorDialog(project, s.toString(), "Create Branch");
-//                return;
-//            }
 
                     // Create the branch
                     logger.info("Creating branch... isFolder: " + isFolder);

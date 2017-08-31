@@ -90,9 +90,6 @@ public class TfsFileRevision implements VcsFileRevision {
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return new VcsRevisionNumber.Int(changeset);
-        // TODO: Determine what the right "revision number" is here
-        // This is what shows up in the history grid for version
-        //return new TfsRevisionNumber(changeset, localPath.getName(), modificationDate);
     }
 
     @Override

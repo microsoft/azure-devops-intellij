@@ -159,28 +159,4 @@ public abstract class ServerStatus {
             statusVisitor.undeleted(localPath, localItemExists, this);
         }
     }
-
-    /* TODO:
-    public static class OutOfDate extends ServerStatus {
-        protected OutOfDate(final @NotNull ExtendedItem extendedItem) {
-            super(extendedItem);
-        }
-
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
-            statusVisitor.outOfDate(localPath, localItemExists, this);
-        }
-    }
-
-    public static class UpToDate extends ServerStatus {
-        protected UpToDate(final @NotNull ExtendedItem extendedItem) {
-            super(extendedItem);
-        }
-
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
-            statusVisitor.upToDate(localPath, localItemExists, this);
-        }
-    }
-    */
 }

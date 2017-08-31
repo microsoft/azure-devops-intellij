@@ -34,10 +34,10 @@ import com.intellij.openapi.vfs.newvfs.RefreshQueue;
 import com.intellij.ui.GuiUtils;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
-import com.microsoft.alm.plugin.versioncontrol.path.LocalPath;
-import com.microsoft.alm.plugin.versioncontrol.path.ServerPath;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import com.microsoft.alm.plugin.versioncontrol.path.LocalPath;
+import com.microsoft.alm.plugin.versioncontrol.path.ServerPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -265,11 +265,6 @@ public class TfsFileUtil {
             }
             fileStream = new FileOutputStream(destination);
             contentWriter.write(fileStream);
-
-            // TODO need this?
-            //if (refreshVirtualFile) {
-            //  refreshVirtualFileContents(destination);
-            //}
         } finally {
             if (fileStream != null) {
                 try {

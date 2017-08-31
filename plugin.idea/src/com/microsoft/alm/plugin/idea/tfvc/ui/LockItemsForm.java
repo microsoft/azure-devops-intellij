@@ -60,23 +60,6 @@ public class LockItemsForm {
             lockItemsTable.getColumnModel().getColumn(i).setPreferredWidth(LockItemsTableModel.Column.values()[i].getWidth());
         }
         lockItemsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//        lockItemsTable.setDefaultRenderer(Boolean.class, new NoBackgroundBooleanTableCellRenderer());
-//        lockItemsTable.setDefaultRenderer(ExtendedItem.class, new DefaultTableCellRenderer() {
-//            @Override
-//            public Component getTableCellRendererComponent(final JTable table,
-//                                                           final Object value,
-//                                                           final boolean isSelected,
-//                                                           final boolean hasFocus,
-//                                                           final int row,
-//                                                           final int column) {
-//                final ExtendedItem item = (ExtendedItem) value;
-//                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
-//                        column);
-//                setIcon(item.getType() == ItemType.Folder ? UiConstants.ICON_FOLDER : UiConstants.ICON_FILE);
-//                setValue(item.getSitem());
-//                return this;
-//            }
-//        });
     }
 
     public JPanel getContentPane() {
