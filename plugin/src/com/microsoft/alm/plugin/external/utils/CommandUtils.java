@@ -284,6 +284,17 @@ public class CommandUtils {
     }
 
     /**
+     * This method forces the Get of a file from the server
+     *
+     * @param context
+     * @param filePath
+     */
+    public static void forceGetFile(final ServerContext context, final String filePath) {
+        final SyncCommand command = new SyncCommand(context, Collections.singletonList(filePath), false, false, true);
+        command.runSynchronously();
+    }
+
+    /**
      * This method undoes the list of local files passed in.
      * This is a synchronous call so it should only be called on a background thread.
      */

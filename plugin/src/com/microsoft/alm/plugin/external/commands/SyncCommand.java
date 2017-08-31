@@ -37,17 +37,23 @@ public class SyncCommand extends Command<SyncResults> {
     private final List<String> updatePaths;
     private final boolean recursive;
     private final boolean shouldThrowBadExitCode;
+    private final boolean force;
 
     public SyncCommand(final ServerContext context, final List<String> updatePaths, final boolean recursive) {
         this(context, updatePaths, recursive, false);
     }
 
-
     public SyncCommand(final ServerContext context, final List<String> updatePaths, final boolean recursive, final boolean shouldThrowBadExitCode) {
+        this(context, updatePaths, recursive, shouldThrowBadExitCode, false);
+    }
+
+    public SyncCommand(final ServerContext context, final List<String> updatePaths, final boolean recursive,
+                       final boolean shouldThrowBadExitCode, final boolean force) {
         super("get", context);
         ArgumentHelper.checkNotNullOrEmpty(updatePaths, "updatePaths");
         this.updatePaths = updatePaths;
         this.recursive = recursive;
+        this.force = force;
         this.shouldThrowBadExitCode = shouldThrowBadExitCode;
     }
 
@@ -59,6 +65,9 @@ public class SyncCommand extends Command<SyncResults> {
         }
         if (recursive) {
             builder.addSwitch("recursive");
+        }
+        if (force) {
+            builder.addSwitch("force");
         }
         return builder;
     }

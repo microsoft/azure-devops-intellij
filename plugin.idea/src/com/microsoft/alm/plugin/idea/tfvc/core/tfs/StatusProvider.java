@@ -55,21 +55,6 @@ public class StatusProvider {
                 statusVisitor);
     }
 
-    /*
-    TODO:
-    private static void addExistingFilesRecursively(final @NotNull Collection<FilePath> result, final @Nullable VirtualFile root) {
-            if (root != null && root.exists()) {
-                VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor() {
-                    @Override
-                    public boolean visitFile(@NotNull VirtualFile file) {
-                        result.add(TfsFileUtil.getFilePath(file));
-                        return true;
-                    }
-                });
-            }
-        }
-     */
-
     /**
      * Determine which state the change is in so we know how to handle it
      *
@@ -112,9 +97,5 @@ public class StatusProvider {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;
         }
-
-        // TODO: other scenarios that need to be considered that Jetbrains had
-        // ServerStatus.OutOfDate(pendingChange);
-        // ServerStatus.UpToDate(pendingChange);
     }
 }

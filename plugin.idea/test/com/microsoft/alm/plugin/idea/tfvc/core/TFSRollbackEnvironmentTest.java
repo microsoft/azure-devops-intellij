@@ -39,6 +39,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
@@ -64,6 +65,9 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     @Mock
     LocalFileSystem mockLocalFileSystem;
 
+    @Mock
+    FilePath filePath1, filePath2, filePath3;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -71,13 +75,17 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
+        when(filePath1.getPath()).thenReturn("/path/to/file1");
+        when(filePath2.getPath()).thenReturn("/path/to/file2");
+        when(filePath3.getPath()).thenReturn("/path/to/file3");
+        exceptions = new ArrayList<VcsException>();
 
         rollbackEnvironment = new TFSRollbackEnvironment(mockTFSVcs, mockProject);
     }
 
     @Test
-    public void testRollback_Happy() {
-        setupRollback();
+    public void testRollbackChanges_Happy() {
+        setupRollbackChanges();
         VirtualFile mockVirtualFile = mock(VirtualFile.class);
         VirtualFile mockVirtualFileParent = mock(VirtualFile.class);
         when(CommandUtils.undoLocalFiles(mockServerContext, filePaths)).thenReturn(filePaths);
@@ -94,8 +102,8 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testRollback_Exception() {
-        setupRollback();
+    public void testRollbackChanges_Exception() {
+        setupRollbackChanges();
         when(CommandUtils.undoLocalFiles(mockServerContext, filePaths)).thenThrow(new RuntimeException("test error"));
 
         rollbackEnvironment.rollbackChanges(changes, exceptions, mockRollbackProgressListener);
@@ -104,8 +112,25 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
         assertEquals(1, exceptions.size());
     }
 
-    private void setupRollback() {
-        exceptions = new ArrayList<VcsException>();
+    @Test
+    public void testRollbackMissingFileDeletion_Happy() {
+        rollbackEnvironment.rollbackMissingFileDeletion(ImmutableList.of(filePath1, filePath2, filePath3),
+                exceptions, mockRollbackProgressListener);
+        verifyStatic(times(1));
+        CommandUtils.forceGetFile(mockServerContext, "/path/to/file1");
+        CommandUtils.forceGetFile(mockServerContext, "/path/to/file2");
+        CommandUtils.forceGetFile(mockServerContext, "/path/to/file3");
+    }
+
+    @Test
+    public void testRollbackMissingFileDeletion_Excepion() throws Exception {
+        doThrow(new RuntimeException("test error")).when(CommandUtils.class, "forceGetFile", mockServerContext, "/path/to/file1");
+
+        rollbackEnvironment.rollbackMissingFileDeletion(ImmutableList.of(filePath1), exceptions, mockRollbackProgressListener);
+        assertEquals(1, exceptions.size());
+    }
+
+    private void setupRollbackChanges() {
         Change change1 = mock(Change.class);
         Change change2 = mock(Change.class);
         Change change3 = mock(Change.class);
@@ -118,16 +143,8 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
         when(change2.getType()).thenReturn(Change.Type.MODIFICATION);
         when(change3.getType()).thenReturn(Change.Type.NEW);
 
-        FilePath filePath1 = mock(FilePath.class);
-        when(filePath1.getPath()).thenReturn("/path/to/file1");
         when(contentRevision1.getFile()).thenReturn(filePath1);
-
-        FilePath filePath2 = mock(FilePath.class);
-        when(filePath2.getPath()).thenReturn("/path/to/file2");
         when(contentRevision2.getFile()).thenReturn(filePath2);
-
-        FilePath filePath3 = mock(FilePath.class);
-        when(filePath3.getPath()).thenReturn("/path/to/file3");
         when(contentRevision3.getFile()).thenReturn(filePath3);
 
         when(change1.getBeforeRevision()).thenReturn(contentRevision1);

@@ -46,7 +46,7 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     private final TFSVcs vcs;
 
     public TFSRollbackEnvironment(@NotNull final TFSVcs vcs, @NotNull final Project project) {
-        logger.info("Initilizing TFSRollbackEnvironment");
+        logger.info("Initializing TFSRollbackEnvironment");
         this.vcs = vcs;
         this.project = project;
     }
@@ -63,110 +63,30 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
             localPaths.add(revision.getFile());
         }
 
-        undoPendingChanges(localPaths, vcsExceptions, listener, false);
+        undoPendingChanges(localPaths, vcsExceptions, listener);
         logger.info("rollbackChanges ended");
     }
 
     public void rollbackMissingFileDeletion(final List<FilePath> files,
                                             final List<VcsException> errors,
                                             final RollbackProgressListener listener) {
-//    try {
-//      WorkstationHelper.processByWorkspaces(files, false, project, new WorkstationHelper.VoidProcessDelegate() {
-//        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
-//          final List<VersionControlServer.GetRequestParams> download = new ArrayList<VersionControlServer.GetRequestParams>();
-//          final Collection<String> undo = new ArrayList<String>();
-//          StatusProvider.visitByStatus(workspace, paths, false, null, new StatusVisitor() {
-//
-//            public void unversioned(final @NotNull FilePath localPath,
-//                                    final boolean localItemExists,
-//                                    final @NotNull ServerStatus serverStatus) throws TfsException {
-//              TFSVcs.error("Server returned status Unversioned when rolling back missing file deletion: " + localPath.getPresentableUrl());
-//            }
-//
-//            public void checkedOutForEdit(final @NotNull FilePath localPath,
-//                                          final boolean localItemExists,
-//                                          final @NotNull ServerStatus serverStatus) {
-//              undo.add(serverStatus.targetItem);
-//            }
-//
-//            public void scheduledForAddition(final @NotNull FilePath localPath,
-//                                             final boolean localItemExists,
-//                                             final @NotNull ServerStatus serverStatus) {
-//              undo.add(serverStatus.targetItem);
-//            }
-//
-//            public void scheduledForDeletion(final @NotNull FilePath localPath,
-//                                             final boolean localItemExists,
-//                                             final @NotNull ServerStatus serverStatus) {
-//              TFSVcs.error(
-//                "Server returned status ScheduledForDeletion when rolling back missing file deletion: " + localPath.getPresentableUrl());
-//            }
-//
-//            public void outOfDate(final @NotNull FilePath localPath,
-//                                  final boolean localItemExists,
-//                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-//              //noinspection ConstantConditions
-//              addForDownload(serverStatus);
-//            }
-//
-//            public void deleted(final @NotNull FilePath localPath,
-//                                final boolean localItemExists,
-//                                final @NotNull ServerStatus serverStatus) {
-//              TFSVcs.error("Server returned status Deleted when rolling back missing file deletion: " + localPath.getPath());
-//            }
-//
-//            public void upToDate(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-//              throws TfsException {
-//              //noinspection ConstantConditions
-//              addForDownload(serverStatus);
-//            }
-//
-//            public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-//              throws TfsException {
-//              undo.add(serverStatus.targetItem);
-//            }
-//
-//            public void renamedCheckedOut(final @NotNull FilePath localPath,
-//                                          final boolean localItemExists,
-//                                          final @NotNull ServerStatus serverStatus) throws TfsException {
-//              undo.add(serverStatus.targetItem);
-//            }
-//
-//            public void undeleted(final @NotNull FilePath localPath,
-//                                  final boolean localItemExists,
-//                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-//              addForDownload(serverStatus);
-//            }
-//
-//            private void addForDownload(final @NotNull ServerStatus serverStatus) {
-//              download.add(new VersionControlServer.GetRequestParams(serverStatus.targetItem, RecursionType.None,
-//                                                                     new ChangesetVersionSpec(serverStatus.localVer)));
-//            }
-//
-//
-//          }, project);
-//
-//          List<GetOperation> operations = workspace.getServer().getVCS()
-//            .get(workspace.getName(), workspace.getOwnerName(), download, project, TFSBundle.message("preparing.for.download"));
-//          final Collection<VcsException> downloadErrors =
-//            ApplyGetOperations.execute(project, workspace, operations, ApplyProgress.EMPTY, null, ApplyGetOperations.DownloadMode.FORCE);
-//          errors.addAll(downloadErrors);
-//
-//          final UndoPendingChanges.UndoPendingChangesResult undoResult =
-//            UndoPendingChanges.execute(project, workspace, undo, false, new ApplyProgress.RollbackProgressWrapper(listener), false);
-//          errors.addAll(undoResult.errors);
-//        }
-//      });
-//    }
-//    catch (TfsException e) {
-//      //noinspection ThrowableInstanceNeverThrown
-//      errors.add(new VcsException(e.getMessage(), e));
-//    }
+        logger.info("rollbackMissingFileDeletion started");
+        for (final FilePath file : files) {
+            try {
+                // get the file from the server so it's restored locally
+                CommandUtils.forceGetFile(vcs.getServerContext(false), file.getPath());
+            } catch (final Throwable t) {
+                logger.warn("Exception hit while rolling back deleted file: " + file.getPath(), t);
+                errors.add(new VcsException(t.getMessage(), t));
+            }
+        }
+        logger.info("rollbackMissingFileDeletion ended");
     }
 
     public void rollbackModifiedWithoutCheckout(final List<VirtualFile> files,
                                                 final List<VcsException> errors,
                                                 final RollbackProgressListener listener) {
+//TODO: implement once we have server workspace where you can checkout files for edit
 //    try {
 //      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, project, new WorkstationHelper.VoidProcessDelegate() {
 //        public void executeRequest(final WorkspaceInfo workspace, final List<ItemPath> paths) throws TfsException {
@@ -195,35 +115,14 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     }
 
     public void rollbackIfUnchanged(final VirtualFile file) {
-        // TODO: this was commented out by Jetbrains
-    /*final List<VcsException> errors = new ArrayList<VcsException>();
-    boolean unchanged = false;
-    try {
-      FilePath path = TfsFileUtil.getFilePath(file);
-      String localContent = CurrentContentRevision.create(path).getContent();
-      TFSContentRevision currentRevision = TfsUtil.getCurrentRevision(project, path, TFSBundle.message("loading.item"));
-      unchanged = currentRevision != null && Comparing.equal(localContent, currentRevision.getContent());
-    }
-    catch (VcsException e) {
-      errors.add(e);
-    }
-    catch (TfsException e) {
-      //noinspection ThrowableInstanceNeverThrown
-      errors.add(new VcsException(e));
-    }
-
-    if (unchanged) {
-      undoPendingChanges(Collections.singletonList(TfsFileUtil.getFilePath(file)), errors, RollbackProgressListener.EMPTY, true);
-    }
-    if (!errors.isEmpty()) {
-      AbstractVcsHelper.getInstance(project).showErrors(errors, TFSVcs.TFS_NAME);
-    }*/
+        // This is optional to implement and not supported by TFVC.
+        // This is called when the user performs an "undo" that returns a file to a
+        // state in which it was checked out or last saved.
     }
 
     private void undoPendingChanges(final List<FilePath> localPaths,
                                     final List<VcsException> errors,
-                                    @NotNull final RollbackProgressListener listener,
-                                    final boolean tolerateNoChangesFailure) {
+                                    @NotNull final RollbackProgressListener listener) {
         logger.info("undoPendingChanges started");
         try {
             // Convert the FilePath objects provided to a simple String list

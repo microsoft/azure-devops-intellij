@@ -25,16 +25,31 @@ public class SyncCommandTest extends AbstractCommandTest {
     @Test
     public void testConstructor_nullContext() {
         final SyncCommand cmd = new SyncCommand(null, files, true);
+        Assert.assertFalse(cmd.shouldThrowBadExitCode());
     }
 
     @Test
     public void testConstructor_withContext() {
         final SyncCommand cmd = new SyncCommand(context, files, true);
+        Assert.assertFalse(cmd.shouldThrowBadExitCode());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nullArgs() {
         final SyncCommand cmd = new SyncCommand(null, null, false);
+        Assert.assertFalse(cmd.shouldThrowBadExitCode());
+    }
+
+    @Test
+    public void testConstructor_shouldThrowBadExitCode() {
+        final SyncCommand cmd = new SyncCommand(null, files, false, true);
+        Assert.assertTrue(cmd.shouldThrowBadExitCode());
+    }
+
+    @Test
+    public void testConstructor_force() {
+        final SyncCommand cmd = new SyncCommand(null, files, false, false, true);
+        Assert.assertFalse(cmd.shouldThrowBadExitCode());
     }
 
     @Test
@@ -49,6 +64,20 @@ public class SyncCommandTest extends AbstractCommandTest {
         final SyncCommand cmd = new SyncCommand(null, files, true);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
         Assert.assertEquals("get -noprompt file1 file2 file3 -recursive", builder.toString());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_withForce() {
+        final SyncCommand cmd = new SyncCommand(context, files, true, false, true);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("get -noprompt -collection:http://server:8080/tfs/defaultcollection ******** file1 file2 file3 -recursive -force", builder.toString());
+    }
+
+    @Test
+    public void testGetArgumentBuilder_withNoForce() {
+        final SyncCommand cmd = new SyncCommand(context, files, true, false, false);
+        final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
+        Assert.assertEquals("get -noprompt -collection:http://server:8080/tfs/defaultcollection ******** file1 file2 file3 -recursive", builder.toString());
     }
 
     @Test
