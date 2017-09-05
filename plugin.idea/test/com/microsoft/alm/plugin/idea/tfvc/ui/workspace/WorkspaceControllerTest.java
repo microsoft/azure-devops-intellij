@@ -11,28 +11,24 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockitoAnnotations;
 
-import javax.swing.LookAndFeel;
-import javax.swing.UIManager;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({UIManager.class})
 public class WorkspaceControllerTest extends IdeaAbstractTest {
+    @Mock
     public Project mockProject;
+    @Mock
     public WorkspaceDialog mockDialog;
+    @Mock
     public WorkspaceModel mockModel;
 
     final String name = "name1";
@@ -45,43 +41,12 @@ public class WorkspaceControllerTest extends IdeaAbstractTest {
 
     @Before
     public void mockOtherObjects() {
-        // We have to mock the getLookAndFeel method because it is called during dialog initialization code
-        // and will throw eventually trying to get the look and fell object.
-        PowerMockito.mockStatic(UIManager.class);
-        when(UIManager.getLookAndFeel()).thenReturn(new LookAndFeel() {
-            @Override
-            public String getName() {
-                return "name";
-            }
+        MockitoAnnotations.initMocks(this);
 
-            @Override
-            public String getID() {
-                return "id";
-            }
-
-            @Override
-            public String getDescription() {
-                return "description";
-            }
-
-            @Override
-            public boolean isNativeLookAndFeel() {
-                return false;
-            }
-
-            @Override
-            public boolean isSupportedLookAndFeel() {
-                return true;
-            }
-        });
-
-        mockProject = mock(Project.class);
-        mockDialog = mock(WorkspaceDialog.class);
         when(mockDialog.getWorkingFolders()).thenReturn(mappings);
         when(mockDialog.getWorkspaceComment()).thenReturn(comment);
         when(mockDialog.getWorkspaceName()).thenReturn(name);
 
-        mockModel = mock(WorkspaceModel.class);
         when(mockModel.getName()).thenReturn(name);
         when(mockModel.getServer()).thenReturn(server);
         when(mockModel.getComment()).thenReturn(comment);
