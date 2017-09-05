@@ -26,6 +26,7 @@ public enum ServerStatusType {
 
     public static final Logger logger = LoggerFactory.getLogger(ServerStatusType.class);
     public static final String SOURCE_RENAME = "source rename";
+    public static final String PROPERTY_X = "property (+x)";
 
     /**
      * Figure out server status type from string
@@ -42,7 +43,7 @@ public enum ServerStatusType {
                 types.add(ADD);
             } else if (StringUtils.equalsIgnoreCase(args[i].trim(), DELETE.name())) {
                 types.add(DELETE);
-            } else if (StringUtils.equalsIgnoreCase(args[i].trim(), EDIT.name())) {
+            } else if (StringUtils.equalsIgnoreCase(args[i].trim(), EDIT.name()) || StringUtils.equalsIgnoreCase(args[i].trim(), PROPERTY_X)) {
                 types.add(EDIT);
             } else if (StringUtils.equalsIgnoreCase(args[i].trim(), RENAME.name()) || StringUtils.equalsIgnoreCase(args[i].trim(), SOURCE_RENAME)) {
                 types.add(RENAME);
