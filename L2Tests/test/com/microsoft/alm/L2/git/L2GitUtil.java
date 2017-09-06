@@ -52,7 +52,7 @@ public class L2GitUtil {
         FileUtil.writeToFile(file, "\nnew line", true);
 
         // adds and commits the change
-        final LocalChangeListImpl localChangeList = LocalChangeListImpl.createEmptyChangeListImpl(project, "TestCommit");
+        final LocalChangeListImpl localChangeList = LocalChangeListImpl.createEmptyChangeListImpl(project, "TestCommit", "12345");
         final ChangeListManagerImpl changeListManager = ChangeListManagerImpl.getInstanceImpl(project);
         VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
         changeListManager.ensureUpToDate(false);
