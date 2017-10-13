@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.123.0</version>
+    <version>1.125.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,9 +57,9 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.123.0
+      v 1.125.0
       <br />
-      Added the Repository view under the Version Control tab to display repository changes found on the server. This release also contains incremental fixes and updates.
+      Updating Application Insights package with bug fix.
       <br />
     ]]>
     </change-notes>
