@@ -163,7 +163,7 @@ subprojects {
 
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
-        compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.8'
+        compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.10'
 	compile group: 'com.google.guava', name: 'guava', version: '19.0'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
