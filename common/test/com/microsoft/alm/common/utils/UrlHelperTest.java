@@ -306,4 +306,26 @@ public class UrlHelperTest {
         assertEquals("https://server:8081/tfs/DefaultCollection/Project%20Name/_versionControl/?path=%24%2Fpath%2Fto%2Fthe%2Ffile.txt&_a=contents&annotate=true&hideComments=true",
                 result.toString());
     }
+
+    @Test
+    public void testIsOrganizationUri() {
+        assertEquals(false, UrlHelper.isOrganization( URI.create("https://myaccount.visualstudio.com/DefaultCollection")));
+        assertEquals(false, UrlHelper.isOrganization( URI.create("https://myaccount.visualstudio.com/")));
+        assertEquals(false, UrlHelper.isOrganization( URI.create("https://www.google.com/")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("https://codedev.ms/account")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("https://CODEDEV.MS/ACCOUNT")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("https://msft.codedev.ms/account")));
+    }
+
+    @Test
+    public void testIsOrganizationHost() {
+        assertEquals(false, UrlHelper.isOrganization( URI.create("myaccount.visualstudio.com")));
+        assertEquals(false, UrlHelper.isOrganization( URI.create("myaccount.visualstudio.com")));
+        assertEquals(false, UrlHelper.isOrganization( URI.create("www.google.com")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("codedev.ms")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("CODEDEV.MS")));
+        assertEquals(true, UrlHelper.isOrganization( URI.create("msft.codedev.ms")));
+    }
+
+
 }

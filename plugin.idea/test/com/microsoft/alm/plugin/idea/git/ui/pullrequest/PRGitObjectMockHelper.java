@@ -58,6 +58,6 @@ public class PRGitObjectMockHelper {
                 Arrays.asList(HashImpl.build("9afa081effdaeafdff089b2aa3543415f6cdb1fb")),
                 date,
                 root,
-                subject, user, message, user, date, Collections.EMPTY_LIST);
+                subject, user, message, user, date, Collections.EMPTY_LIST, null);
     }
 }

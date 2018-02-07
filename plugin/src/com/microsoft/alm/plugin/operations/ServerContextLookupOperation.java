@@ -175,7 +175,8 @@ public class ServerContextLookupOperation extends Operation {
                 return;
             }
 
-            final URI collectionURI = UrlHelper.getCollectionURI(context.getUri(), teamProjectCollectionReference.getName());
+            final URI contextUri = context.getUri();
+            final URI collectionURI = UrlHelper.isOrganization(contextUri) ? contextUri : UrlHelper.getCollectionURI( contextUri, teamProjectCollectionReference.getName());
 
             try {
                 if (resultScope == ContextScope.PROJECT) {

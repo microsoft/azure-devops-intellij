@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.common.ui.common;
 
 
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -216,7 +217,7 @@ public class ServerContextTableModel extends AbstractTableModel {
                 return collection != null ? collection.getName() : "";
             }
             case ACCOUNT:
-                return serverContext.getUri().getHost();
+                return UrlHelper.isOrganization(serverContext.getUri()) ? serverContext.getUri().getHost() + "/" + serverContext.getTeamProjectCollectionReference().getName() : serverContext.getUri().getHost();
             case GENERAL_REPOSITORY: {
                 if (serverContext.getGitRepository() != null) {
                     return serverContext.getGitRepository().getName();

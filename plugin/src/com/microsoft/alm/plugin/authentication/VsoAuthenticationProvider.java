@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public class VsoAuthenticationProvider implements AuthenticationProvider {
     private static final Logger logger = LoggerFactory.getLogger(VsoAuthenticationProvider.class);
 
-    public static final String VSO_AUTH_URL = "https://app.vssps.visualstudio.com";
+    public static final String VSO_AUTH_URL = "https://sps1.vssps.vsts.me";
 
     private AuthenticationInfoProvider getAuthenticationInfoProvider() {
         return VsoAuthInfoProvider.getProvider();

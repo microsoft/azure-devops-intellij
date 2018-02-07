@@ -117,15 +117,18 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
         if (!StringUtils.equals(this.serverName, serverName)) {
             final String newServerName;
             // Allow just the server name as a short hand
-            if (StringUtils.isNotEmpty(serverName) && !StringUtils.contains(serverName, UrlHelper.URL_SEPARATOR)
+            if (StringUtils.isNotEmpty(serverName) && !(StringUtils.contains(serverName, UrlHelper.URL_SEPARATOR)
                     && !StringUtils.equals(serverName, TfPluginBundle.message(TfPluginBundle.KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME))
                     && !StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_VSO)
-                    && !StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN)) {
+                    && !StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN)
+                    || UrlHelper.isOrganization(serverName))) {
                 // no slash, not "Microsoft Account" and does not contain visualstudio.com or tfsallin.net
                 // means it must just be a on-premise TFS server name, so add all the normal stuff
                 newServerName = String.format(DEFAULT_SERVER_FORMAT, serverName);
             } else if (!StringUtils.contains(serverName, UrlHelper.URL_SEPARATOR)
-                    && (StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_VSO) || StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN))) {
+                    && (StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_VSO) ||
+                        StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN) ||
+                        UrlHelper.isOrganization(serverName))) {
                 //no slash and contains visualstudio.com or tfsallin.net
                 // means it must be a VSTS account
                 newServerName = String.format(DEFAULT_VSTS_ACCOUNT_FORMAT, serverName);

@@ -25,6 +25,8 @@ public class UrlHelper {
 
     public static final String HOST_VSO = "visualstudio.com";
     public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
+    public static final String HOST_CODEDEV = "codedev.ms";
+    public static final String HOST_CODEDEV_ORG = ".codedev.ms";
     public static final String DEFAULT_COLLECTION = "DefaultCollection";
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
@@ -111,15 +113,35 @@ public class UrlHelper {
     public static boolean isVSO(final URI uri) {
         if (uri != null && uri.getHost() != null) {
             final String host = uri.getHost().toLowerCase();
-            if (StringUtils.endsWith(host, HOST_VSO) || StringUtils.endsWith(host, HOST_TFS_ALL_IN)) {
+            if (StringUtils.endsWith(host, HOST_VSO) ||
+                    StringUtils.endsWith(host, HOST_TFS_ALL_IN) ||
+                    UrlHelper.isOrganization(uri)) {
                 return true;
             }
         }
         return false;
     }
 
+    public static boolean isOrganization(final URI uri) {
+        if (uri != null && uri.getHost() != null) {
+            final String host = uri.getHost().toLowerCase();
+            return isOrganization(host);
+        }
+        return false;
+    }
+
+    public static boolean isOrganization(String host) {
+       if (StringUtils.equalsIgnoreCase(host, HOST_CODEDEV) ||
+               StringUtils.endsWith(host, HOST_CODEDEV_ORG)) {
+            return true;
+       }
+       return false;
+    }
+
     public static boolean isTeamServicesUrl(final String url) {
-        if (StringUtils.containsIgnoreCase(url, HOST_VSO) || StringUtils.containsIgnoreCase(url, HOST_TFS_ALL_IN)) {
+        if (StringUtils.containsIgnoreCase(url, HOST_VSO) ||
+                StringUtils.containsIgnoreCase(url, HOST_TFS_ALL_IN) ||
+                UrlHelper.isOrganization(url)) {
             return true;
         }
         return false;
@@ -199,7 +221,9 @@ public class UrlHelper {
     }
 
     public static URI getCollectionURI(final URI serverUri, final String collectionName) {
-        if (isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
+        if ((isVSO(serverUri)
+                && getVSOAccountURI(collectionName).equals(serverUri))
+                || isOrganization(serverUri)){
             //collection in the domain case on VSTS
             return serverUri;
         }

@@ -3,27 +3,34 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.common.utils.UrlHelper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
-import com.microsoft.visualstudio.services.account.Account;
-import com.microsoft.visualstudio.services.account.AccountHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Use this operation class to lookup the accounts on VSO for a particular user.
  */
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
+    private static final String TfsServiceUrlPropertyName = "Microsoft.VisualStudio.Services.Account.ServiceUrl.00025394-6065-48CA-87D9-7F5672854EF7";
+    private static final String AccountEndpoint = "/_apis/Accounts?memberid=%s&api-version=1.0";
 
     public static class AccountLookupResults extends ResultsImpl {
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
@@ -56,14 +63,29 @@ public class AccountLookupOperation extends Operation {
                 throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
             }
 
-            final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
-                    UrlHelper.createUri(VsoAuthenticationProvider.VSO_AUTH_URL));
-            List<Account> accounts = accountHttpClient.getAccounts(vsoDeploymentContext.getUserId());
+            // Issue account request
+            Client accountClient = vsoDeploymentContext.getClient();
+            final String accountApiUrlFormat = VsoAuthenticationProvider.VSO_AUTH_URL + AccountEndpoint;
+            WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId()));
+            final Map<String, String> parameters = new HashMap<String, String>();
+            parameters.put("api-version", "3.0-preview.1");
+            parameters.put("charset", "UTF-8");
+            Invocation invocation = resourceTarget.request(
+                    new MediaType("application", "json", parameters))
+                    .buildGet();
+            String response = invocation.invoke(String.class);
+
+            // Loop thru account results and set up context
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(response);
+            List<JsonNode> nodes = rootNode.findValues(TfsServiceUrlPropertyName);
             final AccountLookupResults results = new AccountLookupResults();
-            for (final Account a : accounts) {
+            for (JsonNode node : nodes)
+            {
+                // Each account gets it's own context (i.e. codedev.ms/account1, codedev.ms/account2, etc..)
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
-                                .accountUri(a)
+                                .accountUri(node.path("$value").asText())
                                 .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo(VsoAuthenticationProvider.VSO_AUTH_URL))
                                 .userId(vsoDeploymentContext.getUserId())
                                 .build();

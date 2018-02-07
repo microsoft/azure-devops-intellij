@@ -11,12 +11,12 @@
       <sourceFolder url="file://$MODULE_DIR$/test-functional" isTestSource="true" />
     </content>
     <orderEntry type="library" name="lib" level="project" />
-    <orderEntry type="jdk" jdkName="IntelliJ IDEA Community Edition" jdkType="IDEA JDK" />
+    <orderEntry type="jdk" jdkName="IntelliJ IDEA IU-173.4548.28" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="com.microsoft.alm.common" />
     <orderEntry type="module" module-name="com.microsoft.alm.plugin" />
-    <orderEntry type="library" scope="PROVIDED" name="git4idea" level="application" />
     <orderEntry type="library" scope="TEST" name="testclasses" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="git4idea" level="project" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">

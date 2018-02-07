@@ -777,18 +777,29 @@ public class ServerContextManager {
         public boolean validateTfvcUrl(final String collectionUrl, final String teamProjectName, final String possibleCollectionName) {
             try {
                 final String collectionName;
-                final String serverUrl;
                 if (UrlHelper.isTeamServicesUrl(collectionUrl)) {
-                    // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
-                    // and the url without defaultCollection will validate just fine. However, it expects you to refer to
-                    // the collection by the account name. So, we just need to grab the account name and use that to
-                    // recreate the url.
-                    // If validation fails, we return false.
-                    final String accountName = UrlHelper.getVSOAccountName(UrlHelper.createUri(collectionUrl));
-                    serverUrl = UrlHelper.getVSOAccountURI(accountName).toString();
-                    collectionName = accountName;
-                    if (!validateTfvcCollectionUrl(serverUrl)) {
-                        return false;
+                    if (UrlHelper.isOrganization(UrlHelper.createUri(collectionUrl))) {
+                        // The serverUrl is the same as the Collection Url
+                        serverUrl = collectionUrl;
+                        if (!validateTfvcCollectionUrl(serverUrl)) {
+                            return false;
+                        }
+                        // Account will be in the form codedev.ms/account1, longer term see if Account service can return
+                        String parts[] = serverUrl.split("/");
+                        collectionName = parts[parts.length - 1];
+                    }
+                    else {
+                        // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
+                        // and the url without defaultCollection will validate just fine. However, it expects you to refer to
+                        // the collection by the account name. So, we just need to grab the account name and use that to
+                        // recreate the url.
+                        // If validation fails, we return false.
+                        final String accountName = UrlHelper.getVSOAccountName(UrlHelper.createUri(collectionUrl));
+                        serverUrl = UrlHelper.getVSOAccountURI(accountName).toString();
+                        collectionName = accountName;
+                        if (!validateTfvcCollectionUrl(serverUrl)) {
+                            return false;
+                        }
                     }
                 } else {
                     // A full Team Foundation Server collection url is required for the validate call to succeed. So,
