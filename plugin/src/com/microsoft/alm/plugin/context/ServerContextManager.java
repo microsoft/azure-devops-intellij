@@ -779,14 +779,21 @@ public class ServerContextManager {
                 final String collectionName;
                 final String serverUrl;
                 if (UrlHelper.isTeamServicesUrl(collectionUrl)) {
-                    // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
-                    // and the url without defaultCollection will validate just fine. However, it expects you to refer to
-                    // the collection by the account name. So, we just need to grab the account name and use that to
-                    // recreate the url.
-                    // If validation fails, we return false.
-                    final String accountName = UrlHelper.getVSOAccountName(UrlHelper.createUri(collectionUrl));
-                    serverUrl = UrlHelper.getVSOAccountURI(accountName).toString();
-                    collectionName = accountName;
+                    if (UrlHelper.isOrganizationUrl(collectionUrl)) {
+                        // For organizations the serverUrl == the collectionUrl
+                        serverUrl = collectionUrl;
+                        // Collection name is the account, i.e. codedev.ms/account
+                        collectionName = UrlHelper.getCollectionNameFromOrganization(serverUrl);
+                    } else {
+                        // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
+                        // and the url without defaultCollection will validate just fine. However, it expects you to refer to
+                        // the collection by the account name. So, we just need to grab the account name and use that to
+                        // recreate the url.
+                        // If validation fails, we return false.
+                        final String accountName = UrlHelper.getVSOAccountName(UrlHelper.createUri(collectionUrl));
+                        serverUrl = UrlHelper.getVSOAccountURI(accountName).toString();
+                        collectionName = accountName;
+                    }
                     if (!validateTfvcCollectionUrl(serverUrl)) {
                         return false;
                     }

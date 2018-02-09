@@ -222,6 +222,13 @@ public class UrlHelperTest {
         final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myaccount");
         assertEquals(accountUri, inDomainCollectionUri);
 
+        //codedev accounts
+        final URI codeDevUri = URI.create("https://codedev.ms/acct1");
+        assertEquals(codeDevUri, UrlHelper.getCollectionURI(codeDevUri, "DefaultCollection"));
+
+        final URI codeDevOrgUri = URI.create("https://org.codedev.ms/acct1");
+        assertEquals(codeDevOrgUri, UrlHelper.getCollectionURI(codeDevOrgUri, "DefaultCollection"));
+
         //onprem server
         final URI serverUri = URI.create("http://myserver:8080/tfs");
 
@@ -306,4 +313,47 @@ public class UrlHelperTest {
         assertEquals("https://server:8081/tfs/DefaultCollection/Project%20Name/_versionControl/?path=%24%2Fpath%2Fto%2Fthe%2Ffile.txt&_a=contents&annotate=true&hideComments=true",
                 result.toString());
     }
+
+    @Test
+    public void testIsOrganizationUrl() {
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/DefaultCollection"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://www.google.com/"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://codedev.ms/account"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://CODEDEV.MS/ACCOUNT"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://msft.codedev.ms/account"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "not a url"));
+    }
+
+    @Test
+    public void testIsOrganizationUri() {
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/DefaultCollection")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://www.google.com/")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://codedev.ms/account")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://CODEDEV.MS/ACCOUNT")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://msft.codedev.ms/account")));
+    }
+
+    @Test
+    public void testIsOrganizationHost() {
+        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "www.google.com"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "codedev.ms"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "CODEDEV.MS"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "msft.codedev.ms"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "msft.codedev.MS"));
+    }
+
+    @Test
+    public void testGetCollectionNameFromOrganization() {
+        assertEquals("account", UrlHelper.getCollectionNameFromOrganization( "https://codedev.ms/account"));
+        assertEquals("ACCOUNT", UrlHelper.getCollectionNameFromOrganization( "https://CODEDEV.MS/ACCOUNT"));
+        assertEquals("account", UrlHelper.getCollectionNameFromOrganization( "https://msft.codedev.ms/account"));
+        // the below does not look correct, but is here to capture current behavior of other functions
+        // in code this result will fail later on when we attempt to make a request
+        assertEquals("not a url", UrlHelper.getCollectionNameFromOrganization( "not a url"));
+    }
+
 }

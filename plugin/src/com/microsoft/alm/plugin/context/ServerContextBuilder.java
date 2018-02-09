@@ -9,7 +9,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
-import com.microsoft.visualstudio.services.account.Account;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,8 +80,8 @@ public class ServerContextBuilder {
         return this;
     }
 
-    public ServerContextBuilder accountUri(final Account account) {
-        this.uri = UrlHelper.getVSOAccountURI(account.getAccountName());
+    public ServerContextBuilder accountUri(final String accountUri) {
+        this.uri = UrlHelper.createUri(accountUri);
         this.serverUri = this.uri;
         return this;
     }

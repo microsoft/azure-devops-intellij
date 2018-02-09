@@ -3,27 +3,36 @@
 
 package com.microsoft.alm.plugin.operations;
 
-import com.microsoft.alm.common.utils.UrlHelper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
-import com.microsoft.visualstudio.services.account.Account;
-import com.microsoft.visualstudio.services.account.AccountHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Use this operation class to lookup the accounts on VSO for a particular user.
  */
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
+
+    private static final String ACCOUNT_ENDPOINT = "/_apis/Accounts?memberid=%s&api-version=1.0";
+    private static final String TFS_SERVICE_URL_PROPERTY_NAME = "Microsoft.VisualStudio.Services.Account.ServiceUrl.00025394-6065-48CA-87D9-7F5672854EF7";
 
     public static class AccountLookupResults extends ResultsImpl {
         private final List<ServerContext> serverContexts = new ArrayList<ServerContext>();
@@ -56,14 +65,16 @@ public class AccountLookupOperation extends Operation {
                 throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED);
             }
 
-            final AccountHttpClient accountHttpClient = new AccountHttpClient(vsoDeploymentContext.getClient(),
-                    UrlHelper.createUri(VsoAuthenticationProvider.VSO_AUTH_URL));
-            List<Account> accounts = accountHttpClient.getAccounts(vsoDeploymentContext.getUserId());
+            //Get uris for the accounts the user has access to
+            List<String> accountUris = this.getAccountUris(vsoDeploymentContext);
+            //Loop thru results and add them to the server context
             final AccountLookupResults results = new AccountLookupResults();
-            for (final Account a : accounts) {
+            for (String accountUri : accountUris)
+            {
+                // Each account gets it's own context (i.e. codedev.ms/account1, codedev.ms/account2, etc..)
                 final ServerContext accountContext =
                         new ServerContextBuilder().type(ServerContext.Type.VSO)
-                                .accountUri(a)
+                                .accountUri(accountUri)
                                 .authentication(VsoAuthenticationProvider.getInstance().getAuthenticationInfo(VsoAuthenticationProvider.VSO_AUTH_URL))
                                 .userId(vsoDeploymentContext.getUserId())
                                 .build();
@@ -104,5 +115,41 @@ public class AccountLookupOperation extends Operation {
         results.error = throwable;
         onLookupResults(results);
         onLookupCompleted();
+    }
+
+    // Make a server call to get the uris for the accounts the user has access to
+    private List<String> getAccountUris(final ServerContext vsoDeploymentContext) {
+        // new list of account uris to return
+        List<String> accountUris = new ArrayList<String>();
+
+        // Issue account request
+        Client accountClient = vsoDeploymentContext.getClient();
+        final String accountApiUrlFormat = VsoAuthenticationProvider.VSO_AUTH_URL + ACCOUNT_ENDPOINT;
+        WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId()));
+        final Map<String, String> parameters = new HashMap<String, String>();
+        parameters.put("api-version", "3.0-preview.1");
+        parameters.put("charset", "UTF-8");
+        Invocation invocation = resourceTarget.request(
+                new MediaType("application", "json", parameters))
+                .buildGet();
+        String response = invocation.invoke(String.class);
+
+        // Parse result tree
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = null;
+        try {
+            rootNode = objectMapper.readTree(response);
+        } catch (IOException e) {
+            logger.error("Could not parse Account response", e);
+            return accountUris;
+        }
+
+        // Loop thru account results and add them to the list
+        List<JsonNode> nodes = rootNode.findValues(TFS_SERVICE_URL_PROPERTY_NAME);
+        for (final JsonNode node : nodes)
+        {
+            accountUris.add(node.path("$value").asText());
+        }
+        return accountUris;
     }
 }

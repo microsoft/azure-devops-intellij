@@ -44,5 +44,21 @@ public class LoginPageModelTest extends AbstractTest {
         //full url
         underTest.setServerName("https://myserver:8080/tfs/virtualpath");
         assertEquals("https://myserver:8080/tfs/virtualpath", underTest.getServerName());
+
+        //codedev url
+        underTest.setServerName("codedev.ms/account");
+        assertEquals("https://codedev.ms/account", underTest.getServerName());
+
+        //codedev org url
+        underTest.setServerName("org.codedev.ms/account");
+        assertEquals("https://org.codedev.ms/account", underTest.getServerName());
+
+        //codedev full url
+        underTest.setServerName("https://codedev.ms/account");
+        assertEquals("https://codedev.ms/account", underTest.getServerName());
+
+        //codedev org full url
+        underTest.setServerName("https://org.codedev.ms/account");
+        assertEquals("https://org.codedev.ms/account", underTest.getServerName());
     }
 }
