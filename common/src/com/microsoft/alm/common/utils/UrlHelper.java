@@ -25,6 +25,8 @@ public class UrlHelper {
 
     public static final String HOST_VSO = "visualstudio.com";
     public static final String HOST_TFS_ALL_IN = "tfsallin.net"; //azure test subscriptions
+    public static final String HOST_AZURE = "azure.com";
+    public static final String HOST_AZURE_ORG = ".azure.com";
     public static final String DEFAULT_COLLECTION = "DefaultCollection";
 
     private static final String URL_GIT_PATH_SEGMENT = "_git";
@@ -111,15 +113,68 @@ public class UrlHelper {
     public static boolean isVSO(final URI uri) {
         if (uri != null && uri.getHost() != null) {
             final String host = uri.getHost().toLowerCase();
-            if (StringUtils.endsWith(host, HOST_VSO) || StringUtils.endsWith(host, HOST_TFS_ALL_IN)) {
+            if (StringUtils.endsWith(host, HOST_VSO) ||
+                    StringUtils.endsWith(host, HOST_TFS_ALL_IN) ||
+                    UrlHelper.isOrganizationHost(host)) {
                 return true;
             }
         }
         return false;
     }
 
+    public static boolean isOrganizationUrl(final String url) {
+        try {
+            URI uri = createUri(url);
+            return isOrganizationURI(uri);
+        }
+        catch(IllegalArgumentException ex) {
+            logger.debug(url, ex);
+        }
+        return false;
+    }
+
+    public static boolean isOrganizationURI(final URI uri) {
+        if (uri != null && uri.getHost() != null) {
+            return isOrganizationHost(uri.getHost());
+        }
+        return false;
+    }
+
+    public static boolean isOrganizationHost(final String host) {
+       if (StringUtils.equalsIgnoreCase(host, HOST_AZURE) ||
+               StringUtils.endsWithIgnoreCase(host, HOST_AZURE_ORG)) {
+            return true;
+       }
+       return false;
+    }
+
+    public static String getAccountFromOrganization(final String url){
+        try {
+            URI uri = UrlHelper.createUri(url);
+            return getAccountFromOrganizationUri(uri);
+        }
+        catch(IllegalArgumentException ex) {
+            logger.debug(url, ex);
+        }
+        return null;
+    }
+
+    public static String getAccountFromOrganizationUri(final URI uri) {
+        // Organization should be in the form azure.com/account1, we ignore any other parameters
+        String[] pathSegments = HttpGitUrlParser.getPathSegments(uri);
+        if (pathSegments.length > 0) {
+            return pathSegments[0];
+        }
+        else {
+            logger.debug("getAccountFromOrganizationUri: expected path for organization account = " + uri);
+        }
+        return null;
+    }
+
     public static boolean isTeamServicesUrl(final String url) {
-        if (StringUtils.containsIgnoreCase(url, HOST_VSO) || StringUtils.containsIgnoreCase(url, HOST_TFS_ALL_IN)) {
+        if (StringUtils.containsIgnoreCase(url, HOST_VSO) ||
+                StringUtils.containsIgnoreCase(url, HOST_TFS_ALL_IN) ||
+                UrlHelper.isOrganizationUrl(url)) {
             return true;
         }
         return false;
@@ -199,8 +254,10 @@ public class UrlHelper {
     }
 
     public static URI getCollectionURI(final URI serverUri, final String collectionName) {
-        if (isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
-            //collection in the domain case on VSTS
+        if (isOrganizationURI(serverUri) ||
+                isVSO(serverUri) && getVSOAccountURI(collectionName).equals(serverUri)) {
+            // Either we are using an organization where the collection is the same as the server uri
+            // or collection in the domain case on VSTS on the old style visualstudio.com domain
             return serverUri;
         }
         return UrlHelper.createUri(combine(serverUri.toString(), collectionName));
@@ -278,9 +335,12 @@ public class UrlHelper {
                 String.format(URL_TFVC_ANNOTATE_FILE_SEGMENT, encode(filePath))));
     }
 
-    public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
+    /*
+     * This is the portion that must match in order to use the same PAT
+     */
+    public static boolean haveSameAccount(final URI remoteUrl1, final URI remoteUrl2) {
         if (remoteUrl1 != null && remoteUrl2 != null) {
-            return StringUtils.equalsIgnoreCase(remoteUrl1.getAuthority(), remoteUrl2.getAuthority());
+            return StringUtils.equalsIgnoreCase(getServerAccountKey(remoteUrl1), getServerAccountKey(remoteUrl2));
         }
 
         return false;
@@ -473,6 +533,12 @@ public class UrlHelper {
                     "RepoName = " + repoName + " " +
                     "AccountName = " + accountName;
         }
+    }
+
+    private static String getServerAccountKey(final URI uri) {
+        return UrlHelper.isOrganizationURI(uri)
+                ? uri.getAuthority() + '\\' + getAccountFromOrganizationUri(uri)
+                : uri.getAuthority();
     }
 
     private static class HttpGitUrlParser {
