@@ -475,7 +475,7 @@ public class ServerContextManager {
         // For now I will just do a linear search for an appropriate context info to copy the auth info from
         final URI remoteUri = UrlHelper.createUri(gitRemoteUrl);
         for (final ServerContext context : getAllServerContexts()) {
-            if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
+            if (UrlHelper.haveSameAccount(remoteUri, context.getUri())) {
                 logger.info("AuthenticatedInfo found for url " + gitRemoteUrl);
                 authenticationInfo = context.getAuthenticationInfo();
                 break;
@@ -589,7 +589,7 @@ public class ServerContextManager {
         //Linear search through all contexts to find the ones with same authority as remoteUrl
         for (final ServerContext context : getAllServerContexts()) {
             logger.info("auth info updateAuthenticationInfo compare " + context.getUri().getPath());
-            if (UrlHelper.haveSameAuthority(remoteUri, context.getUri())) {
+            if (UrlHelper.haveSameAccount(remoteUri, context.getUri())) {
                 //remove the context with old credentials
                 remove(context.getKey());
 
@@ -747,6 +747,9 @@ public class ServerContextManager {
                 }
 
                 serverUrl = vstsInfo.getServerUrl();
+                if (UrlHelper.isOrganizationUrl(serverUrl)) {
+                    serverUrl = serverUrl + "/" + UrlHelper.getAccountFromOrganization(vstsInfo.getRepository().getRemoteUrl());
+                }
 
                 collection = new TeamProjectCollection();
                 collection.setId(vstsInfo.getCollectionReference().getId());
@@ -783,7 +786,7 @@ public class ServerContextManager {
                         // For organizations the serverUrl == the collectionUrl
                         serverUrl = collectionUrl;
                         // Collection name is the account, i.e. codedev.ms/account
-                        collectionName = UrlHelper.getCollectionNameFromOrganization(serverUrl);
+                        collectionName = UrlHelper.getAccountFromOrganization(serverUrl);
                     } else {
                         // The Team Services collection is ALWAYS defaultCollection, and both the url with defaultcollection
                         // and the url without defaultCollection will validate just fine. However, it expects you to refer to

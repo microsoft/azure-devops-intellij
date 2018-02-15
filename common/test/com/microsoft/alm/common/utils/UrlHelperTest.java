@@ -347,13 +347,31 @@ public class UrlHelperTest {
     }
 
     @Test
-    public void testGetCollectionNameFromOrganization() {
-        assertEquals("account", UrlHelper.getCollectionNameFromOrganization( "https://codedev.ms/account"));
-        assertEquals("ACCOUNT", UrlHelper.getCollectionNameFromOrganization( "https://CODEDEV.MS/ACCOUNT"));
-        assertEquals("account", UrlHelper.getCollectionNameFromOrganization( "https://msft.codedev.ms/account"));
+    public void testGetAccountFromOrganization() {
+        assertEquals("account", UrlHelper.getAccountFromOrganization( "https://codedev.ms/account"));
+        assertEquals("ACCOUNT", UrlHelper.getAccountFromOrganization( "https://CODEDEV.MS/ACCOUNT"));
+        assertEquals("account", UrlHelper.getAccountFromOrganization( "https://msft.codedev.ms/account"));
         // the below does not look correct, but is here to capture current behavior of other functions
         // in code this result will fail later on when we attempt to make a request
-        assertEquals("not a url", UrlHelper.getCollectionNameFromOrganization( "not a url"));
+        assertEquals("not a url", UrlHelper.getAccountFromOrganization( "not a url"));
     }
 
+    @Test
+    public void testGetAccountFromOrganizationUri() {
+        assertEquals("account", UrlHelper.getAccountFromOrganizationUri( URI.create("https://codedev.ms/account")));
+        assertEquals("ACCOUNT", UrlHelper.getAccountFromOrganizationUri( URI.create("https://CODEDEV.MS/ACCOUNT")));
+        assertEquals("account", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.codedev.ms/account")));
+        assertEquals("", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.codedev.ms/")));
+        assertEquals("", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.codedev.ms")));
+    }
+
+    @Test
+    public void testHaveSameAccount() {
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("https://codedev.ms/account/blah"), URI.create("https://codedev.ms/account/blah2")));
+        assertEquals(false, UrlHelper.haveSameAccount( URI.create("https://codedev.ms/account1/blah"), URI.create("https://codedev.ms/account2/blah2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("http://localhost:8080/test"), URI.create("http://localhost:8080/test2")));
+        assertEquals(false, UrlHelper.haveSameAccount( URI.create("http://localhost:8080/test"), URI.create("http://localhost:5080/test2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("https://CODEDEV.MS/account/blah"), URI.create("https://codedev.ms/account/blah2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("http://LOCALHOST:8080/test"), URI.create("http://localhost:8080/test2")));
+    }
 }

@@ -148,17 +148,25 @@ public class UrlHelper {
        return false;
     }
 
-    public static String getCollectionNameFromOrganization(final String url){
+    public static String getAccountFromOrganization(final String url){
         try {
             URI uri = UrlHelper.createUri(url);
-            // Organization should be in the form codedev.ms/account1, we ignore any other parameters
-            String[] pathSegments = HttpGitUrlParser.getPathSegments(uri);
-            if (pathSegments.length > 0) {
-                return pathSegments[0];
-            }
+            return getAccountFromOrganizationUri(uri);
         }
         catch(IllegalArgumentException ex) {
             logger.debug(url, ex);
+        }
+        return null;
+    }
+
+    public static String getAccountFromOrganizationUri(final URI uri) {
+        // Organization should be in the form codedev.ms/account1, we ignore any other parameters
+        String[] pathSegments = HttpGitUrlParser.getPathSegments(uri);
+        if (pathSegments.length > 0) {
+            return pathSegments[0];
+        }
+        else {
+            logger.debug("getAccountFromOrganizationUri: expected path for organization account = " + uri);
         }
         return null;
     }
@@ -327,9 +335,12 @@ public class UrlHelper {
                 String.format(URL_TFVC_ANNOTATE_FILE_SEGMENT, encode(filePath))));
     }
 
-    public static boolean haveSameAuthority(final URI remoteUrl1, final URI remoteUrl2) {
+    /*
+     * This is the portion that must match in order to use the same PAT
+     */
+    public static boolean haveSameAccount(final URI remoteUrl1, final URI remoteUrl2) {
         if (remoteUrl1 != null && remoteUrl2 != null) {
-            return StringUtils.equalsIgnoreCase(remoteUrl1.getAuthority(), remoteUrl2.getAuthority());
+            return StringUtils.equalsIgnoreCase(getServerAccountKey(remoteUrl1), getServerAccountKey(remoteUrl2));
         }
 
         return false;
@@ -522,6 +533,12 @@ public class UrlHelper {
                     "RepoName = " + repoName + " " +
                     "AccountName = " + accountName;
         }
+    }
+
+    private static String getServerAccountKey(final URI uri) {
+        return UrlHelper.isOrganizationURI(uri)
+                ? uri.getAuthority() + '\\' + getAccountFromOrganizationUri(uri)
+                : uri.getAuthority();
     }
 
     private static class HttpGitUrlParser {

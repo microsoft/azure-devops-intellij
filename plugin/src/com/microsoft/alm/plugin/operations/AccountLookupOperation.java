@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,10 +67,10 @@ public class AccountLookupOperation extends Operation {
             }
 
             //Get uris for the accounts the user has access to
-            List<String> accountUris = this.getAccountUris(vsoDeploymentContext);
+            final List<String> accountUris = this.getAccountUris(vsoDeploymentContext);
             //Loop thru results and add them to the server context
             final AccountLookupResults results = new AccountLookupResults();
-            for (String accountUri : accountUris)
+            for (final String accountUri : accountUris)
             {
                 // Each account gets it's own context (i.e. codedev.ms/account1, codedev.ms/account2, etc..)
                 final ServerContext accountContext =
@@ -123,19 +124,19 @@ public class AccountLookupOperation extends Operation {
         List<String> accountUris = new ArrayList<String>();
 
         // Issue account request
-        Client accountClient = vsoDeploymentContext.getClient();
+        final Client accountClient = vsoDeploymentContext.getClient();
         final String accountApiUrlFormat = VsoAuthenticationProvider.VSO_AUTH_URL + ACCOUNT_ENDPOINT;
-        WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId()));
+        final WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId()));
         final Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("api-version", "3.0-preview.1");
         parameters.put("charset", "UTF-8");
-        Invocation invocation = resourceTarget.request(
+        final Invocation invocation = resourceTarget.request(
                 new MediaType("application", "json", parameters))
                 .buildGet();
-        String response = invocation.invoke(String.class);
+        final String response = invocation.invoke(String.class);
 
         // Parse result tree
-        ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = null;
         try {
             rootNode = objectMapper.readTree(response);
@@ -145,10 +146,10 @@ public class AccountLookupOperation extends Operation {
         }
 
         // Loop thru account results and add them to the list
-        List<JsonNode> nodes = rootNode.findValues(TFS_SERVICE_URL_PROPERTY_NAME);
+        final List<JsonNode> nodes = rootNode.findValues(TFS_SERVICE_URL_PROPERTY_NAME);
         for (final JsonNode node : nodes)
         {
-            accountUris.add(node.path("$value").asText());
+            accountUris.add(StringUtils.removeEnd(node.path("$value").asText(), "/"));
         }
         return accountUris;
     }
