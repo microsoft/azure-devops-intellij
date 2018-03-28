@@ -182,8 +182,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_FEEDBACK_DIALOG_COMMENT_LABEL_FROWN = "Feedback.Dialog.CommentLabel.Frown";
     @NonNls
-    public static final String KEY_FEEDBACK_DIALOG_ERRORS_INVALID_EMAIL = "Feedback.Dialog.Errors.InvalidEmail";
-    @NonNls
     public static final String KEY_FEEDBACK_NOTIFICATION = "Feedback.Notification";
 
     // Select work items dialog

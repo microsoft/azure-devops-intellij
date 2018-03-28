@@ -16,7 +16,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
@@ -28,7 +27,6 @@ public class FeedbackForm {
     private JTextArea comment;
     private JLabel commentLabel;
     private Hyperlink privacyLink;
-    private JTextField email;
     private JPanel contentPanel;
     private JScrollPane commentScrollPane;
     private WrappingLabel thankYouLabel;
@@ -41,10 +39,6 @@ public class FeedbackForm {
         return comment.getText();
     }
 
-    public String getEmail() {
-        return email.getText();
-    }
-
     public void addActionListener(final ActionListener listener) {
         // Hook up listener to all actions
         privacyLink.addActionListener(listener);
@@ -54,10 +48,6 @@ public class FeedbackForm {
         ensureInitialized(smile);
         contentPanel.setPreferredSize(new Dimension(JBUI.scale(400), JBUI.scale(300)));
         return contentPanel;
-    }
-
-    public JComponent getEmailComponent() {
-        return email;
     }
 
     private void ensureInitialized(final boolean smile) {
@@ -76,7 +66,6 @@ public class FeedbackForm {
             // Make sure the comment field has a reasonable height, margins, and font
             SwingHelper.setPreferredHeight(commentScrollPane, 100);
             commentScrollPane.setMinimumSize(new Dimension(JBUI.scale(200), JBUI.scale(70)));
-            SwingHelper.copyFontAndMargins(comment, email);
             // Right now the limit on properties is 1024 in AppInsights
             SwingHelper.setMaxCharLimit(comment, 1024);
 
@@ -104,18 +93,13 @@ public class FeedbackForm {
      */
     private void $$$setupUI$$$() {
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(7, 1, new Insets(0, 0, 0, 0), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         commentLabel = new JLabel();
         this.$$$loadLabelText$$$(commentLabel, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackDialog.CommentLabel.Smile"));
         contentPanel.add(commentLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         privacyLink = new Hyperlink();
         this.$$$loadLabelText$$$(privacyLink, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackForm.PrivacyLink"));
-        contentPanel.add(privacyLink, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackForm.EmailLabel"));
-        contentPanel.add(label1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        email = new JTextField();
-        contentPanel.add(email, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        contentPanel.add(privacyLink, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         commentScrollPane = new JScrollPane();
         contentPanel.add(commentScrollPane, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         comment = new JTextArea();
@@ -124,12 +108,11 @@ public class FeedbackForm {
         commentScrollPane.setViewportView(comment);
         thankYouLabel = new WrappingLabel();
         thankYouLabel.setText(ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackForm.ThankYouLabel"));
-        contentPanel.add(thankYouLabel, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label2 = new JLabel();
-        this.$$$loadLabelText$$$(label2, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackDialog.HeaderLabel"));
-        contentPanel.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        contentPanel.add(thankYouLabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label1 = new JLabel();
+        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("com/microsoft/alm/plugin/idea/ui/tfplugin").getString("FeedbackDialog.HeaderLabel"));
+        contentPanel.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         commentLabel.setLabelFor(comment);
-        label1.setLabelFor(email);
     }
 
     /**

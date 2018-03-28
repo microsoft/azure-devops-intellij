@@ -71,13 +71,11 @@ public class FeedbackAction extends AbstractAction {
         if (dialog.showAndGet()) {
             // Get comment and email and add telemetry entry
             final String comment = dialog.getComment();
-            final String email = dialog.getEmail();
             final String eventName = smile ? CMD_SEND_SMILE : CMD_SEND_FROWN;
             TfsTelemetryHelper.sendEventAsync(eventName,
                     new TfsTelemetryHelper.PropertyMapBuilder()
                             .activeServerContext()
                             .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_COMMENT, comment)
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_EMAIL, email)
                             .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_CONTEXT, feedbackContextInfo)
                             .build());
             VcsNotifier.getInstance(project).notifySuccess(
