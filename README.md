@@ -4,7 +4,7 @@ This is a plugin for working with Git and TFVC repositories on Visual Studio Tea
 and various other Jetbrains IDEs. It is supported on Linux, Mac OS X, and Windows.
 It is compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
 
-To learn more about installing and using our Team Services IntelliJ plug-in, visit: http://java.visualstudio.com/Docs/tools/intelliJ
+To learn more about installing and using our Team Services IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in
 
 ## Pre-Reqs
 1. Install JDK 8. 
@@ -171,6 +171,6 @@ Here are the steps to setup your environment:
 
 Want more information? The following resources are available to help:
 
-* <a href="http://java.visualstudio.com/Downloads/intellijplugin/Index" target="_blank">Instructions</a> on how to install the plugin
+* <a href="https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in" target="_blank">Instructions</a> on how to install the plugin
 * <a href="https://youtu.be/wSdgmQL-Zbg" target="_blank">End-to-end demo</a> video of the plugin's features
-* <a href="http://java.visualstudio.com/Docs/tools/intelliJ" target="_blank">Documentation and tutorial</a> on how to use the plugin 
+* <a href="https://docs.microsoft.com/en-us/vsts/git/create-repo-intellij" target="_blank">Documentation and tutorial</a> on how to use the plugin 
