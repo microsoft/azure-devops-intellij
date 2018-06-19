@@ -55,6 +55,10 @@ public class TfPluginBundle {
     public static final String KEY_TFVC = "Providers.TfvcCheckoutProvider";
     @NonNls
     public static final String KEY_TFVC_NOT_CONFIGURED = "Plugin.Error.TFNotConfigured";
+    @NonNls
+    public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_OPEN_SETTINGS = "Plugin.Error.TFNotConfiguredDialog.OpenSettings";
+    @NonNls
+    public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_CANCEL = "Plugin.Error.TFNotConfiguredDialog.Cancel";
 
     // Login form
     @NonNls
