@@ -3,6 +3,14 @@
  */
 
 /**
+ *This is task for update Gradle wrapper version.
+ */
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.7'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+}
+
+/**
  * settings common to ALL projects (even the root level project)
  */
 allprojects {
