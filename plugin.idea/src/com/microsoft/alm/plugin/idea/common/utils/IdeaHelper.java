@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.common.utils;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -14,6 +15,7 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.IdeFrame;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.apache.commons.lang.StringUtils;
@@ -27,6 +29,8 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+
+import static com.intellij.openapi.ui.Messages.getWarningIcon;
 
 public class IdeaHelper {
     private static final Logger logger = LoggerFactory.getLogger(IdeaHelper.class);
@@ -96,9 +100,16 @@ public class IdeaHelper {
         final String tfLocation = TfTool.getLocation();
         if (StringUtils.isEmpty(tfLocation)) {
             //TF is not configured, show warning message
-            Messages.showWarningDialog(project,
+            int result = Messages.showDialog(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_NOT_CONFIGURED),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC));
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC),
+                    new String[] {
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_NOT_CONFIGURED_DIALOG_OPEN_SETTINGS),
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_NOT_CONFIGURED_DIALOG_CANCEL)},
+                    0, getWarningIcon());
+            if (result == 0) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, TFSVcs.TFVC_NAME);
+            }
             return false;
         }
 
