@@ -16,6 +16,8 @@ import com.intellij.openapi.wm.IdeFrame;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import com.microsoft.alm.plugin.services.PropertyService;
 import git4idea.GitVcs;
 import git4idea.config.GitExecutableValidator;
 import org.apache.commons.lang.StringUtils;
@@ -97,8 +99,13 @@ public class IdeaHelper {
      * @return true if TF is configured, false if TF is not correctly configured
      */
     public static boolean isTFConfigured(@NotNull final Project project) {
-        final String tfLocation = TfTool.getLocation();
+        String tfLocation = TfTool.getLocation();
         if (StringUtils.isEmpty(tfLocation)) {
+            tfLocation = TfTool.tryDetectTf();
+            if (!StringUtils.isEmpty(tfLocation)) {
+                PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfLocation);
+                return true;
+            }
             //TF is not configured, show warning message
             int result = Messages.showDialog(project,
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_NOT_CONFIGURED),
