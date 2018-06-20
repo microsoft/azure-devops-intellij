@@ -102,6 +102,8 @@ project(":plugin") {
 project(":plugin.idea") {
     apply plugin: 'org.jetbrains.intellij'
 
+    version buildNumber
+
     intellij {
         version = idea_version
         plugins = ['git4idea']
@@ -115,27 +117,17 @@ project(":plugin.idea") {
 
     jar {
         baseName 'com.microsoft.alm.plugin.idea'
+        // For build plugin without developer telemetry -Dorg.gradle.project.developer_telemetry=false
+        if (developer_telemetry != "true") {
+            exclude 'telemetry/'
+        }
         from('.') {
             include 'META-INF/plugin.xml'
         }
     }
 
-    task delTestTelemetryPropFile << {
-        delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
-    }
-
-    /**
-     * Create the plugin zip
-     */
-    task zip(type: Zip, dependsOn: ['test', 'check']) {
-        into('com.microsoft.alm/lib') {
-            from configurations.runtime
-            from configurations.runtime.allArtifacts.files
-        }
-    }
-
     task showVersion() {
-        println("version = " + version)
+        println("version = " + buildNumber)
     }    
 }
 
@@ -156,16 +148,6 @@ project(":L2Tests") {
     jar {
         baseName 'com.microsoft.alm.L2'
     }
-    
-    /**
-     * The test settings for L2Tests setup up the environment to use the headless IntelliJ test framework.
-     * No other tests require these settings.
-     */
-    // TODO: Enable tests with IDEA Sdk
-//    test {
-//        jvmArgs "-Xmx2048M", "-Didea.config.path=$idea\\test-config", "-Didea.system.path=$idea\\test-system", "-Didea.test.group=ALL_EXCLUDE_DEFINED", "-Didea.launcher.port=7532", "-Didea.launcher.bin.path=$idea"
-//        workingDir "$idea"
-//    }
 }
 
 
