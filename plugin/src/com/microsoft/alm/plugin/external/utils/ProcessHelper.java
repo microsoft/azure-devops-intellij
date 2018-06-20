@@ -16,10 +16,17 @@ public class ProcessHelper {
         // Disable any telemetry that the tool may initiate
         pb.environment().put("TF_NOTELEMETRY", "TRUE");
         pb.environment().put("TF_ADDITIONAL_JAVA_ARGS", "-Duser.country=US -Duser.language=en");
+        pb.environment().put("PATH", getPatchedPathWithCurrentJavaBinLocation());
 
         if (StringUtils.isNotEmpty(workingDirectory)) {
             pb.directory(new File(workingDirectory));
         }
         return pb.start();
+    }
+
+    private static String getPatchedPathWithCurrentJavaBinLocation() {
+        String currentJavaHome = System.getProperty("java.home");
+        String originPathVariable = System.getenv("PATH");
+        return originPathVariable + File.pathSeparator + currentJavaHome + File.separator + "bin" + File.separator;
     }
 }

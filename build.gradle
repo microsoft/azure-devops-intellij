@@ -2,20 +2,26 @@
  * This is the main gradle build file for the VSO IntelliJ Plugin.
  */
 
+plugins {
+    id 'org.jetbrains.intellij' version '0.3.4' apply false
+}
+
+/**
+ *This is task for update Gradle wrapper version.
+ */
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.7'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+}
+
 /**
  * settings common to ALL projects (even the root level project)
  */
 allprojects {
     configurations {
-        ideaSdkLibs
-        git4ideaLibs
         codeAnalysisLibs
-        toolsLib
     }
 
-    def pluginXml = (new XmlParser()).parse("plugin.idea/META-INF/plugin.xml")
-    version = pluginXml.version.text()
-    
     repositories {
         mavenCentral()
         maven {
@@ -46,8 +52,6 @@ subprojects {
     
     sourceSets {
         main {
-            compileClasspath += configurations.ideaSdkLibs
-            compileClasspath += configurations.git4ideaLibs
             compileClasspath += configurations.codeAnalysisLibs
 
             java {
@@ -60,13 +64,8 @@ subprojects {
         }
 
         test {
-            compileClasspath += configurations.ideaSdkLibs
-            compileClasspath += configurations.git4ideaLibs
             compileClasspath += configurations.codeAnalysisLibs
-            runtimeClasspath += configurations.ideaSdkLibs
-            runtimeClasspath += configurations.git4ideaLibs
             runtimeClasspath += configurations.codeAnalysisLibs
-            runtimeClasspath += configurations.toolsLib
 
             java {
                 srcDir 'test'
@@ -85,6 +84,12 @@ project(":common") {
 }
 
 project(":plugin") {
+    apply plugin: 'org.jetbrains.intellij'
+
+    intellij {
+        version = idea_version
+    }
+
     dependencies {
         compile project(':common')
     }
@@ -95,6 +100,16 @@ project(":plugin") {
 }
 
 project(":plugin.idea") {
+    apply plugin: 'org.jetbrains.intellij'
+
+    version buildNumber
+
+    intellij {
+        version = idea_version
+        plugins = ['git4idea']
+        pluginName = 'com.microsoft.vso.idea'
+    }
+
     dependencies {
         compile project(':plugin')
         testCompile project(':plugin').sourceSets.test.output
@@ -102,31 +117,28 @@ project(":plugin.idea") {
 
     jar {
         baseName 'com.microsoft.alm.plugin.idea'
+        // For build plugin without developer telemetry -Dorg.gradle.project.developer_telemetry=false
+        if (developer_telemetry != "true") {
+            exclude 'telemetry/'
+        }
         from('.') {
             include 'META-INF/plugin.xml'
         }
     }
 
-    task delTestTelemetryPropFile << {
-        delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
-    }
-
-    /**
-     * Create the plugin zip
-     */
-    task zip(type: Zip, dependsOn: ['test', 'check']) {
-        into('com.microsoft.alm/lib') {
-            from configurations.runtime
-            from configurations.runtime.allArtifacts.files
-        }
-    }
-
     task showVersion() {
-        println("version = " + version)
+        println("version = " + buildNumber)
     }    
 }
 
 project(":L2Tests") {
+    apply plugin: 'org.jetbrains.intellij'
+
+    intellij {
+        version = idea_version
+        plugins = ['git4idea']
+    }
+
     dependencies {
         compile project(':plugin.idea')
         testCompile project(':plugin').sourceSets.test.output
@@ -136,15 +148,6 @@ project(":L2Tests") {
     jar {
         baseName 'com.microsoft.alm.L2'
     }
-    
-    /**
-     * The test settings for L2Tests setup up the environment to use the headless IntelliJ test framework.
-     * No other tests require these settings.
-     */
-    test {
-        jvmArgs "-Xmx2048M", "-Didea.config.path=$idea\\test-config", "-Didea.system.path=$idea\\test-system", "-Didea.test.group=ALL_EXCLUDE_DEFINED", "-Didea.launcher.port=7532", "-Didea.launcher.bin.path=$idea"
-        workingDir "$idea"
-    } 
 }
 
 
@@ -153,18 +156,11 @@ project(":L2Tests") {
  */
 subprojects {
     dependencies {
-        def javaHome = System.getenv()['JAVA_HOME']
-        def toolsLocation = "$javaHome/lib"    
-    
-        ideaSdkLibs fileTree(dir: "$ideaSdk", include: '*.jar')
-        git4ideaLibs fileTree(dir: "$git4idea", include: '*.jar')
         codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
-        toolsLib fileTree(dir: toolsLocation, include: 'tools.jar')
-
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
         compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.10'
-	compile group: 'com.google.guava', name: 'guava', version: '19.0'
+        compile group: 'com.google.guava', name: 'guava', version: '19.0'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1') {
@@ -183,14 +179,16 @@ subprojects {
             /* Exclude default SLF4J dependency (would be version 1.7.19 as of this writing) */
             exclude group: 'org.slf4j', module: 'slf4j-api'
         }
+        compileOnly group: 'commons-lang', name: 'commons-lang', version: '2.4'
+        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
         testCompile group: 'junit', name: 'junit', version: '4.12'
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
         testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.6.3'
-        
-        compile files('resources/externals')
+        testCompile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+        testCompile group: 'commons-lang', name: 'commons-lang', version: '2.4'
     }   
 
     test {
@@ -201,43 +199,6 @@ subprojects {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
 
-    /**
-     * Dependencies management for Intellij project
-     *
-     * The Intellij project expects all dependencies are stored in the 'lib' folder
-     */
-    task cleanLibFolder << {
-        delete 'lib'
-    }
-
-    /**
-     * TODO: need to separate the dependencies per subproject to avoid accidental coupling 
-     */
-    task copyDependencies(type: Copy, dependsOn: ['copyDependenciesSource', 'copyTestDependencies']) {
-        from configurations.compile
-        into 'lib/classes'
-    }
-
-    task copyTestDependencies(type: Copy) {
-        from configurations.testCompile - configurations.compile
-        into 'lib/testclasses'
-    }
-
-    task copyDependenciesSource(type: Copy, dependsOn: 'cleanLibFolder') {
-        def sources = configurations.compile.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
-            project.dependencies.create([
-                    group     : artifact.moduleVersion.id.group,
-                    name      : artifact.moduleVersion.id.name,
-                    version   : artifact.moduleVersion.id.version,
-                    classifier: 'sources'
-            ])
-        }
-        from configurations.detachedConfiguration(sources as Dependency[])
-                .resolvedConfiguration.lenientConfiguration.getFiles(Specs.SATISFIES_ALL)
-        include '*-sources.jar'
-        into file( 'lib/src' )
-    }
-    
     tasks.withType(FindBugs) {
         ignoreFailures = true
         reports {
