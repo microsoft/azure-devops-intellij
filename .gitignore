@@ -6,3 +6,4 @@ build
 *.iml
 *.DS_Store
 L2Tests/lib
+out/
