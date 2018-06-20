@@ -112,6 +112,9 @@ public class ProjectConfigurableForm {
                 } catch (ToolException e) {
                     Messages.showErrorDialog(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
                     downloadLinkPane.setVisible(true);
+                } catch (RuntimeException e) {
+                    Messages.showErrorDialog(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLinkPane.setVisible(true);
                 }
 
             }
@@ -183,7 +186,7 @@ public class ProjectConfigurableForm {
     }
 
     public boolean isModified() {
-        return (PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_TF_HOME) != getCurrentExecutablePath());
+        return !PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath());
     }
 
     public void reset() {
