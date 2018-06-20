@@ -20,13 +20,15 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.intellij.openapi.util.Condition;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.HyperlinkLabel;
+import com.intellij.ui.components.JBTextField;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
@@ -36,13 +38,11 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -62,6 +62,8 @@ public class ProjectConfigurableForm {
     private JButton testExeButton;
     private TextFieldWithBrowseButton tfExeField;
     private JLabel pathLabel;
+    private HyperlinkLabel downloadLink;
+    private JPanel downloadLinkPane;
     private String originalTfLocation = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
@@ -78,11 +80,23 @@ public class ProjectConfigurableForm {
         passwordLabel.setVisible(false);
         checkinPolicyLabel.setVisible(false);
         noteLabel.setVisible(false);
-
+        downloadLinkPane.setVisible(false);
+        downloadLink.setHyperlinkText(
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_LINK_LABEL),
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_LINK_TEXT), "");
+        downloadLink.setHyperlinkTarget(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_LINK_URL));
+        downloadLink.setToolTipText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_LINK_URL));
         pathLabel.setText(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_DESCRIPTION));
         tfExeField.addBrowseFolderListener(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_DESCRIPTION), project,
-                FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor());
+                new FileChooserDescriptor(true, false, false ,false, false, false)
+                        .withFileFilter(new Condition<VirtualFile>() {
+                            @Override
+                            public boolean value(VirtualFile virtualFile) {
+                                return virtualFile.getName().equalsIgnoreCase(SystemInfo.isWindows ? "tf.cmd" : "tf");
+                            }
+                        })
+        );
 
         testExeButton.addActionListener(new ActionListener() {
             @Override
@@ -91,10 +105,13 @@ public class ProjectConfigurableForm {
                 try {
                     TfTool.checkVersion();
                     Messages.showInfoMessage(myContentPane, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_FOUND_EXE), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLinkPane.setVisible(false);
                 } catch (ToolVersionException e) {
                     Messages.showWarningDialog(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLinkPane.setVisible(true);
                 } catch (ToolException e) {
                     Messages.showErrorDialog(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(e), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLinkPane.setVisible(true);
                 }
 
             }
@@ -155,6 +172,9 @@ public class ProjectConfigurableForm {
         tfLocation = StringUtils.isEmpty(tfLocation) ? TfTool.tryDetectTf() : tfLocation;
         // if no path was found then default to an empty string
         originalTfLocation = StringUtils.isEmpty(tfLocation) ? StringUtils.EMPTY : tfLocation;
+        if (StringUtils.isEmpty(originalTfLocation)) {
+            downloadLinkPane.setVisible(true);
+        }
         tfExeField.setText(originalTfLocation);
     }
 
@@ -171,94 +191,15 @@ public class ProjectConfigurableForm {
         tfExeField.setText(originalTfLocation);
     }
 
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// >>> IMPORTANT!! <<<
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
+    private void createUIComponents() {
+        JBTextField textField = new JBTextField();
+        textField.getEmptyText().setText(SystemInfo.isWindows
+                ? TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_WIN)
+                : TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_NOWIN));
+        tfExeField = new TextFieldWithBrowseButton(textField);
     }
 
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * >>> IMPORTANT!! <<<
-     * DO NOT edit this method OR call it in your code!
-     *
-     * @noinspection ALL
-     */
-    private void $$$setupUI$$$() {
-        myContentPane = new JPanel();
-        myContentPane.setLayout(new GridLayoutManager(5, 3, new Insets(0, 0, 0, 0), -1, -1));
-        serverLabel = new JPanel();
-        serverLabel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
-        myContentPane.add(serverLabel, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        serverLabel.setBorder(BorderFactory.createTitledBorder("Servers and workspaces"));
-        myManageButton = new JButton();
-        myManageButton.setText("Manage...");
-        myManageButton.setMnemonic('M');
-        myManageButton.setDisplayedMnemonicIndex(0);
-        serverLabel.add(myManageButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        serverLabel.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        myUseIdeaHttpProxyCheckBox = new JCheckBox();
-        myUseIdeaHttpProxyCheckBox.setEnabled(true);
-        myUseIdeaHttpProxyCheckBox.setSelected(false);
-        myUseIdeaHttpProxyCheckBox.setText("Use HTTP Proxy settings");
-        myUseIdeaHttpProxyCheckBox.setMnemonic('U');
-        myUseIdeaHttpProxyCheckBox.setDisplayedMnemonicIndex(0);
-        serverLabel.add(myUseIdeaHttpProxyCheckBox, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        passwordLabel = new JPanel();
-        passwordLabel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        myContentPane.add(passwordLabel, new GridConstraints(2, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        passwordLabel.setBorder(BorderFactory.createTitledBorder("Passwords"));
-        final Spacer spacer2 = new Spacer();
-        passwordLabel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        myResetPasswordsButton = new JButton();
-        myResetPasswordsButton.setText("Reset Saved Passwords");
-        myResetPasswordsButton.setMnemonic('R');
-        myResetPasswordsButton.setDisplayedMnemonicIndex(0);
-        passwordLabel.add(myResetPasswordsButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        checkinPolicyLabel = new JPanel();
-        checkinPolicyLabel.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
-        myContentPane.add(checkinPolicyLabel, new GridConstraints(3, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        checkinPolicyLabel.setBorder(BorderFactory.createTitledBorder("Checkin policies compatibility"));
-        myReportNotInstalledPoliciesCheckBox = new JCheckBox();
-        myReportNotInstalledPoliciesCheckBox.setText("Warn about not installed policies");
-        myReportNotInstalledPoliciesCheckBox.setMnemonic('W');
-        myReportNotInstalledPoliciesCheckBox.setDisplayedMnemonicIndex(0);
-        checkinPolicyLabel.add(myReportNotInstalledPoliciesCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        noteLabel = new JLabel();
-        noteLabel.setText("(Note: these settings may be overridden for individual team project)");
-        checkinPolicyLabel.add(noteLabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myTFSCheckBox = new JCheckBox();
-        myTFSCheckBox.setText("Evaluate Team Explorer policies");
-        myTFSCheckBox.setMnemonic('T');
-        myTFSCheckBox.setDisplayedMnemonicIndex(9);
-        checkinPolicyLabel.add(myTFSCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myStatefulCheckBox = new JCheckBox();
-        myStatefulCheckBox.setText("Evaluate Teamprise policies");
-        myStatefulCheckBox.setMnemonic('E');
-        myStatefulCheckBox.setDisplayedMnemonicIndex(10);
-        checkinPolicyLabel.add(myStatefulCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        pathLabel = new JLabel();
-        pathLabel.setText("Path to tf executable:");
-        myContentPane.add(pathLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        tfExeField = new TextFieldWithBrowseButton();
-        myContentPane.add(tfExeField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        testExeButton = new JButton();
-        testExeButton.setText("Test");
-        myContentPane.add(testExeButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        myContentPane.add(spacer3, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    public JComponent $$$getRootComponent$$$() {
-        return myContentPane;
-    }
-
-    //    public boolean useProxy() {
+//    public boolean useProxy() {
 //        return myUseIdeaHttpProxyCheckBox.isSelected();
 //    }
 //

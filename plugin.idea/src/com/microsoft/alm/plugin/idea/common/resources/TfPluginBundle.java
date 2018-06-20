@@ -774,6 +774,16 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_SETTINGS_DESCRIPTION = "Tfvc.Settings.Description";
     @NonNls
     public static final String KEY_TFVC_SETTINGS_FOUND_EXE = "Tfvc.Settings.FoundExe";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_LINK_LABEL = "Tfvc.Settings.LinkLabel";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_LINK_TEXT = "Tfvc.Settings.LinkText";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_LINK_URL = "Tfvc.Settings.LinkUrl";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_WIN = "Tfvc.Settings.Path.PlaceHolder.Win";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_NOWIN = "Tfvc.Settings.Path.PlaceHolder.NoWin";
 
     //TFVC Edit Workspace Action
     @NonNls
