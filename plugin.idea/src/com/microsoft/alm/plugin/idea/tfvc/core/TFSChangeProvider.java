@@ -31,10 +31,13 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.StatusCommand;
+import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -110,6 +113,15 @@ public class TFSChangeProvider implements ChangeProvider {
                 // TODO: add the ability to pass multiple roots to the command line
                 final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
                 changes = command.runSynchronously();
+            } catch (final ToolEulaNotAcceptedException e) {
+                logger.error("EULA not accepted");
+                IdeaHelper.runOnUIThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        EULADialog.showDialogIfNeeded(myProject);
+                    }
+                });
+                return;
             } catch (final Throwable t) {
                 logger.warn("Failed to get changes from command line. root=" + root.getPath(), t);
                 changes = Collections.emptyList();
