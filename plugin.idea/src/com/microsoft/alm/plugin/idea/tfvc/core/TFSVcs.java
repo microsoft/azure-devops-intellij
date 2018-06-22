@@ -324,7 +324,7 @@ public class TFSVcs extends AbstractVcs {
                                             @Override
                                             protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
                                                 if (SETTINGS_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
-                                                    ShowSettingsUtil.getInstance().showSettingsDialog(myProject, getConfigurable().getDisplayName());
+                                                    ShowSettingsUtil.getInstance().showSettingsDialog(myProject, TFVC_NAME);
                                                 } else {
                                                     BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
                                                 }
