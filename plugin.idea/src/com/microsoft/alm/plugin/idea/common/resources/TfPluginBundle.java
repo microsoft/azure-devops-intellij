@@ -784,6 +784,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_WIN = "Tfvc.Settings.Path.PlaceHolder.Win";
     @NonNls
     public static final String KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_NOWIN = "Tfvc.Settings.Path.PlaceHolder.NoWin";
+    public static final String KEY_TFVC_SETTINGS_PATH_EMPTY = "Tfvc.Settings.Path.Empty";
+    public static final String KEY_TFVC_SETTINGS_PATH_NOT_FOUND = "Tfvc.Settings.Path.NotFound";
 
     //TFVC Edit Workspace Action
     @NonNls

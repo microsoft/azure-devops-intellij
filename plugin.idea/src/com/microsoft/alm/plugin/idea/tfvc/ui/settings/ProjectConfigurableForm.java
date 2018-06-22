@@ -45,6 +45,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 public class ProjectConfigurableForm {
     private JButton myManageButton;
@@ -101,6 +102,22 @@ public class ProjectConfigurableForm {
         testExeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
+                String tfCmdPath = tfExeField.getText();
+                if (StringUtils.isEmpty(tfCmdPath)) {
+                    Messages.showErrorDialog(myContentPane,
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_EMPTY),
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLink.setVisible(true);
+                    return;
+                }
+                File tfCmdFile = new File(tfCmdPath);
+                if (!tfCmdFile.exists() || !tfCmdFile.isFile()) {
+                    Messages.showErrorDialog(myContentPane,
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_NOT_FOUND, tfCmdPath),
+                            TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+                    downloadLink.setVisible(true);
+                    return;
+                }
                 PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
                 try {
                     TfTool.checkVersion();
