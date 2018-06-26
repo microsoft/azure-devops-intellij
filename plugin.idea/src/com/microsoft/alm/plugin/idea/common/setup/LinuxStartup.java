@@ -32,7 +32,7 @@ public class LinuxStartup {
         try {
             final File script = new File(IdeaHelper.getResourcePath(LinuxStartup.class.getResource("/"), SCRIPT_NAME, LINUX_DIR));
             IdeaHelper.setExecutablePermissions(script);
-            createDesktopFile(script, new File(USER_HOME, VSOI_DESKTOP_FILE_PATH));
+            createDesktopFileAndUpdateDatabase(script, new File(USER_HOME, VSOI_DESKTOP_FILE_PATH));
         } catch (IOException e) {
             logger.warn("An IOException was caught while trying to run the Linux startup steps: {}", e.getMessage());
         } catch (InterruptedException e) {
@@ -43,12 +43,12 @@ public class LinuxStartup {
     }
 
     /**
-     * Create .desktop file to register the protocol handler
+     * Create .desktop file to register the protocol handler and update desktop database
      *
      * @param scriptFile
      * @throws IOException
      */
-    protected static void createDesktopFile(final File scriptFile, final File desktopFile) throws IOException, InterruptedException {
+    protected static void createDesktopFileAndUpdateDatabase(final File scriptFile, final File desktopFile) throws IOException, InterruptedException {
         final String desktopFileContent =
                 "[Desktop Entry]\n" +
                 "Name=VSTS Protocol Handler\n" +
