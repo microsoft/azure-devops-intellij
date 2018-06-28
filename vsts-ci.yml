@@ -1,11 +1,9 @@
 resources:
-- repo: self
-  clean: true
+- clean: true
 queue:
   name: Java
   condition: succeeded()
   demands: java
-
 
 steps:
 - task: CmdLine@1
