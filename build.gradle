@@ -130,7 +130,7 @@ project(":plugin.idea") {
         println("version = " + buildNumber)
     }
 
-    task zip(dependsOn: ['buildPlugin']) {}
+    task zip(dependsOn: ['buildPlugin','test']) {}
 }
 
 project(":L2Tests") {
