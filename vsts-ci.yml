@@ -1,0 +1,21 @@
+resources:
+- repo: self
+  clean: true
+queue:
+  name: Java
+  condition: succeeded()
+  demands: java
+
+
+steps:
+- task: CmdLine@1
+  displayName: Run printenv
+  inputs:
+    filename: printenv
+
+- task: Gradle@1
+  displayName: Gradle build (zip)
+  inputs:
+    tasks: zip
+    testResultsFiles: '**/TEST-*.xml'
+    jdkVersionOption: 1.8
