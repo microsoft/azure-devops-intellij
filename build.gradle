@@ -128,7 +128,9 @@ project(":plugin.idea") {
 
     task showVersion() {
         println("version = " + buildNumber)
-    }    
+    }
+
+    task zip(dependsOn: ['buildPlugin']) {}
 }
 
 project(":L2Tests") {
