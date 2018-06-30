@@ -16,11 +16,11 @@ import java.io.IOException;
 public class LinuxStartupTest extends IdeaAbstractTest {
 
     @Test
-    public void testCreateDesktopFile() throws IOException {
+    public void testCreateDesktopFile() throws IOException, InterruptedException {
         File mockScriptFile = Mockito.mock(File.class);
         Mockito.when(mockScriptFile.getAbsolutePath()).thenReturn("/test/path/to/script/vsts.sh");
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        File desktopFile = LinuxStartup.createDesktopFile(mockScriptFile, new File(tmpDir, "vsts-test.desktop"));
+        File desktopFile = LinuxStartup.createDesktopFileAndUpdateDatabase(mockScriptFile, new File(tmpDir, "vsts-test.desktop"));
         Assert.assertTrue(desktopFile.exists());
 
         BufferedReader br = new BufferedReader(new FileReader(desktopFile));

@@ -48,7 +48,7 @@ public class LinuxStartup {
      * @param scriptFile
      * @throws IOException
      */
-    protected static void createDesktopFileAndUpdateDatabase(final File scriptFile, final File desktopFile) throws IOException, InterruptedException {
+    protected static File createDesktopFileAndUpdateDatabase(final File scriptFile, final File desktopFile) throws IOException, InterruptedException {
         final String desktopFileContent =
                 "[Desktop Entry]\n" +
                 "Name=VSTS Protocol Handler\n" +
@@ -62,7 +62,7 @@ public class LinuxStartup {
                 "Encoding=UTF-8\n" +
                 "Categories=Network;Application;";
         if (isFileUpToDate(desktopFile, desktopFileContent)) {
-            return;
+            return desktopFile;
         }
 
         writeFile(desktopFile, desktopFileContent);
@@ -71,6 +71,8 @@ public class LinuxStartup {
         final Process process = Runtime.getRuntime().exec(UPDATE_LOCAL_DESKTOP_DB_CMD);
         process.waitFor();
         logger.debug("The return code for executing update-desktop-database was {}", process.exitValue());
+
+        return desktopFile;
     }
 
 
