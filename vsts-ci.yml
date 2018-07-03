@@ -7,6 +7,25 @@ steps:
 - task: Gradle@1
   displayName: Gradle build (zip)
   inputs:
+    options: '--info --scan'
     tasks: zip
     testResultsFiles: '**/TEST-*.xml'
     jdkVersionOption: 1.8
+
+- task: CopyPublishBuildArtifacts@1
+  displayName: "Publish Artifact: $(build.buildNumber)"
+  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
+  inputs:
+    CopyRoot: 'plugin.idea/build/distributions'
+    Contents: '*.zip'
+    ArtifactName: '$(build.buildNumber)'
+    ArtifactType: Container
+
+- task: CopyPublishBuildArtifacts@1
+  displayName: "Publish Artifact: $(build.buildNumber)-reports"
+  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
+  inputs:
+    CopyRoot: 'plugin.idea/build/reports'
+    Contents: '*'
+    ArtifactName: '$(build.buildNumber)-reports'
+    ArtifactType: Container
