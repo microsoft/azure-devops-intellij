@@ -68,9 +68,17 @@ public class LinuxStartup {
         writeFile(desktopFile, desktopFileContent);
 
         // Run process to update local desktop database to include the new protocol handler
-        final Process process = Runtime.getRuntime().exec(UPDATE_LOCAL_DESKTOP_DB_CMD);
-        process.waitFor();
-        logger.debug("The return code for executing update-desktop-database was {}", process.exitValue());
+        try {
+            final Process process = Runtime.getRuntime().exec(UPDATE_LOCAL_DESKTOP_DB_CMD);
+            process.waitFor();
+            final int exitCode = process.exitValue();
+            if (exitCode != 0) {
+                throw new RuntimeException("Non-zero exit code from " + UPDATE_LOCAL_DESKTOP_DB_CMD + ": " + exitCode);
+            }
+        } catch (Throwable t) {
+            logger.warn("Unable to update local desktop database via " +
+                    UPDATE_LOCAL_DESKTOP_DB_CMD + ": " + t.getMessage(), t);
+        }
 
         return desktopFile;
     }
