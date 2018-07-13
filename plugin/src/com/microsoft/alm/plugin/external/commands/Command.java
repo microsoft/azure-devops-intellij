@@ -229,6 +229,9 @@ public abstract class Command<T> {
         try {
             Throwable error = syncError.get();
             if (error != null) {
+                if (error.getMessage().contains("tf eula")) {
+                    throw new ToolEulaNotAcceptedException(error);
+                }
                 if (error instanceof RuntimeException) {
                     throw (RuntimeException) error;
                 } else {

@@ -34,6 +34,7 @@ import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.CreateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.DeleteWorkspaceCommand;
+import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceAlreadyExistsException;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -44,12 +45,14 @@ import com.microsoft.alm.plugin.idea.common.ui.checkout.VcsSpecificCheckoutModel
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -76,6 +79,15 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                     final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
                             context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
                     command.runSynchronously();
+                }catch (final ToolEulaNotAcceptedException e) {
+                    logger.error("EULA not accepted");
+                    IdeaHelper.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            EULADialog.showDialogIfNeeded(project);
+                        }
+                    });
+                    return;
                 } catch (final WorkspaceAlreadyExistsException e) {
                     logger.warn("Error creating workspace: " + LocalizationServiceImpl.getInstance().getExceptionMessage(e));
                     // TODO: allow user to change name in the flow instead of starting over
