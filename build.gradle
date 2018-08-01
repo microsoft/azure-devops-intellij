@@ -129,6 +129,10 @@ project(":plugin.idea") {
     task showVersion() {
         println("version = " + buildNumber)
     }
+    
+    task delTestTelemetryPropFile << {
+        delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
+    }
 
     task zip(dependsOn: ['buildPlugin','test']) {}
 }
