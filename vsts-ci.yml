@@ -8,7 +8,7 @@ steps:
   displayName: Gradle build (zip)
   inputs:
     options: '--info --scan'
-    tasks: zip
+    tasks: clean :plugin.idea:prepRelease zip
     testResultsFiles: '**/TEST-*.xml'
     jdkVersionOption: 1.8
 
