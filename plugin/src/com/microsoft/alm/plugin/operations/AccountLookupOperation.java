@@ -142,7 +142,7 @@ public class AccountLookupOperation extends Operation {
             rootNode = objectMapper.readTree(response);
         } catch (IOException e) {
             logger.error("Could not parse Account response", e);
-            return accountUris;
+            throw new TeamServicesException(TeamServicesException.KEY_VSO_AUTH_FAILED, e);
         }
 
         // Loop thru account results and add them to the list
