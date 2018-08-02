@@ -222,6 +222,13 @@ public class UrlHelperTest {
         final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myaccount");
         assertEquals(accountUri, inDomainCollectionUri);
 
+        //Azure accounts
+        final URI azureUri = URI.create("https://azure.com/acct1");
+        assertEquals(azureUri, UrlHelper.getCollectionURI(azureUri, "DefaultCollection"));
+
+        final URI azureOrgUri = URI.create("https://org.azure.com/acct1");
+        assertEquals(azureOrgUri, UrlHelper.getCollectionURI(azureOrgUri, "DefaultCollection"));
+
         //onprem server
         final URI serverUri = URI.create("http://myserver:8080/tfs");
 
@@ -305,5 +312,66 @@ public class UrlHelperTest {
         final URI result = UrlHelper.getTfvcAnnotateURI(collection, projectName, filePath);
         assertEquals("https://server:8081/tfs/DefaultCollection/Project%20Name/_versionControl/?path=%24%2Fpath%2Fto%2Fthe%2Ffile.txt&_a=contents&annotate=true&hideComments=true",
                 result.toString());
+    }
+
+    @Test
+    public void testIsOrganizationUrl() {
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/DefaultCollection"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://www.google.com/"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://azure.com/account"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://AZURE.COM/ACCOUNT"));
+        assertEquals(true, UrlHelper.isOrganizationUrl( "https://msft.azure.com/account"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "not a url"));
+    }
+
+    @Test
+    public void testIsOrganizationUri() {
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/DefaultCollection")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://www.google.com/")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://azure.com/account")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://AZURE.COM/ACCOUNT")));
+        assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://msft.azure.com/account")));
+    }
+
+    @Test
+    public void testIsOrganizationHost() {
+        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "www.google.com"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "azure.com"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "AZURE.COM"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "msft.azure.com"));
+        assertEquals(true, UrlHelper.isOrganizationHost( "msft.azure.COM"));
+    }
+
+    @Test
+    public void testGetAccountFromOrganization() {
+        assertEquals("account", UrlHelper.getAccountFromOrganization( "https://azure.com/account"));
+        assertEquals("ACCOUNT", UrlHelper.getAccountFromOrganization( "https://AZURE.COM/ACCOUNT"));
+        assertEquals("account", UrlHelper.getAccountFromOrganization( "https://msft.azure.com/account"));
+        // the below does not look correct, but is here to capture current behavior of other functions
+        // in code this result will fail later on when we attempt to make a request
+        assertEquals("not a url", UrlHelper.getAccountFromOrganization( "not a url"));
+    }
+
+    @Test
+    public void testGetAccountFromOrganizationUri() {
+        assertEquals("account", UrlHelper.getAccountFromOrganizationUri( URI.create("https://azure.com/account")));
+        assertEquals("ACCOUNT", UrlHelper.getAccountFromOrganizationUri( URI.create("https://AZURE.COM/ACCOUNT")));
+        assertEquals("account", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.azure.com/account")));
+        assertEquals("", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.cazure.com/")));
+        assertEquals("", UrlHelper.getAccountFromOrganizationUri( URI.create("https://msft.azure.com")));
+    }
+
+    @Test
+    public void testHaveSameAccount() {
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("https://azure.com/account/blah"), URI.create("https://azure.com/account/blah2")));
+        assertEquals(false, UrlHelper.haveSameAccount( URI.create("https://azure.com/account1/blah"), URI.create("https://azure.com/account2/blah2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("http://localhost:8080/test"), URI.create("http://localhost:8080/test2")));
+        assertEquals(false, UrlHelper.haveSameAccount( URI.create("http://localhost:8080/test"), URI.create("http://localhost:5080/test2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("https://AZURE.COM/account/blah"), URI.create("https://azure.com/account/blah2")));
+        assertEquals(true, UrlHelper.haveSameAccount( URI.create("http://LOCALHOST:8080/test"), URI.create("http://localhost:8080/test2")));
     }
 }

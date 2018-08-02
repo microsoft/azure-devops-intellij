@@ -124,10 +124,11 @@ public abstract class LoginPageModelImpl extends AbstractModel implements LoginP
                 // no slash, not "Microsoft Account" and does not contain visualstudio.com or tfsallin.net
                 // means it must just be a on-premise TFS server name, so add all the normal stuff
                 newServerName = String.format(DEFAULT_SERVER_FORMAT, serverName);
-            } else if (!StringUtils.contains(serverName, UrlHelper.URL_SEPARATOR)
-                    && (StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_VSO) || StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN))) {
-                //no slash and contains visualstudio.com or tfsallin.net
-                // means it must be a VSTS account
+            } else if ((!StringUtils.contains(serverName, UrlHelper.URL_SEPARATOR)
+                    && (StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_VSO) ||
+                        StringUtils.containsIgnoreCase(serverName, UrlHelper.HOST_TFS_ALL_IN))) ||
+                    (UrlHelper.isOrganizationUrl(String.format(DEFAULT_VSTS_ACCOUNT_FORMAT, serverName)) )) {
+                // add "https://" to VSTS accounts if it isn't provided
                 newServerName = String.format(DEFAULT_VSTS_ACCOUNT_FORMAT, serverName);
             } else {
                 newServerName = serverName;
