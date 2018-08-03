@@ -28,7 +28,6 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
-import com.intellij.ui.components.JBTextField;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
@@ -211,34 +210,6 @@ public class ProjectConfigurableForm {
         tfExeField.setText(originalTfLocation);
     }
 
-    // TODO: Find a more convenient way to avoid null ref exception in Gradle test.
-    {
-        createUIComponents();
-    }
-
-    private void createUIComponents() {
-        JBTextField textField = new JBTextField();
-        myContentPane = new JPanel();
-        serverLabel = new JPanel();
-        myManageButton = new JButton();
-        myUseIdeaHttpProxyCheckBox = new JCheckBox();
-        passwordLabel = new JPanel();
-        myResetPasswordsButton = new JButton();
-        checkinPolicyLabel = new JPanel();
-        myReportNotInstalledPoliciesCheckBox = new JCheckBox();
-        noteLabel = new JLabel();
-        myTFSCheckBox = new JCheckBox();
-        myStatefulCheckBox = new JCheckBox();
-        pathLabel = new JLabel();
-        testExeButton = new JButton();
-        downloadLinkPane = new JPanel();
-        downloadLink = new HyperlinkLabel();
-
-        textField.getEmptyText().setText(SystemInfo.isWindows
-                ? TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_WIN)
-                : TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_NOWIN));
-        tfExeField = new TextFieldWithBrowseButton(textField);
-    }
 
 //    public boolean useProxy() {
 //        return myUseIdeaHttpProxyCheckBox.isSelected();
