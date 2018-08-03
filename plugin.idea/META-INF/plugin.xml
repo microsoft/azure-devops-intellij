@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.134.0</version>
+    <version>1.147.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,9 +57,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.134.0
+      v 1.147.0
       <br />
-      Removing email field from feedback form.
+      Added support for Azure.com hosted VSTS organizational accounts.
+      Fixed issues experienced by first time users.<br />
+      Fixed issues related to use of current Java.<br />
+      Added the ability to accept the EULA from within the graphical user experience.<br />
+      Updated the base IDEA SDK used to build the plug-in.<br />
+      <br />
+      Special thanks thanks @mfilippov for contributing several fixes.
       <br />
     ]]>
     </change-notes>
