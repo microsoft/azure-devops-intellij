@@ -57,14 +57,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      v 1.147.0
+      <b>v 1.147.0</b>
       <br />
-      Added support for Azure.com hosted VSTS organizational accounts.
-      Fixed issues experienced by first time users.<br />
-      Fixed issues related to use of current Java.<br />
-      Added the ability to accept the EULA from within the graphical user experience.<br />
-      Updated the base IDEA SDK used to build the plug-in.<br />
-      <br />
+      <ul>
+        <li>Fixed issues with TFVC configuration page not displaying correctly.</li>
+        <li>Fixed issues experienced by first time users.</li>
+        <li>Fixed issues related to use of current Java.</li>
+        <li>Added the ability to accept the EULA from within the graphical user experience.</li>
+        <li>Updated the base IDEA SDK used to build the plug-in.</li>
+      </ul>
       Special thanks thanks @mfilippov for contributing several fixes.
       <br />
     ]]>
