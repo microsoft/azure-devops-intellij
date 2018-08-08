@@ -32,7 +32,8 @@ import java.util.Map;
 public class AccountLookupOperation extends Operation {
     private static final Logger logger = LoggerFactory.getLogger(AccountLookupOperation.class);
 
-    private static final String ACCOUNT_ENDPOINT = "/_apis/Accounts?memberid=%s&api-version=1.0";
+    private static final String ACCOUNT_ENDPOINT = "/_apis/Accounts?memberid=%s&api-version=%s&properties=%s";
+    private static final String TFS_API_VERSION = "5.0-preview.1";
     private static final String TFS_SERVICE_URL_PROPERTY_NAME = "Microsoft.VisualStudio.Services.Account.ServiceUrl.00025394-6065-48CA-87D9-7F5672854EF7";
 
     public static class AccountLookupResults extends ResultsImpl {
@@ -126,9 +127,8 @@ public class AccountLookupOperation extends Operation {
         // Issue account request
         final Client accountClient = vsoDeploymentContext.getClient();
         final String accountApiUrlFormat = VsoAuthenticationProvider.VSO_AUTH_URL + ACCOUNT_ENDPOINT;
-        final WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId()));
+        final WebTarget resourceTarget = accountClient.target(String.format(accountApiUrlFormat, vsoDeploymentContext.getUserId(), TFS_API_VERSION, TFS_SERVICE_URL_PROPERTY_NAME));
         final Map<String, String> parameters = new HashMap<String, String>();
-        parameters.put("api-version", "3.0-preview.1");
         parameters.put("charset", "UTF-8");
         final Invocation invocation = resourceTarget.request(
                 new MediaType("application", "json", parameters))
