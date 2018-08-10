@@ -117,10 +117,6 @@ project(":plugin.idea") {
 
     jar {
         baseName 'com.microsoft.alm.plugin.idea'
-        // For build plugin without developer telemetry -Dorg.gradle.project.developer_telemetry=false
-        if (developer_telemetry != "true") {
-            exclude 'telemetry/'
-        }
         from('.') {
             include 'META-INF/plugin.xml'
         }
@@ -128,10 +124,6 @@ project(":plugin.idea") {
 
     task showVersion() {
         println("version = " + buildNumber)
-    }
-    
-    task delTestTelemetryPropFile << {
-        delete 'resources/telemetry/com.microsoft.alm.plugin-telemetry.properties'
     }
 
     task zip(dependsOn: ['buildPlugin','test']) {}
@@ -165,7 +157,6 @@ subprojects {
         codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
-        compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '1.0.10'
         compile group: 'com.google.guava', name: 'guava', version: '19.0'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
@@ -216,7 +207,7 @@ subprojects {
     /**
      * Preparing for release build
      */
-    task prepRelease(dependsOn: [':plugin.idea:delTestTelemetryPropFile']) {
+    task prepRelease() {
     }
 
     /**

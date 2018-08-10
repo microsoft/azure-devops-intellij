@@ -29,11 +29,6 @@ public class GitCheckoutModel implements VcsSpecificCheckoutModel {
     }
 
     @Override
-    public String getTelemetryAction() {
-        return "clone";
-    }
-
-    @Override
     public String getButtonText() {
         return TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_CLONE_BUTTON);
     }

@@ -116,11 +116,6 @@ public class CheckoutModel extends PageModelImpl implements VcsSpecificCheckoutM
     }
 
     @Override
-    public String getTelemetryAction() {
-        return specificCheckoutModel.getTelemetryAction();
-    }
-
-    @Override
     public String getButtonText() {
         return specificCheckoutModel.getButtonText();
     }

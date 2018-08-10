@@ -27,7 +27,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdate;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdateResult;
 import git4idea.GitRemoteBranch;
@@ -278,13 +277,6 @@ public class CreateBranchModel extends AbstractModel {
                 VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE),
                         TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_ERRORS_BRANCH_CREATE_FAILED, errorMessage));
             }
-
-            // Add Telemetry for the create call along with it's success/failure
-            TfsTelemetryHelper.sendEventAsync(CREATE_BRANCH_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
-                    .currentOrActiveContext(context)
-                    .actionName(CREATE_BRANCH_ACTION)
-                    .success(StringUtils.isEmpty(errorMessage))
-                    .message(errorMessage).build());
 
             hasNotifiedUser = true;
         }

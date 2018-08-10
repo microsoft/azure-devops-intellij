@@ -23,7 +23,6 @@ import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
-import com.microsoft.applicationinsights.core.dependencies.googlecommon.annotations.VisibleForTesting;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -84,7 +83,6 @@ public class ManageWorkspacesModel extends AbstractModel {
      * @param selectedServer
      * @throws VcsException
      */
-    @VisibleForTesting
     protected void reloadWorkspaces(final Server selectedServer) throws VcsException {
         try {
             // get auth info for the server
@@ -132,7 +130,6 @@ public class ManageWorkspacesModel extends AbstractModel {
      *
      * @param selectedWorkspace
      */
-    @VisibleForTesting
     protected void deleteWorkspace(final Workspace selectedWorkspace) throws VcsException {
         try {
             final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
@@ -175,7 +172,6 @@ public class ManageWorkspacesModel extends AbstractModel {
      * @param selectedWorkspace
      * @param update
      */
-    @VisibleForTesting
     protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
         try {
             final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(selectedWorkspace.getServer(), true);
@@ -288,7 +284,6 @@ public class ManageWorkspacesModel extends AbstractModel {
      * @param workspaceName
      * @return
      */
-    @VisibleForTesting
     protected Workspace getPartialWorkspace(final String serverName, final String workspaceName) {
         try {
             return CommandUtils.getPartialWorkspace(serverName, workspaceName);

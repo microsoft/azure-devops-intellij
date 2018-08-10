@@ -12,8 +12,6 @@ import com.intellij.util.PlatformIcons;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.FeedbackForm;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -69,15 +67,6 @@ public class FeedbackAction extends AbstractAction {
         });
 
         if (dialog.showAndGet()) {
-            // Get comment and email and add telemetry entry
-            final String comment = dialog.getComment();
-            final String eventName = smile ? CMD_SEND_SMILE : CMD_SEND_FROWN;
-            TfsTelemetryHelper.sendEventAsync(eventName,
-                    new TfsTelemetryHelper.PropertyMapBuilder()
-                            .activeServerContext()
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_COMMENT, comment)
-                            .pair(TfsTelemetryConstants.FEEDBACK_PROPERTY_CONTEXT, feedbackContextInfo)
-                            .build());
             VcsNotifier.getInstance(project).notifySuccess(
                     TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_DIALOG_TITLE),
                     TfPluginBundle.message(TfPluginBundle.KEY_FEEDBACK_NOTIFICATION));

@@ -16,7 +16,6 @@ public class PluginServiceProvider {
     private ServerContextStore contextStore;
     private CredentialsPrompt credentialsPrompt;
     private DeviceFlowResponsePrompt deviceFlowResponsePrompt;
-    private PluginContextInitializer telemetryContextInitializer;
     private PropertyService propertyService;
     private LocalizationService localizationSerivce;
     private HttpProxyService httpProxyService;
@@ -33,7 +32,6 @@ public class PluginServiceProvider {
     public void initialize(final ServerContextStore contextStore,
                            final CredentialsPrompt credentialsPrompt,
                            final DeviceFlowResponsePrompt deviceFlowResponsePrompt,
-                           final PluginContextInitializer telemetryContextInitializer,
                            final PropertyService propertyService,
                            final LocalizationService localizationService,
                            final HttpProxyService httpProxyService,
@@ -43,7 +41,6 @@ public class PluginServiceProvider {
             this.contextStore = contextStore;
             this.credentialsPrompt = credentialsPrompt;
             this.deviceFlowResponsePrompt = deviceFlowResponsePrompt;
-            this.telemetryContextInitializer = telemetryContextInitializer;
             this.propertyService = propertyService;
             this.localizationSerivce = localizationService;
             this.httpProxyService = httpProxyService;
@@ -73,13 +70,6 @@ public class PluginServiceProvider {
         assert credentialsPrompt != null;
 
         return credentialsPrompt;
-    }
-
-    public PluginContextInitializer getTelemetryContextInitializer() {
-        assert initialized;
-        assert telemetryContextInitializer != null;
-
-        return telemetryContextInitializer;
     }
 
     public PropertyService getPropertyService() {

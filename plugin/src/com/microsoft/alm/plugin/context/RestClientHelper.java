@@ -101,9 +101,7 @@ public class RestClientHelper {
             @Override
             public void filter(final ClientRequestContext requestContext) throws IOException {
                 // The default user agent is something like "Jersey/2.6"
-                final String defaultUserAgent = VersionInfo.getUserAgent("Apache-HttpClient", "org.apache.http.client", HttpClientBuilder.class);
-                // We get the user agent string from the Telemetry context
-                final String userAgent = PluginServiceProvider.getInstance().getTelemetryContextInitializer().getUserAgent(defaultUserAgent);
+                final String userAgent = VersionInfo.getUserAgent("Apache-HttpClient", "org.apache.http.client", HttpClientBuilder.class);
                 // Finally, we can add the header
                 requestContext.getHeaders().add(HttpHeaders.USER_AGENT, userAgent);
             }

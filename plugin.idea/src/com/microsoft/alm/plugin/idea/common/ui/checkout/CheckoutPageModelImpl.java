@@ -16,7 +16,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupPageMod
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.ListSelectionModel;
@@ -268,14 +267,6 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
 
             // Save parent directory for next time
             PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_REPO_ROOT, getParentDirectory());
-
-            // TODO: need a way to tell if/when the clone actually succeeded or failed
-            // Add Telemetry for a successful clone
-            final String action = parentModel.getTelemetryAction();
-            TfsTelemetryHelper.sendEventAsync(action, new TfsTelemetryHelper.PropertyMapBuilder()
-                    .currentOrActiveContext(context)
-                    .actionName(action)
-                    .success(true).build());
         }
     }
 

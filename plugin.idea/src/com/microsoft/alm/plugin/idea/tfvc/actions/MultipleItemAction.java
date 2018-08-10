@@ -23,6 +23,7 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -37,7 +38,6 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.jetbrains.annotations.NotNull;
@@ -53,11 +53,11 @@ import java.util.List;
  * runWithProgress method and execute them as a runnable. Within those sections, you should not
  * show UI.
  */
-public abstract class MultipleItemAction extends InstrumentedAction {
+public abstract class MultipleItemAction extends DumbAwareAction {
     public static final Logger logger = LoggerFactory.getLogger(MultipleItemAction.class);
 
     public MultipleItemAction(final String title, final String message) {
-        super(title, message, null, false);
+        super(title, message, null);
     }
 
     /**
@@ -69,14 +69,14 @@ public abstract class MultipleItemAction extends InstrumentedAction {
     protected abstract void execute(final @NotNull MultipleItemActionContext actionContext);
 
     @Override
-    public void doUpdate(final AnActionEvent anActionEvent) {
+    public void update(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
         anActionEvent.getPresentation().setEnabled(isEnabled(project, files));
     }
 
     @Override
-    public void doActionPerformed(final AnActionEvent anActionEvent) {
+    public void actionPerformed(final AnActionEvent anActionEvent) {
         logger.info("Starting multiple item action");
 
         final MultipleItemActionContext context = new MultipleItemActionContext();

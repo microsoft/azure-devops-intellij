@@ -38,7 +38,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupListene
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.core.webapi.CoreHttpClient;
 import com.microsoft.alm.core.webapi.model.TeamProject;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -272,8 +271,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     remoteUrlForDisplay = "";
                     logger.error("doImport: Unexpected error during import");
                     logger.warn("doImport", unexpectedError);
-                    notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ERRORS_UNEXPECTED, unexpectedError.getLocalizedMessage()),
-                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_FAILED), localContext);
+                    notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ERRORS_UNEXPECTED, unexpectedError.getLocalizedMessage()));
 
                 } finally {
                     if (StringUtils.isNotEmpty(remoteUrlForDisplay)) {
@@ -281,14 +279,6 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SUCCEEDED),
                                 TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SUCCEEDED_MESSAGE, project.getName(), remoteUrlForDisplay, repositoryName),
                                 NotificationListener.URL_OPENING_LISTENER);
-
-                        // Add Telemetry for a successful import
-                        TfsTelemetryHelper.sendEventAsync(ACTION_NAME,
-                                new TfsTelemetryHelper.PropertyMapBuilder()
-                                        .currentOrActiveContext(localContext)
-                                        .actionName(ACTION_NAME)
-                                        .success(true)
-                                        .build());
                     }
                 }
             }
@@ -325,8 +315,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             logger.error("setupGitRepositoryForProject: git init failed on project: {} at root: {} with error: {}",
                     project.getName(), rootVirtualFile.getUrl(), error);
             notifyImportError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT_ERROR, project.getName(), error),
-                    ACTION_NAME, localContext);
+                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_INIT_ERROR, project.getName(), error));
             return null;
         }
         GitInit.refreshAndConfigureVcsMappings(project, rootVirtualFile, rootVirtualFile.getPath());
@@ -383,10 +372,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             //user chose to cancel import
             logger.warn("projectSupportsGitRepos: User chose to cancel import into team project: {}",
                     localContext.getTeamProjectReference().getName());
-            notifyImportError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED),
-                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_IMPORT),
-                    localContext);
+            notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED));
             return false;
         }
 
@@ -446,8 +432,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         logger.error("doFirstCommitIfRequired: git commit failed for project: {}, repoRoot: {} with error: {}",
                                 project.getName(), rootVirtualFile.getUrl(), hCommit.getStderr());
                         notifyImportError(project,
-                                TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), hCommit.getStderr()),
-                                ACTION_NAME, localContext);
+                                TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), hCommit.getStderr()));
                         return false;
                     }
                     VfsUtil.markDirtyAndRefresh(false, true, false, ArrayUtil.toObjectArray(filesToCommit, VirtualFile.class));
@@ -456,8 +441,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     logger.error("doFirstCommitIfRequired: No files to do first commit in project: {}, repoRoot: {}",
                             project.getName(), rootVirtualFile.getUrl());
                     notifyImportError(project,
-                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_NO_SELECTED_FILES),
-                            ACTION_NAME, localContext);
+                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_NO_SELECTED_FILES));
                     return false;
                 }
 
@@ -465,17 +449,9 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 logger.error("doFirstCommitIfRequired: VcsException occurred when trying to do a commit on project: {}, repoRoot: {}",
                         project.getName(), rootVirtualFile.getUrl());
                 logger.warn("doFirstCommitIfRequired", ve);
-                // Log the exact exception here
-                TfsTelemetryHelper.sendExceptionAsync(ve,
-                        new TfsTelemetryHelper.PropertyMapBuilder()
-                                .currentOrActiveContext(localContext)
-                                .actionName(ACTION_NAME)
-                                .success(false)
-                                .build());
 
                 notifyImportError(project,
-                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), ve.getMessage()),
-                        ACTION_NAME, localContext);
+                        TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES_ERROR, project.getName(), ve.getMessage()));
                 return false;
             }
         }
@@ -524,7 +500,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     errorMessage = TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CREATING_REMOTE_REPO_UNEXPECTED_ERROR,
                             repositoryName, localContext.getTeamProjectURI().toString());
                 }
-                notifyImportError(project, errorMessage, ACTION_NAME, localContext);
+                notifyImportError(project, errorMessage);
             }
 
             if (remoteRepository == null) {
@@ -565,10 +541,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                         //user chose to cancel import
                         logger.warn("setupRemoteOnLocalRepo: User chose to cancel import for project: {}, local repo: {}",
                                 project.getName(), localRepository.getGitDir().getUrl());
-                        notifyImportError(project,
-                                TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED),
-                                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_IMPORT),
-                                localContext);
+                        notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_CANCELED));
                         return false;
                     }
                     break;
@@ -591,8 +564,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             logger.error("setupRemoteOnLocalRepo: git remote failed for project: {}, local repo: {}, error: {}, output: {}",
                     project.getName(), localRepository.getRoot().getUrl(), hRemote.getStderr(), hRemote.getStdout());
             notifyImportError(project,
-                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE_ERROR, remoteGitUrl, hRemote.getStderr()),
-                    ACTION_NAME, localContext);
+                    TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_GIT_REMOTE_ERROR, remoteGitUrl, hRemote.getStderr()));
             return false;
         }
         return true;
@@ -611,9 +583,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         if (!result.success()) {
             logger.error("pushChangesToRemoteRepo: push to remote: {} failed with error: {}, outuput: {}",
                     remoteGitUrl, result.getErrorOutputAsJoinedString(), result.getOutputAsJoinedString());
-            notifyImportError(project,
-                    result.getErrorOutputAsJoinedString(),
-                    ACTION_NAME, localContext);
+            notifyImportError(project, result.getErrorOutputAsJoinedString());
             return false;
         }
 
@@ -630,16 +600,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         return filePaths;
     }
 
-    private void notifyImportError(final Project project, final String message, final String action, ServerContext context) {
-        // Add Telemetry for a failed import
-        TfsTelemetryHelper.sendEventAsync(action,
-                new TfsTelemetryHelper.PropertyMapBuilder()
-                        .currentOrActiveContext(context)
-                        .actionName(action)
-                        .success(false)
-                        .message(message)
-                        .build());
-
+    private void notifyImportError(final Project project, final String message) {
         VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_FAILED), message, NotificationListener.URL_OPENING_LISTENER);
     }
 

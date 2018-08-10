@@ -7,6 +7,7 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -34,19 +35,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 
-public class OpenFileInBrowserAction extends InstrumentedAction {
+public class OpenFileInBrowserAction extends DumbAwareAction {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenFileInBrowserAction.class);
 
     protected OpenFileInBrowserAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_OPEN_BROWSER),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_OPEN_BROWSER_MSG),
-                Icons.VSLogoSmall,
-                false /*uses git.exe*/);
+                Icons.VSLogoSmall);
     }
 
     @Override
-    public void doUpdate(@NotNull final AnActionEvent anActionEvent) {
+    public void update(@NotNull final AnActionEvent anActionEvent) {
         final Presentation presentation = anActionEvent.getPresentation();
         final Project project = anActionEvent.getProject();
         if (project == null || project.isDisposed()) {
@@ -144,7 +144,7 @@ public class OpenFileInBrowserAction extends InstrumentedAction {
     }
 
     @Override
-    public void doActionPerformed(final AnActionEvent anActionEvent) {
+    public void actionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
         final VirtualFile virtualFile = anActionEvent.getRequiredData(CommonDataKeys.VIRTUAL_FILE);
 

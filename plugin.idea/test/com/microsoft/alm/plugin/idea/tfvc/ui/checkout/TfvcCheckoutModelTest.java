@@ -29,7 +29,6 @@ public class TfvcCheckoutModelTest extends IdeaAbstractTest {
         Assert.assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_CREATE_WORKSPACE_BUTTON),
                 model.getButtonText());
         Assert.assertEquals("", model.getRepositoryName(null));
-        Assert.assertEquals("create_workspace", model.getTelemetryAction());
         Assert.assertEquals(RepositoryContext.Type.TFVC, model.getRepositoryType());
     }
 

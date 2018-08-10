@@ -8,8 +8,6 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This base dialog implementation provides telemetry and a Tab panel for forms to added to.
+ * This base dialog implementation provides a Tab panel for forms to added to.
  * If you do not need tabs, you can simply override createCenterPanel and return your own panel.
  */
 public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
@@ -52,13 +50,6 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
         super.setTitle(title);
         super.setOKButtonText(okButtonText);
         super.init();
-
-        // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(),
-                new TfsTelemetryHelper.PropertyMapBuilder()
-                        .activeServerContext()
-                        .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, title)
-                        .build());
     }
 
     protected Project getProject() {

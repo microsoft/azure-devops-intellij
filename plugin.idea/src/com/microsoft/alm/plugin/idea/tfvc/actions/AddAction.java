@@ -22,13 +22,13 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
@@ -42,15 +42,11 @@ import java.util.List;
 /**
  * Action to add an unversioned file
  */
-public class AddAction extends InstrumentedAction {
+public class AddAction extends DumbAwareAction {
     private static final Logger logger = LoggerFactory.getLogger(AddAction.class);
 
-    protected AddAction() {
-        super(false);
-    }
-
     @Override
-    public void doActionPerformed(final AnActionEvent anActionEvent) {
+    public void actionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
 
@@ -68,7 +64,7 @@ public class AddAction extends InstrumentedAction {
     }
 
     @Override
-    public void doUpdate(final AnActionEvent anActionEvent) {
+    public void update(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
         anActionEvent.getPresentation().setEnabled(isEnabled(project, files));

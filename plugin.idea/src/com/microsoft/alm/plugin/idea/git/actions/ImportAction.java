@@ -5,9 +5,9 @@ package com.microsoft.alm.plugin.idea.git.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.ImportController;
@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Entry point to Importing a project
  */
-public class ImportAction extends InstrumentedAction {
+public class ImportAction extends DumbAwareAction {
 
     private static final Logger logger = LoggerFactory.getLogger(ImportAction.class);
 
@@ -29,7 +29,7 @@ public class ImportAction extends InstrumentedAction {
     }
 
     @Override
-    public void doUpdate(final AnActionEvent anActionEvent) {
+    public void update(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         if (project == null || project.isDefault()) {
             anActionEvent.getPresentation().setVisible(false);
@@ -42,7 +42,7 @@ public class ImportAction extends InstrumentedAction {
     }
 
     @Override
-    public void doActionPerformed(final AnActionEvent anActionEvent) {
+    public void actionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         if (project == null || project.isDisposed()) {
             return;

@@ -20,8 +20,8 @@
 package com.microsoft.alm.plugin.idea.tfvc.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
@@ -29,23 +29,23 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.workspace.WorkspaceController;
 /**
  * Action to edit the workspace associated with this project
  */
-public class EditWorkspaceAction extends InstrumentedAction {
+public class EditWorkspaceAction extends DumbAwareAction {
 
     protected EditWorkspaceAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_EDIT_WORKSPACE_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_EDIT_WORKSPACE_MSG),
-                null, false);
+                null);
     }
 
     @Override
-    public void doActionPerformed(final AnActionEvent anActionEvent) {
+    public void actionPerformed(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
         final WorkspaceController controller = new WorkspaceController(project, TFSVcs.getInstance(project).getServerContext(false));
         controller.showModalDialog(true);
     }
 
     @Override
-    public void doUpdate(final AnActionEvent anActionEvent) {
+    public void update(final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getProject();
         anActionEvent.getPresentation().setEnabled(project != null);
     }

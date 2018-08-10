@@ -22,6 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
@@ -36,7 +37,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
@@ -50,14 +50,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class SingleItemAction extends InstrumentedAction {
+public abstract class SingleItemAction extends DumbAwareAction {
     protected static final Logger logger = LoggerFactory.getLogger(SingleItemAction.class);
 
     private static final Collection<FileStatus> ALLOWED_STATUSES =
             Arrays.asList(FileStatus.HIJACKED, FileStatus.MODIFIED, FileStatus.NOT_CHANGED, FileStatus.OBSOLETE);
 
     protected SingleItemAction(final String text, final String description) {
-        super(text, description, null, false);
+        super(text, description, null);
     }
 
     protected abstract void execute(final @NotNull SingleItemActionContext actionContext) throws TfsException;
@@ -66,7 +66,7 @@ public abstract class SingleItemAction extends InstrumentedAction {
         return ALLOWED_STATUSES;
     }
 
-    public void doActionPerformed(final AnActionEvent e) {
+    public void actionPerformed(final AnActionEvent e) {
         final Project project = e.getData(CommonDataKeys.PROJECT);
         final VirtualFile file = VcsUtil.getOneVirtualFile(e);
 
@@ -108,7 +108,7 @@ public abstract class SingleItemAction extends InstrumentedAction {
         }
     }
 
-    public void doUpdate(@NotNull final AnActionEvent e) {
+    public void update(@NotNull final AnActionEvent e) {
         e.getPresentation().setEnabled(isEnabled(e.getProject(), VcsUtil.getOneVirtualFile(e)));
     }
 

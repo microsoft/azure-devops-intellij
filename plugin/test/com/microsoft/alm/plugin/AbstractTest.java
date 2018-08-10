@@ -9,10 +9,7 @@ import com.microsoft.alm.plugin.mocks.MockLocalizationService;
 import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
 import com.microsoft.alm.plugin.services.AsyncService;
-import com.microsoft.alm.plugin.services.PluginContextInitializer;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
-import com.microsoft.applicationinsights.telemetry.TelemetryContext;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 
@@ -22,31 +19,20 @@ public class AbstractTest {
 
     @BeforeClass
     public static void setup() {
-        // Make sure we skip client initialization so telemetry is not sent to azure
-        System.setProperty("com.microsoft.alm.plugin.telemetry.skipClientInitialization", "true");
-
-        // To test the telemetry helper singleton class, we need to verify what it logs
         // Setup a test appender for log4j logger to capture log messages for verification
-        logger = Logger.getLogger(TfsTelemetryHelper.class);
+        logger = Logger.getLogger(AbstractTest.class);
         appender = new TestAppender();
         logger.addAppender(appender);
 
         // Attach appropriate test services
-        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null, new PluginContextInitializer() {
-            @Override
-            public String getUserAgent(String defaultUserAgent) {
-                return defaultUserAgent;
-            }
-
-            @Override
-            public void initialize(TelemetryContext context) {
-            }
-        }, new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(), new AsyncService() {
-            @Override
-            public void executeOnPooledThread(Runnable runnable) {
-                runnable.run();
-            }
-        }, false);
+        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null,
+                new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(),
+                new AsyncService() {
+                    @Override
+                    public void executeOnPooledThread(Runnable runnable) {
+                        runnable.run();
+                    }
+                }, false);
     }
 
     public static void assertLogged(final String s) {

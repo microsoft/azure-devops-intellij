@@ -61,7 +61,6 @@ import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -122,8 +121,6 @@ public class TFSVcs extends AbstractVcs {
 
     @Override
     public void activate() {
-        TfsTelemetryHelper.sendRepoChangedEvent(TFVC_NAME, VcsHelper.isVstsRepo(myProject));
-
         fileListener = new TFSFileListener(getProject(), this);
         if (tfsFileSystemListener == null) {
             tfsFileSystemListener = new TFSFileSystemListener();

@@ -6,7 +6,6 @@ package com.microsoft.alm.plugin.idea.common.ui.common;
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.BasicForm;
 import com.microsoft.alm.plugin.idea.common.ui.common.forms.LoginForm;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutPageModel;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -30,9 +29,6 @@ public class LoginPageImpl extends JPanel implements LoginPage {
         this.dataForm = dataForm;
         this.loginForm = loginForm;
         setLoginShowing(true);
-
-        // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(), TfsTelemetryHelper.PropertyMapBuilder.EMPTY);
     }
 
     @Override

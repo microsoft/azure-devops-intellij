@@ -30,7 +30,7 @@ public class AnnotateAction extends SingleItemAction {
     }
 
     @Override
-    public void doUpdate(@NotNull final AnActionEvent e) {
+    public void update(@NotNull final AnActionEvent e) {
         final VirtualFile file = VcsUtil.getOneVirtualFile(e);
 
         // disable for directories
@@ -39,7 +39,7 @@ public class AnnotateAction extends SingleItemAction {
             return;
         }
         // this will disable all new files
-        super.doUpdate(e);
+        super.update(e);
     }
 
     @Override

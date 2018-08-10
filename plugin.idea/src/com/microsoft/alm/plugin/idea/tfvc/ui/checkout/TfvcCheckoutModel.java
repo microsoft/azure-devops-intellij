@@ -52,7 +52,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -191,11 +190,6 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
         // Trigger our listener events
         listener.directoryCheckedOut(new File(parentDirectory, directoryName), TFSVcs.getKey());
         listener.checkoutCompleted();
-    }
-
-    @Override
-    public String getTelemetryAction() {
-        return "create_workspace";
     }
 
     @Override

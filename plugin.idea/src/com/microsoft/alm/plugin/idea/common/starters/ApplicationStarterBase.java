@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationStarterEx;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,33 +104,19 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
             }
         } catch (Exception e) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, e.getMessage()));
-            logMetrics(false, e.getClass().getSimpleName());
             saveAll();
 
             // exit code IntelliJ uses for exceptions
             System.exit(1);
         } catch (Throwable t) {
             logger.error(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, t.getMessage()));
-            logMetrics(false, t.getClass().getSimpleName());
             saveAll();
 
             // exit code IntelliJ uses for throwables
             System.exit(2);
         }
 
-        // log metrics and save settings before IDE closes
-        logMetrics(true, null);
         saveAll();
-    }
-
-    private static void logMetrics(final boolean isSuccess, final String errorName) {
-        TfsTelemetryHelper.sendEventAsync(ACTION_NAME,
-                new TfsTelemetryHelper.PropertyMapBuilder()
-                        .activeServerContext()
-                        .actionName(ACTION_NAME)
-                        .success(isSuccess)
-                        .message(errorName)
-                        .build());
     }
 
     @Override
