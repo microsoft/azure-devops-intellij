@@ -7,6 +7,7 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.VcsFullCommitDetails;
 import com.intellij.vcs.log.VcsLog;
@@ -25,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.List;
 
-public class OpenCommitInBrowserAction extends InstrumentedAction {
+public class OpenCommitInBrowserAction extends DumbAwareAction {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenCommitInBrowserAction.class);
 
@@ -36,7 +37,7 @@ public class OpenCommitInBrowserAction extends InstrumentedAction {
     }
 
     @Override
-    public void doUpdate(@NotNull final AnActionEvent anActionEvent) {
+    public void update(@NotNull final AnActionEvent anActionEvent) {
 
         final Presentation presentation = anActionEvent.getPresentation();
 
@@ -71,7 +72,7 @@ public class OpenCommitInBrowserAction extends InstrumentedAction {
     }
 
     @Override
-    public void doActionPerformed(@NotNull final AnActionEvent anActionEvent) {
+    public void actionPerformed(@NotNull final AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
         final VcsFullCommitDetails commit = anActionEvent.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
 

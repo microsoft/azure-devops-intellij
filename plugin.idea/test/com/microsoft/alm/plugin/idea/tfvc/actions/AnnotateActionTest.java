@@ -73,7 +73,7 @@ public class AnnotateActionTest extends IdeaAbstractTest {
     @Test
     public void testDoUpdate_NullFile() {
         when(VcsUtil.getOneVirtualFile(mockAnActionEvent)).thenReturn(null);
-        annotateAction.doUpdate(mockAnActionEvent);
+        annotateAction.update(mockAnActionEvent);
 
         verify(mockPresentation, times(1)).setEnabled(false);
     }
@@ -81,7 +81,7 @@ public class AnnotateActionTest extends IdeaAbstractTest {
     @Test
     public void testDoUpdate_Directory() {
         when(mockVirtualFile.isDirectory()).thenReturn(false);
-        annotateAction.doUpdate(mockAnActionEvent);
+        annotateAction.update(mockAnActionEvent);
 
         verify(mockPresentation, times(1)).setEnabled(false);
     }

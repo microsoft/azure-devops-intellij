@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.common.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.CommitMessageI;
@@ -24,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class SelectWorkItemsAction extends InstrumentedAction {
+public class SelectWorkItemsAction extends DumbAwareAction {
     public static final Logger logger = LoggerFactory.getLogger(SelectWorkItemsAction.class);
 
     public SelectWorkItemsAction() {
@@ -34,7 +35,7 @@ public class SelectWorkItemsAction extends InstrumentedAction {
     }
 
     @Override
-    public void doUpdate(AnActionEvent anActionEvent) {
+    public void update(AnActionEvent anActionEvent) {
         final Project project = CommonDataKeys.PROJECT.getData(anActionEvent.getDataContext());
 
         // if this is a non-VSTS repo and is in Rider then hide the button
@@ -69,7 +70,7 @@ public class SelectWorkItemsAction extends InstrumentedAction {
     }
 
     @Override
-    public void doActionPerformed(AnActionEvent anActionEvent) {
+    public void actionPerformed(AnActionEvent anActionEvent) {
         final DataContext dc = anActionEvent.getDataContext();
         final Project project = CommonDataKeys.PROJECT.getData(dc);
         final Refreshable panel = CheckinProjectPanel.PANEL_KEY.getData(dc);

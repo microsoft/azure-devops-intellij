@@ -18,7 +18,6 @@ import com.microsoft.alm.plugin.idea.common.services.IdeaAsyncService;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
-import com.microsoft.alm.plugin.idea.common.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.idea.common.statusBar.StatusBarManager;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.sun.jna.Platform;
@@ -60,7 +59,6 @@ public class ApplicationStartup implements ApplicationComponent {
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
                 new DeviceFlowResponsePromptImpl(),
-                new TelemetryContextInitializer(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
                 new HttpProxyServiceImpl(),

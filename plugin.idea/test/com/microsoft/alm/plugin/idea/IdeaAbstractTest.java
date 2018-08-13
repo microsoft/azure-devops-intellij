@@ -10,7 +10,6 @@ import com.microsoft.alm.plugin.idea.common.services.HttpProxyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
-import com.microsoft.alm.plugin.idea.common.services.TelemetryContextInitializer;
 import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.junit.BeforeClass;
@@ -22,14 +21,10 @@ public class IdeaAbstractTest extends AbstractTest {
 
     @BeforeClass
     public static void setup() {
-        // Make sure we skip client initialization so telemetry is not sent to azure
-        System.setProperty("com.microsoft.alm.plugin.telemetry.skipClientInitialization", "true");
-
         PluginServiceProvider.getInstance().initialize(
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
                 new DeviceFlowResponsePromptImpl(),
-                new TelemetryContextInitializer(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
                 new HttpProxyServiceImpl(),

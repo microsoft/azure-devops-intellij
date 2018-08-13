@@ -29,7 +29,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import git4idea.GitRemoteBranch;
 import git4idea.GitVcs;
 import git4idea.branch.GitBrancher;
@@ -187,12 +186,6 @@ public class SimpleCheckoutModel extends AbstractModel {
                     final Git git = ServiceManager.getService(Git.class);
                     logger.info("Cloning repo " + gitRepositoryStr);
                     cloneResult.set(git4idea.checkout.GitCheckoutProvider.doClone(project, git, getDirectoryName(), getParentDirectory(), gitRepositoryStr));
-
-                    // Add Telemetry for the clone call along with it's success/failure
-                    TfsTelemetryHelper.sendEventAsync(COMMANDLINE_CLONE_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
-                            .currentOrActiveContext(context)
-                            .actionName(COMMANDLINE_CLONE_ACTION)
-                            .success(cloneResult.get()).build());
                 }
 
                 @Override

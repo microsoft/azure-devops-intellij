@@ -23,7 +23,6 @@ import com.microsoft.alm.plugin.idea.git.ui.branch.CreateBranchController;
 import com.microsoft.alm.plugin.operations.Operation;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.operations.WorkItemLookupOperation;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.workitemtracking.webapi.models.Link;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import com.microsoft.visualstudio.services.webapi.patch.json.JsonPatchDocument;
@@ -139,11 +138,6 @@ public class VcsWorkItemsModel extends TabModelImpl<WorkItemsTableModel> {
                                         }
                                     });
                         }
-
-                        TfsTelemetryHelper.sendEventAsync(ASSOCIATE_WORK_ITEM_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
-                                .currentOrActiveContext(context)
-                                .actionName(ASSOCIATE_WORK_ITEM_ACTION)
-                                .success(wasWorkItemAssociated).build());
 
                         // Update the work items tab and any other listener to WorkItemChanged events
                         EventContextHelper.triggerWorkItemChanged(EventContextHelper.SENDER_ASSOCIATE_BRANCH, project);

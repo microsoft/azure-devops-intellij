@@ -8,7 +8,6 @@ import com.microsoft.alm.plugin.events.ServerEvent;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabControllerImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.tabs.TabImpl;
 import com.microsoft.alm.plugin.idea.common.ui.controls.WorkItemQueryDropDown;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.event.ActionEvent;
@@ -32,11 +31,6 @@ public class VcsWorkItemsController extends TabControllerImpl<VcsWorkItemsModel>
             //pop up menu - open WIT link in web
             model.openSelectedItemsLink();
         } else if (VcsWorkItemsForm.CMD_CREATE_BRANCH.equals(e.getActionCommand())) {
-            // record initial menu selection for metrics
-            TfsTelemetryHelper.sendEventAsync(WIT_TAB_CREATE_BRANCH_SELECTED_ACTION, new TfsTelemetryHelper.PropertyMapBuilder()
-                    .activeServerContext()
-                    .actionName(WIT_TAB_CREATE_BRANCH_SELECTED_ACTION).build());
-
             //create a new remote branch and add a link for it in the work item
             model.createBranch();
         } else if (WorkItemQueryDropDown.CMD_QUERY_COMBO_BOX_CHANGED.equals(e.getActionCommand())) {

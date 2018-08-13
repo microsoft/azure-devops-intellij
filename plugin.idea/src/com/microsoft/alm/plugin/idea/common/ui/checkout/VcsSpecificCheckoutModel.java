@@ -14,8 +14,6 @@ public interface VcsSpecificCheckoutModel {
                     final ServerContext context, final VirtualFile destinationParent,
                     final String directoryName, final String parentDirectory, final boolean isAdvancedChecked);
 
-    String getTelemetryAction();
-
     String getButtonText();
 
     String getRepositoryName(final ServerContext context);

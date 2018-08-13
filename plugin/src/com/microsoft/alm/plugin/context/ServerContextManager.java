@@ -22,7 +22,6 @@ import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.plugin.services.ServerContextStore;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
@@ -47,11 +46,6 @@ public class ServerContextManager {
 
     private final String CONNECTION_DATA_REST_API_PATH = "/_apis/connectionData?connectOptions=IncludeServices&lastChangeId=-1&lastChangeId64=-1&api-version=1.0";
     private final String TFS2015_NEW_SERVICE = "distributedtask";
-    private final String TELEMETRY_CONNECTION_EVENT = "TfsConnection";
-    private final String TELEMETRY_TFS_VERSION = "TFS.Version";
-    private final String TELEMETRY_TFS2012_OR_OLDER = "TFS2012_or_older";
-    private final String TELEMETRY_TFS2013 = "TFS2013";
-    private final String TELEMETRY_TFS2015_OR_LATER = "TFS2015_or_later";
 
     private Map<String, ServerContext> contextMap = new HashMap<String, ServerContext>();
 
@@ -291,17 +285,12 @@ public class ServerContextManager {
                                 .uri(TfsAuthenticationProvider.TFS_LAST_USED_URL).build();
                         add(lastUsedTfsContext);
 
-                        TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
-                                new TfsTelemetryHelper.PropertyMapBuilder().success(true).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2015_OR_LATER).build());
-
                         return contextWithUserId;
                     }
                 }
 
                 //This is TFS 2013
                 logger.warn("checkTfsVersionAndConnection: Detected an attempt to connect to a TFS 2013 server");
-                TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
-                        new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2013).build());
 
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
             }
@@ -309,8 +298,6 @@ public class ServerContextManager {
             if (e.getStatusCode() == 404) {
                 //HTTP not found, so server does not have this endpoint (TFS 2012 or older) or the URL is incorrect
                 logger.warn("checkTfsVersionAndConnection: 404 while trying to connect to server so either bad url or unsupported server version");
-                TfsTelemetryHelper.sendEventAsync(TELEMETRY_CONNECTION_EVENT,
-                        new TfsTelemetryHelper.PropertyMapBuilder().success(false).pair(TELEMETRY_TFS_VERSION, TELEMETRY_TFS2012_OR_OLDER).build());
                 throw new TeamServicesException(TeamServicesException.KEY_TFS_UNSUPPORTED_VERSION);
             } else {
                 throw new RuntimeException(e);

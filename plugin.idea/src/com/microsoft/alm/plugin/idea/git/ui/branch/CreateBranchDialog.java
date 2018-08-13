@@ -5,8 +5,6 @@ package com.microsoft.alm.plugin.idea.git.ui.branch;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialogImpl;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import git4idea.GitRemoteBranch;
 import org.apache.commons.lang.StringUtils;
 
@@ -25,13 +23,6 @@ public class CreateBranchDialog extends BaseDialogImpl {
         super.setTitle(title);
         super.setOKButtonText(okButtonText);
         super.init();
-
-        // Make a telemetry entry for this UI dialog
-        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(),
-                new TfsTelemetryHelper.PropertyMapBuilder()
-                        .activeServerContext()
-                        .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, title)
-                        .build());
     }
 
     @Override

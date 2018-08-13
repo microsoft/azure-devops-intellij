@@ -5,8 +5,8 @@ package com.microsoft.alm.plugin.idea.git.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.idea.common.actions.InstrumentedAction;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.git.ui.pullrequest.CreatePullRequestController;
@@ -16,7 +16,7 @@ import git4idea.repo.GitRepository;
 /**
  * This class adds a "Create Pull Request" menu item to git menu.
  */
-public class CreatePullRequestAction extends InstrumentedAction {
+public class CreatePullRequestAction extends DumbAwareAction {
 
     public CreatePullRequestAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_CREATE_PULL_REQUEST),
@@ -25,7 +25,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
     }
 
     @Override
-    public void doUpdate(AnActionEvent anActionEvent) {
+    public void update(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 
@@ -39,7 +39,7 @@ public class CreatePullRequestAction extends InstrumentedAction {
     }
 
     @Override
-    public void doActionPerformed(AnActionEvent anActionEvent) {
+    public void actionPerformed(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
         final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 

@@ -6,8 +6,6 @@ package com.microsoft.alm.plugin.idea.common.ui.common.tabs;
 import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.VcsTabStatus;
 import com.microsoft.alm.plugin.operations.Operation;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryConstants;
-import com.microsoft.alm.plugin.telemetry.TfsTelemetryHelper;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JComponent;
@@ -21,13 +19,6 @@ public class TabImpl<T extends FilteredModel> implements Tab<T> {
 
     public TabImpl(@NotNull final TabForm form, final String eventName) {
         this.form = form;
-
-        // Make a telemetry entry for this UI tab opening
-        TfsTelemetryHelper.sendDialogOpenedAsync(this.getClass().getName(),
-                new TfsTelemetryHelper.PropertyMapBuilder()
-                        .activeServerContext()
-                        .pair(TfsTelemetryConstants.PLUGIN_EVENT_PROPERTY_DIALOG, eventName)
-                        .build());
     }
 
     public JComponent getPanel() {
