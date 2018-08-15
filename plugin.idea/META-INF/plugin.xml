@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Visual Studio Team Services</name>
-    <version>1.147.0</version>
+    <version>1.150.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,16 +57,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <b>v 1.147.0</b>
+      <b>v 1.150.0</b>
       <br />
       <ul>
-        <li>Fixed issues with TFVC configuration page not displaying correctly.</li>
-        <li>Fixed issues experienced by first time users.</li>
-        <li>Fixed issues related to use of current Java.</li>
-        <li>Added the ability to accept the EULA from within the graphical user experience.</li>
-        <li>Updated the base IDEA SDK used to build the plug-in.</li>
+        <li>Updated the authentication library to keep up-to-date with fixes and changes.</li>
       </ul>
-      Special thanks thanks @mfilippov for contributing several fixes.
       <br />
     ]]>
     </change-notes>
