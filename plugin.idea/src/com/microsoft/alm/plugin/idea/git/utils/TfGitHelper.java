@@ -66,8 +66,17 @@ public class TfGitHelper {
         }
 
         final String remoteUrl = gitRemote.getFirstUrl();
-        if (remoteUrl != null && (remoteUrl.contains(".visualstudio.com/") || remoteUrl.contains(".tfsallin.net/") || remoteUrl.contains("/_git/"))) {
-            //TODO once we have the connections cached, we should rework this to also query those for better OnPrem detection.
+        if (remoteUrl != null
+            && (remoteUrl.contains(".visualstudio.com/")
+                || remoteUrl.contains(".azure.com/")
+                || remoteUrl.contains(".tfsallin.net/")
+                || remoteUrl.contains(".vsallin.net/")
+                || remoteUrl.contains(".vsts.io/")
+                || remoteUrl.contains(".vsts.me/")
+                || remoteUrl.contains("codeapp.ms/")
+                || remoteUrl.contains("codedev.ms/")
+                || remoteUrl.contains("/_git/"))) {
+            // TODO: once we have the connections cached, we should rework this to also query those for better OnPrem detection.
             return true;
         }
         return false;
