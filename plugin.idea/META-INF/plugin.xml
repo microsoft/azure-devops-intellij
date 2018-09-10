@@ -5,25 +5,25 @@
 
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
-    <name>Visual Studio Team Services</name>
+    <name>Azure DevOps</name>
     <version>1.150.0</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
-      Visual Studio Team Services is a plugin to enable working with Git and TFVC repositories on Visual Studio Team Services (VSTS) or Team Foundation Server (TFS) 2015+.
+      Azure DevOps is a plugin to enable working with Git and TFVC repositories on Azure DevOps Services or Team Foundation Server (TFS) 2015+.
       <br />
-      <a href="https://github.com/Microsoft/azure-devops-intellij">GitHub</a> | <a href="https://java.visualstudio.com/Docs/tools/intelliJ">Documentation</a> | <a href="https://github.com/Microsoft/azure-devops-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/VSTS">@VSTS</a>
+      <a href="https://github.com/Microsoft/azure-devops-intellij">GitHub</a> | <a href="https://java.visualstudio.com/Docs/tools/intelliJ">Documentation</a> | <a href="https://github.com/Microsoft/azure-devops-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/AzureDevOps">@AzureDevOps</a>
       <br />
       <br />
       <b>Features</b>
       <br />
       <ul>
-        <li>Supports authenticating with Team Services and TFS 2015+ to work with source code in Git and TFVC repositories.</li>
-        <li>Checkout code from Git and TFVC repositories on Visual Studio Team Services and TFS 2015+.</li>
+        <li>Supports authenticating with Azure DevOps Services and TFS 2015+ to work with source code in Git and TFVC repositories.</li>
+        <li>Checkout code from Git and TFVC repositories on Azure DevOps Services and TFS 2015+.</li>
         <li>Git specific features:</li>
         <ul>
-            <li>Import IntelliJ projects into Git repositories on Team Services and TFS 2015+.</li>
+            <li>Import IntelliJ projects into Git repositories on Azure DevOps Services and TFS 2015+.</li>
             <li>Create pull requests and view your active pull requests.</li>
             <li>Create a new branch and associate it with the work item you are working on.</li>
             <li>Quickly browse to file history or commit details on the web from the IDE.</li>
@@ -52,7 +52,7 @@
       <br />
       <b>End User License Agreement & Privacy Policy</b>
       <br />
-      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Visual Studio Product Family Privacy Statement</a>
+      By installing this plugin, you agree to our end user license terms and privacy policy. For information about our privacy policy, please view the <a href="http://go.microsoft.com/fwlink/?LinkId=528096&clcid=0x409">Microsoft Privacy Statement</a>
       <br /><i>Note</i>: When using the TFVC support, this plugin will pass your Team Foundation credentials securely to the TF command line tool. That tool is installed separately and it is up to the user to verify that it is in a secure location on disk and has not been tampered with.
     ]]></description>
 
