@@ -56,7 +56,7 @@ class TfsCheckoutPageModel extends CheckoutPageModelImpl {
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
             if (authenticationProvider.isAuthenticated(serverName)) {
-                logger.info("VSTS auth info already found so reusing that for loading repos");
+                logger.info("Azure DevOps Services auth info already found so reusing that for loading repos");
                 setServerNameInternal(authenticationProvider.getAuthenticationInfo(serverName).getServerUri());
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getRepositoryProvider(),

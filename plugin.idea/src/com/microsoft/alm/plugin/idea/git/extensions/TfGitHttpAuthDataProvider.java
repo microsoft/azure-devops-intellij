@@ -44,7 +44,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                     return new AuthData(vsoAuthenticationInfo.getUserName(), vsoAuthenticationInfo.getPassword());
                 }
             } else {
-                logger.warn("getAuthData: Unable to get https team services url for input url = " + url);
+                logger.warn("getAuthData: Unable to get https Azure DevOps Services url for input url = " + url);
             }
         }
 
@@ -64,7 +64,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
             if (authUrl != null) {
                 ServerContextManager.getInstance().updateAuthenticationInfo(authUrl);
             } else {
-                logger.warn("forgetPassword: Unable to get https team services url for input url = " + url);
+                logger.warn("forgetPassword: Unable to get https Azure DevOps Services url for input url = " + url);
             }
         } else {
             //if onprem server is https:// we can't detect it, just use url provided by intelliJ

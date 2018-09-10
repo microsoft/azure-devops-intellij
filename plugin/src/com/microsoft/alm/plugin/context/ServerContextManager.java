@@ -719,7 +719,7 @@ public class ServerContextManager {
                 logger.warn("validate: unexpected exception ", t);
             }
 
-            logger.info("validateGitUrl: failed to get VSTS repo, project and collection info");
+            logger.info("validateGitUrl: failed to get Azure DevOps repo, project and collection info");
             return false;
         }
 

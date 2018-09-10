@@ -177,7 +177,7 @@ public class LookupHelper {
                             loginPageModel.setAuthenticating(false);
                             //Log exception
                             if (throwable != null) {
-                                logger.warn("Authenticating with Team Services failed", throwable);
+                                logger.warn("Authenticating with Azure DevOps failed", throwable);
                                 if (handleProfileDoesNotExist(throwable, loginPageModel)) {
                                     // The error was handled, so leave this method
                                     return;
