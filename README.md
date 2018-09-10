@@ -1,10 +1,10 @@
-# Visual Studio Team Services Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
+# Azure DevOps Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
 
-This is a plugin for working with Git and TFVC repositories on Visual Studio Team Services (VSTS) and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
+This is a plugin for working with Git and TFVC repositories on Azure DevOps and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
 and various other Jetbrains IDEs. It is supported on Linux, Mac OS X, and Windows.
 It is compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
 
-To learn more about installing and using our Team Services IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in
+To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in
 
 ## Pre-Reqs
 1. Install JDK 8. 
@@ -135,7 +135,7 @@ Gradle build will fail if checkstyle plugin detects a violation.
 
 ## Running Integration Tests (L2 tests)
 
-Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have a VSTS account setup to run against.
+Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have an Azure DevOps Services organization setup to run against.
 
 Here are the steps to setup your environment:
 
@@ -171,6 +171,6 @@ Here are the steps to setup your environment:
 
 Want more information? The following resources are available to help:
 
-* <a href="https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in" target="_blank">Instructions</a> on how to install the plugin
+* <a href="https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in" target="_blank">Instructions</a> on how to install the plugin
 * <a href="https://youtu.be/wSdgmQL-Zbg" target="_blank">End-to-end demo</a> video of the plugin's features
-* <a href="https://docs.microsoft.com/en-us/vsts/git/create-repo-intellij" target="_blank">Documentation and tutorial</a> on how to use the plugin 
+* <a href="https://docs.microsoft.com/en-us/azure/devops/repos/git/create-repo-intellij" target="_blank">Documentation and tutorial</a> on how to use the plugin 
