@@ -212,11 +212,11 @@ public class UrlHelperTest {
     @Test
     public void testCollectionInDomainUrl() {
         //vsts account
-        final URI accountUri = URI.create("https://myaccount.visualstudio.com");
+        final URI accountUri = URI.create("https://myorganization.visualstudio.com");
 
         //collection not in domain
         final URI defaultCollectionUri = UrlHelper.getCollectionURI(accountUri, "DefaultCollection");
-        assertEquals(URI.create("https://myaccount.visualstudio.com/DefaultCollection"), defaultCollectionUri);
+        assertEquals(URI.create("https://myorganization.visualstudio.com/DefaultCollection"), defaultCollectionUri);
 
         //collection in domain
         final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myaccount");
@@ -242,14 +242,14 @@ public class UrlHelperTest {
 
     @Test
     public void testSshGitUrls() {
-        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
-                UrlHelper.getHttpsGitUrlFromSshUrl("ssh://myaccount@myaccount.visualstudio.com:22/myCollection/_git/My.Repo"));
+        assertEquals("https://myorganization.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("ssh://myaccount@myorganization.visualstudio.com:22/myCollection/_git/My.Repo"));
 
-        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
-                UrlHelper.getHttpsGitUrlFromSshUrl("myaccount@myaccount.visualstudio.com:22/myCollection/_git/My.Repo"));
+        assertEquals("https://myorganization.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("myaccount@myorganization.visualstudio.com:22/myCollection/_git/My.Repo"));
 
-        assertEquals("https://myaccount.visualstudio.com/myCollection/_git/My.Repo",
-                UrlHelper.getHttpsGitUrlFromSshUrl("https://myaccount.visualstudio.com/myCollection/_git/My.Repo"));
+        assertEquals("https://myorganization.visualstudio.com/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("https://myorganization.visualstudio.com/myCollection/_git/My.Repo"));
 
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("ssh://git@github.com:Microsoft/vso-agent-tasks.git"));
 
@@ -285,7 +285,7 @@ public class UrlHelperTest {
 
     @Test
     public void testGetFileURI_NoBranch() {
-        String remoteUrl = "https://myaccount.visualstudio.com";
+        String remoteUrl = "https://myorganization.visualstudio.com";
         String filePath = "path/to/file.txt";
 
         final URI result = UrlHelper.getFileURI(remoteUrl, filePath, StringUtils.EMPTY);
@@ -294,7 +294,7 @@ public class UrlHelperTest {
 
     @Test
     public void testGetFileURI_Branch() {
-        String remoteUrl = "https://myaccount.visualstudio.com";
+        String remoteUrl = "https://myorganization.visualstudio.com";
         String filePath = "path/to/file.txt";
         String branchName = "branch";
 
@@ -316,8 +316,8 @@ public class UrlHelperTest {
 
     @Test
     public void testIsOrganizationUrl() {
-        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/DefaultCollection"));
-        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myaccount.visualstudio.com/"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myorganization.visualstudio.com/DefaultCollection"));
+        assertEquals(false, UrlHelper.isOrganizationUrl( "https://myorganization.visualstudio.com/"));
         assertEquals(false, UrlHelper.isOrganizationUrl( "https://www.google.com/"));
         assertEquals(true, UrlHelper.isOrganizationUrl( "https://azure.com/account"));
         assertEquals(true, UrlHelper.isOrganizationUrl( "https://AZURE.COM/ACCOUNT"));
@@ -327,8 +327,8 @@ public class UrlHelperTest {
 
     @Test
     public void testIsOrganizationUri() {
-        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/DefaultCollection")));
-        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myaccount.visualstudio.com/")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myorganization.visualstudio.com/DefaultCollection")));
+        assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://myorganization.visualstudio.com/")));
         assertEquals(false, UrlHelper.isOrganizationURI( URI.create("https://www.google.com/")));
         assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://azure.com/account")));
         assertEquals(true, UrlHelper.isOrganizationURI( URI.create("https://AZURE.COM/ACCOUNT")));
@@ -337,8 +337,8 @@ public class UrlHelperTest {
 
     @Test
     public void testIsOrganizationHost() {
-        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
-        assertEquals(false, UrlHelper.isOrganizationHost( "myaccount.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "myorganization.visualstudio.com"));
+        assertEquals(false, UrlHelper.isOrganizationHost( "myorganization.visualstudio.com"));
         assertEquals(false, UrlHelper.isOrganizationHost( "www.google.com"));
         assertEquals(true, UrlHelper.isOrganizationHost( "azure.com"));
         assertEquals(true, UrlHelper.isOrganizationHost( "AZURE.COM"));

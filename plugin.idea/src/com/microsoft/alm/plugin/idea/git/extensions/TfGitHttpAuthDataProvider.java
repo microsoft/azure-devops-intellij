@@ -31,7 +31,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
 
         if (UrlHelper.isTeamServicesUrl(url)) {
             // We can't determine if the url is for a TFS on premise server but prompt for credentials if we know it is VSO
-            // IntelliJ calls us with a http server url e.g. http://myaccount.visualstudio.com
+            // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
             // convert to https:// for team services to avoid rest call failures
             final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
 
@@ -58,7 +58,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
         // This method got called since stored credentials for the url resulted in an unauthorized error 401 or 403
         assert url != null;
         if (UrlHelper.isTeamServicesUrl(url)) {
-            // IntelliJ calls us with a http server url e.g. http://myaccount.visualstudio.com
+            // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
             // convert to https:// for team services to avoid rest call failures
             final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
             if (authUrl != null) {

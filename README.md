@@ -150,10 +150,10 @@ Here are the steps to setup your environment:
 3. Second setup the environment variables that provide the connection information for the tests. If this information is missing the tests will fail with a message that describes the missing information. The values below are examples but you will have to fix them.
    * MSVSTS_INTELLIJ_RUN_L2_TESTS=true
    * MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd
-   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://account.visualstudio.com/_git/projectName
-   * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://account.visualstudio.com/defaultcollection/_git/projectName
+   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://organization.visualstudio.com/_git/projectName
+   * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://organization.visualstudio.com/defaultcollection/_git/projectName
    * MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage
-   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://account.visualstudio.com
+   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://organization.visualstudio.com
    * MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName
    * MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser
 

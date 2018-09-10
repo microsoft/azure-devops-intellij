@@ -30,7 +30,7 @@ import java.util.List;
 public class ApplicationStarterBaseTest extends IdeaAbstractTest {
     public final String URI_ARG = "vsoi://checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
     public final String URI_MINUS_PREFIX = "checkout/?url=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
-    public final String VALID_GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/TestProject";
+    public final String VALID_GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/TestProject";
     public final String SUB_COMMAND = "checkout";
 
     public List<String> processCommandArgs = Collections.emptyList();

@@ -34,8 +34,8 @@ import java.io.IOException;
 @PrepareForTest({PluginServiceProvider.class, LocalFileSystem.class})
 public class SimpleCheckoutModelTest extends IdeaAbstractTest {
     public static final String REPO_NAME = "TestProject-" + System.currentTimeMillis();
-    public static final String GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/" + REPO_NAME;
-    public static final String INVALID_GIT_URL = "https://account.visualstudio.com/TestProject";
+    public static final String GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/" + REPO_NAME;
+    public static final String INVALID_GIT_URL = "https://organization.visualstudio.com/TestProject";
 
     @Mock
     public PluginServiceProvider pluginServiceProvider;

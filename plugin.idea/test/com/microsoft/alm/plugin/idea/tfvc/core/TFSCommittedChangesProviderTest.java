@@ -41,7 +41,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({TFSVcs.class, CommandUtils.class, TFSCommittedChangesProvider.class})
 public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
-    private static final String SERVER_URL = "https://account.visualstudio.com";
+    private static final String SERVER_URL = "https://organization.visualstudio.com";
     private static final String LOCAL_ROOT_PATH = "/Users/user/root";
     private static final String USER_ME = "me";
 

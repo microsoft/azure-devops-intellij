@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SimpleCheckoutControllerTest extends IdeaAbstractTest {
-    public static final String GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/TestProject";
+    public static final String GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/TestProject";
     public static final String DIRECTORY_NAME = "directoryName";
     public static final String PARENT_DIRECTORY = "/parent/directory";
 

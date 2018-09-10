@@ -39,7 +39,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 @PrepareForTest({VcsUtil.class, Presentation.class, Messages.class, BrowserUtil.class})
 public class AnnotateActionTest extends IdeaAbstractTest {
     private AnnotateAction annotateAction;
-    private final URI serverURI = URI.create("http://account.visualstudio.com/");
+    private final URI serverURI = URI.create("http://organization.visualstudio.com/");
 
     @Mock
     private AnActionEvent mockAnActionEvent;

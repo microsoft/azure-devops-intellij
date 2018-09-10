@@ -34,8 +34,8 @@ public class LoginPageModelTest extends AbstractTest {
         assertEquals("http://myserver:8080/tfs", underTest.getServerName());
 
         //VSTS account
-        underTest.setServerName("myaccount.visualstudio.com");
-        assertEquals("https://myaccount.visualstudio.com", underTest.getServerName());
+        underTest.setServerName("myorganization.visualstudio.com");
+        assertEquals("https://myorganization.visualstudio.com", underTest.getServerName());
 
         //VSTS test account
         underTest.setServerName("mytestaccount.tfsallin.net");
@@ -46,19 +46,11 @@ public class LoginPageModelTest extends AbstractTest {
         assertEquals("https://myserver:8080/tfs/virtualpath", underTest.getServerName());
 
         //Azure url
-        underTest.setServerName("azure.com/account");
-        assertEquals("https://azure.com/account", underTest.getServerName());
-
-        //Azure org url
-        underTest.setServerName("org.azure.com/account");
-        assertEquals("https://org.azure.com/account", underTest.getServerName());
+        underTest.setServerName("dev.azure.com/organization");
+        assertEquals("https://dev.azure.com/organization", underTest.getServerName());
 
         //Azure full url
-        underTest.setServerName("https://azure.com/account");
-        assertEquals("https://azure.com/account", underTest.getServerName());
-
-        //Azure org full url
-        underTest.setServerName("https://org.azure.com/account");
-        assertEquals("https://org.azure.com/account", underTest.getServerName());
+        underTest.setServerName("https://dev.azure.com/organization");
+        assertEquals("https://dev.azure.com/organization", underTest.getServerName());
     }
 }
