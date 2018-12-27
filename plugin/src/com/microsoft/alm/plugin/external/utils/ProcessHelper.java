@@ -27,6 +27,6 @@ public class ProcessHelper {
     private static String getPatchedPathWithCurrentJavaBinLocation() {
         String currentJavaHome = System.getProperty("java.home");
         String originPathVariable = System.getenv("PATH");
-        return originPathVariable + File.pathSeparator + currentJavaHome + File.separator + "bin" + File.separator;
+        return currentJavaHome + File.separator + "bin" + File.separator + File.pathSeparator + originPathVariable;
     }
 }
