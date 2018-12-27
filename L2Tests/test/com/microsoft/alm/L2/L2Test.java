@@ -31,6 +31,7 @@ import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -273,6 +274,7 @@ public abstract class L2Test extends UsefulTestCase {
 
             addSilently();
             removeSilently();
+            EULADialog.acceptEula();
         } catch (Exception e) {
             tearDown();
             throw e;
