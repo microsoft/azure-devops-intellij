@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.L2.tfvc.actions;
 
+import com.intellij.testFramework.TestActionEvent;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction;
@@ -30,7 +31,8 @@ public class TfvcConfigureProxySettingsTest extends L2Test {
 
         // Run the action and verify that the proxy was set
         final ConfigureProxyAction action = new ConfigureProxyAction();
-        myCodeInsightFixture.testAction(action);
+        TestActionEvent e = new TestActionEvent(action);
+        action.actionPerformed(e);
         Mockito.verify(dialog).getProxyUri();
         Assert.assertEquals("http://proxy:8888", WorkspaceHelper.getProxyServer(serverUri));
 
