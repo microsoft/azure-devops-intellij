@@ -103,7 +103,6 @@ public abstract class L2Test extends UsefulTestCase {
     protected GitVcs myVcs;
 
     protected IdeaProjectTestFixture myProjectFixture;
-    protected CodeInsightTestFixture myCodeInsightFixture;
     private String myTestStartedIndicator;
 
     public String getServerUrl() {
@@ -250,8 +249,6 @@ public abstract class L2Test extends UsefulTestCase {
         try {
             myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getTestName(true)).getFixture();
             myProjectFixture.setUp();
-
-            myCodeInsightFixture = IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(myProjectFixture);
 
             // Use the context info loaded earlier to setup the environment for TF work
             initializeTfEnvironment();
