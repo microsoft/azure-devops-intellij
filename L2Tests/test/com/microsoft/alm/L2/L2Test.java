@@ -14,18 +14,20 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.EdtTestUtil;
 import com.intellij.testFramework.TestLoggerFactory;
 import com.intellij.testFramework.UsefulTestCase;
-import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
+import com.intellij.util.ThrowableRunnable;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.events.ServerPollingManager;
 import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
@@ -62,16 +64,9 @@ import sun.security.ssl.Debug;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -275,6 +270,7 @@ public abstract class L2Test extends UsefulTestCase {
             addSilently();
             removeSilently();
             EULADialog.acceptEula();
+            ServerPollingManager.getInstance().startPolling();
         } catch (Exception e) {
             tearDown();
             throw e;
@@ -301,8 +297,15 @@ public abstract class L2Test extends UsefulTestCase {
             if (myVcsNotifier != null) {
                 myVcsNotifier.cleanup();
             }*/
+            ServerPollingManager.getInstance().stopPolling();
             if (myProjectFixture != null) {
-                //myProjectFixture.tearDown();
+                EdtTestUtil.runInEdtAndWait(new ThrowableRunnable<Throwable>() {
+                    @Override
+                    public void run() throws Throwable {
+                        myProjectFixture.tearDown();
+                    }
+                });
+
             }
         } finally {
             try {
