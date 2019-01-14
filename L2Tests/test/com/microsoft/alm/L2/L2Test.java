@@ -34,6 +34,7 @@ import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -295,6 +296,7 @@ public abstract class L2Test extends UsefulTestCase {
                 myVcsNotifier.cleanup();
             }*/
             ServerPollingManager.getInstance().stopPolling();
+            OperationExecutor.getInstance().shutdown();
             if (myProjectFixture != null) {
                 EdtTestUtil.runInEdtAndWait(new ThrowableRunnable<Throwable>() {
                     @Override

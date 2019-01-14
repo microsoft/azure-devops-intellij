@@ -96,7 +96,7 @@ public class GitImportTest extends L2Test {
         Assert.assertEquals(uniqueString, content);
         bufferedContent.close();
         contentStream.close();
-
+        selectedContext.dispose();
         // TODO: Clean up the folder now that the test has passed
     }
 }

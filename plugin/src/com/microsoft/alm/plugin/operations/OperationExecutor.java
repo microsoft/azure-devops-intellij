@@ -90,4 +90,8 @@ public class OperationExecutor {
             throw new TeamServicesException(TeamServicesException.KEY_OPERATION_ERRORS, t);
         }
     }
+
+    public void shutdown() {
+        threadPoolExecutor.shutdown();
+    }
 }
