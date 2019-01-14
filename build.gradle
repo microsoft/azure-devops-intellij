@@ -71,7 +71,11 @@ subprojects {
                 srcDir 'test'
             }
         }
-    }    
+    }
+
+    test {
+        forkEvery = 10
+    }
 }
 
 /**
@@ -146,6 +150,10 @@ project(":L2Tests") {
     jar {
         baseName 'com.microsoft.alm.L2'
     }
+
+    test {
+        forkEvery = 1
+    }
 }
 
 
@@ -188,10 +196,6 @@ subprojects {
         testCompile group: 'commons-lang', name: 'commons-lang', version: '2.4'
     }   
 
-    test {
-        forkEvery = 10     
-    }
-    
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
