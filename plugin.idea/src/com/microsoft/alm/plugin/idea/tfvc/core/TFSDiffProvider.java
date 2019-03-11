@@ -109,7 +109,10 @@ public class TFSDiffProvider extends DiffProviderEx {
         try {
             // need to make a file because the VirtualFile object path is in system-independent format
             final File localFile = VfsUtilCore.virtualToIoFile(virtualFile);
-            return getRevisionNumber(localFile.getPath(), localFile.getName());
+            final String filePath = localFile.getPath();
+            final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+            final ItemInfo itemInfo = CommandUtils.getItemInfo(context, filePath);
+            return createRevision(itemInfo, filePath);
         } catch (Exception e) {
             logger.warn("Unable to getCurrentRevision", e);
             AbstractVcsHelper.getInstance(project).showError(
@@ -133,16 +136,12 @@ public class TFSDiffProvider extends DiffProviderEx {
         for (ItemInfo info : statusList) {
             final String itemPath = info.getLocalItem();
             final VirtualFile virtualFile = fs.findFileByPath(itemPath);
-            final TfsRevisionNumber revision = new TfsRevisionNumber(
-                    info.getLocalVersionAsInt(),
-                    itemPath,
-                    null);
             if (virtualFile == null) {
                 logger.error("VirtualFile not found for item " + itemPath);
                 continue;
             }
 
-            revisionMap.put(virtualFile, revision);
+            revisionMap.put(virtualFile, createRevision(info, itemPath));
         }
 
         return revisionMap;
@@ -167,6 +166,13 @@ public class TFSDiffProvider extends DiffProviderEx {
     public VcsRevisionNumber getLatestCommittedRevision(final VirtualFile vcsRoot) {
         // todo.
         return null;
+    }
+
+    private TfsRevisionNumber createRevision(final ItemInfo itemInfo, final String itemPath) {
+        return new TfsRevisionNumber(
+                itemInfo.getLocalVersionAsInt(),
+                itemPath,
+                null);
     }
 
     /**
