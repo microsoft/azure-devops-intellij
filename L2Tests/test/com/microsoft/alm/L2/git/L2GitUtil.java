@@ -30,6 +30,7 @@ import git4idea.GitVcs;
 import git4idea.commands.Git;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +50,7 @@ public class L2GitUtil {
     public static void editAndCommitFile(final File file, final git4idea.repo.GitRepository repository, final Project project) throws IOException {
         // edits file
         final VirtualFile readmeVirtualFile = LocalFileSystem.getInstance().findFileByIoFile(file);
+        Assert.assertNotNull("Git repository should have a " + file.getName() + " file", readmeVirtualFile);
         FileUtil.writeToFile(file, "\nnew line", true);
 
         // adds and commits the change

@@ -3,9 +3,14 @@
 
 package com.microsoft.alm.L2.git;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.EdtTestUtil;
+import com.intellij.util.ThrowableRunnable;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -103,5 +108,19 @@ public class CreatePullRequestTest extends L2Test {
                 pullRequests.get(0).getPullRequestId());
         myGit.branchDelete(repository, branchName, true, mock(GitLineHandlerListener.class));
         FileUtils.deleteDirectory(tempFolder);
+        context.dispose();
+        // Close currentProject
+        EdtTestUtil.runInEdtAndWait(new ThrowableRunnable<Throwable>() {
+            @Override
+            public void run() {
+                ProjectManager.getInstance().closeProject(currentProject);
+                ApplicationManager.getApplication().runWriteAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        Disposer.dispose(currentProject);
+                    }
+                });
+            }
+        });
     }
 }
