@@ -10,20 +10,18 @@ To learn more about installing and using our Team Services IntelliJ plug-in, vis
 1. Install JDK 8. 
    * You can find the JDK 8 download on Oracle's web site at <a href="http://www.oracle.com/technetwork/java/javase/downloads" target="_blank">Java SE Downloads</a>.
 2. Set JAVA_HOME to the location of JDK 8.
-4. Clone the repository (if planning on building yourself).
+3. Clone the repository (if planning on building yourself).
 
 ## Building the Plugin
-
-### Download Dependenc
 
 ## Build with Gradle
 Run the build by:
 
 1. Open a terminal/console window. 
-1. Navigate to the repository root.
-1. Run `./gradlew buildPlugin
+2. Navigate to the repository root.
+3. Run `./gradlew buildPlugin`
    * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.8 JDK.
-1. The plugin zip file will be created in the `plugin.idea/build/distributions/` folder.
+4. The plugin zip file will be created in the `plugin.idea/build/distributions/` folder.
 
 
 ## Build and Run with IntelliJ
@@ -97,17 +95,23 @@ Gradle build will fail if checkstyle plugin detects a violation.
 
 Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have a VSTS account setup to run against.
 
+You'll need to add a test project into your account, and add both git and TFVC repositories into it. Git repository should also include a `README.md` file in the repository root, and TFVC repository should include a `readme.txt` file.
+
 Here are the steps to setup your environment:
-1. Create run configuration from `L2Tests` gradle project  
+1. First create run configuration from `L2Tests` gradle project:
+   * tasks: `cleanTest test`
+   * arguments: `--tests *`
 2. Second setup the environment variables that provide the connection information for the tests. If this information is missing the tests will fail with a message that describes the missing information. The values below are examples but you will have to fix them.
    * MSVSTS_INTELLIJ_RUN_L2_TESTS=true
    * MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd
-   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://account.visualstudio.com/_git/projectName
+   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://account.visualstudio.com/projectName/_git/projectName
    * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://account.visualstudio.com/defaultcollection/_git/projectName
    * MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage
-   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://account.visualstudio.com
+   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://account.visualstudio.com (make sure no trailing slash here)
    * MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName
    * MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser
+   
+   _Note_: Do not use https://dev.azure.com/account/ addresses in these environment variables, make sure to use https://account.visualstudio.com/
 
 3. Other things to note:
    * You can toggle whether the tests will run or not simply by changing the MSVSTS_INTELLIJ_RUN_L2_TESTS environment variable.
