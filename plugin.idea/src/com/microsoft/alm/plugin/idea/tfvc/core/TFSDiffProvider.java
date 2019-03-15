@@ -24,13 +24,16 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
-import com.intellij.openapi.vcs.diff.DiffProvider;
+import com.intellij.openapi.vcs.diff.DiffProviderEx;
 import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.rest.VersionControlRecursionTypeCaseSensitive;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
@@ -49,8 +52,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
-public class TFSDiffProvider implements DiffProvider {
+public class TFSDiffProvider extends DiffProviderEx {
     private static final Logger logger = LoggerFactory.getLogger(TFSDiffProvider.class);
     private static final int MINIMAL_WAIT_FOR_RETRY = 60 * 1000;
 
@@ -105,13 +109,42 @@ public class TFSDiffProvider implements DiffProvider {
         try {
             // need to make a file because the VirtualFile object path is in system-independent format
             final File localFile = VfsUtilCore.virtualToIoFile(virtualFile);
-            return getRevisionNumber(localFile.getPath(), localFile.getName());
+            final String filePath = localFile.getPath();
+            final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+            final ItemInfo itemInfo = CommandUtils.getItemInfo(context, filePath);
+            return createRevision(itemInfo, filePath);
         } catch (Exception e) {
             logger.warn("Unable to getCurrentRevision", e);
             AbstractVcsHelper.getInstance(project).showError(
                     new VcsException(LocalizationServiceImpl.getInstance().getExceptionMessage(e), e), TFSVcs.TFVC_NAME);
         }
         return VcsRevisionNumber.NULL;
+    }
+
+    @Override
+    public Map<VirtualFile, VcsRevisionNumber> getCurrentRevisions(Iterable<VirtualFile> files) {
+        final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+        final List<String> filePaths = ContainerUtil.newArrayList();
+        for (VirtualFile file : files) {
+            String filePath = file.getPath();
+            filePaths.add(filePath);
+        }
+
+        final Map<VirtualFile, VcsRevisionNumber> revisionMap = ContainerUtil.newHashMap();
+        final List<ItemInfo> statusList = CommandUtils.getItemInfos(context, null, filePaths);
+        final LocalFileSystem fs = LocalFileSystem.getInstance();
+        for (ItemInfo info : statusList) {
+            final String itemPath = info.getLocalItem();
+            final VirtualFile virtualFile = fs.findFileByPath(itemPath);
+            if (virtualFile == null) {
+                logger.error("VirtualFile not found for item " + itemPath);
+                continue;
+            }
+
+            revisionMap.put(virtualFile, createRevision(info, itemPath));
+        }
+
+        return revisionMap;
     }
 
     public ItemLatestState getLastRevision(final FilePath localPath) {
@@ -133,6 +166,13 @@ public class TFSDiffProvider implements DiffProvider {
     public VcsRevisionNumber getLatestCommittedRevision(final VirtualFile vcsRoot) {
         // todo.
         return null;
+    }
+
+    private TfsRevisionNumber createRevision(final ItemInfo itemInfo, final String itemPath) {
+        return new TfsRevisionNumber(
+                itemInfo.getLocalVersionAsInt(),
+                itemPath,
+                null);
     }
 
     /**
