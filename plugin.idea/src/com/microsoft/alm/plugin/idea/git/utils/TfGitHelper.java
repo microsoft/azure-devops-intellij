@@ -91,6 +91,11 @@ public class TfGitHelper {
             public boolean apply(final GitRemote remote) {
                 return TfGitHelper.isTfGitRemote(remote);
             }
+
+            @Override
+            public boolean test(@Nullable GitRemote input) {
+                return apply(input);
+            }
         });
     }
 

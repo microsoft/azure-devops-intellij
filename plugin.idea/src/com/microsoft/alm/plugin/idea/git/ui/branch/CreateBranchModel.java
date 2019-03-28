@@ -36,6 +36,7 @@ import git4idea.repo.GitRepository;
 import git4idea.update.GitFetchResult;
 import git4idea.update.GitFetcher;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,11 @@ public class CreateBranchModel extends AbstractModel {
                     public boolean apply(final GitRemoteBranch remoteBranch) {
                         //  condition: remote must be a vso/tfs remote
                         return tfGitRemotes.contains(remoteBranch.getRemote());
+                    }
+
+                    @Override
+                    public boolean test(@Nullable GitRemoteBranch input) {
+                        return apply(input);
                     }
                 })
         );
