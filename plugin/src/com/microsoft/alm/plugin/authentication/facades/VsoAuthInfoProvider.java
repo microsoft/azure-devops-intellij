@@ -34,6 +34,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
     private final static Logger logger = LoggerFactory.getLogger(VsoAuthInfoProvider.class);
 
@@ -102,7 +104,7 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
             authenticationInfoFuture.setException(t);
         }
 
-        Futures.addCallback(authenticationInfoFuture, callback);
+        Futures.addCallback(authenticationInfoFuture, callback, directExecutor());
     }
 
     public AuthenticationInfo getAuthenticationInfo(final URI serverUri, final TokenPair tokenPair) {
