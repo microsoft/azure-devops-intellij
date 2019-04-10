@@ -3,7 +3,7 @@
  */
 
 plugins {
-    id 'org.jetbrains.intellij' version '0.3.4' apply false
+    id 'org.jetbrains.intellij' version '0.4.1' apply false
 }
 
 /**
@@ -71,7 +71,11 @@ subprojects {
                 srcDir 'test'
             }
         }
-    }    
+    }
+
+    test {
+        forkEvery = 10
+    }
 }
 
 /**
@@ -146,6 +150,10 @@ project(":L2Tests") {
     jar {
         baseName 'com.microsoft.alm.L2'
     }
+
+    test {
+        forkEvery = 1
+    }
 }
 
 
@@ -157,7 +165,7 @@ subprojects {
         codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
-        compile group: 'com.google.guava', name: 'guava', version: '19.0'
+        compile group: 'com.google.guava', name: 'guava', version: '27.1-jre'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1') {
@@ -188,10 +196,6 @@ subprojects {
         testCompile group: 'commons-lang', name: 'commons-lang', version: '2.4'
     }   
 
-    test {
-        forkEvery = 10     
-    }
-    
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }

@@ -29,10 +29,9 @@ import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.microsoft.alm.plugin.external.commands.Command;
-import com.microsoft.alm.plugin.external.commands.StatusCommand;
 import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
@@ -43,6 +42,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -99,8 +99,7 @@ public class TFSChangeProvider implements ChangeProvider {
             return;
         }
 
-        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
-
+        final List<String> pathsToProcess = new ArrayList<String>();
         for (final FilePath root : roots) {
             // if we get a change notification in the $tf folder, we need to just ignore it
             if (StringUtils.containsIgnoreCase(root.getPath(), "$tf") ||
@@ -108,32 +107,37 @@ public class TFSChangeProvider implements ChangeProvider {
                 continue;
             }
 
-            List<PendingChange> changes;
-            try {
-                // TODO: add the ability to pass multiple roots to the command line
-                final Command<List<PendingChange>> command = new StatusCommand(null, root.getPath());
-                changes = command.runSynchronously();
-            } catch (final ToolEulaNotAcceptedException e) {
-                logger.error("EULA not accepted");
-                IdeaHelper.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        EULADialog.showDialogIfNeeded(myProject);
-                    }
-                });
-                return;
-            } catch (final Throwable t) {
-                logger.warn("Failed to get changes from command line. root=" + root.getPath(), t);
-                changes = Collections.emptyList();
-            }
+            pathsToProcess.add(root.getPath());
+        }
 
-            // for each change, find out the status of the changes and then add to the list
-            for (final PendingChange change : changes) {
-                try {
-                    StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
-                } catch (TfsException e) {
-                    throw new VcsException(e.getMessage(), e);
+        if (pathsToProcess.isEmpty()) {
+            return;
+        }
+
+        List<PendingChange> changes;
+        try {
+            changes = CommandUtils.getStatusForFiles(null, pathsToProcess);
+        } catch (final ToolEulaNotAcceptedException e) {
+            logger.error("EULA not accepted");
+            IdeaHelper.runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    EULADialog.showDialogIfNeeded(myProject);
                 }
+            });
+            return;
+        } catch (final Throwable t) {
+            logger.warn("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
+            changes = Collections.emptyList();
+        }
+
+        // for each change, find out the status of the changes and then add to the list
+        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
+        for (final PendingChange change : changes) {
+            try {
+                StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
+            } catch (TfsException e) {
+                throw new VcsException(e.getMessage(), e);
             }
         }
     }

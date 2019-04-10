@@ -23,6 +23,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -126,6 +128,7 @@ public class VcsHelperTest extends IdeaAbstractTest {
     }
 
     private void setupVcs(final boolean isGit, final boolean isTfvc) {
+        when(mockGitRepositoryManager.getRepositories()).thenReturn(Collections.singletonList(mockGitRepository));
         when(mockProjectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)).thenReturn(isGit);
         when(mockProjectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)).thenReturn(isTfvc);
     }

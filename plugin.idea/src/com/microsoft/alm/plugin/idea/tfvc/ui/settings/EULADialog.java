@@ -104,13 +104,17 @@ public class EULADialog extends DialogWrapper {
         }
     }
 
+    public static void acceptEula() throws IOException, InterruptedException {
+        String tfLocation = TfTool.getLocation();
+        Process process = ProcessHelper.startProcess(
+                Path.getDirectoryName(tfLocation), Arrays.asList(tfLocation, "eula", SystemInfo.isWindows ? "/accept" : "-accept"));
+        process.waitFor();
+    }
+
     @Override
     public void doOKAction() {
         try {
-            String tfLocation = TfTool.getLocation();
-            Process process = ProcessHelper.startProcess(
-                    Path.getDirectoryName(tfLocation), Arrays.asList(tfLocation, "eula", SystemInfo.isWindows ? "/accept" : "-accept"));
-            process.waitFor();
+            acceptEula();
         } catch (Exception e) {
             logger.error("Can't accept EULA", e);
         } finally {

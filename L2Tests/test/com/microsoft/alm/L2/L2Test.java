@@ -14,23 +14,27 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.EdtTestUtil;
 import com.intellij.testFramework.TestLoggerFactory;
 import com.intellij.testFramework.UsefulTestCase;
-import com.intellij.testFramework.fixtures.CodeInsightTestFixture;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
+import com.intellij.util.ThrowableRunnable;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.events.ServerPollingManager;
 import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -107,7 +111,6 @@ public abstract class L2Test extends UsefulTestCase {
     protected GitVcs myVcs;
 
     protected IdeaProjectTestFixture myProjectFixture;
-    protected CodeInsightTestFixture myCodeInsightFixture;
     private String myTestStartedIndicator;
 
     public String getServerUrl() {
@@ -255,8 +258,6 @@ public abstract class L2Test extends UsefulTestCase {
             myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getTestName(true)).getFixture();
             myProjectFixture.setUp();
 
-            myCodeInsightFixture = IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(myProjectFixture);
-
             // Use the context info loaded earlier to setup the environment for TF work
             initializeTfEnvironment();
 
@@ -273,6 +274,8 @@ public abstract class L2Test extends UsefulTestCase {
 
             addSilently();
             removeSilently();
+            EULADialog.acceptEula();
+            ServerPollingManager.getInstance().startPolling();
         } catch (Exception e) {
             tearDown();
             throw e;
@@ -299,8 +302,16 @@ public abstract class L2Test extends UsefulTestCase {
             if (myVcsNotifier != null) {
                 myVcsNotifier.cleanup();
             }*/
+            ServerPollingManager.getInstance().stopPolling();
+            OperationExecutor.getInstance().shutdown();
             if (myProjectFixture != null) {
-                //myProjectFixture.tearDown();
+                EdtTestUtil.runInEdtAndWait(new ThrowableRunnable<Throwable>() {
+                    @Override
+                    public void run() throws Throwable {
+                        myProjectFixture.tearDown();
+                    }
+                });
+
             }
         } finally {
             try {

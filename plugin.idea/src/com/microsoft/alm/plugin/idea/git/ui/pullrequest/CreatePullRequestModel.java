@@ -75,6 +75,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+
 public class CreatePullRequestModel extends AbstractModel {
 
     private static final Logger logger = LoggerFactory.getLogger(CreatePullRequestModel.class);
@@ -281,6 +283,11 @@ public class CreatePullRequestModel extends AbstractModel {
                                 return tfGitRemotes.contains(remoteBranch.getRemote())
                                         && !remoteBranch.equals(remoteTrackingBranch);
                             }
+
+                            @Override
+                            public boolean test(@org.checkerframework.checker.nullness.qual.Nullable GitRemoteBranch input) {
+                                return apply(input);
+                            }
                         })
         );
         sortedRemoteBranches.setSelectedItem(TfGitHelper.getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
@@ -420,7 +427,7 @@ public class CreatePullRequestModel extends AbstractModel {
                         }
                     });
                 }
-            });
+            }, directExecutor());
         }
     }
 
@@ -505,7 +512,7 @@ public class CreatePullRequestModel extends AbstractModel {
                     public void onFailure(Throwable t) {
                         notifyPushFailedError(createModel.getProject(), t.getLocalizedMessage());
                     }
-                });
+                }, directExecutor());
             }
         };
 
