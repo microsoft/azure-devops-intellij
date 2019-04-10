@@ -3,12 +3,12 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
+import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
-import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
-import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -21,6 +21,7 @@ import org.glassfish.jersey.client.RequestEntityProcessing;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.ws.rs.client.Client;
 import java.net.URI;
 import java.util.Map;
 
@@ -111,14 +112,17 @@ public class ServerContextTest extends AbstractTest {
         //proxy setting doesn't automatically mean we need to setup ssl trust store anymore
         Assert.assertEquals(4, properties2.size());
         Assert.assertNotNull(properties2.get(ClientProperties.PROXY_URI));
-        Assert.assertNull(properties2.get(ApacheClientProperties.SSL_CONFIG));
 
         info = new AuthenticationInfo("users1", "pass", "https://tfsonprem.test", "4display");
         final ClientConfig config3 = RestClientHelper.getClientConfig(ServerContext.Type.TFS, info, false);
         final Map<String, Object> properties3 = config3.getProperties();
-        Assert.assertEquals(4, properties3.size());
+        Assert.assertEquals(3, properties3.size());
         Assert.assertNull(properties3.get(ClientProperties.PROXY_URI));
-        Assert.assertNotNull(properties3.get(ApacheClientProperties.SSL_CONFIG));
     }
 
+    @Test
+    public void getClientSslContext() {
+        Client client = RestClientHelper.getClient("https://tfsonprem.test", "testToken");
+        Assert.assertNotNull(client.getSslContext());
+    }
 }

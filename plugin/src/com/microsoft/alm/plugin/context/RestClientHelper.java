@@ -10,7 +10,6 @@ import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.services.HttpProxyService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -18,7 +17,6 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.VersionInfo;
-import org.glassfish.jersey.SslConfigurator;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
 import org.glassfish.jersey.client.ClientConfig;
@@ -38,20 +36,25 @@ import java.io.IOException;
  */
 public class RestClientHelper {
 
+    private static Client createNewClient(ClientConfig clientConfig) {
+        return ClientBuilder.newBuilder()
+                .withConfig(clientConfig)
+                .sslContext(PluginServiceProvider.getInstance().getCertificateService().getSSLContext())
+                .build();
+    }
+
     public static Client getClient(final String serverUri, final String accessTokenValue) {
         final Credentials credentials = new UsernamePasswordCredentials("accessToken", accessTokenValue);
         final ClientConfig clientConfig = getClientConfig(ServerContext.Type.VSO_DEPLOYMENT, credentials, serverUri,
                 PluginServiceProvider.getInstance().getHttpProxyService().useHttpProxy());
 
-        final Client localClient = ClientBuilder.newClient(clientConfig);
-        return localClient;
+        return createNewClient(clientConfig);
     }
 
     public static Client getClient(final ServerContext.Type type, final AuthenticationInfo authenticationInfo) {
         final ClientConfig clientConfig = getClientConfig(type, authenticationInfo,
                 PluginServiceProvider.getInstance().getHttpProxyService().useHttpProxy());
-        final Client localClient = ClientBuilder.newClient(clientConfig);
-        return localClient;
+        return createNewClient(clientConfig);
     }
 
     public static ClientConfig getClientConfig(final ServerContext.Type type,
@@ -91,11 +94,6 @@ public class RestClientHelper {
             }
         }
 
-        // if this is a onPrem server and the uri starts with https, we need to setup ssl
-        if (isSSLEnabledOnPrem(type, serverUri)) {
-            clientConfig.property(ApacheClientProperties.SSL_CONFIG, getSslConfigurator());
-        }
-
         // register a filter to set the User Agent header
         clientConfig.register(new ClientRequestFilter() {
             @Override
@@ -116,63 +114,5 @@ public class RestClientHelper {
         final Credentials credentials = AuthHelper.getCredentials(type, authenticationInfo);
 
         return getClientConfig(type, credentials, authenticationInfo.getServerUri(), includeProxySettings);
-    }
-
-    public static boolean isSSLEnabledOnPrem(final ServerContext.Type type, final String serverUri) {
-        return type == ServerContext.Type.TFS && serverUri.toLowerCase().startsWith("https://");
-    }
-
-    public static SslConfigurator getSslConfigurator() {
-        /**
-         * Set up trust store and key store for the https connection.
-         *
-         * http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
-         * See table 6.
-         */
-        final SslConfigurator sslConfigurator = SslConfigurator.newInstance();
-
-        // Trust stores are used to store CA certificates. It is used to trust the server connection.
-        setupTrustStore(sslConfigurator);
-
-        // Key stores are used to store client certificates.  It is used to authenticate the client.
-        setupKeyStore(sslConfigurator);
-
-        return sslConfigurator;
-    }
-
-    private static SslConfigurator setupTrustStore(final SslConfigurator sslConfigurator) {
-        // Create trust store from .cer
-        // keytool.exe  -import -trustcacerts -alias root -file cacert.cer -keystore truststore.jks
-        final String trustStore = System.getProperty("javax.net.ssl.trustStore");
-        final String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword", StringUtils.EMPTY);
-
-        final String trustStoreType = System.getProperty("javax.net.ssl.trustStoreType", "JKS");
-        final String trustManagerFactoryAlgorithm = System.getProperty("ssl.TrustManagerFactory.algorithm", "PKIX");
-
-        if (trustStore != null) {
-            sslConfigurator
-                    .trustStoreFile(trustStore)
-                    .trustStorePassword(trustStorePassword)
-                    .trustStoreType(trustStoreType)
-                    .trustManagerFactoryAlgorithm(trustManagerFactoryAlgorithm)
-                    .securityProtocol("SSL");
-        }
-
-        return sslConfigurator;
-    }
-
-    private static SslConfigurator setupKeyStore(final SslConfigurator sslConfigurator) {
-        // Create keystore from pkx:
-        // keytool -importkeystore -srckeystore mycert.pfx -srcstoretype pkcs12 -destkeystore keystore.jks -deststoretype JKS
-        final String keyStore = System.getProperty("javax.net.ssl.keyStore");
-        final String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", StringUtils.EMPTY);
-
-        if (keyStore != null) {
-            sslConfigurator
-                    .keyStoreFile(keyStore)
-                    .keyStorePassword(keyStorePassword);
-        }
-
-        return sslConfigurator;
     }
 }

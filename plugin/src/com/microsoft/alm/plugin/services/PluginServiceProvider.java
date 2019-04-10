@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.services;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * This class is a singleton that holds all of the services that must be provided by the plugin that uses this module.
  * When the plugin is loaded for the first time, this class must be initialized. It may only be initialized once.
@@ -20,6 +22,7 @@ public class PluginServiceProvider {
     private LocalizationService localizationSerivce;
     private HttpProxyService httpProxyService;
     private AsyncService asyncService;
+    private CertificateService certificateService;
 
     private static class ProviderHolder {
         private static PluginServiceProvider INSTANCE = new PluginServiceProvider();
@@ -36,6 +39,7 @@ public class PluginServiceProvider {
                            final LocalizationService localizationService,
                            final HttpProxyService httpProxyService,
                            final AsyncService asyncService,
+                           final CertificateService certificateService,
                            final boolean insideIDE) {
         if (!initialized) {
             this.contextStore = contextStore;
@@ -45,6 +49,7 @@ public class PluginServiceProvider {
             this.localizationSerivce = localizationService;
             this.httpProxyService = httpProxyService;
             this.asyncService = asyncService;
+            this.certificateService = certificateService;
             this.insideIDE = insideIDE;
             initialized = true;
         }
@@ -105,5 +110,13 @@ public class PluginServiceProvider {
         assert asyncService != null;
 
         return asyncService;
+    }
+
+    @NotNull
+    public CertificateService getCertificateService() {
+        assert initialized;
+        assert certificateService != null;
+
+        return certificateService;
     }
 }

@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin;
 
+import com.microsoft.alm.plugin.mocks.MockCertificateService;
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
 import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
 import com.microsoft.alm.plugin.mocks.MockLocalizationService;
@@ -32,7 +33,7 @@ public class AbstractTest {
                     public void executeOnPooledThread(Runnable runnable) {
                         runnable.run();
                     }
-                }, false);
+                }, new MockCertificateService(), false);
     }
 
     public static void assertLogged(final String s) {

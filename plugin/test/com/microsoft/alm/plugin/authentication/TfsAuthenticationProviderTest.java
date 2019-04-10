@@ -3,13 +3,13 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.google.common.util.concurrent.SettableFuture;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
 import org.junit.Assert;
 import org.junit.Test;
 

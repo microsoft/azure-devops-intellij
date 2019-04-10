@@ -3,10 +3,10 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.google.common.collect.ImmutableList;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import jersey.repackaged.com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
