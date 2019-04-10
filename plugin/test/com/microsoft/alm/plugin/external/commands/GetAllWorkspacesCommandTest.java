@@ -30,7 +30,7 @@ public class GetAllWorkspacesCommandTest extends AbstractCommandTest {
     @Test
     public void testConstructor_withAuthInfo() {
         final AuthenticationInfo authInfo = mock(AuthenticationInfo.class);
-        final String serverUrl = "http://account.visualstudio.com/";
+        final String serverUrl = "http://organization.visualstudio.com/";
         final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(authInfo, serverUrl);
     }
 
@@ -53,10 +53,10 @@ public class GetAllWorkspacesCommandTest extends AbstractCommandTest {
     @Test
     public void testGetArgumentBuilder_withAuthInfo() {
         final AuthenticationInfo authInfo = mock(AuthenticationInfo.class);
-        final String serverUrl = "http://account.visualstudio.com/";
+        final String serverUrl = "http://organization.visualstudio.com/";
         final GetAllWorkspacesCommand cmd = new GetAllWorkspacesCommand(authInfo, serverUrl);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
-        assertEquals("workspaces -noprompt ******** -collection:http://account.visualstudio.com/", builder.toString());
+        assertEquals("workspaces -noprompt ******** -collection:http://organization.visualstudio.com/", builder.toString());
         assertEquals(null, builder.getWorkingDirectory());
     }
 

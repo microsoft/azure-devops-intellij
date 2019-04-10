@@ -34,7 +34,7 @@ public class AuthHelper {
     /**
      * Personal Access Token description string formatter
      */
-    private static final String TOKEN_DESCRIPTION_FORMATTER = "VSTS IntelliJ Plugin: %s from: %s on: %s";
+    private static final String TOKEN_DESCRIPTION_FORMATTER = "Azure DevOps IntelliJ Plugin: %s from: %s on: %s";
 
     public static AuthenticationInfo createAuthenticationInfo(final String serverUri,
                                                               final Credentials credentials,

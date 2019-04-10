@@ -77,7 +77,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
     /**
      * Parses the output of the workfold command. (NOT XML)
      * SAMPLE
-     * Access denied connecting to TFS server https://account.visualstudio.com/ (authenticating as Personal Access Token)  <-- line is optional
+     * Access denied connecting to TFS server https://organization.visualstudio.com/ (authenticating as Personal Access Token)  <-- line is optional
      * =====================================================================================================================================================
      * Workspace:  MyNewWorkspace2
      * Collection: http://java-tfs2015:8081/tfs/

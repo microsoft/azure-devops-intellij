@@ -30,7 +30,7 @@ import java.util.Map;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SimpleCheckoutStarter.class})
 public class VstsStarterTest extends IdeaAbstractTest {
-    public static final String VALID_GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/TestProject";
+    public static final String VALID_GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/TestProject";
     public static final String VALID_URI = SimpleCheckoutStarter.SUB_COMMAND_NAME + "/?url=" + VALID_GIT_URL + "&EncFormat=UTF8";
     public ApplicationStarterBase vstsStarter;
 

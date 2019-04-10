@@ -73,7 +73,7 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
         PowerMockito.mockStatic(CommandUtils.class, VersionControlPath.class, TfsFileUtil.class,
                 ProgressManager.class, VcsNotifier.class);
 
-        when(mockServerContext.getUri()).thenReturn(URI.create("http://account.visualstudio.com"));
+        when(mockServerContext.getUri()).thenReturn(URI.create("http://organization.visualstudio.com"));
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
         when(mockTFSVcs.getProject()).thenReturn(mockProject);

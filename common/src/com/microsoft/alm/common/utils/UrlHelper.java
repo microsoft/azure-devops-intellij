@@ -197,8 +197,8 @@ public class UrlHelper {
 
             // check for @ in url - team project name, repo name, collection name and account name don't allow @
             // E.g of valid url formats:
-            // ssh://account@account.visualstudio.com:22/Collection/_git/Repo
-            // account@account.visualstudio.com:22/Collection/_git/Repo
+            // ssh://account@organization.visualstudio.com:22/Collection/_git/Repo
+            // account@organization.visualstudio.com:22/Collection/_git/Repo
             if (StringUtils.contains(gitRemoteUrl, "@")) {
                 return true;
             }

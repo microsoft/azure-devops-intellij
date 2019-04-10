@@ -4,7 +4,7 @@ REM 1. Remote URL for the master repository
 REM 2. Remote URL for the mirror repository that was forked. This will be something like https://github.com/userOrOrgName/repoName.git. 
 REM 3. The branch name on the fork from the Pull request
 REM 4. The github pull request id
-REM Example: For this github pull request https://github.com/Microsoft/vso-intellij/pull/3, URL of mirror repository that was worked = https://github.com/yacaovsnc/vso-intellij.git, branch name on the fork = master, pull request id = 3 
+REM Example: For this github pull request https://github.com/Microsoft/azure-devops-intellij/pull/3, URL of mirror repository that was worked = https://github.com/yacaovsnc/vso-intellij.git, branch name on the fork = master, pull request id = 3 
 
 IF "%1" == "" (
   echo Master repository URL is not provided

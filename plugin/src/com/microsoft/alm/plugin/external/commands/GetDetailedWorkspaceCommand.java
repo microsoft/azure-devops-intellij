@@ -55,13 +55,13 @@ public class GetDetailedWorkspaceCommand extends Command<Workspace> {
     /**
      * Parses output for the workspace attributes
      * <p>
-     * tf workspaces -format:detailed -collection:http://account.visualstudio.com/ WorkspaceName
+     * tf workspaces -format:detailed -collection:http://organization.visualstudio.com/ WorkspaceName
      * ===========================================================================================================================================================================================================
      * Workspace:   WorkspaceName
      * Owner:       John Smith
      * Computer:    computerName
      * Comment:     Workspace created through IntelliJ
-     * Collection:  http://account.visualstudio.com/
+     * Collection:  http://organization.visualstudio.com/
      * Permissions: Private
      * File Time:   Current
      * Location:    Local

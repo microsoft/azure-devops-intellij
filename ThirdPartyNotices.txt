@@ -3,7 +3,7 @@ Do Not Translate or Localize
 
 This file provides information in Section A regarding components that are being relicensed to you by Microsoft under Microsoft's software licensing terms, and information in Section B regarding components that are being made available to you by Microsoft under the original licensing terms. Microsoft reserves all rights not expressly granted herein, whether by implication, estoppel or otherwise.
 
-Section A: Microsoft is offering you a license to use the following components with Microsoft Visual Studio Team Services Plug-in for IntelliJ subject to the terms of the Microsoft software license terms for Microsoft Visual Studio Team Services Plug-in for IntelliJ software products (the �Microsoft Program�).
+Section A: Microsoft is offering you a license to use the following components with Microsoft Azure DevOps Plug-in for IntelliJ subject to the terms of the Microsoft software license terms for Microsoft Azure DevOps Plug-in for IntelliJ software products (the �Microsoft Program�).
 
 1.	Gson (http://code.google.com/p/google-gson/)
 2.	Guava (http://code.google.com/p/guava-libraries/)
@@ -750,7 +750,7 @@ The Apache Software Foundation (http://www.apache.org/).
 =========================================
 END OF Apache HttpClient Windows NOTICES AND INFORMATION
 
-Section B: Microsoft is offering you a license to use the following components with Microsoft Visual Studio Team Services Plug-in for IntelliJ subject to their original license terms.
+Section B: Microsoft is offering you a license to use the following components with Microsoft Azure DevOps Plug-in for IntelliJ subject to their original license terms.
 
 1.	Jersey (https://jersey.java.net/)
 2.	Jaxrs (https://jcp.org/en/jsr/detail?id=339)

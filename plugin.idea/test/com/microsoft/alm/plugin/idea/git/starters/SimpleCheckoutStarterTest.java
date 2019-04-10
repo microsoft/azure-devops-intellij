@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleCheckoutStarterTest extends IdeaAbstractTest {
-    public static final String VALID_GIT_URL = "https://account.visualstudio.com/DefaultCollection/_git/Test  Project!!#";
+    public static final String VALID_GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/Test  Project!!#";
 
     @Test
     public void testCreateWithGitUrlHappy() {

@@ -1,10 +1,10 @@
-# Visual Studio Team Services Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
+# Azure DevOps Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
 
-This is a plugin for working with Git and TFVC repositories on Visual Studio Team Services (VSTS) and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
+This is a plugin for working with Git and TFVC repositories on Azure DevOps and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
 and various other Jetbrains IDEs. It is supported on Linux, Mac OS X, and Windows.
 It is compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
 
-To learn more about installing and using our Team Services IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in
+To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in
 
 ## Pre-Reqs
 1. Install JDK 8. 
@@ -93,7 +93,7 @@ Gradle build will fail if checkstyle plugin detects a violation.
 
 ## Running Integration Tests (L2 tests)
 
-Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have a VSTS account setup to run against.
+Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have an Azure DevOps Services organization setup to run against.
 
 You'll need to add a test project into your account, and add both git and TFVC repositories into it. Git repository should also include a `README.md` file in the repository root, and TFVC repository should include a `readme.txt` file.
 
@@ -104,10 +104,10 @@ Here are the steps to setup your environment:
 2. Second setup the environment variables that provide the connection information for the tests. If this information is missing the tests will fail with a message that describes the missing information. The values below are examples but you will have to fix them.
    * MSVSTS_INTELLIJ_RUN_L2_TESTS=true
    * MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd
-   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://account.visualstudio.com/projectName/_git/projectName
-   * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://account.visualstudio.com/defaultcollection/_git/projectName
+   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://organization.visualstudio.com/projectName/_git/repoName
+   * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://organization.visualstudio.com/defaultcollection/_git/projectName
    * MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage
-   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://account.visualstudio.com (make sure no trailing slash here)
+   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://organization.visualstudio.com (make sure no trailing slash here)
    * MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName
    * MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser
    
@@ -121,6 +121,6 @@ Here are the steps to setup your environment:
 
 Want more information? The following resources are available to help:
 
-* <a href="https://docs.microsoft.com/en-us/vsts/java/download-intellij-plug-in" target="_blank">Instructions</a> on how to install the plugin
+* <a href="https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in" target="_blank">Instructions</a> on how to install the plugin
 * <a href="https://youtu.be/wSdgmQL-Zbg" target="_blank">End-to-end demo</a> video of the plugin's features
-* <a href="https://docs.microsoft.com/en-us/vsts/git/create-repo-intellij" target="_blank">Documentation and tutorial</a> on how to use the plugin 
+* <a href="https://docs.microsoft.com/en-us/azure/devops/repos/git/create-repo-intellij" target="_blank">Documentation and tutorial</a> on how to use the plugin 

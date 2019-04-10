@@ -41,7 +41,7 @@ public class TfsImportPageModel extends ImportPageModelImpl {
         } else {
             authenticationProvider = VsoAuthenticationProvider.getInstance();
             if (authenticationProvider.isAuthenticated(this.getServerName())) {
-                logger.info("VSTS auth info already found so reusing that for loading repos");
+                logger.info("Azure DevOps Services auth info already found so reusing that for loading repos");
                 setServerNameInternal((authenticationProvider.getAuthenticationInfo(this.getServerName()).getServerUri()));
                 LookupHelper.loadVsoContexts(this, this,
                         authenticationProvider, getTeamProjectProvider(),

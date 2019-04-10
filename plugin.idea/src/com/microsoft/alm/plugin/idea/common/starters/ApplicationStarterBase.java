@@ -70,10 +70,10 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
      */
     protected boolean checkArguments(String[] args) {
         if (args.length < 2) {
-            logger.error("VSTS failed due to lack of commands. Please specify the command that you want VSTS to execute");
+            logger.error("Azure DevOps failed due to lack of commands. Please specify the command that you want Azure DevOps to execute");
             return false;
         } else if (!StringUtils.equalsIgnoreCase(VSTS_COMMAND, args[0])) {
-            logger.error("VSTS checkout failed due to the incorrect command being used. Expected \"vsts\" but found \"{}\".", args[0]);
+            logger.error("Azure DevOps checkout failed due to the incorrect command being used. Expected \"vsts\" but found \"{}\".", args[0]);
             return false;
         } else {
             return true;
@@ -91,7 +91,7 @@ public abstract class ApplicationStarterBase extends ApplicationStarterEx {
 
     @Override
     public void main(String[] args) {
-        logger.debug("Args passed to VSTS to process: {}", Arrays.toString(args));
+        logger.debug("Args passed to Azure DevOps to process: {}", Arrays.toString(args));
         try {
             if (StringUtils.startsWithIgnoreCase(args[1], URI_PREFIX)) {
                 // pass the uri but after removing it's prefix since it isn't needed anymore

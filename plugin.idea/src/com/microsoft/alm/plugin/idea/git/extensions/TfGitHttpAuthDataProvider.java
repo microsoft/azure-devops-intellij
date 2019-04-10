@@ -31,7 +31,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
 
         if (UrlHelper.isTeamServicesUrl(url)) {
             // We can't determine if the url is for a TFS on premise server but prompt for credentials if we know it is VSO
-            // IntelliJ calls us with a http server url e.g. http://myaccount.visualstudio.com
+            // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
             // convert to https:// for team services to avoid rest call failures
             final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
 
@@ -44,7 +44,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                     return new AuthData(vsoAuthenticationInfo.getUserName(), vsoAuthenticationInfo.getPassword());
                 }
             } else {
-                logger.warn("getAuthData: Unable to get https team services url for input url = " + url);
+                logger.warn("getAuthData: Unable to get https Azure DevOps Services url for input url = " + url);
             }
         }
 
@@ -58,13 +58,13 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
         // This method got called since stored credentials for the url resulted in an unauthorized error 401 or 403
         assert url != null;
         if (UrlHelper.isTeamServicesUrl(url)) {
-            // IntelliJ calls us with a http server url e.g. http://myaccount.visualstudio.com
+            // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
             // convert to https:// for team services to avoid rest call failures
             final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
             if (authUrl != null) {
                 ServerContextManager.getInstance().updateAuthenticationInfo(authUrl);
             } else {
-                logger.warn("forgetPassword: Unable to get https team services url for input url = " + url);
+                logger.warn("forgetPassword: Unable to get https Azure DevOps Services url for input url = " + url);
             }
         } else {
             //if onprem server is https:// we can't detect it, just use url provided by intelliJ
