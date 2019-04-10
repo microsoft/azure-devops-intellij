@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <version>1.150.0</version>
+    <version>1.151.2</version>
     <category>VCS Integration</category>
     <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,10 +57,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <b>v 1.150.0</b>
+      <b>v 1.151.2</b>
       <br />
       <ul>
-        <li>Updated the authentication library to keep up-to-date with fixes and changes.</li>
+        <li>Rebranding for Azure DevOps.</li>
+        <li>Fix UI freeze on project loading.</li>
+        <li>Various performance improvements and bug fixes.</li>
       </ul>
       <br />
     ]]>
