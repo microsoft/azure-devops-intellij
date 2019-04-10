@@ -20,6 +20,6 @@ public class LocalizationServiceImplTest extends IdeaAbstractTest {
         final TeamServicesException te = new TeamServicesException("KEY_VSO_AUTH_SESSION_EXPIRED", t);
         final String message1 = locService.getExceptionMessage(te);
         Assert.assertNotEquals(message1, "KEY_VSO_AUTH_SESSION_EXPIRED");
-        Assert.assertEquals(message1, "Your previous Team Services session has expired. Sign in again.");
+        Assert.assertEquals(message1, "Your previous Azure DevOps Services session has expired. Sign in again.");
     }
 }
