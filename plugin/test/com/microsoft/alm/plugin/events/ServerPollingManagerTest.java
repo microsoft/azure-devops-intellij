@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.events;
 
-import jersey.repackaged.com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.junit.Assert;
 import org.junit.Test;
 

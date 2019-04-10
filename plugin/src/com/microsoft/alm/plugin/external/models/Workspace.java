@@ -3,7 +3,7 @@
 
 package com.microsoft.alm.plugin.external.models;
 
-import jersey.repackaged.com.google.common.base.Objects;
+import com.google.common.base.Objects;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;

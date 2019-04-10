@@ -14,6 +14,7 @@ import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
 import com.microsoft.alm.plugin.context.rest.TfvcHttpClientEx;
 import com.microsoft.alm.plugin.context.soap.SoapServices;
 import com.microsoft.alm.plugin.context.soap.SoapServicesImpl;
+import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import com.microsoft.alm.workitemtracking.webapi.WorkItemTrackingHttpClient;
 import org.apache.http.auth.AuthScope;
@@ -23,9 +24,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.glassfish.jersey.SslConfigurator;
 
-import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.Client;
 import java.io.IOException;
 import java.net.URI;
@@ -152,14 +151,8 @@ public class ServerContext {
             final Credentials credentials = AuthHelper.getCredentials(type, authenticationInfo);
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(AuthScope.ANY, credentials);
-            final HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-
-            if (RestClientHelper.isSSLEnabledOnPrem(Type.TFS, authenticationInfo.getServerUri())) {
-                final SslConfigurator sslConfigurator = RestClientHelper.getSslConfigurator();
-                final SSLContext sslContext = sslConfigurator.createSSLContext();
-
-                httpClientBuilder.setSslcontext(sslContext);
-            }
+            final HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
+                    .setSSLContext(PluginServiceProvider.getInstance().getCertificateService().getSSLContext());
 
             httpClient = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider).build();
         }

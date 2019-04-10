@@ -166,8 +166,9 @@ subprojects {
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
         compile group: 'com.google.guava', name: 'guava', version: '27.1-jre'
-        compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.6'
-        compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.6'
+        compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.28'
+        compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.28'
+        compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.28'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1') {
             /* Task 454223: exclude default JNA dependency (would be version 4.1.0 as of this writing) */
             exclude group: 'net.java.dev.jna', module: 'jna'
