@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import git4idea.remote.GitHttpAuthDataProvider;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +18,8 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     private static final Logger logger = LoggerFactory.getLogger(TfGitHttpAuthDataProvider.class);
 
     @Override
-    public AuthData getAuthData(final String url) {
-        assert url != null;
+    public AuthData getAuthData(@NotNull String url) {
+        url = UrlHelper.convertToCanonicalHttpApiBase(url);
 
         //try to find authentication info from saved server contexts
         final AuthenticationInfo authenticationInfo = ServerContextManager.getInstance().getBestAuthenticationInfo(url, false);
@@ -54,9 +55,10 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     }
 
     @Override
-    public void forgetPassword(final String url) {
+    public void forgetPassword(@NotNull String url) {
         // This method got called since stored credentials for the url resulted in an unauthorized error 401 or 403
-        assert url != null;
+        url = UrlHelper.convertToCanonicalHttpApiBase(url);
+
         if (UrlHelper.isTeamServicesUrl(url)) {
             // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
             // convert to https:// for team services to avoid rest call failures

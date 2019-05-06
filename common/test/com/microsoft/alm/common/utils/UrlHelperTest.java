@@ -33,6 +33,13 @@ public class UrlHelperTest {
     }
 
     @Test
+    public void testConvertToCanonicalHttpApiBase() {
+        assertEquals("https://dev.azure.com/username", UrlHelper.convertToCanonicalHttpApiBase("https://username@dev.azure.com"));
+        assertEquals("https://username@microsoft.com", UrlHelper.convertToCanonicalHttpApiBase(("https://username@microsoft.com")));
+        assertEquals("http://dev.azure.com", UrlHelper.convertToCanonicalHttpApiBase(("http://dev.azure.com")));
+    }
+
+    @Test
     public void testResolveEndpointURI() throws Exception {
 
         URI expected, resolved;
