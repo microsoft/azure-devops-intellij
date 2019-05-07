@@ -7,10 +7,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import com.microsoft.alm.plugin.idea.git.ui.pullrequest.PRGitObjectMockHelper;
 import git4idea.GitBranch;
-import git4idea.GitCommit;
-import git4idea.history.GitHistoryUtils;
+import git4idea.GitRevisionNumber;
 import git4idea.repo.GitRepository;
 import org.junit.Assert;
 import org.junit.Before;
@@ -22,12 +20,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(GitHistoryUtils.class)
+@PrepareForTest(GitRevisionNumber.class)
 public class GeneralGitHelperTest extends IdeaAbstractTest {
+    private static final String mockBranchName = "mockBranchName";
+
     @Mock
     Project mockProject;
 
@@ -43,29 +40,19 @@ public class GeneralGitHelperTest extends IdeaAbstractTest {
     @Before
     public void startUp() {
         Mockito.when(mockGitRepository.getRoot()).thenReturn(mockVirtualFile);
+        Mockito.when(mockGitBranch.getName()).thenReturn(mockBranchName);
     }
 
     @Test
     public void testGetLastCommitHash_Happy() throws VcsException {
         final String lastHash = "935b168d0601bd05d57489fae04d5c6ec439cfea";
-        final String secondToLastHash = "9afa081effdaeafdff089b2aa3543415f6cdb1fb";
 
-        GitCommit lastCommit = PRGitObjectMockHelper.getCommit(mockProject, mockVirtualFile, "subject", "message", lastHash);
-        GitCommit secondToLastCommit = PRGitObjectMockHelper.getCommit(mockProject, mockVirtualFile, "subject", "message", secondToLastHash);
+        GitRevisionNumber revisionNumber = new GitRevisionNumber(lastHash);
 
-        PowerMockito.mockStatic(GitHistoryUtils.class);
-        Mockito.when(GitHistoryUtils.history(Mockito.eq(mockProject), Mockito.eq(mockVirtualFile),
-                Mockito.any(String.class))).thenReturn(Arrays.asList(lastCommit, secondToLastCommit));
+        PowerMockito.mockStatic(GitRevisionNumber.class);
+        Mockito.when(GitRevisionNumber.resolve(Mockito.eq(mockProject), Mockito.eq(mockVirtualFile),
+                Mockito.eq(mockBranchName))).thenReturn(revisionNumber);
 
         Assert.assertEquals(lastHash, GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockGitBranch));
-    }
-
-    @Test(expected = VcsException.class)
-    public void testGetLastCommitHash_NoHistory() throws VcsException {
-        PowerMockito.mockStatic(GitHistoryUtils.class);
-        Mockito.when(GitHistoryUtils.history(Mockito.eq(mockProject), Mockito.eq(mockVirtualFile),
-                Mockito.any(String.class))).thenReturn(Collections.EMPTY_LIST);
-
-        GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockGitBranch);
     }
 }

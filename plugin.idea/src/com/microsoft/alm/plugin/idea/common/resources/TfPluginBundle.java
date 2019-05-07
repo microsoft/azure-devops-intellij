@@ -106,10 +106,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_VSO_NO_PROFILE_ERROR_HELP = "VSO.NoProfileError.Help";
 
-    // Common Git
-    @NonNls
-    public static final String KEY_GIT_HISTORY_ERRORS_NO_HISTORY_FOUND = "Git.History.Errors.NoHistoryFound";
-
     // Common TFVC
     @NonNls
     public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE = "Errors.UnableToDetermineWorkspace";
