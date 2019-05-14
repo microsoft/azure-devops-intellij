@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.context.rest.ConnectionData;
 import com.microsoft.alm.plugin.context.rest.LocationServiceData;
 import com.microsoft.alm.plugin.context.rest.ServiceDefinition;
 import com.microsoft.alm.plugin.context.rest.VstsHttpClient;
+import com.microsoft.alm.plugin.context.rest.VstsInfo;
 import com.microsoft.alm.plugin.context.rest.VstsUserInfo;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
@@ -337,6 +338,32 @@ public class ServerContextManagerTest extends AbstractTest {
 
         // test the code path when we just provide the remote URL
         manager.validateServerConnection(context, myValidator);
+    }
+
+    @Test
+    public void testValidateGitUrl() {
+        final Client client = Mockito.mock(Client.class);
+        final ServerContext context = new ServerContextBuilder().type(ServerContext.Type.VSO).uri("https://dev.azure.com/username").buildWithClient(client);
+        final ServerContextManager.Validator validator = new ServerContextManager.Validator(context);
+
+        // We should test that the actual API URL used for VstsInto retrieval doesn't contain a user name; otherwise the
+        // HTTP client will use wrong credentials.
+        final String serverUrl = "https://dev.azure.com/username";
+        final String repositoryUrl = "https://username@dev.azure.com/username/projectname/_git/repositoryname";
+        final String repositoryInfoApiUrl = "https://dev.azure.com/username/projectname/_git/repositoryname/vsts/info";
+
+        final GitRepository repository = new GitRepository();
+        repository.setRemoteUrl(repositoryUrl);
+        repository.setProjectReference(new TeamProjectReference());
+        final VstsInfo vstsInfo = new VstsInfo();
+        vstsInfo.setServerUrl(serverUrl);
+        vstsInfo.setCollectionReference(new TeamProjectCollectionReference());
+        vstsInfo.setRepository(repository);
+
+        PowerMockito.mockStatic(VstsHttpClient.class);
+        when(VstsHttpClient.sendRequest(client, repositoryInfoApiUrl, VstsInfo.class)).thenReturn(vstsInfo);
+
+        Assert.assertTrue(validator.validateGitUrl(repositoryUrl));
     }
 
     @Test

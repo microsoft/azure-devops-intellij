@@ -114,6 +114,23 @@ public class UrlHelper {
     }
 
     /**
+     * Removes any user information from an URL, e.g. will remove the "username@" part from the URL
+     * "https://username@dev.azure.com/".
+     */
+    public static String removeUserInfo(final String url) {
+        if (url == null) {
+            return null;
+        }
+
+        try {
+            return new URIBuilder(url).setUserInfo(null).build().toString();
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URL passed to removeUserInfo: {}", url);
+            return url;
+        }
+    }
+
+    /**
      * Sometimes the Git infrastructure may pass an URL like https://username@dev.azure.com/ (note the username
      * placement). Such URL should be converted into https://dev.azure.com/username to properly serve as a base URL for
      * HTTP API calls.
