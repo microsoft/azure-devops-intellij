@@ -364,6 +364,7 @@ public class ServerContextManagerTest extends AbstractTest {
         when(VstsHttpClient.sendRequest(client, repositoryInfoApiUrl, VstsInfo.class)).thenReturn(vstsInfo);
 
         Assert.assertTrue(validator.validateGitUrl(repositoryUrl));
+        Assert.assertEquals("https://dev.azure.com/username", validator.getServerUrl());
     }
 
     @Test

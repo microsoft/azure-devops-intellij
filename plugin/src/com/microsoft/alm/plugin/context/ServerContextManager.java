@@ -221,6 +221,11 @@ public class ServerContextManager {
             }
         }
 
+        logger.info(
+                "Validating a {} server context with a server URI {}",
+                context.getType(),
+                contextToValidate == null ? "" : contextToValidate.getServerUri());
+
         if (context.getType() == ServerContext.Type.TFS) {
             return checkTfsVersionAndConnection(contextToValidate);
         } else {
@@ -737,9 +742,6 @@ public class ServerContextManager {
                 }
 
                 serverUrl = vstsInfo.getServerUrl();
-                if (UrlHelper.isOrganizationUrl(serverUrl)) {
-                    serverUrl = serverUrl + "/" + UrlHelper.getAccountFromOrganization(vstsInfo.getRepository().getRemoteUrl());
-                }
 
                 collection = new TeamProjectCollection();
                 collection.setId(vstsInfo.getCollectionReference().getId());
