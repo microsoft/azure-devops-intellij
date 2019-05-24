@@ -4,13 +4,16 @@
 package com.microsoft.alm.common.utils;
 
 import com.microsoft.alm.common.artifact.GitRefArtifactID;
+import com.microsoft.alm.helpers.UriHelper;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -108,6 +111,47 @@ public class UrlHelper {
         }
 
         return uri;
+    }
+
+    /**
+     * Removes any user information from an URL, e.g. will remove the "username@" part from the URL
+     * "https://username@dev.azure.com/".
+     */
+    public static String removeUserInfo(final String url) {
+        if (url == null) {
+            return null;
+        }
+
+        try {
+            return new URIBuilder(url).setUserInfo(null).build().toString();
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URL passed to removeUserInfo: {}", url);
+            return url;
+        }
+    }
+
+    /**
+     * Sometimes the Git infrastructure may pass an URL like https://username@dev.azure.com/ (note the username
+     * placement). Such URL should be converted into https://dev.azure.com/username to properly serve as a base URL for
+     * HTTP API calls.
+     * <p />
+     * This method will only process URLs pointing to the azure.com and *.azure.com hosts.
+     */
+    public static String convertToCanonicalHttpApiBase(String url) {
+        if (url == null) {
+            return null;
+        }
+
+        URI uri = URI.create(url);
+        if (UriHelper.isAzureHost(uri)) {
+            String fullAccount = UriHelper.getFullAccount(uri); // dev.azure.com/username
+            String result = uri.getScheme() + "://" + fullAccount; // https://dev.azure.com/username
+            logger.info("Converted an URL {} into canonical HTTP API base: {}", url, result);
+            return result;
+        }
+
+        logger.info("Not an Azure host {}, HTTP API base conversion skipped", url);
+        return url;
     }
 
     public static boolean isVSO(final URI uri) {

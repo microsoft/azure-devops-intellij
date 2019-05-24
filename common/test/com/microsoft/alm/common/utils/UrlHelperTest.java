@@ -23,13 +23,18 @@ public class UrlHelperTest {
     };
 
     @Test
-    public void testIsValidServerUrl() throws Exception {
-
+    public void testRemoveUserInfo() {
+        assertEquals("https://dev.azure.com", UrlHelper.removeUserInfo("https://username@dev.azure.com"));
+        assertEquals("https://microsoft.com", UrlHelper.removeUserInfo("https://username@microsoft.com"));
+        assertEquals("https://dev.azure.com", UrlHelper.removeUserInfo("https://dev.azure.com"));
+        assertEquals("https://dev.azure.com", UrlHelper.removeUserInfo("https://username:password@dev.azure.com"));
     }
 
     @Test
-    public void testGetBaseUri() throws Exception {
-
+    public void testConvertToCanonicalHttpApiBase() {
+        assertEquals("https://dev.azure.com/username", UrlHelper.convertToCanonicalHttpApiBase("https://username@dev.azure.com"));
+        assertEquals("https://username@microsoft.com", UrlHelper.convertToCanonicalHttpApiBase(("https://username@microsoft.com")));
+        assertEquals("http://dev.azure.com", UrlHelper.convertToCanonicalHttpApiBase(("http://dev.azure.com")));
     }
 
     @Test

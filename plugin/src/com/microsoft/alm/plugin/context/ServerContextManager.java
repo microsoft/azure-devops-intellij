@@ -221,6 +221,11 @@ public class ServerContextManager {
             }
         }
 
+        logger.info(
+                "Validating a {} server context with a server URI {}",
+                context.getType(),
+                contextToValidate == null ? "" : contextToValidate.getServerUri());
+
         if (context.getType() == ServerContext.Type.TFS) {
             return checkTfsVersionAndConnection(contextToValidate);
         } else {
@@ -702,7 +707,10 @@ public class ServerContextManager {
                 if (UrlHelper.isSshGitRemoteUrl(gitRemoteUrl)) {
                     gitUrlToParse = UrlHelper.getHttpsGitUrlFromSshUrl(gitRemoteUrl);
                 } else {
-                    gitUrlToParse = gitRemoteUrl;
+                    // Trim user info from the URI (e.g. https://username@dev.azure.com → https://dev.azure.com, because
+                    // otherwise the HTTP client will try to use authentication data from the URL instead of the data
+                    // baked into the client itself).
+                    gitUrlToParse = UrlHelper.removeUserInfo(gitRemoteUrl);
                 }
 
                 //query the server endpoint for VSTS repo, project and collection info
@@ -734,9 +742,6 @@ public class ServerContextManager {
                 }
 
                 serverUrl = vstsInfo.getServerUrl();
-                if (UrlHelper.isOrganizationUrl(serverUrl)) {
-                    serverUrl = serverUrl + "/" + UrlHelper.getAccountFromOrganization(vstsInfo.getRepository().getRemoteUrl());
-                }
 
                 collection = new TeamProjectCollection();
                 collection.setId(vstsInfo.getCollectionReference().getId());
