@@ -161,8 +161,6 @@ public class TFSChangeProvider implements ChangeProvider {
                     pathsToProcess.add(root.getPath());
                     break;
                 }
-
-                logger.debug("Ignoring the file because it is outside of any TFVC mapping: {}", root);
             }
         }
 
