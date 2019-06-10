@@ -29,7 +29,7 @@ public class DownloadCommand extends Command<String> {
     private final boolean ignoreFileNotFound;
 
     public DownloadCommand(final ServerContext context, final String localPath, final int version, final String destination, final boolean ignoreFileNotFound) {
-        super("print", context);
+        super("print", context, true, false);
         ArgumentHelper.checkNotEmptyString(localPath, "localPath");
         ArgumentHelper.checkNotEmptyString(destination, "destination");
         this.localPath = localPath;

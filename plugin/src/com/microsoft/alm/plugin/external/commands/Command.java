@@ -63,6 +63,7 @@ public abstract class Command<T> {
 
     private final String name;
     private final boolean useProxyIfAvailable;
+    private final boolean logStdOut;
 
     // The server context provides the server url and credentials for commands
     // Note that this may be null in some cases
@@ -90,13 +91,14 @@ public abstract class Command<T> {
     }
 
     public Command(final String name, final ServerContext context) {
-        this(name, context, true);
+        this(name, context, true, true);
     }
 
-    public Command(final String name, final ServerContext context, final boolean useProxyIfAvailable) {
+    public Command(final String name, final ServerContext context, final boolean useProxyIfAvailable, final boolean logStdOut) {
         this.name = name;
         this.context = context;
         this.useProxyIfAvailable = useProxyIfAvailable;
+        this.logStdOut = logStdOut;
     }
 
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
@@ -140,7 +142,10 @@ public abstract class Command<T> {
                 getArgumentBuilder(), new ToolRunner.Listener() {
                     @Override
                     public void processStandardOutput(final String line) {
-                        logger.info("CMD: " + line);
+                        if (logStdOut) {
+                            logger.info("CMD: " + line);
+                        }
+
                         stdout.append(line + "\n");
                         listener.progress(line, OUTPUT_TYPE_INFO, 50);
                     }
