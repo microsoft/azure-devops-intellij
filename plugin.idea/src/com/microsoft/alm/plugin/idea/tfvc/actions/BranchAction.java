@@ -25,10 +25,12 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.GuiUtils;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.exceptions.BranchAlreadyExistsException;
@@ -49,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -119,7 +122,7 @@ public class BranchAction extends SingleItemAction {
                                     targetServerPath, workspace.getName());
                             descriptor.setDescription(message);
 
-                            final VirtualFile selectedFile = FileChooser.chooseFile(descriptor, project, null);
+                            final VirtualFile selectedFile = chooseFileInUi(descriptor, project);
                             if (selectedFile == null) {
                                 logger.info("User canceled");
                                 return;
@@ -199,5 +202,24 @@ public class BranchAction extends SingleItemAction {
             final String message = TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_FAILURE, t.getMessage());
             Messages.showErrorDialog(actionContext.getProject(), message, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_BRANCH_MESSAGE_TITLE));
         }
+    }
+
+    private VirtualFile chooseFileInUi(final FileChooserDescriptor descriptor, final Project project) {
+        final Ref<VirtualFile> selectedFile = Ref.create();
+        try {
+            GuiUtils.runOrInvokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                     selectedFile.set(FileChooser.chooseFile(descriptor, project, null));
+                }
+            });
+        } catch (InvocationTargetException e) {
+            logger.error("Error when calling FileChooser", e);
+            return null;
+        } catch (InterruptedException e) {
+            return null;
+        }
+
+        return selectedFile.get();
     }
 }
