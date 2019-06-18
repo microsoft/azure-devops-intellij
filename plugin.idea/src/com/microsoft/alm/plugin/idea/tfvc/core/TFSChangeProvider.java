@@ -22,7 +22,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
@@ -32,11 +31,11 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +43,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -101,7 +99,7 @@ public class TFSChangeProvider implements ChangeProvider {
             return;
         }
 
-        final List<String> pathsToProcess = filterValidTFVCPaths(roots);
+        final List<String> pathsToProcess = TFVCUtil.filterValidTFVCPaths(myProject, roots);
         if (pathsToProcess.isEmpty()) {
             return;
         }
@@ -132,38 +130,5 @@ public class TFSChangeProvider implements ChangeProvider {
                 throw new VcsException(e.getMessage(), e);
             }
         }
-    }
-
-    private List<String> filterValidTFVCPaths(RootsCollection.FilePathRootsCollection roots) {
-        // `tf status` won't work if any of the paths passed doesn't belong to a workspace, to we need to filter only
-        // the items belonging to a local workspace.
-        Workspace workspace = CommandUtils.getPartialWorkspace(myProject);
-        if (workspace == null) {
-            return Collections.emptyList();
-        }
-
-        List<FilePath> mappingPaths = new ArrayList<FilePath>();
-        for (Workspace.Mapping mapping : workspace.getMappings()) {
-            mappingPaths.add(new LocalFilePath(mapping.getLocalPath(), true));
-        }
-
-        List<String> pathsToProcess = new ArrayList<String>();
-        for (FilePath root : roots) {
-            // if we get a change notification in the $tf folder, we need to just ignore it
-            if (StringUtils.containsIgnoreCase(root.getPath(), "$tf") ||
-                    StringUtils.containsIgnoreCase(root.getPath(), ".tf")) {
-                continue;
-            }
-
-            // Ignore any files outside of a TFVC mapping:
-            for (FilePath mappingPath : mappingPaths) {
-                if (root.isUnder(mappingPath, false)) {
-                    pathsToProcess.add(root.getPath());
-                    break;
-                }
-            }
-        }
-
-        return pathsToProcess;
     }
 }
