@@ -42,6 +42,7 @@ import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import com.microsoft.alm.plugin.idea.tfvc.ui.TFSVersionFilterComponent;
 import org.apache.commons.lang.StringUtils;
@@ -87,7 +88,13 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return getLocationFor(root);
     }
 
+    @Override
+    @Nullable
     public RepositoryLocation getLocationFor(final FilePath root) {
+        if (!TFVCUtil.isFileUnderTFVCMapping(project, root)) {
+            return null;
+        }
+
         final Workspace workspace = CommandUtils.getPartialWorkspace(project);
         return new TFSRepositoryLocation(workspace, root.getVirtualFile());
     }
@@ -138,8 +145,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         }
         final VersionSpec.Range range = new VersionSpec.Range(versionFrom, versionTo);
 
-        logger.info(String.format("Loading committed changes for range %s", range.toString()));
         final TFSRepositoryLocation tfsRepositoryLocation = (TFSRepositoryLocation) location;
+        logger.info("Loading committed changes for file {}, range {}", tfsRepositoryLocation.getRoot(), range);
         final ServerContext context = TFSVcs.getInstance(project).getServerContext(false);
         final List<ChangeSet> changeSets = CommandUtils.getHistoryCommand(context, tfsRepositoryLocation.getRoot().getPath(),
                 range.toString(), maxCount, true, settings.getUserFilter() == null ? StringUtils.EMPTY : settings.getUserFilter());
@@ -162,6 +169,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         consumer.finished();
     }
 
+    @Override
     public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
                                                    final RepositoryLocation location,
                                                    final int maxCount) throws VcsException {
