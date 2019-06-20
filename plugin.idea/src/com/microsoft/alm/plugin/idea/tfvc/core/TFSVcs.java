@@ -305,6 +305,7 @@ public class TFSVcs extends AbstractVcs {
                         } catch (final Throwable t) {
                             // Don't let unknown errors bubble out here
                             logger.warn("Unexpected error when checking the version of the command line.", t);
+                            versionMessage.set(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_CANNOT_DETERMINE_VERSION_TEXT));
                         }
                     }
 

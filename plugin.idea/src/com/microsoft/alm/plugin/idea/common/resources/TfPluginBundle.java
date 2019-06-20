@@ -698,6 +698,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_TF_VERSION_WARNING_PROGRESS = "Tfvc.tf.VersionWarning.Progress";
     @NonNls
     public static final String KEY_TFVC_TF_VERSION_WARNING_TITLE = "Tfvc.tf.VersionWarning.Title";
+    @NonNls
+    public static final String KEY_TFVC_TF_CANNOT_DETERMINE_VERSION_TEXT = "Tfvc.tf.CannotDetermineVersion.Text";
 
     //TFVC Conflicts
     @NonNls
