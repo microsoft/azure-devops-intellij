@@ -22,6 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -33,6 +34,7 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironment;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ResolveConflictHelper;
@@ -42,16 +44,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
     private static final Logger logger = LoggerFactory.getLogger(TFSUpdateEnvironment.class);
 
+    @NotNull private final Project project;
+
     @NotNull
     private final TFSVcs tfsVcs;
 
-    TFSUpdateEnvironment(final @NotNull TFSVcs vcs) {
+    TFSUpdateEnvironment(@NotNull Project project, final @NotNull TFSVcs vcs) {
+        this.project = project;
         tfsVcs = vcs;
     }
 
@@ -70,14 +76,15 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
         TFSProgressUtil.setProgressText(progressIndicator, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_UPDATE_STATUS_MSG));
 
         try {
-            final List<String> filesUpdatePaths = new ArrayList<String>(contentRoots.length);
             boolean needRecursion = false;
             for (final FilePath file : contentRoots) {
                 // checks for directories so we know if to perform a recursive update
                 needRecursion = file.isDirectory() ? true : needRecursion;
-                filesUpdatePaths.add(file.getPath());
+                if (needRecursion)
+                    break;
             }
 
+            List<String> filesUpdatePaths = TFVCUtil.filterValidTFVCPaths(project, Arrays.asList(contentRoots));
             final SyncResults results = CommandUtils.syncWorkspace(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion, false);
 
             // add the changed files to updatedFiles so user knows what has occurred in the workspace

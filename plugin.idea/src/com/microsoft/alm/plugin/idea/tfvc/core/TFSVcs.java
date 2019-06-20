@@ -163,7 +163,7 @@ public class TFSVcs extends AbstractVcs {
     @NotNull
     public UpdateEnvironment createUpdateEnvironment() {
         if (myUpdateEnvironment == null) {
-            myUpdateEnvironment = new TFSUpdateEnvironment(this);
+            myUpdateEnvironment = new TFSUpdateEnvironment(myProject, this);
         }
         return myUpdateEnvironment;
     }

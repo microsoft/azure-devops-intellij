@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,10 +37,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({TFSVcs.class, CommandUtils.class, TFSCommittedChangesProvider.class})
+@PrepareForTest({TFSVcs.class, CommandUtils.class, TFSCommittedChangesProvider.class, TFVCUtil.class})
 public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     private static final String SERVER_URL = "https://organization.visualstudio.com";
     private static final String LOCAL_ROOT_PATH = "/Users/user/root";
@@ -91,6 +93,9 @@ public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
         when(mockChangeSet1.getDate()).thenReturn("2016-08-15T11:50:09.427-0400");
         when(mockChangeSet2.getDate()).thenReturn("2016-07-11T12:00:00.000-0400");
         when(mockChangeSet3.getDate()).thenReturn("2016-06-23T04:30:00.00-0400");
+
+        mockStatic(TFVCUtil.class);
+        when(TFVCUtil.isFileUnderTFVCMapping(mockProject, mockRoot)).thenReturn(true);
 
         committedChangesProvider = new TFSCommittedChangesProvider(mockProject);
     }

@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.external.exceptions.SyncException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsEnvironment;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts.ConflictsHandler;
@@ -28,16 +29,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -48,7 +54,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class})
+@PrepareForTest({CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class})
 public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     TFSUpdateEnvironment updateEnvironment;
 
@@ -85,14 +91,26 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class);
+        PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(ConflictsEnvironment.getConflictsHandler()).thenReturn(mockConflictsHandler);
         when(mockUpdatedFiles.getGroupById(FileGroup.REMOVED_FROM_REPOSITORY_ID)).thenReturn(mockFileGroupRemove);
         when(mockUpdatedFiles.getGroupById(FileGroup.CREATED_ID)).thenReturn(mockFileGroupCreate);
         when(mockUpdatedFiles.getGroupById(FileGroup.UPDATED_ID)).thenReturn(mockFileGroupUpdate);
-        updateEnvironment = new TFSUpdateEnvironment(mockTFSVcs);
+        when(TFVCUtil.filterValidTFVCPaths(eq(mockProject), anyCollectionOf(FilePath.class))).then(new Answer<Collection<String>>() {
+            @Override
+            public Collection<String> answer(InvocationOnMock invocation) throws Throwable {
+                @SuppressWarnings("unchecked") Collection<FilePath> argument = (Collection<FilePath>) invocation.getArguments()[1];
+                ArrayList<String> result = new ArrayList<String>();
+                for (FilePath filePath : argument) {
+                    result.add(filePath.getPath());
+                }
+                return result;
+            }
+        });
+
+        updateEnvironment = new TFSUpdateEnvironment(mockProject, mockTFSVcs);
     }
 
     @Test
