@@ -21,13 +21,13 @@ Run the build by:
 2. Navigate to the repository root.
 3. Run `./gradlew buildPlugin`
    * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.8 JDK.
-4. The plugin zip file will be created in the `plugin.idea/build/distributions/` folder.
+4. The plugin zip file will be created in the `plugin/build/distributions/` folder.
 
 
 ## Build and Run with IntelliJ
 Once you've downloaded the dependencies, run the build by:
 
-1. Start IntelliJ and open the existing IntelliJ project file `com.microsoft.alm.plugin.idea.iml` from the `plugin.idea` directory.
+1. Start IntelliJ and open the existing IntelliJ project file `com.microsoft.alm.plugin.iml` from the `plugin` directory.
 
 2. Configure a "IntelliJ Platform Plugin SDK" based on JDK 8 and IntelliJ 2017.x.
    * File -> Project Structure -> Project Settings -> Project
@@ -53,7 +53,7 @@ Once you've downloaded the dependencies, run the build by:
 6. Create a "Plugin" configuration to run/debug the code.
    * Run -> Edit Configurations... -> Add -> Gradle 
    * Provide a name for the configuration (e.g., IntelliJ for TFS)
-   * Set Gradle project to `plugin.idea`
+   * Set Gradle project to `plugin`
    * Set Tasks to `runIde`
 
 7. Run the plugin by selecting Run -> Run <configuration you used above>.

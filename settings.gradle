@@ -1,1 +1,1 @@
-include "plugin", "plugin.idea", "L2Tests"
+include "plugin", "L2Tests"

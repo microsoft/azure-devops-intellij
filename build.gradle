@@ -84,29 +84,12 @@ subprojects {
 project(":plugin") {
     apply plugin: 'org.jetbrains.intellij'
 
-    intellij {
-        version = idea_version
-    }
-
-    jar {
-        baseName 'com.microsoft.alm.plugin'
-    }
-}
-
-project(":plugin.idea") {
-    apply plugin: 'org.jetbrains.intellij'
-
     version buildNumber
 
     intellij {
         version = idea_version
         plugins = ['git4idea']
         pluginName = 'com.microsoft.vso.idea'
-    }
-
-    dependencies {
-        compile project(':plugin')
-        testCompile project(':plugin').sourceSets.test.output
     }
 
     jar {
@@ -132,9 +115,8 @@ project(":L2Tests") {
     }
 
     dependencies {
-        compile project(':plugin.idea')
+        compile project(':plugin')
         testCompile project(':plugin').sourceSets.test.output
-        testCompile project(':plugin.idea').sourceSets.test.output        
     }
 
     jar {
