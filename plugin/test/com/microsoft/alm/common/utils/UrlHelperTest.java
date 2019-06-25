@@ -224,7 +224,7 @@ public class UrlHelperTest {
         assertEquals(URI.create("https://myorganization.visualstudio.com/DefaultCollection"), defaultCollectionUri);
 
         //collection in domain
-        final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myaccount");
+        final URI inDomainCollectionUri = UrlHelper.getCollectionURI(accountUri, "myorganization");
         assertEquals(accountUri, inDomainCollectionUri);
 
         //Azure accounts
