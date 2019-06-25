@@ -285,7 +285,7 @@ public class CreatePullRequestModel extends AbstractModel {
                             }
 
                             @Override
-                            public boolean test(@org.checkerframework.checker.nullness.qual.Nullable GitRemoteBranch input) {
+                            public boolean test(@Nullable GitRemoteBranch input) {
                                 return apply(input);
                             }
                         })

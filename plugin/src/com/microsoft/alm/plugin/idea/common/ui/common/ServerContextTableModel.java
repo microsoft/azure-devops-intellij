@@ -15,7 +15,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.ListSelectionModel;

@@ -8,7 +8,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
