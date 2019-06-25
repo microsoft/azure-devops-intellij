@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
+import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import org.junit.Assert;
@@ -28,6 +30,13 @@ public class ImportModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testObservable() {
+        // Precondition: no authentication info is saved for TFS, otherwise the model will become connected immediately
+        // and won't generate the events properly.
+        Assert.assertNull(
+                ServerContextManager.getInstance().getBestAuthenticationInfo(
+                        TfsAuthenticationProvider.TFS_LAST_USED_URL,
+                        false));
+
         ImportModel model = new ImportModel(null);
         MockObserver observer = new MockObserver(model);
 

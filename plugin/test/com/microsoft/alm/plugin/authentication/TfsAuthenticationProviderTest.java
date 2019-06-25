@@ -10,12 +10,18 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
 public class TfsAuthenticationProviderTest extends AbstractTest {
+    @After
+    public void cleanupTest() {
+        ServerContextManager.getInstance().remove(TfsAuthenticationProvider.TFS_LAST_USED_URL);
+    }
+
     @Test
     public void getAuthenticationInfo() {
         final AuthenticationInfo info = new AuthenticationInfo("userName", "", "", "");

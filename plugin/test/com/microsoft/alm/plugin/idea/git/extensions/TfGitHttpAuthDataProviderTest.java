@@ -7,6 +7,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({TeamServicesSecrets.class})
 public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
+    private final String SERVER_URL = "https://dev.azure.com/username";
     private final AuthenticationInfo authenticationInfo = new AuthenticationInfo(
             "userName",
             "password",
@@ -34,14 +36,19 @@ public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
     private TfGitHttpAuthDataProvider authDataProvider;
 
     @Before
-    public void setUp() {
+    public void setUpTest() {
         PowerMockito.mockStatic(TeamServicesSecrets.class);
 
         authDataProvider = new TfGitHttpAuthDataProvider();
         ServerContext context = Mockito.mock(ServerContext.class);
-        when(context.getKey()).thenReturn(ServerContext.getKey("https://dev.azure.com/username"));
+        when(context.getKey()).thenReturn(ServerContext.getKey(SERVER_URL));
         when(context.getAuthenticationInfo()).thenReturn(authenticationInfo);
         ServerContextManager.getInstance().add(context);
+    }
+
+    @After
+    public void cleanupTest() {
+        ServerContextManager.getInstance().remove(SERVER_URL);
     }
 
     @Test

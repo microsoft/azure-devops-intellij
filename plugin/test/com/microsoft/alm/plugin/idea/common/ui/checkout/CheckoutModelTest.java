@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
+import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
@@ -28,6 +30,13 @@ public class CheckoutModelTest extends IdeaAbstractTest {
      */
     @Test
     public void testObservable() {
+        // Precondition: no authentication info is saved for TFS, otherwise the model will become connected immediately
+        // and won't generate the events properly.
+        Assert.assertNull(
+                ServerContextManager.getInstance().getBestAuthenticationInfo(
+                        TfsAuthenticationProvider.TFS_LAST_USED_URL,
+                        false));
+
         CheckoutModel cm = new CheckoutModel(null, null, new GitCheckoutModel());
         MockObserver observer = new MockObserver(cm);
 

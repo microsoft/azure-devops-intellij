@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin;
 
+import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.mocks.MockCertificateService;
 import com.microsoft.alm.plugin.mocks.MockCredentialsPrompt;
 import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
@@ -12,6 +13,7 @@ import com.microsoft.alm.plugin.mocks.MockServerContextStore;
 import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.log4j.Logger;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 public class AbstractTest {
@@ -34,6 +36,11 @@ public class AbstractTest {
                         runnable.run();
                     }
                 }, new MockCertificateService(), false);
+    }
+
+    @AfterClass
+    public static void cleanup() {
+        ServerContextManager.getInstance().clearLastUsedContext();
     }
 
     public static void assertLogged(final String s) {
