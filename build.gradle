@@ -142,8 +142,9 @@ subprojects {
         compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.28'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1')
 
-        compile (group: 'com.microsoft.alm', name: 'auth-core', version: '0.6.4')
-        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+        compile (group: 'com.microsoft.alm', name: 'auth-core', version: '0.6.4') {
+            exclude group: 'org.slf4j', module: 'slf4j-api'
+        }
 
         testCompile group: 'junit', name: 'junit', version: '4.12'
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
