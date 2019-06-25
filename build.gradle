@@ -1,5 +1,5 @@
 /**
- * This is the main gradle build file for the VSO IntelliJ Plugin.
+ * This is the main gradle build file for the Azure DevOps IntelliJ Plugin.
  */
 
 plugins {
@@ -81,21 +81,11 @@ subprojects {
 /**
  * specific settings for each project
  */
-project(":common") {
-    jar {
-        baseName 'com.microsoft.alm.common'
-    }
-}
-
 project(":plugin") {
     apply plugin: 'org.jetbrains.intellij'
 
     intellij {
         version = idea_version
-    }
-
-    dependencies {
-        compile project(':common')
     }
 
     jar {
