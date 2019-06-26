@@ -176,20 +176,12 @@ public class TFSVcs extends AbstractVcs {
         return isVersionedDirectory(filePath.getVirtualFile());
     }
 
-    /*
-    TODO:
-    public boolean isVersionedDirectory(final VirtualFile dir) {
-        if (dir == null) {
-            return false;
-        }
-        return (!Workstation.getInstance().findWorkspacesCached(TfsFileUtil.getFilePath(dir), false).isEmpty());
+    /**
+     * Overrides method from IDEA 2019.2 that will allow us to work without "new" root mappings.
+     */
+    public boolean needsLegacyDefaultMappings() {
+        return true;
     }
-
-
-    public EditFileProvider getEditFileProvider() {
-        return new TFSEditFileProvider(myProject);
-    }
-    */
 
     @NotNull
     public CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> getCommittedChangesProvider() {
