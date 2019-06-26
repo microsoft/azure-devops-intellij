@@ -19,6 +19,8 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ServerContextLookupOperationTest {
     private final ServerContext context = new ServerContextBuilder().type(ServerContext.Type.TFS).build();
@@ -166,7 +168,7 @@ public class ServerContextLookupOperationTest {
     }
 
     @Test
-    public void getRepositoriesCancellation() throws ExecutionException, InterruptedException {
+    public void getRepositoriesCancellation() throws ExecutionException, InterruptedException, TimeoutException {
         // Create context
         URI serverUri = URI.create("http://server");
         AuthenticationInfo info = new AuthenticationInfo("", "", "", "");
@@ -186,9 +188,9 @@ public class ServerContextLookupOperationTest {
         operation.doWorkAsync(Operation.EMPTY_INPUTS);
 
         // Verify results
-        Assert.assertTrue(startedCalled.get());
-        Assert.assertTrue(canceledCalled.get());
-        Assert.assertTrue(completedCalled.get());
+        Assert.assertTrue(startedCalled.get(30, TimeUnit.SECONDS));
+        Assert.assertTrue(canceledCalled.get(30, TimeUnit.SECONDS));
+        Assert.assertTrue(completedCalled.get(30, TimeUnit.SECONDS));
         //TODO: Assert.assertFalse(results.isDone()); - causing build failure on Mac from command line, so commenting out
 
         completedCalled.cancel(true);

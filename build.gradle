@@ -1,5 +1,5 @@
 /**
- * This is the main gradle build file for the VSO IntelliJ Plugin.
+ * This is the main gradle build file for the Azure DevOps IntelliJ Plugin.
  */
 
 plugins {
@@ -81,29 +81,7 @@ subprojects {
 /**
  * specific settings for each project
  */
-project(":common") {
-    jar {
-        baseName 'com.microsoft.alm.common'
-    }
-}
-
 project(":plugin") {
-    apply plugin: 'org.jetbrains.intellij'
-
-    intellij {
-        version = idea_version
-    }
-
-    dependencies {
-        compile project(':common')
-    }
-
-    jar {
-        baseName 'com.microsoft.alm.plugin'
-    }
-}
-
-project(":plugin.idea") {
     apply plugin: 'org.jetbrains.intellij'
 
     version buildNumber
@@ -112,11 +90,6 @@ project(":plugin.idea") {
         version = idea_version
         plugins = ['git4idea']
         pluginName = 'com.microsoft.vso.idea'
-    }
-
-    dependencies {
-        compile project(':plugin')
-        testCompile project(':plugin').sourceSets.test.output
     }
 
     jar {
@@ -142,9 +115,8 @@ project(":L2Tests") {
     }
 
     dependencies {
-        compile project(':plugin.idea')
+        compile project(':plugin')
         testCompile project(':plugin').sourceSets.test.output
-        testCompile project(':plugin.idea').sourceSets.test.output        
     }
 
     jar {
@@ -165,28 +137,17 @@ subprojects {
         codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
-        compile group: 'com.google.guava', name: 'guava', version: '27.1-jre'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.28'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.28'
         compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.28'
         compile (group: 'org.apache.httpcomponents', name: 'httpclient-win', version: '4.4.1') {
-            /* Task 454223: exclude default JNA dependency (would be version 4.1.0 as of this writing) */
             exclude group: 'net.java.dev.jna', module: 'jna'
             exclude group: 'net.java.dev.jna', module: 'jna-platform'
         }
-        /* Task 454223: anchor JNA dependency to version 3.4.0 to match Android Studio 1.4 and IntelliJ IDEA 14 */
-        compile group: 'net.java.dev.jna', name: 'jna', version: '3.4.0'
 
         compile (group: 'com.microsoft.alm', name: 'auth-core', version: '0.6.4') {
-            /* Exclude default JNA dependency (would be version 4.2.1 as of this writing) */
-            exclude group: 'net.java.dev.jna', module: 'jna'
-            exclude group: 'net.java.dev.jna', module: 'jna-platform'
-
-            /* Exclude default SLF4J dependency (would be version 1.7.19 as of this writing) */
             exclude group: 'org.slf4j', module: 'slf4j-api'
         }
-        compileOnly group: 'commons-lang', name: 'commons-lang', version: '2.4'
-        compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
 
         testCompile group: 'junit', name: 'junit', version: '4.12'
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
@@ -194,8 +155,7 @@ subprojects {
         testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.6.3'
         testCompile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
-        testCompile group: 'commons-lang', name: 'commons-lang', version: '2.4'
-    }   
+    }
 
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
