@@ -37,9 +37,9 @@ Once you've downloaded the dependencies, run the build by:
        * Under Linux, the folder is similar to `<IntelliJ installation location on disk>/idea-IC-172.3968.16` 
        * Under Windows, the folder is similar to `C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2017.x`
 
-3. Configure the project to use language level JDK 6
+3. Configure the project to use language level JDK 8
    * File -> Project Structure -> Project Settings -> Project
-   * Under Project Language Level, select "6 - @Override in interface"
+   * Under Project Language Level, select "8 - Lambdas, type annotations etc."
 
 4. Configure the project and ***each module*** to build with this "IntelliJ Platform Plugin SDK".
    * File -> Project Structure -> Project Settings -> Project.

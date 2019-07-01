@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.common.ui.common;
 
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.microsoft.alm.common.utils.UrlHelper;
@@ -15,7 +14,6 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.ListSelectionModel;
@@ -300,17 +298,7 @@ public class ServerContextTableModel extends AbstractTableModel {
         if (!hasFilter()) {
             filteredRows = null;
         } else {
-            filteredRows = Lists.newArrayList(Collections2.filter(rows, new Predicate<ServerContext>() {
-                @Override
-                public boolean apply(ServerContext repositoryRow) {
-                    return rowContains(repositoryRow);
-                }
-
-                @Override
-                public boolean test(@Nullable ServerContext input) {
-                    return apply(input);
-                }
-            }));
+            filteredRows = Lists.newArrayList(Collections2.filter(rows, this::rowContains));
         }
         super.fireTableDataChanged();
     }

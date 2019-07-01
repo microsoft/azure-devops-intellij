@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.common.ui.workitem;
 
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.microsoft.alm.common.utils.SystemHelper;
@@ -12,7 +11,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.FilteredModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.TableModelSelectionConverter;
 import com.microsoft.alm.workitemtracking.webapi.models.WorkItem;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.ListSelectionModel;
@@ -237,17 +235,7 @@ public class WorkItemsTableModel extends AbstractTableModel implements FilteredM
         if (!hasFilter()) {
             filteredRows = null;
         } else {
-            filteredRows = Lists.newArrayList(Collections2.filter(rows, new Predicate<WorkItem>() {
-                @Override
-                public boolean apply(WorkItem item) {
-                    return rowContains(item);
-                }
-
-                @Override
-                public boolean test(@Nullable WorkItem input) {
-                    return apply(input);
-                }
-            }));
+            filteredRows = Lists.newArrayList(Collections2.filter(rows, this::rowContains));
         }
         super.fireTableDataChanged();
     }
