@@ -10,6 +10,7 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.ToolRunnerCache;
+import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolMemoryException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
@@ -238,6 +239,7 @@ public abstract class Command<T> {
                     throw new ToolEulaNotAcceptedException(error);
                 }
                 if (error instanceof RuntimeException) {
+                    logger.error("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
                     throw (RuntimeException) error;
                 } else {
                     // Wrap the exception
@@ -246,10 +248,7 @@ public abstract class Command<T> {
             } else {
                 return syncResult.get();
             }
-        } catch (InterruptedException e) {
-            logger.error("CMD: failure", e);
-            throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             logger.error("CMD: failure", e);
             throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
         } finally {
