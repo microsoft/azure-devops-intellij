@@ -1,6 +1,5 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
@@ -8,7 +7,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +18,9 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -36,7 +36,7 @@ public class TFVCUtilTest {
             "computer",
             "owner",
             "comment",
-            Arrays.asList(new Workspace.Mapping("serverPath", "/tmp/localPath", false)));
+            Collections.singletonList(new Workspace.Mapping("serverPath", "/tmp/localPath", false)));
 
     @Mock
     private Project mockProject;
@@ -59,19 +59,28 @@ public class TFVCUtilTest {
 
     @Test
     public void filterValidTFVCPathsTest() {
-        List<FilePath> localFiles = Arrays.<FilePath>asList(
+        List<FilePath> localFiles = Arrays.asList(
                 new LocalFilePath("/tmp/localPath", true),
                 new LocalFilePath("/tmp/localPath/1.txt", false));
-        List<FilePath> nonLocalFiles = Arrays.<FilePath>asList(
+        List<FilePath> nonLocalFiles = Arrays.asList(
                 new LocalFilePath("/tmp/localPath1", true),
                 new LocalFilePath("/tmp/localPath1/1.txt", false));
         List<FilePath> allPaths = Lists.newArrayList(Iterables.concat(localFiles, nonLocalFiles));
-        List<String> localFilePaths = Lists.transform(localFiles, new Function<FilePath, String>() {
-            @Override
-            public String apply(@Nullable FilePath input) {
-                return input.getPath();
-            }
-        });
+        List<String> localFilePaths = localFiles.stream().map(FilePath::getPath).collect(Collectors.toList());
+        assertThat(TFVCUtil.filterValidTFVCPaths(mockProject, allPaths), is(localFilePaths));
+    }
+
+    @Test
+    public void filterDollarTFVCPathsTest() {
+        List<FilePath> localFiles = Arrays.asList(
+                new LocalFilePath("/tmp/localPath", true),
+                new LocalFilePath("/tmp/localPath/1.txt", false));
+        List<FilePath> dollarFiles = Arrays.asList(
+                new LocalFilePath("/tmp/localPath/$1.txt", false),
+                new LocalFilePath("/tmp/localPath/$1/1.txt", false),
+                new LocalFilePath("/tmp/localPath/$1", true));
+        List<FilePath> allPaths = Lists.newArrayList(Iterables.concat(localFiles, dollarFiles));
+        List<String> localFilePaths = localFiles.stream().map(FilePath::getPath).collect(Collectors.toList());
         assertThat(TFVCUtil.filterValidTFVCPaths(mockProject, allPaths), is(localFilePaths));
     }
 }

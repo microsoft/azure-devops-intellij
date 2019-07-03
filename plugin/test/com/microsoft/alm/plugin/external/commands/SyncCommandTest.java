@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.models.SyncResults;
 import org.junit.Assert;
 import org.junit.Test;
@@ -151,5 +152,11 @@ public class SyncCommandTest extends AbstractCommandTest {
         Assert.assertEquals(1, results.getNewFiles().size());
         Assert.assertEquals(0, results.getUpdatedFiles().size());
         Assert.assertEquals(stderr, results.getExceptions().get(0).getMessage());
+    }
+
+    @Test(expected = DollarInPathException.class)
+    public void testParseOutput_dollar() {
+        SyncCommand cmd = new SyncCommand(null, files, false);
+        SyncResults results = cmd.parseOutput("/path/path", "An input validation error occurred: TF10122: The path '$/serverpath' contains a '$' at the beginning of a path component. Remove the '$' and try again.\n");
     }
 }
