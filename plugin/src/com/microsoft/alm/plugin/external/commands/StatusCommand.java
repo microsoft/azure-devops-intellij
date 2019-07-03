@@ -63,7 +63,7 @@ public class StatusCommand extends Command<List<PendingChange>> {
      */
     @Override
     public List<PendingChange> parseOutput(final String stdout, final String stderr) {
-        super.throwIfError(stderr);
+        throwIfError(stderr);
         final List<PendingChange> changes = new ArrayList<PendingChange>(100);
         final NodeList nodes = super.evaluateXPath(stdout, "/status/*/pending-change");
 
@@ -88,5 +88,11 @@ public class StatusCommand extends Command<List<PendingChange>> {
             }
         }
         return changes;
+    }
+
+    @Override
+    protected void throwIfError(String stderr) {
+        checkStderrForInvalidDollarPath(stderr);
+        super.throwIfError(stderr);
     }
 }

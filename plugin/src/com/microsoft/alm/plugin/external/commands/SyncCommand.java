@@ -100,6 +100,8 @@ public class SyncCommand extends Command<SyncResults> {
      */
     @Override
     public SyncResults parseOutput(final String stdout, final String stderr) {
+        checkStderrForInvalidDollarPath(stderr);
+
         final List<String> updatedFiles = new ArrayList<String>();
         final List<String> newFiles = new ArrayList<String>();
         final List<String> deletedFiles = new ArrayList<String>();
