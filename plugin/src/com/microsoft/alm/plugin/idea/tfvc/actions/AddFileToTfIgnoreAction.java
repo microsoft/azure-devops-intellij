@@ -10,6 +10,7 @@ import com.intellij.openapi.vcs.changes.actions.RefreshAction;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfIgnoreUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ public class AddFileToTfIgnoreAction extends AnAction {
     private final String myServerFilePath;
 
     public AddFileToTfIgnoreAction(@NotNull Project project, @NotNull String serverFilePath) {
-        super("Add to .tfignore");
+        super(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ACTION_ADD_TO_TFIGNORE));
         myProject = project;
         myServerFilePath = serverFilePath;
     }
