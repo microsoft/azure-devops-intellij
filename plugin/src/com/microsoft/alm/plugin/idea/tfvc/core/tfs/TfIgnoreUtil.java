@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ public class TfIgnoreUtil {
      * found
      */
     @Nullable
-    public static File findNearestOrRootTfIgnore(@NotNull List<Workspace.Mapping> mappings, @NotNull File file) {
+    public static File findNearestOrRootTfIgnore(@NotNull Collection<Workspace.Mapping> mappings, @NotNull File file) {
         List<LocalFilePath> localRoots = mappings.stream()
                 .map(m -> new LocalFilePath(m.getLocalPath(), Files.isDirectory(Paths.get(m.getLocalPath()))))
                 .collect(Collectors.toList());
