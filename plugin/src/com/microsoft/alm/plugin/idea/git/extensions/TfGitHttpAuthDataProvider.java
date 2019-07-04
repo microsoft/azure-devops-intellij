@@ -83,7 +83,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
             // project.
             if (!Strings.isNullOrEmpty(remoteUri.getUserInfo())) {
                 logger.info("getAuthData: URL has authentication info");
-                return getAuthDataForProcessedRemoteUrl(url);
+                return getAuthData(url);
             }
 
             Collection<GitRemote> remotes = TfGitHelper.getTfGitRemotes(project);
@@ -91,7 +91,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                     .map(GitRemote::getFirstUrl)
                     .filter(Objects::nonNull)
                     .map(URI::create)
-                    .filter(uri -> UrlHelper.isOrganizationHost(uri.getHost()))
+                    .filter(uri -> host.equals(uri.getHost()))
                     .map(UrlHelper::getAccountFromOrganizationUri)
                     .filter(Objects::nonNull)
                     .distinct()
@@ -116,13 +116,9 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
             } catch (URISyntaxException e) {
                 logger.warn("Error when parsing URL \"" + url + "\"", e);
             }
-
-            return getAuthData(url);
         }
 
-        // Not an Azure DevOps URL; we have nothing to do.
-        logger.info("getAuthData: not an Azure DevOps URL: {}", url);
-        return null;
+        return getAuthData(url);
     }
 
     @Override
@@ -157,33 +153,28 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                 }
             }
 
-            return getAuthDataForProcessedRemoteUrl(url);
+            // We can't determine if the url is for a TFS on premise server but prompt for credentials if we know it is VSO
+            // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
+            // convert to https:// for team services to avoid rest call failures
+            final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
+
+            if (authUrl != null) {
+                final AuthenticationInfo vsoAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(VsoAuthenticationProvider.getInstance(), authUrl);
+                if (vsoAuthenticationInfo == null) {
+                    //user cancelled authentication, send empty credentials to cause a auth failure
+                    return new AuthData("", "");
+                } else {
+                    return new AuthData(vsoAuthenticationInfo.getUserName(), vsoAuthenticationInfo.getPassword());
+                }
+            } else {
+                logger.warn("getAuthData: Unable to get https Azure DevOps Services url for input url = " + url);
+            }
+
+            return null;
         }
 
         //Return null if we couldn't find matching git credentials
         //This will tell the Git plugin to prompt the user for credentials instead of failing silently with "Not authorized" error
-        return null;
-    }
-
-    @Nullable
-    private AuthData getAuthDataForProcessedRemoteUrl(String url) {
-        // We can't determine if the url is for a TFS on premise server but prompt for credentials if we know it is VSO
-        // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
-        // convert to https:// for team services to avoid rest call failures
-        final String authUrl = UrlHelper.getHttpsUrlFromHttpUrl(url);
-
-        if (authUrl != null) {
-            final AuthenticationInfo vsoAuthenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(VsoAuthenticationProvider.getInstance(), authUrl);
-            if (vsoAuthenticationInfo == null) {
-                //user cancelled authentication, send empty credentials to cause a auth failure
-                return new AuthData("", "");
-            } else {
-                return new AuthData(vsoAuthenticationInfo.getUserName(), vsoAuthenticationInfo.getPassword());
-            }
-        } else {
-            logger.warn("getAuthData: Unable to get https Azure DevOps Services url for input url = " + url);
-        }
-
         return null;
     }
 
