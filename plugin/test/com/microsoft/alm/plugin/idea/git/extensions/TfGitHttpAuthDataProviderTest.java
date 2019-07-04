@@ -78,6 +78,8 @@ public class TfGitHttpAuthDataProviderTest extends IdeaAbstractTest {
 
         mockedAuthDataProvider.getAuthData(project, "https://dev.azure.com", "username");
 
-        verify(mockedAuthDataProvider, times(1)).getAuthData("https://username@dev.azure.com");
+        verify(mockedAuthDataProvider, times(1)).getAuthData(
+                project,
+                "https://username@dev.azure.com");
     }
 }
