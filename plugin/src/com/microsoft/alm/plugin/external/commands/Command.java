@@ -246,16 +246,14 @@ public abstract class Command<T> {
             } else {
                 return syncResult.get();
             }
-        } catch (InterruptedException e) {
-            logger.error("CMD: failure", e);
-            throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             logger.error("CMD: failure", e);
             throw new ToolException(ToolException.KEY_TF_BAD_EXIT_CODE, e);
         } finally {
             final long endTime = System.nanoTime();
-            logger.info(Long.toString(endTime - startTime) + "(ns) - elapsed time for " + this.getArgumentBuilder().toString());
-            Debug.println("", Long.toString(endTime - startTime) + "(ns) - elapsed time for " + this.getArgumentBuilder().toString());
+            double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
+            logger.info(seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
+            Debug.println("", seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
         }
     }
 
