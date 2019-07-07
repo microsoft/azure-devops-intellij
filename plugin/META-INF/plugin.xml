@@ -8,12 +8,12 @@
     <name>Azure DevOps</name>
     <version>1.153.0</version>
     <category>VCS Integration</category>
-    <vendor url="http://java.visualstudio.com/">Microsoft Corporation</vendor>
+    <vendor url="https://azure.microsoft.com/en-us/services/devops/">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
       Azure DevOps is a plugin to enable working with Git and TFVC repositories on Azure DevOps Services or Team Foundation Server (TFS) 2015+.
       <br />
-      <a href="https://github.com/Microsoft/azure-devops-intellij">GitHub</a> | <a href="https://java.visualstudio.com/Docs/tools/intelliJ">Documentation</a> | <a href="https://github.com/Microsoft/azure-devops-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/AzureDevOps">@AzureDevOps</a>
+      <a href="https://github.com/Microsoft/azure-devops-intellij">GitHub</a> | <a href="https://docs.microsoft.com/en-us/azure/devops/java">Documentation</a> | <a href="https://github.com/Microsoft/azure-devops-intellij/issues">Issues</a> | Twitter <a href="https://twitter.com/AzureDevOps">@AzureDevOps</a>
       <br />
       <br />
       <b>Features</b>
