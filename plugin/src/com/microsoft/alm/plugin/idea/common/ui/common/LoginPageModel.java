@@ -16,7 +16,7 @@ public interface LoginPageModel extends PageModel {
     String PROP_USER_NAME = "userName";
 
     String URL_CREATE_ACCOUNT = "https://go.microsoft.com/fwlink/?LinkId=307137&wt.mc_id=o~msft~java~intellij";
-    String URL_VSO_JAVA = "http://java.visualstudio.com";
+    String URL_VSO_JAVA = "https://docs.microsoft.com/en-us/azure/devops/java";
     String DEFAULT_SERVER_FORMAT = "http://%s:8080/tfs";
     String DEFAULT_VSTS_ACCOUNT_FORMAT = "https://%s";
 
