@@ -82,7 +82,7 @@ public class TFSVcs extends AbstractVcs {
 
     @NonNls
     public static final String TFVC_NAME = "TFVC";
-    public static final String TFVC_ONLINE_HELP_URL = "http://java.visualstudio.com/Docs/tools/intelliJ#_tfvc-support-preview";
+    public static final String TFVC_ONLINE_HELP_URL = "https://docs.microsoft.com/en-us/azure/devops/java/intellij-faq?view=azure-devops#does-the-intellij-plug-in-support-tfvc";
     public static final String SETTINGS_URL_EVENT = "settings";
     private static final VcsKey ourKey = createKey(TFVC_NAME);
 
