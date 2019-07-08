@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.git.utils;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -86,17 +85,7 @@ public class TfGitHelper {
         assert gitRepository != null;
         Collection<GitRemote> gitRemotes = gitRepository.getRemotes();
 
-        return Collections2.filter(gitRemotes, new Predicate<GitRemote>() {
-            @Override
-            public boolean apply(final GitRemote remote) {
-                return TfGitHelper.isTfGitRemote(remote);
-            }
-
-            @Override
-            public boolean test(@Nullable GitRemote input) {
-                return apply(input);
-            }
-        });
+        return Collections2.filter(gitRemotes, TfGitHelper::isTfGitRemote);
     }
 
     public static GitRepository getTfGitRepository(@NotNull final Project project) {

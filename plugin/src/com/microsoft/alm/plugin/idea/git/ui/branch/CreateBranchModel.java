@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.branch;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
@@ -37,7 +36,6 @@ import git4idea.update.GitFetchResult;
 import git4idea.update.GitFetcher;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,19 +88,10 @@ public class CreateBranchModel extends AbstractModel {
 
         // TODO: add option to retrieve more branches in case the branch they are looking for is missing local
         // only show valid remote branches
-        sortedRemoteBranches.addAll(Collections2.filter(gitRepository.getInfo().getRemoteBranches(), new Predicate<GitRemoteBranch>() {
-                    @Override
-                    public boolean apply(final GitRemoteBranch remoteBranch) {
-                        //  condition: remote must be a vso/tfs remote
-                        return tfGitRemotes.contains(remoteBranch.getRemote());
-                    }
-
-                    @Override
-                    public boolean test(@Nullable GitRemoteBranch input) {
-                        return apply(input);
-                    }
-                })
-        );
+        sortedRemoteBranches.addAll(Collections2.filter(gitRepository.getInfo().getRemoteBranches(), remoteBranch -> {
+            //  condition: remote must be a vso/tfs remote
+            return tfGitRemotes.contains(remoteBranch.getRemote());
+        }));
         sortedRemoteBranches.setSelectedItem(TfGitHelper.getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
         return sortedRemoteBranches;
     }

@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.pullrequest;
 
-import com.google.common.base.Predicate;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -273,22 +272,14 @@ public class CreatePullRequestModel extends AbstractModel {
 
         // only show valid remote branches
         sortedRemoteBranches.addAll(Collections2.filter(getInfo().getRemoteBranches(),
-                        new Predicate<GitRemoteBranch>() {
-                            @Override
-                            public boolean apply(final GitRemoteBranch remoteBranch) {
-                        /* two conditions:
-                         *   1. remote must be a vso/tfs remote
-                         *   2. this isn't the remote tracking branch of current local branch
-                         */
-                                return tfGitRemotes.contains(remoteBranch.getRemote())
-                                        && !remoteBranch.equals(remoteTrackingBranch);
-                            }
-
-                            @Override
-                            public boolean test(@Nullable GitRemoteBranch input) {
-                                return apply(input);
-                            }
-                        })
+                remoteBranch -> {
+                    /* two conditions:
+                     *   1. remote must be a vso/tfs remote
+                     *   2. this isn't the remote tracking branch of current local branch
+                     */
+                    return tfGitRemotes.contains(remoteBranch.getRemote())
+                            && !remoteBranch.equals(remoteTrackingBranch);
+                })
         );
         sortedRemoteBranches.setSelectedItem(TfGitHelper.getDefaultBranch(sortedRemoteBranches.getItems(), tfGitRemotes));
 
