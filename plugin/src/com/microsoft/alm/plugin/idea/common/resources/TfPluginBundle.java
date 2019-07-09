@@ -61,6 +61,8 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_OPEN_SETTINGS = "Plugin.Error.TFNotConfiguredDialog.OpenSettings";
     @NonNls
     public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_CANCEL = "Plugin.Error.TFNotConfiguredDialog.Cancel";
+    @NonNls
+    public static final String KEY_TFVC_NOTIFICATIONS = "Plugin.TfvcNotifications";
 
     // Git
     @NonNls
@@ -113,10 +115,14 @@ public class TfPluginBundle {
     public static final String KEY_ERRORS_NOT_TFS_REPO = "Errors.NotTfsRepo";
     @NonNls
     public static final String KEY_VSO_NO_PROFILE_ERROR_HELP = "VSO.NoProfileError.Help";
+    @NonNls
+    public static final String KEY_TFVC_NOTIFICATION_FILE_NAME_STARTS_WITH_DOLLAR = "Tfvc.Notification.FileNameStartsWithDollar";
 
     // Common TFVC
     @NonNls
     public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE = "Errors.UnableToDetermineWorkspace";
+    @NonNls
+    public static final String KEY_TFVC_ACTION_ADD_TO_TFIGNORE = "Tfvc.Action.AddToTfIgnore";
 
     // Checkout dialog ui and models
     @NonNls

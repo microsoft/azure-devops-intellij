@@ -1,6 +1,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.microsoft.alm.plugin.external.models.Workspace;
@@ -8,6 +9,7 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,8 +46,11 @@ public class TFVCUtil {
             // Ignore any files outside of a TFVC mapping:
             for (FilePath mappingPath : mappingPaths) {
                 if (path.isUnder(mappingPath, false)) {
-                    pathsToProcess.add(path.getPath());
-                    break;
+                    // Ignore any paths that has '$' in any component under the mapping root.
+                    if (!hasIllegalDollarInAnyComponent(mappingPath, path)) {
+                        pathsToProcess.add(path.getPath());
+                        break;
+                    }
                 }
             }
         }
@@ -65,5 +70,20 @@ public class TFVCUtil {
         }
 
         return mappingPaths;
+    }
+
+    private static boolean hasIllegalDollarInAnyComponent(FilePath mapping, FilePath localPath) {
+        String relativePath = FileUtil.getRelativePath(mapping.getIOFile(), localPath.getIOFile());
+        if (relativePath == null) {
+            return localPath.getName().startsWith("$");
+        }
+
+        File file = new File(relativePath);
+        while (file != null) {
+            if (file.getName().startsWith("$")) return true;
+            file = file.getParentFile();
+        }
+
+        return false;
     }
 }

@@ -230,7 +230,7 @@ public abstract class LocalPath {
 
         // Checks for illegal dollar
         return ServerPath.canonicalize(
-                serverRoot + ServerPath.PREFERRED_SEPARATOR_CHARACTER + relativeBuffer.toString());
+                serverRoot + ServerPath.PREFERRED_SEPARATOR_CHARACTER + relativeBuffer.toString(), true);
     }
 
     /**

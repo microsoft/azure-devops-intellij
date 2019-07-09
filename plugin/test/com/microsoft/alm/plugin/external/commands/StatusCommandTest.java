@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.external.commands;
 
 import com.google.common.collect.ImmutableList;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import org.junit.Assert;
@@ -96,5 +97,11 @@ public class StatusCommandTest extends AbstractCommandTest {
     public void testParseOutput_errors() {
         final StatusCommand cmd = new StatusCommand(null, "/localpath");
         final List<PendingChange> pendingChanges = cmd.parseOutput("/path/path", "error");
+    }
+
+    @Test(expected = DollarInPathException.class)
+    public void testParseOutput_dollar() {
+        StatusCommand cmd = new StatusCommand(null, "/localpath");
+        List<PendingChange> pendingChanges = cmd.parseOutput("/path/path", "An input validation error occurred: TF10122: The path '$/serverpath' contains a '$' at the beginning of a path component. Remove the '$' and try again.");
     }
 }

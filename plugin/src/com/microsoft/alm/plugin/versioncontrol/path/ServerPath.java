@@ -71,15 +71,16 @@ public abstract class ServerPath {
      * @param parentPath    the server path to the parent item (must not be <code>null</code>)
      * @param possibleChild the server path of the possible child item (must not be
      *                      <code>null</code>)
+     * @param checkForIllegalDollar whether to check for an illegal '$' character in path
      * @return true if possibleChild is a child of parentPath.
      */
-    public final static boolean isChild(String parentPath, String possibleChild) throws ServerPathFormatException {
+    public final static boolean isChild(String parentPath, String possibleChild, boolean checkForIllegalDollar) throws ServerPathFormatException {
         ArgumentHelper.checkNotNull(parentPath, "parentPath");
         ArgumentHelper.checkNotNull(possibleChild, "possibleChild");
 
         // Canonicalize the paths for easy comparison.
-        parentPath = ServerPath.canonicalize(parentPath);
-        possibleChild = ServerPath.canonicalize(possibleChild);
+        parentPath = ServerPath.canonicalize(parentPath, checkForIllegalDollar);
+        possibleChild = ServerPath.canonicalize(possibleChild, checkForIllegalDollar);
 
         // Ignoring case, if the parent matches all the way up to the length of
         // the child...
@@ -114,10 +115,11 @@ public abstract class ServerPath {
      * from directories, except $/.
      *
      * @param serverPath the repository path string to clean up.
+     * @param checkForIllegalDollar whether to check for illegal '$' character in path
      * @return the cleaned up path.
      * @throws ServerPathFormatException when the path cannot be cleaned up.
      */
-    public final static String canonicalize(String serverPath) throws ServerPathFormatException {
+    public final static String canonicalize(String serverPath, boolean checkForIllegalDollar) throws ServerPathFormatException {
         ArgumentHelper.checkNotNull(serverPath, "serverPath");
 
         int serverPathLength = serverPath.length();
@@ -250,7 +252,7 @@ public abstract class ServerPath {
          * would, if the flag was raised stating we had an illegal dollar
          * somewhere.
          */
-        if (illegalDollarInPath) {
+        if (illegalDollarInPath && checkForIllegalDollar) {
             logger.warn(String.format("TF10122: The path %s contains a $ at the beginning of a path component.", newPath.toString()));
             throw new ServerPathFormatException(newPath.toString());
         }
@@ -433,15 +435,16 @@ public abstract class ServerPath {
      *                             a parent of <code>serverPath</code>)
      * @param localRoot            the local path that corresponds to
      *                             <code>relativeToServerPath</code> (must not be <code>null</code>)
+     * @param checkForIllegalDollar whether to check for an illegal '$' character in path
      * @return the corresponding local path (never <code>null</code>)
      */
-    public static String makeLocal(final String serverPath, final String relativeToServerPath, final String localRoot) {
+    public static String makeLocal(final String serverPath, final String relativeToServerPath, final String localRoot, boolean checkForIllegalDollar) {
         ArgumentHelper.checkNotNull(serverPath, "serverPath");
         ArgumentHelper.checkNotNull(relativeToServerPath, "relativeToServerPath");
         ArgumentHelper.checkNotNull(localRoot, "localRoot");
 
-        // ServerPath.canonicalize() checks for illegal dollar
-        final String relativePart = ServerPath.makeRelative(ServerPath.canonicalize(serverPath), relativeToServerPath);
+        // ServerPath.canonicalize() checks for illegal dollar if necessary
+        final String relativePart = ServerPath.makeRelative(ServerPath.canonicalize(serverPath, checkForIllegalDollar), relativeToServerPath);
 
         /*
          * Convert any allowed separator characters into this platform's

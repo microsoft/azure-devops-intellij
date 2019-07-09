@@ -351,6 +351,20 @@ public class TfsFileUtil {
         return false;
     }
 
+    /**
+     * Translates a server path to a local path using the supplied working folder mappings.
+     * <p>
+     * <code>null</code> will be returned for items that are cloaked.
+     *
+     * @param serverPath the server path to translate into a local path (must not be <code>null</code> or empty)
+     * @param mappings  the {@link com.microsoft.alm.plugin.external.models.Workspace.Mapping} mappings to translate
+     *                  with; can be arranged in any order (must not be <code>null</code>)
+     * @return the {@link String} with the translation information ({@link String} is <code>null</code> for cloaked
+     * items), or <code>null</code> if no appropriate working folder mapping was found
+     */
+    public static String translateServerItemToLocalItem(final List<Workspace.Mapping> mappings, final String serverPath) {
+        return translateServerItemToLocalItem(mappings, serverPath, true);
+    }
 
     /**
      * Taken from team-explorer-everywhere: source/com.microsoft.tfs.core/src/com/microsoft/tfs/core/clients/versioncontrol/soapextensions/WorkingFolder.java
@@ -366,12 +380,13 @@ public class TfsFileUtil {
      *                   <code>null</code> or empty)
      * @param mappings   the {@link com.microsoft.alm.plugin.external.models.Workspace.Mapping} mappings to translate with; can be
      *                   arranged in any order (must not be <code>null</code>)
+     * @param checkForIllegalDollar whether to check for an illegal '$' character in path
      * @return the {@link String} with the translation information (
      * {@link String} is <code>null</code>
      * for cloaked items), or <code>null</code> if no appropriate
      * working folder mapping was found
      */
-    public static String translateServerItemToLocalItem(final List<Workspace.Mapping> mappings, final String serverPath) {
+    public static String translateServerItemToLocalItem(final List<Workspace.Mapping> mappings, final String serverPath, boolean checkForIllegalDollar) {
         ArgumentHelper.checkNotEmptyString(serverPath, "serverPath");
         ArgumentHelper.checkNotNull(mappings, "mappings");
 
@@ -383,7 +398,7 @@ public class TfsFileUtil {
                 continue;
             }
 
-            if (ServerPath.isChild(mapping.getServerPath(), serverPath) && mapping.getServerPath().length() > mappingLength) {
+            if (ServerPath.isChild(mapping.getServerPath(), serverPath, checkForIllegalDollar) && mapping.getServerPath().length() > mappingLength) {
                 // This is the closest new mapping.
                 foundMapping = mapping;
                 mappingLength = mapping.getServerPath().length();
@@ -392,7 +407,7 @@ public class TfsFileUtil {
 
         if (foundMapping != null) {
             final String localPath = foundMapping.isCloaked() ? null :
-                    ServerPath.makeLocal(serverPath, foundMapping.getServerPath(), foundMapping.getLocalPath());
+                    ServerPath.makeLocal(serverPath, foundMapping.getServerPath(), foundMapping.getLocalPath(), checkForIllegalDollar);
             return localPath;
         }
 
@@ -458,7 +473,7 @@ public class TfsFileUtil {
 
                 final String wfServerItem = wf.getServerPath();
 
-                if (wfServerItem.length() > mappingServerPathLength && ServerPath.isChild(wfServerItem, serverPath)) {
+                if (wfServerItem.length() > mappingServerPathLength && ServerPath.isChild(wfServerItem, serverPath, true)) {
                     isCloaked = true;
                     break;
                 }

@@ -10,6 +10,7 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.ToolRunnerCache;
+import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolMemoryException;
 import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
@@ -53,6 +54,7 @@ public abstract class Command<T> {
     private static final Logger logger = LoggerFactory.getLogger(Command.class);
 
     private static final Pattern CHANGESET_NUMBER_PATTERN = Pattern.compile("#(\\d+)");
+    private static final Pattern INVALID_DOLLAR_PATH_PATTERN = Pattern.compile("TF10122: The path '(.*?)' contains a '\\$' at the beginning of a path component. Remove the '\\$' and try again.");
 
     public static final int OUTPUT_TYPE_INFO = 0;
     public static final int OUTPUT_TYPE_WARNING = 1;
@@ -238,6 +240,7 @@ public abstract class Command<T> {
                     throw new ToolEulaNotAcceptedException(error);
                 }
                 if (error instanceof RuntimeException) {
+                    logger.error("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
                     throw (RuntimeException) error;
                 } else {
                     // Wrap the exception
@@ -400,6 +403,18 @@ public abstract class Command<T> {
         }
 
         return Path.combine(folderPath, filename);
+    }
+
+    static void checkStderrForInvalidDollarPath(String stderr) {
+        Matcher matcher = INVALID_DOLLAR_PATH_PATTERN.matcher(stderr);
+        if (!matcher.find()) {
+            return;
+        }
+
+        String serverFilePath = matcher.group(1);
+        if (StringUtils.isNotEmpty(serverFilePath)) {
+            throw new DollarInPathException(serverFilePath);
+        }
     }
 
     protected void throwIfError(final String stderr) {
