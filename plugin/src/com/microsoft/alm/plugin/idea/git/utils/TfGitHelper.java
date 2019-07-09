@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TfGitHelper {
     private static final String MASTER_BRANCH_PATTERN = "%s/master";
@@ -79,6 +80,12 @@ public class TfGitHelper {
             return true;
         }
         return false;
+    }
+
+    @NotNull
+    public static Collection<GitRemote> getTfGitRemotes(@NotNull Project project) {
+        List<GitRepository> repositories = GitUtil.getRepositoryManager(project).getRepositories();
+        return repositories.stream().flatMap(r -> getTfGitRemotes(r).stream()).collect(Collectors.toList());
     }
 
     public static Collection<GitRemote> getTfGitRemotes(@NotNull final GitRepository gitRepository) {

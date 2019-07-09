@@ -48,6 +48,8 @@ public class TfPluginBundle {
 
     // Plugin general
     @NonNls
+    public static final String KEY_PLUGIN_AZURE_DEVOPS = "Plugin.AzureDevOps";
+    @NonNls
     public static final String KEY_TF_GIT = "Providers.TfGitCheckoutProvider";
     @NonNls
     public static final String KEY_GIT_NOT_CONFIGURED = "Plugin.Error.GitExeNotConfigured";
@@ -59,6 +61,12 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_OPEN_SETTINGS = "Plugin.Error.TFNotConfiguredDialog.OpenSettings";
     @NonNls
     public static final String KEY_TFVC_NOT_CONFIGURED_DIALOG_CANCEL = "Plugin.Error.TFNotConfiguredDialog.Cancel";
+
+    // Git
+    @NonNls
+    public static final String KEY_GIT_NOTIFICATION_REMOTE = "Git.Notification.Remote";
+    @NonNls
+    public static final String KEY_GIT_CONFIGURE_REMOTES = "Git.Action.ConfigureRemotes";
 
     // Login form
     @NonNls
