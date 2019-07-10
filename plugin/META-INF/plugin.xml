@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <version>1.153.0</version>
+    <version>1.154.0</version>
     <category>VCS Integration</category>
     <vendor url="https://azure.microsoft.com/en-us/services/devops/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,14 +57,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <b>v 1.153.0</b>
+      <b>v 1.154.0</b>
       <br />
       <ul>
-        <li>Fix an error when creating a branch in TFVC (<a href="https://github.com/microsoft/azure-devops-intellij/issues/206">#206</a>).</li>
-        <li>Fix "Unable to determine the workspace" error caused by additional content roots in module (<a href="https://github.com/microsoft/azure-devops-intellij/issues/173">#173</a>).</li>
-        <li>Fix a UI block on error when trying to get TF client version (<a href="https://github.com/microsoft/azure-devops-intellij/issues/210">#210</a>).</li>
-        <li>IntelliJ 2019.2 compatibility (<a href="https://github.com/microsoft/azure-devops-intellij/pull/213">#213</a>).</li>
-        <li>Make the plugin distribution less heavy (<a href="https://github.com/microsoft/azure-devops-intellij/pull/214">#214</a>).</li>
+        <li>Support for authentication in repositories shared with Visual Studio (<a href="https://github.com/microsoft/azure-devops-intellij/pull/205">#205</a>)</li>
+        <li>We're now targeting Java 8 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/216">#216</a>)</li>
+        <li>The plugin documentation links have been updated (<a href="https://github.com/microsoft/azure-devops-intellij/pull/220">#220</a>)</li>
+        <li>Plugin will now offer a fix for leading '$' character in file names in TFVC repos (<a href="https://github.com/microsoft/azure-devops-intellij/issues/84">#84</a>)</li>
+        <li>Logging has been improved to provide better diagnostics (<a href="https://github.com/microsoft/azure-devops-intellij/pull/218">#218</a>, <a href="https://github.com/microsoft/azure-devops-intellij/pull/219">#219</a>)</li>
       </ul>
       <br />
     ]]>
