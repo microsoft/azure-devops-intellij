@@ -23,6 +23,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,6 +34,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
@@ -42,8 +44,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TFSFileListener extends VcsVFSListener {
     public static final Logger logger = LoggerFactory.getLogger(TFSFileListener.class);
@@ -136,6 +141,9 @@ public class TFSFileListener extends VcsVFSListener {
         } catch (TfsException e) {
             AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
         }
+
+        removeInvalidTFVCAddedFiles();
+
         if (!myAddedFiles.isEmpty()) {
             super.executeAdd();
         }
@@ -150,6 +158,7 @@ public class TFSFileListener extends VcsVFSListener {
         // overriding so we don't do any special logic here for delete since it's already been taken care of
     }
 
+    @Override
     protected void performAdding(final Collection<VirtualFile> addedFiles, final Map<VirtualFile, VirtualFile> copyFromMap) {
         final List<VcsException> errors = new ArrayList<VcsException>();
         ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
@@ -193,5 +202,19 @@ public class TFSFileListener extends VcsVFSListener {
 
     protected boolean isDirectoryVersioningSupported() {
         return true;
+    }
+
+    private void removeInvalidTFVCAddedFiles() {
+        Map<VirtualFile, FilePath> addedFiles = myAddedFiles.stream()
+                .collect(Collectors.toMap(vf -> vf, vf -> new LocalFilePath(vf.getPath(), vf.isDirectory())));
+        Set<FilePath> validPaths = new HashSet<>(TFVCUtil.filterValidTFVCPaths(myProject, addedFiles.values()));
+
+        for (Map.Entry<VirtualFile, FilePath> entry : addedFiles.entrySet()) {
+            VirtualFile file = entry.getKey();
+            FilePath path = entry.getValue();
+            if (!validPaths.contains(path)) {
+                myAddedFiles.remove(file);
+            }
+        }
     }
 }

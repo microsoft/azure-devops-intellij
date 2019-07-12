@@ -33,9 +33,9 @@ public class TFVCUtil {
      * so we need to filter only the items belonging to a local workspace before passing arguments to these commands.
      */
     @NotNull
-    public static List<String> filterValidTFVCPaths(@NotNull Project project, @NotNull Collection<FilePath> paths) {
+    public static List<FilePath> filterValidTFVCPaths(@NotNull Project project, @NotNull Collection<FilePath> paths) {
         List<FilePath> mappingPaths = getMappingsFromWorkspace(project);
-        List<String> pathsToProcess = new ArrayList<String>();
+        List<FilePath> filteredPaths = new ArrayList<>();
         for (FilePath path : paths) {
             // if we get a change notification in the $tf folder, we need to just ignore it
             if (StringUtils.containsIgnoreCase(path.getPath(), "$tf") ||
@@ -48,14 +48,14 @@ public class TFVCUtil {
                 if (path.isUnder(mappingPath, false)) {
                     // Ignore any paths that has '$' in any component under the mapping root.
                     if (!hasIllegalDollarInAnyComponent(mappingPath, path)) {
-                        pathsToProcess.add(path.getPath());
+                        filteredPaths.add(path);
                         break;
                     }
                 }
             }
         }
 
-        return pathsToProcess;
+        return filteredPaths;
     }
 
     private static List<FilePath> getMappingsFromWorkspace(@NotNull Project project) {

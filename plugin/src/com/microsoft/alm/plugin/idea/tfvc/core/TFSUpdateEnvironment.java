@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TFSUpdateEnvironment implements UpdateEnvironment {
     private static final Logger logger = LoggerFactory.getLogger(TFSUpdateEnvironment.class);
@@ -84,7 +85,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
                     break;
             }
 
-            List<String> filesUpdatePaths = TFVCUtil.filterValidTFVCPaths(project, Arrays.asList(contentRoots));
+            List<String> filesUpdatePaths = TFVCUtil.filterValidTFVCPaths(project, Arrays.asList(contentRoots)).stream().map(FilePath::getPath).collect(Collectors.toList());
             final SyncResults results = CommandUtils.syncWorkspace(tfsVcs.getServerContext(false), filesUpdatePaths, needRecursion, false);
 
             // add the changed files to updatedFiles so user knows what has occurred in the workspace

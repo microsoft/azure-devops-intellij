@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Extends the VCS change provider to execture the correct events to find out the local changes in the workspace
@@ -100,7 +101,7 @@ public class TFSChangeProvider implements ChangeProvider {
             return;
         }
 
-        final List<String> pathsToProcess = TFVCUtil.filterValidTFVCPaths(myProject, roots);
+        final List<String> pathsToProcess = TFVCUtil.filterValidTFVCPaths(myProject, roots).stream().map(FilePath::getPath).collect(Collectors.toList());
         if (pathsToProcess.isEmpty()) {
             return;
         }
