@@ -34,7 +34,7 @@ public class TFVCUtil {
 
     /**
      * Will return only invalid paths for TFVC (i.e. paths containing dollar in any component, or $tf / .tf service
-     * directory.
+     * directory).
      * <p>
      * Performs a quick check (without checking every VCS mapping) because we often need this in performance-sensitive
      * contexts.
@@ -44,8 +44,25 @@ public class TFVCUtil {
         List<FilePath> mappings = vcsManager.getDirectoryMappings(vcs).stream()
                 .map(mapping -> new LocalFilePath(mapping.getDirectory(), true))
                 .collect(Collectors.toList());
-        return paths.filter(path -> mappings.stream()
-                .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping, path)));
+        return paths.filter(path -> isInServiceDirectory(path)
+            || mappings.stream() .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping, path)));
+    }
+
+    /**
+     * Will check invalid paths for TFVC (i.e. paths containing dollar in any component, or $tf / .tf service
+     * directory).
+     * <p>
+     * Performs a quick check (without checking every VCS mapping) because we often need this in performance-sensitive
+     * contexts.
+     */
+    public static boolean isInvalidTFVCPath(@NotNull TFSVcs vcs, @NotNull FilePath path) {
+        if (isInServiceDirectory(path)) return true;
+
+        ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(vcs.getProject());
+
+        return vcsManager.getDirectoryMappings(vcs).stream()
+                .map(mapping -> new LocalFilePath(mapping.getDirectory(), true))
+                .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping, path));
     }
 
     /**
@@ -58,8 +75,7 @@ public class TFVCUtil {
         List<FilePath> filteredPaths = new ArrayList<>();
         for (FilePath path : paths) {
             // if we get a change notification in the $tf folder, we need to just ignore it
-            if (StringUtils.containsIgnoreCase(path.getPath(), "$tf") ||
-                    StringUtils.containsIgnoreCase(path.getPath(), ".tf")) {
+            if (isInServiceDirectory(path)) {
                 continue;
             }
 
@@ -76,6 +92,12 @@ public class TFVCUtil {
         }
 
         return filteredPaths;
+    }
+
+    private static boolean isInServiceDirectory(FilePath filePath) {
+        String path = filePath.getPath();
+        return StringUtils.containsIgnoreCase(path, "$tf")
+                || StringUtils.containsIgnoreCase(path, ".tf");
     }
 
     private static List<FilePath> getMappingsFromWorkspace(@NotNull Project project) {

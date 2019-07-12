@@ -8,6 +8,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vfs.LocalFileOperationsHandler;
@@ -22,6 +23,7 @@ import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +67,11 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             return false;
         }
 
+        if (TFVCUtil.isInvalidTFVCPath(vcs, new LocalFilePath(virtualFile.getPath(), virtualFile.isDirectory()))) {
+            logger.info("Invalid file name for TFVC, so not performing TFVC delete: {}", virtualFile.getPath());
+            return false;
+        }
+
         // do nothing with TFVC if the user chooses not to
         final VcsShowConfirmationOption.Value value = vcs.getDeleteConfirmation().getValue();
         if (VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY.equals(value)) {
@@ -75,10 +82,10 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         logger.info("Deleting file with TFVC: " + virtualFile.getPath());
         final Project currentProject = vcs.getProject();
 
-        List<PendingChange> pendingChanges = new ArrayList<>(CommandUtils.getStatusForFiles(
+        List<PendingChange> pendingChanges = CommandUtils.getStatusForFiles(
                 myProject,
                 vcs.getServerContext(true),
-                Collections.singletonList(virtualFile.getPath())));
+                Collections.singletonList(virtualFile.getPath()));
 
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
