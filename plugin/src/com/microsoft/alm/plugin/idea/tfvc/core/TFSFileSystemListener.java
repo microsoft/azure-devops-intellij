@@ -235,7 +235,19 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             return false;
         }
 
-        final Project currentProject = vcs.getProject();
+        boolean isDirectory = oldFile.isDirectory();
+        LocalFilePath oldFilePath = new LocalFilePath(oldFile.getPath(), isDirectory);
+        if (TFVCUtil.isInvalidTFVCPath(vcs, oldFilePath)) {
+            logger.warn("Invalid old TFVC path, ignore rename or move: {}", oldFilePath);
+            return false;
+        }
+
+        LocalFilePath newFilePath = new LocalFilePath(newPath, isDirectory);
+        if (TFVCUtil.isInvalidTFVCPath(vcs, newFilePath)) {
+            logger.warn("Invalid new TFVC path, ignore rename or move: {}", newFilePath);
+            return false;
+        }
+
         final String oldPath = oldFile.getPath();
         try {
             // a single file may have 0, 1, or 2 pending changes to it
