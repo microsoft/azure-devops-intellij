@@ -70,9 +70,9 @@ public class TFVCUtil {
      * so we need to filter only the items belonging to a local workspace before passing arguments to these commands.
      */
     @NotNull
-    public static List<FilePath> filterValidTFVCPaths(@NotNull Project project, @NotNull Collection<FilePath> paths) {
+    public static List<String> filterValidTFVCPaths(@NotNull Project project, @NotNull Collection<FilePath> paths) {
         List<FilePath> mappingPaths = getMappingsFromWorkspace(project);
-        List<FilePath> filteredPaths = new ArrayList<>();
+        List<String> filteredPaths = new ArrayList<>();
         for (FilePath path : paths) {
             // if we get a change notification in the $tf folder, we need to just ignore it
             if (isInServiceDirectory(path)) {
@@ -84,7 +84,7 @@ public class TFVCUtil {
                 if (path.isUnder(mappingPath, false)) {
                     // Ignore any paths that has '$' in any component under the mapping root.
                     if (!hasIllegalDollarInAnyComponent(mappingPath, path)) {
-                        filteredPaths.add(path);
+                        filteredPaths.add(path.getPath());
                         break;
                     }
                 }
