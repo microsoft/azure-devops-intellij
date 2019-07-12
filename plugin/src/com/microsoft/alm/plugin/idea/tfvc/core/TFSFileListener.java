@@ -75,7 +75,11 @@ public class TFSFileListener extends VcsVFSListener {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
                 public void run() {
                     ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                    pendingChanges.addAll(CommandUtils.getStatusForFiles(TFSVcs.getInstance(myProject).getServerContext(true), filePaths));
+                    pendingChanges.addAll(
+                            CommandUtils.getStatusForFiles(
+                                    myProject,
+                                    TFSVcs.getInstance(myProject).getServerContext(true),
+                                    filePaths));
                 }
             }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
 

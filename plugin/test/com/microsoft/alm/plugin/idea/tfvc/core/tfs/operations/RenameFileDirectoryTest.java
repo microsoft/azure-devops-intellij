@@ -110,7 +110,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     @Test
     public void testExecute_RenameFileNoChanges() {
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
+        when(CommandUtils.getStatusForFiles(any(Project.class), eq(mockServerContext), eq(ImmutableList.of(CURRENT_FILE_PATH))))
                 .thenReturn(Collections.EMPTY_LIST);
 
         RenameFileDirectory.execute(mockPsiFile, NEW_FILE_NAME, usageInfos, mockListener);
@@ -128,7 +128,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void testExecute_RenameDirectoryNoChanges() {
         String dirName = Path.combine("/path/to/the", "directory");
         when(mockVirtualFile.getPath()).thenReturn(dirName);
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(dirName)))
+        when(CommandUtils.getStatusForFiles(any(Project.class), eq(mockServerContext), eq(ImmutableList.of(dirName))))
                 .thenReturn(Collections.EMPTY_LIST);
 
         RenameFileDirectory.execute(mockPsiFile, NEW_DIRECTORY_NAME, usageInfos, mockListener);
@@ -146,7 +146,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void testExecute_RenameFileEditChanges() {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
+        when(CommandUtils.getStatusForFiles(any(Project.class), eq(mockServerContext), eq(ImmutableList.of(CURRENT_FILE_PATH))))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         RenameFileDirectory.execute(mockPsiFile, NEW_FILE_NAME, usageInfos, mockListener);
@@ -164,7 +164,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void testExecute_RenameFileEditRenameChanges() {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
+        when(CommandUtils.getStatusForFiles(any(Project.class), eq(mockServerContext), eq(ImmutableList.of(CURRENT_FILE_PATH))))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         RenameFileDirectory.execute(mockPsiFile, NEW_FILE_NAME, usageInfos, mockListener);
@@ -182,7 +182,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void testExecute_RenameFileUnversionedChange() {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
-        when(CommandUtils.getStatusForFiles(mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
+        when(CommandUtils.getStatusForFiles(any(Project.class), eq(mockServerContext), eq(ImmutableList.of(CURRENT_FILE_PATH))))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         RenameFileDirectory.execute(mockPsiFile, NEW_FILE_NAME, usageInfos, mockListener);

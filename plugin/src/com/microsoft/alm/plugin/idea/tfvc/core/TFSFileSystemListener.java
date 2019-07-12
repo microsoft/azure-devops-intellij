@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,7 +43,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TFSFileSystemListener implements LocalFileOperationsHandler, Disposable {
     public static final Logger logger = LoggerFactory.getLogger(TFSFileSystemListener.class);
 
-    public TFSFileSystemListener() {
+    @NotNull
+    private final Project myProject;
+
+    public TFSFileSystemListener(Project project) {
+        myProject = project;
         LocalFileSystem.getInstance().registerAuxiliaryFileOperationsHandler(this);
     }
 
@@ -68,11 +73,12 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         }
 
         logger.info("Deleting file with TFVC: " + virtualFile.getPath());
-        final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
         final Project currentProject = vcs.getProject();
 
-        pendingChanges.addAll(CommandUtils.getStatusForFiles(vcs.getServerContext(true),
-                Arrays.asList(virtualFile.getPath())));
+        List<PendingChange> pendingChanges = new ArrayList<>(CommandUtils.getStatusForFiles(
+                myProject,
+                vcs.getServerContext(true),
+                Collections.singletonList(virtualFile.getPath())));
 
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
@@ -229,9 +235,12 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
-            final List<PendingChange> pendingChanges = new ArrayList<PendingChange>(2);
-            pendingChanges.addAll(CommandUtils.getStatusForFiles(vcs.getServerContext(true),
-                    ImmutableList.of(oldPath)));
+            final List<PendingChange> pendingChanges = new ArrayList<>(2);
+            pendingChanges.addAll(
+                    CommandUtils.getStatusForFiles(
+                            myProject,
+                            vcs.getServerContext(true),
+                            ImmutableList.of(oldPath)));
 
             // ** Rename logic **
             // If 1 change and it's a candidate add that means it's a new unversioned file so rename thru the file system

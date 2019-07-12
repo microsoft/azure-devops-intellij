@@ -69,7 +69,7 @@ public class ScheduleForDeletion {
             final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
 
             for (final String path : filePaths) {
-                final List<PendingChange> fileChanges = CommandUtils.getStatusForFiles(context, ImmutableList.of(path));
+                final List<PendingChange> fileChanges = CommandUtils.getStatusForFiles(project, context, ImmutableList.of(path));
 
                 // deleting a file that has no changes
                 if (fileChanges.isEmpty()) {

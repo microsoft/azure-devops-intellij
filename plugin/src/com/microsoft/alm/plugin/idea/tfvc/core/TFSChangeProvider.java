@@ -30,7 +30,6 @@ import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
-import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
@@ -57,9 +56,10 @@ import java.util.List;
 public class TFSChangeProvider implements ChangeProvider {
     private static final Logger logger = LoggerFactory.getLogger(TFSChangeProvider.class);
 
+    @NotNull
     private final Project myProject;
 
-    public TFSChangeProvider(final Project project) {
+    public TFSChangeProvider(@NotNull final Project project) {
         myProject = project;
     }
 
@@ -107,11 +107,7 @@ public class TFSChangeProvider implements ChangeProvider {
 
         List<PendingChange> changes;
         try {
-            changes = CommandUtils.getStatusForFiles(null, pathsToProcess);
-        } catch (DollarInPathException e) {
-            logger.warn("'$' sign in file path detected: {}. Ignoring any files.", e.getServerFilePath());
-            TFVCNotifications.showInvalidDollarFilePathNotification(myProject, e.getServerFilePath());
-            return;
+            changes = CommandUtils.getStatusForFiles(myProject, null, pathsToProcess);
         } catch (final ToolEulaNotAcceptedException e) {
             logger.error("EULA not accepted");
             IdeaHelper.runOnUIThread(new Runnable() {

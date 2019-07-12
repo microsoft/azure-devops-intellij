@@ -76,9 +76,12 @@ public class RenameFileDirectory {
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
-            final List<PendingChange> pendingChanges = new ArrayList<PendingChange>(2);
-            pendingChanges.addAll(CommandUtils.getStatusForFiles(TFSVcs.getInstance(project).getServerContext(true),
-                    ImmutableList.of(currentPath)));
+            final List<PendingChange> pendingChanges = new ArrayList<>(2);
+            pendingChanges.addAll(
+                    CommandUtils.getStatusForFiles(
+                            project,
+                            TFSVcs.getInstance(project).getServerContext(true),
+                            ImmutableList.of(currentPath)));
 
             // ** Rename logic **
             // If 1 change and it's an add that means it's a new unversioned file so rename thru the file system

@@ -123,7 +123,7 @@ public class TFSVcs extends AbstractVcs {
     public void activate() {
         fileListener = new TFSFileListener(getProject(), this);
         if (tfsFileSystemListener == null) {
-            tfsFileSystemListener = new TFSFileSystemListener();
+            tfsFileSystemListener = new TFSFileSystemListener(myProject);
         }
 
         checkCommandLineVersion();
