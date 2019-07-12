@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -205,16 +204,11 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     private void removeInvalidTFVCAddedFiles() {
-        Map<VirtualFile, FilePath> addedFiles = myAddedFiles.stream()
+        Map<VirtualFile, FilePath> addedFilePaths = myAddedFiles.stream()
                 .collect(Collectors.toMap(vf -> vf, vf -> new LocalFilePath(vf.getPath(), vf.isDirectory())));
-        Set<FilePath> validPaths = new HashSet<>(TFVCUtil.filterValidTFVCPaths(myProject, addedFiles.values()));
+        Set<FilePath> invalidPaths = TFVCUtil.collectInvalidTFVCPaths((TFSVcs) myVcs, addedFilePaths.values().stream())
+                .collect(Collectors.toSet());
 
-        for (Map.Entry<VirtualFile, FilePath> entry : addedFiles.entrySet()) {
-            VirtualFile file = entry.getKey();
-            FilePath path = entry.getValue();
-            if (!validPaths.contains(path)) {
-                myAddedFiles.remove(file);
-            }
-        }
+        myAddedFiles.removeIf(file -> invalidPaths.contains(addedFilePaths.get(file)));
     }
 }

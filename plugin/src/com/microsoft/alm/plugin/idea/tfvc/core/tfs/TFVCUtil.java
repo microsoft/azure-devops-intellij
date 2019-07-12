@@ -4,8 +4,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TFVCUtil {
 
@@ -26,6 +30,22 @@ public class TFVCUtil {
         }
 
         return false;
+    }
+
+    /**
+     * Will return only invalid paths for TFVC (i.e. paths containing dollar in any component, or $tf / .tf service
+     * directory.
+     * <p>
+     * Performs a quick check (without checking every VCS mapping) because we often need this in performance-sensitive
+     * contexts.
+     */
+    public static Stream<FilePath> collectInvalidTFVCPaths(@NotNull TFSVcs vcs, @NotNull Stream<FilePath> paths) {
+        ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(vcs.getProject());
+        List<FilePath> mappings = vcsManager.getDirectoryMappings(vcs).stream()
+                .map(mapping -> new LocalFilePath(mapping.getDirectory(), true))
+                .collect(Collectors.toList());
+        return paths.filter(path -> mappings.stream()
+                .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping, path)));
     }
 
     /**
