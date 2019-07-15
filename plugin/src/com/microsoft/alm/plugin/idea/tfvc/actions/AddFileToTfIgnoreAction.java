@@ -38,12 +38,17 @@ public class AddFileToTfIgnoreAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
+        LOGGER.info("Performing AddFileToTfIgnoreAction for " + myServerFilePath);
+
         Workspace partialWorkspace = CommandUtils.getPartialWorkspace(myProject);
         String filePath = ObjectUtils.assertNotNull(
                 TfsFileUtil.translateServerItemToLocalItem(partialWorkspace.getMappings(), myServerFilePath, false));
         File localFile = new File(filePath);
+        LOGGER.info("Local file path: " + localFile.getAbsolutePath());
 
         File tfIgnore = TfIgnoreUtil.findNearestOrRootTfIgnore(partialWorkspace.getMappings(), localFile);
+        LOGGER.info(".tfignore location: " + (tfIgnore == null ? "null" : tfIgnore.getAbsolutePath()));
+
         if (tfIgnore != null) {
             CommandProcessor.getInstance().executeCommand(
                     myProject,

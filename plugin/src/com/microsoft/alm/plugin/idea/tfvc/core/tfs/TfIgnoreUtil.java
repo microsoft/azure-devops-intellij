@@ -74,7 +74,7 @@ public class TfIgnoreUtil {
         String relativePath = FileUtil.getRelativePath(tfIgnore.getParentFile(), fileToIgnore);
         VirtualFile virtualTfIgnoreFile = LocalFileSystem.getInstance().findFileByIoFile(tfIgnore);
         if (virtualTfIgnoreFile == null) {
-            VirtualFile parentDir = ObjectUtils.assertNotNull(  // should never be null because of the way we work with .tfignore
+            VirtualFile parentDir = ObjectUtils.assertNotNull( // should never be null because of the way we work with .tfignore
                     LocalFileSystem.getInstance().findFileByIoFile(tfIgnore.getParentFile()));
             virtualTfIgnoreFile = parentDir.createChildData(requestor, TFIGNORE_FILE_NAME);
         }
