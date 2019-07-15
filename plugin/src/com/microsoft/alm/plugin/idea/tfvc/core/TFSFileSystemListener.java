@@ -68,7 +68,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         }
 
         if (TFVCUtil.isInvalidTFVCPath(vcs, new LocalFilePath(virtualFile.getPath(), virtualFile.isDirectory()))) {
-            logger.info("Invalid file name for TFVC, so not performing TFVC delete: {}", virtualFile.getPath());
+            logger.warn("Invalid file name for TFVC, so not performing TFVC delete: {}", virtualFile.getPath());
             return false;
         }
 
