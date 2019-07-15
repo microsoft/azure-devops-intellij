@@ -16,6 +16,7 @@ import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class})
+@PrepareForTest({CommandUtils.class, TFSVcs.class, TFVCUtil.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class})
 public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private String CURRENT_FILE_NAME = "file.txt";
     private String NEW_FILE_NAME = "newName.txt";
@@ -85,7 +86,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class);
+        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, TFVCUtil.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class);
 
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
@@ -99,6 +100,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockNewDirectory.getPath()).thenReturn(NEW_DIRECTORY_PATH);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
+        when(TFVCUtil.isInvalidTFVCPath(eq(mockTFSVcs), any(FilePath.class))).thenReturn(false);
 
         FilePath mockFilePath = mock(FilePath.class);
         when(VersionControlPath.getFilePath(CURRENT_FILE_PATH, false)).thenReturn(mockFilePath);
