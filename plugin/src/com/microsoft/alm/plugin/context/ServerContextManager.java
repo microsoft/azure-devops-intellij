@@ -520,10 +520,10 @@ public class ServerContextManager {
 
     /**
      * Takes an existing server context and creates a new server context from it with everything the same except
-     * it prompts the user for new authentication info
+     * it prompts the user for new authentication info.
      *
-     * @param context
-     * @return
+     * @param context the context to use as a base for a new one
+     * @return authentication info for the new context
      */
     private AuthenticationInfo getNewAuthInfo(final ServerContext context) {
         logger.info("Updating context auth info");
@@ -535,8 +535,17 @@ public class ServerContextManager {
         if (StringUtils.equals(url, TfsAuthenticationProvider.TFS_LAST_USED_URL) && context.getAuthenticationInfo() != null) {
             url = context.getAuthenticationInfo().getServerUri();
         }
+
         logger.info("Updating auth info with url: " + url);
-        return AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, url);
+        AuthenticationInfo newAuthInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, url);
+        if (newAuthInfo != null) {
+            // Creating a new authentication info object will replace the existing context with a newly constructed one
+            // that doesn't preserve the repository information. To fix that, we'll create a new context using the
+            // existing context information, and put it into the manager.
+            add(new ServerContextBuilder(context).authentication(newAuthInfo).build());
+        }
+
+        return newAuthInfo;
     }
 
     /**
