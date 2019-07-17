@@ -240,7 +240,7 @@ public abstract class Command<T> {
                     throw new ToolEulaNotAcceptedException(error);
                 }
                 if (error instanceof RuntimeException) {
-                    logger.error("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
+                    logger.warn("Error: {}\nSync stack trace: {}", error, StringUtils.join(Thread.currentThread().getStackTrace(), "\n    at "));
                     throw (RuntimeException) error;
                 } else {
                     // Wrap the exception

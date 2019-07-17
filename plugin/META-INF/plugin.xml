@@ -92,6 +92,8 @@
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
         <vcsConfigurableProvider implementation="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesConfigurable"/>
+
+        <fileTypeFactory implementation="com.microsoft.alm.plugin.idea.tfvc.tfignore.TfIgnoreFileTypeFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

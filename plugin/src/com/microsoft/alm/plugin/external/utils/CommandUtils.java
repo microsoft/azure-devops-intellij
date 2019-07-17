@@ -36,6 +36,7 @@ import com.microsoft.alm.plugin.external.commands.SyncCommand;
 import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
+import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
@@ -51,7 +52,10 @@ import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -323,9 +327,22 @@ public class CommandUtils {
      * @param files
      * @return
      */
-    public static List<PendingChange> getStatusForFiles(final ServerContext context, final List<String> files) {
+    public static List<PendingChange> getStatusForFiles(
+            @Nullable Project project,
+            @Nullable ServerContext context,
+            @NotNull List<String> files) {
         final Command<List<PendingChange>> command = new StatusCommand(context, files);
-        return command.runSynchronously();
+        try {
+            return command.runSynchronously();
+        } catch (DollarInPathException e) {
+            if (project != null) {
+                logger.warn("'$' sign in file path detected: {}. Ignoring any files.", e.getServerFilePath());
+                TFVCNotifications.showInvalidDollarFilePathNotification(project, e.getServerFilePath());
+                return Collections.emptyList();
+            }
+
+            throw e;
+        }
     }
 
     /**

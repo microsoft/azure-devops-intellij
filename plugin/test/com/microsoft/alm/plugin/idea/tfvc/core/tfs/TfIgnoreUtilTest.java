@@ -55,15 +55,51 @@ public class TfIgnoreUtilTest {
         assertEquals(expectedTfIgnore, tfIgnore);
     }
 
-    private static Path createTempFileSystem(String... filesToCreate) throws IOException {
+    @Test
+    public void doNotUseDirectoryAsTfIgnore() throws IOException {
+        Path root = createTempFileSystem("root/project/src/node_modules/test.txt", "root/project/src/.tfignore/");
+        Path projectRoot = root.resolve("root/project");
+        Path textFile = projectRoot.resolve("src/node_modules/src/node_modules/test.txt");
+        Workspace.Mapping mapping = new Workspace.Mapping("$/", projectRoot.toString(), false);
+
+        File tfIgnore = TfIgnoreUtil.findNearestOrRootTfIgnore(Collections.singleton(mapping), textFile.toFile());
+
+        File expectedTfIgnore = projectRoot.resolve(".tfignore").toFile();
+        assertEquals(expectedTfIgnore, tfIgnore);
+    }
+
+    @Test
+    public void doNotUseDirectoryAsTfIgnoreInRoot() throws IOException {
+        Path root = createTempFileSystem("root/project/src/node_modules/test.txt", "root/project/.tfignore/");
+        Path projectRoot = root.resolve("root/project");
+        Path textFile = projectRoot.resolve("src/node_modules/src/node_modules/test.txt");
+        Workspace.Mapping mapping = new Workspace.Mapping("$/", projectRoot.toString(), false);
+
+        File tfIgnore = TfIgnoreUtil.findNearestOrRootTfIgnore(Collections.singleton(mapping), textFile.toFile());
+
+        File expectedTfIgnore = projectRoot.resolve("src/.tfignore").toFile();
+        assertEquals(expectedTfIgnore, tfIgnore);
+    }
+
+    /**
+     * Creates a file system tree in a temporary directory.
+     * @param entriesToCreate a list of paths to create. If path ends with '/', it will become a directory; otherwise it
+     *                        will become a file
+     * @return a path to the root of the file system tree.
+     */
+    private static Path createTempFileSystem(String... entriesToCreate) throws IOException {
         Path rootDirectory = Files.createTempDirectory("azuredevopstest");
-        for (String relativePath : filesToCreate) {
-            Path filePath = rootDirectory.resolve(relativePath);
-            Path directoryPath = filePath.getParent();
+        for (String relativePath : entriesToCreate) {
+            Path resultingPath = rootDirectory.resolve(relativePath);
+            Path directoryPath = resultingPath.getParent();
 
             Files.createDirectories(directoryPath);
-            //noinspection ResultOfMethodCallIgnored
-            filePath.toFile().createNewFile();
+            if (relativePath.endsWith("/")) {
+                Files.createDirectories(resultingPath);
+            } else {
+                //noinspection ResultOfMethodCallIgnored
+                resultingPath.toFile().createNewFile();
+            }
         }
 
         return rootDirectory;
