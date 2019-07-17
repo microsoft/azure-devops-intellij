@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class AddFileToTfIgnoreAction extends AnAction {
-    private static final Logger LOGGER = Logger.getInstance(AddFileToTfIgnoreAction.class);
+    private static final Logger ourLogger = Logger.getInstance(AddFileToTfIgnoreAction.class);
 
     @NotNull
     private final Project myProject;
@@ -38,16 +38,16 @@ public class AddFileToTfIgnoreAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        LOGGER.info("Performing AddFileToTfIgnoreAction for " + myServerFilePath);
+        ourLogger.info("Performing AddFileToTfIgnoreAction for " + myServerFilePath);
 
         Workspace partialWorkspace = CommandUtils.getPartialWorkspace(myProject);
         String filePath = ObjectUtils.assertNotNull(
                 TfsFileUtil.translateServerItemToLocalItem(partialWorkspace.getMappings(), myServerFilePath, false));
         File localFile = new File(filePath);
-        LOGGER.info("Local file path: " + localFile.getAbsolutePath());
+        ourLogger.info("Local file path: " + localFile.getAbsolutePath());
 
         File tfIgnore = TfIgnoreUtil.findNearestOrRootTfIgnore(partialWorkspace.getMappings(), localFile);
-        LOGGER.info(".tfignore location: " + (tfIgnore == null ? "null" : tfIgnore.getAbsolutePath()));
+        ourLogger.info(".tfignore location: " + (tfIgnore == null ? "null" : tfIgnore.getAbsolutePath()));
 
         if (tfIgnore != null) {
             CommandProcessor.getInstance().executeCommand(
@@ -56,7 +56,7 @@ public class AddFileToTfIgnoreAction extends AnAction {
                         try {
                             TfIgnoreUtil.addToTfIgnore(this, tfIgnore, localFile);
                         } catch (IOException ex) {
-                            LOGGER.error(ex);
+                            ourLogger.error(ex);
                         }
                     }),
                     null,

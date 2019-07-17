@@ -43,12 +43,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Listener that intercepts file system actions and executes the appropriate TFVC command if needed
  */
 public class TFSFileSystemListener implements LocalFileOperationsHandler, Disposable {
-    public static final Logger logger = LoggerFactory.getLogger(TFSFileSystemListener.class);
+    private static final Logger ourLogger = LoggerFactory.getLogger(TFSFileSystemListener.class);
 
     @NotNull
     private final Project myProject;
 
-    public TFSFileSystemListener(Project project) {
+    public TFSFileSystemListener(@NotNull Project project) {
         myProject = project;
         LocalFileSystem.getInstance().registerAuxiliaryFileOperationsHandler(this);
     }
@@ -63,23 +63,23 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         final TFSVcs vcs = VcsHelper.getTFSVcsByPath(virtualFile);
         // no TFSVcs so not a TFVC project so do nothing
         if (vcs == null) {
-            logger.info("Not a TFVC project so not doing a TFVC delete");
+            ourLogger.info("Not a TFVC project so not doing a TFVC delete");
             return false;
         }
 
         if (TFVCUtil.isInvalidTFVCPath(vcs, new LocalFilePath(virtualFile.getPath(), virtualFile.isDirectory()))) {
-            logger.warn("Invalid file name for TFVC, so not performing TFVC delete: {}", virtualFile.getPath());
+            ourLogger.warn("Invalid file name for TFVC, so not performing TFVC delete: {}", virtualFile.getPath());
             return false;
         }
 
         // do nothing with TFVC if the user chooses not to
         final VcsShowConfirmationOption.Value value = vcs.getDeleteConfirmation().getValue();
         if (VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY.equals(value)) {
-            logger.info("Don't delete file from TFVC: " + virtualFile.getPath());
+            ourLogger.info("Don't delete file from TFVC: " + virtualFile.getPath());
             return false;
         }
 
-        logger.info("Deleting file with TFVC: " + virtualFile.getPath());
+        ourLogger.info("Deleting file with TFVC: " + virtualFile.getPath());
         final Project currentProject = vcs.getProject();
 
         List<PendingChange> pendingChanges = CommandUtils.getStatusForFiles(
@@ -89,7 +89,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
-            logger.info("No changes to file so deleting though TFVC");
+            ourLogger.info("No changes to file so deleting though TFVC");
             CommandUtils.deleteFiles(vcs.getServerContext(true), Arrays.asList(virtualFile.getPath()), null, true);
             return true;
         }
@@ -166,29 +166,29 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
                 }, pendingChange);
             }
         } catch (TfsException e) {
-            logger.warn("Error while checking delete candidate's pending changes");
+            ourLogger.warn("Error while checking delete candidate's pending changes");
             AbstractVcsHelper.getInstance(currentProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
         }
 
         if (revert.get()) {
-            logger.info("Reverting pending changes for delete candidate");
+            ourLogger.info("Reverting pending changes for delete candidate");
             CommandUtils.undoLocalFiles(vcs.getServerContext(true), Arrays.asList(virtualFile.getPath()));
         }
 
         if (success.get() && !isUndelete.get()) {
-            logger.info("Deleting file with TFVC after undoing pending changes");
+            ourLogger.info("Deleting file with TFVC after undoing pending changes");
             // PendingChnages will always have at least 1 element or else we wouldn't have gotten this far
             final String filePath = StringUtils.isNotEmpty(pendingChanges.get(0).getSourceItem()) ? pendingChanges.get(0).getSourceItem() : pendingChanges.get(0).getLocalItem();
             CommandUtils.deleteFiles(vcs.getServerContext(true),
                     Arrays.asList(filePath), pendingChanges.get(0).getWorkspace(), true);
         }
-        logger.info("File was deleted using TFVC: " + success.get());
+        ourLogger.info("File was deleted using TFVC: " + success.get());
         return success.get();
     }
 
     @Override
     public boolean move(final VirtualFile virtualFile, final VirtualFile toDirectory) throws IOException {
-        logger.info(String.format("Moving file %s to %s", virtualFile.getPath(), toDirectory.getPath()));
+        ourLogger.info(String.format("Moving file %s to %s", virtualFile.getPath(), toDirectory.getPath()));
         return renameOrMove(virtualFile, Path.combine(toDirectory.getPath(), virtualFile.getName()));
     }
 
@@ -200,7 +200,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
     @Override
     public boolean rename(final VirtualFile virtualFile, final String s) throws IOException {
-        logger.info(String.format("Renaming file %s to %s", virtualFile.getName(), s));
+        ourLogger.info(String.format("Renaming file %s to %s", virtualFile.getName(), s));
         return renameOrMove(virtualFile, Path.combine(virtualFile.getParent().getPath(), s));
     }
 
@@ -231,20 +231,20 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         final TFSVcs vcs = VcsHelper.getTFSVcsByPath(oldFile);
         // no TFSVcs so not a TFVC project so do nothing
         if (vcs == null) {
-            logger.info("Not a TFVC project so not doing a TFVC rename/move");
+            ourLogger.info("Not a TFVC project so not doing a TFVC rename/move");
             return false;
         }
 
         boolean isDirectory = oldFile.isDirectory();
         LocalFilePath oldFilePath = new LocalFilePath(oldFile.getPath(), isDirectory);
         if (TFVCUtil.isInvalidTFVCPath(vcs, oldFilePath)) {
-            logger.warn("Invalid old TFVC path, ignore rename or move: {}", oldFilePath);
+            ourLogger.warn("Invalid old TFVC path, ignore rename or move: {}", oldFilePath);
             return false;
         }
 
         LocalFilePath newFilePath = new LocalFilePath(newPath, isDirectory);
         if (TFVCUtil.isInvalidTFVCPath(vcs, newFilePath)) {
-            logger.warn("Invalid new TFVC path, ignore rename or move: {}", newFilePath);
+            ourLogger.warn("Invalid new TFVC path, ignore rename or move: {}", newFilePath);
             return false;
         }
 
@@ -266,15 +266,15 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             // Anything else can be renamed
             // Deleted files should not be at this point since IDE disables rename option for them
             if (pendingChanges.size() == 1 && pendingChanges.get(0).isCandidate() && pendingChanges.get(0).getChangeTypes().contains(ServerStatusType.ADD)) {
-                logger.info("Renaming unversioned file thru file system");
+                ourLogger.info("Renaming unversioned file thru file system");
                 return false;
             } else {
-                logger.info("Renaming file thru tf commandline");
+                ourLogger.info("Renaming file thru tf commandline");
                 CommandUtils.renameFile(vcs.getServerContext(true), oldPath, newPath);
                 return true;
             }
         } catch (Throwable t) {
-            logger.warn("renameOrMove experienced a failure while trying to rename a file", t);
+            ourLogger.warn("renameOrMove experienced a failure while trying to rename a file", t);
             throw new IOException(t);
         }
     }
