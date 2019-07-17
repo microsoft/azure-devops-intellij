@@ -46,14 +46,19 @@ public class TfIgnoreUtil {
             if (file.isDirectory()) {
                 LocalFilePath filePath = new LocalFilePath(file.getAbsolutePath(), true);
                 if (localRoots.stream().noneMatch(root -> filePath.isUnder(root, false))) {
-                    // Path is not under any of the root mappings; return last potential tfignore location that was under
-                    // mapping.
+                    // Path is not under any of the root mappings; return last potential tfignore location that was
+                    // under mapping.
                     return potentialTfIgnore;
                 }
 
-                potentialTfIgnore = new File(FileUtil.join(file.getAbsolutePath(), TFIGNORE_FILE_NAME));
-                if (potentialTfIgnore.isFile()) {
-                    return potentialTfIgnore;
+                File tfIgnoreInCurrentDir = new File(FileUtil.join(file.getAbsolutePath(), TFIGNORE_FILE_NAME));
+                if (!tfIgnoreInCurrentDir.isDirectory()) {
+                    // Remember as a potential location for .tfignore if is not occupied by a directory.
+                    potentialTfIgnore = tfIgnoreInCurrentDir;
+                    if (potentialTfIgnore.isFile()) {
+                        // Return as a best match if already exists as a file.
+                        return potentialTfIgnore;
+                    }
                 }
             }
 
