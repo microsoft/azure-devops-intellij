@@ -65,6 +65,7 @@
         <li>The plugin documentation links have been updated (<a href="https://github.com/microsoft/azure-devops-intellij/pull/220">#220</a>)</li>
         <li>Plugin will now offer a fix for leading '$' character in file names in TFVC repos (<a href="https://github.com/microsoft/azure-devops-intellij/issues/84">#84</a>)</li>
         <li>Logging has been improved to provide better diagnostics (<a href="https://github.com/microsoft/azure-devops-intellij/pull/218">#218</a>, <a href="https://github.com/microsoft/azure-devops-intellij/pull/219">#219</a>)</li>
+        <li>Fix an bug with repository disappearing on credential update (<a href="https://github.com/microsoft/azure-devops-intellij/issues/225">#225</a>)</li>
       </ul>
       <br />
     ]]>
