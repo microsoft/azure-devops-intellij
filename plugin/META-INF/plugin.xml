@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <version>1.154.0</version>
+    <version>1.155.0</version>
     <category>VCS Integration</category>
     <vendor url="https://azure.microsoft.com/en-us/services/devops/">Microsoft Corporation</vendor>
     <description><![CDATA[
