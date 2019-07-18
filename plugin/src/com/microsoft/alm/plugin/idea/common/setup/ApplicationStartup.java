@@ -201,17 +201,12 @@ public class ApplicationStartup implements ApplicationComponent {
      * Finds the OS type the plugin is running on and calls the setup for it
      */
     protected void doOsSetup(final File vstsDirectory, final String ideLocation) {
-        if (Platform.isWindows()) {
-            logger.debug("Windows operating system detected");
-            WindowsStartup.startup();
-        } else if (Platform.isMac()) {
+        if (Platform.isMac()) {
             logger.debug("Mac operating system detected");
             cacheIdeLocation(vstsDirectory, ideLocation + MAC_EXE_DIR);
-            MacStartup.startup();
         } else {
             logger.debug("Linux operating system detected ");
             cacheIdeLocation(vstsDirectory, ideLocation + LINUX_EXE_DIR);
-            LinuxStartup.startup();
         }
     }
 

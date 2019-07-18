@@ -27,7 +27,7 @@ import java.io.FileWriter;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WindowsStartup.class, Platform.class, MacStartup.class, ApplicationNamesInfo.class, AuthHelper.class})
+@PrepareForTest({Platform.class, ApplicationNamesInfo.class, AuthHelper.class})
 public class ApplicationStartupTest extends IdeaAbstractTest {
     public File VSTS_DIR = new File(System.getProperty("java.io.tmpdir"), ".vsts");
     public String TEST_IDE_LOCATION = "/test/idea/location/";
@@ -41,7 +41,7 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
     @Before
     public void localSetup() {
         when(mockApplicationNamesInfo.getProductName()).thenReturn(IDEA_NAME);
-        PowerMockito.mockStatic(Platform.class, WindowsStartup.class, MacStartup.class, ApplicationNamesInfo.class, AuthHelper.class);
+        PowerMockito.mockStatic(Platform.class, ApplicationNamesInfo.class, AuthHelper.class);
         when(ApplicationNamesInfo.getInstance()).thenReturn(mockApplicationNamesInfo);
         VSTS_DIR.mkdir();
     }
@@ -49,27 +49,6 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
     @After
     public void localCleanup() throws Exception {
         FileUtils.deleteDirectory(VSTS_DIR);
-    }
-
-    @Test
-    public void testWindowsOS() {
-        setOsResponses(true, false, false);
-        osSetup();
-        verifyStatics(1, 0, 0);
-    }
-
-    @Test
-    public void testMacOS() {
-        setOsResponses(false, true, false);
-        osSetup();
-        verifyStatics(0, 1, 0);
-    }
-
-    @Test
-    public void testLinuxOS() {
-        setOsResponses(false, false, true);
-        osSetup();
-        verifyStatics(0, 0, 1);
     }
 
     @Test
@@ -158,26 +137,10 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
         AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
     }
 
-    public void osSetup() {
-        ApplicationStartup appStartup = new ApplicationStartup();
-        appStartup.doOsSetup(VSTS_DIR, TEST_IDE_LOCATION);
-    }
-
     public void setOsResponses(boolean windowsResponse, boolean macResponse, boolean linuxResponse) {
         when(Platform.isWindows()).thenReturn(windowsResponse);
         when(Platform.isMac()).thenReturn(macResponse);
         when(Platform.isLinux()).thenReturn(linuxResponse);
-    }
-
-    public void verifyStatics(int winRuns, int macRuns, int linuxRuns) {
-        PowerMockito.verifyStatic(Mockito.times(winRuns));
-        WindowsStartup.startup();
-
-        PowerMockito.verifyStatic(Mockito.times(macRuns));
-        MacStartup.startup();
-
-        PowerMockito.verifyStatic(Mockito.times(linuxRuns));
-        LinuxStartup.startup();
     }
 
     public void writeToFile(File file, String content) throws Exception {
