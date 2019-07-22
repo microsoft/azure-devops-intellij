@@ -6,7 +6,7 @@
 <idea-plugin version="2">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <version>1.155.0</version>
+    <!-- <version>1.155.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
     <category>VCS Integration</category>
     <vendor url="https://azure.microsoft.com/en-us/services/devops/">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -57,7 +57,6 @@
     ]]></description>
 
     <change-notes><![CDATA[
-      <b>v 1.154.0</b>
       <br />
       <ul>
         <li>Support for authentication in repositories shared with Visual Studio (<a href="https://github.com/microsoft/azure-devops-intellij/pull/205">#205</a>)</li>
