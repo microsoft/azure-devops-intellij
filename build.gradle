@@ -90,13 +90,15 @@ project(":plugin") {
         version = idea_version
         plugins = ['git4idea']
         pluginName = 'com.microsoft.vso.idea'
+        updateSinceUntilBuild = false
+    }
+
+    patchPluginXml {
+        pluginXmlFiles = ['META-INF/plugin.xml']
     }
 
     jar {
         baseName 'com.microsoft.alm.plugin.idea'
-        from('.') {
-            include 'META-INF/plugin.xml'
-        }
     }
 
     task showVersion() {
