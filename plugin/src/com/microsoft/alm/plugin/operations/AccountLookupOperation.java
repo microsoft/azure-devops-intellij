@@ -15,10 +15,12 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,6 +87,14 @@ public class AccountLookupOperation extends Operation {
             onLookupResults(results);
             onLookupCompleted();
         } catch (Throwable ex) {
+            if (ex instanceof WebApplicationException) {
+                WebApplicationException webEx = (WebApplicationException)ex;
+                Response response = webEx.getResponse();
+                if (response != null) {
+                    logger.warn("Error response content: {}", response.readEntity(String.class));
+                }
+            }
+
             if (AuthHelper.isNotAuthorizedError(ex)) {
                 final ServerContext context = ServerContextManager.getInstance().updateAuthenticationInfo(VsoAuthenticationProvider.VSO_AUTH_URL);
                 if (context == null) {
