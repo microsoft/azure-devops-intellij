@@ -27,9 +27,8 @@ public class CreatePullRequestAction extends DumbAwareAction {
     @Override
     public void update(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
-        final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 
-        if (project == null || project.isDefault() || gitRepository == null) {
+        if (project == null || project.isDefault() || TfGitHelper.getTfGitRepository(project) == null) {
             anActionEvent.getPresentation().setVisible(false);
             anActionEvent.getPresentation().setEnabled(false);
         } else {
@@ -41,6 +40,9 @@ public class CreatePullRequestAction extends DumbAwareAction {
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         final Project project = anActionEvent.getData(CommonDataKeys.PROJECT);
+        if (project == null)
+            return;
+
         final GitRepository gitRepository = TfGitHelper.getTfGitRepository(project);
 
         if (gitRepository != null) {
