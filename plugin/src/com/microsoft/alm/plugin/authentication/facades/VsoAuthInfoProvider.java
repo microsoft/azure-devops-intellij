@@ -11,9 +11,13 @@ import com.microsoft.alm.auth.pat.VstsPatAuthenticator;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.helpers.Action;
 import com.microsoft.alm.oauth2.useragent.AuthorizationException;
+import com.microsoft.alm.oauth2.useragent.UserAgentImpl;
 import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo.CredsType;
+import com.microsoft.alm.plugin.authentication.providers.ConfigurableAzureAuthorityProvider;
+import com.microsoft.alm.plugin.authentication.providers.ConfigurableOAuth2UserAgentValidator;
+import com.microsoft.alm.plugin.authentication.providers.JbrAwareJavaFxProvider;
 import com.microsoft.alm.plugin.context.RestClientHelper;
 import com.microsoft.alm.plugin.exceptions.ProfileDoesNotExistException;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
@@ -80,12 +84,15 @@ public class VsoAuthInfoProvider implements AuthenticationInfoProvider {
 
         // Must share the same accessTokenStore with the member variable vstsPatAuthenticator to avoid prompt the user
         // when we generate PersonalAccessToken
+        UserAgentImpl userAgent = new UserAgentImpl(JbrAwareJavaFxProvider.PROVIDERS_WITH_JBR_AWARE);
         final OAuth2Authenticator.OAuth2AuthenticatorBuilder oAuth2AuthenticatorBuilder = new OAuth2Authenticator.OAuth2AuthenticatorBuilder()
                 .withClientId(CLIENT_ID)
                 .redirectTo(REDIRECT_URL)
                 .backedBy(accessTokenStore)
                 .manage(OAuth2Authenticator.MANAGEMENT_CORE_RESOURCE)
-                .withDeviceFlowCallback(deviceFlowResponsePrompt.getCallback(cancellationCallback));
+                .withDeviceFlowCallback(deviceFlowResponsePrompt.getCallback(cancellationCallback))
+                .withOAuth2UseragentValidator(new ConfigurableOAuth2UserAgentValidator(userAgent))
+                .withAzureAuthorityProvider(new ConfigurableAzureAuthorityProvider(userAgent));
         final OAuth2Authenticator oAuth2Authenticator = oAuth2AuthenticatorBuilder.build();
 
         final URI encodedServerUri = UrlHelper.createUri(serverUri);
