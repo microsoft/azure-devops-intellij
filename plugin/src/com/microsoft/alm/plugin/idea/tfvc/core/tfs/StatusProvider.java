@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 // Note: if item is renamed (moved), same local item and pending change reported by server for source and target names (Jetbrains)
 
@@ -49,10 +50,15 @@ public class StatusProvider {
      */
     public static void visitByStatus(final @NotNull StatusVisitor statusVisitor,
                                      PendingChange pendingChange) throws TfsException {
-        determineServerStatus(pendingChange).visitBy(
-                VersionControlPath.getFilePath(pendingChange.getLocalItem(), (new File(pendingChange.getLocalItem()).isDirectory())),
-                true, //TODO: I made everything a local item for now
-                statusVisitor);
+        String localItem = pendingChange.getLocalItem();
+        File localFile = new File(localItem);
+        ServerStatus status = determineServerStatus(pendingChange);
+        if (status != null) {
+            status.visitBy(
+                    Objects.requireNonNull(VersionControlPath.getFilePath(localItem, localFile.isDirectory())),
+                    localFile.exists(),
+                    statusVisitor);
+        }
     }
 
     /**
