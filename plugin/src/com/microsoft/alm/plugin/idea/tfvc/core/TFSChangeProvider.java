@@ -21,6 +21,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -29,6 +30,7 @@ import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -57,10 +59,10 @@ public class TFSChangeProvider implements ChangeProvider {
     private static final Logger logger = LoggerFactory.getLogger(TFSChangeProvider.class);
 
     @NotNull
-    private final Project myProject;
+    private final TFSVcs myVcs;
 
-    public TFSChangeProvider(@NotNull final Project project) {
-        myProject = project;
+    public TFSChangeProvider(@NotNull TFSVcs vcs) {
+        myVcs = vcs;
     }
 
     public boolean isModifiedDocumentTrackingRequired() {
@@ -74,11 +76,8 @@ public class TFSChangeProvider implements ChangeProvider {
                            @NotNull final ChangelistBuilder builder,
                            @NotNull final ProgressIndicator progress,
                            @NotNull final ChangeListManagerGate addGate) throws VcsException {
-
-        if (myProject.isDisposed()) {
-            return;
-        }
-        if (builder == null) {
+        Project project = myVcs.getProject();
+        if (project.isDisposed()) {
             return;
         }
 
@@ -88,7 +87,7 @@ public class TFSChangeProvider implements ChangeProvider {
         RootsCollection.FilePathRootsCollection roots = new RootsCollection.FilePathRootsCollection();
         roots.addAll(dirtyScope.getRecursivelyDirtyDirectories());
 
-        final ChangeListManager changeListManager = ChangeListManager.getInstance(myProject);
+        final ChangeListManager changeListManager = ChangeListManager.getInstance(project);
         for (FilePath dirtyFile : dirtyScope.getDirtyFiles()) {
             // workaround for IDEADEV-31511 and IDEADEV-31721
             if (dirtyFile.getVirtualFile() == null || !changeListManager.isIgnoredFile(dirtyFile.getVirtualFile())) {
@@ -100,20 +99,25 @@ public class TFSChangeProvider implements ChangeProvider {
             return;
         }
 
-        final List<String> pathsToProcess = TFVCUtil.filterValidTFVCPaths(myProject, roots);
+        final List<String> pathsToProcess = TFVCUtil.filterValidTFVCPaths(project, roots);
         if (pathsToProcess.isEmpty()) {
             return;
         }
 
         List<PendingChange> changes;
         try {
-            changes = CommandUtils.getStatusForFiles(myProject, null, pathsToProcess);
+            // Status command requires credentials (even if it doesn't use them in most cases). On Windows, it is able
+            // to discover current user's NTLM credentials and use them (even if they don't usually match the
+            // credentials used to access the TFS, it doesn't matter). For other OSs, where TF client couldn't get any
+            // default credentials, we'll obtain the valid credentials from the current server context.
+            ServerContext serverContext = SystemInfo.isWindows ? null : myVcs.getServerContext(false);
+            changes = CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess);
         } catch (final ToolEulaNotAcceptedException e) {
             logger.error("EULA not accepted");
             IdeaHelper.runOnUIThread(new Runnable() {
                 @Override
                 public void run() {
-                    EULADialog.showDialogIfNeeded(myProject);
+                    EULADialog.showDialogIfNeeded(project);
                 }
             });
             return;
@@ -123,7 +127,7 @@ public class TFSChangeProvider implements ChangeProvider {
         }
 
         // for each change, find out the status of the changes and then add to the list
-        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(myProject, builder);
+        final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(project, builder);
         for (final PendingChange change : changes) {
             try {
                 StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
