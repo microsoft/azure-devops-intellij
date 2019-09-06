@@ -149,7 +149,7 @@ public class TFSVcs extends AbstractVcs {
     }
 
     public ChangeProvider getChangeProvider() {
-        return new TFSChangeProvider(myProject);
+        return new TFSChangeProvider(this);
     }
 
     @NotNull
