@@ -31,10 +31,8 @@ import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
@@ -111,16 +109,9 @@ public class TFSChangeProvider implements ChangeProvider {
             // credentials used to access the TFS, it doesn't matter). For other OSs, where TF client couldn't get any
             // default credentials, we'll obtain the valid credentials from the current server context.
             ServerContext serverContext = SystemInfo.isWindows ? null : myVcs.getServerContext(false);
-            changes = CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess);
-        } catch (final ToolEulaNotAcceptedException e) {
-            logger.error("EULA not accepted");
-            IdeaHelper.runOnUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    EULADialog.showDialogIfNeeded(project);
-                }
-            });
-            return;
+            changes = EULADialog.executeWithGuard(
+                    project,
+                    () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
         } catch (final Throwable t) {
             logger.warn("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
             changes = Collections.emptyList();

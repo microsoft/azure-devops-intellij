@@ -10,9 +10,12 @@ import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.helpers.Path;
+import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import kotlin.text.Charsets;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,8 @@ import javax.swing.JTextArea;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.jar.JarFile;
 
 public class EULADialog extends DialogWrapper {
@@ -77,22 +82,22 @@ public class EULADialog extends DialogWrapper {
         } catch (IOException e) {
             logger.error("Cannot read EULA text from: " + jarName, e);
         } finally {
-             if (eulaStream != null) {
-                 try {
-                     eulaStream.close();
+            if (eulaStream != null) {
+                try {
+                    eulaStream.close();
 
-                 } catch (IOException e) {
-                     logger.error("Cannot eulaStream properly", e);
-                 }
-             }
-             if (jarFile != null) {
-                 try {
-                     jarFile.close();
+                } catch (IOException e) {
+                    logger.error("Cannot eulaStream properly", e);
+                }
+            }
+            if (jarFile != null) {
+                try {
+                    jarFile.close();
 
-                 } catch (IOException e) {
-                     logger.error("Cannot jarFile properly", e);
-                 }
-             }
+                } catch (IOException e) {
+                    logger.error("Cannot jarFile properly", e);
+                }
+            }
         }
         return null;
     }
@@ -115,10 +120,10 @@ public class EULADialog extends DialogWrapper {
     public void doOKAction() {
         try {
             acceptEula();
+            close(OK_EXIT_CODE);
         } catch (Exception e) {
             logger.error("Can't accept EULA", e);
-        } finally {
-            super.doCancelAction();
+            doCancelAction();
         }
     }
 
@@ -128,10 +133,58 @@ public class EULADialog extends DialogWrapper {
         return myScrollPane;
     }
 
-    public static synchronized void showDialogIfNeeded(final Project project) {
+    /**
+     * Shows the EULA dialog if it wasn't previously shown in the current session.
+     *
+     * @param project project for which the dialog should be shown.
+     * @return null if dialog was previously shown; true if dialog was shown and the user clicked "Accept"; false if the
+     * dialog was shown and the user clicked "Decline".
+     */
+    @Nullable
+    public static synchronized Boolean showDialogIfNeeded(final Project project) {
         if (!myWasShow) {
-            new EULADialog(project).showAndGet();
+            boolean result = new EULADialog(project).showAndGet();
             myWasShow = true;
+            return result;
         }
+
+        return null;
+    }
+
+    /**
+     * Executes the activity and shows the EULA dialog if necessary.
+     *
+     * @param activity activity to execute on the current thread. May be executed twice if it throws a
+     *                 {@link ToolEulaNotAcceptedException}.
+     * @throws ToolEulaNotAcceptedException will be thrown if the user was presented by the EULA dialog and didn't
+     *                                      accepted it.
+     */
+    public static <T> T executeWithGuard(@NotNull Project project, @NotNull Supplier<T> activity) {
+        T result;
+        try {
+            result = activity.get();
+        } catch (ToolEulaNotAcceptedException ex) {
+            logger.warn("EULA not accepted; showing EULA dialog");
+
+            AtomicBoolean isAccepted = new AtomicBoolean();
+
+            IdeaHelper.runOnUIThread(() -> {
+                Boolean wasAccepted = EULADialog.showDialogIfNeeded(project);
+                if (wasAccepted != null) {
+                    logger.info("EULADialog.showDialogIfNeeded result: {}", wasAccepted);
+                    isAccepted.set(wasAccepted);
+                }
+            }, true);
+
+            if (isAccepted.get()) {
+                logger.info("EULA accepted; repeating the operation");
+                result = activity.get();
+            } else {
+                logger.error("EULA was declined by the user");
+                throw ex;
+            }
+        }
+
+        return result;
     }
 }
