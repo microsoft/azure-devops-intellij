@@ -12,20 +12,16 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     jdkVersionOption: 1.8
 
-- task: CopyPublishBuildArtifacts@1
+- task: PublishPipelineArtifact@1
   displayName: "Publish Artifact: $(build.buildNumber)"
   condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
   inputs:
-    CopyRoot: 'plugin/build/distributions'
-    Contents: '*.zip'
-    ArtifactName: '$(build.buildNumber)'
-    ArtifactType: Container
+    path: 'plugin/build/distributions'
+    artifact: '$(build.buildNumber)'
 
-- task: CopyPublishBuildArtifacts@1
+- task: PublishPipelineArtifact@1
   displayName: "Publish Artifact: $(build.buildNumber)-reports"
   condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
   inputs:
-    CopyRoot: 'plugin/build/reports'
-    Contents: '*'
-    ArtifactName: '$(build.buildNumber)-reports'
-    ArtifactType: Container
+    path: 'plugin/build/reports'
+    artifact: '$(build.buildNumber)-reports'
