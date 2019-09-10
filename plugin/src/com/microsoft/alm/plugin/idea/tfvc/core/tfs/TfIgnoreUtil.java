@@ -6,13 +6,13 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,7 +91,7 @@ public class TfIgnoreUtil {
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
         Document document = ObjectUtils.assertNotNull(fileDocumentManager.getDocument(file));
         CharSequence contents = document.getCharsSequence();
-        if (!StringUtils.isEmpty(contents) && !StringUtils.endsWith(contents, "\n")) {
+        if (!StringUtil.isEmpty(contents) && !StringUtil.endsWith(contents, "\n")) {
             document.insertString(contents.length(), "\n");
         }
         document.insertString(document.getTextLength(), line);
