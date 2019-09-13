@@ -1,27 +1,44 @@
-steps:
-- task: CmdLine@1
-  displayName: Run printenv
-  inputs:
-    filename: printenv
+jobs:
+  - job: production_build_2017_2
+    steps:
+      - task: CmdLine@1
+        displayName: Run printenv
+        inputs:
+          filename: printenv
 
-- task: Gradle@1
-  displayName: Gradle build (zip)
-  inputs:
-    options: '--info --scan'
-    tasks: clean :plugin:prepRelease zip
-    testResultsFiles: '**/TEST-*.xml'
-    jdkVersionOption: 1.8
+      - task: Gradle@1
+        displayName: Gradle build (zip)
+        inputs:
+          options: '--info --scan'
+          tasks: clean :plugin:prepRelease zip
+          testResultsFiles: '**/TEST-*.xml'
+          jdkVersionOption: 1.8
 
-- task: PublishPipelineArtifact@1
-  displayName: "Publish Artifact: $(build.buildNumber)"
-  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
-  inputs:
-    path: 'plugin/build/distributions'
-    artifact: '$(build.buildNumber)'
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish Artifact: $(build.buildNumber)"
+        condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
+        inputs:
+          path: 'plugin/build/distributions'
+          artifact: '$(build.buildNumber)'
 
-- task: PublishPipelineArtifact@1
-  displayName: "Publish Artifact: $(build.buildNumber)-reports"
-  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
-  inputs:
-    path: 'plugin/build/reports'
-    artifact: '$(build.buildNumber)-reports'
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish Artifact: $(build.buildNumber)-reports"
+        condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
+        inputs:
+          path: 'plugin/build/reports'
+          artifact: '$(build.buildNumber)-reports'
+
+  - job: test_build_2019_2
+    steps:
+      - task: CmdLine@1
+        displayName: Run printenv
+        inputs:
+          filename: printenv
+
+      - task: Gradle@1
+        displayName: Gradle build (zip)
+        inputs:
+          options: '--info --scan -PideaVersion=2019.2'
+          tasks: clean :plugin:prepRelease zip
+          testResultsFiles: '**/TEST-*.xml'
+          jdkVersionOption: 1.8
