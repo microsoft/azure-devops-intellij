@@ -39,6 +39,6 @@ jobs:
         displayName: Gradle build (zip)
         inputs:
           options: '--info --scan -PideaVersion=2019.2'
-          tasks: clean :plugin:build
+          tasks: clean :plugin:compileJava
           testResultsFiles: '**/TEST-*.xml'
           jdkVersionOption: 1.8
