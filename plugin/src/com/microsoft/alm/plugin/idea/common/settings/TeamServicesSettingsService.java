@@ -8,7 +8,6 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -28,8 +27,7 @@ import java.util.Map;
  */
 @State(
         name = "VSTSSettings",
-        storages = {@Storage(
-                file = StoragePathMacros.APP_CONFIG + "/vsts_settings.xml")}
+        storages = {@Storage("vsts_settings.xml")}
 )
 public class TeamServicesSettingsService implements PersistentStateComponent<SettingsState> {
     private static final Logger logger = LoggerFactory.getLogger(TeamServicesSettingsService.class);
