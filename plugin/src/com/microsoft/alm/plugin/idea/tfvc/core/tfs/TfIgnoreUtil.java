@@ -10,7 +10,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.jetbrains.annotations.NotNull;
@@ -71,8 +70,10 @@ public class TfIgnoreUtil {
 
     /**
      * Adds an item into the .tfignore file.
-     * @param requestor an object that requested the change; see {@link VirtualFileEvent#getRequestor}
-     * @param tfIgnore a {@link File} object representing the .tfignore file
+     *
+     * @param requestor    an object that requested the change; see
+     *                     {@link com.intellij.openapi.vfs.VirtualFileEvent#getRequestor}
+     * @param tfIgnore     a {@link File} object representing the .tfignore file
      * @param fileToIgnore a file to ignore
      */
     public static void addToTfIgnore(@NotNull Object requestor, @NotNull File tfIgnore, @NotNull File fileToIgnore) throws IOException {
