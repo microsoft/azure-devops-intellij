@@ -123,10 +123,14 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return true;
     }
 
+    @SuppressWarnings("unchecked") // TODO: We have to use the raw type for the AsynchConsumer here, because the
+                                   // signature in question was changed in IDEA 2019.2. We may use the proper type here
+                                   // only after migration to 2019.2+.
+    @Override
     public void loadCommittedChanges(final ChangeBrowserSettings settings,
                                      final RepositoryLocation location,
                                      final int maxCount,
-                                     final AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
+                                     final AsynchConsumer consumer) throws VcsException {
         // TODO: (Jetbrains) if revision and date filters are both set, which one should have priority?
         VersionSpec versionFrom = VersionSpec.create(1);
         if (settings.getChangeAfterFilter() != null) {
