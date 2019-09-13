@@ -87,7 +87,7 @@ project(":plugin") {
     version buildNumber
 
     intellij {
-        version = idea_version
+        version = ideaVersion
         plugins = ['git4idea']
         pluginName = 'com.microsoft.vso.idea'
         updateSinceUntilBuild = false
@@ -103,6 +103,7 @@ project(":plugin") {
 
     task showVersion() {
         println("version = " + buildNumber)
+        println("ideaVersion = " + ideaVersion)
     }
 
     task zip(dependsOn: ['buildPlugin','test']) {}
@@ -112,7 +113,7 @@ project(":L2Tests") {
     apply plugin: 'org.jetbrains.intellij'
 
     intellij {
-        version = idea_version
+        version = ideaVersion
         plugins = ['git4idea']
     }
 
