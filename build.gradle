@@ -173,12 +173,6 @@ subprojects {
     }
 
     /**
-     * Preparing for release build
-     */
-    task prepRelease() {
-    }
-
-    /**
      * Open source prep
      */
     checkstyle {
