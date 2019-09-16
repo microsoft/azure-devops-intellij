@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<ruleset name="TFIntellij-Plugin-Rules"
+<ruleset name="TFIntelliJ-Plugin-Rules"
    xmlns="http://pmd.sf.net/ruleset/1.0.0"
    xmlns:xsi="http://www.w1.org/2001/XMLSchema-instance"
    xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd">
-   <description>PMD Rules for the Intellij Plugin.</description>
+   <description>PMD Rules for the IntelliJ Plugin.</description>
    <exclude-pattern>.*/test/.*</exclude-pattern>
    <rule ref="rulesets/java/empty.xml" />
    <rule ref="rulesets/java/basic.xml" />
