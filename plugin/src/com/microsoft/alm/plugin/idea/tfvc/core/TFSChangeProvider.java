@@ -49,7 +49,7 @@ import java.util.List;
 /**
  * Extends the VCS change provider to execture the correct events to find out the local changes in the workspace
  * <p/>
- * TODO (Jetbrains) important cases
+ * TODO (JetBrains) important cases
  * 1. when folder1 is unversioned and folder1/file1 is scheduled for addition, team explorer effectively shows folder1 as scheduled for addition
  */
 

@@ -116,7 +116,7 @@ public class TFSUpdateEnvironment implements UpdateEnvironment {
             exceptions.add(TFSVcs.convertToVcsException(e));
         }
 
-        // TODO (Jetbrains) content roots can be renamed while executing
+        // TODO (JetBrains) content roots can be renamed while executing
         TfsFileUtil.refreshAndInvalidate(tfsVcs.getProject(), contentRoots, false);
 
         return new UpdateSession() {

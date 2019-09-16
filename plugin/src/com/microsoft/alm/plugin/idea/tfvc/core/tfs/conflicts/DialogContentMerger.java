@@ -58,13 +58,13 @@ public class DialogContentMerger implements ContentMerger {
                 c.getRightPanelTitle(localFile, serverVersion)
         });
 
-        // TODO (Jetbrains) call canShow() first
+        // TODO (JetBrains) call canShow() first
         DiffManager.getInstance().getDiffTool().show(request);
         if (request.getResult() == DialogWrapper.OK_EXIT_CODE) {
             return true;
         } else {
             request.restoreOriginalContent();
-            // TODO (Jetbrains) maybe MergeVersion.MergeDocumentVersion.restoreOriginalContent() should save document itself?
+            // TODO (JetBrains) maybe MergeVersion.MergeDocumentVersion.restoreOriginalContent() should save document itself?
             ApplicationManager.getApplication().runWriteAction(new Runnable() {
                 public void run() {
                     final Document document = FileDocumentManager.getInstance().getDocument(localFile);

@@ -126,7 +126,7 @@ public class TFSChangeList implements CommittedChangeList {
      * NOTE: the tf tool shows a rename as 2 changes ('rename' and 'delete source rename') but there is no way to reliably
      * tell which 'rename' change goes with which 'delete source rename' change if there are multiple renames in a changeset.
      * To deal with this, we will treat the 'delete source rename' changes as deletes and 'rename' changes as adds. This
-     * is what Jetbrains did as well so it doesn't differ from their experience.
+     * is what JetBrains did as well so it doesn't differ from their experience.
      *
      * @return
      */

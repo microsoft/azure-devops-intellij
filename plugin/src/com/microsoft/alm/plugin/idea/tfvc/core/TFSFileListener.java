@@ -98,7 +98,7 @@ public class TFSFileListener extends VcsVFSListener {
                     public void checkedOutForEdit(final @NotNull FilePath localPath,
                                                   final boolean localItemExists,
                                                   final @NotNull ServerStatus serverStatus) {
-                        // TODO (Jetbrains): add local conflict
+                        // TODO (JetBrains): add local conflict
                     }
 
                     @Override
@@ -115,24 +115,24 @@ public class TFSFileListener extends VcsVFSListener {
                     public void scheduledForDeletion(final @NotNull FilePath localPath,
                                                      final boolean localItemExists,
                                                      final @NotNull ServerStatus serverStatus) {
-                        // TODO (Jetbrains): add local conflict
+                        // TODO (JetBrains): add local conflict
                     }
 
                     public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
                             throws TfsException {
-                        // TODO (Jetbrains): add local conflict
+                        // TODO (JetBrains): add local conflict
                     }
 
                     public void renamedCheckedOut(final @NotNull FilePath localPath,
                                                   final boolean localItemExists,
                                                   final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // TODO (Jetbrains): add local conflict
+                        // TODO (JetBrains): add local conflict
                     }
 
                     public void undeleted(final @NotNull FilePath localPath,
                                           final boolean localItemExists,
                                           final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // TODO (Jetbrains): add local conflict
+                        // TODO (JetBrains): add local conflict
                     }
 
                 }, pendingChange);
