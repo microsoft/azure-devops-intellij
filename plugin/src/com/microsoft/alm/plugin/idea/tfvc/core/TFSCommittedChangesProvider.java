@@ -131,7 +131,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
                                      final RepositoryLocation location,
                                      final int maxCount,
                                      final AsynchConsumer consumer) throws VcsException {
-        // TODO: (Jetbrains) if revision and date filters are both set, which one should have priority?
+        // TODO: (JetBrains) if revision and date filters are both set, which one should have priority?
         VersionSpec versionFrom = VersionSpec.create(1);
         if (settings.getChangeAfterFilter() != null) {
             versionFrom = VersionSpec.create((int) settings.getChangeAfterFilter().longValue());
@@ -231,7 +231,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
 
     public boolean refreshIncomingWithCommitted() {
-        // TODO (Jetbrains)
+        // TODO (JetBrains)
         return false;
     }
 

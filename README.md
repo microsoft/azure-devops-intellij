@@ -1,7 +1,7 @@
-# Azure DevOps Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
+# Azure DevOps Plugin for IntelliJ, Android Studio, & other JetBrains IDEs
 
 This is a plugin for working with Git and TFVC repositories on Azure DevOps and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
-and various other Jetbrains IDEs. It is supported on Linux, Mac OS X, and Windows.
+and various other JetBrains IDEs. It is supported on Linux, Mac OS X, and Windows.
 It is compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
 
 To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in

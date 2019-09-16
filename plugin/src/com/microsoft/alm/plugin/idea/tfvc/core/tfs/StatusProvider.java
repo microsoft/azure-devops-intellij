@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-// Note: if item is renamed (moved), same local item and pending change reported by server for source and target names (Jetbrains)
+// Note: if item is renamed (moved), same local item and pending change reported by server for source and target names (JetBrains)
 
 /**
  * Determines a file's state and provides it to the local changes menu

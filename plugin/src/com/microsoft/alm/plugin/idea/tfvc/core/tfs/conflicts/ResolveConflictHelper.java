@@ -466,14 +466,14 @@ public class ResolveConflictHelper {
 
     public void skip(final @NotNull String conflict) {
         if (updatedFiles != null) {
-            // Jetbrains used null for version number in this case
+            // JetBrains used null for version number in this case
             updatedFiles.getGroupById(FileGroup.SKIPPED_ID).add(conflict, TFSVcs.getKey(), null);
         }
     }
 
     public void skip(final @NotNull List<Conflict> conflicts) {
         for (final Conflict conflict : conflicts) {
-            // Jetbrains used null for version number in this case
+            // JetBrains used null for version number in this case
             skip(conflict.getLocalPath());
         }
     }
