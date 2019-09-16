@@ -583,7 +583,7 @@ public class CreatePullRequestModel extends AbstractModel {
                     //user cancelled login, don't retry
                 }
             } else {
-                // catch everything so we don't bubble up to Intellij
+                // catch everything so we don't bubble up to IntelliJ
                 final Pair<PullRequestHelper.PRCreateStatus, String> parsed
                         = pullRequestHelper.parseException(t, branchNameOnRemoteServer, targetBranch, context, gitClient);
 
