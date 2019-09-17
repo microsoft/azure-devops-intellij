@@ -14,10 +14,12 @@ import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
 import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.junit.BeforeClass;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 /**
  * This class assures the the plugin service provider is initialized for all tests.
  */
+@PowerMockIgnore("javax.swing.*")
 public class IdeaAbstractTest extends AbstractTest {
 
     @BeforeClass

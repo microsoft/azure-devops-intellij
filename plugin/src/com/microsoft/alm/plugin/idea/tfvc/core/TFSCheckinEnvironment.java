@@ -238,7 +238,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
     @Nullable
     public List<VcsException> scheduleUnversionedFilesForAddition(final List<VirtualFile> files) {
-        // TODO: schedule parent folders? (Jetbrains)
+        // TODO: schedule parent folders? (JetBrains)
         final List<VcsException> exceptions = new ArrayList<VcsException>();
         try {
             final List<String> filesToAddPaths = new ArrayList<String>(files.size());

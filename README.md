@@ -1,8 +1,8 @@
-# Azure DevOps Plugin for IntelliJ, Android Studio, & other Jetbrains IDEs
+# Azure DevOps Plugin for IntelliJ, Android Studio, & other JetBrains IDEs
 
 This is a plugin for working with Git and TFVC repositories on Azure DevOps and Team Foundation Server (TFS) 2015+ inside IntelliJ, Android Studio, 
-and various other Jetbrains IDEs. It is supported on Linux, Mac OS X, and Windows.
-It is compatible with IntelliJ IDEA Community and Ultimate editions (version 14.1.7+) and Android Studio (version 1.2+).
+and various other JetBrains IDEs. It is supported on Linux, Mac OS X, and Windows.
+It is compatible with IntelliJ IDEA Community and Ultimate editions (version 2018.1+) and Android Studio (version 3.2+).
 
 To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in
 
@@ -27,43 +27,35 @@ Run the build by:
 ## Build and Run with IntelliJ
 Once you've downloaded the dependencies, run the build by:
 
-1. Start IntelliJ and open the existing IntelliJ project file `com.microsoft.alm.plugin.iml` from the `plugin` directory.
+1. Start IntelliJ and open the Gradle project from the root project directory.
 
-2. Configure a "IntelliJ Platform Plugin SDK" based on JDK 8 and IntelliJ 2017.x.
-   * File -> Project Structure -> Project Settings -> Project
-   * Under Project SDK, select the entry marked "IntelliJ IDEA <version number>" if it exists.
-     * If this entry does not exist, click New -> IntelliJ Platform Plugin SDK and select the IntelliJ installation location folder.
-       * Under Mac, the folder is similar to `/Applications/IntelliJ IDEA.app/Contents`
-       * Under Linux, the folder is similar to `<IntelliJ installation location on disk>/idea-IC-172.3968.16` 
-       * Under Windows, the folder is similar to `C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2017.x`
-
-3. Configure the project to use language level JDK 8
+2. Configure the project to use language level JDK 8
    * File -> Project Structure -> Project Settings -> Project
    * Under Project Language Level, select "8 - Lambdas, type annotations etc."
 
-4. Configure the project and ***each module*** to build with this "IntelliJ Platform Plugin SDK".
+3. Configure the project and ***each module*** to build with this "IntelliJ Platform Plugin SDK".
    * File -> Project Structure -> Project Settings -> Project.
      * Under Project SDK, select the entry marked "IntelliJ IDEA <version number>".
    * File -> Project Structure -> Project Settings -> Modules -> Dependencies.
      * For each module beginning with `com.microsoft.alm` (there are three), under Module SDK, select the entry marked "IntelliJ IDEA <version number>". 
 
-5. Make sure the 'GUI designer' generates Java source code.
+4. Make sure the 'GUI designer' generates Java source code.
    * File -> Settings (on Windows) / Preferences (on Mac) -> Editor -> GUI Designer -> Generate GUI into -> Select `Java Souce Code`
 
-6. Create a "Plugin" configuration to run/debug the code.
+5. Create a "Plugin" configuration to run/debug the code.
    * Run -> Edit Configurations... -> Add -> Gradle 
    * Provide a name for the configuration (e.g., IntelliJ for TFS)
    * Set Gradle project to `plugin`
    * Set Tasks to `runIde`
 
-7. Run the plugin by selecting Run -> Run <configuration you used above>.
+6. Run the plugin by selecting Run -> Run <configuration you used above>.
 
-8. Debug the plugin by selecting Run -> Debug <configuration you used above>.
+7. Debug the plugin by selecting Run -> Debug <configuration you used above>.
 
-9. To run tests please check options on the page `Preferences | Build, Execution, Deployment | Build Tools | Gradle | Runner`
+8. To run tests please check options on the page `Preferences | Build, Execution, Deployment | Build Tools | Gradle | Runner`
     * `Delegate IDE build/run actions to gradle` should checked.
     * In `Run tests using` should select `Gradle Test Runner`
- 
+
 ## Contributing
 
 We welcome Pull Requests, please fork this repo and send us your contributions.
