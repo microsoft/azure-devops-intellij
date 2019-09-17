@@ -385,7 +385,6 @@ public class ServerContextManager {
 
     public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final String teamProjectName, final boolean prompt) {
         ArgumentHelper.checkNotEmptyString(tfvcServerUrl, "tfvcServerUrl");
-        ArgumentHelper.checkNotEmptyString(teamProjectName, "teamProjectName");
 
         // Get matching context from manager
         ServerContext context = get(tfvcServerUrl);
