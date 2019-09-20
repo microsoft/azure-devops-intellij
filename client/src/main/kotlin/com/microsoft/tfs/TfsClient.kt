@@ -3,13 +3,12 @@ package com.microsoft.tfs
 import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
 import com.microsoft.tfs.core.clients.versioncontrol.Workstation
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
+import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
 import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.Credentials
-import com.microsoft.tfs.core.httpclient.DefaultNTCredentials
-import com.microsoft.tfs.core.httpclient.NTCredentials
-import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import java.nio.file.Path
 
 class TfsClient(path: Path, credentials: Credentials) {
@@ -31,7 +30,9 @@ class TfsClient(path: Path, credentials: Credentials) {
     val workspaceOwner
         get() = workspace.ownerName
 
-    fun status(path: Path) {
-        val pendingSets = client.queryPendingSets(arrayOf(path.toString()), RecursionType.FULL , false, workspaceName, workspaceOwner)
+    fun status(path: Path): Array<PendingSet> {
+        var itemSpec = ItemSpec("$/TestNuGetPackage", RecursionType.FULL)
+        val ps = client.queryPendingSets(arrayOf(itemSpec), false, workspaceName, workspaceOwner, true)
+        return ps
     }
 }
