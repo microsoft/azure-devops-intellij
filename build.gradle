@@ -4,6 +4,8 @@
 
 plugins {
     id 'org.jetbrains.intellij' version '0.4.1' apply false
+    id "org.jetbrains.kotlin.jvm" version "1.3.50" apply false
+    id "de.undercouch.download" version "4.0.0" apply false
 }
 
 /**
@@ -13,6 +15,8 @@ task wrapper(type: Wrapper) {
     gradleVersion = '4.7'
     distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }
+
+def mainProjects = [project(":L2Tests"), project(":plugin")]
 
 /**
  * settings common to ALL projects (even the root level project)
@@ -34,9 +38,9 @@ allprojects {
 }
 
 /**
- * settings shared by each subproject (part 1)
+ * settings shared by the main projects (part 1)
  */
-subprojects {
+configure(mainProjects) {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
@@ -131,11 +135,10 @@ project(":L2Tests") {
     }
 }
 
-
 /**
- * settings shared by each subproject (part 2)
+ * settings shared by the main projects (part 2)
  */
-subprojects {
+configure(mainProjects) {
     dependencies {
         codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
         compile group: 'com.microsoft.alm', name: 'alm-http-client-dep', version: '0.4.3-SNAPSHOT'
