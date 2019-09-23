@@ -7,3 +7,5 @@ build
 *.DS_Store
 L2Tests/lib
 out/
+
+*.Generated.kt

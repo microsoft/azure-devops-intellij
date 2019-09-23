@@ -1,6 +1,18 @@
 /**
  * This is the main gradle build file for the Azure DevOps IntelliJ Plugin.
  */
+buildscript {
+    ext {
+        rdGenVersion = '0.193.37'
+
+    }
+    repositories {
+        maven {
+            url "https://cache-redirector.jetbrains.com/www.myget.org/F/rd-snapshots/maven"
+        }
+    }
+    dependencies { classpath "com.jetbrains.rd:rd-gen:$rdGenVersion" }
+}
 
 plugins {
     id 'org.jetbrains.intellij' version '0.4.1' apply false
@@ -33,6 +45,9 @@ allprojects {
         }
         maven {
             url "http://artifacts.eastus.cloudapp.azure.com:8081/nexus/content/repositories/releases"
+        }
+        maven {
+            url "https://cache-redirector.jetbrains.com/www.myget.org/F/rd-snapshots/maven"
         }
     }
 }
