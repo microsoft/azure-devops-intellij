@@ -109,6 +109,16 @@ Here are the steps to setup your environment:
    * You can toggle whether the tests will run or not simply by changing the MSVSTS_INTELLIJ_RUN_L2_TESTS environment variable.
    * The internal CI build will run these tests
 
+## Reactive client
+
+To build the reactive client, execute the following task:
+
+```console
+$ ./gradlew :client:backend:installDist
+```
+
+It will generate the reactive client distribution in the `client/backend/build/install/backend` directory.
+
 ## Learn More
 
 Want more information? The following resources are available to help:
