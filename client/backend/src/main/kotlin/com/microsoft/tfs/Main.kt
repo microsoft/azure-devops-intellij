@@ -7,7 +7,7 @@ import com.microsoft.tfs.model.host.TfsRoot
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    val port = args[0].toIntOrNull()
+    val port = args.getOrNull(0)?.toIntOrNull()
     if (port == null) {
         printUsage()
         exitProcess(1)
