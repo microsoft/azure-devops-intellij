@@ -4,9 +4,8 @@ plugins {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile project("tfs-sdk")
-    compile "com.jetbrains.rd:rd-framework:$rdGenVersion"
     compile "com.jetbrains.rd:rd-gen:$rdGenVersion"
+    compile "com.jetbrains.rd:rd-framework:$rdGenVersion"
 }
 
 compileKotlin {

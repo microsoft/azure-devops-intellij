@@ -1,0 +1,31 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "com.jetbrains.rdgen"
+}
+
+dependencies {
+    compile "com.jetbrains.rd:rd-gen:$rdGenVersion"
+}
+
+rdgen {
+    verbose = true
+    sources "$projectDir/src/main/kotlin/model"
+    hashFolder = "build/rdgen/hashes"
+    packages = "model.tfs"
+
+    generator {
+        language = "kotlin"
+        transform = "asis"
+        root = "model.tfs.TfsRoot"
+        namespace = "com.microsoft.tfs.model.host"
+        directory = "$projectDir/../backend/src/main/kotlin/generated"
+    }
+
+    generator {
+        language = "kotlin"
+        transform = "reversed"
+        root = "model.tfs.TfsRoot"
+        namespace = "com.microsoft.tfs.model.connector"
+        directory = "$projectDir/../connector/src/main/kotlin/generated"
+    }
+}

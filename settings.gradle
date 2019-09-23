@@ -1,1 +1,1 @@
-include "plugin", "L2Tests", "client:backend", "client:backend:tfs-sdk"
+include "plugin", "L2Tests", "client:backend", "client:backend:tfs-sdk", "client:connector", "client:protocol"
