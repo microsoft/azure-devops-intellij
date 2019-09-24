@@ -103,6 +103,10 @@ configure(mainProjects) {
 project(":plugin") {
     apply plugin: 'org.jetbrains.intellij'
 
+    dependencies {
+        compile project(":client:connector")
+    }
+
     version buildNumber
 
     intellij {

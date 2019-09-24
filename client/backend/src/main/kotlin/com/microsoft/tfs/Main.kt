@@ -31,4 +31,5 @@ private fun runRdClient(portNumber: Int) {
     val model = TfsRoot.create(appLifetime, protocol)
 
     model.shutdown.advise(appLifetime) { appLifetimeDefinition.terminate() }
+    // TODO: Terminate if wasn't able to connect
 }
