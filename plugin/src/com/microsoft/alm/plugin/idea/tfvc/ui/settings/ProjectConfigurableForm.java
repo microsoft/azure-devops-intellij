@@ -39,10 +39,15 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class ProjectConfigurableForm {
@@ -101,6 +106,11 @@ public class ProjectConfigurableForm {
                             }
                         })
         );
+        reactiveExeField.addBrowseFolderListener(
+                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_TITLE),
+                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_DESCRIPTION), project,
+                new FileChooserDescriptor(true, false, false ,false, false, false)
+        );
 
         testExeButton.addActionListener(new ActionListener() {
             @Override
@@ -149,25 +159,25 @@ public class ProjectConfigurableForm {
                             if (errorMessage == null) {
                                 Messages.showInfoMessage(
                                         myContentPane,
-                                        TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VALID_FOUND),
+                                        TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VALID_FOUND),
                                         TfPluginBundle.message(
-                                                TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                             } else {
                                 ourLogger.warn(errorMessage);
                                 Messages.showInfoMessage(
                                         myContentPane,
                                         TfPluginBundle.message(
-                                                TfPluginBundle.KEY_REACTIVE_CLIENT_HEALTH_CHECK_ERROR,
+                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_HEALTH_CHECK_ERROR,
                                                 errorMessage),
                                         TfPluginBundle.message(
-                                                TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                             }
                         });
                     } else {
                         Messages.showInfoMessage(
                                 myContentPane,
                                 TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_TOO_LOW),
-                                TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                         return CompletableFuture.completedFuture(null);
                     }
                 })).exceptionally(ex -> {
@@ -175,12 +185,12 @@ public class ProjectConfigurableForm {
                     Messages.showInfoMessage(
                             myContentPane,
                             LocalizationServiceImpl.getInstance().getExceptionMessage(ex),
-                            TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                            TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                     return null;
                 });
             } catch (Throwable ex) {
                 ourLogger.error(ex);
-                Messages.showInfoMessage(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(ex), TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                Messages.showInfoMessage(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(ex), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
             }
         });
 
@@ -264,7 +274,7 @@ public class ProjectConfigurableForm {
     public boolean isModified() {
         PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
-                && propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH).equals(getCurrentReactiveClientPath()));
+                && Objects.equals(propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH), getCurrentReactiveClientPath()));
     }
 
     public void reset() {
