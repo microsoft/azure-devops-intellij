@@ -799,6 +799,16 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_SETTINGS_PATH_EMPTY = "Tfvc.Settings.Path.Empty";
     public static final String KEY_TFVC_SETTINGS_PATH_NOT_FOUND = "Tfvc.Settings.Path.NotFound";
 
+    // TFVC Settings: reactive client
+    @NonNls
+    public static final String KEY_REACTIVE_CLIENT_VALID_FOUND = "Tfvc.Settings.ReactiveClient.Valid.Found";
+    @NonNls
+    public static final String KEY_REACTIVE_CLIENT_VERSION_TOO_LOW = "Tfvc.Settings.ReactiveClient.VersionTooLow";
+    @NonNls
+    public static final String KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE = "Tfvc.Settings.ReactiveClient.VersionWarningTitle";
+    @NonNls
+    public static final String KEY_REACTIVE_CLIENT_HEALTH_CHECK_ERROR = "Tfvc.Settings.ReactiveClient.HealthCheckError";
+
     //TFVC Edit Workspace Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_EDIT_WORKSPACE_TITLE = "Actions.Tfvc.EditWorkspace.Title";

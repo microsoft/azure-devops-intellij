@@ -20,6 +20,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -30,6 +31,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
@@ -37,16 +39,15 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 
 public class ProjectConfigurableForm {
+    private static Logger ourLogger = Logger.getInstance(ProjectConfigurableForm.class);
+
     private JButton myManageButton;
     private JButton myResetPasswordsButton;
     private final Project myProject;
@@ -64,7 +65,10 @@ public class ProjectConfigurableForm {
     private JLabel pathLabel;
     private HyperlinkLabel downloadLink;
     private JPanel downloadLinkPane;
+    private TextFieldWithBrowseButton reactiveExeField;
+    private JButton testReactiveExeButton;
     private String originalTfLocation = StringUtils.EMPTY;
+    private String originalReactiveClientLocation = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
         myProject = project;
@@ -136,6 +140,50 @@ public class ProjectConfigurableForm {
             }
         });
 
+        testReactiveExeButton.addActionListener(e -> {
+            try {
+                ReactiveTfClient client = ReactiveTfClient.create(getCurrentReactiveClientPath());
+                client.startAsync().thenComposeAsync(v -> client.checkVersionAsync().thenComposeAsync(isOk -> {
+                    if (isOk) {
+                        return client.healthCheckAsync().thenAccept(errorMessage -> {
+                            if (errorMessage == null) {
+                                Messages.showInfoMessage(
+                                        myContentPane,
+                                        TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VALID_FOUND),
+                                        TfPluginBundle.message(
+                                                TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                            } else {
+                                ourLogger.warn(errorMessage);
+                                Messages.showInfoMessage(
+                                        myContentPane,
+                                        TfPluginBundle.message(
+                                                TfPluginBundle.KEY_REACTIVE_CLIENT_HEALTH_CHECK_ERROR,
+                                                errorMessage),
+                                        TfPluginBundle.message(
+                                                TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                            }
+                        });
+                    } else {
+                        Messages.showInfoMessage(
+                                myContentPane,
+                                TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_TOO_LOW),
+                                TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                        return CompletableFuture.completedFuture(null);
+                    }
+                })).exceptionally(ex -> {
+                    ourLogger.error(ex);
+                    Messages.showInfoMessage(
+                            myContentPane,
+                            LocalizationServiceImpl.getInstance().getExceptionMessage(ex),
+                            TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+                    return null;
+                });
+            } catch (Throwable ex) {
+                ourLogger.error(ex);
+                Messages.showInfoMessage(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(ex), TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
+            }
+        });
+
         // load settings
         load();
 
@@ -186,8 +234,14 @@ public class ProjectConfigurableForm {
         return tfExeField.getText().trim();
     }
 
+    private String getCurrentReactiveClientPath() {
+        return reactiveExeField.getText().trim();
+    }
+
     public void load() {
-        String tfLocation = PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_TF_HOME);
+        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+
+        String tfLocation = propertyService.getProperty(PropertyService.PROP_TF_HOME);
         tfLocation = StringUtils.isEmpty(tfLocation) ? TfTool.tryDetectTf() : tfLocation;
         // if no path was found then default to an empty string
         originalTfLocation = StringUtils.isEmpty(tfLocation) ? StringUtils.EMPTY : tfLocation;
@@ -195,19 +249,31 @@ public class ProjectConfigurableForm {
             downloadLinkPane.setVisible(true);
         }
         tfExeField.setText(originalTfLocation);
+
+        String reactiveClientLocation = propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH);
+        originalReactiveClientLocation = reactiveClientLocation;
+        reactiveExeField.setText(reactiveClientLocation);
     }
 
     public void apply() {
-        PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
+        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        propertyService.setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
+        propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, getCurrentReactiveClientPath());
     }
 
     public boolean isModified() {
-        return !PluginServiceProvider.getInstance().getPropertyService().getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath());
+        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
+                && propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH).equals(getCurrentReactiveClientPath()));
     }
 
     public void reset() {
-        PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
+        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
+
+        propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, originalReactiveClientLocation);
+        reactiveExeField.setText(originalReactiveClientLocation);
     }
 
 
