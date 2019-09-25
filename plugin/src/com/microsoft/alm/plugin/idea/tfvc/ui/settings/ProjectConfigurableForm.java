@@ -29,6 +29,7 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
+import com.intellij.util.concurrency.EdtExecutorService;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
@@ -180,7 +181,7 @@ public class ProjectConfigurableForm {
                                 TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                         return CompletableFuture.completedFuture(null);
                     }
-                })).exceptionally(ex -> {
+                }, EdtExecutorService.getInstance()), EdtExecutorService.getInstance()).exceptionally(ex -> {
                     ourLogger.error(ex);
                     Messages.showInfoMessage(
                             myContentPane,

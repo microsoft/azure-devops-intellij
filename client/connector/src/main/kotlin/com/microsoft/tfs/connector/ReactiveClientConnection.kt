@@ -5,18 +5,18 @@ import com.jetbrains.rd.framework.impl.startAndAdviseSuccess
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.onTermination
+import com.jetbrains.rd.util.reactive.IScheduler
 import com.jetbrains.rd.util.reactive.whenTrue
-import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.microsoft.tfs.model.connector.TfsRoot
 import com.microsoft.tfs.model.connector.VersionNumber
 import java.util.concurrent.CompletableFuture
 
-class ReactiveClientConnection {
+class ReactiveClientConnection(scheduler: IScheduler) {
     private val lifetimeDefinition = LifetimeDefinition()
     val lifetime = lifetimeDefinition.lifetime
     private val socket = SocketWire.Server(
         lifetime,
-        SingleThreadScheduler(lifetime, "com.microsoft.tfs.connector.ReactiveClientConnection.socket"),
+        scheduler,
         null).apply {
         // Handle disconnection:
         connected.change.advise(lifetime) { connected ->
@@ -26,7 +26,7 @@ class ReactiveClientConnection {
     private val protocol = Protocol(
         Serializers(),
         Identities(IdKind.Server),
-        SingleThreadScheduler(lifetime, "com.microsoft.tfs.connector.ReactiveClientConnection.protocol.scheduler"),
+        scheduler,
         socket,
         lifetime
     )
@@ -39,7 +39,7 @@ class ReactiveClientConnection {
     fun startAsync(): CompletableFuture<Void> {
         val startLifetime = lifetime.createNested()
         val future = startLifetime.createFuture<Void>()
-        socket.connected.whenTrue(startLifetime.lifetime) {
+        model.connected.whenTrue(startLifetime.lifetime) {
             future.complete(null)
             startLifetime.terminate()
         }
