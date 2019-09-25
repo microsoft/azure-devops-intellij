@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.utils;
 
+import com.intellij.execution.configurations.GeneralCommandLine;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -22,6 +23,13 @@ public class ProcessHelper {
             pb.directory(new File(workingDirectory));
         }
         return pb.start();
+    }
+
+    /**
+     * Adds current Java to the PATH environment variable for the passed command line.
+     */
+    public static GeneralCommandLine patchPathEnvironmentVariable(GeneralCommandLine commandLine) {
+        return commandLine.withEnvironment("PATH", getPatchedPathWithCurrentJavaBinLocation());
     }
 
     private static String getPatchedPathWithCurrentJavaBinLocation() {
