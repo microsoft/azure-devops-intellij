@@ -6,9 +6,9 @@ import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.IScheduler
+import com.jetbrains.rd.util.reactive.adviseOnce
 import com.jetbrains.rd.util.reactive.whenTrue
-import com.microsoft.tfs.model.connector.TfsRoot
-import com.microsoft.tfs.model.connector.VersionNumber
+import com.microsoft.tfs.model.connector.*
 import java.util.concurrent.CompletableFuture
 
 class ReactiveClientConnection(scheduler: IScheduler) {
@@ -36,6 +36,8 @@ class ReactiveClientConnection(scheduler: IScheduler) {
     val port
         get() = socket.port
 
+    fun terminate() = lifetimeDefinition.terminate()
+
     fun startAsync(): CompletableFuture<Void> {
         val startLifetime = lifetime.createNested()
         val future = startLifetime.createFuture<Void>()
@@ -57,16 +59,37 @@ class ReactiveClientConnection(scheduler: IScheduler) {
     }
 
     fun healthCheckAsync(): CompletableFuture<String?> {
-        val future = CompletableFuture<String?>()
+        val future = lifetime.createFuture<String?>()
         model.healthCheck.startAndAdviseSuccess(Unit) { future.complete(it) }
         return future
     }
 
-    fun terminate() = lifetimeDefinition.terminate()
+    fun getOrCreateWorkspace(definition: TfsWorkspaceDefinition): TfsWorkspace =
+        model.workspaces[definition] ?: TfsWorkspace().apply { model.workspaces[definition] = this }
 
-    fun <T> Lifetime.createFuture(): CompletableFuture<T> {
+    fun waitForReadyAsync(workspace: TfsWorkspace): CompletableFuture<Void> {
+        val future = lifetime.createFuture<Void>()
+        workspace.isReady.whenTrue(lifetime) { future.complete(null) }
+        return future;
+    }
+
+    fun getPendingChangesAsync(workspace: TfsWorkspace, paths: List<TfsLocalPath>): CompletableFuture<List<TfsPendingChange>> {
+        val future = lifetime.createFuture<List<TfsPendingChange>>()
+        workspace.getPendingChanges.start(paths).result.adviseOnce(lifetime) { result -> future.completeFrom(result) }
+        return future
+    }
+
+    private fun <T> Lifetime.createFuture(): CompletableFuture<T> {
         val future = CompletableFuture<T>()
         onTermination { future.cancel(false) }
         return future
+    }
+
+    private fun <T> CompletableFuture<T>.completeFrom(result: RdTaskResult<T>) {
+        try {
+            complete(result.unwrap())
+        } catch (ex: Throwable) {
+            completeExceptionally(ex)
+        }
     }
 }

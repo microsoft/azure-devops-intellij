@@ -9,12 +9,23 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
+import com.microsoft.tfs.model.connector.TfsCredentials;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsWorkspace;
+import com.microsoft.tfs.model.connector.TfsWorkspaceDefinition;
 import com.microsoft.tfs.model.connector.VersionNumber;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A model for the new, reactive client.
@@ -54,6 +65,32 @@ public class ReactiveTfClient {
         return myConnection.getVersionAsync().thenApply(this::checkVersion);
     }
 
+    public CompletableFuture<String> healthCheckAsync() {
+        return myConnection.healthCheckAsync();
+    }
+
+    public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
+            Path workspacePath,
+            AuthenticationInfo authenticationInfo,
+            Stream<Path> localPaths) {
+        List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
+                .collect(Collectors.toList());
+        return getReadyWorkspaceAsync(workspacePath, authenticationInfo)
+                .thenCompose(workspace -> myConnection.getPendingChangesAsync(workspace, paths))
+                .thenApply(changes -> changes.stream().map(pc -> new PendingChange(
+                        pc.getServerItem(),
+                        pc.getLocalItem(),
+                        Integer.toString(pc.getVersion()),
+                        pc.getOwner(),
+                        pc.getDate(),
+                        pc.getLock(),
+                        pc.getChangeTypes().stream().map(ServerStatusType::from).collect(Collectors.toList()),
+                        pc.getWorkspace(),
+                        pc.getComputer(),
+                        pc.isCandidate(),
+                        pc.getSourceItem())).collect(Collectors.toList()));
+    }
+
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
         return new ProcessAdapter() {
             @Override
@@ -74,7 +111,14 @@ public class ReactiveTfClient {
         return true;
     }
 
-    public CompletableFuture<String> healthCheckAsync() {
-        return myConnection.healthCheckAsync();
+    private CompletableFuture<TfsWorkspace> getReadyWorkspaceAsync(
+            @NotNull Path workspacePath,
+            @NotNull AuthenticationInfo authenticationInfo) {
+        TfsCredentials tfsCredentials = new TfsCredentials(
+                authenticationInfo.getUserName(),
+                authenticationInfo.getPassword());
+        TfsWorkspace workspace = myConnection.getOrCreateWorkspace(
+                new TfsWorkspaceDefinition(new TfsLocalPath(workspacePath.toString()), tfsCredentials));
+        return myConnection.waitForReadyAsync(workspace).thenApply(unused -> workspace);
     }
 }

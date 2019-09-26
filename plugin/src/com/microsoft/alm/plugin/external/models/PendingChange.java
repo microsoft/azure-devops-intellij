@@ -31,13 +31,39 @@ public class PendingChange {
                          final String owner, final String date, final String lock,
                          final String changeType, final String workspace, final String computer,
                          final boolean isCandidate, final String sourceItem) {
+        this(
+                serverItem,
+                localItem,
+                version,
+                owner,
+                date,
+                lock,
+                ServerStatusType.getServerStatusTypes(changeType),
+                workspace,
+                computer,
+                isCandidate,
+                sourceItem);
+    }
+
+    public PendingChange(
+            final String serverItem,
+            final String localItem,
+            final String version,
+            final String owner,
+            final String date,
+            final String lock,
+            final List<ServerStatusType> changeTypes,
+            final String workspace,
+            final String computer,
+            final boolean isCandidate,
+            final String sourceItem) {
         this.serverItem = serverItem;
         this.localItem = localItem;
         this.version = version;
         this.owner = owner;
         this.date = date;
         this.lock = lock;
-        this.changeTypes = ServerStatusType.getServerStatusTypes(changeType);
+        this.changeTypes = changeTypes;
         this.workspace = workspace;
         this.computer = computer;
         this.isCandidate = isCandidate;
