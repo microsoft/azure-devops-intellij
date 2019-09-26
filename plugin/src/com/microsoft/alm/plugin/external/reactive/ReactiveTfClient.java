@@ -7,8 +7,15 @@ import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
+import com.jetbrains.rd.util.lifetime.Lifetime;
+import com.jetbrains.rd.util.lifetime.LifetimeDefinition;
+import com.jetbrains.rd.util.lifetime.LifetimeStatus;
+import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -39,8 +46,18 @@ public class ReactiveTfClient {
         myConnection = connection;
     }
 
-    public static ReactiveTfClient create(String clientPath) throws ExecutionException {
-        ReactiveClientConnection connection = new ReactiveClientConnection(SwingScheduler.INSTANCE);
+    private static Lifetime defineNestedLifetime(Disposable disposable) {
+        LifetimeDefinition lifetimeDefinition = new LifetimeDefinition();
+        Disposer.register(disposable, () -> {
+            if (lifetimeDefinition.getStatus() == LifetimeStatus.Alive)
+                lifetimeDefinition.terminate(false);
+        });
+        return lifetimeDefinition;
+    }
+
+    public static ReactiveTfClient create(Project project, String clientPath) throws ExecutionException {
+        SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(project), "ReactiveTfClient Scheduler");
+        ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
                     new GeneralCommandLine(clientPath, Integer.toString(connection.getPort())));
