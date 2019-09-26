@@ -1,7 +1,6 @@
 package com.microsoft.tfs.connector
 
 import com.jetbrains.rd.framework.*
-import com.jetbrains.rd.framework.impl.startAndAdviseSuccess
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.onTermination
@@ -9,9 +8,10 @@ import com.jetbrains.rd.util.reactive.IScheduler
 import com.jetbrains.rd.util.reactive.adviseOnce
 import com.jetbrains.rd.util.reactive.whenTrue
 import com.microsoft.tfs.model.connector.*
+import kotlinx.coroutines.CancellationException
 import java.util.concurrent.CompletableFuture
 
-class ReactiveClientConnection(scheduler: IScheduler) {
+class ReactiveClientConnection(private val scheduler: IScheduler) {
     private val lifetimeDefinition = LifetimeDefinition()
     val lifetime = lifetimeDefinition.lifetime
     private val socket = SocketWire.Server(
@@ -31,65 +31,68 @@ class ReactiveClientConnection(scheduler: IScheduler) {
         lifetime
     )
 
-    val model = TfsRoot.create(lifetime, protocol)
+    lateinit var model: TfsRoot
 
     val port
         get() = socket.port
 
     fun terminate() = lifetimeDefinition.terminate()
 
-    fun startAsync(): CompletableFuture<Void> {
-        val startLifetime = lifetime.createNested()
-        val future = startLifetime.createFuture<Void>()
-        model.connected.whenTrue(startLifetime.lifetime) {
-            future.complete(null)
-            startLifetime.terminate()
+    fun startAsync(): CompletableFuture<Void> =
+        queueFutureAsync { lt ->
+            model = TfsRoot.create(lifetime, protocol).apply {
+                connected.whenTrue(lt) {
+                    complete(null)
+                }
+            }
         }
-        return future
-    }
 
-    fun getVersionAsync(): CompletableFuture<VersionNumber> {
-        val ld = lifetime.createNested()
-        val future = ld.lifetime.createFuture<VersionNumber>()
-        model.version.advise(ld.lifetime) {
-            future.complete(it)
-            ld.terminate()
+    fun getVersionAsync(): CompletableFuture<VersionNumber> =
+        queueFutureAsync { lt ->
+            model.version.advise(lt) {
+                complete(it)
+            }
         }
-        return future
-    }
 
-    fun healthCheckAsync(): CompletableFuture<String?> {
-        val future = lifetime.createFuture<String?>()
-        model.healthCheck.startAndAdviseSuccess(Unit) { future.complete(it) }
-        return future
-    }
+    fun healthCheckAsync(): CompletableFuture<String?> =
+        queueFutureAsync { lt ->
+            model.healthCheck.start(Unit).pipeTo(lt, this)
+        }
 
     fun getOrCreateWorkspace(definition: TfsWorkspaceDefinition): TfsWorkspace =
         model.workspaces[definition] ?: TfsWorkspace().apply { model.workspaces[definition] = this }
 
-    fun waitForReadyAsync(workspace: TfsWorkspace): CompletableFuture<Void> {
-        val future = lifetime.createFuture<Void>()
-        workspace.isReady.whenTrue(lifetime) { future.complete(null) }
-        return future;
-    }
+    fun waitForReadyAsync(workspace: TfsWorkspace): CompletableFuture<Void> =
+        queueFutureAsync {
+            workspace.isReady.whenTrue(lifetime) { complete(null) }
+        }
 
-    fun getPendingChangesAsync(workspace: TfsWorkspace, paths: List<TfsLocalPath>): CompletableFuture<List<TfsPendingChange>> {
-        val future = lifetime.createFuture<List<TfsPendingChange>>()
-        workspace.getPendingChanges.start(paths).result.adviseOnce(lifetime) { result -> future.completeFrom(result) }
+    fun getPendingChangesAsync(
+        workspace: TfsWorkspace,
+        paths: List<TfsLocalPath>): CompletableFuture<List<TfsPendingChange>> =
+        queueFutureAsync { lt ->
+            workspace.getPendingChanges.start(paths).pipeTo(lt, this)
+        }
+
+    private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {
+        val lifetime = lifetime.createNested()
+        val future = CompletableFuture<T>().whenComplete { _, _ -> lifetime.terminate() }
+        lifetime.onTermination { future.cancel(false) }
+        scheduler.queue {
+            future.action(lifetime)
+        }
         return future
     }
 
-    private fun <T> Lifetime.createFuture(): CompletableFuture<T> {
-        val future = CompletableFuture<T>()
-        onTermination { future.cancel(false) }
-        return future
-    }
-
-    private fun <T> CompletableFuture<T>.completeFrom(result: RdTaskResult<T>) {
-        try {
-            complete(result.unwrap())
-        } catch (ex: Throwable) {
-            completeExceptionally(ex)
+    private fun <T> IRdTask<T>.pipeTo(lt: Lifetime, future: CompletableFuture<T>) {
+        result.adviseOnce(lt) {
+            try {
+                future.complete(it.unwrap())
+            } catch (ex: CancellationException) {
+                future.cancel(false)
+            } catch (ex: Throwable) {
+                future.completeExceptionally(ex)
+            }
         }
     }
 }

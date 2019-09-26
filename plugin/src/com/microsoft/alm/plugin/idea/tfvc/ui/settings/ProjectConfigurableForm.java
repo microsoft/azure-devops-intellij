@@ -29,7 +29,7 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
-import com.intellij.util.concurrency.EdtExecutorService;
+import com.intellij.util.ui.UIUtil;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
@@ -39,12 +39,14 @@ import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -153,19 +155,19 @@ public class ProjectConfigurableForm {
 
         testReactiveExeButton.addActionListener(e -> {
             try {
-                ReactiveTfClient client = ReactiveTfClient.create(getCurrentReactiveClientPath());
-                client.startAsync().thenComposeAsync(v -> client.checkVersionAsync().thenComposeAsync(isOk -> {
+                ReactiveTfClient client = ReactiveTfClient.create(myProject, getCurrentReactiveClientPath());
+                client.startAsync().thenCompose(v -> client.checkVersionAsync().thenCompose(isOk -> {
                     if (isOk) {
                         return client.healthCheckAsync().thenAccept(errorMessage -> {
                             if (errorMessage == null) {
-                                Messages.showInfoMessage(
+                                showInfoMessageAsync(
                                         myContentPane,
                                         TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VALID_FOUND),
                                         TfPluginBundle.message(
                                                 TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                             } else {
                                 ourLogger.warn(errorMessage);
-                                Messages.showInfoMessage(
+                                showInfoMessageAsync(
                                         myContentPane,
                                         TfPluginBundle.message(
                                                 TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_HEALTH_CHECK_ERROR,
@@ -175,15 +177,15 @@ public class ProjectConfigurableForm {
                             }
                         });
                     } else {
-                        Messages.showInfoMessage(
+                        showInfoMessageAsync(
                                 myContentPane,
                                 TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_TOO_LOW),
                                 TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
                         return CompletableFuture.completedFuture(null);
                     }
-                }, EdtExecutorService.getInstance()), EdtExecutorService.getInstance()).exceptionally(ex -> {
+                })).exceptionally(ex -> {
                     ourLogger.error(ex);
-                    Messages.showInfoMessage(
+                    showInfoMessageAsync(
                             myContentPane,
                             LocalizationServiceImpl.getInstance().getExceptionMessage(ex),
                             TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
@@ -235,6 +237,10 @@ public class ProjectConfigurableForm {
 //            myReportNotInstalledPoliciesCheckBox.setEnabled(true);
 //        }
 //    }
+
+    private static void showInfoMessageAsync(Component component, String message, @NotNull String title) {
+        UIUtil.invokeLaterIfNeeded(() -> Messages.showInfoMessage(component, message, title));
+    }
 
     public JComponent getContentPane() {
         return myContentPane;
