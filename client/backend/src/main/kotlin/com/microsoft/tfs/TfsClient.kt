@@ -3,6 +3,7 @@ package com.microsoft.tfs
 import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
 import com.microsoft.tfs.core.clients.versioncontrol.Workstation
+import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
@@ -30,9 +31,8 @@ class TfsClient(path: Path, credentials: Credentials) {
     val workspaceOwner
         get() = workspace.ownerName
 
-    fun status(path: Path): Array<PendingSet> {
-        var itemSpec = ItemSpec("$/TestNuGetPackage", RecursionType.FULL)
-        val ps = client.queryPendingSets(arrayOf(itemSpec), false, workspaceName, workspaceOwner, true)
-        return ps
+    fun status(paths: List<Path>): Array<PendingSet> {
+        val itemSpecs = ItemSpec.fromStrings(paths.map { LocalPath.canonicalize(it.toString()) }.toTypedArray(), RecursionType.FULL)
+        return client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
     }
 }

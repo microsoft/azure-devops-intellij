@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import com.microsoft.tfs.model.connector.TfsServerStatusType;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,5 +62,29 @@ public enum ServerStatusType {
             }
         }
         return types;
+    }
+
+    public static ServerStatusType from(TfsServerStatusType type) {
+        switch (type) {
+            case ADD:
+                return ADD;
+            case RENAME:
+                return RENAME;
+            case EDIT:
+                return EDIT;
+            case DELETE:
+                return DELETE;
+            case UNDELETE:
+                return UNDELETE;
+            case LOCK:
+                return LOCK;
+            case BRANCH:
+                return BRANCH;
+            case MERGE:
+                return MERGE;
+            case UNKNOWN:
+            default:
+                return UNKNOWN;
+        }
     }
 }

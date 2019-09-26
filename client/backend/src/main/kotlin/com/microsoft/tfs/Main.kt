@@ -4,7 +4,10 @@ import com.jetbrains.rd.framework.*
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.waitTermination
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
+import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.model.host.TfsRoot
+import com.microsoft.tfs.model.host.TfsWorkspace
+import com.microsoft.tfs.model.host.TfsWorkspaceDefinition
 import com.microsoft.tfs.model.host.VersionNumber
 import kotlin.system.exitProcess
 
@@ -36,12 +39,24 @@ private fun runRdClient(portNumber: Int) {
         model.shutdown.advise(appLifetime) { appLifetimeDefinition.terminate() }
         model.version.set(VersionNumber(1, 0))
         model.healthCheck.set { _ -> healthCheck() }
+
+        model.workspaces.view(appLifetime) { _, definition, workspace -> initializeWorkspace(definition, workspace) }
     }
     // TODO: Terminate if wasn't able to connect
     appLifetime.waitTermination()
 }
 
 private fun healthCheck(): String? {
-    // TODO: Try to load the client
-    return "Health check failed"
+    // TODO: Try to load the client to check for native load errors
+    return null
+}
+
+private fun initializeWorkspace(definition: TfsWorkspaceDefinition, workspace: TfsWorkspace) {
+    val credentials = definition.credentials.run { UsernamePasswordCredentials(login, password) }
+    val client = TfsClient(definition.localPath.toPath(), credentials)
+    workspace.isReady.set(true)
+
+    workspace.getPendingChanges.set { paths ->
+        client.status(paths.map { it.toPath() }).flatMap(::toTfsPendingChanges)
+    }
 }

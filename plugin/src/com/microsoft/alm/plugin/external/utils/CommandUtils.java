@@ -52,6 +52,7 @@ import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -59,9 +60,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Helper for running commands
@@ -343,6 +346,19 @@ public class CommandUtils {
 
             throw e;
         }
+    }
+
+    /**
+     * Get the status for a list of files.
+     */
+    public static CompletableFuture<List<PendingChange>> getStatusForFilesReactive(
+            @NotNull Project project,
+            @NotNull ServerContext context,
+            @NotNull ReactiveTfClient client,
+            @NotNull List<String> files) {
+        Workspace partialWorkspace = getPartialWorkspace(project);
+        java.nio.file.Path path = Paths.get(partialWorkspace.getMappings().get(0).getLocalPath()); // TODO: Work around multiple mappings per workspace
+        return client.getPendingChangesAsync(path, context.getAuthenticationInfo(), files.stream().map(p -> Paths.get(p)));
     }
 
     /**
