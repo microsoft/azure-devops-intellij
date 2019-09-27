@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A model for the new, reactive client.
+ * A model for the reactive TF client.
  */
 public class ReactiveTfClient {
     private static final Logger ourLogger = Logger.getInstance(ReactiveTfClient.class);
@@ -141,8 +141,12 @@ public class ReactiveTfClient {
         TfsCredentials tfsCredentials = new TfsCredentials(
                 authenticationInfo.getUserName(),
                 authenticationInfo.getPassword());
-        TfsWorkspace workspace = myConnection.getOrCreateWorkspace(
-                new TfsWorkspaceDefinition(new TfsLocalPath(workspacePath.toString()), tfsCredentials));
-        return myConnection.waitForReadyAsync(workspace).thenApply(unused -> workspace);
+        TfsWorkspaceDefinition workspaceDefinition = new TfsWorkspaceDefinition(
+                new TfsLocalPath(workspacePath.toString()),
+                tfsCredentials);
+
+        return myConnection.getOrCreateWorkspaceAsync(workspaceDefinition)
+                .thenCompose(workspace -> myConnection.waitForReadyAsync(workspace)
+                        .thenApply(unused -> workspace));
     }
 }

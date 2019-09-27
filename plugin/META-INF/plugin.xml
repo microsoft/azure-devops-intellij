@@ -90,6 +90,8 @@
         <vcsConfigurableProvider implementation="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesConfigurable"/>
 
         <fileTypeFactory implementation="com.microsoft.alm.plugin.idea.tfvc.tfignore.TfIgnoreFileTypeFactory"/>
+
+        <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfClientHolder" />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
