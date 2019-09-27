@@ -12,7 +12,6 @@ import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.Key;
 import com.jetbrains.rd.util.lifetime.Lifetime;
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition;
 import com.jetbrains.rd.util.lifetime.LifetimeStatus;
@@ -123,11 +122,6 @@ public class ReactiveTfClient {
             public void processTerminated(@NotNull ProcessEvent event) {
                 ourLogger.info("Process is terminated, terminating the connection");
                 connection.terminate();
-            }
-
-            @Override
-            public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
-                ourLogger.info(String.format("Output from process (%s): %s", outputType, event.getText()));
             }
         };
     }
