@@ -6,6 +6,7 @@ import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.model.host.TfsLocalPath
 import com.microsoft.tfs.model.host.TfsPendingChange
 import com.microsoft.tfs.model.host.TfsServerStatusType
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
@@ -27,25 +28,25 @@ private val pendingChangeTypeMap = mapOf(
     ChangeType.PROPERTY to TfsServerStatusType.EDIT
 )
 
-private fun extractChangeTypes(changeType: ChangeType): List<TfsServerStatusType> =
+private fun toChangeTypes(changeType: ChangeType): List<TfsServerStatusType> =
     pendingChangeTypeMap.entries.mapNotNull { (k, v) -> if (changeType.contains(k)) v else null }
 
-private fun mapPendingChange(pendingSet: PendingSet, pc: PendingChange) = TfsPendingChange(
+private fun toPendingChange(pendingSet: PendingSet, pc: PendingChange) = TfsPendingChange(
     pc.serverItem,
     pc.localItem,
     pc.version,
     pc.pendingSetOwner,
     isoDateFormat.format(pc.creationDate.time),
     pc.lockLevelName,
-    extractChangeTypes(pc.changeType),
+    toChangeTypes(pc.changeType),
     pendingSet.name,
     pendingSet.computer,
     pc.isCandidate,
     pc.sourceServerItem
 )
 
-fun toTfsPendingChanges(pendingSet: PendingSet): Iterable<TfsPendingChange> =
-    (pendingSet.pendingChanges.asSequence().map { mapPendingChange(pendingSet, it) }
-            + pendingSet.candidatePendingChanges.map { mapPendingChange(pendingSet, it) }).asIterable()
+fun toPendingChanges(pendingSet: PendingSet): Iterable<TfsPendingChange> =
+    (pendingSet.pendingChanges.asSequence().map { toPendingChange(pendingSet, it) }
+            + pendingSet.candidatePendingChanges.map { toPendingChange(pendingSet, it) }).asIterable()
 
-fun TfsLocalPath.toPath() = Paths.get(path)
+fun TfsLocalPath.toJavaPath(): Path = Paths.get(path)

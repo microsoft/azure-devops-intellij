@@ -8,6 +8,7 @@ import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
@@ -29,6 +30,7 @@ import com.microsoft.tfs.model.connector.VersionNumber;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -59,8 +61,13 @@ public class ReactiveTfClient {
         SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(project), "ReactiveTfClient Scheduler");
         ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
+            Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
-                    new GeneralCommandLine(clientPath, Integer.toString(connection.getPort())));
+                    new GeneralCommandLine(
+                            clientPath,
+                            Integer.toString(connection.getPort()),
+                            logDirectory.toString(),
+                            "TRACE"));
             ProcessHandler processHandler = new OSProcessHandler(commandLine);
             connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);
 
