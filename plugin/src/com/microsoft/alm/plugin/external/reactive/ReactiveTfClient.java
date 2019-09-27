@@ -62,12 +62,14 @@ public class ReactiveTfClient {
         ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
             Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
+            Path clientHomeDir = Paths.get(clientPath).getParent().getParent();
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
                     new GeneralCommandLine(
                             clientPath,
                             Integer.toString(connection.getPort()),
                             logDirectory.toString(),
-                            "TRACE"));
+                            "TRACE")
+                            .withWorkDirectory(clientHomeDir.toString()));
             ProcessHandler processHandler = new OSProcessHandler(commandLine);
             connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);
 

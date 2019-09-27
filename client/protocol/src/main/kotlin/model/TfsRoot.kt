@@ -36,7 +36,7 @@ object TfsRoot : Root() {
         field("workspace", string)
         field("computer", string)
         field("isCandidate", bool)
-        field("sourceItem", string)
+        field("sourceItem", string.nullable)
     }
 
     private val TfsCredentials = structdef {

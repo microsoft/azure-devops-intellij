@@ -10,6 +10,7 @@ import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.jetbrains.rd.util.trace
 import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
+import com.microsoft.tfs.jni.loader.NativeLoader
 import com.microsoft.tfs.model.host.TfsRoot
 import com.microsoft.tfs.model.host.TfsWorkspace
 import com.microsoft.tfs.model.host.TfsWorkspaceDefinition
@@ -30,10 +31,7 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
 
-    val logDirectory = if (args.size > 1) Paths.get(args[1]) else null
-    val logLevel = if (args.size > 2) Level.toLevel(args[2]) else Level.INFO
-    Logging.initialize(logDirectory, logLevel)
-
+    initializeApp(args)
     runRdClient(port)
 }
 
@@ -44,6 +42,23 @@ private fun printUsage() {
     println("- <portNumber>: port to connect to")
     println("- [logDirectory]: path to the log directory (log file will be created automatically)")
     println("- [logLevel]: log level (either ALL, DEBUG, INFO, WARN, ERROR, FATAL, OFF, or TRACE), INFO by default")
+}
+
+private fun initializeApp(args: Array<String>) {
+    val logDirectory = if (args.size > 1) Paths.get(args[1]) else null
+    val logLevel = if (args.size > 2) Level.toLevel(args[2]) else Level.INFO
+    Logging.initialize(logDirectory, logLevel)
+
+    if (System.getProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY) == null) {
+        val possibleNativeLibsPath = Paths.get("nativeLibs")
+        if (possibleNativeLibsPath.toFile().isDirectory)
+            System.setProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY, possibleNativeLibsPath.toString())
+    }
+
+    Logging.getLogger("Main").info {
+        "${NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY}: " +
+            System.getProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY)
+    }
 }
 
 private fun runRdClient(portNumber: Int) {
@@ -118,6 +133,9 @@ private fun initializeWorkspace(definition: TfsWorkspaceDefinition, workspace: T
 
     workspace.getPendingChanges.set { paths ->
         logger.trace { "Calculating pending changes for ${paths.size} paths" }
-        client.status(paths.map { it.toJavaPath() }).flatMap(::toPendingChanges)
+        val result = client.status(paths.map { it.toJavaPath() }).flatMap(::toPendingChanges).toList()
+        logger.trace { "${result.size} changes detected" }
+        logger.trace { "First 10 changes: " + result.take(10).joinToString { it.serverItem } }
+        result
     }
 }
