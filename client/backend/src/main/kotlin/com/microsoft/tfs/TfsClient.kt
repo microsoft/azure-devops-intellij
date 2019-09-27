@@ -33,6 +33,7 @@ class TfsClient(path: Path, credentials: Credentials) {
 
     fun status(paths: List<Path>): Array<PendingSet> {
         val itemSpecs = ItemSpec.fromStrings(paths.map { LocalPath.canonicalize(it.toString()) }.toTypedArray(), RecursionType.FULL)
+        workspace.workspaceWatcher.forceFullScan() // TODO: Remove!
         return client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
     }
 }

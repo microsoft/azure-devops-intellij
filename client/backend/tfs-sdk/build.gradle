@@ -3,12 +3,15 @@ plugins {
     id "de.undercouch.download"
 }
 
-def sdkArchiveLocation = "$buildDir/TFS-SDK-14.134.0.zip"
-def sdkUnpackLocation = "$buildDir/sdk"
-def sdkJarName = "com.microsoft.tfs.sdk-14.134.0.jar"
+ext {
+    sdkVersion = "14.134.0"
+    sdkArchiveLocation = file("$buildDir/TFS-SDK-${sdkVersion}.zip")
+    sdkUnpackLocation = file("$buildDir/sdk")
+    sdkJarName = "com.microsoft.tfs.sdk-${sdkVersion}.jar"
+}
 
 task downloadArchive(type: Download) {
-    src "https://github.com/microsoft/team-explorer-everywhere/releases/download/14.134.0/TFS-SDK-14.134.0.zip"
+    src "https://github.com/microsoft/team-explorer-everywhere/releases/download/$sdkVersion/TFS-SDK-${sdkVersion}.zip"
     dest sdkArchiveLocation
     overwrite false
 }
@@ -21,7 +24,7 @@ task verifyArchive(type: Verify, dependsOn: downloadArchive) {
 
 task unpack(type: Copy, dependsOn: [downloadArchive, verifyArchive]) {
     from(zipTree(sdkArchiveLocation)) {
-        include "TFS-SDK-14.134.0/redist/lib/*.jar"
+        include "TFS-SDK-$sdkVersion/redist/lib/*.jar"
         eachFile { fcd ->
             fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(3))
         }
