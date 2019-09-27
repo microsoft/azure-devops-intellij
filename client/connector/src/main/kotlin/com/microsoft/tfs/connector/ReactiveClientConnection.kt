@@ -59,8 +59,10 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             model.healthCheck.start(Unit).pipeTo(lt, this)
         }
 
-    fun getOrCreateWorkspace(definition: TfsWorkspaceDefinition): TfsWorkspace =
-        model.workspaces[definition] ?: TfsWorkspace().apply { model.workspaces[definition] = this }
+    fun getOrCreateWorkspaceAsync(definition: TfsWorkspaceDefinition): CompletableFuture<TfsWorkspace> =
+        queueFutureAsync {
+            complete(model.workspaces[definition] ?: TfsWorkspace().apply { model.workspaces[definition] = this })
+        }
 
     fun waitForReadyAsync(workspace: TfsWorkspace): CompletableFuture<Void> =
         queueFutureAsync {

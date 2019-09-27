@@ -21,7 +21,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -32,12 +31,12 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfClientHolder;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
-import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -104,14 +103,19 @@ public class TFSChangeProvider implements ChangeProvider {
 
         List<PendingChange> changes;
         try {
-            // Status command requires credentials (even if it doesn't use them in most cases). On Windows, it is able
-            // to discover current user's NTLM credentials and use them (even if they don't usually match the
-            // credentials used to access the TFS, it doesn't matter). For other OSs, where TF client couldn't get any
-            // default credentials, we'll obtain the valid credentials from the current server context.
-            ServerContext serverContext = SystemInfo.isWindows ? null : myVcs.getServerContext(false);
-            changes = EULADialog.executeWithGuard(
-                    project,
-                    () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
+            ServerContext serverContext = myVcs.getServerContext(true);
+            changes = ReactiveTfClientHolder.getInstance(project).getClient()
+                    .thenCompose(client -> CommandUtils.getStatusForFilesReactive(
+                            project,
+                            serverContext,
+                            client,
+                            pathsToProcess))
+                    .get();
+
+            // TODO: Make the old code optional
+//            changes = EULADialog.executeWithGuard(
+//                    project,
+//                    () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
         } catch (final Throwable t) {
             logger.warn("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
             changes = Collections.emptyList();
