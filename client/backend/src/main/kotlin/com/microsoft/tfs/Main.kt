@@ -1,12 +1,14 @@
 package com.microsoft.tfs
 
 import com.jetbrains.rd.framework.*
+import com.jetbrains.rd.util.error
 import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.jetbrains.rd.util.trace
+import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.model.host.TfsRoot
 import com.microsoft.tfs.model.host.TfsWorkspace
@@ -94,9 +96,16 @@ private fun waitTermination(lifetime: Lifetime, msBetweenChecks: Long = 1000L) {
     }
 }
 
-private fun healthCheck(): String? {
-    // TODO: Try to load the client to check for native load errors
-    return null
+private fun healthCheck(): String? = try {
+    // Accessing the DefaultPersistenceStoreProvider will trigger loading native library and throw an exception in
+    // case the libraries aren't set up properly
+    val provider = DefaultPersistenceStoreProvider.INSTANCE
+    if (provider == null)
+        "Cannot create DefaultPersistenceStoreProvider"
+    else null
+} catch (t: Throwable) {
+    Logging.getLogger("Main").error(t)
+    t.message
 }
 
 private fun initializeWorkspace(definition: TfsWorkspaceDefinition, workspace: TfsWorkspace) {
