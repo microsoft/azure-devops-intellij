@@ -76,6 +76,11 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             workspace.getPendingChanges.start(paths).pipeTo(lt, this)
         }
 
+    fun invalidatePathAsync(workspace: TfsWorkspace, path: TfsLocalPath): CompletableFuture<Void> =
+        queueFutureAsync { lt ->
+            workspace.invalidatePath.start(path).pipeToVoid(lt, this)
+        }
+
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {
         val lifetime = lifetime.createNested()
         val future = CompletableFuture<T>().whenComplete { _, _ -> lifetime.terminate() }
@@ -90,6 +95,19 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
         result.adviseOnce(lt) {
             try {
                 future.complete(it.unwrap())
+            } catch (ex: CancellationException) {
+                future.cancel(false)
+            } catch (ex: Throwable) {
+                future.completeExceptionally(ex)
+            }
+        }
+    }
+
+    private fun <T> IRdTask<T>.pipeToVoid(lt: Lifetime, future: CompletableFuture<Void>) {
+        result.adviseOnce(lt) {
+            try {
+                it.unwrap()
+                future.complete(null)
             } catch (ex: CancellationException) {
                 future.cancel(false)
             } catch (ex: Throwable) {

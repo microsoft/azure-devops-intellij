@@ -55,6 +55,9 @@ object TfsRoot : Root() {
 
         call("getPendingChanges", immutableList(TfsLocalPath), immutableList(TfsPendingChange))
             .doc("Determines a set of the pending changes in the workspace")
+
+        call("invalidatePath", TfsLocalPath, void)
+            .doc("Invalidates a path in the TFS cache")
     }
 
     init {
