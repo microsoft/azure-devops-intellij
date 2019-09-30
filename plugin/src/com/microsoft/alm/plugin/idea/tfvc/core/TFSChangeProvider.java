@@ -117,7 +117,7 @@ public class TFSChangeProvider implements ChangeProvider {
 //                    project,
 //                    () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
         } catch (final Throwable t) {
-            logger.warn("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
+            logger.error("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
             changes = Collections.emptyList();
         }
 

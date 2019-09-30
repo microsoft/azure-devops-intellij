@@ -85,7 +85,7 @@ private fun runRdClient(portNumber: Int) {
             result
         }
 
-        model.workspaces.view(appLifetime) { _, definition, workspace -> initializeWorkspace(definition, workspace) }
+        model.workspaces.view(appLifetime, ::initializeWorkspace)
     }
 
     logger.info { "Application initialized, waiting termination" }
@@ -123,13 +123,12 @@ private fun healthCheck(): String? = try {
     t.message
 }
 
-private fun initializeWorkspace(definition: TfsWorkspaceDefinition, workspace: TfsWorkspace) {
+private fun initializeWorkspace(lifetime: Lifetime, definition: TfsWorkspaceDefinition, workspace: TfsWorkspace) {
     val logger = Logging.getLogger("Workspace")
     logger.info { "Initializing workspace for ${definition.localPath}" }
 
     val credentials = definition.credentials.run { UsernamePasswordCredentials(login, password) }
-    val client = TfsClient(definition.localPath.toJavaPath(), credentials)
-    workspace.isReady.set(true)
+    val client = TfsClient(lifetime, definition.localPath.toJavaPath(), credentials)
 
     workspace.getPendingChanges.set { paths ->
         logger.trace { "Calculating pending changes for ${paths.size} paths" }
@@ -138,4 +137,11 @@ private fun initializeWorkspace(definition: TfsWorkspaceDefinition, workspace: T
         logger.trace { "First 10 changes: " + result.take(10).joinToString { it.serverItem } }
         result
     }
+
+    workspace.invalidatePath.set { path ->
+        logger.trace { "Invalidating path: $path" }
+        client.invalidatePath(path.toJavaPath())
+    }
+
+    workspace.isReady.set(true)
 }
