@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.openapi.vfs.VirtualFileMoveEvent;
 import com.intellij.openapi.vfs.VirtualFilePropertyEvent;
+import com.jetbrains.rd.framework.impl.RdSecureString;
 import com.jetbrains.rd.util.lifetime.Lifetime;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
@@ -143,7 +144,7 @@ public class ReactiveTfClient {
             @NotNull AuthenticationInfo authenticationInfo) {
         TfsCredentials tfsCredentials = new TfsCredentials(
                 authenticationInfo.getUserName(),
-                authenticationInfo.getPassword());
+                new RdSecureString(authenticationInfo.getPassword()));
         TfsWorkspaceDefinition workspaceDefinition = new TfsWorkspaceDefinition(
                 new TfsLocalPath(workspacePath.toString()),
                 tfsCredentials);

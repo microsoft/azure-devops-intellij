@@ -127,7 +127,7 @@ private fun initializeWorkspace(lifetime: Lifetime, definition: TfsWorkspaceDefi
     val logger = Logging.getLogger("Workspace")
     logger.info { "Initializing workspace for ${definition.localPath}" }
 
-    val credentials = definition.credentials.run { UsernamePasswordCredentials(login, password) }
+    val credentials = definition.credentials.run { UsernamePasswordCredentials(login, password.contents) }
     val client = TfsClient(lifetime, definition.localPath.toJavaPath(), credentials)
 
     workspace.getPendingChanges.set { paths ->
