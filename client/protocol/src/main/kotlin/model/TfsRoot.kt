@@ -41,7 +41,7 @@ object TfsRoot : Root() {
 
     private val TfsCredentials = structdef {
         field("login", string)
-        field("password", string)
+        field("password", secureString)
     }
 
     private val TfsWorkspaceDefinition = structdef {
