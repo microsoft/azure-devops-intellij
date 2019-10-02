@@ -1,6 +1,7 @@
 package com.microsoft.tfs
 
 import com.jetbrains.rd.util.lifetime.Lifetime
+import com.jetbrains.rd.util.lifetime.onTermination
 import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
 import com.microsoft.tfs.core.clients.versioncontrol.Workstation
@@ -24,6 +25,8 @@ class TfsClient(lifetime: Lifetime, path: Path, credentials: Credentials) {
         val serverUri = workspaceInfo.serverURI
 
         val collection = TFSTeamProjectCollection(serverUri, credentials)
+        lifetime.onTermination { collection.close() }
+
         client = collection.versionControlClient.also {
             it.pathWatcherFactory = pathWatcherFactory
         }
