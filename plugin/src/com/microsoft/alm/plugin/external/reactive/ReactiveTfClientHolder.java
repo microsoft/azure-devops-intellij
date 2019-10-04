@@ -14,6 +14,7 @@ public class ReactiveTfClientHolder {
         return ServiceManager.getService(project, ReactiveTfClientHolder.class);
     }
 
+    private final Object myClientLock = new Object();
     private Project myProject;
     private CompletableFuture<ReactiveTfClient> myClient; // TODO: Clear cached instance on settings change
 
@@ -22,17 +23,19 @@ public class ReactiveTfClientHolder {
     }
 
     public CompletableFuture<ReactiveTfClient> getClient() {
-        if (myClient == null || myClient.isCompletedExceptionally() || myClient.isCancelled()) {
-            try {
-                return myClient = createNewClientAsync();
-            } catch (Throwable t) {
-                CompletableFuture<ReactiveTfClient> result = new CompletableFuture<>();
-                result.completeExceptionally(t);
-                return result;
+        synchronized (myClientLock) {
+            if (myClient == null || myClient.isCompletedExceptionally() || myClient.isCancelled()) {
+                try {
+                    return myClient = createNewClientAsync();
+                } catch (Throwable t) {
+                    CompletableFuture<ReactiveTfClient> result = new CompletableFuture<>();
+                    result.completeExceptionally(t);
+                    return result;
+                }
             }
-        }
 
-        return myClient;
+            return myClient;
+        }
     }
 
     private CompletableFuture<ReactiveTfClient> createNewClientAsync() throws ExecutionException {
