@@ -47,6 +47,8 @@ import static com.microsoft.alm.plugin.external.reactive.Lifetimes.toDisposable;
  * A model for the reactive TF client.
  */
 public class ReactiveTfClient {
+    private static final String REACTIVE_CLIENT_LOG_LEVEL = "INFO";
+
     private static final Logger ourLogger = Logger.getInstance(ReactiveTfClient.class);
 
     private final ReactiveClientConnection myConnection;
@@ -66,7 +68,7 @@ public class ReactiveTfClient {
                             clientPath,
                             Integer.toString(connection.getPort()),
                             logDirectory.toString(),
-                            "TRACE")
+                            REACTIVE_CLIENT_LOG_LEVEL)
                             .withWorkDirectory(clientHomeDir.toString()));
             ProcessHandler processHandler = new OSProcessHandler(commandLine);
             connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);

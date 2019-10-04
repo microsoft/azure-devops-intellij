@@ -1,11 +1,11 @@
 package com.microsoft.tfs.watcher
 
+import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.SequentialLifetimes
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.reactive.Signal
-import com.jetbrains.rd.util.trace
 import com.microsoft.tfs.Logging
 import com.microsoft.tfs.core.clients.versioncontrol.localworkspace.PathWatcher
 import com.microsoft.tfs.core.clients.versioncontrol.localworkspace.PathWatcherReport
@@ -24,7 +24,7 @@ class ExternallyControlledPathWatcher(
     }
 
     init {
-        logger.trace { "Path watcher created for path $pathToWatch" }
+        logger.info { "Path watcher created for path $pathToWatch" }
     }
 
     private val lock = Any()
