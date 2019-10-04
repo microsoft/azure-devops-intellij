@@ -31,7 +31,7 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
         lifetime
     )
 
-    lateinit var model: TfsRoot
+    lateinit var model: TfsModel
 
     val port
         get() = socket.port
@@ -40,7 +40,7 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
 
     fun startAsync(): CompletableFuture<Void> =
         queueFutureAsync { lt ->
-            model = TfsRoot.create(lifetime, protocol).apply {
+            model = TfsModel.create(lifetime, protocol).apply {
                 connected.whenTrue(lt) {
                     complete(null)
                 }
@@ -59,26 +59,26 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             model.healthCheck.start(Unit).pipeTo(lt, this)
         }
 
-    fun getOrCreateWorkspaceAsync(definition: TfsWorkspaceDefinition): CompletableFuture<TfsWorkspace> =
+    fun getOrCreateCollectionAsync(definition: TfsCollectionDefinition): CompletableFuture<TfsCollection> =
         queueFutureAsync {
-            complete(model.workspaces[definition] ?: TfsWorkspace().apply { model.workspaces[definition] = this })
+            complete(model.collections[definition] ?: TfsCollection().apply { model.collections[definition] = this })
         }
 
-    fun waitForReadyAsync(workspace: TfsWorkspace): CompletableFuture<Void> =
+    fun waitForReadyAsync(collection: TfsCollection): CompletableFuture<Void> =
         queueFutureAsync {
-            workspace.isReady.whenTrue(lifetime) { complete(null) }
+            collection.isReady.whenTrue(lifetime) { complete(null) }
         }
 
     fun getPendingChangesAsync(
-        workspace: TfsWorkspace,
+        collection: TfsCollection,
         paths: List<TfsLocalPath>): CompletableFuture<List<TfsPendingChange>> =
         queueFutureAsync { lt ->
-            workspace.getPendingChanges.start(paths).pipeTo(lt, this)
+            collection.getPendingChanges.start(paths).pipeTo(lt, this)
         }
 
-    fun invalidatePathAsync(workspace: TfsWorkspace, path: TfsLocalPath): CompletableFuture<Void> =
+    fun invalidatePathAsync(collection: TfsCollection, path: TfsLocalPath): CompletableFuture<Void> =
         queueFutureAsync { lt ->
-            workspace.invalidatePath.start(path).pipeToVoid(lt, this)
+            collection.invalidatePath.start(path).pipeToVoid(lt, this)
         }
 
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {

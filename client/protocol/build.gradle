@@ -8,9 +8,13 @@ dependencies {
 }
 
 def hashDir = "$buildDir/rdgen/hashes"
+def backendGenerated = "$projectDir/../backend/src/main/kotlin/generated"
+def connectorGenerated = "$projectDir/../connector/src/main/kotlin/generated"
 
 clean {
     delete hashDir
+    delete backendGenerated
+    delete connectorGenerated
 }
 
 rdgen {
@@ -22,16 +26,16 @@ rdgen {
     generator {
         language = "kotlin"
         transform = "reversed"
-        root = "model.tfs.TfsRoot"
+        root = "model.tfs.TfsModel"
         namespace = "com.microsoft.tfs.model.host"
-        directory = "$projectDir/../backend/src/main/kotlin/generated"
+        directory = backendGenerated
     }
 
     generator {
         language = "kotlin"
         transform = "asis"
-        root = "model.tfs.TfsRoot"
+        root = "model.tfs.TfsModel"
         namespace = "com.microsoft.tfs.model.connector"
-        directory = "$projectDir/../connector/src/main/kotlin/generated"
+        directory = connectorGenerated
     }
 }

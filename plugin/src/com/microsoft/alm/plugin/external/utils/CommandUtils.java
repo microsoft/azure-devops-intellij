@@ -349,17 +349,17 @@ public class CommandUtils {
     }
 
     /**
-     * Get the status for a list of files.
+     * Get the status for a list of files using the reactive TFS client.
      */
     public static CompletableFuture<List<PendingChange>> getStatusForFilesReactive(
-            @NotNull Project project,
             @NotNull ServerContext context,
             @NotNull ReactiveTfClient client,
             @NotNull List<String> files) {
         long startTime = System.nanoTime();
-        Workspace partialWorkspace = getPartialWorkspace(project);
-        java.nio.file.Path path = Paths.get(partialWorkspace.getMappings().get(0).getLocalPath()); // TODO: Work around multiple mappings per workspace
-        return client.getPendingChangesAsync(path, context.getAuthenticationInfo(), files.stream().map(p -> Paths.get(p))).whenComplete((result, ex) -> {
+        return client.getPendingChangesAsync(
+                context.getCollectionURI(),
+                context.getAuthenticationInfo(),
+                files.stream().map(p -> Paths.get(p))).whenComplete((result, ex) -> {
             if (ex == null) {
                 long endTime = System.nanoTime();
                 double seconds = ((double) endTime - startTime) / 1_000_000_000.0;

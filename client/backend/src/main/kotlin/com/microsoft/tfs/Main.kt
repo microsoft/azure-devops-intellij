@@ -10,10 +10,7 @@ import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.jni.loader.NativeLoader
-import com.microsoft.tfs.model.host.TfsRoot
-import com.microsoft.tfs.model.host.TfsWorkspace
-import com.microsoft.tfs.model.host.TfsWorkspaceDefinition
-import com.microsoft.tfs.model.host.VersionNumber
+import com.microsoft.tfs.model.host.*
 import org.apache.log4j.Level
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -72,7 +69,7 @@ private fun runRdClient(portNumber: Int) {
     val socket = SocketWire.Client(appLifetime, scheduler, portNumber, "com.microsoft.tfs.MainSocketClient")
     val protocol = Protocol(Serializers(), Identities(IdKind.Client), scheduler, socket, appLifetime)
     scheduler.queue {
-        val model = TfsRoot.create(appLifetime, protocol)
+        val model = TfsModel.create(appLifetime, protocol)
         model.shutdown.advise(appLifetime) {
             logger.info { "Shutting down per request" }
             appLifetimeDefinition.terminate()
@@ -84,7 +81,7 @@ private fun runRdClient(portNumber: Int) {
             result
         }
 
-        model.workspaces.view(appLifetime, ::initializeWorkspace)
+        model.collections.view(appLifetime, ::initializeCollection)
     }
 
     logger.info { "Application initialized, waiting termination" }
@@ -122,14 +119,14 @@ private fun healthCheck(): String? = try {
     t.message
 }
 
-private fun initializeWorkspace(lifetime: Lifetime, definition: TfsWorkspaceDefinition, workspace: TfsWorkspace) {
-    val logger = Logging.getLogger("Workspace")
-    logger.info { "Initializing workspace for ${definition.localPath}" }
+private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDefinition, collection: TfsCollection) {
+    val logger = Logging.getLogger("Collection")
+    logger.info { "Initializing collection for ${definition.serverUri}" }
 
     val credentials = definition.credentials.run { UsernamePasswordCredentials(login, password.contents) }
-    val client = TfsClient(lifetime, definition.localPath.toJavaPath(), credentials)
+    val client = TfsClient(lifetime, definition.serverUri, credentials)
 
-    workspace.getPendingChanges.set { paths ->
+    collection.getPendingChanges.set { paths ->
         logger.info { "Calculating pending changes for ${paths.size} paths" }
         val result = client.status(paths.map { it.toJavaPath() }).flatMap(::toPendingChanges).toList()
         logger.info { "${result.size} changes detected" }
@@ -137,10 +134,15 @@ private fun initializeWorkspace(lifetime: Lifetime, definition: TfsWorkspaceDefi
         result
     }
 
-    workspace.invalidatePath.set { path ->
+    collection.invalidatePath.set { path ->
         logger.info { "Invalidating path: $path" }
         client.invalidatePath(path.toJavaPath())
     }
 
-    workspace.isReady.set(true)
+    client.workspaces.advise(lifetime) { workspaces ->
+        val paths = workspaces.flatMap { it.mappedPaths.map(::TfsLocalPath) }
+        collection.mappedPaths.set(paths)
+    }
+
+    collection.isReady.set(true)
 }

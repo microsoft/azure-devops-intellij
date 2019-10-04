@@ -106,7 +106,6 @@ public class TFSChangeProvider implements ChangeProvider {
             ServerContext serverContext = myVcs.getServerContext(true);
             changes = ReactiveTfClientHolder.getInstance(project).getClient()
                     .thenCompose(client -> CommandUtils.getStatusForFilesReactive(
-                            project,
                             serverContext,
                             client,
                             pathsToProcess))

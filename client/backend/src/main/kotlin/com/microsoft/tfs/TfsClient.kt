@@ -2,46 +2,69 @@ package com.microsoft.tfs
 
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.onTermination
+import com.jetbrains.rd.util.reactive.Property
+import com.jetbrains.rd.util.warn
 import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
-import com.microsoft.tfs.core.clients.versioncontrol.Workstation
 import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
-import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.Credentials
 import com.microsoft.tfs.watcher.ExternallyControlledPathWatcherFactory
+import java.net.URI
 import java.nio.file.Path
 
-class TfsClient(lifetime: Lifetime, path: Path, credentials: Credentials) {
+class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
+    companion object {
+        private val logger = Logging.getLogger<TfsClient>()
+    }
+
     private val client: VersionControlClient
-    private val workspace: Workspace
     private val pathWatcherFactory = ExternallyControlledPathWatcherFactory(lifetime)
     init {
-        val workstation = Workstation.getCurrent(DefaultPersistenceStoreProvider.INSTANCE)
-        val workspaceInfo = workstation.getLocalWorkspaceInfo(path.toString())
-        val serverUri = workspaceInfo.serverURI
-
         val collection = TFSTeamProjectCollection(serverUri, credentials)
         lifetime.onTermination { collection.close() }
 
         client = collection.versionControlClient.also {
             it.pathWatcherFactory = pathWatcherFactory
         }
-        workspace = client.getLocalWorkspace(path.toString(), true)
     }
 
-    private val workspaceName
-        get() = workspace.name
+    val workspaces = Property<List<Workspace>>(listOf())
+    private fun getWorkspaceFor(path: Path): Workspace? {
+        for (workspace in workspaces.value) {
+            if (workspace.isLocalPathMapped(path.toString())) {
+                return workspace
+            }
+        }
 
-    private val workspaceOwner
-        get() = workspace.ownerName
+        return client.tryGetWorkspace(path.toString())?.also {
+            workspaces.value += it
+        }
+    }
 
-    fun status(paths: List<Path>): Array<PendingSet> {
-        val itemSpecs = ItemSpec.fromStrings(paths.map { LocalPath.canonicalize(it.toString()) }.toTypedArray(), RecursionType.FULL)
-        return client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
+    fun status(paths: List<Path>): List<PendingSet> {
+        val results = mutableListOf<PendingSet>()
+        for ((workspace, workspacePathList) in paths.asSequence().groupBy(::getWorkspaceFor)) {
+            if (workspace == null) {
+                logger.warn { "Could not determine workspace for paths: " + paths.joinToString(",", "\"", "\"") }
+                continue
+            }
+
+            val workspaceName = workspace.name
+            val workspaceOwner = workspace.ownerName
+
+            val itemSpecs = ItemSpec.fromStrings(
+                workspacePathList.map { LocalPath.canonicalize(it.toString()) }.toTypedArray(),
+                RecursionType.FULL
+            )
+            val pendingSets = client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
+            results.addAll(pendingSets)
+        }
+
+        return results
     }
 
     fun invalidatePath(path: Path) {

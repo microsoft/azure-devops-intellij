@@ -25,14 +25,15 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
+import com.microsoft.tfs.model.connector.TfsCollection;
+import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
-import com.microsoft.tfs.model.connector.TfsWorkspace;
-import com.microsoft.tfs.model.connector.TfsWorkspaceDefinition;
 import com.microsoft.tfs.model.connector.VersionNumber;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -98,13 +99,13 @@ public class ReactiveTfClient {
     }
 
     public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
-            Path workspacePath,
+            URI serverUri,
             AuthenticationInfo authenticationInfo,
             Stream<Path> localPaths) {
         List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
                 .collect(Collectors.toList());
-        return getReadyWorkspaceAsync(workspacePath, authenticationInfo)
-                .thenCompose(workspace -> myConnection.getPendingChangesAsync(workspace, paths))
+        return getReadyCollectionAsync(serverUri, authenticationInfo)
+                .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
                 .thenApply(changes -> changes.stream().map(pc -> new PendingChange(
                         pc.getServerItem(),
                         pc.getLocalItem(),
@@ -130,8 +131,8 @@ public class ReactiveTfClient {
     }
 
     private void initializeStartedConnection() {
-        myConnection.getModel().getWorkspaces().view(myConnection.getLifetime(), (lifetime, def, workspace) -> {
-            addFileSystemListener(lifetime, def, workspace);
+        myConnection.getModel().getCollections().view(myConnection.getLifetime(), (lifetime, def, collection) -> {
+            addFileSystemListener(lifetime, collection);
             return Unit.INSTANCE;
         });
     }
@@ -141,61 +142,61 @@ public class ReactiveTfClient {
         return true;
     }
 
-    private CompletableFuture<TfsWorkspace> getReadyWorkspaceAsync(
-            @NotNull Path workspacePath,
+    private CompletableFuture<TfsCollection> getReadyCollectionAsync(
+            @NotNull URI serverUri,
             @NotNull AuthenticationInfo authenticationInfo) {
         TfsCredentials tfsCredentials = new TfsCredentials(
                 authenticationInfo.getUserName(),
                 new RdSecureString(authenticationInfo.getPassword()));
-        TfsWorkspaceDefinition workspaceDefinition = new TfsWorkspaceDefinition(
-                new TfsLocalPath(workspacePath.toString()),
-                tfsCredentials);
+        TfsCollectionDefinition workspaceDefinition = new TfsCollectionDefinition(serverUri, tfsCredentials);
 
-        return myConnection.getOrCreateWorkspaceAsync(workspaceDefinition)
+        return myConnection.getOrCreateCollectionAsync(workspaceDefinition)
                 .thenCompose(workspace -> myConnection.waitForReadyAsync(workspace)
                         .thenApply(unused -> workspace));
     }
 
-    private void notifyFileChange(VirtualFile file, TfsWorkspaceDefinition definition, TfsWorkspace workspace) {
-        Path workspacePath = Paths.get(definition.getLocalPath().getPath());
+    private void notifyFileChange(VirtualFile file, TfsCollection collection) {
         String filePathString = file.getPath();
         Path filePath = Paths.get(filePathString);
-        if (filePath.startsWith(workspacePath)) {
-            myConnection.invalidatePathAsync(workspace, new TfsLocalPath(filePathString));
-        }
+
+        List<TfsLocalPath> mappedPaths = collection.getMappedPaths().getValueOrNull();
+        if (mappedPaths == null) return;
+
+        if (mappedPaths.stream().anyMatch(p -> filePath.startsWith(p.getPath())))
+            myConnection.invalidatePathAsync(collection, new TfsLocalPath(filePathString));
     }
 
-    private void addFileSystemListener(Lifetime lifetime, TfsWorkspaceDefinition def, TfsWorkspace workspace) {
+    private void addFileSystemListener(Lifetime lifetime, TfsCollection workspace) {
         VirtualFileManager.getInstance().addVirtualFileListener(new VirtualFileListener() {
             @Override
             public void propertyChanged(@NotNull VirtualFilePropertyEvent event) {
-                notifyFileChange(event.getFile(), def, workspace);
+                notifyFileChange(event.getFile(), workspace);
             }
 
             @Override
             public void contentsChanged(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), def, workspace);
+                notifyFileChange(event.getFile(), workspace);
             }
 
             @Override
             public void fileCreated(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), def, workspace);
+                notifyFileChange(event.getFile(), workspace);
             }
 
             @Override
             public void fileDeleted(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), def, workspace);
+                notifyFileChange(event.getFile(), workspace);
             }
 
             @Override
             public void fileMoved(@NotNull VirtualFileMoveEvent event) {
-                notifyFileChange(event.getOldParent(), def, workspace);
-                notifyFileChange(event.getNewParent(), def, workspace);
+                notifyFileChange(event.getOldParent(), workspace);
+                notifyFileChange(event.getNewParent(), workspace);
             }
 
             @Override
             public void fileCopied(@NotNull VirtualFileCopyEvent event) {
-                notifyFileChange(event.getFile(), def, workspace);
+                notifyFileChange(event.getFile(), workspace);
             }
         }, toDisposable(lifetime));
     }
