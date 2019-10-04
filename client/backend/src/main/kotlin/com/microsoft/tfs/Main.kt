@@ -7,7 +7,6 @@ import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
-import com.jetbrains.rd.util.trace
 import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.jni.loader.NativeLoader
@@ -131,15 +130,15 @@ private fun initializeWorkspace(lifetime: Lifetime, definition: TfsWorkspaceDefi
     val client = TfsClient(lifetime, definition.localPath.toJavaPath(), credentials)
 
     workspace.getPendingChanges.set { paths ->
-        logger.trace { "Calculating pending changes for ${paths.size} paths" }
+        logger.info { "Calculating pending changes for ${paths.size} paths" }
         val result = client.status(paths.map { it.toJavaPath() }).flatMap(::toPendingChanges).toList()
-        logger.trace { "${result.size} changes detected" }
-        logger.trace { "First 10 changes: " + result.take(10).joinToString { it.serverItem } }
+        logger.info { "${result.size} changes detected" }
+        logger.info { "First 10 changes: " + result.take(10).joinToString { it.serverItem } }
         result
     }
 
     workspace.invalidatePath.set { path ->
-        logger.trace { "Invalidating path: $path" }
+        logger.info { "Invalidating path: $path" }
         client.invalidatePath(path.toJavaPath())
     }
 
