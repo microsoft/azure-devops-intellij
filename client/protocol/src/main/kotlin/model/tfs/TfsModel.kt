@@ -3,7 +3,8 @@ package model.tfs
 import com.jetbrains.rd.generator.nova.*
 import com.jetbrains.rd.generator.nova.PredefinedType.*
 
-object TfsRoot : Root() {
+@Suppress("unused")
+object TfsModel : Root() {
     private val VersionNumber = structdef {
         field("major", int)
         field("minor", int)
@@ -44,17 +45,20 @@ object TfsRoot : Root() {
         field("password", secureString)
     }
 
-    private val TfsWorkspaceDefinition = structdef {
-        field("localPath", TfsLocalPath)
+    private val TfsCollectionDefinition = structdef {
+        field("serverUri", uri)
         field("credentials", TfsCredentials)
     }
 
-    private val TfsWorkspace = classdef {
+    private val TfsCollection = classdef {
         property("isReady", bool)
-            .doc("Whether the workspace is ready to accept the method calls")
+            .doc("Whether the client is ready to accept method calls")
+
+        property("mappedPaths", immutableList(TfsLocalPath))
+            .doc("A list of path mappings for this collection")
 
         call("getPendingChanges", immutableList(TfsLocalPath), immutableList(TfsPendingChange))
-            .doc("Determines a set of the pending changes in the workspace")
+            .doc("Determines a set of the pending changes in the collection")
 
         call("invalidatePath", TfsLocalPath, void)
             .doc("Invalidates a path in the TFS cache")
@@ -69,6 +73,6 @@ object TfsRoot : Root() {
         signal("shutdown", void)
             .doc("Shuts down the application")
 
-        map("workspaces", TfsWorkspaceDefinition, TfsWorkspace)
+        map("collections", TfsCollectionDefinition, TfsCollection)
     }
 }
