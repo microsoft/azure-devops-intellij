@@ -1,6 +1,7 @@
 package com.microsoft.tfs
 
 import com.jetbrains.rd.framework.*
+import com.jetbrains.rd.util.Logger
 import com.jetbrains.rd.util.error
 import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
@@ -61,18 +62,17 @@ private fun runRdClient(portNumber: Int) {
     val logger = Logging.getLogger("Main")
     logger.info { "Application initializing" }
 
-    val appLifetimeDefinition = LifetimeDefinition()
-    startConsoleWatchdog(appLifetimeDefinition)
-
-    val appLifetime = appLifetimeDefinition.lifetime
+    val appLifetime = LifetimeDefinition()
     val scheduler = SingleThreadScheduler(appLifetime, "com.microsoft.tfs.MainScheduler")
     val socket = SocketWire.Client(appLifetime, scheduler, portNumber, "com.microsoft.tfs.MainSocketClient")
+    startSocketWatchdog(appLifetime, socket, logger)
+
     val protocol = Protocol(Serializers(), Identities(IdKind.Client), scheduler, socket, appLifetime)
     scheduler.queue {
         val model = TfsModel.create(appLifetime, protocol)
         model.shutdown.advise(appLifetime) {
             logger.info { "Shutting down per request" }
-            appLifetimeDefinition.terminate()
+            appLifetime.terminate()
         }
         model.version.set(protocolVersion)
         model.healthCheck.set { _ ->
@@ -88,18 +88,14 @@ private fun runRdClient(portNumber: Int) {
     waitTermination(appLifetime)
 }
 
-/**
- * Will terminate the lifetime when [System.out.checkError] returns true.
- */
-private fun startConsoleWatchdog(ld: LifetimeDefinition, msBetweenChecks: Long = 1000L) = Thread {
-    while (ld.isAlive) {
-        if (System.out.checkError()) {
-            Logging.getLogger("ConsoleWatchdog").info { "System.out.checkError returned true, terminating" }
+private fun startSocketWatchdog(ld: LifetimeDefinition, socket: SocketWire.Client, logger: Logger) {
+    socket.connected.change.advise(ld) { connected ->
+        if (!connected) {
+            logger.info { "Socket has been disconnected, terminating" }
             ld.terminate()
         }
-        Thread.sleep(msBetweenChecks)
     }
-}.start()
+}
 
 private fun waitTermination(lifetime: Lifetime, msBetweenChecks: Long = 1000L) {
     while (lifetime.isAlive) {
