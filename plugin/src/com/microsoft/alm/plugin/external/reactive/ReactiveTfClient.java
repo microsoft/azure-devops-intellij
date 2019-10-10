@@ -163,7 +163,10 @@ public class ReactiveTfClient {
         if (mappedPaths == null) return;
 
         if (mappedPaths.stream().anyMatch(p -> filePath.startsWith(p.getPath())))
-            myConnection.invalidatePathAsync(collection, new TfsLocalPath(filePathString));
+            myConnection.invalidatePathAsync(collection, new TfsLocalPath(filePathString)).exceptionally(ex -> {
+                ourLogger.error(ex);
+                return null;
+            });
     }
 
     private void addFileSystemListener(Lifetime lifetime, TfsCollection workspace) {
