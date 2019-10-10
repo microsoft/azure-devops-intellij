@@ -24,6 +24,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
 import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
@@ -33,10 +34,12 @@ import com.microsoft.tfs.model.connector.VersionNumber;
 import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -157,16 +160,22 @@ public class ReactiveTfClient {
 
     private void notifyFileChange(VirtualFile file, TfsCollection collection) {
         String filePathString = file.getPath();
-        Path filePath = Paths.get(filePathString);
+        if (TFVCUtil.isInServiceDirectory(filePathString)) {
+            return;
+        }
 
+        Path filePath = Paths.get(filePathString);
         List<TfsLocalPath> mappedPaths = collection.getMappedPaths().getValueOrNull();
         if (mappedPaths == null) return;
 
-        if (mappedPaths.stream().anyMatch(p -> filePath.startsWith(p.getPath())))
+        Optional<TfsLocalPath> mapping = mappedPaths.stream().filter(p -> filePath.startsWith(p.getPath())).findFirst();
+        if (mapping.isPresent()
+                && !TFVCUtil.hasIllegalDollarInAnyComponent(new File(mapping.get().getPath()), filePath.toFile())) {
             myConnection.invalidatePathAsync(collection, new TfsLocalPath(filePathString)).exceptionally(ex -> {
                 ourLogger.error(ex);
                 return null;
             });
+        }
     }
 
     private void addFileSystemListener(Lifetime lifetime, TfsCollection workspace) {
