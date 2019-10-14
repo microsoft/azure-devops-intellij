@@ -14,7 +14,7 @@ import java.nio.file.Path
 
 class ExternallyControlledPathWatcher(
     parentLifetime: Lifetime,
-    private val pathInvalidated: Signal<Path>,
+    private val pathsInvalidated: Signal<List<Path>>,
     private val workspaceWatcher: WorkspaceWatcher,
     private val pathToWatch: Path
 ) : PathWatcher {
@@ -47,7 +47,7 @@ class ExternallyControlledPathWatcher(
 
     override fun startWatching() {
         currentSessionLifetime = sessionLifetimes.next()
-        pathInvalidated.advise(currentSessionLifetime, ::invalidatePath)
+        pathsInvalidated.advise(currentSessionLifetime, ::invalidatePaths)
     }
 
     override fun stopWatching() {
@@ -69,10 +69,11 @@ class ExternallyControlledPathWatcher(
         }
     }
 
-    private fun invalidatePath(path: Path) {
-        if (path.startsWith(pathToWatch)) {
+    private fun invalidatePaths(paths: List<Path>) {
+        val pathsToInvalidate = paths.filter { it.startsWith(pathToWatch) }
+        if (pathsToInvalidate.isNotEmpty()) {
             synchronized(lock) {
-                changedPaths.add(path)
+                changedPaths.addAll(pathsToInvalidate)
             }
             workspaceWatcher.pathChanged(this)
         }

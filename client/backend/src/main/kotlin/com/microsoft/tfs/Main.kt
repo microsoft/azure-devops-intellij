@@ -130,9 +130,11 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         result
     }
 
-    collection.invalidatePath.set { path ->
-        logger.info { "Invalidating path: $path" }
-        client.invalidatePath(path.toJavaPath())
+    collection.invalidatePaths.set { paths ->
+        if (paths.isEmpty()) return@set
+
+        logger.info { "Invalidating ${paths.size} paths, first 10: ${paths.take(10).joinToString { it.path }}" }
+        client.invalidatePaths(paths.map { it.toJavaPath() })
     }
 
     client.workspaces.advise(lifetime) { workspaces ->
