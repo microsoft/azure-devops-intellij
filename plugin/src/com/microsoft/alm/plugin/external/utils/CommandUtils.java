@@ -52,7 +52,6 @@ import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -60,11 +59,9 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Helper for running commands
@@ -346,26 +343,6 @@ public class CommandUtils {
 
             throw e;
         }
-    }
-
-    /**
-     * Get the status for a list of files using the reactive TFS client.
-     */
-    public static CompletableFuture<List<PendingChange>> getStatusForFilesReactive(
-            @NotNull ServerContext context,
-            @NotNull ReactiveTfClient client,
-            @NotNull List<String> files) {
-        long startTime = System.nanoTime();
-        return client.getPendingChangesAsync(
-                context.getCollectionURI(),
-                context.getAuthenticationInfo(),
-                files.stream().map(p -> Paths.get(p))).whenComplete((result, ex) -> {
-            if (ex == null) {
-                long endTime = System.nanoTime();
-                double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
-                logger.info("Status command successfully executed in {} sec", seconds);
-            }
-        });
     }
 
     /**
