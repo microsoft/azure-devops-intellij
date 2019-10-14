@@ -10,42 +10,29 @@ import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileCopyEvent;
-import com.intellij.openapi.vfs.VirtualFileEvent;
-import com.intellij.openapi.vfs.VirtualFileListener;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.VirtualFileMoveEvent;
-import com.intellij.openapi.vfs.VirtualFilePropertyEvent;
 import com.jetbrains.rd.framework.impl.RdSecureString;
-import com.jetbrains.rd.util.lifetime.Lifetime;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
-import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
 import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.VersionNumber;
-import kotlin.Unit;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.microsoft.alm.plugin.external.reactive.Lifetimes.defineNestedLifetime;
-import static com.microsoft.alm.plugin.external.reactive.Lifetimes.toDisposable;
 
 /**
  * A model for the reactive TF client.
@@ -88,9 +75,7 @@ public class ReactiveTfClient {
     }
 
     public CompletableFuture<Void> startAsync() {
-        return myConnection.startAsync().thenAccept(unused -> {
-            initializeStartedConnection();
-        });
+        return myConnection.startAsync();
     }
 
     public CompletableFuture<Boolean> checkVersionAsync() {
@@ -108,6 +93,7 @@ public class ReactiveTfClient {
         List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
                 .collect(Collectors.toList());
         return getReadyCollectionAsync(serverUri, authenticationInfo)
+                .thenCompose(collection -> myConnection.invalidatePathsAsync(collection, paths).thenApply(v -> collection))
                 .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
                 .thenApply(changes -> changes.stream().map(pc -> new PendingChange(
                         pc.getServerItem(),
@@ -133,13 +119,6 @@ public class ReactiveTfClient {
         };
     }
 
-    private void initializeStartedConnection() {
-        myConnection.getModel().getCollections().view(myConnection.getLifetime(), (lifetime, def, collection) -> {
-            addFileSystemListener(lifetime, collection);
-            return Unit.INSTANCE;
-        });
-    }
-
     private boolean checkVersion(VersionNumber version) {
         // For now, any version is enough.
         return true;
@@ -156,60 +135,5 @@ public class ReactiveTfClient {
         return myConnection.getOrCreateCollectionAsync(workspaceDefinition)
                 .thenCompose(workspace -> myConnection.waitForReadyAsync(workspace)
                         .thenApply(unused -> workspace));
-    }
-
-    private void notifyFileChange(VirtualFile file, TfsCollection collection) {
-        String filePathString = file.getPath();
-        if (TFVCUtil.isInServiceDirectory(filePathString)) {
-            return;
-        }
-
-        Path filePath = Paths.get(filePathString);
-        List<TfsLocalPath> mappedPaths = collection.getMappedPaths().getValueOrNull();
-        if (mappedPaths == null) return;
-
-        Optional<TfsLocalPath> mapping = mappedPaths.stream().filter(p -> filePath.startsWith(p.getPath())).findFirst();
-        if (mapping.isPresent()
-                && !TFVCUtil.hasIllegalDollarInAnyComponent(new File(mapping.get().getPath()), filePath.toFile())) {
-            myConnection.invalidatePathAsync(collection, new TfsLocalPath(filePathString)).exceptionally(ex -> {
-                ourLogger.error(ex);
-                return null;
-            });
-        }
-    }
-
-    private void addFileSystemListener(Lifetime lifetime, TfsCollection workspace) {
-        VirtualFileManager.getInstance().addVirtualFileListener(new VirtualFileListener() {
-            @Override
-            public void propertyChanged(@NotNull VirtualFilePropertyEvent event) {
-                notifyFileChange(event.getFile(), workspace);
-            }
-
-            @Override
-            public void contentsChanged(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), workspace);
-            }
-
-            @Override
-            public void fileCreated(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), workspace);
-            }
-
-            @Override
-            public void fileDeleted(@NotNull VirtualFileEvent event) {
-                notifyFileChange(event.getFile(), workspace);
-            }
-
-            @Override
-            public void fileMoved(@NotNull VirtualFileMoveEvent event) {
-                notifyFileChange(event.getOldParent(), workspace);
-                notifyFileChange(event.getNewParent(), workspace);
-            }
-
-            @Override
-            public void fileCopied(@NotNull VirtualFileCopyEvent event) {
-                notifyFileChange(event.getFile(), workspace);
-            }
-        }, toDisposable(lifetime));
     }
 }

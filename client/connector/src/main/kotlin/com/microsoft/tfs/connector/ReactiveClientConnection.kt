@@ -76,9 +76,9 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.getPendingChanges.start(paths).pipeTo(lt, this)
         }
 
-    fun invalidatePathAsync(collection: TfsCollection, path: TfsLocalPath): CompletableFuture<Void> =
+    fun invalidatePathsAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletableFuture<Void> =
         queueFutureAsync { lt ->
-            collection.invalidatePath.start(path).pipeToVoid(lt, this)
+            collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {

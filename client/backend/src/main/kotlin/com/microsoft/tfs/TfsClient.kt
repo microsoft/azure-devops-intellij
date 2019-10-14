@@ -67,7 +67,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         return results
     }
 
-    fun invalidatePath(path: Path) {
-        pathWatcherFactory.pathInvalidated.fire(path)
+    fun invalidatePaths(paths: List<Path>) {
+        pathWatcherFactory.pathsInvalidated.fire(paths)
     }
 }

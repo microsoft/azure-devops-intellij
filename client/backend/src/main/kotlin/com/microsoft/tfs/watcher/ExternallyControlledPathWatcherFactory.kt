@@ -9,7 +9,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class ExternallyControlledPathWatcherFactory(private val lifetime: Lifetime) : PathWatcherFactory {
-    val pathInvalidated = Signal<Path>()
+    val pathsInvalidated = Signal<List<Path>>()
     override fun newPathWatcher(path: String, watcher: WorkspaceWatcher): PathWatcher =
-        ExternallyControlledPathWatcher(lifetime, pathInvalidated, watcher, Paths.get(path))
+        ExternallyControlledPathWatcher(lifetime, pathsInvalidated, watcher, Paths.get(path))
 }
