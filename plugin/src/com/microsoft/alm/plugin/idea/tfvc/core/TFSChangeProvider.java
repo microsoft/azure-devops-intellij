@@ -31,8 +31,6 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.reactive.ReactiveTfClientHolder;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
@@ -104,17 +102,7 @@ public class TFSChangeProvider implements ChangeProvider {
         List<PendingChange> changes;
         try {
             ServerContext serverContext = myVcs.getServerContext(true);
-            changes = ReactiveTfClientHolder.getInstance(project).getClient()
-                    .thenCompose(client -> CommandUtils.getStatusForFilesReactive(
-                            serverContext,
-                            client,
-                            pathsToProcess))
-                    .get();
-
-            // TODO: Make the old code optional
-//            changes = EULADialog.executeWithGuard(
-//                    project,
-//                    () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
+            changes = TfvcClient.getInstance(project).getStatusForFiles(serverContext, pathsToProcess);
         } catch (final Throwable t) {
             logger.error("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
             changes = Collections.emptyList();
