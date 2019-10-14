@@ -18,10 +18,4 @@ public class Lifetimes {
         });
         return lifetimeDefinition;
     }
-
-    public static Disposable toDisposable(Lifetime lifetime) {
-        Disposable disposable = () -> { };
-        lifetime.onTerminationIfAlive(() -> Disposer.dispose(disposable));
-        return disposable;
-    }
 }
