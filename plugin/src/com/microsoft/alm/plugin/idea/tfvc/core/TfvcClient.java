@@ -4,6 +4,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.services.PropertyService;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -20,9 +21,13 @@ import java.util.concurrent.ExecutionException;
  */
 public interface TfvcClient {
 
-    static TfvcClient getInstance(Project project) {
-        // TODO: Read the proper service name from the settings
-        return ServiceManager.getService(project, ReactiveTfvcClient.class);
+    @NotNull
+    static TfvcClient getInstance(@NotNull Project project) {
+        boolean useReactiveClient = PropertyService.CLIENT_TYPE_REACTIVE.equals(
+                PropertyService.getInstance().getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE));
+        return useReactiveClient
+                ? ServiceManager.getService(project, ReactiveTfvcClient.class)
+                : ServiceManager.getService(project, ClassicTfvcClient.class);
     }
 
     @NotNull

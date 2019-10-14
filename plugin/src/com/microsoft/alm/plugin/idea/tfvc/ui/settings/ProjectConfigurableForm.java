@@ -36,7 +36,6 @@ import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
-import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +45,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -75,6 +75,8 @@ public class ProjectConfigurableForm {
     private JPanel downloadLinkPane;
     private TextFieldWithBrowseButton reactiveExeField;
     private JButton testReactiveExeButton;
+    private JRadioButton classicClientRadioButton;
+    private JRadioButton reactiveClientRadioButton;
     private String originalTfLocation = StringUtils.EMPTY;
     private String originalReactiveClientLocation = StringUtils.EMPTY;
 
@@ -134,7 +136,7 @@ public class ProjectConfigurableForm {
                     downloadLink.setVisible(true);
                     return;
                 }
-                PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
+                PropertyService.getInstance().setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
                 try {
                     TfTool.checkVersion();
                     Messages.showInfoMessage(myContentPane, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_FOUND_EXE), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
@@ -256,7 +258,7 @@ public class ProjectConfigurableForm {
     }
 
     public void load() {
-        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        PropertyService propertyService = PropertyService.getInstance();
 
         String tfLocation = propertyService.getProperty(PropertyService.PROP_TF_HOME);
         tfLocation = StringUtils.isEmpty(tfLocation) ? TfTool.tryDetectTf() : tfLocation;
@@ -270,27 +272,45 @@ public class ProjectConfigurableForm {
         String reactiveClientLocation = propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH);
         originalReactiveClientLocation = reactiveClientLocation;
         reactiveExeField.setText(reactiveClientLocation);
+
+        String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
+        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);
+        classicClientRadioButton.setSelected(!isReactiveClientEnabled);
+        reactiveClientRadioButton.setSelected(isReactiveClientEnabled);
     }
 
     public void apply() {
-        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
         propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, getCurrentReactiveClientPath());
+
+        String clientType = reactiveClientRadioButton.isSelected()
+                ? PropertyService.CLIENT_TYPE_REACTIVE
+                : PropertyService.CLIENT_TYPE_CLASSIC;
+        propertyService.setProperty(PropertyService.PROP_TFVC_CLIENT_TYPE, clientType);
     }
 
     public boolean isModified() {
-        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        PropertyService propertyService = PropertyService.getInstance();
+        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(
+                propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE));
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
-                && Objects.equals(propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH), getCurrentReactiveClientPath()));
+                && Objects.equals(propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH), getCurrentReactiveClientPath())
+                && isReactiveClientEnabled == reactiveClientRadioButton.isSelected());
     }
 
     public void reset() {
-        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
+        PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
 
         propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, originalReactiveClientLocation);
         reactiveExeField.setText(originalReactiveClientLocation);
+
+        String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
+        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);
+        classicClientRadioButton.setSelected(!isReactiveClientEnabled);
+        reactiveClientRadioButton.setSelected(isReactiveClientEnabled);
     }
 
 
