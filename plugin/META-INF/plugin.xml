@@ -59,11 +59,8 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Fix an issue with changes never being detected on macOS (<a href="https://github.com/microsoft/azure-devops-intellij/issues/129">#129</a>)</li>
-        <li>Fix an error on pull request creation (<a href="https://github.com/microsoft/azure-devops-intellij/issues/234">#234</a>)</li>
-        <li>Improve authentication error messages for some cases (<a href="https://github.com/microsoft/azure-devops-intellij/pull/235">#235</a>)</li>
-        <li>Fix an error on trying to commit a locally deleted file (<a href="https://github.com/microsoft/azure-devops-intellij/issues/240">#240</a>)</li>
-        <li>Allow to proceed the operations after accepting the EULA (<a href="https://github.com/microsoft/azure-devops-intellij/issues/243">#243</a>)</li>
+        <li>Fix a "teamProjectName is empty" error message when editing a workspace that has the root folder mapped into it (<a href="https://github.com/microsoft/azure-devops-intellij/issues/250">#250</a>)</li>
+        <li>Raise the required IntelliJ Platform version to 181 (IDEA 2018.1)</li>
       </ul>
       <br />
     ]]>
