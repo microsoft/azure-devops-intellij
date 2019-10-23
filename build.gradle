@@ -114,6 +114,14 @@ project(":plugin") {
         plugins = ['git4idea']
         pluginName = 'com.microsoft.vso.idea'
         updateSinceUntilBuild = false
+
+        // buildPlugin and runIde should depend on the reactive backend
+        def reactiveBackend = file("../client/backend/build/install")
+        task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
+            from reactiveBackend
+            into file("$buildDir/idea-sandbox/plugins/com.microsoft.vso.idea")
+        }
+        prepareSandbox.finalizedBy(prepareBackendSandbox)
     }
 
     patchPluginXml {
