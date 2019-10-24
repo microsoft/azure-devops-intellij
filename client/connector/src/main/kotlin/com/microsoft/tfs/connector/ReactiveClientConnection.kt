@@ -50,18 +50,6 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             }
         }
 
-    fun getVersionAsync(): CompletableFuture<VersionNumber> =
-        queueFutureAsync { lt ->
-            model.version.advise(lt) {
-                complete(it)
-            }
-        }
-
-    fun healthCheckAsync(): CompletableFuture<String?> =
-        queueFutureAsync { lt ->
-            model.healthCheck.start(Unit).pipeTo(lt, this)
-        }
-
     fun getOrCreateCollectionAsync(definition: TfsCollectionDefinition): CompletableFuture<TfsCollection> =
         queueFutureAsync {
             complete(model.collections[definition] ?: TfsCollection().apply { model.collections[definition] = this })

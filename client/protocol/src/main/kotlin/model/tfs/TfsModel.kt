@@ -8,11 +8,6 @@ import com.jetbrains.rd.generator.nova.PredefinedType.*
 
 @Suppress("unused")
 object TfsModel : Root() {
-    private val VersionNumber = structdef {
-        field("major", int)
-        field("minor", int)
-    }
-
     private val TfsLocalPath = structdef {
         field("path", string)
     }
@@ -68,11 +63,6 @@ object TfsModel : Root() {
     }
 
     init {
-        property("version", VersionNumber)
-
-        call("healthCheck", void, string.nullable)
-            .doc("Performs a health check, returns optional error message")
-
         signal("shutdown", void)
             .doc("Shuts down the application")
 
