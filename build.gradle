@@ -119,7 +119,7 @@ project(":plugin") {
         def reactiveBackend = file("../client/backend/build/install")
         task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
             from reactiveBackend
-            into file("$buildDir/idea-sandbox/plugins/com.microsoft.vso.idea")
+            into file("${prepareSandbox.destinationDir}/${prepareSandbox.pluginName}")
         }
         prepareSandbox.finalizedBy(prepareBackendSandbox)
     }
