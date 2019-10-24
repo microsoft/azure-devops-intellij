@@ -5,25 +5,23 @@ package com.microsoft.tfs
 
 import com.jetbrains.rd.framework.*
 import com.jetbrains.rd.util.Logger
-import com.jetbrains.rd.util.error
 import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
-import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.jni.loader.NativeLoader
-import com.microsoft.tfs.model.host.*
+import com.microsoft.tfs.model.host.TfsCollection
+import com.microsoft.tfs.model.host.TfsCollectionDefinition
+import com.microsoft.tfs.model.host.TfsLocalPath
+import com.microsoft.tfs.model.host.TfsModel
 import org.apache.log4j.Level
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
-val protocolVersion = VersionNumber(1, 0)
-
 fun main(args: Array<String>) {
     println("Reactive TFS Client version 1.0")
-    println("Protocol version: ${protocolVersion.major}.${protocolVersion.minor}")
 
     val port = args.getOrNull(0)?.toIntOrNull()
     if (port == null) {
@@ -77,12 +75,6 @@ private fun runRdClient(portNumber: Int) {
             logger.info { "Shutting down per request" }
             appLifetime.terminate()
         }
-        model.version.set(protocolVersion)
-        model.healthCheck.set { _ ->
-            val result = healthCheck()
-            logger.info { "Health check performed, result: $result" }
-            result
-        }
 
         model.collections.view(appLifetime, ::initializeCollection)
     }
@@ -104,18 +96,6 @@ private fun waitTermination(lifetime: Lifetime, msBetweenChecks: Long = 1000L) {
     while (lifetime.isAlive) {
         Thread.sleep(msBetweenChecks)
     }
-}
-
-private fun healthCheck(): String? = try {
-    // Accessing the DefaultPersistenceStoreProvider will trigger loading native library and throw an exception in
-    // case the libraries aren't set up properly
-    val provider = DefaultPersistenceStoreProvider.INSTANCE
-    if (provider == null)
-        "Cannot create DefaultPersistenceStoreProvider"
-    else null
-} catch (t: Throwable) {
-    Logging.getLogger("Main").error(t)
-    t.message
 }
 
 private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDefinition, collection: TfsCollection) {

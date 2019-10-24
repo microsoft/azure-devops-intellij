@@ -24,7 +24,6 @@ import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
-import com.microsoft.tfs.model.connector.VersionNumber;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
@@ -81,14 +80,6 @@ public class ReactiveTfClient {
         return myConnection.startAsync();
     }
 
-    public CompletableFuture<Boolean> checkVersionAsync() {
-        return myConnection.getVersionAsync().thenApply(this::checkVersion);
-    }
-
-    public CompletableFuture<String> healthCheckAsync() {
-        return myConnection.healthCheckAsync();
-    }
-
     public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
             URI serverUri,
             AuthenticationInfo authenticationInfo,
@@ -120,11 +111,6 @@ public class ReactiveTfClient {
                 connection.terminate();
             }
         };
-    }
-
-    private boolean checkVersion(VersionNumber version) {
-        // For now, any version is enough.
-        return true;
     }
 
     private CompletableFuture<TfsCollection> getReadyCollectionAsync(

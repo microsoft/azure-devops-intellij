@@ -52,13 +52,6 @@ public class ReactiveTfClientHolder {
                 "bin",
                 SystemInfo.isWindows ? "backend.bat" : "backend");
         ReactiveTfClient client = ReactiveTfClient.create(myProject, clientPath);
-        return client.startAsync()
-                .thenCompose(unused -> client.checkVersionAsync().thenAccept(isOk -> {
-                    if (!isOk) throw new RuntimeException("Client version check failed");
-                }))
-                .thenCompose(unused -> client.healthCheckAsync().thenAccept(errorMessage -> {
-                    if (errorMessage != null) throw new RuntimeException("Client health check failed: " + errorMessage);
-                }))
-                .thenApply(unused -> client);
+        return client.startAsync().thenApply(unused -> client);
     }
 }
