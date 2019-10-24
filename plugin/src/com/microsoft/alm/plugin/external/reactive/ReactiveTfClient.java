@@ -51,15 +51,15 @@ public class ReactiveTfClient {
         myConnection = connection;
     }
 
-    public static ReactiveTfClient create(Project project, String clientPath) throws ExecutionException {
+    public static ReactiveTfClient create(Project project, Path clientPath) throws ExecutionException {
         SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(project), "ReactiveTfClient Scheduler");
         ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
             Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
-            Path clientHomeDir = Paths.get(clientPath).getParent().getParent();
+            Path clientHomeDir = clientPath.getParent().getParent();
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
                     new GeneralCommandLine(
-                            clientPath,
+                            clientPath.toString(),
                             Integer.toString(connection.getPort()),
                             logDirectory.toString(),
                             REACTIVE_CLIENT_LOG_LEVEL)

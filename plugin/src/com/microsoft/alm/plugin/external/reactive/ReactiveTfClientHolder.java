@@ -4,11 +4,15 @@
 package com.microsoft.alm.plugin.external.reactive;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.services.PluginServiceProvider;
-import com.microsoft.alm.plugin.services.PropertyService;
+import com.intellij.openapi.util.SystemInfo;
+import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class ReactiveTfClientHolder {
@@ -42,8 +46,11 @@ public class ReactiveTfClientHolder {
     }
 
     private CompletableFuture<ReactiveTfClient> createNewClientAsync() throws ExecutionException {
-        PropertyService propertyService = PluginServiceProvider.getInstance().getPropertyService();
-        String clientPath = propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH);
+        Path clientPath = Paths.get(
+                Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
+                "backend",
+                "bin",
+                SystemInfo.isWindows ? "backend.bat" : "backend");
         ReactiveTfClient client = ReactiveTfClient.create(myProject, clientPath);
         return client.startAsync()
                 .thenCompose(unused -> client.checkVersionAsync().thenAccept(isOk -> {
