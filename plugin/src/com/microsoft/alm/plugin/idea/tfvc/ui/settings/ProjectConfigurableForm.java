@@ -50,6 +50,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -157,7 +158,7 @@ public class ProjectConfigurableForm {
 
         testReactiveExeButton.addActionListener(e -> {
             try {
-                ReactiveTfClient client = ReactiveTfClient.create(myProject, getCurrentReactiveClientPath());
+                ReactiveTfClient client = ReactiveTfClient.create(myProject, Paths.get(getCurrentReactiveClientPath()));
                 client.startAsync().thenCompose(v -> client.checkVersionAsync().thenCompose(isOk -> {
                     if (isOk) {
                         return client.healthCheckAsync().thenAccept(errorMessage -> {
