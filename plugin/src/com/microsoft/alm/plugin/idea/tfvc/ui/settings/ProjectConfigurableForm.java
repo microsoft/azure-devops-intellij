@@ -29,16 +29,13 @@ import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
-import com.intellij.util.ui.UIUtil;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
-import com.microsoft.alm.plugin.external.reactive.ReactiveTfClient;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -46,13 +43,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 public class ProjectConfigurableForm {
     private static Logger ourLogger = Logger.getInstance(ProjectConfigurableForm.class);
@@ -74,12 +67,9 @@ public class ProjectConfigurableForm {
     private JLabel pathLabel;
     private HyperlinkLabel downloadLink;
     private JPanel downloadLinkPane;
-    private TextFieldWithBrowseButton reactiveExeField;
-    private JButton testReactiveExeButton;
     private JRadioButton classicClientRadioButton;
     private JRadioButton reactiveClientRadioButton;
     private String originalTfLocation = StringUtils.EMPTY;
-    private String originalReactiveClientLocation = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
         myProject = project;
@@ -111,11 +101,6 @@ public class ProjectConfigurableForm {
                                 return virtualFile.getName().equalsIgnoreCase(SystemInfo.isWindows ? "tf.cmd" : "tf");
                             }
                         })
-        );
-        reactiveExeField.addBrowseFolderListener(
-                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_TITLE),
-                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_DESCRIPTION), project,
-                new FileChooserDescriptor(true, false, false ,false, false, false)
         );
 
         testExeButton.addActionListener(new ActionListener() {
@@ -153,50 +138,6 @@ public class ProjectConfigurableForm {
                     downloadLinkPane.setVisible(true);
                 }
 
-            }
-        });
-
-        testReactiveExeButton.addActionListener(e -> {
-            try {
-                ReactiveTfClient client = ReactiveTfClient.create(myProject, Paths.get(getCurrentReactiveClientPath()));
-                client.startAsync().thenCompose(v -> client.checkVersionAsync().thenCompose(isOk -> {
-                    if (isOk) {
-                        return client.healthCheckAsync().thenAccept(errorMessage -> {
-                            if (errorMessage == null) {
-                                showInfoMessageAsync(
-                                        myContentPane,
-                                        TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VALID_FOUND),
-                                        TfPluginBundle.message(
-                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
-                            } else {
-                                ourLogger.warn(errorMessage);
-                                showInfoMessageAsync(
-                                        myContentPane,
-                                        TfPluginBundle.message(
-                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_HEALTH_CHECK_ERROR,
-                                                errorMessage),
-                                        TfPluginBundle.message(
-                                                TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
-                            }
-                        });
-                    } else {
-                        showInfoMessageAsync(
-                                myContentPane,
-                                TfPluginBundle.message(TfPluginBundle.KEY_REACTIVE_CLIENT_VERSION_TOO_LOW),
-                                TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
-                        return CompletableFuture.completedFuture(null);
-                    }
-                })).exceptionally(ex -> {
-                    ourLogger.error(ex);
-                    showInfoMessageAsync(
-                            myContentPane,
-                            LocalizationServiceImpl.getInstance().getExceptionMessage(ex),
-                            TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
-                    return null;
-                });
-            } catch (Throwable ex) {
-                ourLogger.error(ex);
-                Messages.showInfoMessage(myContentPane, LocalizationServiceImpl.getInstance().getExceptionMessage(ex), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_REACTIVE_CLIENT_VERSION_WARNING_TITLE));
             }
         });
 
@@ -241,10 +182,6 @@ public class ProjectConfigurableForm {
 //        }
 //    }
 
-    private static void showInfoMessageAsync(Component component, String message, @NotNull String title) {
-        UIUtil.invokeLaterIfNeeded(() -> Messages.showInfoMessage(component, message, title));
-    }
-
     public JComponent getContentPane() {
         return myContentPane;
     }
@@ -252,10 +189,6 @@ public class ProjectConfigurableForm {
     @VisibleForTesting
     protected String getCurrentExecutablePath() {
         return tfExeField.getText().trim();
-    }
-
-    private String getCurrentReactiveClientPath() {
-        return reactiveExeField.getText().trim();
     }
 
     public void load() {
@@ -270,10 +203,6 @@ public class ProjectConfigurableForm {
         }
         tfExeField.setText(originalTfLocation);
 
-        String reactiveClientLocation = propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH);
-        originalReactiveClientLocation = reactiveClientLocation;
-        reactiveExeField.setText(reactiveClientLocation);
-
         String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
         boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);
         classicClientRadioButton.setSelected(!isReactiveClientEnabled);
@@ -283,7 +212,6 @@ public class ProjectConfigurableForm {
     public void apply() {
         PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
-        propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, getCurrentReactiveClientPath());
 
         String clientType = reactiveClientRadioButton.isSelected()
                 ? PropertyService.CLIENT_TYPE_REACTIVE
@@ -296,7 +224,6 @@ public class ProjectConfigurableForm {
         boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(
                 propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE));
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
-                && Objects.equals(propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH), getCurrentReactiveClientPath())
                 && isReactiveClientEnabled == reactiveClientRadioButton.isSelected());
     }
 
@@ -304,9 +231,6 @@ public class ProjectConfigurableForm {
         PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
-
-        propertyService.setProperty(PropertyService.PROP_REACTIVE_CLIENT_PATH, originalReactiveClientLocation);
-        reactiveExeField.setText(originalReactiveClientLocation);
 
         String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
         boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);

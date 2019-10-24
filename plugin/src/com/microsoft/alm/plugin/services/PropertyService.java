@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 public interface PropertyService {
     String PROP_LAST_CONTEXT_KEY = "lastContextKey";
-    String PROP_REACTIVE_CLIENT_PATH = "reactiveClientPath";
     String PROP_TFVC_CLIENT_TYPE = "tfvcClientType";
     String PROP_REPO_ROOT = "repoRoot";
     String PROP_TF_HOME = "tfHome";
