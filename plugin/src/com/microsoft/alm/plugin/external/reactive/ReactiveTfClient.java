@@ -3,16 +3,14 @@
 
 package com.microsoft.alm.plugin.external.reactive;
 
+import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.process.OSProcessHandler;
-import com.intellij.execution.process.ProcessAdapter;
-import com.intellij.execution.process.ProcessEvent;
-import com.intellij.execution.process.ProcessHandler;
-import com.intellij.execution.process.ProcessListener;
+import com.intellij.execution.process.*;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
@@ -29,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -57,12 +57,7 @@ public class ReactiveTfClient {
             Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
             Path clientHomeDir = clientPath.getParent().getParent();
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
-                    new GeneralCommandLine(
-                            clientPath.toString(),
-                            Integer.toString(connection.getPort()),
-                            logDirectory.toString(),
-                            REACTIVE_CLIENT_LOG_LEVEL)
-                            .withWorkDirectory(clientHomeDir.toString()));
+                    getClientCommandLine(clientPath, connection.getPort(), logDirectory, clientHomeDir));
             ProcessHandler processHandler = new OSProcessHandler(commandLine);
             connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);
 
@@ -74,6 +69,25 @@ public class ReactiveTfClient {
             connection.terminate();
             throw t;
         }
+    }
+
+    @NotNull
+    private static GeneralCommandLine getClientCommandLine(
+            Path clientExecutable,
+            int protocolPort,
+            Path logDirectory,
+            Path clientHome) {
+        ArrayList<String> command = Lists.newArrayList(
+                clientExecutable.toString(),
+                Integer.toString(protocolPort),
+                logDirectory.toString(),
+                REACTIVE_CLIENT_LOG_LEVEL);
+        if (SystemInfo.isUnix) {
+            // Client executable is a shell script on Unix-like operating systems
+            command.addAll(0, Arrays.asList("/usr/bin/env", "sh"));
+        }
+
+        return new GeneralCommandLine(command).withWorkDirectory(clientHome.toString());
     }
 
     public CompletableFuture<Void> startAsync() {
