@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.external.reactive;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
@@ -18,7 +19,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class ReactiveTfvcClientHolder {
+public class ReactiveTfvcClientHolder implements Disposable {
 
     public static ReactiveTfvcClientHolder getInstance(Project project) {
         return ServiceManager.getService(project, ReactiveTfvcClientHolder.class);
@@ -53,6 +54,11 @@ public class ReactiveTfvcClientHolder {
 
             return myClient;
         }
+    }
+
+    @Override
+    public void dispose() {
+        destroyClientIfExists();
     }
 
     private void destroyClientIfExists() {
