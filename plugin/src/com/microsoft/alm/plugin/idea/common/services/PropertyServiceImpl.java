@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.services;
 
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
@@ -44,16 +45,18 @@ public class PropertyServiceImpl implements PropertyService {
             map.put(propertyName, value);
         }
 
-        SettingsChangedNotifier settingsChangedNotifier = ApplicationManager.getApplication().getMessageBus()
+        Application application = ApplicationManager.getApplication();
+        if (application == null) // can happen in the unit tests
+            return;
+
+        SettingsChangedNotifier settingsChangedNotifier = application.getMessageBus()
                 .syncPublisher(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC);
         settingsChangedNotifier.afterSettingsChanged(propertyName);
     }
 
     @Override
     public void removeProperty(final String propertyName) {
-        if (map.containsKey(propertyName)) {
-            map.remove(propertyName);
-        }
+        map.remove(propertyName);
     }
 
     public Map<String, String> getProperties() {
