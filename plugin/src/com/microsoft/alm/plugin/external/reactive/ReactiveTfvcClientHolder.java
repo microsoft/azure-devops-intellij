@@ -5,10 +5,13 @@ package com.microsoft.alm.plugin.external.reactive;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
+import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.services.PropertyService;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,11 +25,18 @@ public class ReactiveTfvcClientHolder {
     }
 
     private final Object myClientLock = new Object();
-    private Project myProject;
-    private CompletableFuture<ReactiveTfvcClientHost> myClient; // TODO: Clear cached instance on settings change
+    private final Project myProject;
+    private CompletableFuture<ReactiveTfvcClientHost> myClient;
 
     public ReactiveTfvcClientHolder(Project myProject) {
         this.myProject = myProject;
+        ApplicationManager.getApplication().getMessageBus()
+                .connect(myProject)
+                .subscribe(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC, propertyKey -> {
+                    if (propertyKey.equals(PropertyService.PROP_TFVC_CLIENT_TYPE)) {
+                        destroyClientIfExists();
+                    }
+                });
     }
 
     public CompletableFuture<ReactiveTfvcClientHost> getClient() {
@@ -42,6 +52,16 @@ public class ReactiveTfvcClientHolder {
             }
 
             return myClient;
+        }
+    }
+
+    private void destroyClientIfExists() {
+        synchronized (myClientLock) {
+            if (myClient == null)
+                return;
+
+            myClient.thenAccept(ReactiveTfvcClientHost::terminate);
+            myClient = null;
         }
     }
 
