@@ -75,6 +75,10 @@ public class ReactiveTfvcClientHost {
         }
     }
 
+    public void terminate() {
+        myConnection.terminate();
+    }
+
     @NotNull
     private static GeneralCommandLine getClientCommandLine(
             Path clientExecutable,

@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.idea.common.services;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.services.PropertyService;
 
@@ -14,7 +16,7 @@ public class PropertyServiceImpl implements PropertyService {
     private Map<String, String> map;
 
     private static class Holder {
-        private static PropertyServiceImpl INSTANCE = new PropertyServiceImpl();
+        private static final PropertyServiceImpl INSTANCE = new PropertyServiceImpl();
     }
 
     /**
@@ -41,6 +43,10 @@ public class PropertyServiceImpl implements PropertyService {
         } else {
             map.put(propertyName, value);
         }
+
+        SettingsChangedNotifier settingsChangedNotifier = ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC);
+        settingsChangedNotifier.afterSettingsChanged(propertyName);
     }
 
     @Override
