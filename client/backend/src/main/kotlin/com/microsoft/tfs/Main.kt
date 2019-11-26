@@ -11,7 +11,6 @@ import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
-import com.microsoft.tfs.jni.loader.NativeLoader
 import com.microsoft.tfs.model.host.TfsCollection
 import com.microsoft.tfs.model.host.TfsCollectionDefinition
 import com.microsoft.tfs.model.host.TfsLocalPath
@@ -46,17 +45,6 @@ private fun initializeApp(args: Array<String>) {
     val logDirectory = if (args.size > 1) Paths.get(args[1]) else null
     val logLevel = if (args.size > 2) Level.toLevel(args[2]) else Level.INFO
     Logging.initialize(logDirectory, logLevel)
-
-    if (System.getProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY) == null) {
-        val possibleNativeLibsPath = Paths.get("nativeLibs")
-        if (possibleNativeLibsPath.toFile().isDirectory)
-            System.setProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY, possibleNativeLibsPath.toString())
-    }
-
-    Logging.getLogger("Main").info {
-        "${NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY}: " +
-            System.getProperty(NativeLoader.NATIVE_LIBRARY_BASE_DIRECTORY_PROPERTY)
-    }
 }
 
 private fun runRdClient(portNumber: Int) {

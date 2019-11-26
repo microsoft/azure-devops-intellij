@@ -14,7 +14,7 @@ ext {
 }
 
 task downloadArchive(type: Download) {
-    src "https://github.com/microsoft/team-explorer-everywhere/releases/download/$sdkVersion/TFS-SDK-${sdkVersion}.zip"
+    src "https://ci.appveyor.com/api/buildjobs/n47diettm0kvax1g/artifacts/build%2Foutput%2Fbin%2Fsdk%2FTFS-SDK-14.134.0.zip"
     dest sdkArchiveLocation
     overwrite false
 }
@@ -22,7 +22,7 @@ task downloadArchive(type: Download) {
 task verifyArchive(type: Verify, dependsOn: downloadArchive) {
     src sdkArchiveLocation
     algorithm "SHA-256"
-    checksum "A7CD155475C034CB9A858B9497C473394B08D77DE90AB0A0325CF97F9ABA2055"
+    checksum "24411accb563560d31b14139676dba2ba696a78e8e9396838169a256c25db077"
 }
 
 task unpack(type: Copy, dependsOn: [downloadArchive, verifyArchive]) {
