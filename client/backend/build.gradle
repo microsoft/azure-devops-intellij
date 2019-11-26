@@ -25,27 +25,6 @@ mainClassName = "com.microsoft.tfs.MainKt"
 
 evaluationDependsOnChildren() // to get properties of tfs-sdk subproject
 
-task nativeLibs(type: Copy, dependsOn: ["tfs-sdk:downloadArchive", "tfs-sdk:verifyArchive"]) {
-    def nativeLibs = file("$buildDir/nativeLibs")
-
-    def tfsSdk = project("tfs-sdk")
-    def sdkVersion = tfsSdk.ext.sdkVersion
-    def sdkArchiveLocation = tfsSdk.ext.sdkArchiveLocation
-    from(zipTree(sdkArchiveLocation)) {
-        include "TFS-SDK-$sdkVersion/redist/native/linux/arm/*"
-        include "TFS-SDK-$sdkVersion/redist/native/linux/x86/*"
-        include "TFS-SDK-$sdkVersion/redist/native/linux/x86_64/*"
-        include "TFS-SDK-$sdkVersion/redist/native/macosx/*"
-        include "TFS-SDK-$sdkVersion/redist/native/win32/x86/*"
-        include "TFS-SDK-$sdkVersion/redist/native/win32/x86_64/*"
-        eachFile { fcd ->
-            fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(3))
-        }
-        includeEmptyDirs = false
-    }
-    into nativeLibs
-}
-
 task docs(type: Copy, dependsOn: ["tfs-sdk:downloadArchive", "tfs-sdk:verifyArchive"]) {
     def docs = file("$buildDir/docs")
 
@@ -66,9 +45,6 @@ task docs(type: Copy, dependsOn: ["tfs-sdk:downloadArchive", "tfs-sdk:verifyArch
 distributions {
     main {
         contents {
-            from(nativeLibs) {
-                into "nativeLibs"
-            }
             from(docs)
         }
     }
