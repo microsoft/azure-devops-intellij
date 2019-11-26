@@ -6,7 +6,11 @@ package com.microsoft.alm.plugin.external.reactive;
 import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.process.*;
+import com.intellij.execution.process.OSProcessHandler;
+import com.intellij.execution.process.ProcessAdapter;
+import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessListener;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -37,20 +41,20 @@ import java.util.stream.Stream;
 import static com.microsoft.alm.plugin.external.reactive.Lifetimes.defineNestedLifetime;
 
 /**
- * A model for the reactive TF client.
+ * A model for the reactive TFVC client.
  */
-public class ReactiveTfClient {
+public class ReactiveTfvcClientHost {
     private static final String REACTIVE_CLIENT_LOG_LEVEL = "INFO";
 
-    private static final Logger ourLogger = Logger.getInstance(ReactiveTfClient.class);
+    private static final Logger ourLogger = Logger.getInstance(ReactiveTfvcClientHost.class);
 
     private final ReactiveClientConnection myConnection;
 
-    public ReactiveTfClient(ReactiveClientConnection connection) {
+    public ReactiveTfvcClientHost(ReactiveClientConnection connection) {
         myConnection = connection;
     }
 
-    public static ReactiveTfClient create(Project project, Path clientPath) throws ExecutionException {
+    public static ReactiveTfvcClientHost create(Project project, Path clientPath) throws ExecutionException {
         SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(project), "ReactiveTfClient Scheduler");
         ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
@@ -64,7 +68,7 @@ public class ReactiveTfClient {
             processHandler.addProcessListener(createProcessListener(connection));
             processHandler.startNotify();
 
-            return new ReactiveTfClient(connection);
+            return new ReactiveTfvcClientHost(connection);
         } catch (Throwable t) {
             connection.terminate();
             throw t;

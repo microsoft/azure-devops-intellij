@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.reactive.ReactiveTfClientHolder;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
@@ -44,7 +44,7 @@ public class ReactiveTfvcClient implements TfvcClient {
         AuthenticationInfo authenticationInfo = serverContext.getAuthenticationInfo();
         Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
 
-        return ReactiveTfClientHolder.getInstance(myProject).getClient()
+        return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
                 .thenCompose(client -> client.getPendingChangesAsync(collectionUri, authenticationInfo, paths))
                 .whenComplete((result, ex) -> {
                     if (ex == null) {

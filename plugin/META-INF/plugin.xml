@@ -91,7 +91,7 @@
 
         <fileTypeFactory implementation="com.microsoft.alm.plugin.idea.tfvc.tfignore.TfIgnoreFileTypeFactory"/>
 
-        <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfClientHolder" />
+        <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder" />
         <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient" />
         <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ReactiveTfvcClient" />
     </extensions>

@@ -15,27 +15,27 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class ReactiveTfClientHolder {
+public class ReactiveTfvcClientHolder {
 
-    public static ReactiveTfClientHolder getInstance(Project project) {
-        return ServiceManager.getService(project, ReactiveTfClientHolder.class);
+    public static ReactiveTfvcClientHolder getInstance(Project project) {
+        return ServiceManager.getService(project, ReactiveTfvcClientHolder.class);
     }
 
     private final Object myClientLock = new Object();
     private Project myProject;
-    private CompletableFuture<ReactiveTfClient> myClient; // TODO: Clear cached instance on settings change
+    private CompletableFuture<ReactiveTfvcClientHost> myClient; // TODO: Clear cached instance on settings change
 
-    public ReactiveTfClientHolder(Project myProject) {
+    public ReactiveTfvcClientHolder(Project myProject) {
         this.myProject = myProject;
     }
 
-    public CompletableFuture<ReactiveTfClient> getClient() {
+    public CompletableFuture<ReactiveTfvcClientHost> getClient() {
         synchronized (myClientLock) {
             if (myClient == null || myClient.isCompletedExceptionally() || myClient.isCancelled()) {
                 try {
                     return myClient = createNewClientAsync();
                 } catch (Throwable t) {
-                    CompletableFuture<ReactiveTfClient> result = new CompletableFuture<>();
+                    CompletableFuture<ReactiveTfvcClientHost> result = new CompletableFuture<>();
                     result.completeExceptionally(t);
                     return result;
                 }
@@ -45,13 +45,13 @@ public class ReactiveTfClientHolder {
         }
     }
 
-    private CompletableFuture<ReactiveTfClient> createNewClientAsync() throws ExecutionException {
+    private CompletableFuture<ReactiveTfvcClientHost> createNewClientAsync() throws ExecutionException {
         Path clientPath = Paths.get(
                 Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
                 "backend",
                 "bin",
                 SystemInfo.isWindows ? "backend.bat" : "backend");
-        ReactiveTfClient client = ReactiveTfClient.create(myProject, clientPath);
+        ReactiveTfvcClientHost client = ReactiveTfvcClientHost.create(myProject, clientPath);
         return client.startAsync().thenApply(unused -> client);
     }
 }
