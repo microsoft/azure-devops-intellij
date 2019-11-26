@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.services.PropertyService;
 
 import java.nio.file.Path;
@@ -23,6 +24,12 @@ public class ReactiveTfvcClientHolder implements Disposable {
 
     public static ReactiveTfvcClientHolder getInstance(Project project) {
         return ServiceManager.getService(project, ReactiveTfvcClientHolder.class);
+    }
+
+    public static Path getClientBackendPath() {
+        return Paths.get(
+                Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
+                "backend");
     }
 
     private final Object myClientLock = new Object();
@@ -41,6 +48,8 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     public CompletableFuture<ReactiveTfvcClientHost> getClient() {
+        ensureEulaAccepted();
+
         synchronized (myClientLock) {
             if (myClient == null || myClient.isCompletedExceptionally() || myClient.isCancelled()) {
                 try {
@@ -61,6 +70,17 @@ public class ReactiveTfvcClientHolder implements Disposable {
         destroyClientIfExists();
     }
 
+    private void ensureEulaAccepted() {
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            PropertyService propertyService = PropertyService.getInstance();
+            String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
+            if (!"true".equals(eulaAccepted)) {
+                if (!EULADialog.forTfsSdk(myProject).showAndGet())
+                    throw new RuntimeException("EULA acceptance is required to use the reactive TF client");
+            }
+        });
+    }
+
     private void destroyClientIfExists() {
         synchronized (myClientLock) {
             if (myClient == null)
@@ -72,11 +92,9 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     private CompletableFuture<ReactiveTfvcClientHost> createNewClientAsync() throws ExecutionException {
-        Path clientPath = Paths.get(
-                Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
-                "backend",
-                "bin",
-                SystemInfo.isWindows ? "backend.bat" : "backend");
+        Path clientPath = getClientBackendPath()
+                .resolve("bin")
+                .resolve(SystemInfo.isWindows ? "backend.bat" : "backend");
         ReactiveTfvcClientHost client = ReactiveTfvcClientHost.create(myProject, clientPath);
         return client.startAsync().thenApply(unused -> client);
     }

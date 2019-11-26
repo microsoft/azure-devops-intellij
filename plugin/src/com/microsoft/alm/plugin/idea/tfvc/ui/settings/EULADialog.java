@@ -11,19 +11,24 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.commands.ToolEulaNotAcceptedException;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
+import com.microsoft.alm.plugin.services.PropertyService;
 import kotlin.text.Charsets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -35,24 +40,46 @@ public class EULADialog extends DialogWrapper {
     private final JBScrollPane myScrollPane;
     private final Boolean myEulaTextFound;
 
-    private EULADialog(@Nullable Project project) {
+    private interface OnEulaAccepted {
+        void run() throws Exception;
+    }
+
+    private final OnEulaAccepted onAccept;
+
+    private EULADialog(@Nullable Project project, @NotNull String title, @Nullable String eulaText, boolean isPlainText, OnEulaAccepted onAccept) {
         super(project);
-        String eulaText = getEULAText();
+        this.onAccept = onAccept;
         myEulaTextFound = eulaText != null;
 
-        JTextArea textArea = new JTextArea();
-        textArea.setText(eulaText);
-        textArea.setMinimumSize(null);
-        textArea.setEditable(false);
-        textArea.setCaretPosition(0);
-        textArea.setBackground(null);
-        textArea.setBorder(JBUI.Borders.empty());
+        JComponent component;
+        if (isPlainText) {
+            JTextArea textArea = new JTextArea();
+            textArea.setText(eulaText);
+            textArea.setMinimumSize(null);
+            textArea.setEditable(false);
+            textArea.setCaretPosition(0);
+            textArea.setBackground(null);
+            textArea.setBorder(JBUI.Borders.empty());
 
-        myScrollPane = new JBScrollPane(textArea);
+            component = textArea;
+        } else {
+            JEditorPane editor = new JEditorPane();
+            editor.setContentType("text/html");
+            editor.getDocument().putProperty("IgnoreCharsetDirective", Boolean.TRUE); // work around <meta> tag
+            editor.setText(eulaText);
+            editor.setEditable(false);
+            editor.setCaretPosition(0);
+            editor.setMinimumSize(null);
+            editor.setBorder(JBUI.Borders.empty());
+
+            component = editor;
+        }
+
+        myScrollPane = new JBScrollPane(component);
         myScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         setModal(true);
-        setTitle("Team Foundation Command-Line Client EULA");
+        setTitle(title);
 
         setOKButtonText("Accept");
         getOKAction().putValue(DEFAULT_ACTION, null);
@@ -63,8 +90,26 @@ public class EULADialog extends DialogWrapper {
         init();
     }
 
+    private static EULADialog forCommandLineClient(@NotNull Project project) {
+        return new EULADialog(
+                project,
+                "Team Foundation Command-Line Client EULA",
+                getCommandLineClientEulaText(),
+                true,
+                EULADialog::acceptClientEula);
+    }
+
+    public static EULADialog forTfsSdk(@NotNull Project project) {
+        return new EULADialog(
+                project,
+                "Team Foundation SDK for Java License Terms",
+                getTfsSdkEulaText(),
+                false,
+                EULADialog::acceptSdkEula);
+    }
+
     @Nullable
-    private String getEULAText() {
+    private static String getCommandLineClientEulaText() {
         JarFile jarFile = null;
         InputStream eulaStream = null;
         String jarName = "com.microsoft.tfs.client.common.jar";
@@ -102,6 +147,17 @@ public class EULADialog extends DialogWrapper {
         return null;
     }
 
+    @Nullable
+    private static String getTfsSdkEulaText() {
+        java.nio.file.Path licensePath = ReactiveTfvcClientHolder.getClientBackendPath().resolve("license.html");
+        try {
+            return new String(Files.readAllBytes(licensePath), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            logger.error("Can't read EULA text from " + licensePath, e);
+            return null;
+        }
+    }
+
     @Override
     public void show() {
         if (myEulaTextFound) {
@@ -109,17 +165,22 @@ public class EULADialog extends DialogWrapper {
         }
     }
 
-    public static void acceptEula() throws IOException, InterruptedException {
+    public static void acceptClientEula() throws IOException, InterruptedException {
         String tfLocation = TfTool.getLocation();
         Process process = ProcessHelper.startProcess(
                 Path.getDirectoryName(tfLocation), Arrays.asList(tfLocation, "eula", SystemInfo.isWindows ? "/accept" : "-accept"));
         process.waitFor();
     }
 
+    private static void acceptSdkEula() {
+        PropertyService propertyService = PropertyService.getInstance();
+        propertyService.setProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED, "true");
+    }
+
     @Override
     public void doOKAction() {
         try {
-            acceptEula();
+            onAccept.run();
             close(OK_EXIT_CODE);
         } catch (Exception e) {
             logger.error("Can't accept EULA", e);
@@ -143,7 +204,7 @@ public class EULADialog extends DialogWrapper {
     @Nullable
     public static synchronized Boolean showDialogIfNeeded(final Project project) {
         if (!myWasShow) {
-            boolean result = new EULADialog(project).showAndGet();
+            boolean result = forCommandLineClient(project).showAndGet();
             myWasShow = true;
             return result;
         }
