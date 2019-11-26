@@ -13,6 +13,7 @@ public interface PropertyService {
     String PROP_REPO_ROOT = "repoRoot";
     String PROP_TF_HOME = "tfHome";
     String PROP_AUTH_TYPE = "authType";
+    String PROP_TF_SDK_EULA_ACCEPTED = "tfSdkEulaAccepted";
 
     String CLIENT_TYPE_CLASSIC = ClassicTfvcClient.class.getName();
     String CLIENT_TYPE_REACTIVE = ReactiveTfvcClient.class.getName();
