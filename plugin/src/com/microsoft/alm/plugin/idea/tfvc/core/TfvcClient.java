@@ -16,11 +16,13 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * This is an interface for TFVC client which have two implementations: one based on TF Everywhere (the "classic"
- * client), and another one based on the reactive TF client.
+ * client), and another one based on the reactive TFVC client.
  * <p>
  * This client may have both synchronous and asynchronous operations. By default, you should implement asynchronous
  * ones and use the default implementations for synchronous. Any implementation should be ready that both synchronous
  * and asynchronous versions of its methods will be called on IDEA threads (both UI and background ones).
+ * <p>
+ * This means that an implementation shouldn't perform any calls to a UI-blocking API from an asynchronous method.
  */
 public interface TfvcClient {
 
