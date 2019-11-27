@@ -41,7 +41,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
         ApplicationManager.getApplication().getMessageBus()
                 .connect(myProject)
                 .subscribe(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC, propertyKey -> {
-                    if (propertyKey.equals(PropertyService.PROP_TFVC_CLIENT_TYPE)) {
+                    if (propertyKey.equals(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT)) {
                         destroyClientIfExists();
                     }
                 });

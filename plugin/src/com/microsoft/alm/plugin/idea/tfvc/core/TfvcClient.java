@@ -28,8 +28,8 @@ public interface TfvcClient {
 
     @NotNull
     static TfvcClient getInstance(@NotNull Project project) {
-        boolean useReactiveClient = PropertyService.CLIENT_TYPE_REACTIVE.equals(
-                PropertyService.getInstance().getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE));
+        boolean useReactiveClient = "true".equals(
+                PropertyService.getInstance().getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         return useReactiveClient
                 ? ServiceManager.getService(project, ReactiveTfvcClient.class)
                 : ServiceManager.getService(project, ClassicTfvcClient.class);

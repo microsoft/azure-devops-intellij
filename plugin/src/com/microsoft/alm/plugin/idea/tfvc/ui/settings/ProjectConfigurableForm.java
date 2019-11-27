@@ -42,7 +42,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -67,8 +66,7 @@ public class ProjectConfigurableForm {
     private JLabel pathLabel;
     private HyperlinkLabel downloadLink;
     private JPanel downloadLinkPane;
-    private JRadioButton classicClientRadioButton;
-    private JRadioButton reactiveClientRadioButton;
+    private JCheckBox useReactiveClientCheckBox;
     private String originalTfLocation = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
@@ -203,28 +201,27 @@ public class ProjectConfigurableForm {
         }
         tfExeField.setText(originalTfLocation);
 
-        String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
-        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);
-        classicClientRadioButton.setSelected(!isReactiveClientEnabled);
-        reactiveClientRadioButton.setSelected(isReactiveClientEnabled);
+        boolean isReactiveClientEnabled = "true".equals(
+                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
+        useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
     }
 
     public void apply() {
         PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
 
-        String clientType = reactiveClientRadioButton.isSelected()
-                ? PropertyService.CLIENT_TYPE_REACTIVE
-                : PropertyService.CLIENT_TYPE_CLASSIC;
-        propertyService.setProperty(PropertyService.PROP_TFVC_CLIENT_TYPE, clientType);
+        boolean isReactiveClientEnabled = useReactiveClientCheckBox.isSelected();
+        propertyService.setProperty(
+                PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT,
+                isReactiveClientEnabled ? "true" : "false");
     }
 
     public boolean isModified() {
         PropertyService propertyService = PropertyService.getInstance();
-        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(
-                propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE));
+        boolean isReactiveClientEnabled = "true".equals(
+                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
-                && isReactiveClientEnabled == reactiveClientRadioButton.isSelected());
+                && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected());
     }
 
     public void reset() {
@@ -232,10 +229,9 @@ public class ProjectConfigurableForm {
         propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
 
-        String clientType = propertyService.getProperty(PropertyService.PROP_TFVC_CLIENT_TYPE);
-        boolean isReactiveClientEnabled = PropertyService.CLIENT_TYPE_REACTIVE.equals(clientType);
-        classicClientRadioButton.setSelected(!isReactiveClientEnabled);
-        reactiveClientRadioButton.setSelected(isReactiveClientEnabled);
+        boolean isReactiveClientEnabled = "true".equals(
+                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
+        useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
     }
 
 
