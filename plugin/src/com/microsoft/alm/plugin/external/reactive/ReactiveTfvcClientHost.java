@@ -44,6 +44,10 @@ import static com.microsoft.alm.plugin.external.reactive.Lifetimes.defineNestedL
  * A model for the reactive TFVC client.
  */
 public class ReactiveTfvcClientHost {
+    static {
+        RdIdeaLoggerFactory.initialize();
+    }
+
     private static final String REACTIVE_CLIENT_LOG_LEVEL = "INFO";
 
     private static final Logger ourLogger = Logger.getInstance(ReactiveTfvcClientHost.class);
