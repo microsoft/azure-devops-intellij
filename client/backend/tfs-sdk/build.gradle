@@ -7,14 +7,14 @@ plugins {
 }
 
 ext {
-    sdkVersion = "14.134.0"
+    sdkVersion = "14.135.0"
     sdkArchiveLocation = file("$buildDir/TFS-SDK-${sdkVersion}.zip")
     sdkUnpackLocation = file("$buildDir/sdk")
     sdkJarName = "com.microsoft.tfs.sdk-${sdkVersion}.jar"
 }
 
 task downloadArchive(type: Download) {
-    src "https://ci.appveyor.com/api/buildjobs/n47diettm0kvax1g/artifacts/build%2Foutput%2Fbin%2Fsdk%2FTFS-SDK-14.134.0.zip"
+    src "https://github.com/JetBrains/team-explorer-everywhere/releases/download/$sdkVersion/TFS-SDK-${sdkVersion}.zip"
     dest sdkArchiveLocation
     overwrite false
 }
@@ -22,7 +22,7 @@ task downloadArchive(type: Download) {
 task verifyArchive(type: Verify, dependsOn: downloadArchive) {
     src sdkArchiveLocation
     algorithm "SHA-256"
-    checksum "24411accb563560d31b14139676dba2ba696a78e8e9396838169a256c25db077"
+    checksum "6C7600C40248F986F873829B88429FCACAFFD0CCB70DD7D9F11CB7D4BAA2103D"
 }
 
 task unpack(type: Copy, dependsOn: [downloadArchive, verifyArchive]) {
