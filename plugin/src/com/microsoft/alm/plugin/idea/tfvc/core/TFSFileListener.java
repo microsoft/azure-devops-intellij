@@ -19,6 +19,8 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -70,22 +72,24 @@ public class TFSFileListener extends VcsVFSListener {
         return TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_PROMPT, "{0}");
     }
 
-    protected void executeAdd() {
+    @Override
+    protected void executeAdd(List<VirtualFile> addedFiles, Map<VirtualFile, VirtualFile> copyFromMap) {
         logger.info("executeAdd executing...");
+        Application application = ApplicationManager.getApplication();
         try {
-            final List<String> filePaths = TfsFileUtil.getFilePathStrings(myAddedFiles);
+            final List<String> filePaths = TfsFileUtil.getFilePathStrings(addedFiles);
             final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
 
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-                public void run() {
+            application.invokeAndWait(() -> {
+                ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
                     ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
                     pendingChanges.addAll(
                             CommandUtils.getStatusForFiles(
                                     myProject,
                                     TFSVcs.getInstance(myProject).getServerContext(true),
                                     filePaths));
-                }
-            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
+                }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
+            });
 
             for (final PendingChange pendingChange : pendingChanges) {
                 StatusProvider.visitByStatus(new StatusVisitor() {
@@ -109,7 +113,7 @@ public class TFSFileListener extends VcsVFSListener {
                     public void scheduledForAddition(final @NotNull FilePath localPath,
                                                      final boolean localItemExists,
                                                      final @NotNull ServerStatus serverStatus) {
-                        myAddedFiles.remove(localPath.getVirtualFile());
+                        addedFiles.remove(localPath.getVirtualFile());
                     }
 
                     public void scheduledForDeletion(final @NotNull FilePath localPath,
@@ -141,10 +145,10 @@ public class TFSFileListener extends VcsVFSListener {
             AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
         }
 
-        removeInvalidTFVCAddedFiles();
+        removeInvalidTFVCAddedFiles(addedFiles);
 
-        if (!myAddedFiles.isEmpty()) {
-            super.executeAdd();
+        if (!addedFiles.isEmpty()) {
+            application.invokeAndWait(() -> super.executeAdd(addedFiles, copyFromMap));
         }
     }
 
@@ -203,12 +207,12 @@ public class TFSFileListener extends VcsVFSListener {
         return true;
     }
 
-    private void removeInvalidTFVCAddedFiles() {
-        Map<VirtualFile, FilePath> addedFilePaths = myAddedFiles.stream()
+    private void removeInvalidTFVCAddedFiles(List<VirtualFile> addedFiles) {
+        Map<VirtualFile, FilePath> addedFilePaths = addedFiles.stream()
                 .collect(Collectors.toMap(vf -> vf, vf -> new LocalFilePath(vf.getPath(), vf.isDirectory())));
         Set<FilePath> invalidPaths = TFVCUtil.collectInvalidTFVCPaths((TFSVcs) myVcs, addedFilePaths.values().stream())
                 .collect(Collectors.toSet());
 
-        myAddedFiles.removeIf(file -> invalidPaths.contains(addedFilePaths.get(file)));
+        addedFiles.removeIf(file -> invalidPaths.contains(addedFilePaths.get(file)));
     }
 }
