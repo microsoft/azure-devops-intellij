@@ -201,7 +201,7 @@ public class ProjectConfigurableForm {
         }
         tfExeField.setText(originalTfLocation);
 
-        boolean isReactiveClientEnabled = "true".equals(
+        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
     }
@@ -218,7 +218,7 @@ public class ProjectConfigurableForm {
 
     public boolean isModified() {
         PropertyService propertyService = PropertyService.getInstance();
-        boolean isReactiveClientEnabled = "true".equals(
+        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
                 && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected());
@@ -229,7 +229,7 @@ public class ProjectConfigurableForm {
         propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
 
-        boolean isReactiveClientEnabled = "true".equals(
+        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
     }
