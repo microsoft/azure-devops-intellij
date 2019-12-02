@@ -74,7 +74,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             PropertyService propertyService = PropertyService.getInstance();
             String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
-            if (!"true".equals(eulaAccepted)) {
+            if (!"true".equalsIgnoreCase(eulaAccepted)) {
                 if (!EULADialog.forTfsSdk(myProject).showAndGet())
                     throw new RuntimeException("EULA acceptance is required to use the reactive TF client");
             }
