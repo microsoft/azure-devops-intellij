@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See License.txt in the project root.
 
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.security.MessageDigest
+
 plugins {
     id "base"
     id "de.undercouch.download"
@@ -9,6 +13,7 @@ plugins {
 ext {
     sdkVersion = "14.135.0"
     sdkArchiveLocation = file("$buildDir/TFS-SDK-${sdkVersion}.zip")
+    expectedSdkArchiveHash = "6C7600C40248F986F873829B88429FCACAFFD0CCB70DD7D9F11CB7D4BAA2103D"
     sdkUnpackLocation = file("$buildDir/sdk")
     sdkJarName = "com.microsoft.tfs.sdk-${sdkVersion}.jar"
 }
@@ -19,10 +24,16 @@ task downloadArchive(type: Download) {
     overwrite false
 }
 
-task verifyArchive(type: Verify, dependsOn: downloadArchive) {
-    src sdkArchiveLocation
-    algorithm "SHA-256"
-    checksum "6C7600C40248F986F873829B88429FCACAFFD0CCB70DD7D9F11CB7D4BAA2103D"
+task verifyArchive(dependsOn: downloadArchive) {
+    doLast {
+        def digest = MessageDigest.getInstance("SHA-256")
+        def bytes = Files.readAllBytes(Paths.get(sdkArchiveLocation.absolutePath))
+        def hash = String.format("%064x", new BigInteger(1, digest.digest(bytes)))
+        if (!hash.equalsIgnoreCase(expectedSdkArchiveHash)) {
+            delete sdkArchiveLocation
+            throw new RuntimeException("Expected hash: $expectedSdkArchiveHash, actual hash: $hash\nPlease retry build")
+        }
+    }
 }
 
 task unpack(type: Copy, dependsOn: [downloadArchive, verifyArchive]) {
