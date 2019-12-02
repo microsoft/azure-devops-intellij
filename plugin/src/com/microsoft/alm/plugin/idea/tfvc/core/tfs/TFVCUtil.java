@@ -47,9 +47,9 @@ public class TFVCUtil {
         List<FilePath> mappings = vcsManager.getDirectoryMappings(vcs).stream()
                 .map(mapping -> new LocalFilePath(mapping.getDirectory(), true))
                 .collect(Collectors.toList());
-        return paths.filter(path -> isInServiceDirectory(path.getPath())
+        return paths.filter(path -> isInServiceDirectory(path)
             || mappings.stream().anyMatch(
-                    mapping -> hasIllegalDollarInAnyComponent(mapping.getIOFile(), path.getIOFile())));
+                    mapping -> hasIllegalDollarInAnyComponent(mapping, path)));
     }
 
     /**
@@ -60,13 +60,13 @@ public class TFVCUtil {
      * contexts.
      */
     public static boolean isInvalidTFVCPath(@NotNull TFSVcs vcs, @NotNull FilePath path) {
-        if (isInServiceDirectory(path.getPath())) return true;
+        if (isInServiceDirectory(path)) return true;
 
         ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(vcs.getProject());
 
         return vcsManager.getDirectoryMappings(vcs).stream()
                 .map(mapping -> new LocalFilePath(mapping.getDirectory(), true))
-                .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping.getIOFile(), path.getIOFile()));
+                .anyMatch(mapping -> hasIllegalDollarInAnyComponent(mapping, path));
     }
 
     /**
@@ -79,7 +79,7 @@ public class TFVCUtil {
         List<String> filteredPaths = new ArrayList<>();
         for (FilePath path : paths) {
             // if we get a change notification in the $tf folder, we need to just ignore it
-            if (isInServiceDirectory(path.getPath())) {
+            if (isInServiceDirectory(path)) {
                 continue;
             }
 
@@ -87,7 +87,7 @@ public class TFVCUtil {
             for (FilePath mappingPath : mappingPaths) {
                 if (path.isUnder(mappingPath, false)) {
                     // Ignore any paths that has '$' in any component under the mapping root.
-                    if (!hasIllegalDollarInAnyComponent(mappingPath.getIOFile(), path.getIOFile())) {
+                    if (!hasIllegalDollarInAnyComponent(mappingPath, path)) {
                         filteredPaths.add(path.getPath());
                         break;
                     }
@@ -101,9 +101,10 @@ public class TFVCUtil {
     /**
      * Determines whether the file is in the TFVC service directory ($tf or .tf).
      */
-    public static boolean isInServiceDirectory(String filePath) {
-        return StringUtils.containsIgnoreCase(filePath, "$tf")
-                || StringUtils.containsIgnoreCase(filePath, ".tf");
+    private static boolean isInServiceDirectory(FilePath filePath) {
+        String path = filePath.getPath();
+        return StringUtils.containsIgnoreCase(path, "$tf")
+                || StringUtils.containsIgnoreCase(path, ".tf");
     }
 
     private static List<FilePath> getMappingsFromWorkspace(@NotNull Project project) {
@@ -124,12 +125,12 @@ public class TFVCUtil {
      * Determines if the path has an illegal $ character in any component.
      *
      * @param mapping   root path mapping for the file.
-     * @param localFile the file under VCS.
+     * @param localPath the file under VCS.
      */
-    public static boolean hasIllegalDollarInAnyComponent(File mapping, File localFile) {
-        String relativePath = FileUtil.getRelativePath(mapping, localFile);
+    private static boolean hasIllegalDollarInAnyComponent(FilePath mapping, FilePath localPath) {
+        String relativePath = FileUtil.getRelativePath(mapping.getIOFile(), localPath.getIOFile());
         if (relativePath == null) {
-            return localFile.getName().startsWith("$");
+            return localPath.getName().startsWith("$");
         }
 
         File file = new File(relativePath);
