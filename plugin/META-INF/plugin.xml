@@ -59,8 +59,8 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Fix a "teamProjectName is empty" error message when editing a workspace that has the root folder mapped into it (<a href="https://github.com/microsoft/azure-devops-intellij/issues/250">#250</a>)</li>
-        <li>Raise the required IntelliJ Platform version to 181 (IDEA 2018.1)</li>
+        <li>Fixed compatibility with products based on IDEA 2019.3 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/258">#258</a>)</li>
+        <li>Added an experimental reactive TFVC client which provides better performance. To enable the experimental client, visit Settings | Version Control | TFVC (<a href="https://github.com/microsoft/azure-devops-intellij/pull/257">#257</a>)</li>
       </ul>
       <br />
     ]]>
