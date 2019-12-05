@@ -7,6 +7,7 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -78,7 +79,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
                 if (!EULADialog.forTfsSdk(myProject).showAndGet())
                     throw new RuntimeException("EULA acceptance is required to use the reactive TF client");
             }
-        });
+        }, ModalityState.any()); // EULA should be shown even if there's a modal dialog (e.g. a commit one)
     }
 
     private void destroyClientIfExists() {
