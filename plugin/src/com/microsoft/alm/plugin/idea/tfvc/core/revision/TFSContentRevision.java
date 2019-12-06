@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Creates a revision object for a file so that comparisons can be done between them
@@ -155,5 +156,22 @@ public abstract class TFSContentRevision implements ContentRevision {
     @NonNls
     public String toString() {
         return "TFSContentRevision [file=" + getFile() + ", revision=" + ((TfsRevisionNumber) getRevisionNumber()).getValue() + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TFSContentRevision that = (TFSContentRevision) o;
+        return Objects.equals(getFile(), that.getFile())
+                && Objects.equals(project, that.project)
+                && getChangeset() == that.getChangeset()
+                && Objects.equals(getFilePath(), that.getFilePath())
+                && Objects.equals(getRevisionNumber(), that.getRevisionNumber());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getFile(), project, getChangeset(), getFilePath(), getRevisionNumber());
     }
 }
