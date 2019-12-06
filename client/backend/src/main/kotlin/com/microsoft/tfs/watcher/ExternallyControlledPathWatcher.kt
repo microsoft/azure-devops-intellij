@@ -32,6 +32,7 @@ class ExternallyControlledPathWatcher(
 
     private val lock = Any()
     private val changedPaths = mutableListOf<Path>()
+    private var isFullyInvalidated = false
 
     private val sessionLifetimes = SequentialLifetimes(parentLifetime)
     private var currentSessionLifetime = LifetimeDefinition.Terminated
@@ -60,14 +61,21 @@ class ExternallyControlledPathWatcher(
     override fun isWatching(): Boolean = currentSessionLifetime.isAlive
 
     override fun poll(): PathWatcherReport {
-        val changes = synchronized(lock) {
-            val copy = changedPaths.toList()
+        val (fullyInvalidated, changes) = synchronized(lock) {
+            val paths = changedPaths.toList()
             changedPaths.clear()
-            copy
+
+            val fullyInvalidated = isFullyInvalidated
+            isFullyInvalidated = false
+
+            Pair(fullyInvalidated, paths)
         }
         return PathWatcherReport(false).apply {
             for (changedPath in changes) {
                 addChangedPath(changedPath.toString())
+            }
+            if (fullyInvalidated) {
+                fullyInvalidate()
             }
         }
     }
@@ -76,7 +84,11 @@ class ExternallyControlledPathWatcher(
         val pathsToInvalidate = paths.filter { it.startsWith(pathToWatch) }
         if (pathsToInvalidate.isNotEmpty()) {
             synchronized(lock) {
-                changedPaths.addAll(pathsToInvalidate)
+                for (path in pathsToInvalidate) {
+                    if (path == pathToWatch)
+                        isFullyInvalidated = true
+                    changedPaths.add(path)
+                }
             }
             workspaceWatcher.pathChanged(this)
         }
