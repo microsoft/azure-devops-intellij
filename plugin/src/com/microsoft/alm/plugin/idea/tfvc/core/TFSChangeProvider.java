@@ -61,7 +61,7 @@ public class TFSChangeProvider implements ChangeProvider {
     }
 
     public boolean isModifiedDocumentTrackingRequired() {
-        return true;
+        return false;
     }
 
     public void doCleanup(final List<VirtualFile> files) {
