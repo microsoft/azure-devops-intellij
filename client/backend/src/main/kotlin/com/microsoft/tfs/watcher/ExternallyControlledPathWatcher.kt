@@ -61,15 +61,16 @@ class ExternallyControlledPathWatcher(
     override fun isWatching(): Boolean = currentSessionLifetime.isAlive
 
     override fun poll(): PathWatcherReport {
-        val (fullyInvalidated, changes) = synchronized(lock) {
-            val paths = changedPaths.toList()
+        val fullyInvalidated: Boolean
+        val changes: List<Path>
+        synchronized(lock) {
+            changes = changedPaths.toList()
             changedPaths.clear()
 
-            val fullyInvalidated = isFullyInvalidated
+            fullyInvalidated = isFullyInvalidated
             isFullyInvalidated = false
-
-            Pair(fullyInvalidated, paths)
         }
+
         return PathWatcherReport(false).apply {
             for (changedPath in changes) {
                 addChangedPath(changedPath.toString())
