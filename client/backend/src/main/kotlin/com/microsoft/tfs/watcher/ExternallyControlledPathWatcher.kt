@@ -32,7 +32,7 @@ class ExternallyControlledPathWatcher(
     }
 
     private val lock = Any()
-    private val changedPaths = mutableListOf<Path>()
+    private val changedPaths = mutableSetOf<Path>()
     private var isFullyInvalidated = false
 
     private val sessionLifetimes = SequentialLifetimes(parentLifetime)
@@ -73,27 +73,42 @@ class ExternallyControlledPathWatcher(
         }
 
         return PathWatcherReport(false).apply {
-            for (changedPath in changes) {
-                addChangedPath(changedPath.toString())
-            }
             if (fullyInvalidated) {
                 fullyInvalidate()
+            } else {
+                for (changedPath in changes) {
+                    addChangedPath(changedPath.toString())
+                }
             }
 
-            logger.trace { "Returning PathWatcherReport (fullyInvalidated = ${this.fullyInvalidated}, nothingChanged = $isNothingChanged) with paths:\n" + changedPaths.joinToString("\n") }
+            logger.trace {
+                "Returning PathWatcherReport (fullyInvalidated = ${this.fullyInvalidated}, nothingChanged = $isNothingChanged) with paths:\n" +
+                        changedPaths.joinToString("\n")
+            }
         }
     }
 
     private fun invalidatePaths(paths: List<Path>) {
-        val pathsToInvalidate = paths.filter { it.startsWith(pathToWatch) }
+        var shouldFullyInvalidate = false
+        val pathsToInvalidate = mutableListOf<Path>()
+        for (path in paths) {
+            if (pathToWatch.startsWith(path))
+                shouldFullyInvalidate = true
+            else if (path.startsWith(pathToWatch))
+                pathsToInvalidate.add(path)
+        }
         if (pathsToInvalidate.isNotEmpty()) {
             synchronized(lock) {
-                for (path in pathsToInvalidate) {
-                    if (path == pathToWatch)
-                        isFullyInvalidated = true
-                    changedPaths.add(path)
-                    logger.trace { "Emitting changed path signal: $path" }
+                if (shouldFullyInvalidate) {
+                    isFullyInvalidated = true
+                    changedPaths.clear()
+                } else {
+                    for (path in pathsToInvalidate) {
+                        changedPaths.add(path)
+                    }
                 }
+
+                logger.trace { "Emitting changed path signal: $path" }
             }
             workspaceWatcher.pathChanged(this)
         }
