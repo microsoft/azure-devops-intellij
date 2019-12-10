@@ -9,6 +9,7 @@ import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.SequentialLifetimes
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.reactive.Signal
+import com.jetbrains.rd.util.trace
 import com.microsoft.tfs.Logging
 import com.microsoft.tfs.core.clients.versioncontrol.localworkspace.PathWatcher
 import com.microsoft.tfs.core.clients.versioncontrol.localworkspace.PathWatcherReport
@@ -78,6 +79,8 @@ class ExternallyControlledPathWatcher(
             if (fullyInvalidated) {
                 fullyInvalidate()
             }
+
+            logger.trace { "Returning PathWatcherReport (fullyInvalidated = ${this.fullyInvalidated}, nothingChanged = $isNothingChanged) with paths:\n" + changedPaths.joinToString("\n") }
         }
     }
 
@@ -89,6 +92,7 @@ class ExternallyControlledPathWatcher(
                     if (path == pathToWatch)
                         isFullyInvalidated = true
                     changedPaths.add(path)
+                    logger.trace { "Emitting changed path signal: $path" }
                 }
             }
             workspaceWatcher.pathChanged(this)
