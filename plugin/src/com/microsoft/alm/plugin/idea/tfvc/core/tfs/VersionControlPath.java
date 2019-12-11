@@ -19,6 +19,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class VersionControlPath {
@@ -39,6 +41,8 @@ public class VersionControlPath {
     private static final String WINDOWS_PATH_SEPARATOR = "\\";
     @SuppressWarnings({"HardCodedStringLiteral"})
     private static final String FAKE_DRIVE_PREFIX = "U:";
+
+    private static final Logger ourLogger = Logger.getInstance(VersionControlPath.class);
 
     public static String toTfsRepresentation(@Nullable String localPath) {
         if (localPath == null) {
@@ -52,6 +56,15 @@ public class VersionControlPath {
         return toTfsRepresentation(localPath.getPath());
     }
 
+    private static String canonicalizePath(String path)  {
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (IOException e) {
+            ourLogger.warn("Cannot canonicalize path " + path, e);
+            return path;
+        }
+    }
+
     @Nullable
     public static String localPathFromTfsRepresentation(@Nullable String localPath) {
         if (localPath == null) {
@@ -60,9 +73,9 @@ public class VersionControlPath {
 
         final String systemDependent = FileUtil.toSystemDependentName(localPath);
         if (!SystemInfo.isWindows && systemDependent.startsWith(FAKE_DRIVE_PREFIX)) {
-            return systemDependent.substring(FAKE_DRIVE_PREFIX.length());
+            return canonicalizePath(systemDependent.substring(FAKE_DRIVE_PREFIX.length()));
         } else {
-            return systemDependent;
+            return canonicalizePath(systemDependent);
         }
     }
 
