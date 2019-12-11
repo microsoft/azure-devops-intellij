@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Extends the VCS change provider to execture the correct events to find out the local changes in the workspace
@@ -103,13 +102,7 @@ public class TFSChangeProvider implements ChangeProvider {
         List<PendingChange> changes;
         try {
             ServerContext serverContext = myVcs.getServerContext(true);
-            if (logger.isDebugEnabled())
-                logger.debug("Asking the client for changes in paths:\n" + StringUtils.join(pathsToProcess, "\n"));
             changes = TfvcClient.getInstance(project).getStatusForFiles(serverContext, pathsToProcess);
-            if (logger.isDebugEnabled()) {
-                List<String> fileNames = changes.stream().map(PendingChange::getLocalItem).collect(Collectors.toList());
-                logger.debug("Got answer from the client:\n" + StringUtils.join(fileNames, "\n"));
-            }
         } catch (final Throwable t) {
             logger.error("Failed to get changes from command line. roots=" + StringUtils.join(pathsToProcess, ", "), t);
             changes = Collections.emptyList();
