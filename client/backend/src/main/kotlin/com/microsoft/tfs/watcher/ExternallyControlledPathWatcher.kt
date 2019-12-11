@@ -98,13 +98,15 @@ class ExternallyControlledPathWatcher(
                 shouldFullyInvalidate = true
                 break
             } else if (path.toFile().isDirectory) {
-                // Path watchers in TFS SDK doesn't currently support recursive invalidation, so we could either
-                // enumerate all the files as invalidated ourselves, or report a full invalidation (even if it's too
-                // greedy).
-                // For now, we'll always report full invalidation because, in most cases (or maybe even all of them?),
-                // IDEA asks for recursive directory invalidation when a user has pressed a "Refresh" button manually or
-                // something major happened, like a check-in.
-                logger.info { "Fully invalidating watcher for path $pathToWatch because path $path points to a directory" }
+                // Path watchers in TFS SDK don't currently support recursive invalidation, so we could either enumerate
+                // all the files as invalidated ourselves, or report a full invalidation (even if it's too greedy).
+                //
+                // For now, we'll always report full invalidation: in most cases (or maybe even all of them?), IDEA asks
+                // for recursive directory invalidation when a user has pressed a "Refresh" button manually or something
+                // major happened, like a check-in.
+                logger.info {
+                    "Fully invalidating watcher for path $pathToWatch because path $path points to a directory"
+                }
                 shouldFullyInvalidate = true
                 break
             } else if (path.startsWith(pathToWatch))
