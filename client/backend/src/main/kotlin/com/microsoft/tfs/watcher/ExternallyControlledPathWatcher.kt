@@ -33,7 +33,7 @@ class ExternallyControlledPathWatcher(
 
     private val lock = Any()
     private val changedPaths = mutableSetOf<Path>()
-    private var isFullyInvalidated = false
+    private var isFullyInvalidated = true
 
     private val sessionLifetimes = SequentialLifetimes(parentLifetime)
     private var currentSessionLifetime = LifetimeDefinition.Terminated
@@ -46,6 +46,7 @@ class ExternallyControlledPathWatcher(
 
     override fun setClean() {
         synchronized(lock) {
+            isFullyInvalidated = false
             changedPaths.clear()
         }
     }
@@ -92,12 +93,25 @@ class ExternallyControlledPathWatcher(
         var shouldFullyInvalidate = false
         val pathsToInvalidate = mutableListOf<Path>()
         for (path in paths) {
-            if (pathToWatch.startsWith(path))
+            if (pathToWatch.startsWith(path)) {
+                logger.info { "Fully invalidating watcher for path $pathToWatch because path $path is its parent" }
                 shouldFullyInvalidate = true
-            else if (path.startsWith(pathToWatch))
+                break
+            } else if (path.toFile().isDirectory) {
+                // Path watchers in TFS SDK doesn't currently support recursive invalidation, so we could either
+                // enumerate all the files as invalidated ourselves, or report a full invalidation (even if it's too
+                // greedy).
+                // For now, we'll always report full invalidation because, in most cases (or maybe even all of them?),
+                // IDEA asks for recursive directory invalidation when a user has pressed a "Refresh" button manually or
+                // something major happened, like a check-in.
+                logger.info { "Fully invalidating watcher for path $pathToWatch because path $path points to a directory" }
+                shouldFullyInvalidate = true
+                break
+            } else if (path.startsWith(pathToWatch))
                 pathsToInvalidate.add(path)
         }
-        if (pathsToInvalidate.isNotEmpty()) {
+
+        if (pathsToInvalidate.isNotEmpty() || shouldFullyInvalidate) {
             synchronized(lock) {
                 if (shouldFullyInvalidate) {
                     isFullyInvalidated = true
@@ -107,9 +121,9 @@ class ExternallyControlledPathWatcher(
                         changedPaths.add(path)
                     }
                 }
-
-                logger.trace { "Emitting changed path signal: $path" }
             }
+
+            logger.trace { "Emitting changed path signal: $pathToWatch" }
             workspaceWatcher.pathChanged(this)
         }
     }
