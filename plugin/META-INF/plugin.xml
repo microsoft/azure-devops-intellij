@@ -59,8 +59,10 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Fixed compatibility with products based on IDEA 2019.3 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/258">#258</a>)</li>
         <li>Added an experimental reactive TFVC client which provides better performance. To enable the experimental client, visit Settings | Version Control | TFVC (<a href="https://github.com/microsoft/azure-devops-intellij/pull/257">#257</a>)</li>
+        <li>Fixed compatibility with products based on IDEA 2019.3 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/258">#258</a>)</li>
+        <li>Fixed a performance issue with the new VCS layout (enabled by default in JetBrains Rider) (<a href="https://github.com/microsoft/azure-devops-intellij/issues/267">#267</a>)</li>
+        <li>Fixed an issue with change detection on case-insensitive file systems when the repository was created in wrong case (<a href="https://github.com/microsoft/azure-devops-intellij/issues/274">#274</a>)</li>
       </ul>
       <br />
     ]]>
