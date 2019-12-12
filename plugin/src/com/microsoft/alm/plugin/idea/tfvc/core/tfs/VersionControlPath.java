@@ -71,11 +71,10 @@ public class VersionControlPath {
             return null;
         }
 
-        final String systemDependent = FileUtil.toSystemDependentName(localPath);
-        if (!SystemInfo.isWindows && systemDependent.startsWith(FAKE_DRIVE_PREFIX)) {
-            return canonicalizePath(systemDependent.substring(FAKE_DRIVE_PREFIX.length()));
+        if (!SystemInfo.isWindows && localPath.startsWith(FAKE_DRIVE_PREFIX)) {
+            return canonicalizePath(localPath.substring(FAKE_DRIVE_PREFIX.length()));
         } else {
-            return canonicalizePath(systemDependent);
+            return canonicalizePath(localPath);
         }
     }
 
