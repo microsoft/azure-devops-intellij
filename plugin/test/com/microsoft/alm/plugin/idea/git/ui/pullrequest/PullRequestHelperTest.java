@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -158,4 +159,10 @@ public class PullRequestHelperTest extends IdeaAbstractTest {
         assertEquals(PRCreateStatus.DUPLICATE, parsed.getFirst());
     }
 
+    @Test
+    public void pullRequestUrlShouldNotContainUserName() {
+        String url = "https://username@dev.azure.com/username/projectName/_git/projectName";
+        String message = underTest.getHtmlMsg(url, 100500);
+        assertFalse("\"" + message + "\" should not contain \"username@\"", message.contains("username@"));
+    }
 }
