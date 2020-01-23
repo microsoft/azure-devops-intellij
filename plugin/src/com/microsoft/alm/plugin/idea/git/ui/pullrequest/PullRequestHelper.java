@@ -133,8 +133,9 @@ public class PullRequestHelper {
      * @return html document with link to specified pull request
      */
     public String getHtmlMsg(final String repositoryRemoteUrl, final int id) {
+        String url = UrlHelper.removeUserInfo(repositoryRemoteUrl);
         final String text = TfPluginBundle.message(TfPluginBundle.KEY_CREATE_PR_CREATED_MESSAGE, String.valueOf(id));
-        final String webAccessUrl = String.format(WEB_ACCESS_PR_FORMAT, repositoryRemoteUrl, id);
+        final String webAccessUrl = String.format(WEB_ACCESS_PR_FORMAT, url, id);
         return String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, webAccessUrl, text);
     }
 
