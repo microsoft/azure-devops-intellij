@@ -90,7 +90,7 @@ public class EULADialog extends DialogWrapper {
         init();
     }
 
-    private static EULADialog forCommandLineClient(@NotNull Project project) {
+    private static EULADialog forCommandLineClient(@Nullable Project project) {
         return new EULADialog(
                 project,
                 "Team Foundation Command-Line Client EULA",
@@ -202,7 +202,7 @@ public class EULADialog extends DialogWrapper {
      * dialog was shown and the user clicked "Decline".
      */
     @Nullable
-    public static synchronized Boolean showDialogIfNeeded(final Project project) {
+    public static synchronized Boolean showDialogIfNeeded(@Nullable final Project project) {
         if (!myWasShow) {
             boolean result = forCommandLineClient(project).showAndGet();
             myWasShow = true;
@@ -220,7 +220,7 @@ public class EULADialog extends DialogWrapper {
      * @throws ToolEulaNotAcceptedException will be thrown if the user was presented by the EULA dialog and didn't
      *                                      accepted it.
      */
-    public static <T> T executeWithGuard(@NotNull Project project, @NotNull Supplier<T> activity) {
+    public static <T> T executeWithGuard(@Nullable Project project, @NotNull Supplier<T> activity) {
         T result;
         try {
             result = activity.get();
