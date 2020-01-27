@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.extensions;
 
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -52,6 +53,11 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
         when(CommandUtils.getPartialWorkspace(eq(path))).thenReturn(workspace);
     }
 
+    private static void mockPartialWorkspaceNotDetermined(Path path) {
+        PowerMockito.mockStatic(CommandUtils.class);
+        when(CommandUtils.getPartialWorkspace(eq(path))).thenThrow(new WorkspaceCouldNotBeDeterminedException());
+    }
+
     private static Workspace createWorkspaceWithMapping(String localPath) {
         Workspace.Mapping mapping = new Workspace.Mapping("serverPath", localPath, false);
         return new Workspace("server", "name", "computer", "owner", "comment", Collections.singletonList(mapping));
@@ -78,6 +84,15 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
         mockTfToolPath("tf.cmd");
         mockPartialWorkspace(path, null);
+
+        Assert.assertFalse(checker.isRoot(path.toString()));
+    }
+
+    @Test
+    public void isRootTestWorkspaceNotDetermined() throws IOException {
+        Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
+        mockTfToolPath("tf.cmd");
+        mockPartialWorkspaceNotDetermined(path);
 
         Assert.assertFalse(checker.isRoot(path.toString()));
     }

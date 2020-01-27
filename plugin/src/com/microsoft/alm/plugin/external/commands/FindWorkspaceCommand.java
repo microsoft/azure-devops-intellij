@@ -7,6 +7,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
 
     protected static final String AUTH_ERROR_SERVER = "An error occurred: Access denied connecting to TFS server";
     protected static final String AUTH_ERROR_FEDERATED = "Federated authentication to this server requires a username and password.";
+    private static final String WORKSPACE_COULD_NOT_BE_DETERMINED = "The workspace could not be determined from any argument paths or the current working directory.";
 
     private final String localPath;
     private final String collection;
@@ -128,6 +130,8 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         if (StringUtils.startsWith(stderr, AUTH_ERROR_SERVER) || StringUtils.contains(stderr, AUTH_ERROR_FEDERATED)) {
             logger.warn("Authentication exception hit when running 'tf workfold'");
             throw new ToolAuthenticationException();
+        } else if (StringUtils.contains(stderr, WORKSPACE_COULD_NOT_BE_DETERMINED)) {
+            throw new WorkspaceCouldNotBeDeterminedException();
         }
         super.throwIfError(stderr);
     }
