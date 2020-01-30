@@ -20,6 +20,8 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
@@ -32,6 +34,7 @@ import com.intellij.ui.HyperlinkLabel;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
+import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcClient;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.services.PropertyService;
@@ -45,6 +48,9 @@ import javax.swing.JPanel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public class ProjectConfigurableForm {
     private static Logger ourLogger = Logger.getInstance(ProjectConfigurableForm.class);
@@ -67,7 +73,11 @@ public class ProjectConfigurableForm {
     private HyperlinkLabel downloadLink;
     private JPanel downloadLinkPane;
     private JCheckBox useReactiveClientCheckBox;
+    private JLabel visualStudioClientLabel;
+    private TextFieldWithBrowseButton visualStudioClientField;
+    private JButton testVisualStudioClientButton;
     private String originalTfLocation = StringUtils.EMPTY;
+    private String originalVsClientPath = StringUtils.EMPTY;
 
     public ProjectConfigurableForm(final Project project) {
         myProject = project;
@@ -139,6 +149,18 @@ public class ProjectConfigurableForm {
             }
         });
 
+        // Visual Studio client is only available on Windows:
+        visualStudioClientLabel.setVisible(SystemInfo.isWindows);
+        visualStudioClientField.setVisible(SystemInfo.isWindows);
+        testVisualStudioClientButton.setVisible(SystemInfo.isWindows);
+        if (SystemInfo.isWindows) {
+            visualStudioClientLabel.setText(
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT));
+            testVisualStudioClientButton.setText(
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT_TEST));
+            testVisualStudioClientButton.addActionListener(action -> testVisualStudioClient());
+        }
+
         // load settings
         load();
 
@@ -189,6 +211,10 @@ public class ProjectConfigurableForm {
         return tfExeField.getText().trim();
     }
 
+    private String getCurrentVisualStudioClientPath() {
+        return visualStudioClientField.getText().trim();
+    }
+
     public void load() {
         PropertyService propertyService = PropertyService.getInstance();
 
@@ -204,6 +230,20 @@ public class ProjectConfigurableForm {
         boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
+
+        if (SystemInfo.isWindows) {
+            String visualStudioTfLocation =
+                    propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
+            if (StringUtils.isEmpty(visualStudioTfLocation)) {
+                Path detectedPath = VisualStudioTfvcClient.detectClientPath();
+                if (detectedPath != null) {
+                    visualStudioTfLocation = detectedPath.toString();
+                }
+            }
+
+            originalVsClientPath = visualStudioTfLocation;
+            visualStudioClientField.setText(visualStudioTfLocation);
+        }
     }
 
     public void apply() {
@@ -214,6 +254,10 @@ public class ProjectConfigurableForm {
         propertyService.setProperty(
                 PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT,
                 isReactiveClientEnabled ? "true" : "false");
+
+        propertyService.setProperty(
+                PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH,
+                getCurrentVisualStudioClientPath());
     }
 
     public boolean isModified() {
@@ -221,7 +265,10 @@ public class ProjectConfigurableForm {
         boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
-                && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected());
+                && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected()
+                && Objects.equals(
+                        propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH),
+                        getCurrentVisualStudioClientPath()));
     }
 
     public void reset() {
@@ -232,8 +279,48 @@ public class ProjectConfigurableForm {
         boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
                 propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
+
+        visualStudioClientField.setText(originalVsClientPath);
     }
 
+    private void testVisualStudioClient() {
+        String visualStudioClientPathString = getCurrentVisualStudioClientPath();
+        if (StringUtils.isEmpty(visualStudioClientPathString)) {
+            Messages.showErrorDialog(
+                    myContentPane,
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VS_CLIENT_PATH_EMPTY),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+            return;
+        }
+
+        Path visualStudioClientPath = Paths.get(visualStudioClientPathString);
+        if (!visualStudioClientPath.toFile().isFile()) {
+            Messages.showErrorDialog(
+                    myContentPane,
+                    TfPluginBundle.message(
+                            TfPluginBundle.KEY_TFVC_SETTINGS_VS_CLIENT_PATH_NOT_FOUND,
+                            visualStudioClientPathString),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
+            return;
+        }
+
+        VisualStudioTfvcClient.checkVersionAsync(visualStudioClientPath)
+                .thenAccept(unused -> ApplicationManager.getApplication().invokeLater(
+                        () -> Messages.showInfoMessage(
+                                myContentPane,
+                                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_FOUND_VS_CLIENT_EXE),
+                                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE)),
+                        ModalityState.stateForComponent(myContentPane)))
+                .exceptionally(ex -> {
+                    ApplicationManager.getApplication().invokeLater(
+                            () -> Messages.showWarningDialog(
+                                    myContentPane,
+                                    LocalizationServiceImpl.getInstance().getExceptionMessage(ex),
+                                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE)),
+                            ModalityState.stateForComponent(myContentPane));
+                    return null;
+                });
+    }
 
 //    public boolean useProxy() {
 //        return myUseIdeaHttpProxyCheckBox.isSelected();
