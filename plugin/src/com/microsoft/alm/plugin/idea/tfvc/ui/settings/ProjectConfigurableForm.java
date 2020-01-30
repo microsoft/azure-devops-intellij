@@ -109,7 +109,7 @@ public class ProjectConfigurableForm {
                     Messages.showErrorDialog(myContentPane,
                             TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_EMPTY),
                             TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
-                    downloadLink.setVisible(true);
+                    downloadLinkPane.setVisible(true);
                     return;
                 }
                 File tfCmdFile = new File(tfCmdPath);
@@ -117,7 +117,7 @@ public class ProjectConfigurableForm {
                     Messages.showErrorDialog(myContentPane,
                             TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_PATH_NOT_FOUND, tfCmdPath),
                             TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE));
-                    downloadLink.setVisible(true);
+                    downloadLinkPane.setVisible(true);
                     return;
                 }
                 PropertyService.getInstance().setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
