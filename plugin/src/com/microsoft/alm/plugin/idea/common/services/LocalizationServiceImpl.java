@@ -103,6 +103,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             put(ToolException.KEY_TF_BRANCH_EXISTS, "ToolException.TF.BranchExists");
             put(ToolException.KEY_TF_OOM, "ToolException.TF.OOM");
             put(ToolException.KEY_TF_AUTH_FAIL, "ToolException.TF.Auth.Fail");
+            put(ToolException.KEY_TF_VS_MIN_VERSION_WARNING, "ToolException.VS.MinVersionWarning");
         }
     };
 

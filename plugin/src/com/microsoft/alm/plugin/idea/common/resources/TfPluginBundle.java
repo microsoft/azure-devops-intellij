@@ -798,6 +798,16 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_SETTINGS_PATH_PLACEHOLDER_NOWIN = "Tfvc.Settings.Path.PlaceHolder.NoWin";
     public static final String KEY_TFVC_SETTINGS_PATH_EMPTY = "Tfvc.Settings.Path.Empty";
     public static final String KEY_TFVC_SETTINGS_PATH_NOT_FOUND = "Tfvc.Settings.Path.NotFound";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT = "Tfvc.Settings.VisualStudioClient";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT_TEST = "Tfvc.Settings.VisualStudioClient.Test";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_VS_CLIENT_PATH_EMPTY = "Tfvc.Settings.VisualStudioClient.PathEmpty";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_VS_CLIENT_PATH_NOT_FOUND = "Tfvc.Settings.VisualStudioClient.PathNotFound";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_FOUND_VS_CLIENT_EXE = "Tfvc.Settings.VisualStudioClient.Found";
 
     //TFVC Edit Workspace Action
     @NonNls
