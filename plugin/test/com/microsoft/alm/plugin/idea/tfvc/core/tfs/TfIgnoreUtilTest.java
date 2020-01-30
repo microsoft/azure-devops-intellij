@@ -8,10 +8,10 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
+import static com.microsoft.alm.plugin.idea.tfvc.FileSystemTestUtil.createTempFileSystem;
 import static org.junit.Assert.assertEquals;
 
 public class TfIgnoreUtilTest {
@@ -79,29 +79,5 @@ public class TfIgnoreUtilTest {
 
         File expectedTfIgnore = projectRoot.resolve("src/.tfignore").toFile();
         assertEquals(expectedTfIgnore, tfIgnore);
-    }
-
-    /**
-     * Creates a file system tree in a temporary directory.
-     * @param entriesToCreate a list of paths to create. If path ends with '/', it will become a directory; otherwise it
-     *                        will become a file
-     * @return a path to the root of the file system tree.
-     */
-    private static Path createTempFileSystem(String... entriesToCreate) throws IOException {
-        Path rootDirectory = Files.createTempDirectory("azuredevopstest");
-        for (String relativePath : entriesToCreate) {
-            Path resultingPath = rootDirectory.resolve(relativePath);
-            Path directoryPath = resultingPath.getParent();
-
-            Files.createDirectories(directoryPath);
-            if (relativePath.endsWith("/")) {
-                Files.createDirectories(resultingPath);
-            } else {
-                //noinspection ResultOfMethodCallIgnored
-                resultingPath.toFile().createNewFile();
-            }
-        }
-
-        return rootDirectory;
     }
 }

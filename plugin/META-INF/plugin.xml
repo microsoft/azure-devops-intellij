@@ -91,6 +91,8 @@
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
         <vcsConfigurableProvider implementation="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesConfigurable"/>
 
+        <vcsRootChecker implementation="com.microsoft.alm.plugin.idea.tfvc.extensions.TfvcRootChecker"/>
+
         <fileTypeFactory implementation="com.microsoft.alm.plugin.idea.tfvc.tfignore.TfIgnoreFileTypeFactory"/>
 
         <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder" />

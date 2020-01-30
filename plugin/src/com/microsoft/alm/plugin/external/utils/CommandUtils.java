@@ -59,6 +59,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -91,8 +92,14 @@ public class CommandUtils {
      */
     public static Workspace getPartialWorkspace(final Project project) {
         ArgumentHelper.checkNotNull(project, "project");
-        final FindWorkspaceCommand command = new FindWorkspaceCommand(project.getBasePath());
-        return command.runSynchronously();
+        String basePath = project.getBasePath();
+        if (basePath == null) return null;
+        return getPartialWorkspace(Paths.get(basePath));
+    }
+
+    @Nullable
+    public static Workspace getPartialWorkspace(@NotNull java.nio.file.Path path) {
+        return new FindWorkspaceCommand(path.toString()).runSynchronously();
     }
 
     /**
