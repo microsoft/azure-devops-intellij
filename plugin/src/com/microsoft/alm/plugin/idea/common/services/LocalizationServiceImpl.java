@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 
 /**
  * Provides an implementation for string localization in IntelliJ
@@ -43,7 +44,13 @@ public class LocalizationServiceImpl implements LocalizationService {
      * @param t
      * @return localized string
      */
-    public String getExceptionMessage(final Throwable t) {
+    public String getExceptionMessage(Throwable t) {
+        // Unwrap a CompletionException:
+        if (t instanceof CompletionException) {
+            Throwable cause = t.getCause();
+            if (cause != null)
+                t = cause;
+        }
 
         //get exception message
         String message = t.getLocalizedMessage();
