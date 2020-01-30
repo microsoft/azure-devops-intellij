@@ -156,6 +156,13 @@ public class ProjectConfigurableForm {
         if (SystemInfo.isWindows) {
             visualStudioClientLabel.setText(
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT));
+            visualStudioClientField.addBrowseFolderListener(
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_TITLE),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT),
+                    project,
+                    new FileChooserDescriptor(true, false, false ,false, false, false)
+                            .withFileFilter(virtualFile -> virtualFile.getName().equalsIgnoreCase("tf.exe"))
+            );
             testVisualStudioClientButton.setText(
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT_TEST));
             testVisualStudioClientButton.addActionListener(action -> testVisualStudioClient());
