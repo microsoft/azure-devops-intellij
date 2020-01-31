@@ -582,6 +582,18 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_LOCK_DIALOG_UNLOCK_BUTTON = "Tfvc.Lock.Dialog.UnlockButton";
 
+    // TFVC Import Workspace Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE = "Actions.Tfvc.ImportWorkspace.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_DESCRIPTION = "Actions.Tfvc.ImportWorkspace.Description";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_SELECT_WORKSPACE_PATH = "Actions.Tfvc.SelectWorkspacePath";
+    @NonNls
+    public static final String KEY_TFVC_WORKSPACE_NOT_DETECTED = "Tfvc.WorkspaceNotDetected";
+    @NonNls
+    public static final String KEY_TFVC_WORKSPACE_ALREADY_IMPORTED = "Tfvc.WorkspaceAlreadyImported";
+
     //TFVC Branch Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_TITLE = "Actions.Tfvc.Branch.Title";

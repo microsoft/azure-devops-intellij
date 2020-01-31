@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.external.visualstudio;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.microsoft.alm.plugin.external.exceptions.VisualStudioClientVersionException;
@@ -17,10 +16,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class VisualStudioTfvcClient {
 
@@ -31,7 +29,6 @@ public class VisualStudioTfvcClient {
     private static final String EDITION_RELATIVE_TF_EXE_PATH =
             "Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\TF.exe";
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
     private static final ToolVersion MINIMAL_SUPPORTED_VERSION = new ToolVersion(15, 0, 0, "");
 
     /**
@@ -61,46 +58,41 @@ public class VisualStudioTfvcClient {
 
     @NotNull
     public static CompletionStage<Void> checkVersionAsync(Path visualStudioClientPath) {
-        CompletableFuture<Void> result = new CompletableFuture<>();
-        try {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    ToolVersion clientVersion = getClientVersion(visualStudioClientPath);
-                    if (clientVersion == null)
-                        throw new VisualStudioClientVersionException(ToolVersion.UNKNOWN, MINIMAL_SUPPORTED_VERSION);
+        return VisualStudioTfvcCommands.getVersionAsync(visualStudioClientPath).thenAccept(version -> {
+            if (version == null)
+                throw new VisualStudioClientVersionException(ToolVersion.UNKNOWN, MINIMAL_SUPPORTED_VERSION);
 
-                    if (MINIMAL_SUPPORTED_VERSION.compare(clientVersion) > 0)
-                        throw new VisualStudioClientVersionException(clientVersion, MINIMAL_SUPPORTED_VERSION);
-
-                    result.complete(null);
-                } catch (Throwable t) {
-                    result.completeExceptionally(t);
-                }
-            });
-        } catch (Throwable t) {
-            result.completeExceptionally(t);
-        }
-
-        return result;
+            if (MINIMAL_SUPPORTED_VERSION.compare(version) > 0)
+                throw new VisualStudioClientVersionException(version, MINIMAL_SUPPORTED_VERSION);
+        });
     }
 
-    @Nullable
-    private static ToolVersion getClientVersion(Path visualStudioClientPath) throws IOException {
-        ourLogger.info("Checking VS Client: " + visualStudioClientPath);
-        Process process = new ProcessBuilder().command(visualStudioClientPath.toString()).start();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+    static List<String> executeClientAndGetOutput(
+            @NotNull Path clientPath,
+            @Nullable Path workingDirectory,
+            @NotNull List<String> arguments) throws IOException, InterruptedException {
+        ourLogger.info("Executing VS client: " + clientPath + ", args: " + StringUtils.join(arguments, ','));
+        List<String> command = new ArrayList<>(arguments.size() + 1);
+        command.add(clientPath.toString());
+        command.addAll(arguments);
+
+        Process client = new ProcessBuilder()
+                .command(command)
+                .directory(workingDirectory == null ? null : workingDirectory.toFile())
+                .start();
+
+        List<String> output = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                ourLogger.info("Client stdout: " + line);
-
-                Matcher matcher = VERSION_PATTERN.matcher(line);
-                if (matcher.find()) {
-                    ourLogger.info("Client version: " + matcher.group());
-                    return new ToolVersion(matcher.group());
-                }
+                ourLogger.info("VS client stdout: " + line);
+                output.add(line);
             }
         }
 
-        return null;
+        int exitCode = client.waitFor();
+        ourLogger.info("VS client exit code: " + exitCode);
+
+        return output;
     }
 }
