@@ -1,17 +1,18 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.progress.impl.ProgressManagerImpl;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.roots.VcsIntegrationEnabler;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.tfvc.actions.ImportWorkspaceAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
@@ -24,31 +25,34 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
     @Override
     protected boolean initOrNotifyError(@NotNull VirtualFile projectDir) {
         VcsNotifier vcsNotifier = VcsNotifier.getInstance(myProject);
-        AtomicBoolean success = new AtomicBoolean();
-        UIUtil.invokeAndWaitIfNeeded(
-                () -> ImportWorkspaceAction.importWorkspaceUnderProgressAsync(
-                        myProject,
-                        Paths.get(projectDir.getPath()))).handle((result, error) -> {
-            if (error == null) {
-                success.set(true);
-                vcsNotifier.notifySuccess(
-                        TfPluginBundle.message(
-                                TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_SUCCESS,
-                                projectDir.getPresentableUrl()));
-            } else {
-                success.set(false);
-                String exceptionMessage = LocalizationServiceImpl.getInstance().getExceptionMessage(error);
-                vcsNotifier.notifyError(
-                        TfPluginBundle.message(
-                                TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_ERROR,
-                                projectDir.getPresentableUrl()),
-                        exceptionMessage);
-                ourLogger.error(error);
-            }
+        boolean success;
+        try {
+            ProgressManagerImpl.getInstance().run(new Task.Modal(
+                    myProject,
+                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE),
+                    true) {
+                @Override
+                public void run(@NotNull ProgressIndicator indicator) {
+                    ImportWorkspaceAction.importWorkspaceAsync(myProject, indicator, Paths.get(projectDir.getPath()))
+                            .toCompletableFuture().join();
+                }
+            });
 
-            return null;
-        }).toCompletableFuture().join();
+            vcsNotifier.notifySuccess(
+                    TfPluginBundle.message(
+                            TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_SUCCESS,
+                            projectDir.getPresentableUrl()));
+            success = true;
+        } catch (Throwable error) {
+            ourLogger.error(error);
+            vcsNotifier.notifyError(
+                    TfPluginBundle.message(
+                            TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_ERROR,
+                            projectDir.getPresentableUrl()),
+                    LocalizationServiceImpl.getInstance().getExceptionMessage(error));
+            success = false;
+        }
 
-        return success.get();
+        return success;
     }
 }

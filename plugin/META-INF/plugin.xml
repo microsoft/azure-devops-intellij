@@ -191,10 +191,6 @@
             <action id="Tfvc.ManageWorkspaces" class="com.microsoft.alm.plugin.idea.tfvc.actions.ManageWorkspacesAction"/>
         </group>
 
-        <action id="Tfvc.ImportWorkspace" class="com.microsoft.alm.plugin.idea.tfvc.actions.ImportWorkspaceAction">
-            <add-to-group group-id="VcsGroups" anchor="after" relative-to-action="Start.Use.Vcs" />
-        </action>
-
         <group id="TfvcTreePopupMenu">
         </group>
 
