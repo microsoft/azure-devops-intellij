@@ -22,12 +22,16 @@ import java.nio.file.Paths;
 public class TfvcRootChecker extends VcsRootChecker {
     private static final Logger ourLogger = Logger.getInstance(TfvcRootChecker.class);
 
-    @Override
-    public boolean isRoot(@NotNull String path) {
+    public static boolean isPossibleTfvcWorkspaceRoot(@NotNull String path) {
         if (StringUtil.isEmpty(TfTool.getLocation()))
             return false;
 
-        if (!new File(path, "$tf").isDirectory() && !new File(path, ".tf").isDirectory())
+        return new File(path, "$tf").isDirectory() || new File(path, ".tf").isDirectory();
+    }
+
+    @Override
+    public boolean isRoot(@NotNull String path) {
+        if (!isPossibleTfvcWorkspaceRoot(path))
             return false;
 
         return EULADialog.executeWithGuard(null, () -> {
