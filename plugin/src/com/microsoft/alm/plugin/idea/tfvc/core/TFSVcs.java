@@ -23,11 +23,13 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.progress.util.BackgroundTaskUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.AbstractVcs;
@@ -39,6 +41,7 @@ import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsNotifier;
+import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.VcsShowSettingOption;
 import com.intellij.openapi.vcs.VcsVFSListener;
@@ -47,6 +50,7 @@ import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
+import com.intellij.openapi.vcs.roots.VcsRootDetector;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.vcsUtil.VcsUtil;
@@ -70,6 +74,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.event.HyperlinkEvent;
 import javax.ws.rs.NotAuthorizedException;
+import java.util.Collection;
 
 /**
  * Class that sets up the TFS version control extension.
@@ -134,6 +139,14 @@ public class TFSVcs extends AbstractVcs {
         Disposer.dispose(fileListener);
         tfsFileSystemListener.dispose();
         tfsFileSystemListener = null;
+    }
+
+    @Override
+    public void enableIntegration() {
+        BackgroundTaskUtil.executeOnPooledThread(myProject, () -> {
+            Collection<VcsRoot> roots = ServiceManager.getService(myProject, VcsRootDetector.class).detect();
+            new TfvcIntegrationEnabler(this).enable(roots);
+        });
     }
 
     public VcsShowConfirmationOption getAddConfirmation() {
