@@ -198,7 +198,8 @@ public class ImportWorkspaceAction extends AnAction {
                 });
     }
 
-    public static void startWorkspaceImportUnderProgress(@Nullable Project project, @NotNull Path workspacePath) {
+    public static CompletionStage<Void> importWorkspaceUnderProgressAsync(@Nullable Project project, @NotNull Path workspacePath) {
+        CompletableFuture<Void> result = new CompletableFuture<>();
         Task.Backgroundable task = new Task.Backgroundable(
                 project,
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE),
@@ -206,12 +207,20 @@ public class ImportWorkspaceAction extends AnAction {
                 PerformInBackgroundOption.ALWAYS_BACKGROUND) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                importWorkspaceAsync(project, indicator, workspacePath).toCompletableFuture().join();
+                try {
+                    importWorkspaceAsync(project, indicator, workspacePath).toCompletableFuture().join();
+                    result.complete(null);
+                } catch (Throwable t) {
+                    result.completeExceptionally(t);
+                    throw t;
+                }
             }
         };
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(
                 task,
                 new BackgroundableProcessIndicator(task));
+
+        return result;
     }
 
     @Override
@@ -221,7 +230,7 @@ public class ImportWorkspaceAction extends AnAction {
         if (project != null) {
             String basePath = project.getBasePath();
             if (basePath != null && TfvcRootChecker.isPossibleTfvcWorkspaceRoot(basePath)) {
-                startWorkspaceImportUnderProgress(project, Paths.get(basePath));
+                importWorkspaceUnderProgressAsync(project, Paths.get(basePath));
                 return;
             }
         }
@@ -231,6 +240,6 @@ public class ImportWorkspaceAction extends AnAction {
                         .withTitle(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SELECT_WORKSPACE_PATH)),
                 project,
                 null,
-                virtualFile -> startWorkspaceImportUnderProgress(project, Paths.get(virtualFile.getPath())));
+                virtualFile -> importWorkspaceUnderProgressAsync(project, Paths.get(virtualFile.getPath())));
     }
 }

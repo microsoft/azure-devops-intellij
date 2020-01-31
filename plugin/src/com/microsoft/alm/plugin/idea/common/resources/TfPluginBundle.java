@@ -123,6 +123,10 @@ public class TfPluginBundle {
     public static final String KEY_ERRORS_UNABLE_TO_DETERMINE_WORKSPACE = "Errors.UnableToDetermineWorkspace";
     @NonNls
     public static final String KEY_TFVC_ACTION_ADD_TO_TFIGNORE = "Tfvc.Action.AddToTfIgnore";
+    @NonNls
+    public static final String KEY_TFVC_REPOSITORY_IMPORT_ERROR = "Tfvc.RepositoryImportError";
+    @NonNls
+    public static final String KEY_TFVC_REPOSITORY_IMPORT_SUCCESS = "Tfvc.RepositoryImportSuccess";
 
     // Checkout dialog ui and models
     @NonNls
