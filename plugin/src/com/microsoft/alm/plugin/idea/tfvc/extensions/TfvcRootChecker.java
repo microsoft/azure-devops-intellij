@@ -12,34 +12,47 @@ import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDetermine
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcCommands;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.alm.plugin.services.PropertyService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TfvcRootChecker extends VcsRootChecker {
     private static final Logger ourLogger = Logger.getInstance(TfvcRootChecker.class);
 
-    public static boolean isPossibleTfvcWorkspaceRoot(@NotNull String path) {
-        if (StringUtil.isEmpty(TfTool.getLocation()))
-            return false;
-
+    private static boolean isPossibleTfvcWorkspaceRoot(@NotNull String path) {
         return new File(path, "$tf").isDirectory() || new File(path, ".tf").isDirectory();
     }
 
     @Override
     public boolean isRoot(@NotNull String path) {
+        if (StringUtil.isEmpty(TfTool.getLocation()))
+            return false;
+
         if (!isPossibleTfvcWorkspaceRoot(path))
             return false;
 
         return EULADialog.executeWithGuard(null, () -> {
             Workspace workspace = null;
+            Path workspacePath = Paths.get(path);
             try {
-                workspace = CommandUtils.getPartialWorkspace(Paths.get(path));
+                workspace = CommandUtils.getPartialWorkspace(workspacePath);
             } catch (WorkspaceCouldNotBeDeterminedException ex) {
                 ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
+            }
+
+            if (workspace == null) {
+                PropertyService propertyService = PropertyService.getInstance();
+                String vsClientPath = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
+                if (!StringUtil.isEmpty(vsClientPath))
+                    workspace = VisualStudioTfvcCommands.getPartialWorkspaceAsync(
+                            Paths.get(vsClientPath),
+                            workspacePath).toCompletableFuture().join();
             }
 
             if (workspace == null) return false;
