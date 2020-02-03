@@ -107,7 +107,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
     public static CompletionStage<Boolean> importWorkspaceAsync(@Nullable Project project, @NotNull ProgressIndicator indicator, @NotNull Path workspacePath) {
         Application application = ApplicationManager.getApplication();
 
-        final double totalSteps = 4.0;
+        final double totalSteps = 5.0;
         indicator.setIndeterminate(false);
         indicator.setFraction(0.0 / totalSteps);
 
@@ -165,7 +165,16 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                         CommandUtils.refreshWorkspacesForServer(authenticationInfo, collectionUrl);
                         indicator.setFraction(4.0 / totalSteps);
 
-                        return true;
+                        ourLogger.info("Checking if workspace was successfully imported from path: \"" + workspacePath + "\"");
+                        Workspace workspace;
+                        try {
+                            workspace = CommandUtils.getPartialWorkspace(workspacePath);
+                            indicator.setFraction(5.0 / totalSteps);
+                        } catch (WorkspaceCouldNotBeDeterminedException ex) {
+                            return false;
+                        }
+
+                        return workspace != null;
                     });
                 });
     }
