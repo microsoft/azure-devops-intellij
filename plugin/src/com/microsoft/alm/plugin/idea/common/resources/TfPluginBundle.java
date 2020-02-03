@@ -124,9 +124,13 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_ACTION_ADD_TO_TFIGNORE = "Tfvc.Action.AddToTfIgnore";
     @NonNls
+    public static final String KEY_TFVC_IMPORT_WORKSPACE_TITLE = "Actions.Tfvc.ImportWorkspace.Title";
+    @NonNls
     public static final String KEY_TFVC_REPOSITORY_IMPORT_ERROR = "Tfvc.RepositoryImportError";
     @NonNls
     public static final String KEY_TFVC_REPOSITORY_IMPORT_SUCCESS = "Tfvc.RepositoryImportSuccess";
+    @NonNls
+    public static final String KEY_TFVC_WORKSPACE_NOT_DETECTED = "Tfvc.WorkspaceNotDetected";
 
     // Checkout dialog ui and models
     @NonNls
@@ -230,7 +234,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_WIT_FIELD_WORK_ITEM_TYPE = "WitField.WorkItemType";
 
-    // Work item association meesages
+    // Work item association messages
     @NonNls
     public static final String KEY_WIT_ASSOCIATION_SUCCESSFUL_TITLE = "WitAssociation.Successful.Title";
     @NonNls
@@ -585,12 +589,6 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_LOCK_DIALOG_LOCK_BUTTON = "Tfvc.Lock.Dialog.LockButton";
     @NonNls
     public static final String KEY_TFVC_LOCK_DIALOG_UNLOCK_BUTTON = "Tfvc.Lock.Dialog.UnlockButton";
-
-    // TFVC Import Workspace Action
-    @NonNls
-    public static final String KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE = "Actions.Tfvc.ImportWorkspace.Title";
-    @NonNls
-    public static final String KEY_TFVC_WORKSPACE_NOT_DETECTED = "Tfvc.WorkspaceNotDetected";
 
     //TFVC Branch Action
     @NonNls
