@@ -48,7 +48,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         Messages.showErrorDialog(
                 project,
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_VS_CLIENT_PATH_EMPTY),
-                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE));
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_IMPORT_WORKSPACE_TITLE));
         ShowSettingsUtil.getInstance().showSettingsDialog(project, TFSVcs.TFVC_NAME);
     }
 
@@ -58,17 +58,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         Messages.showErrorDialog(
                 project,
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_WORKSPACE_NOT_DETECTED),
-                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE));
-    }
-
-    private static void showErrorDialog(@Nullable Project project, Throwable error) {
-        ApplicationManager.getApplication().assertIsDispatchThread();
-        LocalizationServiceImpl localizationService = LocalizationServiceImpl.getInstance();
-
-        Messages.showErrorDialog(
-                project,
-                localizationService.getExceptionMessage(error),
-                TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE));
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_IMPORT_WORKSPACE_TITLE));
     }
 
     private static CompletionStage<AuthenticationInfo> getAuthenticationInfoAsync(@NotNull String serverUrl) {
@@ -115,7 +105,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         return result;
     }
 
-    public static CompletionStage<Void> importWorkspaceAsync(@Nullable Project project, @NotNull ProgressIndicator indicator, @NotNull Path workspacePath) {
+    public static CompletionStage<Boolean> importWorkspaceAsync(@Nullable Project project, @NotNull ProgressIndicator indicator, @NotNull Path workspacePath) {
         Application application = ApplicationManager.getApplication();
 
         final double totalSteps = 4.0;
@@ -127,8 +117,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
             Workspace existingWorkspace = CommandUtils.getPartialWorkspace(workspacePath);
             if (existingWorkspace != null) {
                 ourLogger.info("Workspace under path \"" + workspacePath + "\" is already imported, exiting");
-                // TODO: Call the VcsIntegrationEnabler here
-                return CompletableFuture.completedFuture(null);
+                return CompletableFuture.completedFuture(true);
             }
         } catch (WorkspaceCouldNotBeDeterminedException ex) {
             ourLogger.info("No known workspace detected under path \"" + workspacePath + "\"");
@@ -139,7 +128,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         String visualStudioClientPath = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
         if (StringUtils.isEmpty(visualStudioClientPath)) {
             application.invokeLater(() -> showNoVsClientDialog(project));
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(false);
         }
 
         ourLogger.info("Determining workspace information from client \"" + visualStudioClientPath + "\" for path \"" + workspacePath + "\"");
@@ -148,27 +137,27 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                     if (vsWorkspace == null) {
                         ourLogger.info("No workspace information, exiting");
                         application.invokeLater(() -> showNoWorkspaceDetectedDialog(project));
-                        return CompletableFuture.completedFuture(null);
+                        return CompletableFuture.completedFuture(false);
                     }
 
                     if (indicator.isCanceled()) {
                         ourLogger.info("Operation canceled, exiting");
-                        return CompletableFuture.completedFuture(null);
+                        return CompletableFuture.completedFuture(false);
                     }
 
                     indicator.setFraction(2.0 / totalSteps);
 
                     String collectionUrl = vsWorkspace.getServer();
                     ourLogger.info("Gathering authentication info for URL: " + collectionUrl);
-                    return getAuthenticationInfoAsync(collectionUrl).thenAccept(authenticationInfo -> {
+                    return getAuthenticationInfoAsync(collectionUrl).thenApply(authenticationInfo -> {
                         if (authenticationInfo == null) {
                             ourLogger.info("authenticationInfo == null, exiting");
-                            return;
+                            return false;
                         }
 
                         if (indicator.isCanceled()) {
                             ourLogger.info("Operation canceled, exiting");
-                            return;
+                            return false;
                         }
 
                         indicator.setFraction(3.0 / totalSteps);
@@ -177,12 +166,8 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                         CommandUtils.refreshWorkspacesForServer(authenticationInfo, collectionUrl);
                         indicator.setFraction(4.0 / totalSteps);
 
-                        // TODO: Call the VcsIntegrationEnabler here
+                        return true;
                     });
-                }).exceptionally(ex -> {
-                    ourLogger.error(ex);
-                    application.invokeLater(() -> showErrorDialog(project, ex));
-                    return null;
                 });
     }
 
@@ -191,22 +176,23 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         VcsNotifier vcsNotifier = VcsNotifier.getInstance(myProject);
         boolean success;
         try {
-            ProgressManagerImpl.getInstance().run(new Task.Modal(
+            success = ProgressManagerImpl.getInstance().run(new Task.WithResult<Boolean, Exception>(
                     myProject,
-                    TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_IMPORT_WORKSPACE_TITLE),
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_IMPORT_WORKSPACE_TITLE),
                     true) {
                 @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    importWorkspaceAsync(myProject, indicator, Paths.get(projectDir.getPath()))
+                protected Boolean compute(@NotNull ProgressIndicator indicator) {
+                    return importWorkspaceAsync(myProject, indicator, Paths.get(projectDir.getPath()))
                             .toCompletableFuture().join();
                 }
             });
 
-            vcsNotifier.notifySuccess(
-                    TfPluginBundle.message(
-                            TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_SUCCESS,
-                            projectDir.getPresentableUrl()));
-            success = true;
+            if (success) {
+                vcsNotifier.notifySuccess(
+                        TfPluginBundle.message(
+                                TfPluginBundle.KEY_TFVC_REPOSITORY_IMPORT_SUCCESS,
+                                projectDir.getPresentableUrl()));
+            }
         } catch (Throwable error) {
             ourLogger.error(error);
             vcsNotifier.notifyError(
