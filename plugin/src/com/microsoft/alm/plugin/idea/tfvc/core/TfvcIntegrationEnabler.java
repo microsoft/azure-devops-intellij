@@ -15,7 +15,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
-import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
@@ -80,7 +79,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
             }
 
             ourLogger.info("Authentication provider pass for URL: " + serverUrl);
-            AuthenticationProvider authenticationProvider = TfsAuthenticationProvider.getInstance();
+            AuthenticationProvider authenticationProvider = serverContextManager.getAuthenticationProvider(serverUrl);
             authenticationProvider.authenticateAsync(serverUrl, new AuthenticationListener() {
                 @Override
                 public void authenticating() {
