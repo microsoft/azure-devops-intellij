@@ -9,9 +9,17 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.progress.impl.ProgressManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.AbstractVcs;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsNotifier;
+import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vcs.roots.VcsIntegrationEnabler;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.AuthenticationListener;
 import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
@@ -30,15 +38,96 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+
+import static java.util.stream.Collectors.toList;
 
 public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
     private static final Logger ourLogger = Logger.getInstance(TfvcIntegrationEnabler.class);
 
+    private final TFSVcs myVcs;
+
     protected TfvcIntegrationEnabler(@NotNull TFSVcs vcs) {
         super(vcs);
+        myVcs = vcs;
+    }
+
+    @Override
+    public void enable(@NotNull Collection<VcsRoot> vcsRoots) {
+        // This override does the same as base method, but tries to determine a workspace directory instead of using
+        // project.getBaseDir().
+        Collection<VirtualFile> existingRoots = vcsRoots.stream().filter(root -> {
+            AbstractVcs<?> vcs = root.getVcs();
+            return vcs != null && vcs.getName().equals(myVcs.getName());
+        }).map(VcsRoot::getPath).collect(toList());
+
+        if (!existingRoots.isEmpty()) {
+            super.enable(vcsRoots);
+            return;
+        }
+
+        String basePath = myProject.getBasePath();
+        if (basePath == null) {
+            ourLogger.warn("Project base path is null");
+            return;
+        }
+
+        Path workspacePath = determineWorkspaceDirectory(Paths.get(basePath));
+        VirtualFile workspaceFile = ObjectUtils.notNull(
+                LocalFileSystem.getInstance().findFileByIoFile(workspacePath.toFile()));
+
+        if (initOrNotifyError(workspaceFile))
+            addVcsRoot(workspaceFile);
+    }
+
+    @NotNull
+    private static Path determineWorkspaceDirectory(@NotNull Path projectBasePath) {
+        String vsClient = PropertyService.getInstance().getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
+        Path vsClientPath = StringUtil.isEmpty(vsClient) ? null : Paths.get(vsClient);
+
+        Path path = projectBasePath;
+        do {
+            Workspace workspace = null;
+            try {
+                ourLogger.info("Analyzing path \"" + path + "\" using TF Everywhere client");
+                workspace = CommandUtils.getPartialWorkspace(path);
+            } catch (WorkspaceCouldNotBeDeterminedException ex) {
+                ourLogger.info("Path \"" + path + "\" has no TF Everywhere workspace");
+            }
+
+            if (workspace == null && vsClientPath != null)
+                workspace = VisualStudioTfvcCommands.getPartialWorkspaceAsync(vsClientPath, path)
+                        .toCompletableFuture().join();
+
+            String currentPath = path.toAbsolutePath().toString();
+            boolean correspondsToAnyMapping = workspace != null && workspace.getMappings().stream()
+                    .anyMatch(mapping -> FileUtil.pathsEqual(currentPath, mapping.getLocalPath()));
+            if (correspondsToAnyMapping)
+                return path;
+
+            path = path.getParent();
+        } while (path != null);
+
+        ourLogger.warn("No workspace found, falling back to project base path \"" + projectBasePath + "\"");
+        return projectBasePath;
+    }
+
+    private void addVcsRoot(@NotNull VirtualFile root) {
+        ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(myProject);
+        List<VirtualFile> currentVcsRoots = Arrays.asList(vcsManager.getRootsUnderVcs(myVcs));
+
+        List<VcsDirectoryMapping> mappings = new ArrayList<>(vcsManager.getDirectoryMappings(myVcs));
+        if (!currentVcsRoots.contains(root)) {
+            mappings.add(new VcsDirectoryMapping(root.getPath(), myVcs.getName()));
+        }
+
+        vcsManager.setDirectoryMappings(mappings);
     }
 
     private static void showNoVsClientDialog(@Nullable Project project) {
