@@ -12,10 +12,8 @@ import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDetermine
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcCommands;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
-import com.microsoft.alm.plugin.services.PropertyService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -55,15 +53,6 @@ public class TfvcRootChecker extends VcsRootChecker {
                 workspace = CommandUtils.getPartialWorkspace(workspacePath);
             } catch (WorkspaceCouldNotBeDeterminedException ex) {
                 ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
-            }
-
-            if (workspace == null) {
-                PropertyService propertyService = PropertyService.getInstance();
-                String vsClientPath = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
-                if (!StringUtil.isEmpty(vsClientPath))
-                    workspace = VisualStudioTfvcCommands.getPartialWorkspaceAsync(
-                            Paths.get(vsClientPath),
-                            workspacePath).toCompletableFuture().join();
             }
 
             if (workspace == null) return false;
