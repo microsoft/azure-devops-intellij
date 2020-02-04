@@ -29,12 +29,23 @@ public class TfvcRootChecker extends VcsRootChecker {
         return new File(path, "$tf").isDirectory() || new File(path, ".tf").isDirectory();
     }
 
-    @Override
-    public boolean isRoot(@NotNull String path) {
+    /**
+     * Checks if registered mapping can be used to perform VCS operations. According to the specification, returns
+     * {@code true} if unsure.
+     * <br/>
+     * It is used as optimization in IDEA 2019.2+.
+     */
+    // @Override // only available in IDEA 2019.2
+    public boolean validateRoot(@NotNull String path) {
         if (StringUtil.isEmpty(TfTool.getLocation()))
             return false;
 
-        if (!isPossibleTfvcWorkspaceRoot(path))
+        return isPossibleTfvcWorkspaceRoot(path);
+    }
+
+    @Override
+    public boolean isRoot(@NotNull String path) {
+        if (!validateRoot(path))
             return false;
 
         return EULADialog.executeWithGuard(null, () -> {
