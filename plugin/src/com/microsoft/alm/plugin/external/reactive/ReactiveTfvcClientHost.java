@@ -11,9 +11,11 @@ import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
+import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
@@ -131,6 +133,17 @@ public class ReactiveTfvcClientHost {
 
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
         return new ProcessAdapter() {
+            @Override
+            public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
+                if (outputType == ProcessOutputTypes.STDERR || ourLogger.isTraceEnabled()) {
+                    String message = "Process output (" + outputType + "): " + event.getText();
+                    if (outputType == ProcessOutputTypes.STDERR)
+                        ourLogger.warn(message);
+                    else
+                        ourLogger.trace(message);
+                }
+            }
+
             @Override
             public void processTerminated(@NotNull ProcessEvent event) {
                 ourLogger.info("Process is terminated, terminating the connection");
