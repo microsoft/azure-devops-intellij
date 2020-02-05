@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.progress.impl.ProgressManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcs;
@@ -215,7 +216,9 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         PropertyService propertyService = PropertyService.getInstance();
         String visualStudioClientPath = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
         if (StringUtils.isEmpty(visualStudioClientPath)) {
-            application.invokeLater(() -> showNoVsClientDialog(project));
+            if (SystemInfo.isWindows)
+                application.invokeLater(() -> showNoVsClientDialog(project));
+
             return CompletableFuture.completedFuture(false);
         }
 
