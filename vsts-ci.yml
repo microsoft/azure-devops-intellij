@@ -1,5 +1,5 @@
 jobs:
-  - job: production_build_2017_2
+  - job: production_build_2018_2
     steps:
       - task: CmdLine@1
         displayName: Run printenv
