@@ -28,7 +28,7 @@ jobs:
           path: 'plugin/build/reports'
           artifact: '$(build.buildNumber)-reports'
 
-  - job: test_build_2019_2
+  - job: test_build_2019_3
     steps:
       - task: CmdLine@1
         displayName: Run printenv
@@ -38,7 +38,7 @@ jobs:
       - task: Gradle@1
         displayName: Gradle build (zip)
         inputs:
-          options: '--info --scan -PideaVersion=2019.2'
+          options: '--info --scan -PideaVersion=2019.3'
           tasks: clean :plugin:compileJava
           testResultsFiles: '**/TEST-*.xml'
           jdkVersionOption: 1.8
