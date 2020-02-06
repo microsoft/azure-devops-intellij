@@ -5,8 +5,10 @@ package com.microsoft.alm.plugin.external.visualstudio;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.util.text.StringUtil;
 import com.microsoft.alm.plugin.external.exceptions.VisualStudioClientVersionException;
 import com.microsoft.alm.plugin.external.models.ToolVersion;
+import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +32,16 @@ public class VisualStudioTfvcClient {
             "Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\TF.exe";
 
     private static final ToolVersion MINIMAL_SUPPORTED_VERSION = new ToolVersion(15, 0, 0, "");
+
+    @Nullable
+    public static Path getOrDetectPath(PropertyService propertyService) {
+        String path = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
+        if (!StringUtil.isEmpty(path)) {
+            return Paths.get(path);
+        }
+
+        return detectClientPath();
+    }
 
     /**
      * Tries to detect path to the latest available TFVC client from a set of hardcoded locations.

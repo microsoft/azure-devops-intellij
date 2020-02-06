@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
@@ -29,11 +28,11 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcClient;
 import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcCommands;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.services.PropertyService;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,9 +88,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
     @NotNull
     private static Path determineWorkspaceDirectory(@NotNull Path projectBasePath) {
-        String vsClient = PropertyService.getInstance().getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
-        Path vsClientPath = StringUtil.isEmpty(vsClient) ? null : Paths.get(vsClient);
-
+        Path vsClient = VisualStudioTfvcClient.getOrDetectPath(PropertyService.getInstance());
         Path path = projectBasePath;
         do {
             Workspace workspace = null;
@@ -102,8 +99,8 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                 ourLogger.info("Path \"" + path + "\" has no TF Everywhere workspace");
             }
 
-            if (workspace == null && vsClientPath != null)
-                workspace = VisualStudioTfvcCommands.getPartialWorkspaceAsync(vsClientPath, path)
+            if (workspace == null && vsClient != null)
+                workspace = VisualStudioTfvcCommands.getPartialWorkspaceAsync(vsClient, path)
                         .toCompletableFuture().join();
 
             String currentPath = path.toAbsolutePath().toString();
@@ -213,9 +210,8 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         }
         indicator.setFraction(1.0 / totalSteps);
 
-        PropertyService propertyService = PropertyService.getInstance();
-        String visualStudioClientPath = propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
-        if (StringUtils.isEmpty(visualStudioClientPath)) {
+        Path visualStudioClientPath = VisualStudioTfvcClient.getOrDetectPath(PropertyService.getInstance());
+        if (visualStudioClientPath == null) {
             if (SystemInfo.isWindows)
                 application.invokeLater(() -> showNoVsClientDialog(project));
 
@@ -223,7 +219,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         }
 
         ourLogger.info("Determining workspace information from client \"" + visualStudioClientPath + "\" for path \"" + workspacePath + "\"");
-        return VisualStudioTfvcCommands.getPartialWorkspaceAsync(Paths.get(visualStudioClientPath), workspacePath)
+        return VisualStudioTfvcCommands.getPartialWorkspaceAsync(visualStudioClientPath, workspacePath)
                 .thenCompose(vsWorkspace -> {
                     if (vsWorkspace == null) {
                         ourLogger.info("No workspace information, exiting");
