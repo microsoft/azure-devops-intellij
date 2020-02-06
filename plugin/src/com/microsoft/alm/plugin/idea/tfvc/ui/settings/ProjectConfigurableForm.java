@@ -239,17 +239,11 @@ public class ProjectConfigurableForm {
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
 
         if (SystemInfo.isWindows) {
-            String visualStudioTfLocation =
-                    propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH);
-            if (StringUtils.isEmpty(visualStudioTfLocation)) {
-                Path detectedPath = VisualStudioTfvcClient.detectClientPath();
-                if (detectedPath != null) {
-                    visualStudioTfLocation = detectedPath.toString();
-                }
-            }
+            Path visualStudioTfLocation = VisualStudioTfvcClient.getOrDetectPath(propertyService);
+            String vsClientPath = visualStudioTfLocation == null ? null : visualStudioTfLocation.toString();
 
-            originalVsClientPath = visualStudioTfLocation;
-            visualStudioClientField.setText(visualStudioTfLocation);
+            originalVsClientPath = vsClientPath;
+            visualStudioClientField.setText(vsClientPath);
         }
     }
 
