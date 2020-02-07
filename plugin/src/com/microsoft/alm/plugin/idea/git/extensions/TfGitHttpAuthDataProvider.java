@@ -32,19 +32,13 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     private static final Logger logger = LoggerFactory.getLogger(TfGitHttpAuthDataProvider.class);
 
     /**
-     * This is a method that was introduced into {@link GitHttpAuthDataProvider} in IDEA 2018.2. Azure DevOps plugin is
-     * still compatible with IDEA 2017, thus we cannot properly mark this method as @Override.
-     *
-     * It is important that we override this method in IDEA 2018.2+, because
-     * {@link GitHttpAuthDataProvider#getAuthData(String)} override won't receive the `username@` as part of the URL
-     * starting from this version of IDEA. So we have to add the username to the URL ourselves, because the internal
-     * Azure authentication mechanism requires the URL combined with the username.
-     *
-     * Despite not marked as @Override, this method still overrides the interface method in IDEA 2018.2+, because this
-     * is how Java ABI works.
+     * It is important that we override this method, because {@link GitHttpAuthDataProvider#getAuthData(String)}
+     * override won't receive the `username@` as part of the URL starting from this version of IDEA. So we have to add
+     * the username to the URL ourselves, because the internal Azure authentication mechanism requires the URL combined
+     * with the username.
      */
     @Nullable
-    // @Override // HACK: It is impossible to mark this method as @Override according to the above.
+    @Override
     public AuthData getAuthData(@NotNull Project project, @NotNull String url, @NotNull String login) {
         logger.info("getAuthData: processing URL {}, login {}", url, login);
         try {
@@ -57,7 +51,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     }
 
     @Nullable
-    // @Override // HACK: This method was introduced in IDEA 2018.2 thus we cannot mark it as an override without raising the IDEA version
+    @Override
     public AuthData getAuthData(@NotNull Project project, @NotNull String url) {
         logger.info("getAuthData: processing URL {}", url);
 

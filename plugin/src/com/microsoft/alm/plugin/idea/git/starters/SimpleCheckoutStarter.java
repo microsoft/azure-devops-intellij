@@ -3,15 +3,11 @@
 
 package com.microsoft.alm.plugin.idea.git.starters;
 
-import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.project.DefaultProjectFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsNotifier;
-import com.intellij.openapi.wm.WindowManager;
-import com.intellij.openapi.wm.impl.SystemDock;
-import com.intellij.openapi.wm.impl.WindowManagerImpl;
 import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.starters.StarterBase;
@@ -116,8 +112,6 @@ public class SimpleCheckoutStarter implements StarterBase {
         final CheckoutProvider.Listener listener = ProjectLevelVcsManager.getInstance(project).getCompositeCheckoutListener();
 
         try {
-            launchApplicationWindow();
-
             final SimpleCheckoutController controller = new SimpleCheckoutController(project, listener, gitUrl, ref);
             controller.showModalDialog();
         } catch (Throwable t) {
@@ -126,16 +120,6 @@ public class SimpleCheckoutStarter implements StarterBase {
             VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TITLE),
                     TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_ERRORS_UNEXPECTED, t.getMessage()));
         }
-    }
-
-    /**
-     * Launch IntelliJ window without any project or start menu showing
-     */
-    private void launchApplicationWindow() {
-        SystemDock.updateMenu();
-        WindowManagerImpl windowManager = (WindowManagerImpl) WindowManager.getInstance();
-        IdeEventQueue.getInstance().setWindowManager(windowManager);
-        windowManager.showFrame();
     }
 
     /**
