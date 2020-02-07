@@ -17,6 +17,7 @@ import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,6 @@ import sun.security.util.Debug;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -289,7 +289,7 @@ public abstract class Command<T> {
             xmlInput = new InputSource(new StringReader(stdout));
         }
 
-        final XPath xpath = XPathFactory.newInstance().newXPath();
+        final XPath xpath = new XPathFactoryImpl().newXPath();
         try {
             final Object result = xpath.evaluate(xpathQuery, xmlInput, XPathConstants.NODESET);
             if (result != null && result instanceof NodeList) {
