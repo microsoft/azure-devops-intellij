@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.visualstudio;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.microsoft.alm.plugin.external.exceptions.VisualStudioClientVersionException;
@@ -28,7 +29,7 @@ public class VisualStudioTfvcClient {
 
     private static final String[] SUPPORTED_VS_VERSIONS = new String[] { "2019", "2017" };
     private static final String[] SUPPORTED_VS_EDITIONS = new String[] { "Enterprise", "Professional", "Community" };
-    private static final String EDITION_RELATIVE_TF_EXE_PATH =
+    private static final String TF_EXE_PATH_RELATIVE_TO_EDITION_ROOT =
             "Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\TF.exe";
 
     private static final ToolVersion MINIMAL_SUPPORTED_VERSION = new ToolVersion(15, 0, 0, "");
@@ -61,7 +62,7 @@ public class VisualStudioTfvcClient {
             if (!versionPath.toFile().isDirectory()) continue;
             for (String vsEdition : SUPPORTED_VS_EDITIONS) {
                 Path editionPath = versionPath.resolve(vsEdition);
-                Path tfExePath = editionPath.resolve(EDITION_RELATIVE_TF_EXE_PATH);
+                Path tfExePath = editionPath.resolve(TF_EXE_PATH_RELATIVE_TO_EDITION_ROOT);
                 if (tfExePath.toFile().isFile()) return tfExePath;
             }
         }
@@ -70,8 +71,10 @@ public class VisualStudioTfvcClient {
     }
 
     @NotNull
-    public static CompletionStage<Void> checkVersionAsync(Path visualStudioClientPath) {
-        return VisualStudioTfvcCommands.getVersionAsync(visualStudioClientPath).thenAccept(version -> {
+    public static CompletionStage<Void> checkVersionAsync(
+            @NotNull Project project,
+            @NotNull Path visualStudioClientPath) {
+        return VisualStudioTfvcCommands.getVersionAsync(project, visualStudioClientPath).thenAccept(version -> {
             if (version == null)
                 throw new VisualStudioClientVersionException(ToolVersion.UNKNOWN, MINIMAL_SUPPORTED_VERSION, MINIMAL_SUPPORTED_VERSION_NICKNAME);
 

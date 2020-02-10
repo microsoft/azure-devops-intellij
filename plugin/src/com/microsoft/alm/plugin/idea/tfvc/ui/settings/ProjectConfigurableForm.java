@@ -305,7 +305,7 @@ public class ProjectConfigurableForm {
             return;
         }
 
-        VisualStudioTfvcClient.checkVersionAsync(visualStudioClientPath)
+        VisualStudioTfvcClient.checkVersionAsync(myProject, visualStudioClientPath)
                 .thenAccept(unused -> ApplicationManager.getApplication().invokeLater(
                         () -> Messages.showInfoMessage(
                                 myContentPane,
