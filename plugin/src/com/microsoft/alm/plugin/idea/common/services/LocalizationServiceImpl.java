@@ -49,7 +49,7 @@ public class LocalizationServiceImpl implements LocalizationService {
         if (t instanceof CompletionException) {
             Throwable cause = t.getCause();
             if (cause != null)
-                t = cause;
+                return getExceptionMessage(cause);
         }
 
         //get exception message
