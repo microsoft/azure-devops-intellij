@@ -32,6 +32,7 @@ public class VisualStudioTfvcClient {
             "Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer\\TF.exe";
 
     private static final ToolVersion MINIMAL_SUPPORTED_VERSION = new ToolVersion(15, 0, 0, "");
+    private static final String MINIMAL_SUPPORTED_VERSION_NICKNAME = "Visual Studio 2017";
 
     @Nullable
     public static Path getOrDetectPath(PropertyService propertyService) {
@@ -72,10 +73,10 @@ public class VisualStudioTfvcClient {
     public static CompletionStage<Void> checkVersionAsync(Path visualStudioClientPath) {
         return VisualStudioTfvcCommands.getVersionAsync(visualStudioClientPath).thenAccept(version -> {
             if (version == null)
-                throw new VisualStudioClientVersionException(ToolVersion.UNKNOWN, MINIMAL_SUPPORTED_VERSION);
+                throw new VisualStudioClientVersionException(ToolVersion.UNKNOWN, MINIMAL_SUPPORTED_VERSION, MINIMAL_SUPPORTED_VERSION_NICKNAME);
 
             if (MINIMAL_SUPPORTED_VERSION.compare(version) > 0)
-                throw new VisualStudioClientVersionException(version, MINIMAL_SUPPORTED_VERSION);
+                throw new VisualStudioClientVersionException(version, MINIMAL_SUPPORTED_VERSION, MINIMAL_SUPPORTED_VERSION_NICKNAME);
         });
     }
 
