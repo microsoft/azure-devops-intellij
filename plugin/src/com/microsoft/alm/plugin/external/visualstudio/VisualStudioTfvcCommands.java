@@ -6,12 +6,14 @@ package com.microsoft.alm.plugin.external.visualstudio;
 import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.external.models.ToolVersion;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,18 +31,23 @@ public class VisualStudioTfvcCommands {
     private static final Pattern WORKFOLD_WORKSPACE_NAME_AND_OWNER_PATTERN = Pattern.compile("^(.*?) \\((.*)\\)$");
 
     @NotNull
-    public static CompletionStage<ToolVersion> getVersionAsync(@NotNull Path clientPath) {
-        return executeClientAndProcessOutputAsync(clientPath, null, Collections.emptyList(), output -> {
-            for (String line : output) {
-                Matcher matcher = VERSION_PATTERN.matcher(line);
-                if (matcher.find()) {
-                    ourLogger.info("Client version: " + matcher.group());
-                    return new ToolVersion(matcher.group());
-                }
-            }
+    public static CompletionStage<ToolVersion> getVersionAsync(@NotNull Project project, @NotNull Path clientPath) {
+        String basePath = project.getBasePath();
+        return executeClientAndProcessOutputAsync(
+                clientPath,
+                basePath == null ? null : Paths.get(basePath),
+                Collections.emptyList(),
+                output -> {
+                    for (String line : output) {
+                        Matcher matcher = VERSION_PATTERN.matcher(line);
+                        if (matcher.find()) {
+                            ourLogger.info("Client version: " + matcher.group());
+                            return new ToolVersion(matcher.group());
+                        }
+                    }
 
-            return null;
-        });
+                    return null;
+                });
     }
 
     /**
@@ -57,7 +64,7 @@ public class VisualStudioTfvcCommands {
             @NotNull Path workspacePath) {
         return executeClientAndProcessOutputAsync(clientPath, workspacePath, Collections.singletonList("workfold"), output -> {
             String workspaceName = null, workspaceUser = null, collectionUrl = null;
-            boolean anyDataAvailable = false;
+            boolean workspaceDataAvailable = false;
             List<Workspace.Mapping> mappings = Lists.newArrayList();
             for (String line : output) {
                 Matcher matcher = WORKFOLD_REPORT_PATTERN.matcher(line);
@@ -73,7 +80,7 @@ public class VisualStudioTfvcCommands {
                             workspaceName = workspaceNameAndOwner;
                         }
 
-                        anyDataAvailable = true;
+                        workspaceDataAvailable = true;
                     } else if (collectionUrl == null) {
                         collectionUrl = matcher.group(2);
                     } else {
@@ -84,7 +91,7 @@ public class VisualStudioTfvcCommands {
                 }
             }
 
-            return anyDataAvailable
+            return workspaceDataAvailable
                     ? new Workspace(collectionUrl, workspaceName, null, workspaceUser, null, mappings)
                     : null;
         });
