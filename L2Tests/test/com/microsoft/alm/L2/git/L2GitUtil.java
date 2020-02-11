@@ -93,7 +93,7 @@ public class L2GitUtil {
         DvcsUtil.addMappingIfSubRoot(project, FileUtil.join(baseDirectory.getPath(), teamProject), GitVcs.NAME);
         virtualBaseDirectory.refresh(true, true, new Runnable() {
             public void run() {
-                if (project.isOpen() && (!project.isDisposed()) && (!project.isDefault())) {
+                if (project.isOpen() && !project.isDisposed() && !project.isDefault()) {
                     final VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
                     mgr.fileDirty(virtualBaseDirectory);
                 }
