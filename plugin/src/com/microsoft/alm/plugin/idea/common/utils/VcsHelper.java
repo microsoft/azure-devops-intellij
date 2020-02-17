@@ -115,7 +115,7 @@ public class VcsHelper {
     public static GitRepository getGitRepository(final Project project) {
         if (isGitVcs(project)) {
             final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-            GitRepository repository = manager.getRepositoryForRoot(project.getBaseDir());
+            GitRepository repository = manager.getRepositoryForRootQuick(project.getBaseDir());
 
             // in the case where the base dir of the Git repo and the base dir of IDEA project don't match this can be null
             if (repository == null) {
