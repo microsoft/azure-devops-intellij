@@ -174,7 +174,7 @@ public abstract class TabFormImpl<T extends FilteredModel> implements TabForm<T>
     protected DefaultActionGroup createActionsGroup() {
         final AnAction createAction = new AnAction(TfPluginBundle.message(createDialogTitle),
                 TfPluginBundle.message(createDialogTitle),
-                AllIcons.ToolbarDecorator.Add) {
+                AllIcons.General.Add) {
             @Override
             public void actionPerformed(AnActionEvent anActionEvent) {
                 listenerContainer.triggerEvent(this, CMD_CREATE_NEW_ITEM);
