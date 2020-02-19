@@ -59,10 +59,12 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Added an experimental reactive TFVC client which provides better performance. To enable the experimental client, visit Settings | Version Control | TFVC (<a href="https://github.com/microsoft/azure-devops-intellij/pull/257">#257</a>)</li>
-        <li>Fixed compatibility with products based on IDEA 2019.3 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/258">#258</a>)</li>
-        <li>Fixed a performance issue with the new VCS layout (enabled by default in JetBrains Rider) (<a href="https://github.com/microsoft/azure-devops-intellij/issues/267">#267</a>)</li>
-        <li>Fixed an issue with change detection on case-insensitive file systems when the repository was created in wrong case (<a href="https://github.com/microsoft/azure-devops-intellij/issues/274">#274</a>)</li>
+        <li><b>Plugin is now only compatible with IntelliJ 2018.2+ (Android Studio 3.3+)</b></li>
+        <li>Plugin now suggests to automatically enable version control if an appropriate repository is opened (<a href="https://github.com/microsoft/azure-devops-intellij/issues/284">#284</a>)</li>
+        <li><b>Enable Version Control Integration</b> now should work for Visual Studio repositories (<a href="https://github.com/microsoft/azure-devops-intellij/issues/67">#67</a>)</li>
+        <li>Small bug fixes and compatibility changes for IDEA 2020.1 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/293">#293</a>)</li>
+        <li>Fixed an issue with opening pull request URLs in a browser (<a href="https://github.com/microsoft/azure-devops-intellij/issues/280">#280</a>)</li>
+        <li>TFVC client download link is now visible when the client path is empty or the file isn't found (<a href="https://github.com/microsoft/azure-devops-intellij/pull/286">#286</a>)</li>
       </ul>
       <br />
     ]]>
