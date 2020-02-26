@@ -41,7 +41,7 @@ public class PullRequestHelper {
     public static final String PR_EXISTS_EXCEPTION_NAME = "GitPullRequestExistsException";
     public static final String PR_EXISTS_EXCEPTION_CODE = "TF401179";
 
-    private static final String WEB_ACCESS_PR_FORMAT = "%s/pullrequest/%d#view=discussion";
+    private static final String WEB_ACCESS_PR_FORMAT = "%s/pullrequest/%d";
     private static final String TF_REF_FORMATTER = "refs/heads/%s";
 
     /**
