@@ -6,7 +6,7 @@ jobs:
         inputs:
           filename: printenv
 
-      - task: Gradle@1
+      - task: Gradle@2
         displayName: Gradle build (zip)
         inputs:
           options: '--info --scan'
@@ -35,7 +35,7 @@ jobs:
         inputs:
           filename: printenv
 
-      - task: Gradle@1
+      - task: Gradle@2
         displayName: Gradle build (zip)
         inputs:
           options: '--info --scan -PideaVersion=2019.3'
