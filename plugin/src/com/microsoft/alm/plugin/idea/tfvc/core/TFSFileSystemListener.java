@@ -16,6 +16,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThrowableConsumer;
 import com.microsoft.alm.helpers.Path;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -34,9 +35,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -59,7 +60,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
     }
 
     @Override
-    public boolean delete(final VirtualFile virtualFile) throws IOException {
+    public boolean delete(final VirtualFile virtualFile) {
         long startTime = System.nanoTime();
         ourLogger.trace("Delete command started for file " + virtualFile);
 
@@ -85,15 +86,20 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         ourLogger.info("Deleting file with TFVC: " + virtualFile.getPath());
         final Project currentProject = vcs.getProject();
 
-        List<PendingChange> pendingChanges = CommandUtils.getStatusForFiles(
-                myProject,
-                vcs.getServerContext(true),
-                Collections.singletonList(virtualFile.getPath()));
+        ServerContext serverContext = vcs.getServerContext(true);
+        List<PendingChange> pendingChanges;
+        try {
+            pendingChanges = TfvcClient.getInstance(currentProject).getStatusForFiles(
+                    serverContext,
+                    Collections.singletonList(virtualFile.getPath()));
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
             ourLogger.info("No changes to file so deleting though TFVC");
-            CommandUtils.deleteFiles(vcs.getServerContext(true), Arrays.asList(virtualFile.getPath()), null, true);
+            CommandUtils.deleteFiles(serverContext, Collections.singletonList(virtualFile.getPath()), null, true);
             return true;
         }
 
@@ -175,15 +181,15 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         if (revert.get()) {
             ourLogger.info("Reverting pending changes for delete candidate");
-            CommandUtils.undoLocalFiles(vcs.getServerContext(true), Arrays.asList(virtualFile.getPath()));
+            CommandUtils.undoLocalFiles(serverContext, Collections.singletonList(virtualFile.getPath()));
         }
 
         if (success.get() && !isUndelete.get()) {
             ourLogger.info("Deleting file with TFVC after undoing pending changes");
-            // PendingChnages will always have at least 1 element or else we wouldn't have gotten this far
+            // PendingChanges will always have at least 1 element or else we wouldn't have gotten this far
             final String filePath = StringUtils.isNotEmpty(pendingChanges.get(0).getSourceItem()) ? pendingChanges.get(0).getSourceItem() : pendingChanges.get(0).getLocalItem();
-            CommandUtils.deleteFiles(vcs.getServerContext(true),
-                    Arrays.asList(filePath), pendingChanges.get(0).getWorkspace(), true);
+            CommandUtils.deleteFiles(serverContext,
+                    Collections.singletonList(filePath), pendingChanges.get(0).getWorkspace(), true);
         }
         ourLogger.info("File was deleted using TFVC: " + success.get());
 
