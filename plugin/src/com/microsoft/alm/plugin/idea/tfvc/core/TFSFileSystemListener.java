@@ -60,6 +60,9 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
     @Override
     public boolean delete(final VirtualFile virtualFile) throws IOException {
+        long startTime = System.nanoTime();
+        ourLogger.trace("Delete command started for file " + virtualFile);
+
         final TFSVcs vcs = VcsHelper.getTFSVcsByPath(virtualFile);
         // no TFSVcs so not a TFVC project so do nothing
         if (vcs == null) {
@@ -183,6 +186,10 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
                     Arrays.asList(filePath), pendingChanges.get(0).getWorkspace(), true);
         }
         ourLogger.info("File was deleted using TFVC: " + success.get());
+
+        long time = System.nanoTime() - startTime;
+        ourLogger.trace("Delete command finished in " + time / 1_000_000_000.0 + "s");
+
         return success.get();
     }
 
