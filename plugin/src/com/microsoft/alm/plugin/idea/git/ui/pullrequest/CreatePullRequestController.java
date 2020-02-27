@@ -17,6 +17,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Controller for CreatePullRequestDialog
@@ -61,6 +62,10 @@ public class CreatePullRequestController implements Observer, ActionListener {
                 return validate();
             }
         });
+    }
+
+    public boolean dispose(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return createModel.dispose(timeout, timeUnit);
     }
 
     public void showModalDialog() {
