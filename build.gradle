@@ -143,6 +143,14 @@ project(":plugin") {
 project(":L2Tests") {
     apply plugin: 'org.jetbrains.intellij'
 
+    // The plugin relies on an outdated version of jackson-databind being available in the classpath (it is a required
+    // transitive dependency of com.microsoft.alm:com.microsoft.alm.client with no newer version available). It is
+    // available in the product because of how IDEA classloaders work, but it gets overridden by IDEA's instance of
+    // jackson-databind in tests. We have to load right version of the library by moving it on top of the classpath.
+    configurations {
+        jacksonDatabind
+    }
+
     intellij {
         version = ideaVersion
         plugins = ['git4idea']
@@ -150,7 +158,7 @@ project(":L2Tests") {
 
     dependencies {
         compile project(':plugin')
-        testCompile project(':plugin').sourceSets.test.output
+        jacksonDatabind 'com.fasterxml.jackson.core:jackson-databind:2.4.1'
     }
 
     jar {
@@ -158,6 +166,7 @@ project(":L2Tests") {
     }
 
     test {
+        classpath = configurations.jacksonDatabind + (classpath - configurations.jacksonDatabind)
         forkEvery = 1
     }
 }
