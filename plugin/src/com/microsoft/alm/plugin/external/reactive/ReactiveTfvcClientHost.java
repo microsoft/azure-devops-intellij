@@ -30,7 +30,6 @@ import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -109,12 +108,11 @@ public class ReactiveTfvcClientHost {
     }
 
     public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
-            URI serverUri,
-            AuthenticationInfo authenticationInfo,
+            ServerIdentification serverIdentification,
             Stream<Path> localPaths) {
         List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
                 .collect(Collectors.toList());
-        return getReadyCollectionAsync(serverUri, authenticationInfo)
+        return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.invalidatePathsAsync(collection, paths).thenApply(v -> collection))
                 .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
                 .thenApply(changes -> changes.stream().map(pc -> new PendingChange(
@@ -129,6 +127,16 @@ public class ReactiveTfvcClientHost {
                         pc.getComputer(),
                         pc.isCandidate(),
                         pc.getSourceItem())).collect(Collectors.toList()));
+    }
+
+    @NotNull
+    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+            @NotNull ServerIdentification serverIdentification,
+            @NotNull Stream<Path> localPaths) {
+        List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
+                .collect(Collectors.toList());
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> myConnection.deleteFilesRecursivelyAsync(collection, paths));
     }
 
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
@@ -153,12 +161,14 @@ public class ReactiveTfvcClientHost {
     }
 
     private CompletableFuture<TfsCollection> getReadyCollectionAsync(
-            @NotNull URI serverUri,
-            @NotNull AuthenticationInfo authenticationInfo) {
+            @NotNull ServerIdentification serverIdentification) {
+        AuthenticationInfo authenticationInfo = serverIdentification.getAuthenticationInfo();
         TfsCredentials tfsCredentials = new TfsCredentials(
                 authenticationInfo.getUserName(),
                 new RdSecureString(authenticationInfo.getPassword()));
-        TfsCollectionDefinition workspaceDefinition = new TfsCollectionDefinition(serverUri, tfsCredentials);
+        TfsCollectionDefinition workspaceDefinition = new TfsCollectionDefinition(
+                serverIdentification.getServerUri(),
+                tfsCredentials);
 
         return myConnection.getOrCreateCollectionAsync(workspaceDefinition)
                 .thenCompose(workspace -> myConnection.waitForReadyAsync(workspace)

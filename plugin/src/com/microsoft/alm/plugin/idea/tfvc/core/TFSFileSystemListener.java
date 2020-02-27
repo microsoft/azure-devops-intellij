@@ -85,11 +85,12 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         ourLogger.info("Deleting file with TFVC: " + virtualFile.getPath());
         final Project currentProject = vcs.getProject();
-
+        TfvcClient tfvcClient = TfvcClient.getInstance(currentProject);
         ServerContext serverContext = vcs.getServerContext(true);
+
         List<PendingChange> pendingChanges;
         try {
-            pendingChanges = TfvcClient.getInstance(currentProject).getStatusForFiles(
+            pendingChanges = tfvcClient.getStatusForFiles(
                     serverContext,
                     Collections.singletonList(virtualFile.getPath()));
         } catch (ExecutionException | InterruptedException e) {
@@ -99,7 +100,18 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
             ourLogger.info("No changes to file so deleting though TFVC");
-            CommandUtils.deleteFiles(serverContext, Collections.singletonList(virtualFile.getPath()), null, true);
+            try {
+                tfvcClient.deleteFilesRecursively(
+                        serverContext,
+                        null,
+                        Collections.singletonList(virtualFile.getPath()));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            long time = System.nanoTime() - startTime;
+            ourLogger.trace("Delete command finished in " + time / 1_000_000_000.0 + "s");
+
             return true;
         }
 
@@ -188,8 +200,14 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             ourLogger.info("Deleting file with TFVC after undoing pending changes");
             // PendingChanges will always have at least 1 element or else we wouldn't have gotten this far
             final String filePath = StringUtils.isNotEmpty(pendingChanges.get(0).getSourceItem()) ? pendingChanges.get(0).getSourceItem() : pendingChanges.get(0).getLocalItem();
-            CommandUtils.deleteFiles(serverContext,
-                    Collections.singletonList(filePath), pendingChanges.get(0).getWorkspace(), true);
+            try {
+                tfvcClient.deleteFilesRecursively(
+                        serverContext,
+                        pendingChanges.get(0).getWorkspace(),
+                        Collections.singletonList(filePath));
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
         ourLogger.info("File was deleted using TFVC: " + success.get());
 

@@ -108,6 +108,13 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         client.invalidatePaths(paths.map { it.toJavaPath() })
     }
 
+    collection.deleteFilesRecursively.set { paths ->
+        if (paths.isEmpty()) return@set
+
+        logger.info { "Deleting ${paths.size} paths, first 10: ${paths.take(10).joinToString { it.path }}" }
+        client.deletePathsRecursively(paths.map { it.toJavaPath() })
+    }
+
     client.workspaces.advise(lifetime) { workspaces ->
         val paths = workspaces.flatMap { it.mappedPaths.map(::TfsLocalPath) }
         collection.mappedPaths.set(paths)

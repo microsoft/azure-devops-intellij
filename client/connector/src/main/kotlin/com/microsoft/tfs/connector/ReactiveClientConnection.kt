@@ -72,6 +72,11 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
+    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletableFuture<Void> =
+        queueFutureAsync { lt ->
+            collection.deleteFilesRecursively.start(paths).pipeToVoid(lt, this)
+        }
+
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {
         val lifetime = lifetime.createNested()
         val future = CompletableFuture<T>().whenComplete { _, _ -> lifetime.terminate() }
