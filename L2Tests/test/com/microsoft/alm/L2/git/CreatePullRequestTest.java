@@ -10,7 +10,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.EdtTestUtil;
-import com.intellij.util.ThrowableRunnable;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -32,6 +31,7 @@ import sun.security.util.Debug;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 
@@ -73,54 +73,50 @@ public class CreatePullRequestTest extends L2Test {
         // create PR model and set inputs
         final CreatePullRequestDialog mockDialog = mock(CreatePullRequestDialog.class);
         final CreatePullRequestModel model = new CreatePullRequestModel(currentProject, repository);
-        model.setTitle(prName);
-        model.setDescription(prDescription);
+        try {
+            model.setTitle(prName);
+            model.setDescription(prDescription);
 
-        // verify model created correctly
-        Assert.assertTrue(model.getRemoteBranchDropdownModel().getSize() >= 1);
-        Assert.assertEquals("origin/master", model.getTargetBranch().getName());
+            // verify model created correctly
+            Assert.assertTrue(model.getRemoteBranchDropdownModel().getSize() >= 1);
+            Assert.assertEquals("origin/master", model.getTargetBranch().getName());
 
-        final CreatePullRequestController controller = new CreatePullRequestController(mockDialog, model);
-        controller.actionPerformed(new ActionEvent(this, 1, BaseDialog.CMD_OK));
+            final CreatePullRequestController controller = new CreatePullRequestController(mockDialog, model);
+            controller.actionPerformed(new ActionEvent(this, 1, BaseDialog.CMD_OK));
 
-        // verify PR created correctly
-        final GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria();
-        criteria.setRepositoryId(context.getGitRepository().getId());
-        criteria.setStatus(PullRequestStatus.ACTIVE);
-        criteria.setIncludeLinks(false);
-        criteria.setCreatorId(context.getUserId());
-        criteria.setSourceRefName("refs/heads/" + branchName);
+            // verify PR created correctly
+            final GitPullRequestSearchCriteria criteria = new GitPullRequestSearchCriteria();
+            criteria.setRepositoryId(context.getGitRepository().getId());
+            criteria.setStatus(PullRequestStatus.ACTIVE);
+            criteria.setIncludeLinks(false);
+            criteria.setCreatorId(context.getUserId());
+            criteria.setSourceRefName("refs/heads/" + branchName);
 
-        //query server and add results
-        final GitHttpClient gitHttpClient = context.getGitHttpClient();
-        final List<GitPullRequest> pullRequests = gitHttpClient.getPullRequests(context.getGitRepository().getId(),
-                criteria, 256, 0, 101);
-        Assert.assertEquals(1, pullRequests.size());
-        Assert.assertEquals(prName, pullRequests.get(0).getTitle());
-        Assert.assertEquals(prDescription, pullRequests.get(0).getDescription());
-        // TODO: this was working, investigating (commit it there but not returning)
-        // Assert.assertEquals(L2GitUtil.COMMIT_MESSAGE, pullRequests.get(0).getCommits()[0].getComment());
+            //query server and add results
+            final GitHttpClient gitHttpClient = context.getGitHttpClient();
+            final List<GitPullRequest> pullRequests = gitHttpClient.getPullRequests(context.getGitRepository().getId(),
+                    criteria, 256, 0, 101);
+            Assert.assertEquals(1, pullRequests.size());
+            Assert.assertEquals(prName, pullRequests.get(0).getTitle());
+            Assert.assertEquals(prDescription, pullRequests.get(0).getDescription());
+            // TODO: this was working, investigating (commit it there but not returning)
+            // Assert.assertEquals(L2GitUtil.COMMIT_MESSAGE, pullRequests.get(0).getCommits()[0].getComment());
 
-        // cleanup
-        final GitPullRequest pullRequestToUpdate = new GitPullRequest();
-        pullRequestToUpdate.setStatus(PullRequestStatus.ABANDONED);
-        gitHttpClient.updatePullRequest(pullRequestToUpdate, pullRequests.get(0).getRepository().getId(),
-                pullRequests.get(0).getPullRequestId());
-        myGit.branchDelete(repository, branchName, true, mock(GitLineHandlerListener.class));
-        FileUtils.deleteDirectory(tempFolder);
-        context.dispose();
-        // Close currentProject
-        EdtTestUtil.runInEdtAndWait(new ThrowableRunnable<Throwable>() {
-            @Override
-            public void run() {
+            // cleanup
+            final GitPullRequest pullRequestToUpdate = new GitPullRequest();
+            pullRequestToUpdate.setStatus(PullRequestStatus.ABANDONED);
+            gitHttpClient.updatePullRequest(pullRequestToUpdate, pullRequests.get(0).getRepository().getId(),
+                    pullRequests.get(0).getPullRequestId());
+            myGit.branchDelete(repository, branchName, true, mock(GitLineHandlerListener.class));
+            FileUtils.deleteDirectory(tempFolder);
+            context.dispose();
+            // Close currentProject
+            EdtTestUtil.runInEdtAndWait(() -> {
                 ProjectManager.getInstance().closeProject(currentProject);
-                ApplicationManager.getApplication().runWriteAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        Disposer.dispose(currentProject);
-                    }
-                });
-            }
-        });
+                ApplicationManager.getApplication().runWriteAction(() -> Disposer.dispose(currentProject));
+            });
+        } finally {
+            assertTrue(model.dispose(10, TimeUnit.SECONDS));
+        }
     }
 }
