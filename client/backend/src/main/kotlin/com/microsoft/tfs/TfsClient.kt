@@ -8,8 +8,11 @@ import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.Property
 import com.jetbrains.rd.util.warn
 import com.microsoft.tfs.core.TFSTeamProjectCollection
+import com.microsoft.tfs.core.clients.versioncontrol.GetOptions
+import com.microsoft.tfs.core.clients.versioncontrol.PendChangesOptions
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
 import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.LockLevel
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
@@ -48,19 +51,25 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         }
     }
 
-    fun status(paths: List<Path>): List<PendingSet> {
-        val results = mutableListOf<PendingSet>()
+    private fun enumeratePathsWithWorkspace(paths: Iterable<Path>, action: (Workspace, List<Path>) -> Unit) {
         for ((workspace, workspacePathList) in paths.asSequence().groupBy(::getWorkspaceFor)) {
             if (workspace == null) {
                 logger.warn { "Could not determine workspace for paths: " + paths.joinToString(",", "\"", "\"") }
                 continue
             }
 
+            action(workspace, workspacePathList)
+        }
+    }
+
+    fun status(paths: List<Path>): List<PendingSet> {
+        val results = mutableListOf<PendingSet>()
+        enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
             val workspaceName = workspace.name
             val workspaceOwner = workspace.ownerName
 
             val itemSpecs = ItemSpec.fromStrings(
-                workspacePathList.map { LocalPath.canonicalize(it.toString()) }.toTypedArray(),
+                workspacePaths.mapToArray { LocalPath.canonicalize(it.toString()) },
                 RecursionType.FULL
             )
             val pendingSets = client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
@@ -72,5 +81,17 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
 
     fun invalidatePaths(paths: List<Path>) {
         pathWatcherFactory.pathsInvalidated.fire(paths)
+    }
+
+    fun deletePathsRecursively(paths: List<Path>) {
+        enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
+            workspace.pendDelete(
+                workspacePaths.mapToArray { it.toString() },
+                RecursionType.FULL,
+                LockLevel.UNCHANGED,
+                GetOptions.NONE,
+                PendChangesOptions.NONE
+            )
+        }
     }
 }

@@ -5,13 +5,13 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
+import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -24,13 +24,17 @@ import java.util.stream.Stream;
  */
 public class ReactiveTfvcClient implements TfvcClient {
 
-    private static Logger ourLogger = Logger.getInstance(ReactiveTfvcClient.class);
+    private static final Logger ourLogger = Logger.getInstance(ReactiveTfvcClient.class);
 
     @NotNull
     private final Project myProject;
 
     public ReactiveTfvcClient(@NotNull Project project) {
         myProject = project;
+    }
+
+    private static ServerIdentification getServerIdentification(ServerContext serverContext) {
+        return new ServerIdentification(serverContext.getCollectionURI(), serverContext.getAuthenticationInfo());
     }
 
     @Override
@@ -40,12 +44,11 @@ public class ReactiveTfvcClient implements TfvcClient {
             @NotNull List<String> pathsToProcess) {
         long startTime = System.nanoTime();
 
-        URI collectionUri = serverContext.getCollectionURI();
-        AuthenticationInfo authenticationInfo = serverContext.getAuthenticationInfo();
+        ServerIdentification serverIdentification = getServerIdentification(serverContext);
         Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
 
         return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                .thenCompose(client -> client.getPendingChangesAsync(collectionUri, authenticationInfo, paths))
+                .thenCompose(client -> client.getPendingChangesAsync(serverIdentification, paths))
                 .whenComplete((result, ex) -> {
                     if (ex == null) {
                         long endTime = System.nanoTime();
@@ -53,5 +56,18 @@ public class ReactiveTfvcClient implements TfvcClient {
                         ourLogger.info("Status command successfully executed in " + seconds + " sec");
                     }
                 });
+    }
+
+    @NotNull
+    @Override
+    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+            @NotNull ServerContext serverContext,
+            @Nullable String workingFolder,
+            @NotNull List<String> filePaths) {
+        ServerIdentification serverIdentification = getServerIdentification(serverContext);
+        Stream<Path> paths = filePaths.stream().map(Paths::get);
+
+        return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, paths));
     }
 }

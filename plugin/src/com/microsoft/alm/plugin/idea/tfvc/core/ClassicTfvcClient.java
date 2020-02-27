@@ -9,6 +9,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -38,5 +39,23 @@ public class ClassicTfvcClient implements TfvcClient {
         return EULADialog.executeWithGuard(
                 myProject,
                 () -> CommandUtils.getStatusForFiles(myProject, serverContext, pathsToProcess));
+    }
+
+    @NotNull
+    @Override
+    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+            @NotNull ServerContext serverContext,
+            @Nullable String workingFolder,
+            @NotNull List<String> filePaths) {
+        deleteFilesRecursively(serverContext, workingFolder, filePaths);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void deleteFilesRecursively(
+            @NotNull ServerContext serverContext,
+            @Nullable String workingFolder,
+            @NotNull List<String> filePaths) {
+        CommandUtils.deleteFiles(serverContext, filePaths, workingFolder, true);
     }
 }

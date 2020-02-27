@@ -60,6 +60,9 @@ object TfsModel : Root() {
 
         call("invalidatePaths", immutableList(TfsLocalPath), void)
             .doc("Invalidates the paths in the TFS cache")
+
+        call("deleteFilesRecursively", immutableList(TfsLocalPath), void)
+            .doc("Scheduled deletion of the files")
     }
 
     init {
