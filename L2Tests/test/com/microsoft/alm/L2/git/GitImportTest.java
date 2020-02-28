@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.idea.git.ui.vcsimport.ImportModel;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.VsoImportPageModel;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.security.util.Debug;
@@ -29,6 +30,13 @@ public class GitImportTest extends L2Test {
     public static final String GIT_FOLDER = ".git";
     public static final String README_FILE = "readme.md";
 
+    @Override
+    protected void tearDown() throws Exception {
+        File gitDirectory = new File(myProjectPath, GIT_FOLDER);
+        FileUtils.deleteDirectory(gitDirectory);
+
+        super.tearDown();
+    }
 
     @Test(timeout = 60000)
     public void testImport_VSO() throws Exception {
@@ -97,6 +105,5 @@ public class GitImportTest extends L2Test {
         bufferedContent.close();
         contentStream.close();
         selectedContext.dispose();
-        // TODO: Clean up the folder now that the test has passed
     }
 }
