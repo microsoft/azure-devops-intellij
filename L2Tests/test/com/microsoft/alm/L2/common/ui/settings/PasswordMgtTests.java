@@ -14,7 +14,6 @@ import com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesSettingsCont
 import com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesSettingsForm;
 import com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesSettingsModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,14 +42,6 @@ public class PasswordMgtTests extends L2Test {
     @Before
     public void testSetup() {
         PowerMockito.mockStatic(Messages.class);
-    }
-
-    @After
-    public void cleanup() {
-        // remove all contexts for the next test
-        for (final ServerContext context : ServerContextManager.getInstance().getAllServerContexts()) {
-            ServerContextManager.getInstance().remove(context.getKey());
-        }
     }
 
     @Test(timeout = 60000)
