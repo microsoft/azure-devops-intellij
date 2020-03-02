@@ -293,8 +293,23 @@ public abstract class L2Test extends UsefulTestCase {
         return name;
     }
 
+    private void disposeRegisteredServerContexts() {
+        // remove and dispose all the contexts for the next test
+        for (final ServerContext context : ServerContextManager.getInstance().getAllServerContexts()) {
+            ServerContextManager.getInstance().remove(context.getKey());
+            context.dispose();
+        }
+    }
+
+    private void disposeJerseyPool() throws InterruptedException {
+        // Since there's no API to dispose Jersey thread pool, let's just give it a bit more time to shutdown the pool.
+        Thread.sleep(1000);
+    }
+
     @Override
     protected void tearDown() throws Exception {
+        disposeRegisteredServerContexts();
+        disposeJerseyPool();
         try {
             /*if (myDialogManager != null) {
                 myDialogManager.cleanup();

@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
@@ -162,6 +163,11 @@ public class CreatePullRequestModel extends AbstractModel {
 
         this.executorService = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
         this.workItems = new HashSet<Integer>();
+    }
+
+    public boolean dispose(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        executorService.shutdown();
+        return executorService.awaitTermination(timeout, timeUnit);
     }
 
     public Project getProject() {

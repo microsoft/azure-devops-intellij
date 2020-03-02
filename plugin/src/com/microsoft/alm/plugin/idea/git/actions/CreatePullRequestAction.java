@@ -13,6 +13,8 @@ import com.microsoft.alm.plugin.idea.git.ui.pullrequest.CreatePullRequestControl
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import git4idea.repo.GitRepository;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * This class adds a "Create Pull Request" menu item to git menu.
  */
@@ -48,7 +50,17 @@ public class CreatePullRequestAction extends DumbAwareAction {
         if (gitRepository != null) {
             CreatePullRequestController createPullRequestController
                     = new CreatePullRequestController(project, gitRepository);
-            createPullRequestController.showModalDialog();
+            try {
+                createPullRequestController.showModalDialog();
+            } finally {
+                try {
+                    // We don't need synchronous dispose here, so pass zero timeout and ignore the exit code. The model
+                    // will be disposed eventually, which is okay.
+                    createPullRequestController.dispose(0, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    // ignore interruption
+                }
+            }
         }
     }
 }
