@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.collect.ImmutableList;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
@@ -44,7 +45,15 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, TFSVcs.class, TFVCUtil.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class})
+@PrepareForTest({
+        CommandUtils.class,
+        LocalFileSystem.class,
+        ServiceManager.class,
+        TFSVcs.class,
+        TFVCUtil.class,
+        VcsHelper.class,
+        VersionControlPath.class,
+})
 public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private String CURRENT_FILE_NAME = "file.txt";
     private String NEW_FILE_NAME = "newName.txt";
@@ -72,6 +81,9 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private Project mockProject;
 
     @Mock
+    private TfvcClient mockTfvcClient;
+
+    @Mock
     private ServerContext mockServerContext;
 
     @Mock
@@ -86,8 +98,17 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, TFVCUtil.class, LocalFileSystem.class, VersionControlPath.class, VcsHelper.class);
+        PowerMockito.mockStatic(
+                CommandUtils.class,
+                LocalFileSystem.class,
+                ServiceManager.class,
+                TFSVcs.class,
+                TFVCUtil.class,
+                VcsHelper.class,
+                VersionControlPath.class
+        );
 
+        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
         when(mockTFSVcs.getDeleteConfirmation()).thenReturn(mockVcsShowConfirmationOption);
