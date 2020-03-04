@@ -3,7 +3,7 @@
   ~ Licensed under the MIT license. See License.txt in the project root.
   -->
 
-<idea-plugin version="2">
+<idea-plugin allow-bundled-update="true">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
     <!-- <version>1.155.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
