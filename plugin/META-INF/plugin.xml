@@ -60,7 +60,7 @@
       <br />
       <ul>
         <li><b>Plugin is now only compatible with IntelliJ 2018.2+ (Android Studio 3.3+)</b></li>
-        <li>Plugin now suggests to automatically enable version control if an appropriate repository is opened (<a href="https://github.com/microsoft/azure-devops-intellij/issues/284">#284</a>)</li>
+        <li>Plugin automatically enables version control if an appropriate repository is opened (<a href="https://github.com/microsoft/azure-devops-intellij/issues/284">#284</a>)</li>
         <li><b>Enable Version Control Integration</b> now should work for Visual Studio repositories (<a href="https://github.com/microsoft/azure-devops-intellij/issues/67">#67</a>)</li>
         <li>Deleting files is now a much faster operation (<a href="https://github.com/microsoft/azure-devops-intellij/issues/296">#296</a>)</li>
         <li>Small bug fixes and compatibility changes for IDEA 2020.1 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/293">#293</a>)</li>
