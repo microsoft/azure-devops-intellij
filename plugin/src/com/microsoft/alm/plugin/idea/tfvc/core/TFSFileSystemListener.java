@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThrowableConsumer;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.exceptions.NoPendingChangesFoundException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -60,7 +61,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
     }
 
     @Override
-    public boolean delete(final VirtualFile virtualFile) {
+    public boolean delete(@NotNull final VirtualFile virtualFile) throws IOException {
         long startTime = System.nanoTime();
         ourLogger.trace("Delete command started for file " + virtualFile);
 
@@ -193,7 +194,22 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         if (revert.get()) {
             ourLogger.info("Reverting pending changes for delete candidate");
-            CommandUtils.undoLocalFiles(serverContext, Collections.singletonList(virtualFile.getPath()));
+            File file = new File(virtualFile.getPath());
+            if (!file.exists()) {
+                // In case of files that were deleted externally (by IDEA 2019.3+ due to bug IDEA-228828), we should
+                // restore them in a special way since the standard TFS client isn't able to undo changes in a deleted
+                // file.
+                ourLogger.info("Creating temporary file for non-existing deleted candidate change");
+                boolean status = file.createNewFile();
+                ourLogger.info("File \"{}\" created: {}", virtualFile.getPath(), status);
+            }
+
+            try {
+                CommandUtils.undoLocalFiles(serverContext, Collections.singletonList(virtualFile.getPath()));
+            } catch (NoPendingChangesFoundException ex) {
+                // This usually will happen when deleting empty files in IDEA 2019.3.x.
+                ourLogger.info("Nothing to undo in file \"{}\", proceeding", virtualFile.getPath());
+            }
         }
 
         if (success.get() && !isUndelete.get()) {
