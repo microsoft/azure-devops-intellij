@@ -7,6 +7,7 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.external.exceptions.NoPendingChangesFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ public class UndoCommand extends Command<List<String>> {
     public static final Logger logger = LoggerFactory.getLogger(UndoCommand.class);
 
     private static final String UNDO_LINE_PREFIX = "Undoing edit:";
+    private static final String NO_PENDING_CHANGES_WERE_FOUND = "No pending changes were found for ";
 
     private final List<String> files;
 
@@ -55,6 +57,11 @@ public class UndoCommand extends Command<List<String>> {
 
         // check for failure
         if (StringUtils.isNotEmpty(stderr)) {
+            if (stderr.startsWith(NO_PENDING_CHANGES_WERE_FOUND)) {
+                logger.warn("Message from the TFVC client: " + stderr);
+                throw new NoPendingChangesFoundException();
+            }
+
             logger.error("Undo failed with the following stderr: " + stderr);
             for (int i = 0; i < output.length; i++) {
                 // finding error message by eliminating all other known output lines since we can't parse for the error line itself (it's unknown to us)
