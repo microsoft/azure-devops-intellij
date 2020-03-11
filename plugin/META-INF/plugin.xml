@@ -63,7 +63,8 @@
         <li>Plugin automatically enables version control if an appropriate repository is opened (<a href="https://github.com/microsoft/azure-devops-intellij/issues/284">#284</a>)</li>
         <li>Fixed an issue with file deleting in IntelliJ 2019.3+ (<a href="https://github.com/microsoft/azure-devops-intellij/issues/304">#304</a>)</li>
         <li><b>Enable Version Control Integration</b> now should work for Visual Studio repositories (<a href="https://github.com/microsoft/azure-devops-intellij/issues/67">#67</a>)</li>
-        <li>Deleting files is now a much faster operation (<a href="https://github.com/microsoft/azure-devops-intellij/issues/296">#296</a>)</li>
+        <li>Delete operation is now much faster (<a href="https://github.com/microsoft/azure-devops-intellij/issues/296">#296</a>)</li>
+        <li>Rollback operation is now much faster</li>
         <li>Small bug fixes and compatibility changes for IDEA 2020.1 (<a href="https://github.com/microsoft/azure-devops-intellij/pull/293">#293</a>)</li>
         <li>Fixed an issue with opening pull request URLs in a browser (<a href="https://github.com/microsoft/azure-devops-intellij/issues/280">#280</a>, thanks <a href="https://github.com/baltuonis">@baltuonis</a> and <a href="https://github.com/pecanw">@pecanw</a> for help)</li>
         <li>TFVC client download link is now visible when the client path is empty or the file isn't found (<a href="https://github.com/microsoft/azure-devops-intellij/pull/286">#286</a>)</li>
