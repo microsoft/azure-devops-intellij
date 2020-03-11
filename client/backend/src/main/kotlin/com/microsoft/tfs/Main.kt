@@ -117,7 +117,7 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
     }
 
     collection.undoLocalChanges.set { paths ->
-        if (paths.isEmpty()) return@set
+        if (paths.isEmpty()) return@set emptyList()
 
         logPaths("Undo", paths)
         client.undoLocalChanges(paths)

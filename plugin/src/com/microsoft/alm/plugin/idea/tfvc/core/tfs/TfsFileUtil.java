@@ -22,6 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -38,6 +39,7 @@ import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.alm.plugin.versioncontrol.path.LocalPath;
 import com.microsoft.alm.plugin.versioncontrol.path.ServerPath;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -51,6 +53,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -66,6 +69,24 @@ public class TfsFileUtil {
 
     public interface ContentWriter {
         void write(OutputStream outputStream) throws TfsException;
+    }
+
+    public static TfsLocalPath createLocalPath(String path) {
+        if (isServerItem(path))
+            throw new RuntimeException("Attempt to create a local path from a server path: \"" + path + "\"");
+        return new TfsLocalPath(FileUtil.toSystemDependentName(path));
+    }
+
+    public static TfsLocalPath createLocalPath(FilePath path) {
+        return createLocalPath(path.getPath());
+    }
+
+    public static TfsLocalPath createLocalPath(Path path) {
+        return createLocalPath(path.toString());
+    }
+
+    public static TfsLocalPath createLocalPath(VirtualFile file) {
+        return createLocalPath(file.getPath());
     }
 
     public static boolean isServerItem(final String itemPath) {
