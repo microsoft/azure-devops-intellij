@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -383,8 +384,9 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDelete_FileRename() throws Exception {
+    public void testDelete_FileRename() {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
+        when(mockPendingChange.getWorkspace()).thenReturn("testDelete_FileRename.workspace");
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.RENAME));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
@@ -393,7 +395,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertTrue(result);
-        verifyDeleteCmd("$/server/path/to/file.txt");
+        verifyDeleteCmd("$/server/path/to/file.txt", "testDelete_FileRename.workspace");
     }
 
     @Test
@@ -412,8 +414,9 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDelete_FileRenameEdit() throws Exception {
+    public void testDelete_FileRenameEdit() {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
+        when(mockPendingChange.getWorkspace()).thenReturn("testDelete_FileRenameEdit.workspace");
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
@@ -423,7 +426,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
         assertTrue(result);
         verifyUndoCmd(CURRENT_FILE_PATH);
-        verifyDeleteCmd("$/server/path/to/file.txt");
+        verifyDeleteCmd("$/server/path/to/file.txt", "testDelete_FileRenameEdit.workspace");
     }
 
     @Test
@@ -442,9 +445,13 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     }
 
     private void verifyDeleteCmd(final String path) {
+        verifyDeleteCmd(path, null);
+    }
+
+    private void verifyDeleteCmd(final String path, @Nullable String workspace) {
         ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
         verifyStatic(times(1));
-        CommandUtils.deleteFiles(eq(mockServerContext), listArgumentCaptor.capture(), eq((String) null), eq(true));
+        CommandUtils.deleteFiles(eq(mockServerContext), listArgumentCaptor.capture(), eq(workspace), eq(true));
         assertEquals(1, listArgumentCaptor.getValue().size());
         assertEquals(path, listArgumentCaptor.getValue().get(0));
     }
