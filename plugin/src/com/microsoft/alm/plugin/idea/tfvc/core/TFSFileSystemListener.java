@@ -64,7 +64,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
     }
 
     @Override
-    public boolean delete(@NotNull final VirtualFile virtualFile) throws IOException {
+    public boolean delete(@NotNull final VirtualFile virtualFile) {
         long startTime = System.nanoTime();
         ourLogger.trace("Delete command started for file " + virtualFile);
 
