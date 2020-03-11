@@ -62,7 +62,7 @@ public class ClassicTfvcClient implements TfvcClient {
         else if (path instanceof TfsServerPath)
             return Optional.of(((TfsServerPath) path).getWorkspace());
         else
-            throw new RuntimeException("Unknown subtype of TfsPath: " + path);
+            throw new RuntimeException("Unknown path type: " + path);
     }
 
     @NotNull
@@ -72,7 +72,7 @@ public class ClassicTfvcClient implements TfvcClient {
         else if (path instanceof TfsServerPath)
             return ((TfsServerPath) path).getPath();
         else
-            throw new RuntimeException("Unknown subtype of TfsPath: " + path);
+            throw new RuntimeException("Unknown path type: " + path);
     }
 
     @Override
