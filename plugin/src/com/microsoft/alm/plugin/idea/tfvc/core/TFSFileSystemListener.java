@@ -27,6 +27,9 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfsServerPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -104,8 +107,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             try {
                 tfvcClient.deleteFilesRecursively(
                         serverContext,
-                        null,
-                        Collections.singletonList(virtualFile.getPath()));
+                        Collections.singletonList(new TfsLocalPath(virtualFile.getPath())));
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -193,17 +195,6 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         }
 
         if (revert.get()) {
-            ourLogger.info("Reverting pending changes for delete candidate");
-            File file = new File(virtualFile.getPath());
-            if (!file.exists()) {
-                // In case of files that were deleted externally (by IDEA 2019.3+ due to bug IDEA-228828), we should
-                // restore them in a special way since the standard TFS client isn't able to undo changes in a deleted
-                // file.
-                ourLogger.info("Creating temporary file for non-existing deleted candidate change");
-                boolean status = file.createNewFile();
-                ourLogger.info("File \"{}\" created: {}", virtualFile.getPath(), status);
-            }
-
             try {
                 CommandUtils.undoLocalFiles(serverContext, Collections.singletonList(virtualFile.getPath()));
             } catch (NoPendingChangesFoundException ex) {
@@ -215,12 +206,12 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         if (success.get() && !isUndelete.get()) {
             ourLogger.info("Deleting file with TFVC after undoing pending changes");
             // PendingChanges will always have at least 1 element or else we wouldn't have gotten this far
-            final String filePath = StringUtils.isNotEmpty(pendingChanges.get(0).getSourceItem()) ? pendingChanges.get(0).getSourceItem() : pendingChanges.get(0).getLocalItem();
+            PendingChange pendingChange = pendingChanges.get(0);
+            TfsPath itemToDelete = StringUtils.isNotEmpty(pendingChange.getSourceItem())
+                    ? new TfsServerPath(pendingChange.getWorkspace(), pendingChange.getSourceItem())
+                    : new TfsLocalPath(pendingChange.getLocalItem());
             try {
-                tfvcClient.deleteFilesRecursively(
-                        serverContext,
-                        pendingChanges.get(0).getWorkspace(),
-                        Collections.singletonList(filePath));
+                tfvcClient.deleteFilesRecursively(serverContext, Collections.singletonList(itemToDelete));
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }

@@ -29,8 +29,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 
@@ -59,9 +57,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private String CURRENT_FILE_NAME = "file.txt";
     private String NEW_FILE_NAME = "newName.txt";
-    private String parentPath;
-    private String currentFilePath;
-    private String newFilePath;
+    private String PARENT_PATH = "/path/to/the";
+    private String CURRENT_FILE_PATH = Path.combine(PARENT_PATH, CURRENT_FILE_NAME);
+    private String NEW_FILE_PATH = Path.combine(PARENT_PATH, NEW_FILE_NAME);
     private String NEW_DIRECTORY_PATH = "/path/to/new/directory";
     private String MOVED_FILE_PATH = Path.combine(NEW_DIRECTORY_PATH, CURRENT_FILE_NAME);
 
@@ -98,11 +96,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private VcsShowConfirmationOption mockVcsShowConfirmationOption;
 
     @Before
-    public void setUp() throws IOException {
-        parentPath = Files.createTempDirectory("TFSFileSystemListenerTest").toString();
-        currentFilePath = Path.combine(parentPath, CURRENT_FILE_NAME);
-        newFilePath = Path.combine(parentPath, NEW_FILE_NAME);
-
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
                 CommandUtils.class,
@@ -120,9 +114,9 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockTFSVcs.getDeleteConfirmation()).thenReturn(mockVcsShowConfirmationOption);
         when(VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(mockTFSVcs);
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
-        when(mockVirtualFile.getPath()).thenReturn(currentFilePath);
+        when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
         when(mockVirtualFile.getName()).thenReturn(CURRENT_FILE_NAME);
-        when(mockVirtualParent.getPath()).thenReturn(parentPath);
+        when(mockVirtualParent.getPath()).thenReturn(PARENT_PATH);
         when(mockVirtualFile.getParent()).thenReturn(mockVirtualParent);
         when(mockNewDirectory.getPath()).thenReturn(NEW_DIRECTORY_PATH);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
@@ -130,8 +124,8 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(TFVCUtil.isInvalidTFVCPath(eq(mockTFSVcs), any(FilePath.class))).thenReturn(false);
 
         FilePath mockFilePath = mock(FilePath.class);
-        when(VersionControlPath.getFilePath(currentFilePath, false)).thenReturn(mockFilePath);
-        when(mockPendingChange.getLocalItem()).thenReturn(currentFilePath);
+        when(VersionControlPath.getFilePath(CURRENT_FILE_PATH, false)).thenReturn(mockFilePath);
+        when(mockPendingChange.getLocalItem()).thenReturn(CURRENT_FILE_PATH);
         when(mockPendingChange.getVersion()).thenReturn("5");
 
         tfsFileSystemListener = new TFSFileSystemListener(mockProject);
@@ -150,47 +144,47 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testRename_FileNoChanges() throws Exception {
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(Collections.EMPTY_LIST);
 
         boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(newFilePath));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(NEW_FILE_PATH));
     }
 
     @Test
     public void testRename_FileEditChanges() throws Exception {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(newFilePath));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(NEW_FILE_PATH));
     }
 
     @Test
     public void testRename_FileEditRenameChanges() throws Exception {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(newFilePath));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(NEW_FILE_PATH));
     }
 
     @Test
     public void testRename_FileUnversionedChange() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(true);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
@@ -204,59 +198,59 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testRename_FileAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.rename(mockVirtualFile, NEW_FILE_NAME);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(newFilePath));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(NEW_FILE_PATH));
     }
 
     @Test
     public void testMove_FileNoChanges() throws Exception {
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(Collections.EMPTY_LIST);
 
         boolean result = tfsFileSystemListener.move(mockVirtualFile, mockNewDirectory);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(MOVED_FILE_PATH));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(MOVED_FILE_PATH));
     }
 
     @Test
     public void testMove_FileEditChanges() throws Exception {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.move(mockVirtualFile, mockNewDirectory);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(MOVED_FILE_PATH));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(MOVED_FILE_PATH));
     }
 
     @Test
     public void testMove_FileEditRenameChanges() throws Exception {
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.move(mockVirtualFile, mockNewDirectory);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(MOVED_FILE_PATH));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(MOVED_FILE_PATH));
     }
 
     @Test
     public void testMove_FileUnversionedChange() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(true);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.move(mockVirtualFile, mockNewDirectory);
@@ -270,14 +264,14 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testMove_FileAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.move(mockVirtualFile, mockNewDirectory);
 
         assertTrue(result);
         verifyStatic(times(1));
-        CommandUtils.renameFile(eq(mockServerContext), eq(currentFilePath), eq(MOVED_FILE_PATH));
+        CommandUtils.renameFile(eq(mockServerContext), eq(CURRENT_FILE_PATH), eq(MOVED_FILE_PATH));
     }
 
     @Test
@@ -306,20 +300,20 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testDelete_NoChanges() throws Exception {
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(Collections.EMPTY_LIST);
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertTrue(result);
-        verifyDeleteCmd(currentFilePath);
+        verifyDeleteCmd(CURRENT_FILE_PATH);
     }
 
     @Test
     public void testDelete_FileUnversionedAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(true);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
@@ -334,27 +328,27 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testDelete_FileUnversionedDelete() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(true);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.DELETE));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertTrue(result);
-        verifyUndoCmd(currentFilePath);
-        verifyDeleteCmd(currentFilePath);
+        verifyUndoCmd(CURRENT_FILE_PATH);
+        verifyDeleteCmd(CURRENT_FILE_PATH);
     }
 
     @Test
     public void testDelete_FileAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertFalse(result);
-        verifyUndoCmd(currentFilePath);
+        verifyUndoCmd(CURRENT_FILE_PATH);
         verifyStatic(never());
         CommandUtils.deleteFiles(any(ServerContext.class), any(List.class), any(String.class), any(Boolean.class));
     }
@@ -363,7 +357,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testDelete_FileDelete() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.DELETE));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
@@ -378,14 +372,14 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testDelete_FileEdit() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertTrue(result);
-        verifyUndoCmd(currentFilePath);
-        verifyDeleteCmd(currentFilePath);
+        verifyUndoCmd(CURRENT_FILE_PATH);
+        verifyDeleteCmd(CURRENT_FILE_PATH);
     }
 
     @Test
@@ -393,7 +387,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.RENAME));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
@@ -406,7 +400,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testDelete_FileLock() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(true);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.LOCK));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
@@ -422,13 +416,13 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertTrue(result);
-        verifyUndoCmd(currentFilePath);
+        verifyUndoCmd(CURRENT_FILE_PATH);
         verifyDeleteCmd("$/server/path/to/file.txt");
     }
 
@@ -436,13 +430,13 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void testDelete_FileUndeleted() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
         when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.UNDELETE));
-        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(currentFilePath)))
+        when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
         boolean result = tfsFileSystemListener.delete(mockVirtualFile);
 
         assertFalse(result);
-        verifyUndoCmd(currentFilePath);
+        verifyUndoCmd(CURRENT_FILE_PATH);
         verifyStatic(never());
         CommandUtils.deleteFiles(any(ServerContext.class), any(List.class), any(String.class), any(Boolean.class));
     }

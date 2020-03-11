@@ -62,7 +62,7 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
 
     fun getPendingChangesAsync(
         collection: TfsCollection,
-        paths: List<TfsLocalPath>): CompletableFuture<List<TfsPendingChange>> =
+        paths: List<TfsPath>): CompletableFuture<List<TfsPendingChange>> =
         queueFutureAsync { lt ->
             collection.getPendingChanges.start(paths).pipeTo(lt, this)
         }
@@ -72,7 +72,7 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
-    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletableFuture<Void> =
+    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletableFuture<Void> =
         queueFutureAsync { lt ->
             collection.deleteFilesRecursively.start(paths).pipeToVoid(lt, this)
         }

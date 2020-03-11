@@ -11,16 +11,19 @@ import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.GetOptions
 import com.microsoft.tfs.core.clients.versioncontrol.PendChangesOptions
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
-import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.LockLevel
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.Workspace
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
 import com.microsoft.tfs.core.httpclient.Credentials
+import com.microsoft.tfs.model.host.TfsLocalPath
+import com.microsoft.tfs.model.host.TfsPath
+import com.microsoft.tfs.sdk.isPathMapped
+import com.microsoft.tfs.sdk.tryGetWorkspace
 import com.microsoft.tfs.watcher.ExternallyControlledPathWatcherFactory
 import java.net.URI
-import java.nio.file.Path
+import java.nio.file.Paths
 
 class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
     companion object {
@@ -39,22 +42,22 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
     }
 
     val workspaces = Property<List<Workspace>>(listOf())
-    private fun getWorkspaceFor(path: Path): Workspace? {
+    private fun getWorkspaceFor(path: TfsPath): Workspace? {
         for (workspace in workspaces.value) {
-            if (workspace.isLocalPathMapped(path.toString())) {
+            if (workspace.isPathMapped(path)) {
                 return workspace
             }
         }
 
-        return client.tryGetWorkspace(path.toString())?.also {
+        return client.tryGetWorkspace(path)?.also {
             workspaces.value += it
         }
     }
 
-    private fun enumeratePathsWithWorkspace(paths: Iterable<Path>, action: (Workspace, List<Path>) -> Unit) {
+    private fun enumeratePathsWithWorkspace(paths: Iterable<TfsPath>, action: (Workspace, List<TfsPath>) -> Unit) {
         for ((workspace, workspacePathList) in paths.asSequence().groupBy(::getWorkspaceFor)) {
             if (workspace == null) {
-                logger.warn { "Could not determine workspace for paths: " + paths.joinToString(",", "\"", "\"") }
+                logger.warn { "Could not determine workspace for paths: " + paths.joinToString() }
                 continue
             }
 
@@ -62,14 +65,14 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         }
     }
 
-    fun status(paths: List<Path>): List<PendingSet> {
+    fun status(paths: List<TfsPath>): List<PendingSet> {
         val results = mutableListOf<PendingSet>()
         enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
             val workspaceName = workspace.name
             val workspaceOwner = workspace.ownerName
 
             val itemSpecs = ItemSpec.fromStrings(
-                workspacePaths.mapToArray { LocalPath.canonicalize(it.toString()) },
+                workspacePaths.mapToArray { it.toCanonicalPathString() },
                 RecursionType.FULL
             )
             val pendingSets = client.queryPendingSets(itemSpecs, false, workspaceName, workspaceOwner, true)
@@ -79,14 +82,14 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         return results
     }
 
-    fun invalidatePaths(paths: List<Path>) {
-        pathWatcherFactory.pathsInvalidated.fire(paths)
+    fun invalidatePaths(paths: List<TfsLocalPath>) {
+        pathWatcherFactory.pathsInvalidated.fire(paths.map { Paths.get(it.path) })
     }
 
-    fun deletePathsRecursively(paths: List<Path>) {
+    fun deletePathsRecursively(paths: List<TfsPath>) {
         enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
             workspace.pendDelete(
-                workspacePaths.mapToArray { it.toString() },
+                workspacePaths.mapToArray { it.toCanonicalPathString() },
                 RecursionType.FULL,
                 LockLevel.UNCHANGED,
                 GetOptions.NONE,
