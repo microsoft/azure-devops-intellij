@@ -9,8 +9,8 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,12 +62,9 @@ public class ReactiveTfvcClient implements TfvcClient {
     @Override
     public CompletableFuture<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
-            @Nullable String workingFolder,
-            @NotNull List<String> filePaths) {
+            @NotNull List<TfsPath> items) {
         ServerIdentification serverIdentification = getServerIdentification(serverContext);
-        Stream<Path> paths = filePaths.stream().map(Paths::get);
-
         return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, paths));
+                .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items));
     }
 }

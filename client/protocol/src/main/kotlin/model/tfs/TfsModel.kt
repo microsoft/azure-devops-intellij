@@ -8,7 +8,14 @@ import com.jetbrains.rd.generator.nova.PredefinedType.*
 
 @Suppress("unused")
 object TfsModel : Root() {
-    private val TfsLocalPath = structdef {
+    private val TfsPath = basestruct {}
+
+    private val TfsLocalPath = structdef extends TfsPath {
+        field("path", string)
+    }
+
+    private val TfsServerPath = structdef extends TfsPath {
+        field("workspace", string)
         field("path", string)
     }
 
@@ -52,16 +59,16 @@ object TfsModel : Root() {
         property("isReady", bool)
             .doc("Whether the client is ready to accept method calls")
 
-        property("mappedPaths", immutableList(TfsLocalPath))
+        property("mappedPaths", immutableList(TfsPath))
             .doc("A list of path mappings for this collection")
 
-        call("getPendingChanges", immutableList(TfsLocalPath), immutableList(TfsPendingChange))
+        call("getPendingChanges", immutableList(TfsPath), immutableList(TfsPendingChange))
             .doc("Determines a set of the pending changes in the collection")
 
         call("invalidatePaths", immutableList(TfsLocalPath), void)
             .doc("Invalidates the paths in the TFS cache")
 
-        call("deleteFilesRecursively", immutableList(TfsLocalPath), void)
+        call("deleteFilesRecursively", immutableList(TfsPath), void)
             .doc("Scheduled deletion of the files")
     }
 

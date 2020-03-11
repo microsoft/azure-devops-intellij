@@ -3,14 +3,11 @@
 
 package com.microsoft.tfs
 
+import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.ChangeType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingChange
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
-import com.microsoft.tfs.model.host.TfsLocalPath
-import com.microsoft.tfs.model.host.TfsPendingChange
-import com.microsoft.tfs.model.host.TfsServerStatusType
-import java.nio.file.Path
-import java.nio.file.Paths
+import com.microsoft.tfs.model.host.*
 import java.text.SimpleDateFormat
 
 private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
@@ -52,4 +49,8 @@ fun toPendingChanges(pendingSet: PendingSet): Iterable<TfsPendingChange> =
     (pendingSet.pendingChanges.asSequence().map { toPendingChange(pendingSet, it) }
             + pendingSet.candidatePendingChanges.map { toPendingChange(pendingSet, it) }).asIterable()
 
-fun TfsLocalPath.toJavaPath(): Path = Paths.get(path)
+fun TfsPath.toCanonicalPathString(): String = when(this) {
+    is TfsLocalPath -> LocalPath.canonicalize(path)
+    is TfsServerPath -> path
+    else -> throw Exception("Unknown path type: $this")
+}

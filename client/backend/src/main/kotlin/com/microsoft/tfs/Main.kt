@@ -95,7 +95,7 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
 
     collection.getPendingChanges.set { paths ->
         logger.info { "Calculating pending changes for ${paths.size} paths" }
-        val result = client.status(paths.map { it.toJavaPath() }).flatMap(::toPendingChanges).toList()
+        val result = client.status(paths).flatMap(::toPendingChanges).toList()
         logger.info { "${result.size} changes detected" }
         logger.info { "First 10 changes: " + result.take(10).joinToString { it.serverItem } }
         result
@@ -104,15 +104,15 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
     collection.invalidatePaths.set { paths ->
         if (paths.isEmpty()) return@set
 
-        logger.info { "Invalidating ${paths.size} paths, first 10: ${paths.take(10).joinToString { it.path }}" }
-        client.invalidatePaths(paths.map { it.toJavaPath() })
+        logger.info { "Invalidating ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
+        client.invalidatePaths(paths)
     }
 
     collection.deleteFilesRecursively.set { paths ->
         if (paths.isEmpty()) return@set
 
-        logger.info { "Deleting ${paths.size} paths, first 10: ${paths.take(10).joinToString { it.path }}" }
-        client.deletePathsRecursively(paths.map { it.toJavaPath() })
+        logger.info { "Deleting ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
+        client.deletePathsRecursively(paths)
     }
 
     client.workspaces.advise(lifetime) { workspaces ->

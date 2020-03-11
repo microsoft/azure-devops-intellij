@@ -23,11 +23,13 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
 import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -107,11 +109,20 @@ public class ReactiveTfvcClientHost {
         return myConnection.startAsync();
     }
 
+    private static Stream<TfsLocalPath> toTfsLocalPaths(Stream<Path> paths) {
+        return paths.map(path -> {
+            String pathString = path.toString();
+            if (TfsFileUtil.isServerItem(pathString))
+                ourLogger.warn("Server path passed as local: \"" + path + "\"");
+
+            return new TfsLocalPath(pathString);
+        });
+    }
+
     public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
             ServerIdentification serverIdentification,
             Stream<Path> localPaths) {
-        List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
-                .collect(Collectors.toList());
+        List<TfsLocalPath> paths = toTfsLocalPaths(localPaths).collect(Collectors.toList());
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.invalidatePathsAsync(collection, paths).thenApply(v -> collection))
                 .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
@@ -132,9 +143,7 @@ public class ReactiveTfvcClientHost {
     @NotNull
     public CompletableFuture<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerIdentification serverIdentification,
-            @NotNull Stream<Path> localPaths) {
-        List<TfsLocalPath> paths = localPaths.map(path -> new TfsLocalPath(path.toString()))
-                .collect(Collectors.toList());
+            @NotNull List<TfsPath> paths) {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.deleteFilesRecursivelyAsync(collection, paths));
     }

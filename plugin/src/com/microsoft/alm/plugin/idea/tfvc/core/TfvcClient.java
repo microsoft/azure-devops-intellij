@@ -8,8 +8,8 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.services.PropertyService;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -51,13 +51,11 @@ public interface TfvcClient {
     @NotNull
     CompletableFuture<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
-            @Nullable String workingFolder,
-            @NotNull List<String> filePaths);
+            @NotNull List<TfsPath> items);
 
     default void deleteFilesRecursively(
             @NotNull ServerContext serverContext,
-            @Nullable String workingFolder,
-            @NotNull List<String> filePaths) throws ExecutionException, InterruptedException {
-        deleteFilesRecursivelyAsync(serverContext, workingFolder, filePaths).get();
+            @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
+        deleteFilesRecursivelyAsync(serverContext, items).get();
     }
 }
