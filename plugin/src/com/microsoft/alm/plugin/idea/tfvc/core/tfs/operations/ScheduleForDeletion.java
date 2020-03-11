@@ -28,11 +28,14 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -43,6 +46,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Deletes a list of files through TFVC
@@ -142,7 +146,8 @@ public class ScheduleForDeletion {
             }
 
             if (!revert.isEmpty()) {
-                CommandUtils.undoLocalFiles(context, revert);
+                List<TfsPath> pathsForUndo = revert.stream().map(TfsLocalPath::new).collect(Collectors.toList());
+                TfvcClient.getInstance(project).undoLocalChanges(context, pathsForUndo);
             }
 
             final List<String> confirmedDeletedFiles = new ArrayList<String>();

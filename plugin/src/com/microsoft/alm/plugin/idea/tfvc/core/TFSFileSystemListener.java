@@ -17,7 +17,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThrowableConsumer;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.external.exceptions.NoPendingChangesFoundException;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -26,8 +25,8 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
-import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import org.apache.commons.lang.StringUtils;
@@ -107,7 +106,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             try {
                 tfvcClient.deleteFilesRecursively(
                         serverContext,
-                        Collections.singletonList(new TfsLocalPath(virtualFile.getPath())));
+                        Collections.singletonList(TfsFileUtil.createLocalPath(virtualFile)));
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -196,10 +195,10 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         if (revert.get()) {
             try {
-                CommandUtils.undoLocalFiles(serverContext, Collections.singletonList(virtualFile.getPath()));
-            } catch (NoPendingChangesFoundException ex) {
-                // This usually will happen when deleting empty files in IDEA 2019.3.x.
-                ourLogger.info("Nothing to undo in file \"{}\", proceeding", virtualFile.getPath());
+                TfsPath filePath = TfsFileUtil.createLocalPath(virtualFile);
+                tfvcClient.undoLocalChanges(serverContext, Collections.singletonList(filePath));
+            } catch (ExecutionException | InterruptedException ex) {
+                throw new RuntimeException(ex);
             }
         }
 
@@ -209,7 +208,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             PendingChange pendingChange = pendingChanges.get(0);
             TfsPath itemToDelete = StringUtils.isNotEmpty(pendingChange.getSourceItem())
                     ? new TfsServerPath(pendingChange.getWorkspace(), pendingChange.getSourceItem())
-                    : new TfsLocalPath(pendingChange.getLocalItem());
+                    : TfsFileUtil.createLocalPath(pendingChange.getLocalItem());
             try {
                 tfvcClient.deleteFilesRecursively(serverContext, Collections.singletonList(itemToDelete));
             } catch (ExecutionException | InterruptedException e) {

@@ -93,7 +93,7 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<Void> undoLocalChangesAsync(
+    public CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         undoLocalChanges(serverContext, items);
@@ -101,8 +101,9 @@ public class ClassicTfvcClient implements TfvcClient {
     }
 
     @Override
-    public void undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+    public List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
         List<String> itemPaths = items.stream().map(ClassicTfvcClient::getPathItem).collect(Collectors.toList());
-        CommandUtils.undoLocalFiles(serverContext, itemPaths);
+        List<String> undonePaths = CommandUtils.undoLocalFiles(serverContext, itemPaths);
+        return undonePaths.stream().map(TfsLocalPath::new).collect(Collectors.toList());
     }
 }

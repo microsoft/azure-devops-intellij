@@ -3,6 +3,7 @@
 
 package com.microsoft.tfs
 
+import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.onTermination
 import com.jetbrains.rd.util.reactive.Property
@@ -11,6 +12,7 @@ import com.microsoft.tfs.core.TFSTeamProjectCollection
 import com.microsoft.tfs.core.clients.versioncontrol.GetOptions
 import com.microsoft.tfs.core.clients.versioncontrol.PendChangesOptions
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
+import com.microsoft.tfs.core.clients.versioncontrol.events.UndonePendingChangeListener
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.LockLevel
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
@@ -98,9 +100,19 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         }
     }
 
-    fun undoLocalChanges(paths: List<TfsPath>) {
-        enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
-            workspace.undo(workspacePaths.mapToArray { it.toCanonicalPathItemSpec(RecursionType.NONE) })
+    fun undoLocalChanges(paths: List<TfsPath>): List<TfsLocalPath> {
+        val eventEngine = client.eventEngine
+        val undonePaths = mutableListOf<TfsLocalPath>()
+        val listener = UndonePendingChangeListener { undonePaths.add(TfsLocalPath(it.pendingChange.localItem)) }
+        eventEngine.addUndonePendingChangeListener(listener)
+        try {
+            enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
+                val count = workspace.undo(workspacePaths.mapToArray { it.toCanonicalPathItemSpec(RecursionType.NONE) })
+                logger.info { "Undo result = $count" }
+            }
+        } finally {
+            eventEngine.removeUndonePendingChangeListener(listener)
         }
+        return undonePaths
     }
 }

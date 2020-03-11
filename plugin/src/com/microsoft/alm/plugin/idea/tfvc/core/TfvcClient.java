@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.services.PropertyService;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,10 +65,10 @@ public interface TfvcClient {
      *
      * @param serverContext server context to extract a authorization information from
      * @param items         list of items to undo changes
-     * @return a completion stage that will be resolved when the operation ends.
+     * @return a completion stage with the list of the files undone that will be resolved when the operation ends.
      */
     @NotNull
-    CompletionStage<Void> undoLocalChangesAsync(
+    CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
@@ -76,10 +77,11 @@ public interface TfvcClient {
      *
      * @param serverContext server context to extract a authorization information from
      * @param items         list of items to undo changes
+     * @return list of the paths undone.
      */
-    default void undoLocalChanges(
+    default List<TfsLocalPath> undoLocalChanges(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
-        undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
+        return undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
     }
 }

@@ -9,6 +9,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
 
@@ -79,7 +80,7 @@ public class ReactiveTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<Void> undoLocalChangesAsync(
+    public CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         return traceTime("Undo", () -> {

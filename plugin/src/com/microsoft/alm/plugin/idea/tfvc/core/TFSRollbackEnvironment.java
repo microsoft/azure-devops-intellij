@@ -31,6 +31,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
     private static final Logger logger = LoggerFactory.getLogger(TFSRollbackEnvironment.class);
@@ -125,21 +128,19 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
                                     @NotNull final RollbackProgressListener listener) {
         logger.info("undoPendingChanges started");
         try {
-            // Convert the FilePath objects provided to a simple String list
-            final List<String> localFiles = new ArrayList<String>(localPaths.size());
-            for (final FilePath path : localPaths) {
-                localFiles.add(path.getPath());
-            }
+            List<TfsPath> localFiles = localPaths.stream()
+                    .map(TfsFileUtil::createLocalPath)
+                    .collect(Collectors.toList());
 
             // Call the undo command synchronously
-            final ServerContext context = vcs.getServerContext(false);
-            final List<String> filesUndone = CommandUtils.undoLocalFiles(context, localFiles);
+            final ServerContext context = vcs.getServerContext(true);
+            final List<TfsLocalPath> filesUndone = TfvcClient.getInstance(project).undoLocalChanges(context, localFiles);
 
             // Trigger the accept callback and build up our refresh list
             final List<VirtualFile> refresh = new ArrayList<VirtualFile>(filesUndone.size());
-            for (final String path : filesUndone) {
+            for (final TfsLocalPath path : filesUndone) {
                 // Call the accept method on the listener to indicate progress
-                final File fileUndone = new File(path);
+                final File fileUndone = new File(path.getPath());
                 listener.accept(fileUndone);
 
                 // Add the parent folder of the file to our refresh list

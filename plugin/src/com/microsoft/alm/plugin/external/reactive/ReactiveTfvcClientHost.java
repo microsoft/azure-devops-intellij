@@ -109,20 +109,10 @@ public class ReactiveTfvcClientHost {
         return myConnection.startAsync();
     }
 
-    private static Stream<TfsLocalPath> toTfsLocalPaths(Stream<Path> paths) {
-        return paths.map(path -> {
-            String pathString = path.toString();
-            if (TfsFileUtil.isServerItem(pathString))
-                ourLogger.warn("Server path passed as local: \"" + path + "\"");
-
-            return new TfsLocalPath(pathString);
-        });
-    }
-
     public CompletionStage<List<PendingChange>> getPendingChangesAsync(
             ServerIdentification serverIdentification,
             Stream<Path> localPaths) {
-        List<TfsLocalPath> paths = toTfsLocalPaths(localPaths).collect(Collectors.toList());
+        List<TfsLocalPath> paths = localPaths.map(TfsFileUtil::createLocalPath).collect(Collectors.toList());
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.invalidatePathsAsync(collection, paths).thenApply(v -> collection))
                 .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
@@ -149,7 +139,7 @@ public class ReactiveTfvcClientHost {
     }
 
     @NotNull
-    public CompletionStage<Void> undoLocalChangesAsync(
+    public CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
             @NotNull ServerIdentification serverIdentification,
             @NotNull List<TfsPath> paths) {
         return getReadyCollectionAsync(serverIdentification)

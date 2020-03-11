@@ -7,7 +7,6 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.exceptions.TeamServicesException;
 import com.microsoft.alm.plugin.external.ToolRunner;
-import com.microsoft.alm.plugin.external.exceptions.NoPendingChangesFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,33 +56,42 @@ public class UndoCommand extends Command<List<String>> {
 
         // check for failure
         if (StringUtils.isNotEmpty(stderr)) {
-            if (stderr.startsWith(NO_PENDING_CHANGES_WERE_FOUND)) {
-                logger.warn("Message from the TFVC client: " + stderr);
-                throw new NoPendingChangesFoundException();
-            }
+            String[] errorLines = stderr.split("\n");
+            boolean hasUnknownError = false;
 
-            logger.error("Undo failed with the following stderr: " + stderr);
-            for (int i = 0; i < output.length; i++) {
-                // finding error message by eliminating all other known output lines since we can't parse for the error line itself (it's unknown to us)
-                // TODO: figure out a better way to get the error message instead of parsing
-                if (isOutputLineExpected(output[i], new String[]{UNDO_LINE_PREFIX}, true)) {
-                    throw new RuntimeException(output[i]);
+            for (String errorLine : errorLines) {
+                // No pending changes isn't an error: we'll just return empty list for this case.
+                if (errorLine.startsWith(NO_PENDING_CHANGES_WERE_FOUND)) {
+                    logger.warn(errorLine);
+                } else {
+                    hasUnknownError = true;
+                    break;
                 }
             }
-            // couldn't figure out error message parsing so returning generic error
-            logger.error("Parsing of the stdout failed to get the error message");
-            throw new TeamServicesException(TeamServicesException.KEY_ERROR_UNKNOWN);
+
+            if (hasUnknownError) {
+                logger.error("Undo failed with the following stderr: " + stderr);
+                for (String s : output) {
+                    // finding error message by eliminating all other known output lines since we can't parse for the error line itself (it's unknown to us)
+                    if (StringUtils.isNotEmpty(s) && isOutputLineExpected(s, new String[]{UNDO_LINE_PREFIX}, true)) {
+                        throw new RuntimeException(s);
+                    }
+                }
+                // couldn't figure out error message parsing so returning generic error
+                logger.error("Parsing of the stdout failed to get the error message");
+                throw new TeamServicesException(TeamServicesException.KEY_ERROR_UNKNOWN);
+            }
         }
 
-        final List<String> filesUndone = new ArrayList<String>();
+        final List<String> filesUndone = new ArrayList<>();
 
         // parse output for directory paths and file names to combine
         String path = StringUtils.EMPTY;
-        for (int i = 0; i < output.length; i++) {
-            if (isFilePath(output[i])) {
-                path = output[i];
-            } else if (StringUtils.isNotEmpty(output[i])) {
-                filesUndone.add(getFilePath(path, output[i], "")); //TODO: Need to pass in the path root
+        for (String s : output) {
+            if (isFilePath(s)) {
+                path = s;
+            } else if (StringUtils.isNotEmpty(s)) {
+                filesUndone.add(getFilePath(path, s, "")); //TODO: Need to pass in the path root
             }
         }
 
