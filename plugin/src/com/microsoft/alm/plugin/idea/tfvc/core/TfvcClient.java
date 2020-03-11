@@ -12,7 +12,7 @@ import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -37,7 +37,7 @@ public interface TfvcClient {
     }
 
     @NotNull
-    CompletableFuture<List<PendingChange>> getStatusForFilesAsync(
+    CompletionStage<List<PendingChange>> getStatusForFilesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess);
 
@@ -45,17 +45,41 @@ public interface TfvcClient {
     default List<PendingChange> getStatusForFiles(
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) throws ExecutionException, InterruptedException {
-        return getStatusForFilesAsync(serverContext, pathsToProcess).get();
+        return getStatusForFilesAsync(serverContext, pathsToProcess).toCompletableFuture().get();
     }
 
     @NotNull
-    CompletableFuture<Void> deleteFilesRecursivelyAsync(
+    CompletionStage<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
     default void deleteFilesRecursively(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
-        deleteFilesRecursivelyAsync(serverContext, items).get();
+        deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
+    }
+
+    /**
+     * Performs asynchronous local change undo for passed file paths. This operation is non-recursive.
+     *
+     * @param serverContext server context to extract a authorization information from
+     * @param items         list of items to undo changes
+     * @return a completion stage that will be resolved when the operation ends.
+     */
+    @NotNull
+    CompletionStage<Void> undoLocalChangesAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items);
+
+    /**
+     * Performs synchronous local change undo for passed file paths. This operation is non-recursive.
+     *
+     * @param serverContext server context to extract a authorization information from
+     * @param items         list of items to undo changes
+     */
+    default void undoLocalChanges(
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
+        undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
     }
 }

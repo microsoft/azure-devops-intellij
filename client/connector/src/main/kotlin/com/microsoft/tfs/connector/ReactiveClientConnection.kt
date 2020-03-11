@@ -13,6 +13,7 @@ import com.jetbrains.rd.util.reactive.whenTrue
 import com.microsoft.tfs.model.connector.*
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionStage
 
 class ReactiveClientConnection(private val scheduler: IScheduler) {
     private val lifetimeDefinition = LifetimeDefinition()
@@ -41,7 +42,7 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
 
     fun terminate() = lifetimeDefinition.terminate()
 
-    fun startAsync(): CompletableFuture<Void> =
+    fun startAsync(): CompletionStage<Void> =
         queueFutureAsync { lt ->
             model = TfsModel.create(lifetime, protocol).apply {
                 connected.whenTrue(lt) {
@@ -50,34 +51,39 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             }
         }
 
-    fun getOrCreateCollectionAsync(definition: TfsCollectionDefinition): CompletableFuture<TfsCollection> =
+    fun getOrCreateCollectionAsync(definition: TfsCollectionDefinition): CompletionStage<TfsCollection> =
         queueFutureAsync {
             complete(model.collections[definition] ?: TfsCollection().apply { model.collections[definition] = this })
         }
 
-    fun waitForReadyAsync(collection: TfsCollection): CompletableFuture<Void> =
+    fun waitForReadyAsync(collection: TfsCollection): CompletionStage<Void> =
         queueFutureAsync {
             collection.isReady.whenTrue(lifetime) { complete(null) }
         }
 
     fun getPendingChangesAsync(
         collection: TfsCollection,
-        paths: List<TfsPath>): CompletableFuture<List<TfsPendingChange>> =
+        paths: List<TfsPath>): CompletionStage<List<TfsPendingChange>> =
         queueFutureAsync { lt ->
             collection.getPendingChanges.start(paths).pipeTo(lt, this)
         }
 
-    fun invalidatePathsAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletableFuture<Void> =
+    fun invalidatePathsAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletionStage<Void> =
         queueFutureAsync { lt ->
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
-    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletableFuture<Void> =
+    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<Void> =
         queueFutureAsync { lt ->
             collection.deleteFilesRecursively.start(paths).pipeToVoid(lt, this)
         }
 
-    private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletableFuture<T> {
+    fun undoLocalChangesAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<Void> =
+        queueFutureAsync { lt ->
+            collection.undoLocalChanges.start(paths).pipeToVoid(lt, this)
+        }
+
+    private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletionStage<T> {
         val lifetime = lifetime.createNested()
         val future = CompletableFuture<T>().whenComplete { _, _ -> lifetime.terminate() }
         lifetime.onTermination { future.cancel(false) }

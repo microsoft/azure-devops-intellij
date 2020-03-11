@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 public class ClassicTfvcClient implements TfvcClient {
@@ -30,7 +31,7 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletableFuture<List<PendingChange>> getStatusForFilesAsync(
+    public CompletionStage<List<PendingChange>> getStatusForFilesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
         return CompletableFuture.completedFuture(getStatusForFiles(serverContext, pathsToProcess));
@@ -48,7 +49,7 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         deleteFilesRecursively(serverContext, items);
@@ -88,5 +89,20 @@ public class ClassicTfvcClient implements TfvcClient {
                     .collect(Collectors.toList());
             CommandUtils.deleteFiles(serverContext, itemsInWorkspace, workspace.orElse(null), true);
         }
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Void> undoLocalChangesAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) {
+        undoLocalChanges(serverContext, items);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+        List<String> itemPaths = items.stream().map(ClassicTfvcClient::getPathItem).collect(Collectors.toList());
+        CommandUtils.undoLocalFiles(serverContext, itemPaths);
     }
 }

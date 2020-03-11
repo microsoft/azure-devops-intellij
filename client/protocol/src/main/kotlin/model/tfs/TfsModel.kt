@@ -70,6 +70,9 @@ object TfsModel : Root() {
 
         call("deleteFilesRecursively", immutableList(TfsPath), void)
             .doc("Scheduled deletion of the files")
+
+        call("undoLocalChanges", immutableList(TfsPath), void)
+            .doc("Removes pending changes from a workspace, restoring the local disk files to match the state of the source control server before the change was made.")
     }
 
     init {

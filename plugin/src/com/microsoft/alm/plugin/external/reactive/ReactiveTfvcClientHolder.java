@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public class ReactiveTfvcClientHolder implements Disposable {
 
@@ -48,7 +49,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
                 });
     }
 
-    public CompletableFuture<ReactiveTfvcClientHost> getClient() {
+    public CompletionStage<ReactiveTfvcClientHost> getClient() {
         ensureEulaAccepted();
 
         synchronized (myClientLock) {
@@ -97,6 +98,6 @@ public class ReactiveTfvcClientHolder implements Disposable {
                 .resolve("bin")
                 .resolve(SystemInfo.isWindows ? "backend.bat" : "backend");
         ReactiveTfvcClientHost client = ReactiveTfvcClientHost.create(myProject, clientPath);
-        return client.startAsync().thenApply(unused -> client);
+        return client.startAsync().thenApply(unused -> client).toCompletableFuture();
     }
 }
