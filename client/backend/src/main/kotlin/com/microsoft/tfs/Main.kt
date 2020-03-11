@@ -11,10 +11,7 @@ import com.jetbrains.rd.util.lifetime.LifetimeDefinition
 import com.jetbrains.rd.util.lifetime.isAlive
 import com.jetbrains.rd.util.threading.SingleThreadScheduler
 import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
-import com.microsoft.tfs.model.host.TfsCollection
-import com.microsoft.tfs.model.host.TfsCollectionDefinition
-import com.microsoft.tfs.model.host.TfsLocalPath
-import com.microsoft.tfs.model.host.TfsModel
+import com.microsoft.tfs.model.host.*
 import org.apache.log4j.Level
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -101,18 +98,29 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         result
     }
 
+    fun logPaths(title: String, paths: List<TfsPath>) {
+        logger.info { "Performing $title operation on ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
+    }
+
     collection.invalidatePaths.set { paths ->
         if (paths.isEmpty()) return@set
 
-        logger.info { "Invalidating ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
+        logPaths("Invalidate", paths)
         client.invalidatePaths(paths)
     }
 
     collection.deleteFilesRecursively.set { paths ->
         if (paths.isEmpty()) return@set
 
-        logger.info { "Deleting ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
+        logPaths("Recursive Delete", paths)
         client.deletePathsRecursively(paths)
+    }
+
+    collection.undoLocalChanges.set { paths ->
+        if (paths.isEmpty()) return@set
+
+        logPaths("Undo", paths)
+        client.undoLocalChanges(paths)
     }
 
     client.workspaces.advise(lifetime) { workspaces ->

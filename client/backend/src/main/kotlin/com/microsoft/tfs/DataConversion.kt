@@ -7,6 +7,8 @@ import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.ChangeType
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingChange
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
+import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
 import com.microsoft.tfs.model.host.*
 import java.text.SimpleDateFormat
 
@@ -54,3 +56,6 @@ fun TfsPath.toCanonicalPathString(): String = when(this) {
     is TfsServerPath -> path
     else -> throw Exception("Unknown path type: $this")
 }
+
+fun TfsPath.toCanonicalPathItemSpec(recursionType: RecursionType): ItemSpec =
+    ItemSpec(toCanonicalPathString(), recursionType)

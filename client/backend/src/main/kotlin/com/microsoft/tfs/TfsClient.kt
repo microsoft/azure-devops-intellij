@@ -97,4 +97,10 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
             )
         }
     }
+
+    fun undoLocalChanges(paths: List<TfsPath>) {
+        enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
+            workspace.undo(workspacePaths.mapToArray { it.toCanonicalPathItemSpec(RecursionType.NONE) })
+        }
+    }
 }

@@ -37,7 +37,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,7 +105,7 @@ public class ReactiveTfvcClientHost {
         return new GeneralCommandLine(command).withWorkDirectory(clientHome.toString());
     }
 
-    public CompletableFuture<Void> startAsync() {
+    public CompletionStage<Void> startAsync() {
         return myConnection.startAsync();
     }
 
@@ -119,7 +119,7 @@ public class ReactiveTfvcClientHost {
         });
     }
 
-    public CompletableFuture<List<PendingChange>> getPendingChangesAsync(
+    public CompletionStage<List<PendingChange>> getPendingChangesAsync(
             ServerIdentification serverIdentification,
             Stream<Path> localPaths) {
         List<TfsLocalPath> paths = toTfsLocalPaths(localPaths).collect(Collectors.toList());
@@ -141,11 +141,19 @@ public class ReactiveTfvcClientHost {
     }
 
     @NotNull
-    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerIdentification serverIdentification,
             @NotNull List<TfsPath> paths) {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.deleteFilesRecursivelyAsync(collection, paths));
+    }
+
+    @NotNull
+    public CompletionStage<Void> undoLocalChangesAsync(
+            @NotNull ServerIdentification serverIdentification,
+            @NotNull List<TfsPath> paths) {
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> myConnection.undoLocalChangesAsync(collection, paths));
     }
 
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
@@ -169,7 +177,7 @@ public class ReactiveTfvcClientHost {
         };
     }
 
-    private CompletableFuture<TfsCollection> getReadyCollectionAsync(
+    private CompletionStage<TfsCollection> getReadyCollectionAsync(
             @NotNull ServerIdentification serverIdentification) {
         AuthenticationInfo authenticationInfo = serverIdentification.getAuthenticationInfo();
         TfsCredentials tfsCredentials = new TfsCredentials(

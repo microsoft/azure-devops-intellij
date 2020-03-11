@@ -15,7 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -37,34 +38,54 @@ public class ReactiveTfvcClient implements TfvcClient {
         return new ServerIdentification(serverContext.getCollectionURI(), serverContext.getAuthenticationInfo());
     }
 
+    @NotNull
+    private static <T> CompletionStage<T> traceTime(
+            @NotNull String title,
+            @NotNull Supplier<CompletionStage<T>> action) {
+        long startTime = System.nanoTime();
+        return action.get().whenComplete((result, ex) -> {
+            long endTime = System.nanoTime();
+            double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
+            String status = ex == null ? "successfully" : "with error";
+            ourLogger.trace(title + " finished " + status + " in " + seconds + " sec");
+        });
+    }
+
     @Override
     @NotNull
-    public CompletableFuture<List<PendingChange>> getStatusForFilesAsync(
+    public CompletionStage<List<PendingChange>> getStatusForFilesAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
-        long startTime = System.nanoTime();
+        return traceTime("Status", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
 
-        ServerIdentification serverIdentification = getServerIdentification(serverContext);
-        Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
-
-        return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                .thenCompose(client -> client.getPendingChangesAsync(serverIdentification, paths))
-                .whenComplete((result, ex) -> {
-                    if (ex == null) {
-                        long endTime = System.nanoTime();
-                        double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
-                        ourLogger.info("Status command successfully executed in " + seconds + " sec");
-                    }
-                });
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.getPendingChangesAsync(serverIdentification, paths));
+        });
     }
 
     @NotNull
     @Override
-    public CompletableFuture<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<Void> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
-        ServerIdentification serverIdentification = getServerIdentification(serverContext);
-        return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items));
+        return traceTime("Delete", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items));
+        });
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Void> undoLocalChangesAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) {
+        return traceTime("Undo", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.undoLocalChangesAsync(serverIdentification, items));
+        });
     }
 }
