@@ -41,6 +41,13 @@ public class UndoCommand extends Command<List<String>> {
         return builder;
     }
 
+    @Override
+    protected boolean shouldThrowBadExitCode() {
+        // This command shouldn't throw on bad exit code since it will return non-zero code even in non-fatal conditions
+        // (e.g. when there was nothing to undo which is mostly fine).
+        return false;
+    }
+
     /**
      * Returns the files that were undone
      * <p/>
