@@ -21,6 +21,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.undo.UndoManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -74,6 +75,10 @@ public class TFSFileListener extends VcsVFSListener {
     protected void executeAdd(List<VirtualFile> addedFiles, Map<VirtualFile, VirtualFile> copyFromMap) {
         logger.info("executeAdd executing...");
         Application application = ApplicationManager.getApplication();
+        if (UndoManager.getInstance(myProject).isUndoInProgress()) {
+            logger.info("{} files won't be added into TFS since Undo action is in progress", addedFiles.size());
+            return;
+        }
 
         final List<String> filePaths = TfsFileUtil.getFilePathStrings(addedFiles);
         final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();

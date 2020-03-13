@@ -5,6 +5,9 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.command.undo.DocumentReference;
+import com.intellij.openapi.command.undo.DocumentReferenceManager;
+import com.intellij.openapi.command.undo.UndoManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
@@ -24,6 +27,7 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,6 +89,19 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         ourLogger.info("Deleting file with TFVC: " + virtualFile.getPath());
         final Project currentProject = vcs.getProject();
+
+        // TODO: Currently, we cannot allow the users to undo directory deletion, because there's no non-recursive
+        // `tf undo` command. In future, we may allow this after we drop legacy client support and add a undo command
+        // that won't touch the disk at all.
+        //
+        // Currently, `tf undo` will always try to restore the whole directory (with ALL the files) which breaks the
+        // undo behavior.
+        if (virtualFile.isDirectory()) {
+            ourLogger.info("Marking operation as non-undoable since directory \"{}\" is deleted", virtualFile);
+            DocumentReference ref = DocumentReferenceManager.getInstance().create(virtualFile);
+            UndoManager.getInstance(currentProject).nonundoableActionPerformed(ref, false);
+        }
+
         TfvcClient tfvcClient = TfvcClient.getInstance(currentProject);
         ServerContext serverContext = vcs.getServerContext(true);
 
@@ -214,13 +232,58 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         return renameOrMove(virtualFile, Path.combine(virtualFile.getParent().getPath(), s));
     }
 
+    /**
+     * The point of this method is to perform undo operation in TFS to restore the file on disk in case we're in middle
+     * of the IDE undo action.
+     *
+     * @param dir  the directory in which the file is being created.
+     * @param name the name of the new file.
+     * @return true if the handler has performed the file creation, false if the creation needs to be performed through
+     * standard core logic.
+     */
     @Override
-    public boolean createFile(final VirtualFile virtualFile, final String s) throws IOException {
+    public boolean createFile(@NotNull final VirtualFile dir, @NotNull final String name) {
+        if (!UndoManager.getInstance(myProject).isUndoInProgress())
+            return false;
+
+        TFSVcs vcs = VcsHelper.getTFSVcsByPath(dir);
+        if (vcs == null)
+            return false;
+
+        TfvcClient client = TfvcClient.getInstance(myProject);
+        ServerContext serverContext = vcs.getServerContext(true);
+
+        String path = Paths.get(dir.getPath(), name).toString();
+        List<PendingChange> changes = client.getStatusForFiles(serverContext, Collections.singletonList(path));
+
+        AtomicBoolean performUndo = new AtomicBoolean(false);
+        for (PendingChange change : changes) {
+            StatusProvider.visitByStatus(new StatusProvider.StatusAdapter() {
+                @Override
+                public void scheduledForDeletion(
+                        @NotNull FilePath localPath,
+                        boolean localItemExists,
+                        @NotNull ServerStatus serverStatus) {
+                    ourLogger.info(
+                            "File \"{}\" is scheduled for delete: undo operation will be performed via TFVC",
+                            path);
+                    performUndo.set(true);
+                }
+            }, change);
+        }
+
+        if (performUndo.get()) {
+            TfsPath filePath = TfsFileUtil.createLocalPath(path);
+            List<TfsLocalPath> undone = client.undoLocalChanges(serverContext, Collections.singletonList(filePath));
+            ourLogger.info("Undone {} items", undone.size());
+            return true;
+        }
+
         return false;
     }
 
     @Override
-    public boolean createDirectory(final VirtualFile virtualFile, final String s) throws IOException {
+    public boolean createDirectory(@NotNull final VirtualFile dir, @NotNull final String name) {
         return false;
     }
 
