@@ -163,7 +163,6 @@ public class ScheduleForDeletion {
                     TfsFileUtil.markFileDirty(project, expectedDeletedFile);
                 }
             }
-
         } catch (Throwable t) {
             logger.warn("executeDelete experienced a failure while looking for altered files to delete", t);
             errors.add(TFSVcs.convertToVcsException(t));

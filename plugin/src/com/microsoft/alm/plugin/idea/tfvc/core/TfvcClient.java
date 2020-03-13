@@ -45,8 +45,12 @@ public interface TfvcClient {
     @NotNull
     default List<PendingChange> getStatusForFiles(
             @NotNull ServerContext serverContext,
-            @NotNull List<String> pathsToProcess) throws ExecutionException, InterruptedException {
-        return getStatusForFilesAsync(serverContext, pathsToProcess).toCompletableFuture().get();
+            @NotNull List<String> pathsToProcess) {
+        try {
+            return getStatusForFilesAsync(serverContext, pathsToProcess).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @NotNull
@@ -54,10 +58,12 @@ public interface TfvcClient {
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
-    default void deleteFilesRecursively(
-            @NotNull ServerContext serverContext,
-            @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
-        deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
+    default void deleteFilesRecursively(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+        try {
+            deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -79,9 +85,11 @@ public interface TfvcClient {
      * @param items         list of items to undo changes
      * @return list of the paths undone.
      */
-    default List<TfsLocalPath> undoLocalChanges(
-            @NotNull ServerContext serverContext,
-            @NotNull List<TfsPath> items) throws ExecutionException, InterruptedException {
-        return undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
+    default List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+        try {
+            return undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

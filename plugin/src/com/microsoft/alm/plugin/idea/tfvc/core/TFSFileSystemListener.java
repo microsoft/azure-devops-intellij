@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -88,25 +87,16 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         TfvcClient tfvcClient = TfvcClient.getInstance(currentProject);
         ServerContext serverContext = vcs.getServerContext(true);
 
-        List<PendingChange> pendingChanges;
-        try {
-            pendingChanges = tfvcClient.getStatusForFiles(
-                    serverContext,
-                    Collections.singletonList(virtualFile.getPath()));
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        List<PendingChange> pendingChanges = tfvcClient.getStatusForFiles(
+                serverContext,
+                Collections.singletonList(virtualFile.getPath()));
 
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
             ourLogger.info("No changes to file so deleting though TFVC");
-            try {
-                tfvcClient.deleteFilesRecursively(
-                        serverContext,
-                        Collections.singletonList(TfsFileUtil.createLocalPath(virtualFile)));
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            tfvcClient.deleteFilesRecursively(
+                    serverContext,
+                    Collections.singletonList(TfsFileUtil.createLocalPath(virtualFile)));
 
             long time = System.nanoTime() - startTime;
             ourLogger.trace("Delete command finished in " + time / 1_000_000_000.0 + "s");
@@ -185,12 +175,8 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         }
 
         if (revert.get()) {
-            try {
-                TfsPath filePath = TfsFileUtil.createLocalPath(virtualFile);
-                tfvcClient.undoLocalChanges(serverContext, Collections.singletonList(filePath));
-            } catch (ExecutionException | InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
+            TfsPath filePath = TfsFileUtil.createLocalPath(virtualFile);
+            tfvcClient.undoLocalChanges(serverContext, Collections.singletonList(filePath));
         }
 
         if (success.get() && !isUndelete.get()) {
@@ -200,11 +186,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             TfsPath itemToDelete = StringUtils.isNotEmpty(pendingChange.getSourceItem())
                     ? new TfsServerPath(pendingChange.getWorkspace(), pendingChange.getSourceItem())
                     : TfsFileUtil.createLocalPath(pendingChange.getLocalItem());
-            try {
-                tfvcClient.deleteFilesRecursively(serverContext, Collections.singletonList(itemToDelete));
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            tfvcClient.deleteFilesRecursively(serverContext, Collections.singletonList(itemToDelete));
         }
         ourLogger.info("File was deleted using TFVC: " + success.get());
 
