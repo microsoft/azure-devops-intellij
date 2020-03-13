@@ -4,7 +4,9 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.collect.ImmutableList;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
@@ -43,10 +45,12 @@ import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, LocalFileSystem.class, TfsFileUtil.class})
+@PrepareForTest({CommandUtils.class, LocalFileSystem.class, ServiceManager.class, TfsFileUtil.class})
 public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     TFSRollbackEnvironment rollbackEnvironment;
-    List<String> filePaths = ImmutableList.of("/path/to/file1", "/path/to/file2", "/path/to/file3");
+    List<String> filePaths = SystemInfo.isWindows
+            ? ImmutableList.of("\\path\\to\\file1", "\\path\\to\\file2", "\\path\\to\\file3")
+            : ImmutableList.of("/path/to/file1", "/path/to/file2", "/path/to/file3");
     List<VcsException> exceptions;
     List<Change> changes;
 
@@ -71,14 +75,17 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, LocalFileSystem.class, TfsFileUtil.class);
+        PowerMockito.mockStatic(CommandUtils.class, LocalFileSystem.class, ServiceManager.class, TfsFileUtil.class);
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
+        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
+        when(TfsFileUtil.createLocalPath(any(String.class))).thenCallRealMethod();
+        when(TfsFileUtil.createLocalPath(any(FilePath.class))).thenCallRealMethod();
         when(filePath1.getPath()).thenReturn("/path/to/file1");
         when(filePath2.getPath()).thenReturn("/path/to/file2");
         when(filePath3.getPath()).thenReturn("/path/to/file3");
-        exceptions = new ArrayList<VcsException>();
+        exceptions = new ArrayList<>();
 
         rollbackEnvironment = new TFSRollbackEnvironment(mockTFSVcs, mockProject);
     }
