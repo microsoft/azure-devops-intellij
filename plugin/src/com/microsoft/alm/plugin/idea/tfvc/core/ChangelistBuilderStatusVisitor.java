@@ -33,7 +33,6 @@ import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +54,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         this.changelistBuilder = changelistBuilder;
     }
 
-    public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException {
+    public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
             TFSContentRevision baseRevision =
                     TFSContentRevision.create(project, localPath, serverStatus.localVer, serverStatus.modicationDate);
@@ -67,7 +65,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
     }
 
     @Override
-    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
         // Nothing to do
     }
 
@@ -89,8 +87,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         changelistBuilder.processChange(new Change(baseRevision, null), TFSVcs.getKey());
     }
 
-    public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException {
+    public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
             final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
             final ContentRevision after = CurrentContentRevision.create(localPath);
@@ -100,8 +97,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         }
     }
 
-    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException {
+    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         if (localItemExists) {
             final ContentRevision before = getPreviousRenamedRevision(localPath, serverStatus.localVer);
             final ContentRevision after = CurrentContentRevision.create(localPath);
@@ -123,8 +119,7 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         }
     }
 
-    public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-            throws TfsException {
+    public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
         checkedOutForEdit(localPath, localItemExists, serverStatus);
     }
 

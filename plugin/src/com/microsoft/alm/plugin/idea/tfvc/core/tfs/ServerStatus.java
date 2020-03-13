@@ -21,7 +21,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,8 +60,7 @@ public abstract class ServerStatus {
         this(Integer.parseInt(pendingChange.getVersion()), new File(pendingChange.getLocalItem()).isDirectory(), pendingChange.getServerItem(), pendingChange.getLocalItem(), pendingChange.getDate());
     }
 
-    public abstract void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-            throws TfsException;
+    public abstract void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor);
 
     public String toString() {
         return getClass().getName().substring(getClass().getName().lastIndexOf("$") + 1);
@@ -74,8 +72,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.checkedOutForEdit(localPath, localItemExists, this);
         }
     }
@@ -85,8 +82,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.locked(localPath, localItemExists, this);
         }
     }
@@ -96,8 +92,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.scheduledForAddition(localPath, localItemExists, this);
         }
     }
@@ -107,8 +102,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.scheduledForDeletion(localPath, localItemExists, this);
         }
     }
@@ -118,8 +112,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.renamedCheckedOut(localPath, localItemExists, this);
         }
     }
@@ -129,8 +122,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.renamed(localPath, localItemExists, this);
         }
     }
@@ -143,8 +135,7 @@ public abstract class ServerStatus {
             super(0, false, null, null, new Date().toString()); // use now date for unversioned since it doesn't matter there are no previous versions
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.unversioned(localPath, localItemExists, this);
         }
     }
@@ -154,8 +145,7 @@ public abstract class ServerStatus {
             super(pendingChange);
         }
 
-        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor)
-                throws TfsException {
+        public void visitBy(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull StatusVisitor statusVisitor) {
             statusVisitor.undeleted(localPath, localItemExists, this);
         }
     }
