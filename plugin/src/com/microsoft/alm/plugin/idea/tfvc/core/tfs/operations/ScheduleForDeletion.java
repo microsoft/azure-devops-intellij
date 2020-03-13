@@ -31,7 +31,6 @@ import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
-import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
@@ -83,7 +82,7 @@ public class ScheduleForDeletion {
             }
 
             for (final PendingChange pendingChange : pendingChanges) {
-                StatusProvider.visitByStatus(new StatusVisitor() {
+                StatusProvider.visitByStatus(new StatusProvider.StatusAdapter() {
 
                     public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists,
                                             final @NotNull ServerStatus serverStatus) {
@@ -102,11 +101,6 @@ public class ScheduleForDeletion {
                         logger.info("ScheduleForDeletion: checkedOutForEdit file " + localPath.getPath());
                         revert.add(pendingChange.getLocalItem());
                         scheduleForDeletion.add(pendingChange.getLocalItem());
-                    }
-
-                    @Override
-                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
-                        // nothing to do
                     }
 
                     public void scheduledForAddition(final @NotNull FilePath localPath, final boolean localItemExists,

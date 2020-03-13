@@ -31,7 +31,7 @@ import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
-import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Adds changes to change log as the correct status
  */
-class ChangelistBuilderStatusVisitor implements StatusVisitor {
+class ChangelistBuilderStatusVisitor extends StatusProvider.StatusAdapter {
     private static final Logger logger = LoggerFactory.getLogger(ChangelistBuilderStatusVisitor.class);
 
     @NotNull
@@ -62,11 +62,6 @@ class ChangelistBuilderStatusVisitor implements StatusVisitor {
         } else {
             changelistBuilder.processLocallyDeletedFile(localPath);
         }
-    }
-
-    @Override
-    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
-        // Nothing to do
     }
 
     public void scheduledForAddition(final @NotNull FilePath localPath,

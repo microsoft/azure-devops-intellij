@@ -19,6 +19,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
@@ -100,6 +101,43 @@ public class StatusProvider {
         } else {
             logger.error("Unhandled status type: " + Arrays.toString(pendingChange.getChangeTypes().toArray()));
             return null;
+        }
+    }
+
+    /**
+     * An empty {@link StatusVisitor} implementation useful for cases when only some of the overrides are required.
+     */
+    public static class StatusAdapter implements StatusVisitor {
+        @Override
+        public void checkedOutForEdit(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void scheduledForAddition(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void scheduledForDeletion(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void renamedCheckedOut(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void unversioned(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void renamed(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+        }
+
+        @Override
+        public void undeleted(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
         }
     }
 }
