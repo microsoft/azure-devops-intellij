@@ -35,7 +35,6 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
-import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.apache.commons.lang.StringUtils;
@@ -91,22 +90,11 @@ public class TFSFileListener extends VcsVFSListener {
         });
 
         for (final PendingChange pendingChange : pendingChanges) {
-            StatusProvider.visitByStatus(new StatusVisitor() {
-                public void unversioned(final @NotNull FilePath localPath,
-                                        final boolean localItemExists,
-                                        final @NotNull ServerStatus serverStatus) {
-                    // ignore
-                }
-
+            StatusProvider.visitByStatus(new StatusProvider.StatusAdapter() {
                 public void checkedOutForEdit(final @NotNull FilePath localPath,
                                               final boolean localItemExists,
                                               final @NotNull ServerStatus serverStatus) {
                     // TODO (JetBrains): add local conflict
-                }
-
-                @Override
-                public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
-                    // ignore
                 }
 
                 public void scheduledForAddition(final @NotNull FilePath localPath,
