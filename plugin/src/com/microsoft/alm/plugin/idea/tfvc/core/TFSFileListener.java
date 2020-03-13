@@ -38,7 +38,6 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -76,73 +75,69 @@ public class TFSFileListener extends VcsVFSListener {
     protected void executeAdd(List<VirtualFile> addedFiles, Map<VirtualFile, VirtualFile> copyFromMap) {
         logger.info("executeAdd executing...");
         Application application = ApplicationManager.getApplication();
-        try {
-            final List<String> filePaths = TfsFileUtil.getFilePathStrings(addedFiles);
-            final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
 
-            application.invokeAndWait(() -> {
-                ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
-                    ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                    pendingChanges.addAll(
-                            CommandUtils.getStatusForFiles(
-                                    myProject,
-                                    TFSVcs.getInstance(myProject).getServerContext(true),
-                                    filePaths));
-                }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
-            });
+        final List<String> filePaths = TfsFileUtil.getFilePathStrings(addedFiles);
+        final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
 
-            for (final PendingChange pendingChange : pendingChanges) {
-                StatusProvider.visitByStatus(new StatusVisitor() {
-                    public void unversioned(final @NotNull FilePath localPath,
-                                            final boolean localItemExists,
-                                            final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // ignore
-                    }
+        application.invokeAndWait(() -> {
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+                pendingChanges.addAll(
+                        CommandUtils.getStatusForFiles(
+                                myProject,
+                                TFSVcs.getInstance(myProject).getServerContext(true),
+                                filePaths));
+            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
+        });
 
-                    public void checkedOutForEdit(final @NotNull FilePath localPath,
-                                                  final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) {
-                        // TODO (JetBrains): add local conflict
-                    }
+        for (final PendingChange pendingChange : pendingChanges) {
+            StatusProvider.visitByStatus(new StatusVisitor() {
+                public void unversioned(final @NotNull FilePath localPath,
+                                        final boolean localItemExists,
+                                        final @NotNull ServerStatus serverStatus) {
+                    // ignore
+                }
 
-                    @Override
-                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
-                        // ignore
-                    }
+                public void checkedOutForEdit(final @NotNull FilePath localPath,
+                                              final boolean localItemExists,
+                                              final @NotNull ServerStatus serverStatus) {
+                    // TODO (JetBrains): add local conflict
+                }
 
-                    public void scheduledForAddition(final @NotNull FilePath localPath,
-                                                     final boolean localItemExists,
-                                                     final @NotNull ServerStatus serverStatus) {
-                        addedFiles.remove(localPath.getVirtualFile());
-                    }
+                @Override
+                public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+                    // ignore
+                }
 
-                    public void scheduledForDeletion(final @NotNull FilePath localPath,
-                                                     final boolean localItemExists,
-                                                     final @NotNull ServerStatus serverStatus) {
-                        // TODO (JetBrains): add local conflict
-                    }
+                public void scheduledForAddition(final @NotNull FilePath localPath,
+                                                 final boolean localItemExists,
+                                                 final @NotNull ServerStatus serverStatus) {
+                    addedFiles.remove(localPath.getVirtualFile());
+                }
 
-                    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-                            throws TfsException {
-                        // TODO (JetBrains): add local conflict
-                    }
+                public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                                 final boolean localItemExists,
+                                                 final @NotNull ServerStatus serverStatus) {
+                    // TODO (JetBrains): add local conflict
+                }
 
-                    public void renamedCheckedOut(final @NotNull FilePath localPath,
-                                                  final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // TODO (JetBrains): add local conflict
-                    }
+                public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
+                    // TODO (JetBrains): add local conflict
+                }
 
-                    public void undeleted(final @NotNull FilePath localPath,
-                                          final boolean localItemExists,
-                                          final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // TODO (JetBrains): add local conflict
-                    }
+                public void renamedCheckedOut(final @NotNull FilePath localPath,
+                                              final boolean localItemExists,
+                                              final @NotNull ServerStatus serverStatus) {
+                    // TODO (JetBrains): add local conflict
+                }
 
-                }, pendingChange);
-            }
-        } catch (TfsException e) {
-            AbstractVcsHelper.getInstance(myProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
+                public void undeleted(final @NotNull FilePath localPath,
+                                      final boolean localItemExists,
+                                      final @NotNull ServerStatus serverStatus) {
+                    // TODO (JetBrains): add local conflict
+                }
+
+            }, pendingChange);
         }
 
         removeInvalidTFVCAddedFiles(addedFiles);

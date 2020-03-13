@@ -22,7 +22,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core.tfs;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -46,10 +45,9 @@ public class StatusProvider {
      *
      * @param statusVisitor
      * @param pendingChange
-     * @throws TfsException
      */
     public static void visitByStatus(final @NotNull StatusVisitor statusVisitor,
-                                     PendingChange pendingChange) throws TfsException {
+                                     PendingChange pendingChange) {
         String localItem = pendingChange.getLocalItem();
         File localFile = new File(localItem);
         ServerStatus status = determineServerStatus(pendingChange);

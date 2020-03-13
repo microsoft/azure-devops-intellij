@@ -33,7 +33,6 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.apache.commons.lang.StringUtils;
@@ -87,7 +86,7 @@ public class ScheduleForDeletion {
                 StatusProvider.visitByStatus(new StatusVisitor() {
 
                     public void unversioned(final @NotNull FilePath localPath, final boolean localItemExists,
-                                            final @NotNull ServerStatus serverStatus) throws TfsException {
+                                            final @NotNull ServerStatus serverStatus) {
                         // if an unversioned delete, IDE has already deleted the file and now TFVC has to delete it
                         if (pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
                             logger.info("ScheduleForDeletion: unversioned deleted file " + localPath.getPath());
@@ -99,14 +98,14 @@ public class ScheduleForDeletion {
                     }
 
                     public void checkedOutForEdit(final @NotNull FilePath localPath, final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                                                  final @NotNull ServerStatus serverStatus) {
                         logger.info("ScheduleForDeletion: checkedOutForEdit file " + localPath.getPath());
                         revert.add(pendingChange.getLocalItem());
                         scheduleForDeletion.add(pendingChange.getLocalItem());
                     }
 
                     @Override
-                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
+                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
                         // nothing to do
                     }
 
@@ -122,7 +121,7 @@ public class ScheduleForDeletion {
                     }
 
                     public void renamed(final @NotNull FilePath localPath, final boolean localItemExists,
-                                        final @NotNull ServerStatus serverStatus) throws TfsException {
+                                        final @NotNull ServerStatus serverStatus) {
                         logger.info("ScheduleForDeletion: renamed file " + localPath.getPath());
                         // revert local path but delete the source path since that is the original path before the rename
                         revert.add(pendingChange.getLocalItem());
@@ -130,7 +129,7 @@ public class ScheduleForDeletion {
                     }
 
                     public void renamedCheckedOut(final @NotNull FilePath localPath, final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
+                                                  final @NotNull ServerStatus serverStatus) {
                         logger.info("ScheduleForDeletion: renamedCheckedOut file " + localPath.getPath());
                         // revert local path but delete the source path since that is the original path before the rename
                         revert.add(pendingChange.getLocalItem());
@@ -138,7 +137,7 @@ public class ScheduleForDeletion {
                     }
 
                     public void undeleted(final @NotNull FilePath localPath, final boolean localItemExists,
-                                          final @NotNull ServerStatus serverStatus) throws TfsException {
+                                          final @NotNull ServerStatus serverStatus) {
                         logger.info("ScheduleForDeletion: undeleted file " + localPath.getPath());
                         revert.add(pendingChange.getLocalItem());
                     }

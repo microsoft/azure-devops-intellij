@@ -22,7 +22,6 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -34,7 +33,6 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.RootsCollection;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -70,7 +68,7 @@ public class TFSChangeProvider implements ChangeProvider {
     public void getChanges(@NotNull final VcsDirtyScope dirtyScope,
                            @NotNull final ChangelistBuilder builder,
                            @NotNull final ProgressIndicator progress,
-                           @NotNull final ChangeListManagerGate addGate) throws VcsException {
+                           @NotNull final ChangeListManagerGate addGate) {
         Project project = myVcs.getProject();
         if (project.isDisposed()) {
             return;
@@ -111,11 +109,7 @@ public class TFSChangeProvider implements ChangeProvider {
         // for each change, find out the status of the changes and then add to the list
         final ChangelistBuilderStatusVisitor changelistBuilderStatusVisitor = new ChangelistBuilderStatusVisitor(project, builder);
         for (final PendingChange change : changes) {
-            try {
-                StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
-            } catch (TfsException e) {
-                throw new VcsException(e.getMessage(), e);
-            }
+            StatusProvider.visitByStatus(changelistBuilderStatusVisitor, change);
         }
     }
 }

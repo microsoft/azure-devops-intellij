@@ -6,10 +6,8 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vfs.LocalFileOperationsHandler;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -26,7 +24,6 @@ import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusVisitor;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
-import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import org.apache.commons.lang.StringUtils;
@@ -122,75 +119,69 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         // assume false until we know we need to delete from TFVC
         final AtomicBoolean success = new AtomicBoolean(false);
         final AtomicBoolean isUndelete = new AtomicBoolean(false);
-        try {
-            for (final PendingChange pendingChange : pendingChanges) {
-                StatusProvider.visitByStatus(new StatusVisitor() {
-                    public void scheduledForAddition(final @NotNull FilePath localPath,
-                                                     final boolean localItemExists,
-                                                     final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // revert the file and then let the IDE delete it
-                        revert.set(true);
-                        success.set(false);
-                    }
+        for (final PendingChange pendingChange : pendingChanges) {
+            StatusProvider.visitByStatus(new StatusVisitor() {
+                public void scheduledForAddition(final @NotNull FilePath localPath,
+                                                 final boolean localItemExists,
+                                                 final @NotNull ServerStatus serverStatus) {
+                    // revert the file and then let the IDE delete it
+                    revert.set(true);
+                    success.set(false);
+                }
 
-                    public void unversioned(final @NotNull FilePath localPath,
-                                            final boolean localItemExists,
-                                            final @NotNull ServerStatus serverStatus) {
-                        // only do something if it's an unversioned delete, the IDE will take care of it otherwise
-                        if (pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
-                            revert.set(true);
-                            success.set(true);
-                        }
-                    }
-
-                    public void scheduledForDeletion(final @NotNull FilePath localPath,
-                                                     final boolean localItemExists,
-                                                     final @NotNull ServerStatus serverStatus) {
-                        // already deleted on server so let IDE take care of it
-                        success.set(false);
-                    }
-
-                    public void checkedOutForEdit(final @NotNull FilePath localPath,
-                                                  final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) {
-                        // revert it and then delete it
+                public void unversioned(final @NotNull FilePath localPath,
+                                        final boolean localItemExists,
+                                        final @NotNull ServerStatus serverStatus) {
+                    // only do something if it's an unversioned delete, the IDE will take care of it otherwise
+                    if (pendingChange.getChangeTypes().contains(ServerStatusType.DELETE)) {
                         revert.set(true);
                         success.set(true);
                     }
+                }
 
-                    @Override
-                    public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) throws TfsException {
-                        // nothing to do if it's locked
-                        success.set(false);
-                    }
+                public void scheduledForDeletion(final @NotNull FilePath localPath,
+                                                 final boolean localItemExists,
+                                                 final @NotNull ServerStatus serverStatus) {
+                    // already deleted on server so let IDE take care of it
+                    success.set(false);
+                }
 
-                    public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus)
-                            throws TfsException {
-                        // revert it and then delete it
-                        revert.set(true);
-                        success.set(true);
-                    }
+                public void checkedOutForEdit(final @NotNull FilePath localPath,
+                                              final boolean localItemExists,
+                                              final @NotNull ServerStatus serverStatus) {
+                    // revert it and then delete it
+                    revert.set(true);
+                    success.set(true);
+                }
 
-                    public void renamedCheckedOut(final @NotNull FilePath localPath,
-                                                  final boolean localItemExists,
-                                                  final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // revert it and then delete it
-                        revert.set(true);
-                        success.set(true);
-                    }
+                @Override
+                public void locked(@NotNull FilePath localPath, boolean localItemExists, @NotNull ServerStatus serverStatus) {
+                    // nothing to do if it's locked
+                    success.set(false);
+                }
 
-                    public void undeleted(final @NotNull FilePath localPath,
-                                          final boolean localItemExists,
-                                          final @NotNull ServerStatus serverStatus) throws TfsException {
-                        // revert it and it will be deleted
-                        revert.set(true);
-                        isUndelete.set(true);
-                    }
-                }, pendingChange);
-            }
-        } catch (TfsException e) {
-            ourLogger.warn("Error while checking delete candidate's pending changes");
-            AbstractVcsHelper.getInstance(currentProject).showError(new VcsException(e), TFSVcs.TFVC_NAME);
+                public void renamed(final @NotNull FilePath localPath, final boolean localItemExists, final @NotNull ServerStatus serverStatus) {
+                    // revert it and then delete it
+                    revert.set(true);
+                    success.set(true);
+                }
+
+                public void renamedCheckedOut(final @NotNull FilePath localPath,
+                                              final boolean localItemExists,
+                                              final @NotNull ServerStatus serverStatus) {
+                    // revert it and then delete it
+                    revert.set(true);
+                    success.set(true);
+                }
+
+                public void undeleted(final @NotNull FilePath localPath,
+                                      final boolean localItemExists,
+                                      final @NotNull ServerStatus serverStatus) {
+                    // revert it and it will be deleted
+                    revert.set(true);
+                    isUndelete.set(true);
+                }
+            }, pendingChange);
         }
 
         if (revert.get()) {
