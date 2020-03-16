@@ -56,7 +56,7 @@ public class OpenCommitInBrowserAction extends DumbAwareAction {
 
         final VcsFullCommitDetails commit = commits.get(0);
 
-        final GitRepository repository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
+        final GitRepository repository = GitUtil.getRepositoryManager(project).getRepositoryForRootQuick(commit.getRoot());
 
         if (repository == null || !TfGitHelper.isTfGitRepository(repository)) {
             presentation.setEnabledAndVisible(false);
@@ -76,7 +76,10 @@ public class OpenCommitInBrowserAction extends DumbAwareAction {
         final Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
         final VcsFullCommitDetails commit = anActionEvent.getRequiredData(VcsLogDataKeys.VCS_LOG).getSelectedDetails().get(0);
 
-        final GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRoot(commit.getRoot());
+        final GitRepository gitRepository = GitUtil.getRepositoryManager(project).getRepositoryForRootQuick(commit.getRoot());
+        if (gitRepository == null)
+            return;
+
         final GitRemote remote = TfGitHelper.getTfGitRemote(gitRepository);
 
         // guard for null so findbugs doesn't complain
