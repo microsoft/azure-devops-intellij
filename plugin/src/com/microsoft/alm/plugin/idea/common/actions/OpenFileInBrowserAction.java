@@ -66,7 +66,7 @@ public class OpenFileInBrowserAction extends DumbAwareAction {
             // however we do want to leave a breadcrumb if any of the files selected individually are valid
             final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
             for (VirtualFile vFile : vFiles) {
-                final GitRepository repository = manager.getRepositoryForFile(vFile);
+                final GitRepository repository = manager.getRepositoryForFileQuick(vFile);
                 if (repository != null && TfGitHelper.isTfGitRepository(repository)) {
                     // show the action if any of the files are TF
                     presentation.setVisible(true);
@@ -84,7 +84,7 @@ public class OpenFileInBrowserAction extends DumbAwareAction {
         final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
 
         try {
-            final GitRepository repository = manager.getRepositoryForFile(vFile);
+            final GitRepository repository = manager.getRepositoryForFileQuick(vFile);
 
             if (repository == null || !TfGitHelper.isTfGitRepository(repository)) {
                 presentation.setEnabledAndVisible(false);
@@ -149,11 +149,14 @@ public class OpenFileInBrowserAction extends DumbAwareAction {
         final VirtualFile virtualFile = anActionEvent.getRequiredData(CommonDataKeys.VIRTUAL_FILE);
 
         final GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
-        final GitRepository gitRepository = manager.getRepositoryForFile(virtualFile);
+        final GitRepository gitRepository = manager.getRepositoryForFileQuick(virtualFile);
+        if (gitRepository == null)
+            return;
+
         final GitRemote gitRemote = TfGitHelper.getTfGitRemote(gitRepository);
 
         // guard for null so findbugs doesn't complain
-        if (gitRemote == null || gitRepository == null || gitRepository.getRoot() == null) {
+        if (gitRemote == null || gitRepository.getRoot() == null) {
             return;
         }
 
