@@ -92,7 +92,7 @@ public class GetDetailedWorkspaceCommandTest extends AbstractCommandTest  {
                 "\n";
         final Workspace workspace = cmd.parseOutput(output, "");
         Assert.assertEquals("WorkspaceName", workspace.getName());
-        Assert.assertEquals("http://organization.visualstudio.com/", workspace.getServer());
+        Assert.assertEquals("http://organization.visualstudio.com/", workspace.getServerDisplayName());
         Assert.assertEquals("Workspace created through IntelliJ", workspace.getComment());
         Assert.assertEquals("computerName", workspace.getComputer());
         Assert.assertEquals("John Smith", workspace.getOwner());

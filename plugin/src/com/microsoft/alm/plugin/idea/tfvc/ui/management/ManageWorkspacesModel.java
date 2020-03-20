@@ -132,12 +132,12 @@ public class ManageWorkspacesModel extends AbstractModel {
      */
     protected void deleteWorkspace(final Workspace selectedWorkspace) throws VcsException {
         try {
-            final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName());
+            final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServerUri().toString(), selectedWorkspace.getName());
             if (workspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
                         workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
 
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServer(), projectName, true);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServerUri().toString(), projectName, true);
                 CommandUtils.deleteWorkspace(context, selectedWorkspace.getName());
             } else {
                 logger.warn("Couldn't find partial workspace so aborting delete command");
@@ -174,14 +174,15 @@ public class ManageWorkspacesModel extends AbstractModel {
      */
     protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
         try {
-            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(selectedWorkspace.getServer(), true);
-            final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), authInfo);
+            String serverUriString = selectedWorkspace.getServerUri().toString();
+            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(serverUriString, true);
+            final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(serverUriString, selectedWorkspace.getName(), authInfo);
             if (detailedWorkspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
                         detailedWorkspace.getMappings().size() > 0 ? detailedWorkspace.getMappings().get(0).getServerPath() : null);
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(detailedWorkspace.getServer(), projectName, true);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(serverUriString, projectName, true);
                 // use info from the 2 incomplete workspace objects to create a complete one
-                final Workspace workspace = new Workspace(selectedWorkspace.getServer(), selectedWorkspace.getName(), selectedWorkspace.getComputer(),
+                final Workspace workspace = new Workspace(serverUriString, selectedWorkspace.getName(), selectedWorkspace.getComputer(),
                         selectedWorkspace.getOwner(), selectedWorkspace.getComment(), detailedWorkspace.getMappings(), detailedWorkspace.getLocation());
 
                 if (context == null || workspace == null) {

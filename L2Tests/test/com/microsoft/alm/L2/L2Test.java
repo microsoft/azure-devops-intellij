@@ -65,6 +65,7 @@ import sun.security.ssl.Debug;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -142,9 +143,11 @@ public abstract class L2Test extends UsefulTestCase {
         return authenticationInfo;
     }
 
-    public void mockRepositoryContextForProject(final String serverUri) {
+    public void mockRepositoryContextForProject(final String serverUriString) {
+        URI serverUri = URI.create(serverUriString);
         PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", serverUri));
+        when(VcsHelper.getRepositoryContext(any(Project.class)))
+                .thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", serverUri));
     }
 
     private void loadContext() {

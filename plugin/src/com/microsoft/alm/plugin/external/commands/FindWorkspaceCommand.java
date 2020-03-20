@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.common.utils.ArgumentHelper;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
@@ -65,7 +66,7 @@ public class FindWorkspaceCommand extends Command<Workspace> {
             builder.addSwitch("login", "username,pw", true);
         } else if (StringUtils.isNotEmpty(collection) && StringUtils.isNotEmpty(workspace)) {
             // need both collection and workspace name to make this call local
-            builder.addSwitch("collection", collection);
+            builder.addSwitch("collection", UrlHelper.getCmdLineFriendlyUrl(collection));
             builder.addSwitch("workspace", workspace);
         }
 

@@ -25,6 +25,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -57,10 +58,12 @@ public class VcsWorkItemsModelTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "repoUrl1"));
+        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(
+                RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("http://repoUrl1")));
 
         model = new VcsWorkItemsModel(mockProject);
-        operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "remoteURL"));
+        operation = new WorkItemLookupOperation(
+                RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("http://remoteURL")));
     }
 
     @Test

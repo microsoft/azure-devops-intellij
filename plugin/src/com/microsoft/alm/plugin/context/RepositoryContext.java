@@ -3,6 +3,8 @@
 
 package com.microsoft.alm.plugin.context;
 
+import java.net.URI;
+
 public class RepositoryContext {
     public enum Type {
         GIT,
@@ -16,13 +18,13 @@ public class RepositoryContext {
     private final String teamProjectName;
 
     public static RepositoryContext createGitContext(final String localRootFolder, final String repoName,
-                                                     final String currentBranch, final String remoteUrl) {
-        return new RepositoryContext(localRootFolder, Type.GIT, repoName, currentBranch, remoteUrl, null);
+                                                     final String currentBranch, final URI remoteUrl) {
+        return new RepositoryContext(localRootFolder, Type.GIT, repoName, currentBranch, remoteUrl.toString(), null);
     }
 
     public static RepositoryContext createTfvcContext(final String localRootFolder, final String workspaceName,
-                                                      final String teamProjectName, final String serverUrl) {
-        return new RepositoryContext(localRootFolder, Type.TFVC, workspaceName, null, serverUrl, teamProjectName);
+                                                      final String teamProjectName, final URI serverUrl) {
+        return new RepositoryContext(localRootFolder, Type.TFVC, workspaceName, null, serverUrl.toString(), teamProjectName);
     }
 
     private RepositoryContext(final String localRootFolder, final Type type, final String name, final String branch,

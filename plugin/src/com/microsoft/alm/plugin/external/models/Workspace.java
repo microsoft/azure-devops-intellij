@@ -4,8 +4,10 @@
 package com.microsoft.alm.plugin.external.models;
 
 import com.google.common.base.Objects;
+import com.microsoft.alm.common.utils.UrlHelper;
 import org.apache.commons.lang.StringUtils;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +40,16 @@ public class Workspace {
         this.location = location;
     }
 
-    public String getServer() {
+    /**
+     * @return the presentable string for server name (the URL without URL escaping applied). For example, URL
+     * "http://tfs/collection%20name" will be presented here as "http://tfs/collection name".
+     */
+    public String getServerDisplayName() {
         return server;
+    }
+
+    public URI getServerUri() {
+        return UrlHelper.createUri(server);
     }
 
     public String getName() {
@@ -89,7 +99,7 @@ public class Workspace {
         if (!StringUtils.equals(this.owner, workspace.getOwner())) {
             return false;
         }
-        if (!StringUtils.equals(this.server, workspace.getServer())) {
+        if (!StringUtils.equals(this.server, workspace.server)) {
             return false;
         }
         return true;
