@@ -180,6 +180,10 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_CHECKOUT_TFVC_FAILED_TITLE = "CheckoutDialog.Tfvc.Failed.Title";
 
+    // Tool exceptions:
+    @NonNls
+    public static final String KEY_TOOLEXCEPTION_TF_HOME_NOT_SET = "ToolException.TF.HomeNotSet";
+
     //User account panel
     @NonNls
     public static final String KEY_USER_ACCOUNT_PANEL_VSO_SERVER_NAME = "UserAccountPanel.VSO.ServerName";
