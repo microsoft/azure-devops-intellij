@@ -101,7 +101,7 @@ public class LocalizationServiceImpl implements LocalizationService {
             // Tool Exception messages
             put(ToolException.KEY_TF_BAD_EXIT_CODE, "ToolException.TF.BadExitCode");
             put(ToolException.KEY_TF_DOLLAR_IN_PATH, "ToolException.TF.DollarInPath");
-            put(ToolException.KEY_TF_HOME_NOT_SET, "ToolException.TF.HomeNotSet");
+            put(ToolException.KEY_TF_HOME_NOT_SET, TfPluginBundle.KEY_TOOLEXCEPTION_TF_HOME_NOT_SET);
             put(ToolException.KEY_TF_EXE_NOT_FOUND, "ToolException.TF.ExeNotFound");
             put(ToolException.KEY_TF_PARSE_FAILURE, "ToolException.TF.ParseFailure");
             put(ToolException.KEY_TF_MIN_VERSION_WARNING, "ToolException.TF.MinVersionWarning");

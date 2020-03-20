@@ -292,54 +292,53 @@ public class TFSVcs extends AbstractVcs {
 
         // We want to start a background thread to check the version, but that can only be done
         // form the UI thread.
-        IdeaHelper.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                final SettableFuture<String> versionMessage = SettableFuture.create();
-                (new Task.Backgroundable(getProject(), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_PROGRESS),
-                        false, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
-                    public void run(@NotNull final ProgressIndicator indicator) {
-                        try {
-                            logger.info("Attempting to check the version of the TF command line.");
-                            TfTool.checkVersion();
-                            versionMessage.set(StringUtils.EMPTY);
-                        } catch (final ToolException ex) {
-                            final String error = LocalizationServiceImpl.getInstance().getExceptionMessage(ex);
-                            logger.warn(error);
-                            versionMessage.set(error);
-                        } catch (final Throwable t) {
-                            // Don't let unknown errors bubble out here
-                            logger.warn("Unexpected error when checking the version of the command line.", t);
-                            versionMessage.set(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_CANNOT_DETERMINE_VERSION_TEXT));
-                        }
+        IdeaHelper.runOnUIThread(() -> {
+            final SettableFuture<String> versionMessage = SettableFuture.create();
+            (new Task.Backgroundable(getProject(), TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_PROGRESS),
+                    false, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
+                public void run(@NotNull final ProgressIndicator indicator) {
+                    try {
+                        logger.info("Attempting to check the version of the TF command line.");
+                        TfTool.checkVersion();
+                        versionMessage.set(StringUtils.EMPTY);
+                    } catch (final ToolException ex) {
+                        String error = ToolException.KEY_TF_EXE_NOT_FOUND.equals(ex.getMessageKey())
+                            ? TfPluginBundle.message(TfPluginBundle.KEY_TOOLEXCEPTION_TF_HOME_NOT_SET) // more suitable for notification than the default message
+                            : LocalizationServiceImpl.getInstance().getExceptionMessage(ex);
+                        logger.warn(error);
+                        versionMessage.set(error);
+                    } catch (final Throwable t) {
+                        // Don't let unknown errors bubble out here
+                        logger.warn("Unexpected error when checking the version of the command line.", t);
+                        versionMessage.set(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_CANNOT_DETERMINE_VERSION_TEXT));
                     }
+                }
 
-                    public void onSuccess() {
-                        try {
-                            final String error = versionMessage.get();
-                            if (StringUtils.isNotEmpty(error)) {
-                                logger.info("Notifying the user of the min version problem.");
-                                // Notify the user that they should upgrade their version of the TF command line
-                                VcsNotifier.getInstance(getProject()).notifyImportantWarning(
-                                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE),
-                                        error, new NotificationListener.Adapter() {
+                public void onSuccess() {
+                    try {
+                        final String error = versionMessage.get();
+                        if (StringUtils.isNotEmpty(error)) {
+                            logger.info("Notifying the user of the min version problem.");
+                            // Notify the user that they should upgrade their version of the TF command line
+                            VcsNotifier.getInstance(getProject()).notifyImportantWarning(
+                                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_TF_VERSION_WARNING_TITLE),
+                                    error, new NotificationListener.Adapter() {
 
-                                            @Override
-                                            protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
-                                                if (SETTINGS_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
-                                                    ShowSettingsUtil.getInstance().showSettingsDialog(myProject, TFVC_NAME);
-                                                } else {
-                                                    BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
-                                                }
+                                        @Override
+                                        protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                            if (SETTINGS_URL_EVENT.equals(hyperlinkEvent.getDescription())) {
+                                                ShowSettingsUtil.getInstance().showSettingsDialog(myProject, TFVC_NAME);
+                                            } else {
+                                                BrowserUtil.browse(TFVC_ONLINE_HELP_URL);
                                             }
-                                        });
-                            }
-                        } catch (Exception e) {
-                            logger.warn("Failed to warn user about min version of TF command line.", e);
+                                        }
+                                    });
                         }
+                    } catch (Exception e) {
+                        logger.warn("Failed to warn user about min version of TF command line.", e);
                     }
-                }).queue();
-            }
+                }
+            }).queue();
         });
     }
 }
