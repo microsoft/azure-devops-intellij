@@ -51,7 +51,7 @@ public class TFSRepositoryLocation implements RepositoryLocation {
     }
 
     public String toPresentableString() {
-        return workspace.getServer();
+        return workspace.getServerDisplayName();
     }
 
     public String toString() {

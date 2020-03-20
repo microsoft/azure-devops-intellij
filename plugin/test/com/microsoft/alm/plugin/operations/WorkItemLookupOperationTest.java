@@ -26,6 +26,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -86,7 +87,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
         }
 
         //construct correctly
-        WorkItemLookupOperation operation1 = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "gitRemoteUrl"));
+        WorkItemLookupOperation operation1 = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("gitRemoteUrl")));
     }
 
     @Test
@@ -98,7 +99,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
         workItems.add(item);
         setupLocalTests(workItems);
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "gitRemoteUrl"));
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("gitRemoteUrl")));
         final SettableFuture<Boolean> startedCalled = SettableFuture.create();
         final SettableFuture<Boolean> completedCalled = SettableFuture.create();
         final SettableFuture<WorkItemLookupOperation.WitResults> witResults = SettableFuture.create();
@@ -134,7 +135,7 @@ public class WorkItemLookupOperationTest extends AbstractTest {
     public void testDoWork_failure() throws InterruptedException, ExecutionException, TimeoutException {
         setupLocalTests(null);
 
-        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "gitRemoteUrl"));
+        WorkItemLookupOperation operation = new WorkItemLookupOperation(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", URI.create("gitRemoteUrl")));
         final SettableFuture<Boolean> startedCalled = SettableFuture.create();
         final SettableFuture<Boolean> completedCalled = SettableFuture.create();
         final SettableFuture<WorkItemLookupOperation.WitResults> witResults = SettableFuture.create();

@@ -7,6 +7,8 @@ import com.microsoft.alm.plugin.AbstractTest;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.URI;
+
 public class RepositoryContextManagerTest extends AbstractTest {
     @Test
     public void testSingletonConstructor() {
@@ -17,7 +19,11 @@ public class RepositoryContextManagerTest extends AbstractTest {
     public void testAdd() {
         final String localRootFolder = "/path/path/";
         final RepositoryContextManager manager = new RepositoryContextManager();
-        final RepositoryContext context = RepositoryContext.createGitContext(localRootFolder, "repo1", "branch1", "url1");
+        final RepositoryContext context = RepositoryContext.createGitContext(
+                localRootFolder,
+                "repo1",
+                "branch1",
+                URI.create("http://url1"));
         Assert.assertNull(manager.get(localRootFolder));
         manager.add(context);
         Assert.assertEquals(context, manager.get(localRootFolder));
@@ -39,7 +45,11 @@ public class RepositoryContextManagerTest extends AbstractTest {
     public void testRemove() {
         final String localRootFolder = "/path/path/";
         final RepositoryContextManager manager = new RepositoryContextManager();
-        final RepositoryContext context = RepositoryContext.createGitContext(localRootFolder, "repo1", "branch1", "url1");
+        final RepositoryContext context = RepositoryContext.createGitContext(
+                localRootFolder,
+                "repo1",
+                "branch1",
+                URI.create("http://url1"));
         // Make sure remove doesn't throw if its not there
         manager.remove(localRootFolder);
 

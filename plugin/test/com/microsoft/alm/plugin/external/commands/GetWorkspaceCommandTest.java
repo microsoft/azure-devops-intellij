@@ -56,7 +56,7 @@ public class GetWorkspaceCommandTest extends AbstractCommandTest {
                 "</workspaces>";
         final Workspace workspace = cmd.parseOutput(output, "");
         Assert.assertEquals("workspaceName", workspace.getName());
-        Assert.assertEquals("http://server:8080/tfs/", workspace.getServer());
+        Assert.assertEquals("http://server:8080/tfs/", workspace.getServerDisplayName());
         Assert.assertEquals("description", workspace.getComment());
         Assert.assertEquals("machine", workspace.getComputer());
         Assert.assertEquals("username", workspace.getOwner());

@@ -80,7 +80,7 @@ public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockVcs);
         when(mockVirtualFile.getPath()).thenReturn(LOCAL_ROOT_PATH);
         when(mockRoot.getVirtualFile()).thenReturn(mockVirtualFile);
-        when(mockWorkspace.getServer()).thenReturn(SERVER_URL);
+        when(mockWorkspace.getServerDisplayName()).thenReturn(SERVER_URL);
         when(mockChangeBrowserSettings.getUserFilter()).thenReturn(USER_ME);
         when(CommandUtils.getPartialWorkspace(mockProject)).thenReturn(mockWorkspace);
         whenNew(TFSChangeListBuilder.class).withAnyArguments().thenReturn(mockTFSChangeListBuilder);

@@ -21,6 +21,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.Observer;
 
 import static org.mockito.Matchers.any;
@@ -94,7 +95,13 @@ public class TabModelImplTest extends IdeaAbstractTest {
 
     @Test
     public void testisTeamServicesRepository_True() {
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "repoUrl1"));
+        when(VcsHelper.getRepositoryContext(any(Project.class)))
+                .thenReturn(
+                        RepositoryContext.createGitContext(
+                                "/root/one",
+                                "repo1",
+                                "branch1",
+                                URI.create("http://repoUrl1")));
         Assert.assertTrue(underTest.isTeamServicesRepository());
     }
 

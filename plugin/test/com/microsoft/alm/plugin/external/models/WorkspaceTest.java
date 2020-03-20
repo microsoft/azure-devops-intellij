@@ -28,7 +28,7 @@ public class WorkspaceTest extends AbstractTest {
     public void testConstructor() {
         final Workspace workspace = new Workspace(server, name, computer, owner, comment, mappings);
 
-        assertEquals(server, workspace.getServer());
+        assertEquals(server, workspace.getServerDisplayName());
         assertEquals(name, workspace.getName());
         assertEquals(computer, workspace.getComputer());
         assertEquals(owner, workspace.getOwner());

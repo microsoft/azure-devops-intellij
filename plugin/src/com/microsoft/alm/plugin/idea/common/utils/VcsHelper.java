@@ -27,8 +27,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -163,10 +165,10 @@ public class VcsHelper {
                 final GitRepository repository = getGitRepository(project);
                 if (repository != null && TfGitHelper.isTfGitRepository(repository)) {
                     final GitRemote gitRemote = TfGitHelper.getTfGitRemote(repository);
-                    final String gitRemoteUrl = gitRemote.getFirstUrl();
+                    final String gitRemoteUrl = Objects.requireNonNull(gitRemote.getFirstUrl());
                     // TODO: Fix this HACK. There doesn't seem to be a clear way to get the full name of the current branch
                     final String branch = GIT_BRANCH_PREFIX + GitBranchUtil.getDisplayableBranchText(repository);
-                    context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, gitRemoteUrl);
+                    context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, URI.create(gitRemoteUrl));
                 }
             } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
                 // It's TFVC so run the FindWorkspace command to get the workspace object which as the server info
@@ -175,7 +177,7 @@ public class VcsHelper {
                 if (workspace != null) {
                     final String projectName = getTeamProjectFromTfvcServerPath(
                             workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
-                    context = RepositoryContext.createTfvcContext(projectRootFolder, workspace.getName(), projectName, workspace.getServer());
+                    context = RepositoryContext.createTfvcContext(projectRootFolder, workspace.getName(), projectName, workspace.getServerUri());
                 }
             }
 

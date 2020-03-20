@@ -80,7 +80,7 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
                 "$/project1: /path";
         final Workspace workspace = cmd.parseOutput(output, "");
         Assert.assertEquals("MyWorkspace", workspace.getName());
-        Assert.assertEquals("http://server:8080/tfs/", workspace.getServer());
+        Assert.assertEquals("http://server:8080/tfs/", workspace.getServerDisplayName());
         Assert.assertEquals("", workspace.getComment());
         Assert.assertEquals("", workspace.getComputer());
         Assert.assertEquals("", workspace.getOwner());
@@ -96,7 +96,7 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
                 "$/project1: /path";
         final Workspace workspace = cmd.parseOutput(output, "");
         Assert.assertEquals("MyWorkspace", workspace.getName());
-        Assert.assertEquals("http://server:8080/tfs/", workspace.getServer());
+        Assert.assertEquals("http://server:8080/tfs/", workspace.getServerDisplayName());
         Assert.assertEquals("", workspace.getComment());
         Assert.assertEquals("", workspace.getComputer());
         Assert.assertEquals("", workspace.getOwner());

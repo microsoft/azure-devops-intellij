@@ -39,6 +39,7 @@ import com.microsoft.alm.plugin.services.PropertyService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -153,35 +154,35 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_IMPORT_WORKSPACE_TITLE));
     }
 
-    private static CompletionStage<AuthenticationInfo> getAuthenticationInfoAsync(@NotNull String serverUrl) {
+    private static CompletionStage<AuthenticationInfo> getAuthenticationInfoAsync(@NotNull URI serverUri) {
         CompletableFuture<AuthenticationInfo> result = new CompletableFuture<>();
 
         try {
             // First, try to get the authentication info from existing context:
-            ourLogger.info("Server context lookup for URL: " + serverUrl);
+            ourLogger.info("Server context lookup for URL: " + serverUri);
             ServerContextManager serverContextManager = ServerContextManager.getInstance();
-            ServerContext serverContext = serverContextManager.get(serverUrl);
+            ServerContext serverContext = serverContextManager.get(serverUri.toString());
             if (serverContext != null) {
-                ourLogger.info("Server context found for URL: " + serverUrl);
+                ourLogger.info("Server context found for URL: " + serverUri);
                 AuthenticationInfo authenticationInfo = serverContext.getAuthenticationInfo();
                 if (authenticationInfo != null) {
-                    ourLogger.info("Authentication info found for URL: " + serverUrl);
+                    ourLogger.info("Authentication info found for URL: " + serverUri);
                     result.complete(authenticationInfo);
                     return result;
                 }
             }
 
-            ourLogger.info("Authentication provider pass for URL: " + serverUrl);
-            AuthenticationProvider authenticationProvider = serverContextManager.getAuthenticationProvider(serverUrl);
-            authenticationProvider.authenticateAsync(serverUrl, new AuthenticationListener() {
+            ourLogger.info("Authentication provider pass for URL: " + serverUri);
+            AuthenticationProvider authenticationProvider = serverContextManager.getAuthenticationProvider(serverUri.toString());
+            authenticationProvider.authenticateAsync(serverUri.toString(), new AuthenticationListener() {
                 @Override
                 public void authenticating() {
-                    ourLogger.info("Authenticating URL: " + serverUrl);
+                    ourLogger.info("Authenticating URL: " + serverUri);
                 }
 
                 @Override
                 public void authenticated(AuthenticationInfo authenticationInfo, Throwable throwable) {
-                    ourLogger.info("Authentication result for URL " + serverUrl + ": " + (authenticationInfo != null));
+                    ourLogger.info("Authentication result for URL " + serverUri + ": " + (authenticationInfo != null));
                     if (throwable != null) {
                         result.completeExceptionally(throwable);
                         return;
@@ -240,9 +241,9 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
                     indicator.setFraction(2.0 / totalSteps);
 
-                    String collectionUrl = vsWorkspace.getServer();
-                    ourLogger.info("Gathering authentication info for URL: " + collectionUrl);
-                    return getAuthenticationInfoAsync(collectionUrl).thenApply(authenticationInfo -> {
+                    URI collectionUri = vsWorkspace.getServerUri();
+                    ourLogger.info("Gathering authentication info for URL: " + collectionUri);
+                    return getAuthenticationInfoAsync(collectionUri).thenApply(authenticationInfo -> {
                         if (authenticationInfo == null) {
                             ourLogger.info("authenticationInfo == null, exiting");
                             return false;
@@ -255,8 +256,8 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
                         indicator.setFraction(3.0 / totalSteps);
 
-                        ourLogger.info("Refreshing workspaces for server: " + collectionUrl);
-                        CommandUtils.refreshWorkspacesForServer(authenticationInfo, collectionUrl);
+                        ourLogger.info("Refreshing workspaces for server: " + collectionUri);
+                        CommandUtils.refreshWorkspacesForServer(authenticationInfo, collectionUri.toString());
                         indicator.setFraction(4.0 / totalSteps);
 
                         ourLogger.info("Checking if workspace was successfully imported from path: \"" + workspacePath + "\"");

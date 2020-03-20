@@ -33,6 +33,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -84,7 +85,13 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
         when(projectManager.getOpenProjects()).thenReturn(new Project[]{project});
 
         PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class))).thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "repoUrl1"));
+        when(VcsHelper.getRepositoryContext(any(Project.class)))
+                .thenReturn(
+                        RepositoryContext.createGitContext(
+                                "/root/one",
+                                "repo1",
+                                "branch1",
+                                URI.create("http://repoUrl1")));
 
         PowerMockito.mockStatic(GitBranchUtil.class);
         when(GitBranchUtil.getCurrentRepository(any(Project.class))).thenReturn(gitRepository);
@@ -216,7 +223,13 @@ public class StatusBarManagerTest extends IdeaAbstractTest {
     private class MyBuildStatusLookupOperation extends BuildStatusLookupOperation {
 
         protected MyBuildStatusLookupOperation() {
-            super(RepositoryContext.createGitContext("/root/one", "gitrepo", "branch", "gitRemoteUrl"), false);
+            super(
+                    RepositoryContext.createGitContext(
+                            "/root/one",
+                            "gitrepo",
+                            "branch",
+                            URI.create("http://gitRemoteUrl")),
+                    false);
         }
 
         @Override

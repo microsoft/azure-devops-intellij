@@ -26,6 +26,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -43,7 +44,11 @@ import static org.mockito.Mockito.when;
 public class WorkItemQueriesLookupOperationTest extends AbstractTest {
     private ServerContextManager serverContextManager;
     private RepositoryContext defaultRepositoryContext =
-            RepositoryContext.createGitContext("/root/one", "repo1", "branch1", "http://one.vs.com/_git/repo1");
+            RepositoryContext.createGitContext(
+                    "/root/one",
+                    "repo1",
+                    "branch1",
+                    URI.create("http://one.vs.com/_git/repo1"));
 
     private void setupLocalTests(List<QueryHierarchyItem> queries) {
         MockitoAnnotations.initMocks(this);

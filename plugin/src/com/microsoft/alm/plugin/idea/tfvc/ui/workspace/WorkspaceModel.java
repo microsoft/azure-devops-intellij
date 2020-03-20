@@ -268,7 +268,7 @@ public class WorkspaceModel extends AbstractModel {
         oldWorkspace = workspace;
         if (oldWorkspace != null) {
             logger.info("loadWorkspace: got workspace, setting fields");
-            server = oldWorkspace.getServer();
+            server = oldWorkspace.getServerDisplayName();
             owner = oldWorkspace.getOwner();
             computer = oldWorkspace.getComputer();
             name = oldWorkspace.getName();

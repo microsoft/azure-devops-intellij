@@ -141,7 +141,7 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
                     // Check the isAdvanced flag
                     if (isAdvancedChecked) {
                         // The user wants to edit the workspace before syncing...
-                        final RepositoryContext repositoryContext = RepositoryContext.createTfvcContext(localPath, workspaceName, teamProjectName, context.getServerUri().toString());
+                        final RepositoryContext repositoryContext = RepositoryContext.createTfvcContext(localPath, workspaceName, teamProjectName, context.getServerUri());
                         final WorkspaceController controller = new WorkspaceController(project, repositoryContext, context, workspaceName);
                         if (controller.showModalDialog(false)) {
                             // Save and Sync the workspace (this will be backgrounded)

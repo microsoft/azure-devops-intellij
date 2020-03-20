@@ -86,8 +86,8 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         when(CommandUtils.updateWorkspace(Matchers.any(ServerContext.class), Matchers.any(Workspace.class), Matchers.any(Workspace.class))).thenReturn("");
         when(CommandUtils.syncWorkspace(Matchers.any(ServerContext.class), anyString())).thenReturn(null);
 
-        repositoryContext = RepositoryContext.createTfvcContext("/path", name, "project1", server);
-        repositoryContext_noProject = RepositoryContext.createTfvcContext("/path", name, "", server);
+        repositoryContext = RepositoryContext.createTfvcContext("/path", name, "project1", workspace.getServerUri());
+        repositoryContext_noProject = RepositoryContext.createTfvcContext("/path", name, "", workspace.getServerUri());
         PowerMockito.mockStatic(VcsHelper.class);
         when(VcsHelper.getRepositoryContext(mockProject)).thenReturn(repositoryContext);
         when(VcsHelper.getRepositoryContext(mockProject2)).thenReturn(repositoryContext_noProject);
@@ -464,7 +464,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         when(mockWorkspace.getComputer()).thenReturn(computer);
         when(mockWorkspace.getName()).thenReturn(name);
         when(mockWorkspace.getOwner()).thenReturn(owner);
-        when(mockWorkspace.getServer()).thenReturn(server);
+        when(mockWorkspace.getServerDisplayName()).thenReturn(server);
         when(mockWorkspace.getMappings()).thenReturn(mappings);
         when(mockWorkspace.getLocation()).thenReturn(Workspace.Location.SERVER);
 

@@ -83,7 +83,12 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
     @Test
     public void testConstructor_goodInputs() {
         BuildStatusLookupOperation operation1 = new BuildStatusLookupOperation(
-                RepositoryContext.createGitContext("/root/one", "repoName", "branch", "url"), false);
+                RepositoryContext.createGitContext(
+                        "/root/one",
+                        "repoName",
+                        "branch",
+                        URI.create("http://url")),
+                false);
     }
 
     @Test
@@ -283,7 +288,11 @@ public class BuildStatusLookupOperationTest extends AbstractTest {
         }
 
         public RepositoryContext getRepositoryContext() {
-            return RepositoryContext.createGitContext("/root/one", currentRepo.getName(), currentBranch, currentRepo.getRemoteUrl());
+            return RepositoryContext.createGitContext(
+                    "/root/one",
+                    currentRepo.getName(),
+                    currentBranch,
+                    URI.create(currentRepo.getRemoteUrl()));
         }
     }
 
