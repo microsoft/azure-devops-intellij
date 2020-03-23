@@ -8,7 +8,7 @@
     <name>Azure DevOps</name>
     <!-- <version>1.155.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
     <category>VCS Integration</category>
-    <vendor url="https://azure.microsoft.com/en-us/services/devops/">Microsoft Corporation</vendor>
+    <vendor url="https://github.com/microsoft/azure-devops-intellij">Microsoft Corporation</vendor>
     <description><![CDATA[
     <br />
       Azure DevOps is a plugin to enable working with Git and TFVC repositories on Azure DevOps Services or Team Foundation Server (TFS) 2015+.
