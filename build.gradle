@@ -124,10 +124,6 @@ project(":plugin") {
         prepareSandbox.finalizedBy(prepareBackendSandbox)
     }
 
-    patchPluginXml {
-        pluginXmlFiles = ['META-INF/plugin.xml']
-    }
-
     jar {
         baseName 'com.microsoft.alm.plugin.idea'
     }
