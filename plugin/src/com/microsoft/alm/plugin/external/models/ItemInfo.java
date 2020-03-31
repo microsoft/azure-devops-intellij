@@ -22,11 +22,10 @@ public class ItemInfo {
     private final String deletionId;
     private final String lastModified;
     private final String fileType;
-    private final String fileSize;
 
     public ItemInfo(final String serverItem, final String localItem, final String serverVersion, final String localVersion,
                     final String change, final String type, final String lock, final String lockOwner, final String deletionId,
-                    final String lastModified, final String fileType, final String fileSize) {
+                    final String lastModified, final String fileType) {
         this.serverItem = serverItem;
         this.localItem = localItem;
         this.serverVersion = serverVersion;
@@ -38,7 +37,6 @@ public class ItemInfo {
         this.deletionId = deletionId;
         this.lastModified = lastModified;
         this.fileType = fileType;
-        this.fileSize = fileSize;
     }
 
     public static ItemInfo from(TfsItemInfo ii) {
@@ -53,8 +51,7 @@ public class ItemInfo {
                 ii.getLockOwner(),
                 Integer.toString(ii.getDeletionId()),
                 ii.getLastModified(),
-                ii.getFileEncoding(),
-                ii.getFileSize() == null ? null : Long.toString(ii.getFileSize()));
+                ii.getFileEncoding());
     }
 
     public String getServerItem() {
@@ -111,9 +108,5 @@ public class ItemInfo {
 
     public boolean isFolder() {
         return !StringUtils.equalsIgnoreCase(type, "file");
-    }
-
-    public String getFileSize() {
-        return fileSize;
     }
 }

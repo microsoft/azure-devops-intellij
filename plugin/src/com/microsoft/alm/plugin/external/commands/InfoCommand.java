@@ -112,8 +112,7 @@ public class InfoCommand extends Command<List<ItemInfo>> {
                 propertyMap.get("server lock owner"),
                 propertyMap.get("server deletion id"),
                 propertyMap.get("server last modified"),
-                propertyMap.get("server file type"),
-                propertyMap.get("server size")
+                propertyMap.get("server file type")
         );
     }
 }

@@ -125,7 +125,7 @@ public class ReactiveTfvcClientHost {
                 .thenApply(changes -> changes.stream().map(PendingChange::from).collect(Collectors.toList()));
     }
 
-    private CompletionStage<Void> getItemsInfoAsyncChunk(
+    private CompletionStage<Void> getLocalItemsInfoAsyncChunk(
             TfsCollection collection,
             Iterator<List<Path>> chunkIterator,
             Consumer<ItemInfo> onItemReceived) {
@@ -134,21 +134,21 @@ public class ReactiveTfvcClientHost {
 
         List<Path> chunk = chunkIterator.next();
         List<TfsLocalPath> paths = chunk.stream().map(TfsFileUtil::createLocalPath).collect(Collectors.toList());
-        return myConnection.getItemsInfoAsync(collection, paths)
+        return myConnection.getLocalItemsInfoAsync(collection, paths)
                 .thenCompose(infos -> {
                     infos.forEach(ii -> onItemReceived.accept(ItemInfo.from(ii)));
-                    return getItemsInfoAsyncChunk(collection, chunkIterator, onItemReceived);
+                    return getLocalItemsInfoAsyncChunk(collection, chunkIterator, onItemReceived);
                 });
     }
 
-    public CompletionStage<Void> getItemsInfoAsync(
+    public CompletionStage<Void> getLocalItemsInfoAsync(
             ServerIdentification serverIdentification,
             Stream<Path> localPaths,
             Consumer<ItemInfo> onItemReceived) {
         // Pack the paths into partitions of predefined size to avoid overloading the protocol.
         Iterable<List<Path>> partitions = Iterables.partition(localPaths::iterator, INFO_PARTITION_COUNT);
         return getReadyCollectionAsync(serverIdentification)
-                .thenCompose(collection -> getItemsInfoAsyncChunk(collection, partitions.iterator(), onItemReceived));
+                .thenCompose(collection -> getLocalItemsInfoAsyncChunk(collection, partitions.iterator(), onItemReceived));
     }
 
     @NotNull

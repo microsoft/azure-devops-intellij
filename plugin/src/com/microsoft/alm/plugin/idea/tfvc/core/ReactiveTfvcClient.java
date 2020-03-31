@@ -78,7 +78,7 @@ public class ReactiveTfvcClient implements TfvcClient {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
             return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                    .thenCompose(client -> client.getItemsInfoAsync(serverIdentification, paths, onItemReceived));
+                    .thenCompose(client -> client.getLocalItemsInfoAsync(serverIdentification, paths, onItemReceived));
         });
     }
 
