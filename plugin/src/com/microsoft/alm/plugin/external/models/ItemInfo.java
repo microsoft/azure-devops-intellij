@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.external.models;
 
 import com.microsoft.alm.common.utils.SystemHelper;
+import com.microsoft.tfs.model.connector.TfsItemInfo;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -38,6 +39,22 @@ public class ItemInfo {
         this.lastModified = lastModified;
         this.fileType = fileType;
         this.fileSize = fileSize;
+    }
+
+    public static ItemInfo from(TfsItemInfo ii) {
+        return new ItemInfo(
+                ii.getServerItem(),
+                ii.getLocalItem(),
+                Integer.toString(ii.getServerVersion()),
+                Integer.toString(ii.getLocalVersion()),
+                ii.getChange(),
+                ii.getType(),
+                ii.getLock(),
+                ii.getLockOwner(),
+                Integer.toString(ii.getDeletionId()),
+                ii.getLastModified(),
+                ii.getFileEncoding(),
+                ii.getFileSize() == null ? null : Long.toString(ii.getFileSize()));
     }
 
     public String getServerItem() {

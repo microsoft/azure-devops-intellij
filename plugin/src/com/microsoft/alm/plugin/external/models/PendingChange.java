@@ -3,9 +3,11 @@
 
 package com.microsoft.alm.plugin.external.models;
 
+import com.microsoft.tfs.model.connector.TfsPendingChange;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents the data returned by the TF command line about a pending change.
@@ -68,6 +70,21 @@ public class PendingChange {
         this.computer = computer;
         this.isCandidate = isCandidate;
         this.sourceItem = sourceItem;
+    }
+
+    public static PendingChange from(TfsPendingChange pc) {
+        return new PendingChange(
+                pc.getServerItem(),
+                pc.getLocalItem(),
+                Integer.toString(pc.getVersion()),
+                pc.getOwner(),
+                pc.getDate(),
+                pc.getLock(),
+                pc.getChangeTypes().stream().map(ServerStatusType::from).collect(Collectors.toList()),
+                pc.getWorkspace(),
+                pc.getComputer(),
+                pc.isCandidate(),
+                pc.getSourceItem());
     }
 
     public String getComputer() {

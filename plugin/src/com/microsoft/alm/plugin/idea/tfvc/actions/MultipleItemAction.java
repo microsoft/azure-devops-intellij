@@ -37,9 +37,9 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,8 +97,8 @@ public abstract class MultipleItemAction extends DumbAwareAction {
                 }
 
                 // Get the item infos (no need for a working folder since these are local paths)
-                final List<ItemInfo> infos = CommandUtils.getItemInfos(context.serverContext, null, localPaths);
-                context.itemInfos.addAll(infos);
+                TfvcClient client = TfvcClient.getInstance(context.project);
+                client.getLocalItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
 
                 // Set the default path and additional parameters
                 if (context.itemInfos.size() > 0) {

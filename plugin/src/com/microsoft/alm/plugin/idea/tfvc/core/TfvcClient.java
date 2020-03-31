@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 /**
  * This is an interface for TFVC client which have two implementations: one based on TF Everywhere (the "classic"
@@ -48,6 +50,44 @@ public interface TfvcClient {
             @NotNull List<String> pathsToProcess) {
         try {
             return getStatusForFilesAsync(serverContext, pathsToProcess).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Collects local repository information on selected items asynchronously and passes it into a user-provided
+     * callback.
+     *
+     * @param serverContext  server context to extract a authorization information from
+     * @param pathsToProcess list of items to process information
+     * @param onItemReceived callback that will be called for each item received. Should be free-threaded (may be
+     *                       called from any thread, including the one that performed this call), but will be called in
+     *                       a thread-safe way (multiple simultaneous calls are prohibited).
+     * @return a completion stage that will be finished after the call is completely finished and all of the callbacks
+     * are done.
+     */
+    @NotNull
+    CompletionStage<Void> getLocalItemsInfoAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ItemInfo> onItemReceived);
+
+    /**
+     * Collects local repository information on selected items and passes it into a user-provided callback.
+     *
+     * @param serverContext  server context to extract a authorization information from
+     * @param pathsToProcess list of items to process information
+     * @param onItemReceived callback that will be called for each item received. Should be free-threaded (may be
+     *                       called from any thread, including the one that performed this call), but will be called in
+     *                       a thread-safe way (multiple simultaneous calls are prohibited).
+     */
+    default void getLocalItemsInfo(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ItemInfo> onItemReceived) {
+        try {
+            getLocalItemsInfoAsync(serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
