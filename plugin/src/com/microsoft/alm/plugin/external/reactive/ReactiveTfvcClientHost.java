@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.reactive;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
@@ -20,8 +21,8 @@ import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
@@ -36,8 +37,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,6 +54,8 @@ public class ReactiveTfvcClientHost {
     static {
         RdIdeaLoggerFactory.initialize();
     }
+
+    private static final int INFO_PARTITION_COUNT = 1000;
 
     private static final String REACTIVE_CLIENT_LOG_LEVEL = "INFO";
 
@@ -116,18 +122,33 @@ public class ReactiveTfvcClientHost {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.invalidatePathsAsync(collection, paths).thenApply(v -> collection))
                 .thenCompose(collection -> myConnection.getPendingChangesAsync(collection, paths))
-                .thenApply(changes -> changes.stream().map(pc -> new PendingChange(
-                        pc.getServerItem(),
-                        pc.getLocalItem(),
-                        Integer.toString(pc.getVersion()),
-                        pc.getOwner(),
-                        pc.getDate(),
-                        pc.getLock(),
-                        pc.getChangeTypes().stream().map(ServerStatusType::from).collect(Collectors.toList()),
-                        pc.getWorkspace(),
-                        pc.getComputer(),
-                        pc.isCandidate(),
-                        pc.getSourceItem())).collect(Collectors.toList()));
+                .thenApply(changes -> changes.stream().map(PendingChange::from).collect(Collectors.toList()));
+    }
+
+    private CompletionStage<Void> getItemsInfoAsyncChunk(
+            TfsCollection collection,
+            Iterator<List<Path>> chunkIterator,
+            Consumer<ItemInfo> onItemReceived) {
+        if (!chunkIterator.hasNext())
+            return CompletableFuture.completedFuture(null);
+
+        List<Path> chunk = chunkIterator.next();
+        List<TfsLocalPath> paths = chunk.stream().map(TfsFileUtil::createLocalPath).collect(Collectors.toList());
+        return myConnection.getItemsInfoAsync(collection, paths)
+                .thenCompose(infos -> {
+                    infos.forEach(ii -> onItemReceived.accept(ItemInfo.from(ii)));
+                    return getItemsInfoAsyncChunk(collection, chunkIterator, onItemReceived);
+                });
+    }
+
+    public CompletionStage<Void> getItemsInfoAsync(
+            ServerIdentification serverIdentification,
+            Stream<Path> localPaths,
+            Consumer<ItemInfo> onItemReceived) {
+        // Pack the paths into partitions of predefined size to avoid overloading the protocol.
+        Iterable<List<Path>> partitions = Iterables.partition(localPaths::iterator, INFO_PARTITION_COUNT);
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> getItemsInfoAsyncChunk(collection, partitions.iterator(), onItemReceived));
     }
 
     @NotNull

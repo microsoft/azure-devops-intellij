@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
@@ -17,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -63,6 +65,20 @@ public class ReactiveTfvcClient implements TfvcClient {
 
             return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
                     .thenCompose(client -> client.getPendingChangesAsync(serverIdentification, paths));
+        });
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Void> getLocalItemsInfoAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ItemInfo> onItemReceived) {
+        return traceTime("Info", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.getItemsInfoAsync(serverIdentification, paths, onItemReceived));
         });
     }
 

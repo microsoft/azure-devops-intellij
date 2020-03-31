@@ -603,9 +603,8 @@ public class CommandUtils {
      * Returns the item infos for the item paths provided. Specify a working folder in the workspace if you want info for
      * server paths.
      */
-    public static List<ItemInfo> getItemInfos(final ServerContext context, final String workingFolder,
-                                              final List<String> itemPaths) {
-        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, itemPaths);
+    public static List<ItemInfo> getItemInfos(final ServerContext context, final List<String> itemPaths) {
+        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, itemPaths);
         return infoCommand.runSynchronously();
     }
 

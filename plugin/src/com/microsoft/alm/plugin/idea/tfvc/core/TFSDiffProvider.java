@@ -130,19 +130,19 @@ public class TFSDiffProvider extends DiffProviderEx {
             filePaths.add(filePath);
         }
 
-        final Map<VirtualFile, VcsRevisionNumber> revisionMap = ContainerUtil.newHashMap();
-        final List<ItemInfo> statusList = CommandUtils.getItemInfos(context, null, filePaths);
+        TfvcClient client = TfvcClient.getInstance(project);
         final LocalFileSystem fs = LocalFileSystem.getInstance();
-        for (ItemInfo info : statusList) {
+        final Map<VirtualFile, VcsRevisionNumber> revisionMap = ContainerUtil.newHashMap();
+        client.getLocalItemsInfo(context, filePaths, info -> {
             final String itemPath = info.getLocalItem();
             final VirtualFile virtualFile = fs.findFileByPath(itemPath);
             if (virtualFile == null) {
                 logger.error("VirtualFile not found for item " + itemPath);
-                continue;
+                return;
             }
 
             revisionMap.put(virtualFile, createRevision(info, itemPath));
-        }
+        });
 
         return revisionMap;
     }

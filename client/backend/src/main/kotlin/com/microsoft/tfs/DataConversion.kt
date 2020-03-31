@@ -3,12 +3,11 @@
 
 package com.microsoft.tfs
 
+import com.microsoft.tfs.core.clients.versioncontrol.VersionControlConstants
 import com.microsoft.tfs.core.clients.versioncontrol.path.LocalPath
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.ChangeType
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingChange
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.RecursionType
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.*
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
+import com.microsoft.tfs.core.util.FileEncoding
 import com.microsoft.tfs.model.host.*
 import java.text.SimpleDateFormat
 
@@ -59,3 +58,66 @@ fun TfsPath.toCanonicalPathString(): String = when(this) {
 
 fun TfsPath.toCanonicalPathItemSpec(recursionType: RecursionType): ItemSpec =
     ItemSpec(toCanonicalPathString(), recursionType)
+
+/**
+ * Converts a pair of [Item] and [ExtendedItem] to [TfsItemInfo]. Tries to replicate behavior of
+ * `com.microsoft.tfs.client.clc.vc.commands.CommandProperties.ItemProperties::setExtendedItem` from the TFS
+ * command-line client.
+ */
+fun toTfsItemInfo(item: Item?, extendedItem: ExtendedItem?): TfsItemInfo {
+    if (item == null && extendedItem == null) {
+        throw Exception("Bot item and extendedItem should never be null")
+    }
+
+    var serverItem = item?.serverItem
+    var localItem: String? = null
+    var localVersion = 0
+    val serverVersion = item?.changeSetID ?: 0
+    var change: String? = null
+    var itemTypeName: String? = null
+    var lockStatus: String? = null
+    var lockOwner: String? = null
+    val deletionId = item?.deletionID ?: 0
+    val checkInDate = item?.checkinDate?.time?.let(isoDateFormat::format)
+    var type = item?.itemType
+    val encodingName = if (item?.encoding == FileEncoding(VersionControlConstants.ENCODING_UNCHANGED))
+        null
+    else
+        item?.encoding?.name
+    val fileSize = item?.contentLength
+
+    if (extendedItem != null) {
+        // Only show the server item when the user has the file or has a pending change on the file.
+        if (extendedItem.localItem != null || extendedItem.pendingChange != ChangeType.NONE) {
+            serverItem = extendedItem.targetServerItem
+            localItem = extendedItem.localItem
+            localVersion = extendedItem.localVersion
+            itemTypeName = extendedItem.itemType.toUIString()
+        }
+
+        change =
+            if (extendedItem.pendingChange == ChangeType.NONE) "none"
+            else extendedItem.pendingChange.toUIString(false, extendedItem)
+
+        lockStatus = extendedItem.lockLevel.toUIString()
+        lockOwner = extendedItem.lockOwner
+        type = extendedItem.itemType
+    }
+
+    val fileEncodingName = if (type == ItemType.FILE) encodingName else null
+
+    return TfsItemInfo(
+        serverItem,
+        localItem,
+        localVersion,
+        serverVersion,
+        change,
+        itemTypeName,
+        lockStatus,
+        lockOwner,
+        deletionId,
+        checkInDate,
+        fileEncodingName,
+        fileSize
+    )
+}

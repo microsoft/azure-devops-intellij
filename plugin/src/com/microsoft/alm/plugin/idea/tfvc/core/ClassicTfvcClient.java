@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ClassicTfvcClient implements TfvcClient {
@@ -45,6 +47,25 @@ public class ClassicTfvcClient implements TfvcClient {
         return EULADialog.executeWithGuard(
                 myProject,
                 () -> CommandUtils.getStatusForFiles(myProject, serverContext, pathsToProcess));
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Void> getLocalItemsInfoAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ItemInfo> onItemReceived) {
+        getLocalItemsInfo(serverContext, pathsToProcess, onItemReceived);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void getLocalItemsInfo(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ItemInfo> onItemReceived) {
+        List<ItemInfo> itemInfos = CommandUtils.getItemInfos(serverContext, pathsToProcess);
+        itemInfos.forEach(onItemReceived);
     }
 
     @NotNull

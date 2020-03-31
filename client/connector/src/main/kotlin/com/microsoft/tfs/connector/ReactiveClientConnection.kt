@@ -68,6 +68,11 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.getPendingChanges.start(paths).pipeTo(lt, this)
         }
 
+    fun getItemsInfoAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletionStage<List<TfsItemInfo>> =
+        queueFutureAsync { lt ->
+            collection.getItemsInfo.start(paths).pipeTo(lt, this)
+        }
+
     fun invalidatePathsAsync(collection: TfsCollection, paths: List<TfsLocalPath>): CompletionStage<Void> =
         queueFutureAsync { lt ->
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
