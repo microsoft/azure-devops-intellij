@@ -14,6 +14,7 @@ import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.model.host.*
 import org.apache.log4j.Level
 import java.nio.file.Paths
+import java.util.*
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -39,6 +40,7 @@ private fun printUsage() {
 }
 
 private fun initializeApp(args: Array<String>) {
+    Locale.setDefault(Locale.US)
     val logDirectory = if (args.size > 1) Paths.get(args[1]) else null
     val logLevel = if (args.size > 2) Level.toLevel(args[2]) else Level.INFO
     Logging.initialize(logDirectory, logLevel)
