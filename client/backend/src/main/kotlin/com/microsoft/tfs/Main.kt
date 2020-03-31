@@ -102,11 +102,11 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         logger.info { "Performing $title operation on ${paths.size} paths, first 10: ${paths.take(10).joinToString()}" }
     }
 
-    collection.getItemsInfo.set { paths ->
+    collection.getLocalItemsInfo.set { paths ->
         if (paths.isEmpty()) return@set emptyList()
 
-        logPaths("Get Info", paths)
-        client.getItemsInfo(paths)
+        logPaths("Get Local Items Info", paths)
+        client.getLocalItemsInfo(paths)
     }
 
     collection.invalidatePaths.set { paths ->
