@@ -1,18 +1,29 @@
 jobs:
-  - job: production_build_2018_2
+  - job: production_build
+    variables:
+      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
     steps:
       - task: CmdLine@1
         displayName: Run printenv
         inputs:
           filename: printenv
 
+      - task: Cache@2
+        inputs:
+          key: '"2018.2" | production_build | **/*.gradle | gradle.properties'
+          restoreKeys: |
+            "2018.2" | production_build | **/*.gradle
+            "2018.2" | production_build
+          path: $(GRADLE_USER_HOME)/caches/modules-2
+        displayName: Gradle build cache
+
       - task: Gradle@2
         displayName: Gradle build (zip)
         inputs:
+          jdkVersionOption: 1.8
           options: '--info --scan'
           tasks: clean build zip
           testResultsFiles: '**/TEST-*.xml'
-          jdkVersionOption: 1.8
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)"
@@ -28,17 +39,43 @@ jobs:
           path: 'plugin/build/reports'
           artifact: '$(build.buildNumber)-reports'
 
-  - job: test_build_2019_3
+      - task: Gradle@2
+        displayName: Stop Gradle Daemon # for correct cache extraction
+        inputs:
+          jdkVersionOption: 1.8
+          options: --stop
+
+  - job: test_build
+    variables:
+      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
     steps:
       - task: CmdLine@1
         displayName: Run printenv
         inputs:
           filename: printenv
 
-      - task: Gradle@2
-        displayName: Gradle build (zip)
+      - task: Cache@2
         inputs:
+          # Test build is allowed to reuse cache from the main one, but not the other way around.
+          key: '"2019.3" | test_build | **/*.gradle | gradle.properties'
+          restoreKeys: |
+            "2019.3" | production_build | **/*.gradle | gradle.properties
+            "2019.3" | test_build | **/*.gradle
+            "2019.3" | production_build | **/*.gradle
+            "2019.3" | test_build
+            "2019.3"
+          path: $(GRADLE_USER_HOME)/caches/modules-2
+        displayName: Gradle build cache
+
+      - task: Gradle@2
+        displayName: Gradle compile
+        inputs:
+          jdkVersionOption: 1.8
           options: '--info --scan -PideaVersion=2019.3'
           tasks: clean :plugin:compileJava
-          testResultsFiles: '**/TEST-*.xml'
+
+      - task: Gradle@2
+        displayName: Stop Gradle Daemon # for correct cache extraction
+        inputs:
           jdkVersionOption: 1.8
+          options: --stop
