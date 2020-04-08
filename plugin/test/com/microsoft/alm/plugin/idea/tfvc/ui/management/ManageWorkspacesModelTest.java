@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.vcsUtil.VcsRunnable;
 import com.intellij.vcsUtil.VcsUtil;
+import com.microsoft.alm.common.utils.UrlHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -35,6 +36,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +99,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
 
         when(
                 mockServerContextManager.createContextFromTfvcServerUrl(
-                        workspace1.getServerUri().toString(),
+                        workspace1.getServerUri(),
                         "root",
                         true))
                 .thenReturn(mockServerContext);
@@ -240,7 +242,8 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
     @Test
     public void testEditWorkspace_Happy() throws Exception {
         final AuthenticationInfo mockAuthInfo = mock(AuthenticationInfo.class);
-        when(mockServerContextManager.getAuthenticationInfo(server.getName(), true)).thenReturn(mockAuthInfo);
+        when(mockServerContextManager.getAuthenticationInfo(UrlHelper.createUri(server.getName()), true))
+                .thenReturn(mockAuthInfo);
         when(CommandUtils.getDetailedWorkspace(server.getName(), workspace1.getName(), mockAuthInfo)).thenReturn(workspace1);
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
@@ -281,7 +284,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
     @Test
     public void testEditWorkspace_CollectionWithSpaces() throws VcsException {
         final String collectionName = "http://tfs-server/Collection With Spaces";
-        final String collectionUrl = "http://tfs-server/Collection%20With%20Spaces";
+        final URI collectionUrl = URI.create("http://tfs-server/Collection%20With%20Spaces");
         Workspace workspace = new Workspace(
                 collectionName,
                 "workspace1",

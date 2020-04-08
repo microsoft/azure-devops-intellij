@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -132,12 +133,12 @@ public class ManageWorkspacesModel extends AbstractModel {
      */
     protected void deleteWorkspace(final Workspace selectedWorkspace) throws VcsException {
         try {
-            final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServerUri().toString(), selectedWorkspace.getName());
+            final Workspace workspace = getPartialWorkspace(selectedWorkspace.getServerDisplayName(), selectedWorkspace.getName());
             if (workspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
                         workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
 
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServerUri().toString(), projectName, true);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(workspace.getServerUri(), projectName, true);
                 CommandUtils.deleteWorkspace(context, selectedWorkspace.getName());
             } else {
                 logger.warn("Couldn't find partial workspace so aborting delete command");
@@ -174,21 +175,20 @@ public class ManageWorkspacesModel extends AbstractModel {
      */
     protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
         try {
-            String serverUriString = selectedWorkspace.getServerUri().toString();
+            URI serverUri = selectedWorkspace.getServerUri();
             String serverName = selectedWorkspace.getServerDisplayName();
-            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(serverUriString, true);
+            final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(serverUri, true);
             final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(serverName, selectedWorkspace.getName(), authInfo);
             if (detailedWorkspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
                         detailedWorkspace.getMappings().size() > 0 ? detailedWorkspace.getMappings().get(0).getServerPath() : null);
-                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(serverUriString, projectName, true);
+                final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(serverUri, projectName, true);
                 // use info from the 2 incomplete workspace objects to create a complete one
                 final Workspace workspace = new Workspace(serverName, selectedWorkspace.getName(), selectedWorkspace.getComputer(),
                         selectedWorkspace.getOwner(), selectedWorkspace.getComment(), detailedWorkspace.getMappings(), detailedWorkspace.getLocation());
 
-                if (context == null || workspace == null) {
-                    logger.warn(String.format("Can't edit workspace because context is null: %s or workspace is null: %s",
-                            context == null, workspace == null));
+                if (context == null) {
+                    logger.warn("Can't edit workspace because context is null");
                     throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG,
                             selectedWorkspace.getName())));
                 }
