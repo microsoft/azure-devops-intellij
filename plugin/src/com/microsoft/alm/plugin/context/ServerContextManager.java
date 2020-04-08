@@ -382,7 +382,13 @@ public class ServerContextManager {
         return context;
     }
 
+    public ServerContext createContextFromTfvcServerUrl(URI tfvcServerUrl, String teamProjectName, boolean prompt) {
+        return createContextFromTfvcServerUrl(tfvcServerUrl.toString(), teamProjectName, prompt);
+    }
 
+    /**
+     * @deprecated Use {@link #createContextFromTfvcServerUrl(URI, String, boolean)} instead.
+     */
     public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final String teamProjectName, final boolean prompt) {
         ArgumentHelper.checkNotEmptyString(tfvcServerUrl, "tfvcServerUrl");
 
@@ -457,16 +463,22 @@ public class ServerContextManager {
     }
 
     /**
+     * @deprecated Use {@link #getAuthenticationInfo(URI, boolean)} instead.
+     */
+    public AuthenticationInfo getAuthenticationInfo(String gitRemoteUrl, boolean prompt) {
+        return getAuthenticationInfo(UrlHelper.createUri(gitRemoteUrl), prompt);
+    }
+
+    /**
      * This method tries to find existing authentication info for a given git url.
      * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
      */
-    public AuthenticationInfo getAuthenticationInfo(final String gitRemoteUrl, final boolean prompt) {
+    public AuthenticationInfo getAuthenticationInfo(URI gitRemoteUrl, final boolean prompt) {
         AuthenticationInfo authenticationInfo = null;
 
         // For now I will just do a linear search for an appropriate context info to copy the auth info from
-        final URI remoteUri = UrlHelper.createUri(gitRemoteUrl);
         for (final ServerContext context : getAllServerContexts()) {
-            if (UrlHelper.haveSameAccount(remoteUri, context.getUri())) {
+            if (UrlHelper.haveSameAccount(gitRemoteUrl, context.getUri())) {
                 logger.info("AuthenticatedInfo found for url " + gitRemoteUrl);
                 authenticationInfo = context.getAuthenticationInfo();
                 break;
@@ -476,8 +488,9 @@ public class ServerContextManager {
         // If the auth info wasn't found and we are ok to prompt, then prompt
         if (authenticationInfo == null && prompt) {
             logger.info("Prompting for credentials");
-            final AuthenticationProvider authenticationProvider = getAuthenticationProvider(gitRemoteUrl);
-            authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, gitRemoteUrl);
+            String uriString = gitRemoteUrl.toString();
+            final AuthenticationProvider authenticationProvider = getAuthenticationProvider(uriString);
+            authenticationInfo = AuthHelper.getAuthenticationInfoSynchronously(authenticationProvider, uriString);
         }
 
         return authenticationInfo;
