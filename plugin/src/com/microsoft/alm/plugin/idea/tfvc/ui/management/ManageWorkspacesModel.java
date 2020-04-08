@@ -175,14 +175,15 @@ public class ManageWorkspacesModel extends AbstractModel {
     protected void editWorkspace(final Workspace selectedWorkspace, final Runnable update) throws VcsException {
         try {
             String serverUriString = selectedWorkspace.getServerUri().toString();
+            String serverName = selectedWorkspace.getServerDisplayName();
             final AuthenticationInfo authInfo = ServerContextManager.getInstance().getAuthenticationInfo(serverUriString, true);
-            final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(serverUriString, selectedWorkspace.getName(), authInfo);
+            final Workspace detailedWorkspace = CommandUtils.getDetailedWorkspace(serverName, selectedWorkspace.getName(), authInfo);
             if (detailedWorkspace != null) {
                 final String projectName = VcsHelper.getTeamProjectFromTfvcServerPath(
                         detailedWorkspace.getMappings().size() > 0 ? detailedWorkspace.getMappings().get(0).getServerPath() : null);
                 final ServerContext context = ServerContextManager.getInstance().createContextFromTfvcServerUrl(serverUriString, projectName, true);
                 // use info from the 2 incomplete workspace objects to create a complete one
-                final Workspace workspace = new Workspace(serverUriString, selectedWorkspace.getName(), selectedWorkspace.getComputer(),
+                final Workspace workspace = new Workspace(serverName, selectedWorkspace.getName(), selectedWorkspace.getComputer(),
                         selectedWorkspace.getOwner(), selectedWorkspace.getComment(), detailedWorkspace.getMappings(), detailedWorkspace.getLocation());
 
                 if (context == null || workspace == null) {

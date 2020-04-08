@@ -125,7 +125,8 @@ public class CommandUtils {
      * <p>
      * The collection is needed for sever workspaces but not local
      *
-     * @param collectionName
+     * @param collectionName the name of the collection (if it contains spaces, then they should be passed as spaces,
+     *                       not "%20").
      * @param workspaceName
      * @param authInfo
      * @return

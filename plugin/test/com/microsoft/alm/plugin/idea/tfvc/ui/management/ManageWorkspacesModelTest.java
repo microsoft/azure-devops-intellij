@@ -95,7 +95,12 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         workspaces = ImmutableList.of(workspace1);
         server = new Server("http://server:8080/tfs/defaultcollection", workspaces);
 
-        when(mockServerContextManager.createContextFromTfvcServerUrl(workspace1.getServerDisplayName(), "root", true)).thenReturn(mockServerContext);
+        when(
+                mockServerContextManager.createContextFromTfvcServerUrl(
+                        workspace1.getServerUri().toString(),
+                        "root",
+                        true))
+                .thenReturn(mockServerContext);
         when(ServerContextManager.getInstance()).thenReturn(mockServerContextManager);
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
 
@@ -263,6 +268,34 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         doThrow(new RuntimeException()).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
+    }
+
+    /**
+     * This test verifies that {@link ManageWorkspacesModel#editWorkspace(Workspace, Runnable)} passes actual server
+     * name into {@link CommandUtils#getDetailedWorkspace(String, String, AuthenticationInfo)}, and not a formatted URL.
+     * <p>
+     * I.e. spaces in the server/collection name should be preserved and not turned into %20.
+     * <p>
+     * It is currently enough to verify that no exception is thrown during the edit method call.
+     */
+    @Test
+    public void testEditWorkspace_CollectionWithSpaces() throws VcsException {
+        final String collectionName = "http://tfs-server/Collection With Spaces";
+        final String collectionUrl = "http://tfs-server/Collection%20With%20Spaces";
+        Workspace workspace = new Workspace(
+                collectionName,
+                "workspace1",
+                "computerName",
+                "ownerName",
+                "comment for workspace",
+                ImmutableList.of(new Workspace.Mapping("$/root", "/local/path/directory", false)));
+
+        when(CommandUtils.getDetailedWorkspace(collectionName, workspace.getName(), null))
+                .thenReturn(workspace);
+        when(mockServerContextManager.createContextFromTfvcServerUrl(collectionUrl, "root", true))
+                .thenReturn(mockServerContext);
+
+        manageWorkspacesModel.editWorkspace(workspace, mockRunnable);
     }
 
     @Test
