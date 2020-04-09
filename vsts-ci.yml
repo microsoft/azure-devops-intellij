@@ -34,7 +34,7 @@ jobs:
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)-reports"
-        condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
+        condition: always()
         inputs:
           path: 'plugin/build/reports'
           artifact: '$(build.buildNumber)-reports'
