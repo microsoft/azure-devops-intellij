@@ -21,7 +21,7 @@ jobs:
         displayName: Gradle build (zip)
         inputs:
           jdkVersionOption: 1.8
-          options: '--info --scan'
+          options: '--info'
           tasks: clean build zip
           testResultsFiles: '**/TEST-*.xml'
 
@@ -71,7 +71,7 @@ jobs:
         displayName: Gradle compile
         inputs:
           jdkVersionOption: 1.8
-          options: '--info --scan -PideaVersion=2019.3'
+          options: '--info -PideaVersion=2019.3'
           tasks: clean :plugin:compileJava
 
       - task: Gradle@2
