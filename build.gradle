@@ -34,10 +34,6 @@ def mainProjects = [project(":L2Tests"), project(":plugin")]
  * settings common to ALL projects (even the root level project)
  */
 allprojects {
-    configurations {
-        codeAnalysisLibs
-    }
-
     repositories {
         mavenCentral()
         maven {
@@ -56,6 +52,15 @@ allprojects {
  * settings shared by the main projects (part 1)
  */
 configure(mainProjects) {
+    configurations {
+        codeAnalysisLibs
+
+        // Some our dependencies should be included *before* dependencies from IDEA (e.g. junit, jackson-databind). IDEA
+        // has some versions of these dependencies that sometimes break tests (see comments for particular dependencies
+        // included into this configuration for details).
+        priorityTestCompile
+    }
+
     apply plugin: 'java'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
@@ -83,8 +88,12 @@ configure(mainProjects) {
         }
 
         test {
-            compileClasspath += configurations.codeAnalysisLibs
-            runtimeClasspath += configurations.codeAnalysisLibs
+            def setUpDependencies = { originalCollection ->
+                configurations.priorityTestCompile + originalCollection + configurations.codeAnalysisLibs
+            }
+
+            compileClasspath = setUpDependencies(compileClasspath)
+            runtimeClasspath = setUpDependencies(runtimeClasspath)
 
             java {
                 srcDir 'test'
@@ -139,22 +148,20 @@ project(":plugin") {
 project(":L2Tests") {
     apply plugin: 'org.jetbrains.intellij'
 
-    // The plugin relies on an outdated version of jackson-databind being available in the classpath (it is a required
-    // transitive dependency of com.microsoft.alm:com.microsoft.alm.client with no newer version available). It is
-    // available in the product because of how IDEA classloaders work, but it gets overridden by IDEA's instance of
-    // jackson-databind in tests. We have to load right version of the library by moving it on top of the classpath.
-    configurations {
-        jacksonDatabind
-    }
-
     intellij {
         version = ideaVersion
         plugins = ['git4idea']
     }
 
     dependencies {
+        // The plugin relies on an outdated version of jackson-databind being available in the classpath (it is a
+        // required transitive dependency of com.microsoft.alm:com.microsoft.alm.client with no newer version
+        // available). It is available in the product because of how IDEA classloaders work, but it gets overridden by
+        // IDEA's instance of jackson-databind in tests. We have to load right version of the library by moving it on
+        // top of the classpath.
+        priorityTestCompile 'com.fasterxml.jackson.core:jackson-databind:2.4.1'
+
         compile project(':plugin')
-        jacksonDatabind 'com.fasterxml.jackson.core:jackson-databind:2.4.1'
     }
 
     jar {
@@ -162,7 +169,6 @@ project(":L2Tests") {
     }
 
     test {
-        classpath = configurations.jacksonDatabind + (classpath - configurations.jacksonDatabind)
         forkEvery = 1
     }
 }
@@ -187,7 +193,10 @@ configure(mainProjects) {
             exclude group: 'org.slf4j', module: 'slf4j-api'
         }
 
-        testCompile group: 'junit', name: 'junit', version: '4.12'
+        // IDEA 2018.2 has two other junit versions embedded into it: 3.8.1 (junit.jar) and 4.12 (junit-4.12.jar). We
+        // need our version to take priority.
+        priorityTestCompile group: 'junit', name: 'junit', version: '4.12'
+
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
         testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.3'
         testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
