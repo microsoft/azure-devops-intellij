@@ -71,7 +71,12 @@ public class VersionControlPath {
             return null;
         }
 
-        if (!SystemInfo.isWindows && localPath.startsWith(FAKE_DRIVE_PREFIX)) {
+        if (!SystemInfo.isWindows && localPath.regionMatches(
+                !SystemInfo.isFileSystemCaseSensitive,
+                0,
+                FAKE_DRIVE_PREFIX,
+                0,
+                FAKE_DRIVE_PREFIX.length())) {
             return canonicalizePath(localPath.substring(FAKE_DRIVE_PREFIX.length()));
         } else {
             return canonicalizePath(localPath);
