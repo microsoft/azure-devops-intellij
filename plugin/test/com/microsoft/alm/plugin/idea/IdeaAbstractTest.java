@@ -11,7 +11,6 @@ import com.microsoft.alm.plugin.idea.common.services.IdeaCertificateService;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.PropertyServiceImpl;
 import com.microsoft.alm.plugin.idea.common.services.ServerContextStoreImpl;
-import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.junit.BeforeClass;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -24,19 +23,14 @@ public class IdeaAbstractTest extends AbstractTest {
 
     @BeforeClass
     public static void setup() {
-        PluginServiceProvider.getInstance().initialize(
+        PluginServiceProvider.getInstance().forceInitialize(
                 new ServerContextStoreImpl(),
                 new CredentialsPromptImpl(),
                 new DeviceFlowResponsePromptImpl(),
                 PropertyServiceImpl.getInstance(),
                 LocalizationServiceImpl.getInstance(),
                 new HttpProxyServiceImpl(),
-                new AsyncService() {
-                    @Override
-                    public void executeOnPooledThread(Runnable runnable) {
-                        runnable.run();
-                    }
-                },
+                Runnable::run,
                 new IdeaCertificateService(),
                 false);
 

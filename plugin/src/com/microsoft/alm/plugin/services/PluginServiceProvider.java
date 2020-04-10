@@ -42,17 +42,42 @@ public class PluginServiceProvider {
                            final CertificateService certificateService,
                            final boolean insideIDE) {
         if (!initialized) {
-            this.contextStore = contextStore;
-            this.credentialsPrompt = credentialsPrompt;
-            this.deviceFlowResponsePrompt = deviceFlowResponsePrompt;
-            this.propertyService = propertyService;
-            this.localizationSerivce = localizationService;
-            this.httpProxyService = httpProxyService;
-            this.asyncService = asyncService;
-            this.certificateService = certificateService;
-            this.insideIDE = insideIDE;
-            initialized = true;
+            forceInitialize(
+                    contextStore,
+                    credentialsPrompt,
+                    deviceFlowResponsePrompt,
+                    propertyService,
+                    localizationService,
+                    httpProxyService,
+                    asyncService,
+                    certificateService,
+                    insideIDE);
         }
+    }
+
+    /**
+     * This method is to be called only from tests.
+     */
+    public void forceInitialize(
+            ServerContextStore contextStore,
+            CredentialsPrompt credentialsPrompt,
+            DeviceFlowResponsePrompt deviceFlowResponsePrompt,
+            PropertyService propertyService,
+            LocalizationService localizationService,
+            HttpProxyService httpProxyService,
+            AsyncService asyncService,
+            CertificateService certificateService,
+            boolean insideIDE) {
+        this.contextStore = contextStore;
+        this.credentialsPrompt = credentialsPrompt;
+        this.deviceFlowResponsePrompt = deviceFlowResponsePrompt;
+        this.propertyService = propertyService;
+        this.localizationSerivce = localizationService;
+        this.httpProxyService = httpProxyService;
+        this.asyncService = asyncService;
+        this.certificateService = certificateService;
+        this.insideIDE = insideIDE;
+        initialized = true;
     }
 
     public boolean isInitialized() {

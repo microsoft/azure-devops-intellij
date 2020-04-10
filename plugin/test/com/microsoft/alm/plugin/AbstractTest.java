@@ -10,7 +10,6 @@ import com.microsoft.alm.plugin.mocks.MockHttpProxyService;
 import com.microsoft.alm.plugin.mocks.MockLocalizationService;
 import com.microsoft.alm.plugin.mocks.MockPropertyService;
 import com.microsoft.alm.plugin.mocks.MockServerContextStore;
-import com.microsoft.alm.plugin.services.AsyncService;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
@@ -28,14 +27,16 @@ public class AbstractTest {
         logger.addAppender(appender);
 
         // Attach appropriate test services
-        PluginServiceProvider.getInstance().initialize(new MockServerContextStore(), new MockCredentialsPrompt(), null,
-                new MockPropertyService(), new MockLocalizationService(), new MockHttpProxyService(),
-                new AsyncService() {
-                    @Override
-                    public void executeOnPooledThread(Runnable runnable) {
-                        runnable.run();
-                    }
-                }, new MockCertificateService(), false);
+        PluginServiceProvider.getInstance().forceInitialize(
+                new MockServerContextStore(),
+                new MockCredentialsPrompt(),
+                null,
+                new MockPropertyService(),
+                new MockLocalizationService(),
+                new MockHttpProxyService(),
+                Runnable::run,
+                new MockCertificateService(),
+                false);
     }
 
     @AfterClass
