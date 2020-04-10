@@ -27,9 +27,11 @@ public class VersionControlPathTests {
             String localPath = VersionControlPath.localPathFromTfsRepresentation(tfsRepresentation);
             Assert.assertEquals(tempFile.getAbsolutePath(), localPath);
 
-            tfsRepresentation = tfsRepresentation.toLowerCase();
-            localPath = VersionControlPath.localPathFromTfsRepresentation(tfsRepresentation);
-            Assert.assertEquals(tempFile.getAbsolutePath(), localPath);
+            if (!SystemInfo.isFileSystemCaseSensitive) {
+                tfsRepresentation = tfsRepresentation.toLowerCase();
+                localPath = VersionControlPath.localPathFromTfsRepresentation(tfsRepresentation);
+                Assert.assertEquals(tempFile.getAbsolutePath(), localPath);
+            }
         } finally {
             FileUtil.delete(tempDirectory);
         }
