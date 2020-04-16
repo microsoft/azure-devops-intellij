@@ -4,10 +4,13 @@ jobs:
       matrix:
         linux:
           imageName: 'ubuntu-18.04'
+          tfClcScriptName: 'tf'
         macOS:
           imageName: 'macOS-10.15'
+          tfClcScriptName: 'tf'
         windows:
           imageName: 'windows-2019'
+          tfClcScriptName: 'tf.cmd'
     pool:
       vmImage: $(imageName)
     variables:
@@ -25,35 +28,79 @@ jobs:
             "$(Agent.OS)" | "2018.2" | production_build | **/*.gradle
             "$(Agent.OS)" | "2018.2" | production_build
           path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle build cache
+        displayName: Gradle cache
 
       - task: Gradle@2
-        displayName: Gradle build (zip)
+        displayName: Gradle build
         inputs:
           jdkVersionOption: 1.8
           options: '--info'
-          tasks: clean build zip
-          testResultsFiles: '**/TEST-*.xml'
+          tasks: build zip
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish unit test reports"
+        condition: always()
+        inputs:
+          path: 'plugin/build/reports'
+          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)"
-        condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false), eq(variables['Agent.OS'], 'Linux'))
+        condition: and(eq(variables['system.pullrequest.isfork'], false), eq(variables['Agent.OS'], 'Linux'))
         inputs:
           path: 'plugin/build/distributions'
           artifact: '$(build.buildNumber)'
 
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish Artifact: $(build.buildNumber)-reports"
-        condition: always()
+      - task: Cache@2
         inputs:
-          path: 'plugin/build/reports'
-          artifact: '$(build.buildNumber).$(Agent.OS)-reports'
+          key: '.azure/install-tfs-clc.ps1'
+          path: .azure/.download-cache
+        displayName: TFS client artifact cache
+
+      - pwsh: ./.azure/install-tfs-clc.ps1
+        displayName: TFS client setup
+
+      - pwsh: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+        displayName: Git setup
 
       - task: Gradle@2
-        displayName: Stop Gradle Daemon # for correct cache extraction
+        displayName: Run integration tests
+        condition: and(succeeded(), eq(variables['System.PullRequest.IsFork'], false))
+        inputs:
+          jdkVersionOption: 1.8
+          options: '--info'
+          tasks: L2test:cleanTest L2test:test
+        env:
+          MSVSTS_INTELLIJ_RUN_L2_TESTS: true
+          MSVSTS_INTELLIJ_TF_EXE: $(Build.SourcesDirectory)/.azure/.installed/tfs-clc/TEE-CLC-14.134.0/$(tfClcScriptName)
+          MSVSTS_INTELLIJ_VSO_GIT_REPO_URL: $(VSO_GIT_REPO_URL)
+          MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL: $(VSO_LEGACY_GIT_REPO_URL)
+          MSVSTS_INTELLIJ_VSO_PASS: $(VSO_PASS)
+          MSVSTS_INTELLIJ_VSO_SERVER_URL: $(VSO_SERVER_URL)
+          MSVSTS_INTELLIJ_VSO_TEAM_PROJECT: $(VSO_TEAM_PROJECT)
+          MSVSTS_INTELLIJ_VSO_USER: $(VSO_USER)
+
+      - task: Gradle@2
+        displayName: Stop Gradle Daemon # for correct cache and log extraction
         inputs:
           jdkVersionOption: 1.8
           options: --stop
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish integration test reports"
+        condition: eq(variables['System.PullRequest.IsFork'], false)
+        inputs:
+          path: 'L2Tests/build/reports'
+          artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-reports'
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish integration test logs"
+        condition: eq(variables['System.PullRequest.IsFork'], false)
+        inputs:
+          path: 'L2Tests/build/idea-sandbox/system-test/testlog'
+          artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-logs'
 
   - job: test_build # check compilation for newest IDEA
     pool:
@@ -77,14 +124,14 @@ jobs:
             "$(Agent.OS)" | "2019.3" | test_build
             "$(Agent.OS)" | "2019.3"
           path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle build cache
+        displayName: Gradle cache
 
       - task: Gradle@2
         displayName: Gradle compile
         inputs:
           jdkVersionOption: 1.8
           options: '--info -PideaVersion=2019.3'
-          tasks: clean :plugin:compileJava
+          tasks: :plugin:compileJava
 
       - task: Gradle@2
         displayName: Stop Gradle Daemon # for correct cache extraction
