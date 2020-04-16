@@ -4,14 +4,25 @@ jobs:
       matrix:
         linux:
           imageName: 'ubuntu-18.04'
+          tfClcScriptName: 'tf'
         macOS:
           imageName: 'macOS-10.15'
+          tfClcScriptName: 'tf'
         windows:
           imageName: 'windows-2019'
+          tfClcScriptName: 'tf.cmd'
     pool:
       vmImage: $(imageName)
     variables:
       GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+      MSVSTS_INTELLIJ_RUN_L2_TESTS: true
+      MSVSTS_INTELLIJ_TF_EXE: $(Build.SourcesDirectory)/.azure/.installed/tfs-clc/TEE-CLC-14.134.0/$(tfClcScriptName)
+      MSVSTS_INTELLIJ_VSO_GIT_REPO_URL: $(INTELLIJ_VSO_GIT_REPO_URL)
+      MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL: $(INTELLIJ_VSO_LEGACY_GIT_REPO_URL)
+      MSVSTS_INTELLIJ_VSO_PASS: $(INTELLIJ_VSO_PASS)
+      MSVSTS_INTELLIJ_VSO_SERVER_URL: $(INTELLIJ_VSO_SERVER_URL)
+      MSVSTS_INTELLIJ_VSO_TEAM_PROJECT: $(INTELLIJ_VSO_TEAM_PROJECT)
+      MSVSTS_INTELLIJ_VSO_USER: $(INTELLIJ_VSO_USER)
     steps:
       - task: CmdLine@1
         displayName: Run printenv
@@ -25,15 +36,30 @@ jobs:
             "$(Agent.OS)" | "2018.2" | production_build | **/*.gradle
             "$(Agent.OS)" | "2018.2" | production_build
           path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle build cache
+        displayName: Gradle cache
 
       - task: Gradle@2
-        displayName: Gradle build (zip)
+        displayName: Gradle build
         inputs:
           jdkVersionOption: 1.8
           options: '--info'
-          tasks: clean build zip
-          testResultsFiles: '**/TEST-*.xml'
+          tasks: build zip
+
+      - task: Cache@2
+        inputs:
+          key: '.azure/install-tfs-clc.ps1'
+          path: .azure/caches
+        displayName: TFS client artifact cache
+
+      - pwsh: ./.azure/install-tfs-clc.ps1
+        displayName: Install TFS command-line client for tests
+
+      - task: Gradle@2
+        displayName: Run integration tests
+        inputs:
+          jdkVersionOption: 1.8
+          options: '--info'
+          tasks: L2test:test
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)"
@@ -77,7 +103,7 @@ jobs:
             "$(Agent.OS)" | "2019.3" | test_build
             "$(Agent.OS)" | "2019.3"
           path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle build cache
+        displayName: Gradle cache
 
       - task: Gradle@2
         displayName: Gradle compile
