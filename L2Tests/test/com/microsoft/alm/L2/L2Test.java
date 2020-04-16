@@ -46,7 +46,6 @@ import git4idea.commands.Git;
 import git4idea.commands.GitHandler;
 import git4idea.config.GitVcsSettings;
 import git4idea.repo.GitRepositoryManager;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -159,14 +158,24 @@ public abstract class L2Test extends UsefulTestCase {
         legacyRepoUrl = System.getenv("MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL");
         tfExe = System.getenv("MSVSTS_INTELLIJ_TF_EXE");
 
-        final String message = "You must provide %s for the L2 tests through the following environment variable: %s (see Readme.md for more information)";
-        Assert.assertFalse(String.format(message, "user", "MSVSTS_INTELLIJ_VSO_USER"), StringUtils.isEmpty(user));
-        Assert.assertFalse(String.format(message, "pass", "MSVSTS_INTELLIJ_VSO_PASS"), StringUtils.isEmpty(pass));
-        Assert.assertFalse(String.format(message, "serverUrl", "MSVSTS_INTELLIJ_VSO_SERVER_URL"), StringUtils.isEmpty(serverUrl));
-        Assert.assertFalse(String.format(message, "teamProject", "MSVSTS_INTELLIJ_VSO_TEAM_PROJECT"), StringUtils.isEmpty(teamProject));
-        Assert.assertFalse(String.format(message, "repoUrl", "MSVSTS_INTELLIJ_VSO_GIT_REPO_URL"), StringUtils.isEmpty(repoUrl));
-        Assert.assertFalse(String.format(message, "legacyRepoUrl", "MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL"), StringUtils.isEmpty(legacyRepoUrl));
-        Assert.assertFalse(String.format(message, "tfExe", "MSVSTS_INTELLIJ_TF_EXE"), StringUtils.isEmpty(tfExe));
+        String error =
+                "serverUrl = " + serverUrl + "\n"
+         + "teamProject = " + teamProject + "\n"
+         + "user = " + user + "\n"
+         + "pass = " + pass + "\n"
+         + "repoUrl = " + repoUrl + "\n"
+         + "legacyRepoUrl = " + legacyRepoUrl + "\n"
+         + "tfExe = " + tfExe;
+        throw new RuntimeException("context variables: " + error);
+
+//        final String message = "You must provide %s for the L2 tests through the following environment variable: %s (see Readme.md for more information)";
+//        Assert.assertFalse(String.format(message, "user", "MSVSTS_INTELLIJ_VSO_USER"), StringUtils.isEmpty(user));
+//        Assert.assertFalse(String.format(message, "pass", "MSVSTS_INTELLIJ_VSO_PASS"), StringUtils.isEmpty(pass));
+//        Assert.assertFalse(String.format(message, "serverUrl", "MSVSTS_INTELLIJ_VSO_SERVER_URL"), StringUtils.isEmpty(serverUrl));
+//        Assert.assertFalse(String.format(message, "teamProject", "MSVSTS_INTELLIJ_VSO_TEAM_PROJECT"), StringUtils.isEmpty(teamProject));
+//        Assert.assertFalse(String.format(message, "repoUrl", "MSVSTS_INTELLIJ_VSO_GIT_REPO_URL"), StringUtils.isEmpty(repoUrl));
+//        Assert.assertFalse(String.format(message, "legacyRepoUrl", "MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL"), StringUtils.isEmpty(legacyRepoUrl));
+//        Assert.assertFalse(String.format(message, "tfExe", "MSVSTS_INTELLIJ_TF_EXE"), StringUtils.isEmpty(tfExe));
     }
 
     protected void initializeTfEnvironment() throws Exception {
