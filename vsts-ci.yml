@@ -2,12 +2,12 @@ jobs:
   - job: production_build
     strategy:
       matrix:
-        linux:
-          imageName: 'ubuntu-18.04'
-          tfClcScriptName: 'tf'
-        macOS:
-          imageName: 'macOS-10.15'
-          tfClcScriptName: 'tf'
+#        linux:
+#          imageName: 'ubuntu-18.04'
+#          tfClcScriptName: 'tf'
+#        macOS:
+#          imageName: 'macOS-10.15'
+#          tfClcScriptName: 'tf'
         windows:
           imageName: 'windows-2019'
           tfClcScriptName: 'tf.cmd'
@@ -38,12 +38,12 @@ jobs:
           path: $(GRADLE_USER_HOME)/caches/modules-2
         displayName: Gradle cache
 
-      - task: Gradle@2
-        displayName: Gradle build
-        inputs:
-          jdkVersionOption: 1.8
-          options: '--info'
-          tasks: build zip
+#      - task: Gradle@2
+#        displayName: Gradle build
+#        inputs:
+#          jdkVersionOption: 1.8
+#          options: '--info'
+#          tasks: build zip
 
       - task: Cache@2
         inputs:
@@ -68,12 +68,12 @@ jobs:
           path: 'plugin/build/distributions'
           artifact: '$(build.buildNumber)'
 
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish Artifact: $(build.buildNumber)-test-reports"
-        condition: always()
-        inputs:
-          path: 'plugin/build/reports'
-          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
+#      - task: PublishPipelineArtifact@1
+#        displayName: "Publish Artifact: $(build.buildNumber)-test-reports"
+#        condition: always()
+#        inputs:
+#          path: 'plugin/build/reports'
+#          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)-integration-test-reports"
@@ -88,39 +88,39 @@ jobs:
           jdkVersionOption: 1.8
           options: --stop
 
-  - job: test_build # check compilation for newest IDEA
-    pool:
-      vmImage: 'ubuntu-18.04'
-    variables:
-      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
-    steps:
-      - task: CmdLine@1
-        displayName: Run printenv
-        inputs:
-          filename: printenv
-
-      - task: Cache@2
-        inputs:
-          # Test build is allowed to reuse cache from the main one, but not the other way around.
-          key: '"$(Agent.OS)" | "2019.3" | test_build | **/*.gradle | gradle.properties'
-          restoreKeys: |
-            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle | gradle.properties
-            "$(Agent.OS)" | "2019.3" | test_build | **/*.gradle
-            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle
-            "$(Agent.OS)" | "2019.3" | test_build
-            "$(Agent.OS)" | "2019.3"
-          path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle cache
-
-      - task: Gradle@2
-        displayName: Gradle compile
-        inputs:
-          jdkVersionOption: 1.8
-          options: '--info -PideaVersion=2019.3'
-          tasks: clean :plugin:compileJava
-
-      - task: Gradle@2
-        displayName: Stop Gradle Daemon # for correct cache extraction
-        inputs:
-          jdkVersionOption: 1.8
-          options: --stop
+#  - job: test_build # check compilation for newest IDEA
+#    pool:
+#      vmImage: 'ubuntu-18.04'
+#    variables:
+#      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+#    steps:
+#      - task: CmdLine@1
+#        displayName: Run printenv
+#        inputs:
+#          filename: printenv
+#
+#      - task: Cache@2
+#        inputs:
+#          # Test build is allowed to reuse cache from the main one, but not the other way around.
+#          key: '"$(Agent.OS)" | "2019.3" | test_build | **/*.gradle | gradle.properties'
+#          restoreKeys: |
+#            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle | gradle.properties
+#            "$(Agent.OS)" | "2019.3" | test_build | **/*.gradle
+#            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle
+#            "$(Agent.OS)" | "2019.3" | test_build
+#            "$(Agent.OS)" | "2019.3"
+#          path: $(GRADLE_USER_HOME)/caches/modules-2
+#        displayName: Gradle cache
+#
+#      - task: Gradle@2
+#        displayName: Gradle compile
+#        inputs:
+#          jdkVersionOption: 1.8
+#          options: '--info -PideaVersion=2019.3'
+#          tasks: clean :plugin:compileJava
+#
+#      - task: Gradle@2
+#        displayName: Stop Gradle Daemon # for correct cache extraction
+#        inputs:
+#          jdkVersionOption: 1.8
+#          options: --stop
