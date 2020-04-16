@@ -15,14 +15,6 @@ jobs:
       vmImage: $(imageName)
     variables:
       GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
-      MSVSTS_INTELLIJ_RUN_L2_TESTS: true
-      MSVSTS_INTELLIJ_TF_EXE: $(Build.SourcesDirectory)/.azure/.installed/tfs-clc/TEE-CLC-14.134.0/$(tfClcScriptName)
-      MSVSTS_INTELLIJ_VSO_GIT_REPO_URL: $(INTELLIJ_VSO_GIT_REPO_URL)
-      MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL: $(INTELLIJ_VSO_LEGACY_GIT_REPO_URL)
-      MSVSTS_INTELLIJ_VSO_PASS: $(INTELLIJ_VSO_PASS)
-      MSVSTS_INTELLIJ_VSO_SERVER_URL: $(INTELLIJ_VSO_SERVER_URL)
-      MSVSTS_INTELLIJ_VSO_TEAM_PROJECT: $(INTELLIJ_VSO_TEAM_PROJECT)
-      MSVSTS_INTELLIJ_VSO_USER: $(INTELLIJ_VSO_USER)
     steps:
       - task: CmdLine@1
         displayName: Run printenv
@@ -60,6 +52,15 @@ jobs:
           jdkVersionOption: 1.8
           options: '--info'
           tasks: L2test:test
+        env:
+          MSVSTS_INTELLIJ_RUN_L2_TESTS: true
+          MSVSTS_INTELLIJ_TF_EXE: $(Build.SourcesDirectory)/.azure/.installed/tfs-clc/TEE-CLC-14.134.0/$(tfClcScriptName)
+          MSVSTS_INTELLIJ_VSO_GIT_REPO_URL: $(INTELLIJ_VSO_GIT_REPO_URL)
+          MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL: $(INTELLIJ_VSO_LEGACY_GIT_REPO_URL)
+          MSVSTS_INTELLIJ_VSO_PASS: $(INTELLIJ_VSO_PASS)
+          MSVSTS_INTELLIJ_VSO_SERVER_URL: $(INTELLIJ_VSO_SERVER_URL)
+          MSVSTS_INTELLIJ_VSO_TEAM_PROJECT: $(INTELLIJ_VSO_TEAM_PROJECT)
+          MSVSTS_INTELLIJ_VSO_USER: $(INTELLIJ_VSO_USER)
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)"
