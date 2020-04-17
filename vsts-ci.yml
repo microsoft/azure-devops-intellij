@@ -59,6 +59,7 @@ jobs:
 
       - task: Gradle@2
         displayName: Run integration tests
+        condition: eq(variables['System.PullRequest.IsFork'], false)
         inputs:
           jdkVersionOption: 1.8
           options: '--info'
@@ -89,14 +90,14 @@ jobs:
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish integration test reports"
-        condition: always()
+        condition: eq(variables['System.PullRequest.IsFork'], false)
         inputs:
           path: 'L2Tests/build/reports'
           artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-reports'
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish integration test logs"
-        condition: always()
+        condition: eq(variables['System.PullRequest.IsFork'], false)
         inputs:
           path: 'L2Tests/build/idea-sandbox/system-test/testlog'
           artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-logs'
