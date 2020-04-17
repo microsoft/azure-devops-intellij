@@ -198,9 +198,9 @@ configure(mainProjects) {
         priorityTestCompile group: 'junit', name: 'junit', version: '4.12'
 
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
-        testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.3'
-        testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.3'
-        testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.6.3'
+        testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.7.1'
+        testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.7.1'
+        testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.7.1'
         testCompile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     }
 
