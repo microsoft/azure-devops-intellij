@@ -46,6 +46,11 @@ jobs:
       - pwsh: ./.azure/install-tfs-clc.ps1
         displayName: Install TFS command-line client for tests
 
+      - pwsh: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+        displayName: Git setup
+
       - task: Gradle@2
         displayName: Run integration tests
         inputs:
