@@ -172,6 +172,8 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
             public boolean value(Project project) {
                 VirtualFile baseDir = project.getBaseDir();
                 System.out.println("Found project for directory " + directory);
+                System.out.println("virtualToIoFile result: " + VfsUtilCore.virtualToIoFile(baseDir));
+                System.out.println("filesEqual result: " + FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory));
                 return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
             }
         });
