@@ -34,6 +34,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -152,7 +153,8 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
             }
         }
 
-        Project newProject = findProjectByBaseDirLocation(directory);
+        Project newProject = Objects.requireNonNull(findProjectByBaseDirLocation(directory));
+        System.out.println("Found project: " + newProject);
         newProjectFuture.complete(newProject);
     }
 
@@ -164,10 +166,12 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
 
     @Nullable
     Project findProjectByBaseDirLocation(@NotNull final File directory) {
+        System.out.println("Searching for project in directory " + directory);
         return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), new Condition<Project>() {
             @Override
             public boolean value(Project project) {
                 VirtualFile baseDir = project.getBaseDir();
+                System.out.println("Found project for directory " + directory);
                 return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
             }
         });
