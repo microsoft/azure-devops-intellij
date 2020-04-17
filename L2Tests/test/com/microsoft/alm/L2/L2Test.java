@@ -433,7 +433,7 @@ public abstract class L2Test extends UsefulTestCase {
             throws IOException {
         final File temp;
 
-        temp = File.createTempFile("temp", Long.toString(System.nanoTime()));
+        temp = File.createTempFile("temp", Long.toString(System.nanoTime())).getCanonicalFile();
 
         if (!temp.delete()) {
             throw new IOException("Could not delete temp file: " + temp.getAbsolutePath());
