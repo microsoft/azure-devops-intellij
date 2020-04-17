@@ -44,7 +44,7 @@ jobs:
         displayName: TFS client artifact cache
 
       - pwsh: ./.azure/install-tfs-clc.ps1
-        displayName: Install TFS command-line client for tests
+        displayName: TFS client setup
 
       - pwsh: |
           git config --global user.email "test@example.com"
