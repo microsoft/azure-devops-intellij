@@ -12,7 +12,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
@@ -34,6 +33,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 public class L2GitUtil {
     public static final String COMMIT_MESSAGE = "test commit";
@@ -146,7 +146,7 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
             }
         }
 
-        newProject = findProjectByBaseDirLocation(directory);
+        newProject = Objects.requireNonNull(findProjectByBaseDirLocation(directory));
     }
 
     public void checkoutCompleted() {
@@ -156,13 +156,10 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
     }
 
     @Nullable
-    Project findProjectByBaseDirLocation(@NotNull final File directory) {
-        return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), new Condition<Project>() {
-            @Override
-            public boolean value(Project project) {
-                VirtualFile baseDir = project.getBaseDir();
-                return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
-            }
+    Project findProjectByBaseDirLocation(@NotNull File directory) {
+        return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), project -> {
+            VirtualFile baseDir = project.getBaseDir();
+            return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
         });
     }
 
