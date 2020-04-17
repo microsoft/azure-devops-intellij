@@ -70,18 +70,25 @@ jobs:
           artifact: '$(build.buildNumber)'
 
 #      - task: PublishPipelineArtifact@1
-#        displayName: "Publish Artifact: $(build.buildNumber)-test-reports"
+#        displayName: "Publish unit test reports"
 #        condition: always()
 #        inputs:
 #          path: 'plugin/build/reports'
 #          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
 
       - task: PublishPipelineArtifact@1
-        displayName: "Publish Artifact: $(build.buildNumber)-integration-test-reports"
+        displayName: "Publish integration test reports"
         condition: always()
         inputs:
           path: 'L2Tests/build/reports'
           artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-reports'
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish integration test logs"
+        condition: always()
+        inputs:
+          path: 'L2Tests/build/idea-sandbox/system-test/testlog'
+          artifact: '$(build.buildNumber).$(Agent.OS)-integration-test-logs'
 
       - task: Gradle@2
         displayName: Stop Gradle Daemon # for correct cache extraction
