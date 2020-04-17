@@ -40,7 +40,7 @@ jobs:
       - task: Cache@2
         inputs:
           key: '.azure/install-tfs-clc.ps1'
-          path: .azure/caches
+          path: .azure/.download-cache
         displayName: TFS client artifact cache
 
       - pwsh: ./.azure/install-tfs-clc.ps1
