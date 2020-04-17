@@ -43,6 +43,13 @@ jobs:
 #          options: '--info'
 #          tasks: build zip
 
+#      - task: PublishPipelineArtifact@1
+#        displayName: "Publish unit test reports"
+#        condition: always()
+#        inputs:
+#          path: 'plugin/build/reports'
+#          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
+
       - task: Cache@2
         inputs:
           key: '.azure/install-tfs-clc.ps1'
@@ -80,13 +87,6 @@ jobs:
         inputs:
           path: 'plugin/build/distributions'
           artifact: '$(build.buildNumber)'
-
-#      - task: PublishPipelineArtifact@1
-#        displayName: "Publish unit test reports"
-#        condition: always()
-#        inputs:
-#          path: 'plugin/build/reports'
-#          artifact: '$(build.buildNumber).$(Agent.OS)-test-reports'
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish integration test reports"
