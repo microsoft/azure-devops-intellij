@@ -34,6 +34,8 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public class L2GitUtil {
     public static final String COMMIT_MESSAGE = "test commit";
@@ -73,8 +75,12 @@ public class L2GitUtil {
      * @param teamProject
      * @return
      */
-    public static Project cloneRepo(final Project project, final File baseDirectory, final Git myGit, final String gitRepoUrl,
-                                    final String teamProject) {
+    public static CompletionStage<Project> cloneRepo(
+            Project project,
+            File baseDirectory,
+            Git myGit,
+            String gitRepoUrl,
+            String teamProject) {
         final CustomCheckoutListener customListener = new CustomCheckoutListener(project);
         final VirtualFile virtualBaseDirectory = LocalFileSystem.getInstance().findFileByIoFile(baseDirectory);
 
@@ -100,7 +106,7 @@ public class L2GitUtil {
             }
         });
 
-        return customListener.getNewProject();
+        return customListener.getNewProjectAsync();
     }
 }
 
@@ -112,7 +118,7 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
     private boolean myFoundProject = false;
     private File myFirstDirectory;
     private VcsKey myVcsKey;
-    private Project newProject;
+    private final CompletableFuture<Project> newProjectFuture = new CompletableFuture<>();
 
     public CustomCheckoutListener(final Project project) {
         this.myProject = project;
@@ -146,7 +152,8 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
             }
         }
 
-        newProject = findProjectByBaseDirLocation(directory);
+        Project newProject = findProjectByBaseDirLocation(directory);
+        newProjectFuture.complete(newProject);
     }
 
     public void checkoutCompleted() {
@@ -166,7 +173,7 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
         });
     }
 
-    public Project getNewProject() {
-        return newProject;
+    public CompletionStage<Project> getNewProjectAsync() {
+        return newProjectFuture;
     }
 }

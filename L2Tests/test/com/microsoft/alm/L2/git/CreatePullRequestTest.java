@@ -58,7 +58,8 @@ public class CreatePullRequestTest extends L2Test {
         Debug.println("prDescription", prDescription);
 
         // clone repo and checkout branch
-        final Project currentProject = L2GitUtil.cloneRepo(myProject, tempFolder, myGit, getRepoUrl(), getTeamProject());
+        final Project currentProject = L2GitUtil.cloneRepo(myProject, tempFolder, myGit, getRepoUrl(), getTeamProject())
+                .toCompletableFuture().get(30L, TimeUnit.SECONDS);
         final VirtualFile baseDirectory = LocalFileSystem.getInstance().findFileByIoFile(new File(tempFolder, getTeamProject()));
         Assert.assertTrue(baseDirectory.exists());
         final git4idea.repo.GitRepository repository

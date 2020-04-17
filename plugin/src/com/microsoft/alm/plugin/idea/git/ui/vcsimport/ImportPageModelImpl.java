@@ -56,6 +56,7 @@ import git4idea.repo.GitRepositoryManager;
 import git4idea.util.GitFileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * This class is provided as a base for the VSO and TFS import page models. It provides the majority of the
@@ -195,6 +198,11 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
     @Override
     public void importIntoRepository() {
+        importIntoRepositoryAsync();
+    }
+
+    @Nullable
+    public CompletionStage<Void> importIntoRepositoryAsync() {
         final ModelValidationInfo validationInfo = validate();
         if (validationInfo == null) {
             final ServerContext selectedContext = getSelectedContext();
@@ -205,11 +213,14 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
             //prepare for import
             final Project project = getParentModel().getProject();
 
-            doImport(project, context, getRepositoryName());
+            return doImport(project, context, getRepositoryName());
         }
+
+        return null;
     }
 
-    private void doImport(final Project project, final ServerContext context, final String repositoryName) {
+    private CompletionStage<Void> doImport(final Project project, final ServerContext context, final String repositoryName) {
+        CompletableFuture<Void> importResult = new CompletableFuture<>();
         new Task.Backgroundable(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_IMPORTING_PROJECT), true, PerformInBackgroundOption.DEAF) {
             @Override
             public void run(@NotNull final ProgressIndicator indicator) {
@@ -266,13 +277,13 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
 
                     //all steps completed successfully
                     remoteUrlForDisplay = remoteRepository.getRemoteUrl();
-
+                    importResult.complete(null);
                 } catch (Throwable unexpectedError) {
                     remoteUrlForDisplay = "";
                     logger.error("doImport: Unexpected error during import");
                     logger.warn("doImport", unexpectedError);
                     notifyImportError(project, TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ERRORS_UNEXPECTED, unexpectedError.getLocalizedMessage()));
-
+                    importResult.completeExceptionally(unexpectedError);
                 } finally {
                     if (StringUtils.isNotEmpty(remoteUrlForDisplay)) {
                         // Notify the user that we are done and provide a link to the repo
@@ -282,9 +293,9 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                     }
                 }
             }
-
         }.queue();
 
+        return importResult;
     }
 
     private GitRepository getRepositoryForProject(final Project project) {
