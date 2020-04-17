@@ -84,6 +84,7 @@ import static org.mockito.Mockito.when;
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
 public abstract class L2Test extends UsefulTestCase {
+    protected static final String ENV_VSO_WORKSPACE_SUFFIX = "MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX";
     static {
         Logger.setFactory(TestLoggerFactory.class);
     }

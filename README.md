@@ -94,14 +94,15 @@ Here are the steps to setup your environment:
    * tasks: `cleanTest test`
    * arguments: `--tests *`
 2. Second setup the environment variables that provide the connection information for the tests. If this information is missing the tests will fail with a message that describes the missing information. The values below are examples but you will have to fix them.
-   * MSVSTS_INTELLIJ_RUN_L2_TESTS=true
-   * MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd
-   * MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://organization.visualstudio.com/projectName/_git/repoName
-   * MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://organization.visualstudio.com/defaultcollection/_git/projectName
-   * MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage
-   * MSVSTS_INTELLIJ_VSO_SERVER_URL=https://organization.visualstudio.com (make sure no trailing slash here)
-   * MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName
-   * MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser
+   * `MSVSTS_INTELLIJ_RUN_L2_TESTS=true`
+   * `MSVSTS_INTELLIJ_TF_EXE=d:\bin\TEE-CLC-14.0.4\tf.cmd`
+   * `MSVSTS_INTELLIJ_VSO_GIT_REPO_URL=https://organization.visualstudio.com/projectName/_git/repoName`
+   * `MSVSTS_INTELLIJ_VSO_LEGACY_GIT_REPO_URL=https://organization.visualstudio.com/defaultcollection/_git/projectName`
+   * `MSVSTS_INTELLIJ_VSO_PASS=PersonalAccessTokenGeneratedFromTheUserSecurityPage`
+   * `MSVSTS_INTELLIJ_VSO_SERVER_URL=https://organization.visualstudio.com` (make sure no trailing slash here)
+   * `MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName`
+   * `MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser`
+   * `MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX=""`: you may leave it empty; if not empty, it will be used as a suffix for workspace name in TFVC tests; introduced for simultaneous test execution on agents
    
    _Note_: Do not use https://dev.azure.com/account/ addresses in these environment variables, make sure to use https://account.visualstudio.com/
 

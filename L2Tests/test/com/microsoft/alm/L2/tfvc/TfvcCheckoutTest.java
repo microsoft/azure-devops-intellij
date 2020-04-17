@@ -21,8 +21,6 @@ import sun.security.util.Debug;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.ExecutionException;
 
 public class TfvcCheckoutTest extends L2Test {
 
@@ -30,8 +28,22 @@ public class TfvcCheckoutTest extends L2Test {
     public static final String TFVC_FOLDER_WIN = "$tf";
     public static final String README_FILE = "readme.txt";
 
+    private String getWorkspaceName() {
+        String teamProject = getTeamProject();
+        String suffix = System.getenv(ENV_VSO_WORKSPACE_SUFFIX);
+        if (suffix == null)
+            return teamProject;
+
+        return teamProject + "." + suffix;
+    }
+
+    private void deleteWorkspaceIfExists(ServerContext context, String workspaceName) {
+        DeleteWorkspaceCommand deleteWorkspaceCommand = new DeleteWorkspaceCommand(context, workspaceName);
+        deleteWorkspaceCommand.runSynchronously();
+    }
+
     @Test(timeout = 60000)
-    public void testCheckout_VSO() throws InterruptedException, NoSuchAlgorithmException, IOException, ExecutionException {
+    public void testCheckout_VSO() throws InterruptedException, IOException {
         final SettableFuture<Boolean> checkoutCompleted = SettableFuture.create();
         CheckoutModel checkoutModel = new CheckoutModel(ProjectManager.getInstance().getDefaultProject(), new CheckoutProvider.Listener() {
             @Override
@@ -46,7 +58,10 @@ public class TfvcCheckoutTest extends L2Test {
 
         // Create a temp folder for the clone
         File tempFolder = createTempDirectory();
-        Debug.println("tempFolder=" + tempFolder, null);
+        Debug.println("tempFolder", tempFolder.toString());
+
+        String workspaceName = getWorkspaceName();
+        Debug.println("workspaceName", workspaceName);
 
         // Create the model and set fields appropriately
         VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();
@@ -54,7 +69,6 @@ public class TfvcCheckoutTest extends L2Test {
         model.setServerName(getServerUrl());
         model.setUserName(getUser());
         model.setParentDirectory(tempFolder.getPath());
-        model.setDirectoryName(getTeamProject());
 
         // loadRepositories should now load just the repos for this account
         model.loadRepositories();
@@ -76,26 +90,29 @@ public class TfvcCheckoutTest extends L2Test {
         Assert.assertTrue(index >= 0);
         // select it
         model.getTableSelectionModel().setSelectionInterval(index, index);
+        model.setDirectoryName(workspaceName);
 
-        // Delete any existing workspace with the same name
-        DeleteWorkspaceCommand deleteWorkspaceCommand = new DeleteWorkspaceCommand(model.getSelectedContext(), model.getDirectoryName());
-        deleteWorkspaceCommand.runSynchronously();
+        deleteWorkspaceIfExists(model.getSelectedContext(), workspaceName);
 
-        // clone it
-        // Everything happens synchronously, so no need to worry
-        model.cloneSelectedRepo();
+        try {
+            // clone it
+            // Everything happens synchronously, so no need to worry
+            model.cloneSelectedRepo();
 
-        // verify that it got cloned
-        File tfvcFolder = new File(tempFolder, Path.combine(getTeamProject(), TFVC_FOLDER));
-        File tfvcFolderWin = new File(tempFolder, Path.combine(getTeamProject(), TFVC_FOLDER_WIN));
-        Assert.assertTrue(tfvcFolder.exists() || tfvcFolderWin.exists());
+            // verify that it got cloned
+            File tfvcFolder = new File(tempFolder, Path.combine(workspaceName, TFVC_FOLDER));
+            File tfvcFolderWin = new File(tempFolder, Path.combine(workspaceName, TFVC_FOLDER_WIN));
+            Assert.assertTrue(tfvcFolder.exists() || tfvcFolderWin.exists());
 
-        // verify that the readme was downloaded
-        File readme = new File(tempFolder, Path.combine(getTeamProject(), README_FILE));
-        Assert.assertTrue(readme.exists());
+            // verify that the readme was downloaded
+            File readme = new File(tempFolder, Path.combine(workspaceName, README_FILE));
+            Assert.assertTrue(readme.exists());
 
-        // Clean up the folder now that the test has passed
-        // TODO: this delete seems to be failing
-        tempFolder.delete();
+            // Clean up the folder now that the test has passed
+            tempFolder.delete();
+        } finally {
+            // Clean up the workspace
+            deleteWorkspaceIfExists(model.getSelectedContext(), workspaceName);
+        }
     }
 }
