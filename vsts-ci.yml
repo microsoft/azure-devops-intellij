@@ -30,6 +30,12 @@ jobs:
           path: $(GRADLE_USER_HOME)/caches/modules-2
         displayName: Gradle cache
 
+      - task: Cache@2
+        inputs:
+          key: 'client/backend/tfs-sdk/build.gradle'
+          path: client/backend/tfs-sdk/build/*.zip
+        displayName: TFS SDK artifact cache
+
 #      - task: Gradle@2
 #        displayName: Gradle build
 #        inputs:
@@ -124,7 +130,11 @@ jobs:
 #            "$(Agent.OS)" | "2019.3"
 #          path: $(GRADLE_USER_HOME)/caches/modules-2
 #        displayName: Gradle cache
-#
+#      - task: Cache@2
+#        inputs:
+#          key: 'client/backend/tfs-sdk/build.gradle'
+#          path: client/backend/tfs-sdk/build/*.zip
+#        displayName: TFS SDK artifact cache
 #      - task: Gradle@2
 #        displayName: Gradle compile
 #        inputs:
