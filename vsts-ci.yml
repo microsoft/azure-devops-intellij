@@ -2,12 +2,12 @@ jobs:
   - job: production_build
     strategy:
       matrix:
-#        linux:
-#          imageName: 'ubuntu-18.04'
-#          tfClcScriptName: 'tf'
-#        macOS:
-#          imageName: 'macOS-10.15'
-#          tfClcScriptName: 'tf'
+        linux:
+          imageName: 'ubuntu-18.04'
+          tfClcScriptName: 'tf'
+        macOS:
+          imageName: 'macOS-10.15'
+          tfClcScriptName: 'tf'
         windows:
           imageName: 'windows-2019'
           tfClcScriptName: 'tf.cmd'
