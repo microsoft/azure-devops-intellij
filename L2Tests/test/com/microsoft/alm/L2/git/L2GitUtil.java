@@ -12,7 +12,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
@@ -165,17 +164,10 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
     }
 
     @Nullable
-    Project findProjectByBaseDirLocation(@NotNull final File directory) {
-        System.out.println("Searching for project in directory " + directory);
-        return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), new Condition<Project>() {
-            @Override
-            public boolean value(Project project) {
-                VirtualFile baseDir = project.getBaseDir();
-                System.out.println("Found project for directory " + directory);
-                System.out.println("virtualToIoFile result: " + VfsUtilCore.virtualToIoFile(baseDir));
-                System.out.println("filesEqual result: " + FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory));
-                return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
-            }
+    Project findProjectByBaseDirLocation(@NotNull File directory) {
+        return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), project -> {
+            VirtualFile baseDir = project.getBaseDir();
+            return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
         });
     }
 
