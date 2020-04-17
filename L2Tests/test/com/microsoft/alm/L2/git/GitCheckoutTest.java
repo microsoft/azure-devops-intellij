@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutionException;
 public class GitCheckoutTest extends L2Test {
 
     public static final String GIT_FOLDER = ".git";
-    public static final String README_FILE = "readme.md";
+    public static final String README_FILE = "README.md";
 
 
     @Test(timeout = 60000)
