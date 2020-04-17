@@ -33,7 +33,7 @@ jobs:
       - task: Cache@2
         inputs:
           key: 'client/backend/tfs-sdk/build.gradle'
-          path: client/backend/tfs-sdk/build/*.zip
+          path: client/backend/tfs-sdk/build/cache
         displayName: TFS SDK artifact cache
 
 #      - task: Gradle@2
