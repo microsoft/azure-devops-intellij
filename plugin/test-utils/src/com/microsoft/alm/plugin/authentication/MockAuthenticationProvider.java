@@ -20,16 +20,25 @@ public class MockAuthenticationProvider extends VsoAuthenticationProvider {
         return authenticationInfoMap.get(serverUri);
     }
 
-    private final Map<String, Boolean> authenticatedMap = new HashMap<>();
-    public void setAuthenticated(String serverUrl, boolean authenticated) {
-        authenticatedMap.put(serverUrl, authenticated);
+    @Override
+    public void authenticateAsync(String serverUri, AuthenticationListener listener) {
+        // Note this doesn't perfectly emulate the real authentication process, but should work for tests.
+        for (Map.Entry<String, AuthenticationInfo> entry : authenticationInfoMap.entrySet()) {
+            String authenticatedUrl = entry.getKey();
+            if (serverUri.startsWith(authenticatedUrl)) {
+                listener.authenticated(entry.getValue(), null);
+                return;
+            }
+        }
+
+        super.authenticateAsync(serverUri, listener);
     }
 
     @Override
     public boolean isAuthenticated(String serverUri) {
-        if (!authenticatedMap.containsKey(serverUri))
+        if (!authenticationInfoMap.containsKey(serverUri))
             return super.isAuthenticated(serverUri);
 
-        return authenticatedMap.get(serverUri);
+        return authenticationInfoMap.get(serverUri) != null;
     }
 }
