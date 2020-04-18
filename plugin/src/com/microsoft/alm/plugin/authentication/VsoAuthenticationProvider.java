@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.authentication;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoCallback;
 import com.microsoft.alm.plugin.authentication.facades.AuthenticationInfoProvider;
 import com.microsoft.alm.plugin.authentication.facades.VsoAuthInfoProvider;
@@ -31,12 +32,8 @@ public class VsoAuthenticationProvider implements AuthenticationProvider {
     protected VsoAuthenticationProvider() {
     }
 
-    private static class Holder {
-        private static VsoAuthenticationProvider INSTANCE = new VsoAuthenticationProvider();
-    }
-
     public static VsoAuthenticationProvider getInstance() {
-        return Holder.INSTANCE;
+        return ServiceManager.getService(VsoAuthenticationProvider.class);
     }
 
     @Override

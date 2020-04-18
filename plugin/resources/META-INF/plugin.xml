@@ -96,6 +96,10 @@
         <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder" />
         <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient" />
         <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ReactiveTfvcClient" />
+
+        <applicationService serviceInterface="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"
+                            serviceImplementation="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"
+                            testServiceImplementation="com.microsoft.alm.plugin.authentication.MockAuthenticationProvider" />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

@@ -28,7 +28,7 @@ task wrapper(type: Wrapper) {
     distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }
 
-def mainProjects = [project(":L2Tests"), project(":plugin")]
+def mainProjects = [project(":L2Tests"), project(":plugin"), project(':plugin:test-utils')]
 
 /**
  * settings common to ALL projects (even the root level project)
@@ -114,6 +114,7 @@ project(":plugin") {
 
     dependencies {
         compile project(":client:connector")
+        testRuntime project(":plugin:test-utils")
     }
 
     version buildNumber
@@ -145,6 +146,12 @@ project(":plugin") {
     task zip(dependsOn: ['buildPlugin','test']) {}
 }
 
+project(':plugin:test-utils') {
+    dependencies {
+        compile project(':plugin')
+    }
+}
+
 project(":L2Tests") {
     apply plugin: 'org.jetbrains.intellij'
 
@@ -162,6 +169,7 @@ project(":L2Tests") {
         priorityTestCompile 'com.fasterxml.jackson.core:jackson-databind:2.4.1'
 
         compile project(':plugin')
+        testCompile project(':plugin:test-utils')
     }
 
     jar {
