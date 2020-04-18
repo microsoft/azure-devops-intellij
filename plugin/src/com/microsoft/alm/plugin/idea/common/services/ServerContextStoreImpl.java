@@ -27,6 +27,6 @@ public class ServerContextStoreImpl implements ServerContextStore {
 
     @Override
     public void saveServerContext(final ServerContext context) {
-        TeamServicesSecrets.save(context);
+        TeamServicesSecrets.getInstance().save(context);
     }
 }

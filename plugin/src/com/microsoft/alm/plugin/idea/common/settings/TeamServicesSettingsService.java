@@ -72,7 +72,7 @@ public class TeamServicesSettingsService implements PersistentStateComponent<Set
                 String key = null;
                 try {
                     key = ServerContext.getKey(contextState.uri);
-                    final AuthenticationInfo authenticationInfo = TeamServicesSecrets.load(key);
+                    final AuthenticationInfo authenticationInfo = TeamServicesSecrets.getInstance().load(key);
                     if (authenticationInfo != null) {
                         serverContexts.add(contextState.createBuilder()
                                 .authentication(authenticationInfo)

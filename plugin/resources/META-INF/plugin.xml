@@ -100,6 +100,9 @@
         <applicationService serviceInterface="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"
                             serviceImplementation="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"
                             testServiceImplementation="com.microsoft.alm.plugin.authentication.MockAuthenticationProvider" />
+        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets"
+                            serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets"
+                            testServiceImplementation="com.microsoft.alm.plugin.idea.common.settings.MockTeamServicesSecrets" />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

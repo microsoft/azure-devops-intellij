@@ -7,6 +7,7 @@ import com.intellij.credentialStore.CredentialAttributes;
 import com.intellij.credentialStore.Credentials;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.openapi.components.ServiceManager;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import org.apache.commons.lang.StringUtils;
@@ -18,11 +19,15 @@ import java.io.IOException;
 public class TeamServicesSecrets {
     private static final Logger logger = LoggerFactory.getLogger(TeamServicesSecrets.class);
 
+    public static TeamServicesSecrets getInstance() {
+        return ServiceManager.getService(TeamServicesSecrets.class);
+    }
+
     public static void forget(final String key) {
         forgetPassword(key);
     }
 
-    public static AuthenticationInfo load(final String key) throws IOException {
+    public AuthenticationInfo load(final String key) throws IOException {
         final String authInfoSerialized = readPassword(key);
 
         AuthenticationInfo info = null;
@@ -38,7 +43,7 @@ public class TeamServicesSecrets {
         return info;
     }
 
-    public static void save(final ServerContext context) {
+    public void save(final ServerContext context) {
         if (context == null) {
             return;
         }

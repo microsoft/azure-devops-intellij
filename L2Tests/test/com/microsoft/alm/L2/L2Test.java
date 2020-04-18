@@ -28,6 +28,7 @@ import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
+import com.microsoft.alm.plugin.idea.common.settings.MockTeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
@@ -78,7 +79,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SelectFilesDialog.class, VcsHelper.class, TeamServicesSecrets.class})
+@PrepareForTest({SelectFilesDialog.class, VcsHelper.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -169,7 +170,7 @@ public abstract class L2Test extends UsefulTestCase {
         Assert.assertFalse(String.format(message, "tfExe", "MSVSTS_INTELLIJ_TF_EXE"), StringUtils.isEmpty(tfExe));
     }
 
-    protected void initializeTfEnvironment() throws Exception {
+    protected void initializeTfEnvironment() {
         // Make sure that we can find the location of tf command line
         PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_TF_HOME, tfExe);
         AuthenticationInfo info = getAuthenticationInfo();
@@ -179,8 +180,9 @@ public abstract class L2Test extends UsefulTestCase {
                 (MockAuthenticationProvider) VsoAuthenticationProvider.getInstance();
         authenticationProvider.setAuthenticationInfo(serverUrl, info);
 
-        PowerMockito.mockStatic(TeamServicesSecrets.class);
-        when(TeamServicesSecrets.load(anyString())).thenReturn(info);
+        MockTeamServicesSecrets secrets = (MockTeamServicesSecrets) TeamServicesSecrets.getInstance();
+        secrets.forceUseAuthenticationInfo(info);
+        secrets.setIgnoreWrites(true);
     }
 
     protected void mockTeamServicesSettingsService() {
