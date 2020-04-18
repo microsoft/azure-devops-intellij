@@ -6,7 +6,7 @@ package com.microsoft.alm.plugin.idea.common.ui.checkout;
 import com.microsoft.alm.core.webapi.model.TeamProjectCollectionReference;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.IdeaLightweightTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.mocks.MockCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
@@ -16,19 +16,17 @@ import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockServerContext;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.io.File;
 import java.net.URI;
 import java.util.Observable;
 
-public class CheckoutPageModelTest extends IdeaAbstractTest {
+public class CheckoutPageModelTest extends IdeaLightweightTest {
     /**
      * This is just a really basic test of the constructor(s)
      * It checks all the variants of the constructor(s)
      * It checks the values of the properties right after construction
      */
-    @Test
     public void testConstructor() {
 
         // all combinations should succeed
@@ -46,7 +44,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that all setters on the page model notify the observer if and only if the value changes.
      */
-    @Test
     public void testObservable() {
         final CheckoutModel m = new CheckoutModel(null, null, new GitCheckoutModel());
         CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
@@ -152,7 +149,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that properties are validated and in the correct order
      */
-    @Test
     public void testValidate() {
         final CheckoutModel m = new CheckoutModel(null, null, new GitCheckoutModel());
         CheckoutPageModel pm = new MockCheckoutPageModel(m, ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
@@ -233,7 +229,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This checks that the columns in the table are correct for both VSO and TFS table models
      */
-    @Test
     public void testGetColumnName() {
         // First test the VSO columns
         CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
@@ -251,7 +246,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This is just a simple check to make sure that the gotoLink method handles null and empty string.
      */
-    @Test
     public void testGotoLink() {
         CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         pm.gotoLink(null);
@@ -261,7 +255,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the methods associated with errors behave correctly.
      */
-    @Test
     public void testErrors() {
         CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals(0, pm.getErrors().size());
@@ -305,7 +298,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      * This tests the behavior of the ServerName setter and getter.
      * By default the setter will actually change the value passed in if it is in a simplified form.
      */
-    @Test
     public void testServerName() {
         CheckoutPageModel pm = new MockCheckoutPageModel(new CheckoutModel(null, null, new GitCheckoutModel()), ServerContextTableModel.VSO_GIT_REPO_COLUMNS);
         Assert.assertEquals("", pm.getServerName());
@@ -324,7 +316,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the table model returns the expected values when in VSO page mode.
      */
-    @Test
     public void testTableModel_VSO() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";
@@ -363,7 +354,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the table model returns the expected values when in TFS page mode.
      */
-    @Test
     public void testTableModel_TFS() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";
@@ -401,7 +391,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the table model properly keeps track of selection.
      */
-    @Test
     public void testTableModel_selection() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";
@@ -451,7 +440,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the table model keeps the repos sorted by name as they are added.
      */
-    @Test
     public void testTableModel_initialSort() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";
@@ -493,7 +481,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that the table model responds correctly to the repository filter being changed.
      */
-    @Test
     public void testTableModel_filtering() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";
@@ -573,7 +560,6 @@ public class CheckoutPageModelTest extends IdeaAbstractTest {
      * This test makes sure that the table model responds correctly to the repository filter being set
      * before the rows are added.
      */
-    @Test
     public void testTableModel_filterFirst() {
         final String serverName = "http://server/tfs";
         final String collName = "collection1";

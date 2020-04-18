@@ -5,18 +5,16 @@ package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.IdeaLightweightTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import org.junit.Assert;
-import org.junit.Test;
 
-public class ImportModelTest extends IdeaAbstractTest {
+public class ImportModelTest extends IdeaLightweightTest {
 
     /**
      * Basic test of the constructors
      * It checks the values of properties are correctly initialized
      */
-    @Test
     public void testConstructor() {
         ImportModel model = new ImportModel(null);
         Assert.assertNotNull("Tfs import page model is not initialized",
@@ -28,7 +26,6 @@ public class ImportModelTest extends IdeaAbstractTest {
     /**
      * This test verifies all the setters on the import model notify the observers only if the value changes
      */
-    @Test
     public void testObservable() {
         // Precondition: no authentication info is saved for TFS, otherwise the model will become connected immediately
         // and won't generate the events properly.

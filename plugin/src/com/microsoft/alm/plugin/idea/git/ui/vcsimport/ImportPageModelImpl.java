@@ -101,7 +101,7 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
         // Set default repository name
         // We test this method and so we need to check to see if we are in IntelliJ
         // ApplicationManager is null if we are not in IntelliJ
-        if (ApplicationManager.getApplication() != null) {
+        if (ApplicationManager.getApplication() != null && !ApplicationManager.getApplication().isUnitTestMode()) {
             repositoryName = importModel.getProject().getName();
         }
     }

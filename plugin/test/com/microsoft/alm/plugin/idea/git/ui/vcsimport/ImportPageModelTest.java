@@ -4,7 +4,7 @@
 package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.IdeaLightweightTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.PageModel;
@@ -12,17 +12,15 @@ import com.microsoft.alm.plugin.idea.common.ui.common.helpers.ServerContextHelpe
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.mocks.MockImportPageModel;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.util.Observable;
 
-public class ImportPageModelTest extends IdeaAbstractTest {
+public class ImportPageModelTest extends IdeaLightweightTest {
 
     /**
      * Basic test for the constructors
      * It checks the values of properties are initialized correctly
      */
-    @Test
     public void testConstructor() {
         //VSO
         final ImportPageModel pageModelVso = new MockImportPageModel(null, false);
@@ -52,7 +50,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
 
     }
 
-    @Test
     public void testObservable() {
         final ImportModel model = new ImportModel(null);
         final MockObserver observerModel = new MockObserver(model);
@@ -161,7 +158,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies properties on the pageModel are validation in correct order
      */
-    @Test
     public void testValidate() {
         final ImportModel model = new ImportModel(null);
         final ImportPageModel pageModel = new MockImportPageModel(model, false);
@@ -215,7 +211,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * Verifies the goto link feature used for create an account in VSO handles null and empty strings
      */
-    @Test
     public void testGotoLink() {
         ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), false);
         pageModel.gotoLink(null);
@@ -225,7 +220,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies adding, getting and clearing errors on the page model
      */
-    @Test
     public void testErrors() {
         //verify no errors on new page model
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), false);
@@ -268,7 +262,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies the behavior of the server name getter and setter for Tfs
      */
-    @Test
     public void testTfsServerName() {
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), true); //tfs page model
         Assert.assertEquals("Server name on new page model is not empty", "", pageModel.getServerName());
@@ -286,7 +279,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies the table model returns expected values in VSO page mode
      */
-    @Test
     public void testVsoTableModel() {
         //initialize and verify number of columns
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), false);
@@ -322,7 +314,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies the table model returns expected values in TFS page mode
      */
-    @Test
     public void testTfsTableModel() {
         //initialize and verify number of columns
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), true);
@@ -354,7 +345,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
                 0, pageModel.getTableModel().getRowCount());
     }
 
-    @Test
     public void testTableModelSelection() {
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), false);
 
@@ -379,7 +369,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
                 ((MockImportPageModel) pageModel).getSelectedContext());
     }
 
-    @Test
     public void testTableModelFiltering() {
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), false);
 
@@ -425,7 +414,6 @@ public class ImportPageModelTest extends IdeaAbstractTest {
     /**
      * This test verifies the table model handles the case where repository filter is set before rows are added to the table
      */
-    @Test
     public void testTableModelFilterFirst() {
         final ImportPageModel pageModel = new MockImportPageModel(new ImportModel(null), true);
 

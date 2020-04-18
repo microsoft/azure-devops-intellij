@@ -5,20 +5,18 @@ package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.microsoft.alm.plugin.authentication.TfsAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.IdeaLightweightTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.mocks.MockObserver;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
-import org.junit.Test;
 
-public class CheckoutModelTest extends IdeaAbstractTest {
+public class CheckoutModelTest extends IdeaLightweightTest {
 
     /**
      * This is just a really basic test of the constructor(s)
      * It checks all the variants of the constructor(s)
      * It checks the values of the properties right after construction
      */
-    @Test
     public void testConstructor() {
         CheckoutModel cm = new CheckoutModel(null, null, new GitCheckoutModel());
         Assert.assertTrue(cm.getTfsModel() != null);
@@ -28,7 +26,6 @@ public class CheckoutModelTest extends IdeaAbstractTest {
     /**
      * This test makes sure that all setters on the page model notify the observer if and only if the value changes.
      */
-    @Test
     public void testObservable() {
         // Precondition: no authentication info is saved for TFS, otherwise the model will become connected immediately
         // and won't generate the events properly.
