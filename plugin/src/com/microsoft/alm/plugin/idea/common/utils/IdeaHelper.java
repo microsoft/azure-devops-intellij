@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.utils;
 
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.application.ModalityState;
@@ -138,17 +139,18 @@ public class IdeaHelper {
     }
 
     public static void runOnUIThread(final Runnable runnable, final boolean wait, final ModalityState modalityState) {
-        if (ApplicationManager.getApplication() != null && !ApplicationManager.getApplication().isDispatchThread()) {
+        Application application = ApplicationManager.getApplication();
+        if (application != null && !application.isDispatchThread() && !application.isUnitTestMode()) {
             if (wait) {
-                ApplicationManager.getApplication().invokeAndWait(runnable, modalityState);
+                application.invokeAndWait(runnable, modalityState);
                 // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransactionAndWait(runnable);
             } else {
-                ApplicationManager.getApplication().invokeLater(runnable, modalityState);
+                application.invokeLater(runnable, modalityState);
                 // TODO: use this instead after deprecating IDEA 15: TransactionGuard.getInstance().submitTransaction(runnable);
             }
         } else {
             // If we are already on the dispatch thread then we can run it here
-            // If we don't have an application then we are testing, just run the runnable here
+            // If we don't have an application or we are testing, just run the runnable here
             runnable.run();
         }
     }
