@@ -5,8 +5,10 @@ package com.microsoft.alm.plugin.idea.common.ui.checkout;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
@@ -48,7 +50,7 @@ import java.util.ResourceBundle;
 /**
  * This form is hosted by the CheckoutPageImpl.
  */
-public class CheckoutForm implements BasicForm {
+public class CheckoutForm implements BasicForm, Disposable {
     private JTextField repositoryFilter;
     private JTable repositoryTable;
     private JTextField directoryName;
@@ -79,7 +81,12 @@ public class CheckoutForm implements BasicForm {
         // DO NOT MOVE THIS CALL
         $$$setupUI$$$();
         userAccountPanel.setWindowsAccount(!vsoSelected);
+
+        Disposer.register(this, busySpinner);
     }
+
+    @Override
+    public void dispose() {}
 
     public JPanel getContentPanel() {
         ensureInitialized();

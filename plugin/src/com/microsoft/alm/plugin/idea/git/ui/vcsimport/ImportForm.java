@@ -3,9 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.vcsimport;
 
-
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.JBUI;
@@ -42,7 +43,7 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
-public class ImportForm implements BasicForm {
+public class ImportForm implements BasicForm, Disposable {
     private JPanel contentPanel;
     private UserAccountPanel userAccountPanel;
     private JTextField teamProjectFilter;
@@ -69,6 +70,7 @@ public class ImportForm implements BasicForm {
         // The following call is required to initialize the controls on the form
         // DO NOT MOVE THIS CALL
         $$$setupUI$$$();
+        Disposer.register(this, busySpinner);
         userAccountPanel.setWindowsAccount(!vsoSelected);
     }
 
@@ -76,6 +78,9 @@ public class ImportForm implements BasicForm {
         ensureInitialized();
         return contentPanel;
     }
+
+    @Override
+    public void dispose() {}
 
     private void ensureInitialized() {
         if (!initialized) {

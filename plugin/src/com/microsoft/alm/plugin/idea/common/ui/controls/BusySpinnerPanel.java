@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.common.ui.controls;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.ui.JBColor;
 
 import javax.swing.JPanel;
@@ -20,7 +21,7 @@ import java.awt.event.ActionListener;
  * You can start and stop the spinning with start() and stop().
  * You should stop the spinning if the control isn't visible.
  */
-public class BusySpinnerPanel extends JPanel {
+public class BusySpinnerPanel extends JPanel implements Disposable {
     private int rotationAngle = 0;
     private Timer timer;
 
@@ -53,6 +54,11 @@ public class BusySpinnerPanel extends JPanel {
         if (hide) {
             setVisible(false);
         }
+        timer.stop();
+    }
+
+    @Override
+    public void dispose() {
         timer.stop();
     }
 
