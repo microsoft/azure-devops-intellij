@@ -51,14 +51,10 @@ import git4idea.repo.GitRepositoryManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Rule;
+import org.junit.internal.runners.JUnit38ClassRunner;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import sun.security.ssl.Debug;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,10 +65,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-// PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
-// you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
-@PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
+@RunWith(JUnit38ClassRunner.class)
 public abstract class L2Test extends UsefulTestCase {
     protected static final String ENV_VSO_WORKSPACE_SUFFIX = "MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX";
     static {
@@ -81,6 +74,11 @@ public abstract class L2Test extends UsefulTestCase {
 
     @Rule
     public TestName name = new TestName();
+
+    public L2Test() {
+        // Set the name of the test in the base class
+        setName(name.getMethodName());
+    }
 
     // Context variables
     String serverUrl;
@@ -203,20 +201,6 @@ public abstract class L2Test extends UsefulTestCase {
         assertEquals(3, ServerContextManager.getInstance().getAllServerContexts().size());
     }
 
-    @Before
-    public void verifyEnvironment() {
-        if (!"true".equalsIgnoreCase(System.getenv("MSVSTS_INTELLIJ_RUN_L2_TESTS"))) {
-            Debug.println("***** SKIP ******", "Skipping this test because MSVSTS_INTELLIJ_RUN_L2_TESTS is not set to 'true'.");
-            Assume.assumeTrue(false);
-        }
-
-        // Load context info from the environment
-        loadContext();
-
-        // Set the name of the test in the base class
-        setName(name.getMethodName());
-    }
-
     /**
      * This method can be called by test methods to mock the JetBrains SelectFilesDialog so that it returns the files
      * passed in here.
@@ -237,6 +221,8 @@ public abstract class L2Test extends UsefulTestCase {
 
     @Override
     protected void setUp() throws Exception {
+        loadContext();
+
         super.setUp();
         enableDebugLogging();
 

@@ -10,11 +10,16 @@ import com.microsoft.alm.plugin.idea.tfvc.actions.ConfigureProxyAction;
 import com.microsoft.alm.plugin.idea.tfvc.ui.ProxySettingsDialog;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+@RunWith(PowerMockRunner.class)
 @PrepareForTest({ConfigureProxyAction.class})
+@PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
 public class TfvcConfigureProxySettingsTest extends L2Test {
 
     @Test(timeout = 60000)
