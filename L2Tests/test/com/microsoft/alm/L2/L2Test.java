@@ -8,10 +8,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsConfiguration;
-import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
-import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.EdtTestUtil;
@@ -33,6 +31,8 @@ import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
+import com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector;
+import com.microsoft.alm.plugin.idea.common.ui.common.MockFileSelector;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
@@ -55,8 +55,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -73,13 +71,10 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SelectFilesDialog.class, VcsHelper.class})
+@PrepareForTest({VcsHelper.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -233,19 +228,15 @@ public abstract class L2Test extends UsefulTestCase {
      * @param filesToSelect are the file you want the dialog to return for the test
      */
     protected void mockSelectFilesDialog(final List<File> filesToSelect) {
-        final SelectFilesDialog dialog = Mockito.mock(SelectFilesDialog.class);
-        PowerMockito.mockStatic(SelectFilesDialog.class);
-        when(SelectFilesDialog.init(Matchers.any(Project.class), anyList(), anyString(), Matchers.any(VcsShowConfirmationOption.class), anyBoolean(), anyBoolean(), anyBoolean()))
-                .thenReturn(dialog);
-
         final List<VirtualFile> virtualFiles = new ArrayList<VirtualFile>();
         for (File f : filesToSelect) {
             final VirtualFile vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
             Assert.assertNotNull(vf);
             virtualFiles.add(vf);
         }
-        when(dialog.getSelectedFiles()).thenReturn(virtualFiles);
-        when(dialog.isOK()).thenReturn(virtualFiles.size() > 0);
+
+        MockFileSelector fileSelector = (MockFileSelector) IdeaFileSelector.getInstance();
+        fileSelector.forceReturnSelectedFiles(virtualFiles);
     }
 
     @Override

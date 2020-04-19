@@ -17,7 +17,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.ui.SelectFilesDialog;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
@@ -34,6 +33,7 @@ import com.microsoft.alm.plugin.context.ServerContextBuilder;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.idea.common.resources.Icons;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector;
 import com.microsoft.alm.plugin.idea.common.ui.common.LoginPageModelImpl;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupListener;
@@ -41,7 +41,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupPageMod
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
-import git4idea.DialogManager;
 import git4idea.GitUtil;
 import git4idea.actions.GitInit;
 import git4idea.commands.Git;
@@ -402,23 +401,15 @@ public abstract class ImportPageModelImpl extends LoginPageModelImpl implements 
                 allFiles.addAll(untrackedFiles);
 
                 final List<VirtualFile> filesToCommit = new ArrayList<VirtualFile>();
-                IdeaHelper.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        final SelectFilesDialog dialog = SelectFilesDialog.init(project,
-                                allFiles,
-                                TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SELECT_FILES),
-                                VcsShowConfirmationOption.STATIC_SHOW_CONFIRMATION,
-                                true,
-                                false,
-                                false);
-                        dialog.setTitle(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SELECT_FILES_DIALOG_TITLE));
-                        DialogManager.show(dialog);
-                        if (dialog.isOK()) {
-                            //add files only if user clicked OK on the SelectFilesDialog
-                            filesToCommit.addAll(dialog.getSelectedFiles());
-                        }
-                    }
+                IdeaHelper.runOnUIThread(() -> {
+                    Collection<VirtualFile> selectedFiles = IdeaFileSelector.getInstance().selectFiles(
+                            project,
+                            allFiles,
+                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SELECT_FILES),
+                            VcsShowConfirmationOption.STATIC_SHOW_CONFIRMATION,
+                            TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_SELECT_FILES_DIALOG_TITLE));
+                    if (selectedFiles != null)
+                        filesToCommit.addAll(selectedFiles);
                 }, true, indicator.getModalityState());
 
                 indicator.setText(TfPluginBundle.message(TfPluginBundle.KEY_IMPORT_ADDING_FILES, project.getName()));

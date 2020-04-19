@@ -147,8 +147,14 @@ project(":plugin") {
 }
 
 project(':plugin:test-utils') {
+    apply plugin: 'org.jetbrains.intellij'
+
     dependencies {
         compile project(':plugin')
+    }
+
+    intellij {
+        version = ideaVersion
     }
 }
 

@@ -103,6 +103,9 @@
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets"
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets"
                             testServiceImplementation="com.microsoft.alm.plugin.idea.common.settings.MockTeamServicesSecrets" />
+        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector"
+                            serviceImplementation="com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector"
+                            testServiceImplementation="com.microsoft.alm.plugin.idea.common.ui.common.MockFileSelector" />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
