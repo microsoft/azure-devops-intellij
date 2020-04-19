@@ -106,6 +106,9 @@
         <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector"
                             serviceImplementation="com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector"
                             testServiceImplementation="com.microsoft.alm.plugin.idea.common.ui.common.MockFileSelector" />
+        <applicationService serviceInterface="com.microsoft.alm.plugin.context.RepositoryContextManager"
+                            serviceImplementation="com.microsoft.alm.plugin.context.RepositoryContextManager"
+                            testServiceImplementation="com.microsoft.alm.plugin.context.MockRepositoryContextManager" />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

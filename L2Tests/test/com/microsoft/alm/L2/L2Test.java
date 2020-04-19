@@ -22,7 +22,9 @@ import com.intellij.util.ThrowableRunnable;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.MockAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
+import com.microsoft.alm.plugin.context.MockRepositoryContextManager;
 import com.microsoft.alm.plugin.context.RepositoryContext;
+import com.microsoft.alm.plugin.context.RepositoryContextManager;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
@@ -33,7 +35,6 @@ import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService;
 import com.microsoft.alm.plugin.idea.common.ui.common.IdeaFileSelector;
 import com.microsoft.alm.plugin.idea.common.ui.common.MockFileSelector;
-import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.operations.OperationExecutor;
 import com.microsoft.alm.plugin.services.PluginServiceProvider;
@@ -55,9 +56,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import sun.security.ssl.Debug;
 
@@ -70,11 +69,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
-
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsHelper.class})
 // PowerMock and the javax.net.ssl.SSLContext class don't play well together. If you mock any static classes
 // you have to PowerMockIgnore("javax.net.ssl.*") to avoid exceptions being thrown by SSLContext
 @PowerMockIgnore({"javax.net.ssl.*", "javax.swing.*", "javax.security.*"})
@@ -141,9 +136,10 @@ public abstract class L2Test extends UsefulTestCase {
 
     public void mockRepositoryContextForProject(final String serverUriString) {
         URI serverUri = URI.create(serverUriString);
-        PowerMockito.mockStatic(VcsHelper.class);
-        when(VcsHelper.getRepositoryContext(any(Project.class)))
-                .thenReturn(RepositoryContext.createGitContext("/root/one", "repo1", "branch1", serverUri));
+        RepositoryContext mockContext = RepositoryContext.createGitContext("/root/one", "repo1", "branch1", serverUri);
+        MockRepositoryContextManager contextManager =
+                (MockRepositoryContextManager) RepositoryContextManager.getInstance();
+        contextManager.useContext(mockContext);
     }
 
     private void loadContext() {

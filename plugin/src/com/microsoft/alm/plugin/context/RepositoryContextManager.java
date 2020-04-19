@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.context;
 
+import com.intellij.openapi.components.ServiceManager;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +20,8 @@ public class RepositoryContextManager {
 
     private Map<String, RepositoryContext> contextMap = new HashMap<String, RepositoryContext>();
 
-    private static class Holder {
-        private static final RepositoryContextManager INSTANCE = new RepositoryContextManager();
-    }
-
-    /**
-     * The constructor is protected for tests.
-     */
-    protected RepositoryContextManager() {
-    }
-
     public static RepositoryContextManager getInstance() {
-        return Holder.INSTANCE;
+        return ServiceManager.getService(RepositoryContextManager.class);
     }
 
     public synchronized void add(final RepositoryContext context) {
