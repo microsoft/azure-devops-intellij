@@ -45,8 +45,8 @@ Once you've downloaded the dependencies, run the build by:
 5. Create a "Plugin" configuration to run/debug the code.
    * Run -> Edit Configurations... -> Add -> Gradle 
    * Provide a name for the configuration (e.g., IntelliJ for TFS)
-   * Set Gradle project to `plugin`
-   * Set Tasks to `runIde`
+   * Set Gradle project to `azure-devops-intellij`
+   * Set Tasks to `:plugin:runIde`
 
 6. Run the plugin by selecting Run -> Run <configuration you used above>.
 
