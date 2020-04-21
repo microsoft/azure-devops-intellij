@@ -39,6 +39,9 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
 
         client = collection.versionControlClient.also {
             it.pathWatcherFactory = pathWatcherFactory
+            it.eventEngine.addNonFatalErrorListener { event ->
+                logger.warn { event.message }
+            }
         }
     }
 
