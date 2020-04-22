@@ -81,9 +81,9 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
-    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<Void> =
+    fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<TfsDeleteResult> =
         queueFutureAsync { lt ->
-            collection.deleteFilesRecursively.start(paths).pipeToVoid(lt, this)
+            collection.deleteFilesRecursively.start(paths).pipeTo(lt, this)
         }
 
     fun undoLocalChangesAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<List<TfsLocalPath>> =

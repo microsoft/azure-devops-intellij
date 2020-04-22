@@ -13,13 +13,12 @@ import com.microsoft.tfs.core.clients.versioncontrol.GetItemsOptions
 import com.microsoft.tfs.core.clients.versioncontrol.GetOptions
 import com.microsoft.tfs.core.clients.versioncontrol.PendChangesOptions
 import com.microsoft.tfs.core.clients.versioncontrol.VersionControlClient
+import com.microsoft.tfs.core.clients.versioncontrol.events.NonFatalErrorListener
 import com.microsoft.tfs.core.clients.versioncontrol.events.UndonePendingChangeListener
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.*
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
 import com.microsoft.tfs.core.httpclient.Credentials
-import com.microsoft.tfs.model.host.TfsItemInfo
-import com.microsoft.tfs.model.host.TfsLocalPath
-import com.microsoft.tfs.model.host.TfsPath
+import com.microsoft.tfs.model.host.*
 import com.microsoft.tfs.sdk.isPathMapped
 import com.microsoft.tfs.sdk.tryGetWorkspace
 import com.microsoft.tfs.watcher.ExternallyControlledPathWatcherFactory
@@ -107,16 +106,34 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         pathWatcherFactory.pathsInvalidated.fire(paths.map { Paths.get(it.path) })
     }
 
-    fun deletePathsRecursively(paths: List<TfsPath>) {
+    fun deletePathsRecursively(paths: List<TfsPath>): TfsDeleteResult {
+        val eventEngine = client.eventEngine
+        val failedPaths = mutableListOf<TfsPath>()
         enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
-            workspace.pendDelete(
-                workspacePaths.mapToArray { it.toCanonicalPathString() },
-                RecursionType.FULL,
-                LockLevel.UNCHANGED,
-                GetOptions.NONE,
-                PendChangesOptions.NONE
-            )
+            val listener = NonFatalErrorListener { event ->
+                val path = event.failure.localItem?.let(::TfsLocalPath)
+                    ?: event.failure.serverItem?.let { TfsServerPath(workspace.serverURI.toString(), it) }
+                if (path == null)
+                    logger.warn { "Unknown event when processing delete: $event" }
+                else
+                    failedPaths.add(path)
+            }
+
+            eventEngine.addNonFatalErrorListener(listener)
+            try {
+                workspace.pendDelete(
+                    workspacePaths.mapToArray { it.toCanonicalPathString() },
+                    RecursionType.FULL,
+                    LockLevel.UNCHANGED,
+                    GetOptions.NONE,
+                    PendChangesOptions.NONE
+                )
+            } finally {
+                eventEngine.removeNonFatalErrorListener(listener)
+            }
         }
+
+        return if (failedPaths.isEmpty()) TfsDeleteSuccess() else TfsDeleteFailure(failedPaths)
     }
 
     fun undoLocalChanges(paths: List<TfsPath>): List<TfsLocalPath> {

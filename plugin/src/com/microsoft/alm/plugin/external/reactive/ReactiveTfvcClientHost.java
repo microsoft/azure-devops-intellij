@@ -29,6 +29,7 @@ import com.microsoft.tfs.connector.ReactiveClientConnection;
 import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
+import com.microsoft.tfs.model.connector.TfsDeleteResult;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
@@ -152,7 +153,7 @@ public class ReactiveTfvcClientHost {
     }
 
     @NotNull
-    public CompletionStage<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<TfsDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerIdentification serverIdentification,
             @NotNull List<TfsPath> paths) {
         return getReadyCollectionAsync(serverIdentification)
