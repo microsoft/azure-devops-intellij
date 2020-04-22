@@ -83,7 +83,7 @@ Those settings are already configured in the `com.microsoft.alm.plugin.idea.iml`
 
 Gradle build will fail if checkstyle plugin detects a violation.
 
-## Running Integration Tests (L2 tests)
+## Running Integration Tests (L2 tests and reactive client tests)
 
 Our Integration tests are in the L2Tests folder. In order to run them correctly, you have to set up the environment and have an Azure DevOps Services organization setup to run against.
 
@@ -109,6 +109,8 @@ Here are the steps to setup your environment:
 3. Other things to note:
    * You can toggle whether the tests will run or not simply by changing the MSVSTS_INTELLIJ_RUN_L2_TESTS environment variable.
    * The internal CI build will run these tests
+
+4. To run the reactive client integration tests, create a run configuration for `:client:backend:test` task, or use Gradle to run it. It uses the same environment variables as L2 tests.
 
 ## Learn More
 

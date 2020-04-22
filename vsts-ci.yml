@@ -40,7 +40,7 @@ jobs:
         inputs:
           jdkVersionOption: 1.8
           options: '--info'
-          tasks: L2test:cleanTest L2test:test
+          tasks: L2test:cleanTest L2test:test :client:backend:test
         env:
           MSVSTS_INTELLIJ_RUN_L2_TESTS: true
           MSVSTS_INTELLIJ_TF_EXE: $(Build.SourcesDirectory)/.azure/.installed/tfs-clc/TEE-CLC-14.134.0/$(tfClcScriptName)

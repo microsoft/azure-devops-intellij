@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
+import com.microsoft.tfs.model.connector.TfsDeleteFailure;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -90,7 +92,17 @@ public class ReactiveTfvcClient implements TfvcClient {
         return traceTime("Delete", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
-                    .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items));
+                    .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items))
+                    .thenAccept(result -> {
+                        if (result instanceof TfsDeleteFailure) {
+                            List<String> pathStrings = ((TfsDeleteFailure) result).getFailedPaths().stream()
+                                    .map(TfsPath::toString)
+                                    .collect(Collectors.toList());
+                            throw new RuntimeException(
+                                    "TFVC client weren't able to delete these items: "
+                                            + String.join(", ", pathStrings));
+                        }
+                    });
         });
     }
 

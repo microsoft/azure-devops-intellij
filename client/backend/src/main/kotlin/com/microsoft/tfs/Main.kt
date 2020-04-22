@@ -119,7 +119,7 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
     }
 
     collection.deleteFilesRecursively.set { paths ->
-        if (paths.isEmpty()) return@set
+        if (paths.isEmpty()) return@set TfsDeleteSuccess()
 
         logPaths("Recursive Delete", paths)
         client.deletePathsRecursively(paths)

@@ -10,6 +10,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile project("tfs-sdk")
     compile "com.jetbrains.rd:rd-framework:$rdGenVersion"
+
+    testImplementation 'junit:junit:4.12'
 }
 
 compileKotlin {
@@ -41,6 +43,8 @@ task docs(type: Copy, dependsOn: ["tfs-sdk:downloadArchive", "tfs-sdk:verifyArch
     }
     into docs
 }
+
+test.onlyIf { "true".equalsIgnoreCase(System.getenv("MSVSTS_INTELLIJ_RUN_L2_TESTS")) }
 
 distributions {
     main {

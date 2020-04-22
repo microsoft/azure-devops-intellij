@@ -69,6 +69,12 @@ object TfsModel : Root() {
         field("fileEncoding", string.nullable)
     }
 
+    private val TfsDeleteResult = basestruct {}
+    private val TfsDeleteSuccess = structdef extends TfsDeleteResult {}
+    private val TfsDeleteFailure = structdef extends TfsDeleteResult {
+        field("failedPaths", immutableList(TfsPath))
+    }
+
     private val TfsCollection = classdef {
         property("isReady", bool)
             .doc("Whether the client is ready to accept method calls")
@@ -85,7 +91,7 @@ object TfsModel : Root() {
         call("invalidatePaths", immutableList(TfsLocalPath), void)
             .doc("Invalidates the paths in the TFS cache")
 
-        call("deleteFilesRecursively", immutableList(TfsPath), void)
+        call("deleteFilesRecursively", immutableList(TfsPath), TfsDeleteResult)
             .doc("Scheduled deletion of the files")
 
         call("undoLocalChanges", immutableList(TfsPath), immutableList(TfsLocalPath))
