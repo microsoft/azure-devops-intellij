@@ -69,10 +69,10 @@ object TfsModel : Root() {
         field("fileEncoding", string.nullable)
     }
 
-    private val TfsDeleteResult = basestruct {}
-    private val TfsDeleteSuccess = structdef extends TfsDeleteResult {}
-    private val TfsDeleteFailure = structdef extends TfsDeleteResult {
-        field("failedPaths", immutableList(TfsPath))
+    private val TfsDeleteResult = structdef {
+        field("deletedPaths", immutableList(TfsLocalPath))
+        field("notFoundPaths", immutableList(TfsPath))
+        field("errorMessages", immutableList(string))
     }
 
     private val TfsCollection = classdef {

@@ -4,11 +4,15 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.google.common.collect.ImmutableList;
-import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.external.ToolRunner;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 public class DeleteCommandTest extends AbstractCommandTest {
@@ -53,10 +57,23 @@ public class DeleteCommandTest extends AbstractCommandTest {
     @Test
     public void testParseOutput_noErrors() {
         final DeleteCommand cmd = new DeleteCommand(context, filePaths, "workspaceName", true);
-        final List<String> output = cmd.parseOutput("/path/to:\nfile.txt\nfile2.txt\n\n/path/to/another:\nfile2.txt", "");
+        TfvcDeleteResult result = cmd.parseOutput("/path/to:\nfile.txt\nfile2.txt\n\n/path/to/another:\nfile2.txt", "");
+        List<Path> output = result.getDeletedPaths();
         Assert.assertEquals(3, output.size());
-        Assert.assertEquals(Path.combine("/path/to", "file.txt"), output.get(0));
-        Assert.assertEquals(Path.combine("/path/to", "file2.txt"), output.get(1));
-        Assert.assertEquals(Path.combine("/path/to/another", "file2.txt"), output.get(2));
+        Assert.assertEquals(Paths.get("/path/to", "file.txt"), output.get(0));
+        Assert.assertEquals(Paths.get("/path/to", "file2.txt"), output.get(1));
+        Assert.assertEquals(Paths.get("/path/to/another", "file2.txt"), output.get(2));
+    }
+
+    @Test
+    public void testParseOutput_FilesNotFound() {
+        final DeleteCommand cmd = new DeleteCommand(context, filePaths, "workspaceName", true);
+        TfvcDeleteResult result = cmd.parseOutput("", "No matching items found in /path/file.txt in your workspace, or you do not have permission to access them.\r\nNo arguments matched any files to delete.\r\n");
+
+        Assert.assertEquals(Collections.emptyList(), result.getDeletedPaths());
+        Assert.assertEquals(
+                Collections.singletonList(TfsFileUtil.createLocalPath("/path/file.txt")),
+                result.getNotFoundPaths());
+        Assert.assertEquals(Collections.emptyList(), result.getErrorMessages());
     }
 }

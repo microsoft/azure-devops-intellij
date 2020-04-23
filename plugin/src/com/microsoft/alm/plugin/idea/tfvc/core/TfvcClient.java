@@ -94,8 +94,7 @@ public interface TfvcClient {
     }
 
     /**
-     * Deletes the passed paths recursively using the TFS client. Will be finished with an exception if some paths
-     * weren't processed by the client successfully.
+     * Deletes the passed paths recursively using the TFS client.
      *
      * @param serverContext server context to authenticate.
      * @param items         items to delete.
@@ -103,20 +102,19 @@ public interface TfvcClient {
      * are done.
      */
     @NotNull
-    CompletionStage<Void> deleteFilesRecursivelyAsync(
+    CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
     /**
-     * Deletes the passed paths recursively using the TFS client. Will throw an exception if some paths weren't
-     * processed by the client successfully.
+     * Deletes the passed paths recursively using the TFS client.
      *
      * @param serverContext server context to authenticate.
      * @param items         items to delete.
      */
-    default void deleteFilesRecursively(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+    default TfvcDeleteResult deleteFilesRecursively(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
         try {
-            deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
+            return deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

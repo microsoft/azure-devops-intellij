@@ -30,6 +30,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,6 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -123,6 +125,10 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(TFVCUtil.isInvalidTFVCPath(eq(mockTFSVcs), any(FilePath.class))).thenReturn(false);
+        when(
+                CommandUtils.deleteFiles(
+                        any(ServerContext.class), anyListOf(String.class), any(String.class), any(Boolean.class)))
+                .thenReturn(new TfvcDeleteResult());
 
         FilePath mockFilePath = mock(FilePath.class);
         when(VersionControlPath.getFilePath(CURRENT_FILE_PATH, false)).thenReturn(mockFilePath);
@@ -384,7 +390,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDelete_FileRename() {
+    public void testDelete_FileRename() throws IOException {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
         when(mockPendingChange.getWorkspace()).thenReturn("testDelete_FileRename.workspace");
         when(mockPendingChange.isCandidate()).thenReturn(false);
@@ -414,7 +420,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDelete_FileRenameEdit() {
+    public void testDelete_FileRenameEdit() throws IOException {
         when(mockPendingChange.getSourceItem()).thenReturn("$/server/path/to/file.txt");
         when(mockPendingChange.getWorkspace()).thenReturn("testDelete_FileRenameEdit.workspace");
         when(mockPendingChange.isCandidate()).thenReturn(false);

@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
@@ -70,11 +71,10 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
-        deleteFilesRecursively(serverContext, items);
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(deleteFilesRecursively(serverContext, items));
     }
 
     @NotNull
@@ -87,29 +87,27 @@ public class ClassicTfvcClient implements TfvcClient {
             throw new RuntimeException("Unknown path type: " + path);
     }
 
-    @NotNull
-    private static String getPathItem(TfsPath path) {
-        if (path instanceof TfsLocalPath)
-            return ((TfsLocalPath) path).getPath();
-        else if (path instanceof TfsServerPath)
-            return ((TfsServerPath) path).getPath();
-        else
-            throw new RuntimeException("Unknown path type: " + path);
-    }
-
     @Override
-    public void deleteFilesRecursively(
+    @NotNull
+    public TfvcDeleteResult deleteFilesRecursively(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         Map<Optional<String>, List<TfsPath>> itemsByWorkspace = items.stream()
                 .collect(Collectors.groupingBy(ClassicTfvcClient::getWorkspace));
+        TfvcDeleteResult result = new TfvcDeleteResult();
         for (Map.Entry<Optional<String>, List<TfsPath>> workspaceItems : itemsByWorkspace.entrySet()) {
             Optional<String> workspace = workspaceItems.getKey();
             List<String> itemsInWorkspace = workspaceItems.getValue().stream()
-                    .map(ClassicTfvcClient::getPathItem)
+                    .map(TfsFileUtil::getPathItem)
                     .collect(Collectors.toList());
-            CommandUtils.deleteFiles(serverContext, itemsInWorkspace, workspace.orElse(null), true);
+            result = result.mergeWith(CommandUtils.deleteFiles(
+                    serverContext,
+                    itemsInWorkspace,
+                    workspace.orElse(null),
+                    true));
         }
+
+        return result;
     }
 
     @NotNull
@@ -123,7 +121,7 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @Override
     public List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
-        List<String> itemPaths = items.stream().map(ClassicTfvcClient::getPathItem).collect(Collectors.toList());
+        List<String> itemPaths = items.stream().map(TfsFileUtil::getPathItem).collect(Collectors.toList());
         List<String> undonePaths = CommandUtils.undoLocalFiles(serverContext, itemPaths);
         return undonePaths.stream().map(TfsLocalPath::new).collect(Collectors.toList());
     }

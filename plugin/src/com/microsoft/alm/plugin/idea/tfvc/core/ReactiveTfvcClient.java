@@ -10,7 +10,6 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
-import com.microsoft.tfs.model.connector.TfsDeleteFailure;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import org.jetbrains.annotations.NotNull;
@@ -86,22 +85,18 @@ public class ReactiveTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<Void> deleteFilesRecursivelyAsync(
+    public CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         return traceTime("Delete", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
                     .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items))
-                    .thenAccept(result -> {
-                        if (result instanceof TfsDeleteFailure) {
-                            List<String> pathStrings = ((TfsDeleteFailure) result).getFailedPaths().stream()
-                                    .map(TfsPath::toString)
-                                    .collect(Collectors.toList());
-                            throw new RuntimeException(
-                                    "TFVC client weren't able to delete these items: "
-                                            + String.join(", ", pathStrings));
-                        }
+                    .thenApply(result -> {
+                        List<Path> deletedPaths = result.getDeletedPaths().stream()
+                                .map(localPath -> Paths.get(localPath.getPath())).collect(Collectors.toList());
+
+                        return new TfvcDeleteResult(deletedPaths, result.getNotFoundPaths(), result.getErrorMessages());
                     });
         });
     }
