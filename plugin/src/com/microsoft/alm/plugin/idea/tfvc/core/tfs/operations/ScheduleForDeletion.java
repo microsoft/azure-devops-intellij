@@ -29,6 +29,7 @@ import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -154,8 +156,19 @@ public class ScheduleForDeletion {
                 } else {
                     workspace = StringUtils.EMPTY;
                 }
-                confirmedDeletedFiles.addAll(CommandUtils.deleteFiles(context,
-                        new ArrayList<String>(scheduleForDeletion), workspace, false));
+
+                TfvcDeleteResult deleteResult = CommandUtils.deleteFiles(
+                        context,
+                        new ArrayList<>(scheduleForDeletion),
+                        workspace,
+                        false);
+                deleteResult.throwIfErrorMessagesAreNotEmpty();
+                deleteResult.throwIfNotFoundPathsAreNotEmpty();
+
+                List<String> deletedPaths = deleteResult.getDeletedPaths().stream()
+                        .map(Path::toString)
+                        .collect(Collectors.toList());
+                confirmedDeletedFiles.addAll(deletedPaths);
             }
 
             for (final FilePath expectedDeletedFile : files) {

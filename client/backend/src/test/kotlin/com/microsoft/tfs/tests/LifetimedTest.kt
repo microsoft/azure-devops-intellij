@@ -19,7 +19,7 @@ abstract class LifetimedTest {
     }
 
     @After
-    fun tearDown() {
+    open fun tearDown() {
         testLifetimeDefinition.terminate()
     }
 }

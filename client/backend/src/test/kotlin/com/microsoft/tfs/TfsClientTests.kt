@@ -5,12 +5,12 @@ package com.microsoft.tfs
 
 import com.google.common.io.Files
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
-import com.microsoft.tfs.model.host.TfsDeleteFailure
 import com.microsoft.tfs.model.host.TfsLocalPath
 import com.microsoft.tfs.tests.*
 import org.apache.commons.io.FileUtils.deleteDirectory
 import org.apache.log4j.Level
 import org.junit.Assert
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -23,6 +23,13 @@ class TfsClientTests : LifetimedTest() {
             Assert.assertEquals("There should be no changes in $path", emptyList<PendingSet>(), states)
         }
 
+        private fun createTestFile(filePath: Path) {
+            filePath.parent.toFile().mkdirs()
+
+            @Suppress("UnstableApiUsage")
+            Files.write("testfile", filePath.toFile(), StandardCharsets.UTF_8)
+        }
+
         private fun ignoreItem(workspace: Path, item: String) {
             val tfIgnore = workspace.resolve(".tfignore")
 
@@ -31,32 +38,47 @@ class TfsClientTests : LifetimedTest() {
         }
     }
 
+    lateinit var workspacePath: Path
+
     override fun setUp() {
         Logging.initialize(null, Level.INFO)
         super.setUp()
         IntegrationTestUtils.ensureInitialized()
+        workspacePath = cloneTestRepository()
+    }
+
+    override fun tearDown() {
+        deleteWorkspace(workspacePath)
+        deleteDirectory(workspacePath.toFile())
+        super.tearDown()
+    }
+
+    @Test
+    fun clientShouldReturnDeletedPath() {
+        val client = createClient(testLifetime)
+        val filePath = workspacePath.resolve("readme.txt")
+        assertTrue("Test file should exits", filePath.toFile().exists())
+        val localPathList = listOf(TfsLocalPath(filePath.toString()))
+
+        val result = client.deletePathsRecursively(localPathList)
+
+        Assert.assertEquals(localPathList, result.deletedPaths)
+        Assert.assertEquals(emptyList<TfsLocalPath>(), result.notFoundPaths)
+        Assert.assertEquals(emptyList<String>(), result.errorMessages)
     }
 
     @Test
     fun clientShouldThrowExceptionWhenTryingToDeleteIgnoredItem() {
-        val workspace = cloneTestRepository()
-        try {
-            val client = createClient(testLifetime)
-            val fileName = ".idea/libraries/something.xml"
-            val filePath = workspace.resolve(fileName)
-            filePath.parent.toFile().mkdirs()
+        val client = createClient(testLifetime)
+        val filePath = workspacePath.resolve(".idea/libraries/something.xml")
 
-            @Suppress("UnstableApiUsage")
-            Files.write("testfile", filePath.toFile(), StandardCharsets.UTF_8)
+        createTestFile(filePath)
+        ignoreItem(workspacePath, ".idea")
+        assertNoPendingChanges(client, filePath)
 
-            ignoreItem(workspace, ".idea")
-            assertNoPendingChanges(client, filePath)
-
-            val result = client.deletePathsRecursively(listOf(TfsLocalPath(filePath.toString()))) as TfsDeleteFailure
-            Assert.assertEquals(listOf(TfsLocalPath(filePath.toString())), result.failedPaths)
-        } finally {
-            deleteWorkspace(workspace)
-            deleteDirectory(workspace.toFile())
-        }
+        val result = client.deletePathsRecursively(listOf(TfsLocalPath(filePath.toString())))
+        Assert.assertEquals(emptyList<TfsLocalPath>(), result.deletedPaths)
+        Assert.assertEquals(listOf(TfsLocalPath(filePath.toString())), result.notFoundPaths)
+        Assert.assertEquals(emptyList<String>(), result.errorMessages)
     }
 }

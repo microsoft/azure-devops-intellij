@@ -18,6 +18,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.tfs.model.connector.TfsPath;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -82,6 +83,7 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
         when(TfsFileUtil.createLocalPath(any(String.class))).thenCallRealMethod();
         when(TfsFileUtil.createLocalPath(any(FilePath.class))).thenCallRealMethod();
+        when(TfsFileUtil.getPathItem(any(TfsPath.class))).thenCallRealMethod();
         when(filePath1.getPath()).thenReturn("/path/to/file1");
         when(filePath2.getPath()).thenReturn("/path/to/file2");
         when(filePath3.getPath()).thenReturn("/path/to/file3");

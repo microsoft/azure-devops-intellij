@@ -53,6 +53,7 @@ import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -702,8 +703,8 @@ public class CommandUtils {
      * @param recursive
      * @return
      */
-    public static List<String> deleteFiles(final ServerContext context, final List<String> filePaths,
-                                           final String workingFolder, final boolean recursive) {
+    public static TfvcDeleteResult deleteFiles(final ServerContext context, final List<String> filePaths,
+                                               final String workingFolder, final boolean recursive) {
         final DeleteCommand deleteCommand = new DeleteCommand(context, filePaths, workingFolder, recursive);
         return deleteCommand.runSynchronously();
     }

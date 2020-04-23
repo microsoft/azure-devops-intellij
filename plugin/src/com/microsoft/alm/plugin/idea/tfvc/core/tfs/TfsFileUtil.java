@@ -40,6 +40,8 @@ import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
 import com.microsoft.alm.plugin.versioncontrol.path.LocalPath;
 import com.microsoft.alm.plugin.versioncontrol.path.ServerPath;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfsServerPath;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -87,6 +89,15 @@ public class TfsFileUtil {
 
     public static TfsLocalPath createLocalPath(VirtualFile file) {
         return createLocalPath(file.getPath());
+    }
+
+    public static String getPathItem(TfsPath path) {
+        if (path instanceof TfsLocalPath)
+            return ((TfsLocalPath) path).getPath();
+        else if (path instanceof TfsServerPath)
+            return ((TfsServerPath) path).getPath();
+        else
+            throw new RuntimeException("Unknown path type: " + path);
     }
 
     public static boolean isServerItem(final String itemPath) {

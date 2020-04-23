@@ -64,7 +64,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
     }
 
     @Override
-    public boolean delete(@NotNull final VirtualFile virtualFile) {
+    public boolean delete(@NotNull final VirtualFile virtualFile) throws IOException {
         long startTime = System.nanoTime();
         ourLogger.trace("Delete command started for file " + virtualFile);
 
@@ -112,14 +112,19 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         // if 0 pending changes then just delete the file and return
         if (pendingChanges.isEmpty()) {
             ourLogger.info("No changes to file so deleting though TFVC");
-            tfvcClient.deleteFilesRecursively(
+            TfvcDeleteResult operationResult = tfvcClient.deleteFilesRecursively(
                     serverContext,
                     Collections.singletonList(TfsFileUtil.createLocalPath(virtualFile)));
+            operationResult.throwIfErrorMessagesAreNotEmpty();
 
             long time = System.nanoTime() - startTime;
             ourLogger.trace("Delete command finished in " + time / 1_000_000_000.0 + "s");
 
-            return true;
+            // There's a possibility that the path in question was explicitly ignored using .tfignore. In such case,
+            // TFVC client will report that the file wasn't found and won't do anything with it. If this happened, then
+            // we'll delegate the operation to IDEA (i.e. return false).
+            List<TfsPath> notFoundPaths = operationResult.getNotFoundPaths();
+            return notFoundPaths.isEmpty();
         }
 
         // start with assuming you don't need to revert but look at the pending changes to see if that's incorrect
@@ -204,7 +209,11 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             TfsPath itemToDelete = StringUtils.isNotEmpty(pendingChange.getSourceItem())
                     ? new TfsServerPath(pendingChange.getWorkspace(), pendingChange.getSourceItem())
                     : TfsFileUtil.createLocalPath(pendingChange.getLocalItem());
-            tfvcClient.deleteFilesRecursively(serverContext, Collections.singletonList(itemToDelete));
+            TfvcDeleteResult operationResult = tfvcClient.deleteFilesRecursively(
+                    serverContext,
+                    Collections.singletonList(itemToDelete));
+            operationResult.throwIfErrorMessagesAreNotEmpty();
+            operationResult.throwIfNotFoundPathsAreNotEmpty();
         }
         ourLogger.info("File was deleted using TFVC: " + success.get());
 
