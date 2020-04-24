@@ -31,7 +31,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         private val logger = Logging.getLogger<TfsClient>()
     }
 
-    private val client: VersionControlClient
+    val client: VersionControlClient
     private val pathWatcherFactory = ExternallyControlledPathWatcherFactory(lifetime)
     init {
         val collection = TFSTeamProjectCollection(serverUri, credentials)
