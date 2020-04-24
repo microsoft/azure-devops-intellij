@@ -53,6 +53,20 @@ jobs:
           MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX: $(Agent.OS).$(Build.BuildNumber)
 
       - task: PublishPipelineArtifact@1
+        displayName: "Publish Artifact: $(build.buildNumber)"
+        condition: and(eq(variables['system.pullrequest.isfork'], false), eq(variables['Agent.OS'], 'Linux'))
+        inputs:
+          path: 'plugin/build/distributions'
+          artifact: '$(System.JobId).$(build.buildNumber)'
+
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish unit test reports"
+        condition: always()
+        inputs:
+          path: 'plugin/build/reports'
+          artifact: '$(System.JobId).$(build.buildNumber).$(Agent.OS)-test-reports'
+
+      - task: PublishPipelineArtifact@1
         displayName: "Publish integration test reports"
         condition: eq(variables['System.PullRequest.IsFork'], false)
         inputs:
