@@ -13,22 +13,11 @@ jobs:
           tfClcScriptName: 'tf.cmd'
     pool:
       vmImage: $(imageName)
-    variables:
-      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
     steps:
       - task: CmdLine@1
         displayName: Run printenv
         inputs:
           filename: printenv
-
-      - task: Cache@2
-        inputs:
-          key: '"$(Agent.OS)" | "2018.2" | production_build | **/*.gradle | gradle.properties'
-          restoreKeys: |
-            "$(Agent.OS)" | "2018.2" | production_build | **/*.gradle
-            "$(Agent.OS)" | "2018.2" | production_build
-          path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle cache
 
       - task: Gradle@2
         displayName: Gradle build
@@ -36,26 +25,6 @@ jobs:
           jdkVersionOption: 1.8
           options: '--info'
           tasks: build zip
-
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish unit test reports"
-        condition: always()
-        inputs:
-          path: 'plugin/build/reports'
-          artifact: '$(System.JobId).$(build.buildNumber).$(Agent.OS)-test-reports'
-
-      - task: PublishPipelineArtifact@1
-        displayName: "Publish Artifact: $(build.buildNumber)"
-        condition: and(eq(variables['system.pullrequest.isfork'], false), eq(variables['Agent.OS'], 'Linux'))
-        inputs:
-          path: 'plugin/build/distributions'
-          artifact: '$(System.JobId).$(build.buildNumber)'
-
-      - task: Cache@2
-        inputs:
-          key: '.azure/install-tfs-clc.ps1'
-          path: .azure/.download-cache
-        displayName: TFS client artifact cache
 
       - pwsh: ./.azure/install-tfs-clc.ps1
         displayName: TFS client setup
@@ -83,12 +52,6 @@ jobs:
           MSVSTS_INTELLIJ_VSO_USER: $(VSO_USER)
           MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX: $(Agent.OS).$(Build.BuildNumber)
 
-      - task: Gradle@2
-        displayName: Stop Gradle Daemon # for correct cache and log extraction
-        inputs:
-          jdkVersionOption: 1.8
-          options: --stop
-
       - task: PublishPipelineArtifact@1
         displayName: "Publish integration test reports"
         condition: eq(variables['System.PullRequest.IsFork'], false)
@@ -106,26 +69,11 @@ jobs:
   - job: test_build # check compilation for newest IDEA
     pool:
       vmImage: 'ubuntu-18.04'
-    variables:
-      GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
     steps:
       - task: CmdLine@1
         displayName: Run printenv
         inputs:
           filename: printenv
-
-      - task: Cache@2
-        inputs:
-          # Test build is allowed to reuse cache from the main one, but not the other way around.
-          key: '"$(Agent.OS)" | "2019.3" | test_build | **/*.gradle | gradle.properties'
-          restoreKeys: |
-            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle | gradle.properties
-            "$(Agent.OS)" | "2019.3" | test_build | **/*.gradle
-            "$(Agent.OS)" | "2019.3" | production_build | **/*.gradle
-            "$(Agent.OS)" | "2019.3" | test_build
-            "$(Agent.OS)" | "2019.3"
-          path: $(GRADLE_USER_HOME)/caches/modules-2
-        displayName: Gradle cache
 
       - task: Gradle@2
         displayName: Gradle compile
@@ -133,9 +81,3 @@ jobs:
           jdkVersionOption: 1.8
           options: '--info -PideaVersion=2019.3'
           tasks: :plugin:compileJava
-
-      - task: Gradle@2
-        displayName: Stop Gradle Daemon # for correct cache extraction
-        inputs:
-          jdkVersionOption: 1.8
-          options: --stop
