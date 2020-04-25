@@ -17,8 +17,14 @@ private fun executeClient(directory: Path, vararg arguments: String) {
     val loginArgument = "-login:${IntegrationTestUtils.user},${IntegrationTestUtils.pass}"
     val process = ProcessBuilder(IntegrationTestUtils.tfExe, loginArgument, *arguments)
         .directory(directory.toFile())
-        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .apply {
+            environment().also {
+                it["TF_NOTELEMETRY"] = "TRUE"
+                it["TF_ADDITIONAL_JAVA_ARGS"] = "-Duser.country=US -Duser.language=en"
+                it["TF_USE_KEYCHAIN"] = "FALSE" // will be stuck on com.microsoft.tfs.jni.internal.keychain.NativeKeychain.nativeFindInternetPassword on macOS otherwise
+            }
+        }
+        .inheritIO()
         .start()
     val exitCode = process.waitFor()
     Assert.assertEquals(0, exitCode)
