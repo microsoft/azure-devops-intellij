@@ -60,7 +60,8 @@
       <br />
       <ul>
         <li>Repository history refresh has been made significantly faster when Reactive client is enabled</li>
-          <li>Fixed a failure to edit a workspace inside of a TFS collection when the collection name had a space (<a href="https://github.com/microsoft/azure-devops-intellij/issues/326">#326</a>)</li>
+        <li>TFVC client is now able to successfully delete ignored files (<a href="https://github.com/microsoft/azure-devops-intellij/issues/330">#330</a>)</li>
+        <li>Fixed a failure to edit a workspace inside of a TFS collection when the collection name had a space (<a href="https://github.com/microsoft/azure-devops-intellij/issues/326">#326</a>)</li>
       </ul>
       <br />
     ]]>
