@@ -19,6 +19,7 @@ import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.ThrowableRunnable;
+import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.MockAuthenticationProvider;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
@@ -67,7 +68,7 @@ import java.util.List;
 
 @RunWith(JUnit38ClassRunner.class)
 public abstract class L2Test extends UsefulTestCase {
-    protected static final String ENV_VSO_WORKSPACE_SUFFIX = "MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX";
+    protected static final String ENV_UNIQUE_SUFFIX = "MSVSTS_INTELLIJ_UNIQUE_SUFFIX";
     static {
         Logger.setFactory(TestLoggerFactory.class);
     }
@@ -125,6 +126,18 @@ public abstract class L2Test extends UsefulTestCase {
 
     public String getLegacyRepoUrl() {
         return legacyRepoUrl;
+    }
+
+    /**
+     * Returns name unique enough for test purposes. Adds value of {@link L2Test::ENV_UNIQUE_SUFFIX} to the passed
+     * prefix.
+     */
+    protected String generateUniqueName(String prefix) {
+        String suffix = System.getenv(ENV_UNIQUE_SUFFIX);
+        if (StringUtils.isEmpty(suffix))
+            return prefix + "." + SystemHelper.getComputerName();
+
+        return prefix + "." + suffix;
     }
 
     private AuthenticationInfo getAuthenticationInfo() {

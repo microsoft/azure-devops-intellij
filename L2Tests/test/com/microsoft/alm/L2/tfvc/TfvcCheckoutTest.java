@@ -29,12 +29,7 @@ public class TfvcCheckoutTest extends L2Test {
     public static final String README_FILE = "readme.txt";
 
     private String getWorkspaceName() {
-        String teamProject = getTeamProject();
-        String suffix = System.getenv(ENV_VSO_WORKSPACE_SUFFIX);
-        if (suffix == null)
-            return teamProject;
-
-        return teamProject + "." + suffix;
+        return generateUniqueName(getTeamProject());
     }
 
     private void deleteWorkspaceIfExists(ServerContext context, String workspaceName) {

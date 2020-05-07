@@ -50,7 +50,7 @@ jobs:
           MSVSTS_INTELLIJ_VSO_SERVER_URL: $(VSO_SERVER_URL)
           MSVSTS_INTELLIJ_VSO_TEAM_PROJECT: $(VSO_TEAM_PROJECT)
           MSVSTS_INTELLIJ_VSO_USER: $(VSO_USER)
-          MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX: $(Agent.OS).$(Build.BuildNumber)
+          MSVSTS_INTELLIJ_UNIQUE_SUFFIX: $(Agent.OS).$(Build.BuildNumber)
 
       - task: PublishPipelineArtifact@1
         displayName: "Publish Artifact: $(build.buildNumber)"

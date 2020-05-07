@@ -5,7 +5,6 @@ package com.microsoft.alm.L2.git;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.microsoft.alm.L2.L2Test;
-import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.vcsimport.ImportModel;
@@ -42,8 +41,7 @@ public class GitImportTest extends L2Test {
     public void testImport_VSO() throws Exception {
         Debug.println("Start", null);
         final ImportModel importModel = new ImportModel(myProject, null, null, false);
-        // Get a repo name that is unique for this computer - so tests running in parallel do not conflict
-        final String repoName = "testRepo-" + SystemHelper.getComputerName();
+        final String repoName = generateUniqueName("testRepo");
 
         final File projectPath = new File(myProjectPath);
 
