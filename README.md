@@ -102,7 +102,7 @@ Here are the steps to setup your environment:
    * `MSVSTS_INTELLIJ_VSO_SERVER_URL=https://organization.visualstudio.com` (make sure no trailing slash here)
    * `MSVSTS_INTELLIJ_VSO_TEAM_PROJECT=projectName`
    * `MSVSTS_INTELLIJ_VSO_USER=EmailAddressForUser`
-   * `MSVSTS_INTELLIJ_VSO_WORKSPACE_SUFFIX=""`: you may leave it empty; if not empty, it will be used as a suffix for workspace name in TFVC tests; introduced for simultaneous test execution on agents
+   * `MSVSTS_INTELLIJ_UNIQUE_SUFFIX=""`: you may leave it empty; if not empty, it will be used as a suffix for various names in tests; introduced for simultaneous test execution on agents
    
    _Note_: Do not use https://dev.azure.com/account/ addresses in these environment variables, make sure to use https://account.visualstudio.com/
 
