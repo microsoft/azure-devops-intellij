@@ -205,8 +205,8 @@ configure(mainProjects) {
             exclude group: 'org.slf4j', module: 'slf4j-api'
         }
 
-        // IDEA 2018.2 has two other junit versions embedded into it: 3.8.1 (junit.jar) and 4.12 (junit-4.12.jar). We
-        // need our version to take priority.
+        // IDEA has two other junit versions embedded into it: 3.8.1 (junit.jar) and 4.12 (junit-4.12.jar). We need our
+        // version to take priority.
         priorityTestCompile group: 'junit', name: 'junit', version: '4.12'
 
         testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'

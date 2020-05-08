@@ -137,13 +137,7 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                 // For dev.azure.com we need to check if the organization was included.
                 logger.info("getAuthData: is Azure DevOps host: {}", host);
                 if (Strings.isNullOrEmpty(UrlHelper.getAccountFromOrganizationUri(uri))) {
-                    logger.warn("getAuthData: no user information detected");
-
-                    // If we're at this point, it could only mean that we're in IDEA version older than 2018.2, so we
-                    // have no Project and cannot determine the Git remotes in the project. Only thing we could do is
-                    // show a notification and suggest something's wrong with the remotes.
-                    AzureDevOpsNotifications.showManageRemoteUrlsNotification(null, host);
-                    return null;
+                    throw new RuntimeException("User information could not be determined from the project URL");
                 }
             }
 
