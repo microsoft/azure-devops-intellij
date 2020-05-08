@@ -4,9 +4,12 @@
 package com.microsoft.alm.plugin.idea.git.ui.branch;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.intellij.dvcs.repo.Repository;
 import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsNotifier;
+import com.intellij.vcs.log.Hash;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
@@ -16,6 +19,7 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdateResult;
 import git4idea.GitRemoteBranch;
+import git4idea.repo.GitHooksInfo;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
@@ -30,6 +34,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +51,6 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({VcsNotifier.class, GeneralGitHelper.class})
-@SuppressWarnings("unchecked")
 public class CreateBranchModelTest extends IdeaAbstractTest {
 
     private CreateBranchModel underTest;
@@ -64,8 +68,6 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     @Mock
     private GitRepository mockGitRepository;
     @Mock
-    private GitRepoInfo mockGitRepoInfo;
-    @Mock
     private GitRemoteBranch mockRemoteMaster;
     @Mock
     private GitRemoteBranch mockRemoteBranch1;
@@ -82,6 +84,36 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     @Mock
     private GitHttpClientEx mockClient;
 
+    private static void mockRemoteBranch(GitRemoteBranch branch, GitRemote remote, String shortBranchName) {
+        String remoteName = remote.getName();
+        String branchName = remoteName + "/" + shortBranchName;
+        String fullBranchName = "refs/remotes/" + branchName;
+        when(branch.getRemote()).thenReturn(remote);
+        when(branch.getName()).thenReturn(branchName);
+        when(branch.getFullName()).thenReturn(fullBranchName);
+    }
+
+    private void mockGitRepoInfo(GitRemoteBranch... remoteBranches) {
+        HashMap<GitRemoteBranch, Hash> remoteBranchMap = Maps.newHashMap();
+        for (GitRemoteBranch remoteBranch : remoteBranches) {
+            remoteBranchMap.put(remoteBranch, null);
+        }
+
+        GitRepoInfo gitRepoInfo = new GitRepoInfo(
+                null,
+                null,
+                Repository.State.NORMAL,
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                remoteBranchMap,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                new GitHooksInfo(false, false),
+                false
+        );
+        when(mockGitRepository.getInfo()).thenReturn(gitRepoInfo);
+    }
+
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(VcsNotifier.class);
@@ -90,21 +122,15 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
         PowerMockito.mockStatic(GeneralGitHelper.class);
         when(GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockRemoteMaster)).thenReturn("281e2d5f8ba36655570ba808055e81ff64ba14d8");
 
-        when(mockGitRepository.getRemotes()).thenReturn(ImmutableList.of(tfsRemoteBranch1, tfsRemoteBranch2, tfsRemoteMaster));
-        when(mockGitRepository.getInfo()).thenReturn(mockGitRepoInfo);
+        when(mockGitRepository.getRemotes()).thenReturn(ImmutableList.of(tfsRemoteMaster, tfsRemoteBranch1, tfsRemoteBranch2));
 
-        when(mockRemoteMaster.getRemote()).thenReturn(tfsRemoteMaster);
-        when(mockRemoteMaster.getName()).thenReturn("master");
-
-        when(mockRemoteBranch1.getRemote()).thenReturn(tfsRemoteBranch1);
-        when(mockRemoteBranch1.getName()).thenReturn("branch1");
-
-        when(mockRemoteBranch2.getRemote()).thenReturn(tfsRemoteBranch2);
-        when(mockRemoteBranch2.getName()).thenReturn("branch2");
+        mockRemoteBranch(mockRemoteMaster, tfsRemoteMaster, "master");
+        mockRemoteBranch(mockRemoteBranch1, tfsRemoteBranch1, "branch1");
+        mockRemoteBranch(mockRemoteBranch2, tfsRemoteBranch2, "branch2");
 
         when(mockVstsRepo.getId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000000"));
         when(mockTeamProjectReference.getId()).thenReturn(UUID.fromString("00000000-0000-0000-0000-000000000000"));
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(ImmutableList.of(mockRemoteMaster));
+        mockGitRepoInfo(mockRemoteMaster);
 
         when(mockContext.getUri()).thenReturn(uri);
         when(mockContext.getGitRepository()).thenReturn(mockVstsRepo);
@@ -113,27 +139,27 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
     @Test
     public void testConstructor_MasterSelected() {
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(ImmutableList.of(mockRemoteBranch1, mockRemoteMaster));
+        mockGitRepoInfo(mockRemoteBranch1, mockRemoteMaster);
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
 
         assertNotNull(underTest.getRemoteBranchDropdownModel());
         assertEquals(2, underTest.getRemoteBranchDropdownModel().getSize());
-        assertEquals("master", underTest.getSelectedRemoteBranch().getName());
+        assertEquals("master/master", underTest.getSelectedRemoteBranch().getName());
     }
 
     @Test
     public void testConstructor_NoMasterToSelect() {
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(ImmutableList.of(mockRemoteBranch1, mockRemoteBranch2));
+        mockGitRepoInfo(mockRemoteBranch1, mockRemoteBranch2);
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
 
         assertNotNull(underTest.getRemoteBranchDropdownModel());
         assertEquals(2, underTest.getRemoteBranchDropdownModel().getSize());
-        assertEquals("branch2", underTest.getSelectedRemoteBranch().getName());
+        assertEquals("branch1/branch1", underTest.getSelectedRemoteBranch().getName());
     }
 
     @Test
     public void testConstructor_NoRemotesFound() {
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(Collections.EMPTY_LIST);
+        mockGitRepoInfo();
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
 
         assertNotNull(underTest.getRemoteBranchDropdownModel());
@@ -154,19 +180,19 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
     @Test
     public void testValidate_DuplicateBranchName() {
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(ImmutableList.of(mockRemoteMaster));
+        mockGitRepoInfo(mockRemoteMaster);
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
-        underTest.setBranchName("master");
+        underTest.setBranchName("master/master");
 
         ModelValidationInfo info = underTest.validate();
         assertNotEquals(ModelValidationInfo.NO_ERRORS, info);
         assertEquals(CreateBranchModel.PROP_BRANCH_NAME, info.getValidationSource());
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EXISTS, "master"), info.getValidationMessage());
+        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_ERRORS_BRANCH_NAME_EXISTS, "master/master"), info.getValidationMessage());
     }
 
     @Test
     public void testValidate_NoErrors() {
-        when(mockGitRepoInfo.getRemoteBranches()).thenReturn(ImmutableList.of(mockRemoteMaster));
+        mockGitRepoInfo(mockRemoteMaster);
         underTest = new CreateBranchModel(mockProject, defaultBranchName, mockGitRepository);
         underTest.setBranchName("newBranch");
 
@@ -175,7 +201,8 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDoBranchCreate_Success() throws Exception {
+    @SuppressWarnings("unchecked")
+    public void testDoBranchCreate_Success() {
         GitRefUpdateResult result = new GitRefUpdateResult();
         result.setSuccess(true);
         when(mockClient.updateRefs(any(List.class), any(UUID.class), any(String.class))).thenReturn(ImmutableList.of(result));
@@ -190,7 +217,8 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDoBranchCreate_ResultsReturnedFailed() throws Exception {
+    @SuppressWarnings("unchecked")
+    public void testDoBranchCreate_ResultsReturnedFailed() {
         GitRefUpdateResult result = new GitRefUpdateResult();
         result.setSuccess(false);
         result.setCustomMessage("failed");
@@ -206,7 +234,8 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testDoBranchCreate_NoResultsReturned() throws Exception {
+    @SuppressWarnings("unchecked")
+    public void testDoBranchCreate_NoResultsReturned() {
         when(mockClient.updateRefs(any(List.class), any(UUID.class), any(String.class))).thenReturn(Collections.EMPTY_LIST);
         when(mockContext.getGitHttpClient()).thenReturn(mockClient);
 

@@ -3,13 +3,16 @@
 
 package com.microsoft.alm.plugin.idea.git.ui.pullrequest;
 
+import com.google.common.collect.Maps;
+import com.intellij.dvcs.repo.Repository;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcs.log.Hash;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
 import git4idea.GitLocalBranch;
 import git4idea.GitRemoteBranch;
+import git4idea.repo.GitHooksInfo;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepoInfo;
 import git4idea.repo.GitRepository;
@@ -24,6 +27,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Observer;
 
 import static org.junit.Assert.assertEquals;
@@ -43,37 +47,56 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     Project projectMock;
     GitRepository gitRepositoryMock;
-    GitRepoInfo gitRepoInfoMock;
     GitRemote tfsRemote;
     DiffCompareInfoProvider diffProviderMock;
     CreatePullRequestModel.ApplicationProvider applicationProviderMock;
     Observer observerMock;
     GitLocalBranch currentBranch;
 
+    private void mockGitRepoBranches(GitLocalBranch currentBranch, GitRemoteBranch... remoteBranches) {
+        HashMap<GitRemoteBranch, Hash> remoteBranchMap = Maps.newHashMap();
+        for (GitRemoteBranch remoteBranch : remoteBranches) {
+            remoteBranchMap.put(remoteBranch, null);
+        }
+
+        GitRepoInfo gitRepoInfo = new GitRepoInfo(
+                currentBranch,
+                null,
+                Repository.State.NORMAL,
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                remoteBranchMap,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                new GitHooksInfo(false, false),
+                false
+        );
+        when(gitRepositoryMock.getInfo()).thenReturn(gitRepoInfo);
+    }
+
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         projectMock = Mockito.mock(Project.class);
-        gitRepoInfoMock = Mockito.mock(GitRepoInfo.class);
         gitRepositoryMock = Mockito.mock(GitRepository.class);
         diffProviderMock = Mockito.mock(DiffCompareInfoProvider.class);
         observerMock = Mockito.mock(Observer.class);
         applicationProviderMock = Mockito.mock(CreatePullRequestModel.ApplicationProvider.class);
         currentBranch = PRGitObjectMockHelper.createLocalBranch("local");
 
-        tfsRemote = new GitRemote("origin", Arrays.asList("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
-                Arrays.asList("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
+        tfsRemote = new GitRemote("origin", Collections.singletonList("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
+                Collections.singletonList("https://pushurl"), Collections.emptyList(), Collections.emptyList());
 
         when(diffProviderMock.getEmptyDiff(gitRepositoryMock)).thenCallRealMethod();
-        when(gitRepositoryMock.getInfo()).thenReturn(gitRepoInfoMock);
         when(gitRepositoryMock.getRemotes()).thenReturn(Collections.singletonList(tfsRemote));
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(currentBranch);
+
+        mockGitRepoBranches(currentBranch);
     }
 
     /* Testing behavior about setting default target branch */
     @Test
     public void emptyRemoteListsNoTargetBranch() {
         //empty remotes list, branch drop down shouldn't have anything selected
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Collections.<GitRemoteBranch>emptyList());
+        mockGitRepoBranches(currentBranch);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
 
         // never null
@@ -88,9 +111,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         //when there are more than one remotes but non is named master, return the first
         GitRemoteBranch first = PRGitObjectMockHelper.createRemoteBranch("origin/test1", tfsRemote);
         GitRemoteBranch second = PRGitObjectMockHelper.createRemoteBranch("origin/test2", tfsRemote);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(
-                first, second
-        ));
+        mockGitRepoBranches(currentBranch, first, second);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
 
         // selected is nul
@@ -98,13 +119,11 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void masterIsAlwaysTheDefaultTargetBranch() throws Exception {
+    public void masterIsAlwaysTheDefaultTargetBranch() {
         GitRemoteBranch first = PRGitObjectMockHelper.createRemoteBranch("origin/test1", tfsRemote);
         GitRemoteBranch second = PRGitObjectMockHelper.createRemoteBranch("origin/test2", tfsRemote);
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(
-                first, second, master
-        ));
+        mockGitRepoBranches(currentBranch, first, second, master);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
 
         // always return master
@@ -119,14 +138,12 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
 
         // two remotes, non tfs repo should be filtered out
-        GitRemote nonTfsRemote = new GitRemote("origin", Arrays.asList("https://mytest.notvso.com/git/testrepo"),
-                Arrays.asList("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
+        GitRemote nonTfsRemote = new GitRemote("origin", Collections.singletonList("https://mytest.notvso.com/git/testrepo"),
+                Collections.singletonList("https://pushurl"), Collections.emptyList(), Collections.emptyList());
 
         when(gitRepositoryMock.getRemotes()).thenReturn(Arrays.asList(tfsRemote, nonTfsRemote));
         GitRemoteBranch nonTfsMaster = PRGitObjectMockHelper.createRemoteBranch("other/master", nonTfsRemote);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(
-                first, second, master, nonTfsMaster
-        ));
+        mockGitRepoBranches(currentBranch, first, second, master, nonTfsMaster);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
 
         // nonTfsMaster should be filtered out
@@ -139,7 +156,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
     @Test
     public void noDiffsWhenEitherSourceOrTargetBranchIsNotSet() throws Exception {
         // when we are in detached head state, we can't create pr, so let's not populate dif
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(null);
+        mockGitRepoBranches(null);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
 
         GitChangesContainer changesContainer = underTest.getMyChangesCompareInfo();
@@ -148,8 +165,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
         // when there is a local branch, but we didn't select any remote branch, also return empty compareInfo
         GitLocalBranch mockLocalBranch = PRGitObjectMockHelper.createLocalBranch("local");
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(mockLocalBranch);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Collections.<GitRemoteBranch>emptyList());
+        mockGitRepoBranches(mockLocalBranch);
 
         changesContainer = underTest.getMyChangesCompareInfo();
         assertEquals(0, changesContainer.getGitCommitCompareInfo().getTotalDiff().size());
@@ -161,7 +177,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
         final String currentBranchCommitHash = "935b168d0601bd05d57489fae04d5c6ec439cfea";
         final String remoteBranchCommitHash = "9afa081effdaeafdff089b2aa3543415f6cdb1fb";
         GitRemoteBranch master = PRGitObjectMockHelper.createRemoteBranch("origin/master", tfsRemote);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(master));
+        mockGitRepoBranches(currentBranch, master);
 
         PowerMockito.mockStatic(GeneralGitHelper.class);
         when(GeneralGitHelper.getLastCommitHash(projectMock, gitRepositoryMock, currentBranch)).thenReturn(currentBranchCommitHash);
@@ -194,12 +210,10 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void whenWeSetModelWeShouldBeNotified() throws VcsException {
+    public void whenWeSetModelWeShouldBeNotified() {
         GitRemoteBranch first = PRGitObjectMockHelper.createRemoteBranch("origin/test1", tfsRemote);
         GitRemoteBranch second = PRGitObjectMockHelper.createRemoteBranch("origin/test2", tfsRemote);
-        when(gitRepoInfoMock.getRemoteBranches()).thenReturn(Arrays.asList(
-                first, second
-        ));
+        mockGitRepoBranches(currentBranch, first, second);
         underTest = new CreatePullRequestModel(projectMock, gitRepositoryMock);
         underTest.addObserver(observerMock);
 
@@ -244,7 +258,7 @@ public class CreatePullRequestModelTest extends IdeaAbstractTest {
 
     @Test
     public void emptySourceBranchShouldNotPassValidation() {
-        when(gitRepoInfoMock.getCurrentBranch()).thenReturn(null);
+        mockGitRepoBranches(null);
         underTest = getValidModel();
 
         ModelValidationInfo info = underTest.validate();
