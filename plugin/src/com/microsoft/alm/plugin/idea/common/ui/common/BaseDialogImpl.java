@@ -40,15 +40,22 @@ public class BaseDialogImpl extends DialogWrapper implements BaseDialog {
         this(project, title, okButtonText, feedbackContext, true, null);
     }
 
-    public BaseDialogImpl(final Project project, final String title, final String okButtonText, final String feedbackContext, final boolean showFeedback, final Map<String, Object> properties) {
+    public BaseDialogImpl(
+            @Nullable Project project,
+            @NotNull String title,
+            @Nullable String okButtonText,
+            @Nullable String feedbackContext,
+            boolean showFeedback,
+            @Nullable Map<String, Object> properties) {
         super(project);
         this.showFeedback = showFeedback;
         this.feedbackContext = feedbackContext;
         this.project = project;
-        this.properties = properties != null ? new HashMap<String, Object>(properties) : Collections.<String, Object>emptyMap();
+        this.properties = properties != null ? new HashMap<>(properties) : Collections.emptyMap();
 
         super.setTitle(title);
-        super.setOKButtonText(okButtonText);
+        if (okButtonText != null)
+            super.setOKButtonText(okButtonText);
         super.init();
     }
 
