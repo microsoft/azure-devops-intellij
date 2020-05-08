@@ -62,7 +62,8 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         myVcs = vcs;
     }
 
-    // TODO: Fix the generic signatures in this method. Currently this is crippled due to IDEA 2018.2 compatibility.
+    // TODO: Fix the generic signatures in this method after migration to IDEA 2019.1. Currently this is crippled due to
+    // IDEA 2018.3 compatibility.
     @SuppressWarnings("unchecked")
     @Override
     public void enable(@NotNull Collection vcsRoots) {

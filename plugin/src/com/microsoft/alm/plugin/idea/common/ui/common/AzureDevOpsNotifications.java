@@ -12,7 +12,6 @@ import com.intellij.openapi.ui.MessageType;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import git4idea.remote.GitConfigureRemotesAction;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class AzureDevOpsNotifications {
     private static final NotificationGroup AZURE_DEVOPS_NOTIFICATIONS = new NotificationGroup(
@@ -20,7 +19,7 @@ public class AzureDevOpsNotifications {
             NotificationDisplayType.BALLOON,
             true);
 
-    public static void showManageRemoteUrlsNotification(@Nullable Project project, @NotNull String hostName) {
+    public static void showManageRemoteUrlsNotification(@NotNull Project project, @NotNull String hostName) {
         Notification notification = AZURE_DEVOPS_NOTIFICATIONS.createNotification(
                 TfPluginBundle.message(TfPluginBundle.KEY_GIT_NOTIFICATION_REMOTE, hostName),
                 MessageType.ERROR);
