@@ -262,6 +262,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
                 exceptions.add(new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ERROR, StringUtils.join(filesToAddPaths, ", "))));
             }
         } catch (RuntimeException e) {
+            logger.warn("Exception during adding the files", e);
             exceptions.add(new VcsException(e));
         }
         return exceptions;
