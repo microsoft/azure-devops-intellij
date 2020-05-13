@@ -20,35 +20,58 @@ import java.util.regex.Pattern;
  * [/filetime:current|checkin] [/permission:Private|PublicLimited|Public] [<workspacename;[workspaceowner]>]
  */
 public class CreateWorkspaceCommand extends Command<String> {
-    private static String WORKSPACE_EXISTS_ERROR = "An error occurred: The workspace %s;.* already exists on computer .*";
+    private static final String WORKSPACE_EXISTS_ERROR = "An error occurred: The workspace %s;.* already exists on computer .*";
 
     private final String workspaceName;
     private final String comment;
     private final Workspace.FileTime fileTime;
     private final Workspace.Permission permission;
+    private final Workspace.Location location;
 
     /**
-     * Constructor
+     * Creates a command that will checkout a project to a workspace of selected kind when called.
      *
      * @param context       This is the server context used for collection and login info (can be null)
      * @param workspaceName This is the current name of the workspace to update
+     * @param location      workspace location type: either {@link Workspace.Location#LOCAL} or
+     *                      {@link Workspace.Location#SERVER}.
      */
-    public CreateWorkspaceCommand(final ServerContext context, final String workspaceName,
-                                  final String comment, final Workspace.FileTime fileTime,
-                                  final Workspace.Permission permission) {
+    public CreateWorkspaceCommand(
+            ServerContext context,
+            String workspaceName,
+            String comment,
+            Workspace.FileTime fileTime,
+            Workspace.Permission permission,
+            Workspace.Location location) {
         super("workspace", context);
         ArgumentHelper.checkNotEmptyString(workspaceName, "workspaceName");
         this.workspaceName = workspaceName;
         this.comment = comment;
         this.fileTime = fileTime;
         this.permission = permission;
+        this.location = location;
+    }
+
+    /**
+     * Creates a command that will checkout a project to a local workspace when called.
+     *
+     * @param context       This is the server context used for collection and login info (can be null)
+     * @param workspaceName This is the current name of the workspace to update
+     */
+    public CreateWorkspaceCommand(
+            ServerContext context,
+            String workspaceName,
+            String comment,
+            Workspace.FileTime fileTime,
+            Workspace.Permission permission) {
+        this(context, workspaceName, comment, fileTime, permission, Workspace.Location.LOCAL);
     }
 
     @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .addSwitch("new")
-                .addSwitch("location", "local") // make local default for now
+                .addSwitch("location", location.toParameterString())
                 .add(workspaceName);
         if (StringUtils.isNotEmpty(comment)) {
             builder.addSwitch("comment", comment);

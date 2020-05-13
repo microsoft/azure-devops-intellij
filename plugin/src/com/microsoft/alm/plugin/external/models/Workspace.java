@@ -191,5 +191,16 @@ public class Workspace {
                 return UNKNOWN;
             }
         }
+
+        /**
+         * Converts this enum member to a string suitable for use in a command-line TFVC client.
+         */
+        public String toParameterString() {
+            switch (this) {
+                case LOCAL: return "local";
+                case SERVER: return "server";
+                default: return "unknown";
+            }
+        }
     }
 }

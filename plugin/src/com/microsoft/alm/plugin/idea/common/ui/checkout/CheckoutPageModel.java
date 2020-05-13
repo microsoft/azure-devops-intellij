@@ -19,6 +19,7 @@ public interface CheckoutPageModel extends LoginPageModel {
     String PROP_PARENT_DIR = "parentDirectory";
     String PROP_REPO_FILTER = "repositoryFilter";
     String PROP_REPO_TABLE = "repoTable";
+    String PROP_TFVC_SERVER_CHECKOUT = "tfvcServerCheckout";
 
     String DEFAULT_SOURCE_PATH = System.getProperty("user.home");
 
@@ -39,6 +40,8 @@ public interface CheckoutPageModel extends LoginPageModel {
     void setAdvanced(boolean advanced);
 
     boolean isAdvanced();
+
+    void setTfvcServerCheckout(boolean isTfvcServerCheckout);
 
     void setLoading(boolean loading);
 
