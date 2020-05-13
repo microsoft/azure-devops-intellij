@@ -8,6 +8,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsRootChecker;
+import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
@@ -16,16 +17,11 @@ import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TfvcRootChecker extends VcsRootChecker {
     private static final Logger ourLogger = Logger.getInstance(TfvcRootChecker.class);
-
-    private static boolean isPossibleTfvcWorkspaceRoot(@NotNull String path) {
-        return new File(path, "$tf").isDirectory() || new File(path, ".tf").isDirectory();
-    }
 
     /**
      * Checks if registered mapping can be used to perform VCS operations. According to the specification, returns
@@ -35,10 +31,7 @@ public class TfvcRootChecker extends VcsRootChecker {
      */
     // @Override // only available in IDEA 2019.2
     public boolean validateRoot(@NotNull String path) {
-        if (StringUtil.isEmpty(TfTool.getLocation()))
-            return false;
-
-        return isPossibleTfvcWorkspaceRoot(path);
+        return !StringUtil.isEmpty(TfTool.getLocation());
     }
 
     @Override
@@ -50,8 +43,11 @@ public class TfvcRootChecker extends VcsRootChecker {
             Workspace workspace = null;
             Path workspacePath = Paths.get(path);
             try {
-                workspace = CommandUtils.getPartialWorkspace(workspacePath);
-            } catch (WorkspaceCouldNotBeDeterminedException ex) {
+                workspace = CommandUtils.getPartialWorkspace(workspacePath, false);
+            } catch (WorkspaceCouldNotBeDeterminedException | ToolAuthenticationException ex) {
+                if (!(ex instanceof WorkspaceCouldNotBeDeterminedException))
+                    ourLogger.info(ex);
+
                 ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
             }
 
