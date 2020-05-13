@@ -40,7 +40,7 @@ public class AddFileToTfIgnoreAction extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         ourLogger.info("Performing AddFileToTfIgnoreAction for " + myServerFilePath);
 
-        Workspace partialWorkspace = CommandUtils.getPartialWorkspace(myProject);
+        Workspace partialWorkspace = CommandUtils.getPartialWorkspace(myProject, true);
         String filePath = ObjectUtils.assertNotNull(
                 TfsFileUtil.translateServerItemToLocalItem(partialWorkspace.getMappings(), myServerFilePath, false));
         File localFile = new File(filePath);

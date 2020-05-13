@@ -13,8 +13,8 @@ import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.RepositoryContextManager;
-import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import git4idea.GitUtil;
@@ -171,9 +171,7 @@ public class VcsHelper {
                     context = RepositoryContext.createGitContext(projectRootFolder, repository.getRoot().getName(), branch, URI.create(gitRemoteUrl));
                 }
             } else if (projectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)) {
-                // It's TFVC so run the FindWorkspace command to get the workspace object which as the server info
-                final FindWorkspaceCommand command = new FindWorkspaceCommand(projectRootFolder);
-                final Workspace workspace = command.runSynchronously();
+                final Workspace workspace = CommandUtils.getPartialWorkspace(project, false);
                 if (workspace != null) {
                     final String projectName = getTeamProjectFromTfvcServerPath(
                             workspace.getMappings().size() > 0 ? workspace.getMappings().get(0).getServerPath() : null);
