@@ -10,9 +10,15 @@ import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
 
 public interface VcsSpecificCheckoutModel {
-    void doCheckout(final Project project, final CheckoutProvider.Listener listener,
-                    final ServerContext context, final VirtualFile destinationParent,
-                    final String directoryName, final String parentDirectory, final boolean isAdvancedChecked);
+    void doCheckout(
+            Project project,
+            CheckoutProvider.Listener listener,
+            ServerContext context,
+            VirtualFile destinationParent,
+            String directoryName,
+            String parentDirectory,
+            boolean isAdvancedChecked,
+            boolean isTfvcServerCheckout);
 
     String getButtonText();
 

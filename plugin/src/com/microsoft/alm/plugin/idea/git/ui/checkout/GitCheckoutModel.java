@@ -16,9 +16,15 @@ import org.apache.commons.lang.StringUtils;
 
 public class GitCheckoutModel implements VcsSpecificCheckoutModel {
     @Override
-    public void doCheckout(final Project project, final CheckoutProvider.Listener listener,
-                           final ServerContext context, final VirtualFile destinationParent,
-                           final String directoryName, final String parentDirectory, final boolean isAdvancedChecked) {
+    public void doCheckout(
+            Project project,
+            CheckoutProvider.Listener listener,
+            ServerContext context,
+            VirtualFile destinationParent,
+            String directoryName,
+            String parentDirectory,
+            boolean isAdvancedChecked,
+            boolean isTfvcServerCheckout) {
         final String gitRepositoryStr = context.getUsableGitUrl();
         final Git git = ServiceManager.getService(Git.class);
         git4idea.checkout.GitCheckoutProvider.clone(project, git, listener,

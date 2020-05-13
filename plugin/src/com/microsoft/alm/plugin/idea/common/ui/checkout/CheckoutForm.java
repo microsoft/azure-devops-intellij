@@ -62,6 +62,7 @@ public class CheckoutForm implements BasicForm, Disposable {
     private JScrollPane repositoryTableScrollPane;
     private HelpPanel helpPanel;
     private JCheckBox advancedCheckBox;
+    private JCheckBox serverWorkspaceCheckBox;
     private boolean initialized = false;
     private RepositoryContext.Type repositoryType;
     private Timer timer;
@@ -162,12 +163,17 @@ public class CheckoutForm implements BasicForm, Disposable {
 
             // Initialize the advanced button (only used for TFVC right now)
             advancedCheckBox.setSelected(false);
+            serverWorkspaceCheckBox.setSelected(false);
             if (repositoryType == RepositoryContext.Type.TFVC) {
                 advancedCheckBox.setVisible(true);
                 advancedCheckBox.setText(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TFVC_ADVANCED));
+
+                serverWorkspaceCheckBox.setVisible(true);
+                serverWorkspaceCheckBox.setText(TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_DIALOG_TFVC_SERVER_WORKSPACE));
             } else {
                 // There are no advanced features for our Git checkout dialog
                 advancedCheckBox.setVisible(false);
+                serverWorkspaceCheckBox.setVisible(false);
             }
 
             initialized = true;
@@ -270,6 +276,10 @@ public class CheckoutForm implements BasicForm, Disposable {
 
     public void setAdvanced(final boolean advanced) {
         advancedCheckBox.setSelected(advanced);
+    }
+
+    public boolean isTfvcServerCheckout() {
+        return serverWorkspaceCheckBox.isSelected();
     }
 
     private void createUIComponents() {

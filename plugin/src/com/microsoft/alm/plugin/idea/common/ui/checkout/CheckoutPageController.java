@@ -119,5 +119,6 @@ class CheckoutPageController extends AbstractController {
         model.setRepositoryFilter(page.getRepositoryFilter());
         model.setServerName(page.getServerName());
         model.setAdvanced(page.getAdvanced());
+        model.setTfvcServerCheckout(page.isTfvcServerCheckout());
     }
 }

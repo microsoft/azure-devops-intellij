@@ -59,12 +59,19 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
 
 
     @Override
-    public void doCheckout(final Project project, final CheckoutProvider.Listener listener,
-                           final ServerContext context, final VirtualFile destinationParent,
-                           final String directoryName, final String parentDirectory, final boolean isAdvancedChecked) {
+    public void doCheckout(
+            Project project,
+            CheckoutProvider.Listener listener,
+            ServerContext context,
+            VirtualFile destinationParent,
+            String directoryName,
+            String parentDirectory,
+            boolean isAdvancedChecked,
+            boolean isTfvcServerCheckout) {
         final String workspaceName = directoryName;
         final String teamProjectName = getRepositoryName(context);
         final String localPath = Path.combine(parentDirectory, directoryName);
+        Workspace.Location workspaceKind = isTfvcServerCheckout ? Workspace.Location.SERVER : Workspace.Location.LOCAL;
         final AtomicBoolean checkoutResult = new AtomicBoolean();
         (new Task.Backgroundable(project,
                 TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_CREATING_WORKSPACE),
@@ -74,7 +81,12 @@ public class TfvcCheckoutModel implements VcsSpecificCheckoutModel {
 
                 // Create the workspace with default values
                 final CreateWorkspaceCommand command = new CreateWorkspaceCommand(
-                        context, workspaceName, TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT), null, null);
+                        context,
+                        workspaceName,
+                        TfPluginBundle.message(TfPluginBundle.KEY_CHECKOUT_TFVC_WORKSPACE_COMMENT),
+                        null,
+                        null,
+                        workspaceKind);
                 try {
                     EULADialog.executeWithGuard(project, command::runSynchronously);
                 } catch (final WorkspaceAlreadyExistsException e) {

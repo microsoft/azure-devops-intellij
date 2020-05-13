@@ -80,6 +80,11 @@ class CheckoutPageImpl extends LoginPageImpl implements CheckoutPage {
         return checkoutForm.isAdvanced();
     }
 
+    @Override
+    public boolean isTfvcServerCheckout() {
+        return checkoutForm.isTfvcServerCheckout();
+    }
+
     // Overrides of LoginPage //
 
     @Override

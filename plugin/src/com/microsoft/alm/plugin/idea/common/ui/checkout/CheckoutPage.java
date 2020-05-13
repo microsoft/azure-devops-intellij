@@ -27,6 +27,8 @@ public interface CheckoutPage extends FocusableTabPage {
 
     boolean getAdvanced();
 
+    boolean isTfvcServerCheckout();
+
     void setRepositoryFilter(String filter);
 
     String getRepositoryFilter();

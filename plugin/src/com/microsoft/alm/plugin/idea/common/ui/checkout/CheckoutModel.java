@@ -109,10 +109,24 @@ public class CheckoutModel extends PageModelImpl implements VcsSpecificCheckoutM
     // Implement VcsSpecificCheckoutModel and redirect calls to the specific implementation
     // BEGIN VcsSpecificCheckoutModel
     @Override
-    public void doCheckout(final Project project, final CheckoutProvider.Listener listener, final ServerContext context,
-                           final VirtualFile destinationParent, final String directoryName, final String parentDirectory,
-                           final boolean isAdvancedChecked) {
-        specificCheckoutModel.doCheckout(project, listener, context, destinationParent, directoryName, parentDirectory, isAdvancedChecked);
+    public void doCheckout(
+            Project project,
+            CheckoutProvider.Listener listener,
+            ServerContext context,
+            VirtualFile destinationParent,
+            String directoryName,
+            String parentDirectory,
+            boolean isAdvancedChecked,
+            boolean isTfvcServerCheckout) {
+        specificCheckoutModel.doCheckout(
+                project,
+                listener,
+                context,
+                destinationParent,
+                directoryName,
+                parentDirectory,
+                isAdvancedChecked,
+                isTfvcServerCheckout);
     }
 
     @Override

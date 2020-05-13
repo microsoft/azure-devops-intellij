@@ -162,6 +162,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TFVC_ADVANCED = "CheckoutDialog.Tfvc.Advanced";
     @NonNls
+    public static final String KEY_CHECKOUT_DIALOG_TFVC_SERVER_WORKSPACE = "CheckoutDialog.Tfvc.ServerWorkspace";
+    @NonNls
     public static final String KEY_CHECKOUT_ERRORS_UNEXPECTED = "Checkout.Errors.Unexpected";
     @NonNls
     public static final String KEY_CHECKOUT_ERRORS_AUTHENTICATION_FAILED_TITLE = "CheckoutDialog.Errors.AuthenticationFailed.Title";

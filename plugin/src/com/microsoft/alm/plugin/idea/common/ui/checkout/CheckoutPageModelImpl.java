@@ -34,6 +34,8 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     private boolean loading = false;
     private boolean cloneEnabled = false;
     private boolean advanced = false;
+    private boolean isTfvcServerCheckout = false;
+
     //default values for Strings should be "" rather than null.
     private String parentDirectory = "";
     private String directoryName = "";
@@ -155,6 +157,14 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
     }
 
     @Override
+    public void setTfvcServerCheckout(boolean isTfvcServerCheckout) {
+        if (this.isTfvcServerCheckout != isTfvcServerCheckout) {
+            this.isTfvcServerCheckout = isTfvcServerCheckout;
+            setChangedAndNotify(PROP_TFVC_SERVER_CHECKOUT);
+        }
+    }
+
+    @Override
     public void setLoading(final boolean loading) {
         if (this.loading != loading) {
             this.loading = loading;
@@ -263,7 +273,7 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
 
             // Do the specific checkout for this VCS provider (Git or TFVC)
             parentModel.doCheckout(getParentModel().getProject(), getParentModel().getListener(),
-                    context, destinationParent, getDirectoryName(), getParentDirectory(), isAdvanced());
+                    context, destinationParent, getDirectoryName(), getParentDirectory(), isAdvanced(), isTfvcServerCheckout);
 
             // Save parent directory for next time
             PluginServiceProvider.getInstance().getPropertyService().setProperty(PropertyService.PROP_REPO_ROOT, getParentDirectory());
