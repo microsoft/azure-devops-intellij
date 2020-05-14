@@ -118,8 +118,23 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         pathWatcherFactory.pathsInvalidated.fire(paths.map { Paths.get(it.path) })
     }
 
-    fun deletePathsRecursively(paths: List<TfsPath>): TfsDeleteResult {
+    private fun performLocalChanges(
+        paths: List<TfsPath>,
+        changeListener: NewPendingChangeListener,
+        errorListener: NonFatalErrorListener,
+        action: (Workspace, List<TfsPath>) -> Unit) {
         val eventEngine = client.eventEngine
+
+        eventEngine.withNewPendingChangeListener(changeListener) {
+            eventEngine.withNonFatalErrorListener(errorListener) {
+                enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
+                    action(workspace, workspacePaths)
+                }
+            }
+        }
+    }
+
+    fun deletePathsRecursively(paths: List<TfsPath>): TfsDeleteResult {
         val deletedEvents = mutableListOf<PendingChangeEvent>()
         val itemNotExistsFailures = mutableListOf<Failure>()
         val otherFailures = mutableListOf<Failure>()
@@ -139,18 +154,14 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
             }
         }
 
-        eventEngine.withNewPendingChangeListener(changeListener) {
-            eventEngine.withNonFatalErrorListener(errorListener) {
-                enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
-                    workspace.pendDelete(
-                        workspacePaths.mapToArray { it.toCanonicalPathString() },
-                        RecursionType.FULL,
-                        LockLevel.UNCHANGED,
-                        GetOptions.NONE,
-                        PendChangesOptions.NONE
-                    )
-                }
-            }
+        performLocalChanges(paths, changeListener, errorListener) { workspace, workspacePaths ->
+            workspace.pendDelete(
+                workspacePaths.mapToArray { it.toCanonicalPathString() },
+                RecursionType.FULL,
+                LockLevel.UNCHANGED,
+                GetOptions.NONE,
+                PendChangesOptions.NONE
+            )
         }
 
         val deletedPaths = deletedEvents.map { TfsLocalPath(it.pendingChange.localItem) }
@@ -171,5 +182,44 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         }
 
         return undonePaths
+    }
+
+    fun checkoutFilesForEdit(paths: List<TfsLocalPath>, recursive: Boolean): TfvcCheckoutResult {
+        val editedEvents = mutableListOf<PendingChangeEvent>()
+        val itemNotExistsFailures = mutableListOf<Failure>()
+        val otherFailures = mutableListOf<Failure>()
+
+        val changeListener = NewPendingChangeListener { event ->
+            if (event.pendingChange.changeType.contains(ChangeType.EDIT)) {
+                editedEvents.add(event)
+            }
+        }
+
+        val errorListener = NonFatalErrorListener { event ->
+            event.failure?.let {
+                when (event.failure.code) {
+                    FailureCodes.ITEM_NOT_FOUND_EXCEPTION -> itemNotExistsFailures.add(it)
+                    else -> otherFailures.add(it)
+                }
+            }
+        }
+
+        val recursionType = if (recursive) RecursionType.FULL else RecursionType.NONE
+        performLocalChanges(paths, changeListener, errorListener) { workspace, workspacePaths ->
+            workspace.pendEdit(
+                workspacePaths.mapToArray { it.toCanonicalPathString() },
+                recursionType,
+                LockLevel.NONE,
+                null,
+                GetOptions.NONE,
+                PendChangesOptions.NONE
+            )
+        }
+
+        val editedPaths = editedEvents.map { TfsLocalPath(it.pendingChange.localItem) }
+        val errorMessages = otherFailures.map { it.toString() }
+        val notFoundPaths = itemNotExistsFailures.map { TfsLocalPath(it.localItem) }
+
+        return TfvcCheckoutResult(editedPaths, notFoundPaths, errorMessages)
     }
 }

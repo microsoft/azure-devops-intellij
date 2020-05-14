@@ -11,8 +11,10 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
+import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -128,6 +130,25 @@ public class ReactiveTfvcClient implements TfvcClient {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
                     .thenCompose(client -> client.undoLocalChangesAsync(serverIdentification, items));
+        });
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> filePaths,
+            boolean recursive) {
+        return traceTime("Checkout", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            List<TfsLocalPath> paths = filePaths.stream()
+                    .map(TfsFileUtil::createLocalPath)
+                    .collect(Collectors.toList());
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.checkoutFilesForEditAsync(
+                            serverIdentification,
+                            paths,
+                            recursive));
         });
     }
 }

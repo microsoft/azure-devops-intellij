@@ -79,6 +79,17 @@ object TfsModel : Root() {
         field("errorMessages", immutableList(string))
     }
 
+    private val TfvcCheckoutParameters = structdef {
+        field("filePaths", immutableList(TfsLocalPath))
+        field("recursive", bool)
+    }
+
+    private val TfvcCheckoutResult = structdef {
+        field("checkedOutFiles", immutableList(TfsLocalPath))
+        field("notFoundFiles", immutableList(TfsLocalPath))
+        field("errorMessages", immutableList(string))
+    }
+
     private val TfsCollection = classdef {
         property("isReady", bool)
             .doc("Whether the client is ready to accept method calls")
@@ -103,6 +114,9 @@ object TfsModel : Root() {
 
         call("undoLocalChanges", immutableList(TfsPath), immutableList(TfsLocalPath))
             .doc("Removes pending changes from a workspace, restoring the local disk files to match the state of the source control server before the change was made.")
+
+        call("checkoutFilesForEdit", TfvcCheckoutParameters, TfvcCheckoutResult)
+            .doc("Makes one or more local files writable and creates \"edit\" pending changes for them in the current workspace.")
     }
 
     init {

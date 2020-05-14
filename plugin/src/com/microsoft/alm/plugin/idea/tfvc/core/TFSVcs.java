@@ -35,6 +35,7 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.CommittedChangesProvider;
+import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsConfiguration;
@@ -78,8 +79,6 @@ import java.util.Collection;
 
 /**
  * Class that sets up the TFS version control extension.
- * <p/>
- * TODO: comment back in code as more features are added
  */
 public class TFSVcs extends AbstractVcs {
     public static final Logger logger = LoggerFactory.getLogger(TFSVcs.class);
@@ -102,6 +101,7 @@ public class TFSVcs extends AbstractVcs {
     private VcsVFSListener fileListener;
     private TFSFileSystemListener tfsFileSystemListener;
     private CommittedChangesProvider<TFSChangeList, ChangeBrowserSettings> committedChangesProvider;
+    private EditFileProvider myEditFileProvider;
 
     public TFSVcs(@NotNull Project project) {
         super(project, TFVC_NAME);
@@ -218,6 +218,14 @@ public class TFSVcs extends AbstractVcs {
             myDiffProvider = new TFSDiffProvider(myProject);
         }
         return myDiffProvider;
+    }
+
+    @NotNull
+    @Override
+    public EditFileProvider getEditFileProvider() {
+        if (myEditFileProvider == null)
+            myEditFileProvider = new TfvcEditFileProvider(this);
+        return myEditFileProvider;
     }
 
     @Nullable

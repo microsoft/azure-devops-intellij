@@ -12,8 +12,10 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -182,6 +184,40 @@ public interface TfvcClient {
     default List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
         try {
             return undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Performs asynchronous checkout of passed files for edit.
+     *
+     * @param serverContext a server context to extract the authorization information from.
+     * @param filePaths     list of file paths to checkout.
+     * @param recursive     whether the operation should be recursive.
+     * @return a completion stage with the checkout result that will be resolved when the operation ends.
+     */
+    @NotNull
+    CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> filePaths,
+            boolean recursive);
+
+    /**
+     * Performs asynchronous checkout of passed files for edit.
+     *
+     * @param serverContext a server context to extract the authorization information from.
+     * @param filePaths     list of file paths to checkout.
+     * @param recursive     whether the operation should be recursive.
+     * @return the checkout result.
+     */
+    @NotNull
+    default TfvcCheckoutResult checkoutForEdit(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> filePaths,
+            boolean recursive) {
+        try {
+            return checkoutForEditAsync(serverContext, filePaths, recursive).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

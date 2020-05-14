@@ -132,6 +132,14 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_WORKSPACE_NOT_DETECTED = "Tfvc.WorkspaceNotDetected";
 
+    // TFVC Checkout
+    @NonNls
+    public static final String KEY_TFVC_CHECKOUT_FAILED = "Tfvc.CheckoutFailed";
+    @NonNls
+    public static final String KEY_TFVC_CHECKOUT_FILES = "Tfvc.CheckoutFiles";
+    @NonNls
+    public static final String KEY_TFVC_CHECKOUT_FILES_FAILED = "Tfvc.CheckoutFilesFailed";
+
     // Checkout dialog ui and models
     @NonNls
     public static final String KEY_CHECKOUT_DIALOG_TFS_TAB = "CheckoutDialog.TfsTab";

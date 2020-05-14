@@ -139,6 +139,11 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         client.undoLocalChanges(paths)
     }
 
+    collection.checkoutFilesForEdit.set { parameters ->
+        logPaths("Checkout (recursive: ${parameters.recursive})", parameters.filePaths)
+        client.checkoutFilesForEdit(parameters.filePaths, parameters.recursive)
+    }
+
     client.workspaces.advise(lifetime) { workspaces ->
         val paths = workspaces.flatMap { it.mappedPaths.map(::TfsLocalPath) }
         collection.mappedPaths.set(paths)

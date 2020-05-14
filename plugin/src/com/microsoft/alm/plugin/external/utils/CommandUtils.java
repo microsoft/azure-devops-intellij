@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
+import com.microsoft.alm.plugin.external.commands.CheckoutCommand;
 import com.microsoft.alm.plugin.external.commands.Command;
 import com.microsoft.alm.plugin.external.commands.CreateBranchCommand;
 import com.microsoft.alm.plugin.external.commands.CreateLabelCommand;
@@ -58,6 +59,7 @@ import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.models.WorkspaceInformation;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
+import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -673,6 +675,22 @@ public class CommandUtils {
     public static List<ExtendedItemInfo> getItemInfos(final ServerContext context, final List<String> itemPaths) {
         Command<List<ExtendedItemInfo>> infoCommand = new InfoCommand(context, itemPaths);
         return infoCommand.runSynchronously();
+    }
+
+    /**
+     * Performs a checkout operation on the list of the files passed.
+     *
+     * @param serverContext a server context to extract the authentication information.
+     * @param filePaths     list of the files to checkout.
+     * @param recursive     whether the operation should be recursive.
+     * @return the checkout result.
+     */
+    @NotNull
+    public static TfvcCheckoutResult checkoutFilesForEdit(
+            @NotNull ServerContext serverContext,
+            @NotNull List<java.nio.file.Path> filePaths,
+            boolean recursive) {
+        return new CheckoutCommand(serverContext, filePaths, recursive).runSynchronously();
     }
 
     /**
