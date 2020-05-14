@@ -99,6 +99,15 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
             collection.undoLocalChanges.start(paths).pipeTo(lt, this)
         }
 
+    fun checkoutFilesForEditAsync(
+        collection: TfsCollection,
+        filePaths: List<TfsLocalPath>,
+        recursive: Boolean
+    ): CompletionStage<TfvcCheckoutResult> =
+        queueFutureAsync { lt ->
+            collection.checkoutFilesForEdit.start(TfvcCheckoutParameters(filePaths, recursive)).pipeTo(lt, this)
+        }
+
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletionStage<T> {
         val lifetime = lifetime.createNested()
         val future = CompletableFuture<T>().whenComplete { _, _ -> lifetime.terminate() }

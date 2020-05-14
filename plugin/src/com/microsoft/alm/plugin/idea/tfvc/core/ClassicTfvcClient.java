@@ -14,8 +14,10 @@ import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
+import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -142,5 +144,23 @@ public class ClassicTfvcClient implements TfvcClient {
         List<String> itemPaths = items.stream().map(TfsFileUtil::getPathItem).collect(Collectors.toList());
         List<String> undonePaths = CommandUtils.undoLocalFiles(serverContext, itemPaths);
         return undonePaths.stream().map(TfsLocalPath::new).collect(Collectors.toList());
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> filePaths,
+            boolean recursive) {
+        return CompletableFuture.completedFuture(checkoutForEdit(serverContext, filePaths, recursive));
+    }
+
+    @NotNull
+    @Override
+    public TfvcCheckoutResult checkoutForEdit(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> filePaths,
+            boolean recursive) {
+        return CommandUtils.checkoutFilesForEdit(serverContext, filePaths, recursive);
     }
 }

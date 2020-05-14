@@ -33,6 +33,7 @@ import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsDeleteResult;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -196,6 +197,15 @@ public class ReactiveTfvcClientHost {
             @NotNull List<TfsPath> paths) {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.undoLocalChangesAsync(collection, paths));
+    }
+
+    @NotNull
+    public CompletionStage<TfvcCheckoutResult> checkoutFilesForEditAsync(
+            @NotNull ServerIdentification serverIdentification,
+            @NotNull List<TfsLocalPath> paths,
+            boolean recursive) {
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> myConnection.checkoutFilesForEditAsync(collection, paths, recursive));
     }
 
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
