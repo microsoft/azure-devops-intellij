@@ -94,8 +94,6 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
 
         if (authInfo != null) {
             builder.addAuthInfo(authInfo);
-        } else {
-            builder.addSwitch("noprompt");
         }
 
         return builder;
