@@ -15,11 +15,27 @@ import java.util.concurrent.ConcurrentMap;
 public class ToolRunnerCache {
     private static final Logger logger = LoggerFactory.getLogger(ToolRunnerCache.class);
 
-    private static ConcurrentMap<String, ToolRunner> cache = new ConcurrentHashMap<String, ToolRunner>(3);
+    private static final ConcurrentMap<String, ToolRunner> cache = new ConcurrentHashMap<>(3);
 
-    public static ToolRunner getRunningToolRunner(final String toolLocation, final ToolRunner.ArgumentBuilder argumentBuilder, final ToolRunner.Listener listener) {
-        logger.info("getRunningToolRunner: toolLocation={0}", toolLocation);
-        ToolRunner toolRunner = null;
+    /**
+     * Creates and returns a running tool runner instance for TFVC client.
+     *
+     * @param toolLocation              location of the tool to start.
+     * @param argumentBuilder           an object that defined the tool arguments.
+     * @param listener                  tool execution listener.
+     * @param shouldPrepareCachedRunner whether to prepare a new cached runner for the same location in advance: for
+     *                                  cases when new calls of the same tool in the same working directory are
+     *                                  likely. See {@link #getKey(String, ToolRunner.ArgumentBuilder)} for cache key
+     *                                  calculation algorithm.
+     * @return a started tool runner object.
+     */
+    public static ToolRunner getRunningToolRunner(
+            String toolLocation,
+            ToolRunner.ArgumentBuilder argumentBuilder,
+            ToolRunner.Listener listener,
+            boolean shouldPrepareCachedRunner) {
+        logger.info("getRunningToolRunner: toolLocation={}", toolLocation);
+        ToolRunner toolRunner;
 
         // Check the version
         final ToolVersion version = TfTool.getCachedVersion();
@@ -49,7 +65,8 @@ public class ToolRunnerCache {
 
             // Add another instance to the cache for later
             //TODO: clear all or part of the cache to make sure we aren't leaking memory by never cleaning up
-            updateCachedInstance(key, toolLocation, argumentBuilder);
+            if (shouldPrepareCachedRunner)
+                updateCachedInstance(key, toolLocation, argumentBuilder);
         }
 
         return toolRunner;
