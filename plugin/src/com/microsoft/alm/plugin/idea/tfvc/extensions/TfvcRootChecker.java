@@ -43,7 +43,7 @@ public class TfvcRootChecker extends VcsRootChecker {
             Workspace workspace = null;
             Path workspacePath = Paths.get(path);
             try {
-                workspace = CommandUtils.getPartialWorkspace(workspacePath, false);
+                workspace = CommandUtils.getPartialWorkspace(workspacePath, true);
             } catch (WorkspaceCouldNotBeDeterminedException | ToolAuthenticationException ex) {
                 if (!(ex instanceof WorkspaceCouldNotBeDeterminedException))
                     ourLogger.info(ex);

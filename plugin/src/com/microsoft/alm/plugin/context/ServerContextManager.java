@@ -25,6 +25,8 @@ import com.microsoft.alm.plugin.services.ServerContextStore;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -446,20 +448,31 @@ public class ServerContextManager {
     }
 
     /**
-     * This method tries to find existing authentication info for a given git url.
+     * This method tries to find existing authentication info for a given server URI.
      * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
      */
-    public AuthenticationInfo getBestAuthenticationInfo(final String url, final boolean prompt) {
-        final ServerContext context = get(url);
+    @Nullable
+    public AuthenticationInfo getBestAuthenticationInfo(@NotNull URI uri, boolean prompt) {
+        final ServerContext context = get(uri.toString());
         final AuthenticationInfo info;
         if (context != null) {
             // return exact match
             info = context.getAuthenticationInfo();
         } else {
             // look for a good enough match
-            info = getAuthenticationInfo(url, prompt);
+            info = getAuthenticationInfo(uri, prompt);
         }
         return info;
+    }
+
+    /**
+     * This method tries to find existing authentication info for a given git url.
+     * If the auth info cannot be found and the prompt flag is true, the user will be prompted.
+     *
+     * @deprecated Use {@link #getBestAuthenticationInfo(URI, boolean)} instead.
+     */
+    public AuthenticationInfo getBestAuthenticationInfo(final String url, final boolean prompt) {
+        return getAuthenticationInfo(URI.create(url), prompt);
     }
 
     /**
