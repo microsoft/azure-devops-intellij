@@ -190,7 +190,7 @@ public abstract class Command<T> {
                         listener.progress("", OUTPUT_TYPE_INFO, 100);
                         listener.completed(result, error);
                     }
-                });
+                }, shouldPrepareCachedRunner());
     }
 
     /**
@@ -270,6 +270,21 @@ public abstract class Command<T> {
      */
     public int interpretReturnCode(final int returnCode) {
         return returnCode;
+    }
+
+    /**
+     * Determines whether a cached tool runner instance should be created after execution of this command. This runner
+     * will be used when a new command is issued against the same working directory/tool location. See
+     * {@link ToolRunnerCache#getKey} for details on cache key calculation.
+     * <p/>
+     * Usually, it is a good idea to prepare a runner in advance, because there's always a possibility that new
+     * commands will be issued against the same working directory as defined by the current command.
+     * <p/>
+     * It should be overridden in rare cases when it isn't necessary, e.g. when it is known that command is often used
+     * against temporary/non-workspace locations.
+     */
+    public boolean shouldPrepareCachedRunner() {
+        return true;
     }
 
     protected NodeList evaluateXPath(final String stdout, final String xpathQuery) {

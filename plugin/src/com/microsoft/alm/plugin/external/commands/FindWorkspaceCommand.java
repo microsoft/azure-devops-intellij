@@ -77,6 +77,13 @@ public class FindWorkspaceCommand extends Command<Workspace> {
         return builder;
     }
 
+    @Override
+    public boolean shouldPrepareCachedRunner() {
+        // This command may be called on non-workspace location, so we shouldn't generally prepare a runner for the new
+        // workspace in advance. So, we should cache only "static" invocations with no working directory override.
+        return StringUtils.isEmpty(localPath);
+    }
+
     /**
      * Parses the output of the workfold command. (NOT XML)
      * SAMPLE
