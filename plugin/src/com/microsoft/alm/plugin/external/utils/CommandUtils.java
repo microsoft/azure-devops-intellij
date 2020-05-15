@@ -149,7 +149,7 @@ public class CommandUtils {
                 collectionUri,
                 allowCredentialPrompt);
         AuthenticationInfo authenticationInfo = ServerContextManager.getInstance()
-                .getAuthenticationInfo(collectionUri, allowCredentialPrompt);
+                .getBestAuthenticationInfo(collectionUri, allowCredentialPrompt);
         if (authenticationInfo == null) {
             logger.warn("Wasn't able to load the authentication information for \"{}\"", collectionUri);
             throw new ToolAuthenticationException();

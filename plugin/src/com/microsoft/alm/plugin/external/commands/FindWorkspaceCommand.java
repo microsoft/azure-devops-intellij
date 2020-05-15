@@ -107,8 +107,8 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
     }
 
     /**
-     * Checks stderr for fatal errors. Will throw a corresponding exception on a fatal error, will return false on
-     * nonfatal error. Will return true if no errors were discovered.
+     * Checks stderr for fatal errors. Will throw a corresponding exception on a fatal error, will return true on any
+     * nonfatal error. Will return false if no errors were discovered.
      */
     private boolean checkErrors(String stderr) {
         if (StringUtils.startsWith(stderr, AUTH_ERROR_SERVER) || StringUtils.contains(stderr, AUTH_ERROR_FEDERATED)) {
@@ -116,7 +116,7 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
 
             // Basic information could be extracted even in case of authentication error, so we should ignore the error.
             if (allowBasicInformation) {
-                return false;
+                return true;
             }
 
             throw new ToolAuthenticationException();
@@ -125,7 +125,7 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
         }
         super.throwIfError(stderr);
 
-        return true;
+        return false;
     }
 
     /**
