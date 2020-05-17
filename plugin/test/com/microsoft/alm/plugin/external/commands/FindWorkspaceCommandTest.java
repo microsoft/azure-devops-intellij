@@ -46,6 +46,12 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     }
 
     @Test
+    public void findWorkspaceCommandShouldOnlyBeCachedWithoutLocalPathDefined() {
+        Assert.assertFalse(new FindWorkspaceCommand("/tmp").shouldPrepareCachedRunner());
+        Assert.assertTrue(new FindWorkspaceCommand("collection", "workspace", null).shouldPrepareCachedRunner());
+    }
+
+    @Test
     public void testGetArgumentBuilder_collectionWorkspace() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("collectionName", "workspaceName", null);
         final ToolRunner.ArgumentBuilder builder = cmd.getArgumentBuilder();
