@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 public class TfvcRootChecker extends VcsRootChecker {
     private static final Logger ourLogger = Logger.getInstance(TfvcRootChecker.class);
 
+    private final TfvcRootCache myCache = new TfvcRootCache();
+
     /**
      * Checks if registered mapping can be used to perform VCS operations. According to the specification, returns
      * {@code true} if unsure.
@@ -30,13 +32,28 @@ public class TfvcRootChecker extends VcsRootChecker {
      * It is used as optimization in IDEA 2019.2+.
      */
     // @Override // only available in IDEA 2019.2
-    public boolean validateRoot(@NotNull String path) {
-        return !StringUtil.isEmpty(TfTool.getLocation());
+    public boolean validateRoot(@NotNull String pathString) {
+        Path path = Paths.get(pathString);
+        String fileName = path.getFileName().toString();
+        if (isVcsDir(fileName) || fileName.startsWith("$"))
+            return false;
+
+        for (Path component : path) {
+            if (isVcsDir(component.toString()))
+                return false;
+        }
+
+        TfvcRootCache.CachedStatus cachedStatus = myCache.get(path);
+        return cachedStatus == TfvcRootCache.CachedStatus.UNKNOWN
+                || cachedStatus == TfvcRootCache.CachedStatus.IS_MAPPING_ROOT; // known as not a root otherwise
     }
 
     @Override
     public boolean isRoot(@NotNull String path) {
         if (!validateRoot(path))
+            return false;
+
+        if (StringUtil.isEmpty(TfTool.getLocation()))
             return false;
 
         return EULADialog.executeWithGuard(null, () -> {
@@ -46,12 +63,17 @@ public class TfvcRootChecker extends VcsRootChecker {
                 workspace = CommandUtils.getPartialWorkspace(workspacePath, true);
             } catch (WorkspaceCouldNotBeDeterminedException | ToolAuthenticationException ex) {
                 if (!(ex instanceof WorkspaceCouldNotBeDeterminedException))
-                    ourLogger.info(ex);
+                    ourLogger.warn(ex);
 
                 ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
             }
 
-            if (workspace == null) return false;
+            if (workspace == null) {
+                myCache.putNoMappingsFor(workspacePath);
+                return false;
+            }
+
+            myCache.putMappings(workspace.getMappings());
             return workspace.getMappings().stream()
                     .anyMatch(mapping -> FileUtil.pathsEqual(path, mapping.getLocalPath()));
         });

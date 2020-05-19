@@ -101,7 +101,7 @@ public class TFVCUtil {
     /**
      * Determines whether the file is in the TFVC service directory ($tf or .tf).
      */
-    private static boolean isInServiceDirectory(FilePath filePath) {
+    public static boolean isInServiceDirectory(FilePath filePath) {
         String path = filePath.getPath();
         return StringUtils.containsIgnoreCase(path, "$tf")
                 || StringUtils.containsIgnoreCase(path, ".tf");
