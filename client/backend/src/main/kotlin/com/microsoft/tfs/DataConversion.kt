@@ -48,7 +48,7 @@ private fun toPendingChange(pendingSet: PendingSet, pc: PendingChange) = TfsPend
 
 fun toPendingChanges(pendingSet: PendingSet): Iterable<TfsPendingChange> =
     (pendingSet.pendingChanges.asSequence().map { toPendingChange(pendingSet, it) }
-            + pendingSet.candidatePendingChanges.map { toPendingChange(pendingSet, it) }).asIterable()
+            + pendingSet.candidatePendingChanges.orEmpty().map { toPendingChange(pendingSet, it) }).asIterable()
 
 fun TfsPath.toCanonicalPathString(): String = when (this) {
     is TfsLocalPath -> LocalPath.canonicalize(path)
