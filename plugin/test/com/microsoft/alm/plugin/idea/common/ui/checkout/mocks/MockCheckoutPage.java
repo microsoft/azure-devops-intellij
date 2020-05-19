@@ -48,6 +48,11 @@ public class MockCheckoutPage implements CheckoutPage {
     }
 
     @Override
+    public boolean isTfvcServerCheckout() {
+        return false;
+    }
+
+    @Override
     public void setRepositoryFilter(String filter) {
         repositoryFilter = filter;
     }
