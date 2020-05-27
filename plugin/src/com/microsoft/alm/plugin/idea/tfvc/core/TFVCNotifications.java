@@ -11,6 +11,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
+import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.update.MergingUpdateQueue;
 import com.intellij.util.ui.update.Update;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -46,6 +47,6 @@ public class TFVCNotifications {
                 Notifications.Bus.notify(notification, project);
             }
         });
-        ourQueue.activate();
+        UIUtil.invokeLaterIfNeeded(ourQueue::activate);
     }
 }
