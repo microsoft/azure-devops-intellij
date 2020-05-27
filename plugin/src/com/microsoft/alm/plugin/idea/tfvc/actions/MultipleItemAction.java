@@ -39,7 +39,6 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
-import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,8 +51,11 @@ import java.util.List;
  * Subclasses of this class should surround sections of code that may take some time with the
  * runWithProgress method and execute them as a runnable. Within those sections, you should not
  * show UI.
+ *
+ * @param <TItemInfo> type of the item information class, e.g. {@link ItemInfo} or
+ *                    {@link com.microsoft.alm.plugin.external.models.ExtendedItemInfo}.
  */
-public abstract class MultipleItemAction extends DumbAwareAction {
+public abstract class MultipleItemAction<TItemInfo extends ItemInfo> extends DumbAwareAction {
     public static final Logger logger = LoggerFactory.getLogger(MultipleItemAction.class);
 
     public MultipleItemAction(final String title, final String message) {
@@ -74,6 +76,8 @@ public abstract class MultipleItemAction extends DumbAwareAction {
         final VirtualFile[] files = VcsUtil.getVirtualFiles(anActionEvent);
         anActionEvent.getPresentation().setEnabled(isEnabled(project, files));
     }
+
+    protected abstract void loadItemInfoCollection(MultipleItemActionContext context, List<String> localPaths);
 
     @Override
     public void actionPerformed(final AnActionEvent anActionEvent) {
@@ -96,9 +100,8 @@ public abstract class MultipleItemAction extends DumbAwareAction {
                     localPaths.add(localPath.getPath());
                 }
 
-                // Get the item infos (no need for a working folder since these are local paths)
-                TfvcClient client = TfvcClient.getInstance(context.project);
-                client.getLocalItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
+                // Get the item infos
+                loadItemInfoCollection(context, localPaths);
 
                 // Set the default path and additional parameters
                 if (context.itemInfos.size() > 0) {
@@ -202,7 +205,7 @@ public abstract class MultipleItemAction extends DumbAwareAction {
     /**
      * This internal class is used to keep track of our context thru all the runnables above.
      */
-    protected static class MultipleItemActionContext {
+    protected class MultipleItemActionContext {
         protected Project project;
         protected ServerContext serverContext;
         protected String defaultLocalPath;
@@ -210,7 +213,7 @@ public abstract class MultipleItemAction extends DumbAwareAction {
         protected String workingFolder;
         protected boolean cancelled = false;
         protected final List<VcsException> errors = new ArrayList<VcsException>();
-        protected final List<ItemInfo> itemInfos = new ArrayList<ItemInfo>();
+        protected final List<TItemInfo> itemInfos = new ArrayList<>();
 
         public boolean hasErrors() {
             return !errors.isEmpty();

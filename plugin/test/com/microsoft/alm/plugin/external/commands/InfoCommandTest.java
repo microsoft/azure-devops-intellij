@@ -4,7 +4,7 @@
 package com.microsoft.alm.plugin.external.commands;
 
 import com.microsoft.alm.plugin.external.ToolRunner;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -54,7 +54,7 @@ public class InfoCommandTest extends AbstractCommandTest {
     @Test
     public void testParseOutput_noOutput() {
         final InfoCommand cmd = new InfoCommand(null, files);
-        final List<ItemInfo> infos = cmd.parseOutput("", "");
+        List<ExtendedItemInfo> infos = cmd.parseOutput("", "");
         Assert.assertEquals(0, infos.size());
     }
 
@@ -95,7 +95,7 @@ public class InfoCommandTest extends AbstractCommandTest {
                 "Type:          file\n" +
                 "File type:     windows-1252\n" +
                 "Size:          164";
-        final List<ItemInfo> infos = cmd.parseOutput(output, "");
+        List<ExtendedItemInfo> infos = cmd.parseOutput(output, "");
         Assert.assertEquals(2, infos.size());
         Assert.assertEquals("/path/to/build.xml", infos.get(0).getLocalItem());
         Assert.assertEquals("$/TFVC_1/build.xml", infos.get(0).getServerItem());
@@ -110,6 +110,6 @@ public class InfoCommandTest extends AbstractCommandTest {
     @Test(expected = RuntimeException.class)
     public void testParseOutput_errors() {
         final InfoCommand cmd = new InfoCommand(null, files);
-        final List<ItemInfo> infos = cmd.parseOutput("", "error");
+        List<ExtendedItemInfo> infos = cmd.parseOutput("", "error");
     }
 }

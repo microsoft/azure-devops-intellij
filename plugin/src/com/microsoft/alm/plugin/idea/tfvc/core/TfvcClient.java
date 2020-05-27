@@ -6,6 +6,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.services.PropertyService;
@@ -88,6 +89,45 @@ public interface TfvcClient {
             @NotNull Consumer<ItemInfo> onItemReceived) {
         try {
             getLocalItemsInfoAsync(serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Collects extended item information on selected items asynchronously and passes it into a user-provided callback.
+     * Differs from {@link #getLocalItemsInfoAsync(ServerContext, List, Consumer)} in that it also returns lock information.
+     *
+     * @param serverContext  server context to extract a authorization information from
+     * @param pathsToProcess list of items to process information
+     * @param onItemReceived callback that will be called for each item received. Should be free-threaded (may be
+     *                       called from any thread, including the one that performed this call), but will be called in
+     *                       a thread-safe way (multiple simultaneous calls are prohibited).
+     * @return a completion stage that will be finished after the call is completely finished and all of the callbacks
+     * are done.
+     */
+    @NotNull
+    CompletionStage<Void> getExtendedItemsInfoAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ExtendedItemInfo> onItemReceived);
+
+    /**
+     * Collects extended item information on selected items and passes it into a user-provided callback. Differs from
+     * {@link #getLocalItemsInfo(ServerContext, List, Consumer)} in that it also returns lock information.
+     *
+     * @param serverContext  server context to extract a authorization information from
+     * @param pathsToProcess list of items to process information
+     * @param onItemReceived callback that will be called for each item received. Should be free-threaded (may be
+     *                       called from any thread, including the one that performed this call), but will be called in
+     *                       a thread-safe way (multiple simultaneous calls are prohibited).
+     */
+    default void getExtendedItemsInfo(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
+        try {
+            getExtendedItemsInfoAsync(serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

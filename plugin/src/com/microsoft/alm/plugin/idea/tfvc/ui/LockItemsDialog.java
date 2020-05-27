@@ -21,7 +21,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.external.commands.LockCommand;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialogImpl;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +46,7 @@ public class LockItemsDialog extends BaseDialogImpl {
     private Action lockAction;
     private Action unlockAction;
 
-    public LockItemsDialog(final Project project, final List<ItemInfo> items) {
+    public LockItemsDialog(Project project, List<ExtendedItemInfo> items) {
         super(project, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_TITLE), null,
                 TfPluginBundle.KEY_TFVC_LOCK_DIALOG_TITLE, true,
                 Collections.<String, Object>singletonMap(PROP_ITEMS, items));
@@ -57,7 +57,7 @@ public class LockItemsDialog extends BaseDialogImpl {
 
     @Nullable
     protected JComponent createCenterPanel() {
-        form = new LockItemsForm((List<ItemInfo>) getProperty(PROP_ITEMS));
+        form = new LockItemsForm((List<ExtendedItemInfo>) getProperty(PROP_ITEMS));
         form.addListener(new LockItemsTableModel.Listener() {
             public void selectionChanged() {
                 updateControls();
@@ -88,13 +88,13 @@ public class LockItemsDialog extends BaseDialogImpl {
     }
 
     private void updateControls() {
-        final List<ItemInfo> items = getSelectedItems();
+        List<ExtendedItemInfo> items = getSelectedItems();
         setLockActionEnabled(!items.isEmpty() && canAllBeLocked(items));
         setUnlockActionEnabled(!items.isEmpty() && canAllBeUnlocked(items));
     }
 
-    private static boolean canAllBeLocked(final List<ItemInfo> items) {
-        for (final ItemInfo item : items) {
+    private static boolean canAllBeLocked(List<ExtendedItemInfo> items) {
+        for (ExtendedItemInfo item : items) {
             final LockCommand.LockLevel level = LockCommand.LockLevel.fromString(item.getLock());
             if (level != LockCommand.LockLevel.NONE) {
                 return false;
@@ -103,8 +103,8 @@ public class LockItemsDialog extends BaseDialogImpl {
         return true;
     }
 
-    private static boolean canAllBeUnlocked(final List<ItemInfo> items) {
-        for (ItemInfo item : items) {
+    private static boolean canAllBeUnlocked(List<ExtendedItemInfo> items) {
+        for (ExtendedItemInfo item : items) {
             final LockCommand.LockLevel level = LockCommand.LockLevel.fromString(item.getLock());
             if (level == LockCommand.LockLevel.NONE) {
                 return false;
@@ -113,7 +113,7 @@ public class LockItemsDialog extends BaseDialogImpl {
         return true;
     }
 
-    public List<ItemInfo> getSelectedItems() {
+    public List<ExtendedItemInfo> getSelectedItems() {
         return form.getSelectedItems();
     }
 

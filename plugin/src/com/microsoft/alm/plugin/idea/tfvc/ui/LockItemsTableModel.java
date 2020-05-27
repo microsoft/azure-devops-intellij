@@ -22,7 +22,7 @@ package com.microsoft.alm.plugin.idea.tfvc.ui;
 import com.intellij.util.EventDispatcher;
 import com.intellij.util.ui.JBUI;
 import com.microsoft.alm.plugin.external.commands.LockCommand;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -41,17 +41,17 @@ public class LockItemsTableModel extends AbstractTableModel {
 
     enum Column {
         Selection("", 25) {
-            public Boolean getValue(final ExtendedItemInfo item) {
+            public Boolean getValue(final ExtendedItemInfoWithSelection item) {
                 return item.selected;
             }
         },
         Item(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_ITEM_COLUMN), 550) {
-            public String getValue(final ExtendedItemInfo item) {
+            public String getValue(final ExtendedItemInfoWithSelection item) {
                 return item.info.getServerItem();
             }
         },
         Lock(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCK_COLUMN), 110) {
-            public String getValue(final ExtendedItemInfo item) {
+            public String getValue(final ExtendedItemInfoWithSelection item) {
                 final LockCommand.LockLevel level = LockCommand.LockLevel.fromString(item.info.getLock());
                 switch (level) {
                     case CHECKIN:
@@ -64,7 +64,7 @@ public class LockItemsTableModel extends AbstractTableModel {
             }
         },
         LockOwner(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_LOCK_DIALOG_LOCKED_BY_COLUMN), 130) {
-            public String getValue(final ExtendedItemInfo item) {
+            public String getValue(final ExtendedItemInfoWithSelection item) {
                 return item.info.getLockOwner();
             }
         };
@@ -86,16 +86,16 @@ public class LockItemsTableModel extends AbstractTableModel {
         }
 
         @Nullable
-        public abstract Object getValue(final ExtendedItemInfo item);
+        public abstract Object getValue(final ExtendedItemInfoWithSelection item);
     }
 
-    private final List<ExtendedItemInfo> items;
+    private final List<ExtendedItemInfoWithSelection> items;
     private final EventDispatcher<Listener> myEventDispatcher = EventDispatcher.create(Listener.class);
 
-    public LockItemsTableModel(final @NotNull List<ItemInfo> items) {
-        this.items = new ArrayList<ExtendedItemInfo>(items.size());
-        for (final ItemInfo item : items) {
-            this.items.add(new ExtendedItemInfo(item));
+    public LockItemsTableModel(@NotNull List<ExtendedItemInfo> items) {
+        this.items = new ArrayList<>(items.size());
+        for (ExtendedItemInfo item : items) {
+            this.items.add(new ExtendedItemInfoWithSelection(item));
         }
         setInitialSelection();
     }
@@ -111,7 +111,7 @@ public class LockItemsTableModel extends AbstractTableModel {
             final LockCommand.LockLevel firstItemLevel = LockCommand.LockLevel.fromString(items.get(0).info.getLock());
             final boolean selectIfNone = firstItemLevel == LockCommand.LockLevel.NONE;
 
-            for (final ExtendedItemInfo item : items) {
+            for (final ExtendedItemInfoWithSelection item : items) {
                 final LockCommand.LockLevel currentLevel = LockCommand.LockLevel.fromString(item.info.getLock());
                 if (currentLevel == LockCommand.LockLevel.NONE && selectIfNone) {
                     item.selected = true;
@@ -153,9 +153,9 @@ public class LockItemsTableModel extends AbstractTableModel {
         }
     }
 
-    public List<ItemInfo> getSelectedItems() {
-        final List<ItemInfo> result = new ArrayList<ItemInfo>();
-        for (ExtendedItemInfo item : items) {
+    public List<ExtendedItemInfo> getSelectedItems() {
+        final List<ExtendedItemInfo> result = new ArrayList<>();
+        for (ExtendedItemInfoWithSelection item : items) {
             if (item.selected) {
                 result.add(item.info);
             }
@@ -180,11 +180,11 @@ public class LockItemsTableModel extends AbstractTableModel {
         }
     }
 
-    private class ExtendedItemInfo {
-        public final ItemInfo info;
+    private static class ExtendedItemInfoWithSelection {
+        public final ExtendedItemInfo info;
         public boolean selected;
 
-        public ExtendedItemInfo(final ItemInfo info) {
+        public ExtendedItemInfoWithSelection(ExtendedItemInfo info) {
             this.info = info;
         }
     }

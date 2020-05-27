@@ -111,6 +111,13 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         client.getLocalItemsInfo(paths)
     }
 
+    collection.getExtendedLocalItemsInfo.set { paths ->
+        if (paths.isEmpty()) return@set emptyList()
+
+        logPaths("Get Local Items Info", paths)
+        client.getExtendedLocalItemsInfo(paths)
+    }
+
     collection.invalidatePaths.set { paths ->
         if (paths.isEmpty()) return@set
 

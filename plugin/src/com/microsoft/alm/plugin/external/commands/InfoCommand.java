@@ -6,7 +6,7 @@ package com.microsoft.alm.plugin.external.commands;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import java.util.Map;
  * <p/>
  * info [/recursive] [/version:<value>] <itemSpec>...
  */
-public class InfoCommand extends Command<List<ItemInfo>> {
+public class InfoCommand extends Command<List<ExtendedItemInfo>> {
     private final List<String> itemPaths;
     private final String workingFolder;
 
@@ -64,10 +64,10 @@ public class InfoCommand extends Command<List<ItemInfo>> {
      * Size:          1385
      */
     @Override
-    public List<ItemInfo> parseOutput(final String stdout, final String stderr) {
+    public List<ExtendedItemInfo> parseOutput(final String stdout, final String stderr) {
         super.throwIfError(stderr);
 
-        final List<ItemInfo> itemInfos = new ArrayList<ItemInfo>(itemPaths.size());
+        final List<ExtendedItemInfo> itemInfos = new ArrayList<>(itemPaths.size());
 
         final Map<String, String> propertyMap = new HashMap<String, String>(15);
         final String[] output = getLines(stdout);
@@ -100,8 +100,8 @@ public class InfoCommand extends Command<List<ItemInfo>> {
         return itemInfos;
     }
 
-    private ItemInfo getItemInfo(Map<String, String> propertyMap) {
-        return new ItemInfo(
+    private ExtendedItemInfo getItemInfo(Map<String, String> propertyMap) {
+        return new ExtendedItemInfo(
                 propertyMap.get("server path"),
                 propertyMap.get("local path"),
                 propertyMap.get("server changeset"),
@@ -110,7 +110,6 @@ public class InfoCommand extends Command<List<ItemInfo>> {
                 propertyMap.get("type"),
                 propertyMap.get("server lock"),
                 propertyMap.get("server lock owner"),
-                propertyMap.get("server deletion id"),
                 propertyMap.get("server last modified"),
                 propertyMap.get("server file type")
         );

@@ -50,7 +50,7 @@ fun toPendingChanges(pendingSet: PendingSet): Iterable<TfsPendingChange> =
     (pendingSet.pendingChanges.asSequence().map { toPendingChange(pendingSet, it) }
             + pendingSet.candidatePendingChanges.map { toPendingChange(pendingSet, it) }).asIterable()
 
-fun TfsPath.toCanonicalPathString(): String = when(this) {
+fun TfsPath.toCanonicalPathString(): String = when (this) {
     is TfsLocalPath -> LocalPath.canonicalize(path)
     is TfsServerPath -> path
     else -> throw Exception("Unknown path type: $this")
@@ -59,29 +59,50 @@ fun TfsPath.toCanonicalPathString(): String = when(this) {
 fun TfsPath.toCanonicalPathItemSpec(recursionType: RecursionType): ItemSpec =
     ItemSpec(toCanonicalPathString(), recursionType)
 
-fun ExtendedItem.toTfsItemInfo(): TfsItemInfo {
-    val change =
+private val ExtendedItem.changeTypeName
+    get() =
         if (pendingChange == ChangeType.NONE) "none"
         else pendingChange.toUIString(false, this)
-    val itemTypeName = itemType.toUIString()
-    val lockStatus = lockLevel.toUIString()
-    val checkInDate = checkinDate?.time?.let(isoDateFormat::format)
-    val encodingName =
+
+private val ExtendedItem.itemTypeName
+    get() = itemType.toUIString()
+
+private val ExtendedItem.checkinDateString
+    get() = checkinDate?.time?.let(isoDateFormat::format)
+
+private val ExtendedItem.encodingName
+    get() =
         if (encoding == FileEncoding(VersionControlConstants.ENCODING_UNCHANGED)) null
         else encoding?.name
-    val fileEncodingName = if (itemType == ItemType.FILE) encodingName else null
 
-    return TfsItemInfo(
+private val ExtendedItem.fileEncodingName
+    get() = if (itemType == ItemType.FILE) encodingName else null
+
+private val ExtendedItem.lockStatus
+    get() = lockLevel.toUIString()
+
+fun ExtendedItem.toLocalItemInfo(): TfsLocalItemInfo =
+    TfsLocalItemInfo(
         targetServerItem,
         localItem,
         localVersion,
         latestVersion,
-        change,
+        changeTypeName,
         itemTypeName,
-        lockStatus,
-        lockOwner,
-        deletionID,
-        checkInDate,
+        checkinDateString,
         fileEncodingName
     )
-}
+
+fun ExtendedItem.toExtendedItemInfo(): TfsExtendedItemInfo =
+    TfsExtendedItemInfo(
+        lockStatus,
+        lockOwner,
+        targetServerItem,
+        localItem,
+        localVersion,
+        latestVersion,
+        changeTypeName,
+        itemTypeName,
+        checkinDateString,
+        fileEncodingName
+    )

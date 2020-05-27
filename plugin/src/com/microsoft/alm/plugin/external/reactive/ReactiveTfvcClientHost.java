@@ -21,6 +21,7 @@ import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
@@ -142,6 +143,22 @@ public class ReactiveTfvcClientHost {
                 });
     }
 
+    private CompletionStage<Void> getExtendedItemsInfoAsyncChunk(
+            TfsCollection collection,
+            Iterator<List<Path>> chunkIterator,
+            Consumer<ExtendedItemInfo> onItemReceived) {
+        if (!chunkIterator.hasNext())
+            return CompletableFuture.completedFuture(null);
+
+        List<Path> chunk = chunkIterator.next();
+        List<TfsLocalPath> paths = chunk.stream().map(TfsFileUtil::createLocalPath).collect(Collectors.toList());
+        return myConnection.getExtendedItemsInfoAsync(collection, paths)
+                .thenCompose(infos -> {
+                    infos.forEach(ii -> onItemReceived.accept(ExtendedItemInfo.from(ii)));
+                    return getExtendedItemsInfoAsyncChunk(collection, chunkIterator, onItemReceived);
+                });
+    }
+
     public CompletionStage<Void> getLocalItemsInfoAsync(
             ServerIdentification serverIdentification,
             Stream<Path> localPaths,
@@ -150,6 +167,19 @@ public class ReactiveTfvcClientHost {
         Iterable<List<Path>> partitions = Iterables.partition(localPaths::iterator, INFO_PARTITION_COUNT);
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> getLocalItemsInfoAsyncChunk(collection, partitions.iterator(), onItemReceived));
+    }
+
+    public CompletionStage<Void> getExtendedItemsInfoAsync(
+            ServerIdentification serverIdentification,
+            Stream<Path> localPaths,
+            Consumer<ExtendedItemInfo> onItemReceived) {
+        // Pack the paths into partitions of predefined size to avoid overloading the protocol.
+        Iterable<List<Path>> partitions = Iterables.partition(localPaths::iterator, INFO_PARTITION_COUNT);
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> getExtendedItemsInfoAsyncChunk(
+                        collection,
+                        partitions.iterator(),
+                        onItemReceived));
     }
 
     @NotNull

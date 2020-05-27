@@ -40,6 +40,7 @@ import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.MergeConflict;
 import com.microsoft.alm.plugin.external.models.MergeMapping;
@@ -592,8 +593,8 @@ public class CommandUtils {
      */
     public static ItemInfo getItemInfo(final ServerContext context, final String workingFolder,
                                        final String itemPath) {
-        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, workingFolder, Collections.singletonList(itemPath));
-        List<ItemInfo> items = infoCommand.runSynchronously();
+        InfoCommand infoCommand = new InfoCommand(context, workingFolder, Collections.singletonList(itemPath));
+        List<ExtendedItemInfo> items = infoCommand.runSynchronously();
         if (items != null && items.size() > 0) {
             return items.get(0);
         }
@@ -605,8 +606,8 @@ public class CommandUtils {
      * Returns the item infos for the item paths provided. Specify a working folder in the workspace if you want info for
      * server paths.
      */
-    public static List<ItemInfo> getItemInfos(final ServerContext context, final List<String> itemPaths) {
-        final Command<List<ItemInfo>> infoCommand = new InfoCommand(context, itemPaths);
+    public static List<ExtendedItemInfo> getItemInfos(final ServerContext context, final List<String> itemPaths) {
+        Command<List<ExtendedItemInfo>> infoCommand = new InfoCommand(context, itemPaths);
         return infoCommand.runSynchronously();
     }
 
