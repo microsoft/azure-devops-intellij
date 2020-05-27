@@ -17,10 +17,7 @@ import com.microsoft.tfs.core.clients.versioncontrol.events.UndonePendingChangeL
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.*
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
 import com.microsoft.tfs.core.httpclient.Credentials
-import com.microsoft.tfs.model.host.TfsDeleteResult
-import com.microsoft.tfs.model.host.TfsItemInfo
-import com.microsoft.tfs.model.host.TfsLocalPath
-import com.microsoft.tfs.model.host.TfsPath
+import com.microsoft.tfs.model.host.*
 import com.microsoft.tfs.sdk.*
 import com.microsoft.tfs.watcher.ExternallyControlledPathWatcherFactory
 import java.net.URI
@@ -86,22 +83,36 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         return results
     }
 
-    fun getLocalItemsInfo(paths: List<TfsLocalPath>): List<TfsItemInfo> {
-        val infos = ArrayList<TfsItemInfo>(paths.size)
+    private fun <TInfo>getLocalItemsInfo(
+        paths: List<TfsLocalPath>,
+        extended: Boolean,
+        converter: (ExtendedItem) -> TInfo
+    ): List<TInfo> {
+        val infos = ArrayList<TInfo>(paths.size)
         enumeratePathsWithWorkspace(paths) { workspace, workspacePaths ->
-            val downloadType = if (workspace.isLocal) GetItemsOptions.LOCAL_ONLY else GetItemsOptions.NONE
+            // Pass NONE to get lock info in extended mode.
+            val downloadType = if (extended) GetItemsOptions.NONE else GetItemsOptions.LOCAL_ONLY
             val itemSpecs = workspacePaths.mapToArray { it.toCanonicalPathItemSpec(RecursionType.NONE) }
             val extendedItems = workspace.getExtendedItems(itemSpecs, DeletedState.ANY, ItemType.ANY, downloadType)
                 .asSequence()
                 .flatMap { it.asSequence() }
 
             for (extendedItem in extendedItems) {
-                infos.add(extendedItem.toTfsItemInfo())
+                infos.add(converter(extendedItem))
             }
         }
 
         return infos
     }
+
+    fun getLocalItemsInfo(paths: List<TfsLocalPath>): List<TfsLocalItemInfo> = getLocalItemsInfo(paths, false) {
+        it.toLocalItemInfo()
+    }
+
+    fun getExtendedLocalItemsInfo(paths: List<TfsLocalPath>): List<TfsExtendedItemInfo> =
+        getLocalItemsInfo(paths, true) {
+            it.toExtendedItemInfo()
+        }
 
     fun invalidatePaths(paths: List<TfsLocalPath>) {
         pathWatcherFactory.pathsInvalidated.fire(paths.map { Paths.get(it.path) })

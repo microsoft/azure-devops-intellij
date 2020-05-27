@@ -21,9 +21,11 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 
 
 import com.intellij.openapi.ui.Messages;
+import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.ui.ApplyLabelDialog;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -32,12 +34,18 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LabelAction extends MultipleItemAction {
+public class LabelAction extends MultipleItemAction<ItemInfo> {
     public static final Logger logger = LoggerFactory.getLogger(LabelAction.class);
 
     public LabelAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LABEL_MSG));
+    }
+
+    @Override
+    protected void loadItemInfoCollection(MultipleItemActionContext context, List<String> localPaths) {
+        TfvcClient client = TfvcClient.getInstance(context.project);
+        client.getLocalItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
     }
 
     @Override

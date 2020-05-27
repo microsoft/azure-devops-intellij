@@ -17,24 +17,24 @@ public class ItemInfo {
     private final String serverVersion;
     private final String change;
     private final String type;
-    private final String lock;
-    private final String lockOwner;
-    private final String deletionId;
     private final String lastModified;
     private final String fileType;
 
-    public ItemInfo(final String serverItem, final String localItem, final String serverVersion, final String localVersion,
-                    final String change, final String type, final String lock, final String lockOwner, final String deletionId,
-                    final String lastModified, final String fileType) {
+    public ItemInfo(
+            String serverItem,
+            String localItem,
+            String serverVersion,
+            String localVersion,
+            String change,
+            String type,
+            String lastModified,
+            String fileType) {
         this.serverItem = serverItem;
         this.localItem = localItem;
         this.serverVersion = serverVersion;
         this.localVersion = localVersion;
         this.change = change;
         this.type = type;
-        this.lock = lock;
-        this.lockOwner = lockOwner;
-        this.deletionId = deletionId;
         this.lastModified = lastModified;
         this.fileType = fileType;
     }
@@ -47,9 +47,6 @@ public class ItemInfo {
                 Integer.toString(ii.getLocalVersion()),
                 ii.getChange(),
                 ii.getType(),
-                ii.getLock(),
-                ii.getLockOwner(),
-                Integer.toString(ii.getDeletionId()),
                 ii.getLastModified(),
                 ii.getFileEncoding());
     }
@@ -84,18 +81,6 @@ public class ItemInfo {
 
     public String getType() {
         return type;
-    }
-
-    public String getLock() {
-        return lock;
-    }
-
-    public String getLockOwner() {
-        return lockOwner;
-    }
-
-    public String getDeletionId() {
-        return deletionId;
     }
 
     public String getLastModified() {

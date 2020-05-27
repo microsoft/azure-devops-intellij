@@ -24,7 +24,7 @@ import com.intellij.ui.table.JBTable;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.microsoft.alm.plugin.external.commands.LockCommand;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -50,7 +50,7 @@ public class LockItemsForm {
 
     private final LockItemsTableModel lockItemsTableModel;
 
-    public LockItemsForm(final List<ItemInfo> items) {
+    public LockItemsForm(List<ExtendedItemInfo> items) {
         // Default to CheckIn since we only allow local workspaces right now
         lockCheckInRadioButton.setSelected(true);
 
@@ -71,7 +71,7 @@ public class LockItemsForm {
         lockCheckOutRadioButton.setEnabled(isEnabled);
     }
 
-    public List<ItemInfo> getSelectedItems() {
+    public List<ExtendedItemInfo> getSelectedItems() {
         return lockItemsTableModel.getSelectedItems();
     }
 

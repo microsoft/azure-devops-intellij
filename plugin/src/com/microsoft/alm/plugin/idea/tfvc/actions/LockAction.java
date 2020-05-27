@@ -21,9 +21,10 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.microsoft.alm.plugin.external.commands.LockCommand;
-import com.microsoft.alm.plugin.external.models.ItemInfo;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.ui.LockItemsDialog;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -32,12 +33,18 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LockAction extends MultipleItemAction {
+public class LockAction extends MultipleItemAction<ExtendedItemInfo> {
     public static final Logger logger = LoggerFactory.getLogger(LockAction.class);
 
     public LockAction() {
         super(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LOCK_TITLE),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LOCK_MSG));
+    }
+
+    @Override
+    protected void loadItemInfoCollection(MultipleItemActionContext context, List<String> localPaths) {
+        TfvcClient client = TfvcClient.getInstance(context.project);
+        client.getExtendedItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
     }
 
     @Override
@@ -55,19 +62,17 @@ public class LockAction extends MultipleItemAction {
         final String title = d.getLockLevel() == LockCommand.LockLevel.NONE ?
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LOCK_PROGRESS_UNLOCKING) :
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_LOCK_PROGRESS_LOCKING);
-        runWithProgress(actionContext, new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                final List<ItemInfo> selectedItems = d.getSelectedItems();
-                final List<String> itemSpecs = new ArrayList<String>(selectedItems.size());
-                for (final ItemInfo item : selectedItems) {
-                    itemSpecs.add(item.getServerItem());
-                }
-
-                logger.info("Calling the lock command");
-                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
-                        d.getLockLevel(), d.getRecursive(), itemSpecs);
+        runWithProgress(actionContext, () -> {
+            ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+            List<ExtendedItemInfo> selectedItems = d.getSelectedItems();
+            final List<String> itemSpecs = new ArrayList<>(selectedItems.size());
+            for (ExtendedItemInfo item : selectedItems) {
+                itemSpecs.add(item.getServerItem());
             }
+
+            logger.info("Calling the lock command");
+            CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
+                    d.getLockLevel(), d.getRecursive(), itemSpecs);
         }, title);
 
         if (!actionContext.hasErrors()) {

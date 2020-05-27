@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
@@ -56,8 +57,7 @@ public class ClassicTfvcClient implements TfvcClient {
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
-        getLocalItemsInfo(serverContext, pathsToProcess, onItemReceived);
-        return CompletableFuture.completedFuture(null);
+        return getExtendedItemsInfoAsync(serverContext, pathsToProcess, onItemReceived::accept);
     }
 
     @Override
@@ -65,7 +65,25 @@ public class ClassicTfvcClient implements TfvcClient {
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
-        List<ItemInfo> itemInfos = CommandUtils.getItemInfos(serverContext, pathsToProcess);
+        getExtendedItemsInfo(serverContext, pathsToProcess, onItemReceived::accept);
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Void> getExtendedItemsInfoAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
+        getExtendedItemsInfo(serverContext, pathsToProcess, onItemReceived);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void getExtendedItemsInfo(
+            @NotNull ServerContext serverContext,
+            @NotNull List<String> pathsToProcess,
+            @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
+        List<ExtendedItemInfo> itemInfos = CommandUtils.getItemInfos(serverContext, pathsToProcess);
         itemInfos.forEach(onItemReceived);
     }
 

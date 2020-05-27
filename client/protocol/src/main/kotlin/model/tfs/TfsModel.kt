@@ -55,18 +55,22 @@ object TfsModel : Root() {
         field("credentials", TfsCredentials)
     }
 
-    private val TfsItemInfo = structdef {
+    private val TfsItemInfo = basestruct {
         field("serverItem", string.nullable)
         field("localItem", string.nullable)
         field("localVersion", int)
         field("serverVersion", int)
         field("change", string.nullable)
         field("type", string.nullable)
-        field("lock", string.nullable)
-        field("lockOwner", string.nullable)
-        field("deletionId", int)
         field("lastModified", string.nullable)
         field("fileEncoding", string.nullable)
+    }
+
+    private val TfsLocalItemInfo = structdef extends TfsItemInfo {}
+
+    private val TfsExtendedItemInfo = structdef extends TfsItemInfo {
+        field("lock", string.nullable)
+        field("lockOwner", string.nullable)
     }
 
     private val TfsDeleteResult = structdef {
@@ -85,8 +89,11 @@ object TfsModel : Root() {
         call("getPendingChanges", immutableList(TfsPath), immutableList(TfsPendingChange))
             .doc("Determines a set of the pending changes in the collection")
 
-        call("getLocalItemsInfo", immutableList(TfsLocalPath), immutableList(TfsItemInfo))
+        call("getLocalItemsInfo", immutableList(TfsLocalPath), immutableList(TfsLocalItemInfo))
             .doc("Provides information on local repository items")
+
+        call("getExtendedLocalItemsInfo", immutableList(TfsLocalPath), immutableList(TfsExtendedItemInfo))
+            .doc("Provides extended information (i.e. including locks) on local repository items")
 
         call("invalidatePaths", immutableList(TfsLocalPath), void)
             .doc("Invalidates the paths in the TFS cache")
