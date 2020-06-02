@@ -30,11 +30,15 @@ public class GetDetailedWorkspaceCommand extends Command<Workspace> {
     private final String collection;
     private final AuthenticationInfo authInfo;
 
-    public GetDetailedWorkspaceCommand(final String collection, final String workspace, final AuthenticationInfo authInfo) {
+    /**
+     * @param collectionDisplayName the collection display name, i.e. an URI with spaces represented by " " (literal
+     *                              space) instead of "%20" (URL-encoded space).
+     */
+    public GetDetailedWorkspaceCommand(String collectionDisplayName, String workspace, AuthenticationInfo authInfo) {
         super("workspaces", null);
         ArgumentHelper.checkNotEmptyString(workspace, "workspace");
         ArgumentHelper.checkNotNull(authInfo, "authInfo");
-        this.collection = collection;
+        this.collection = collectionDisplayName;
         this.workspaceName = workspace;
         this.authInfo = authInfo;
     }
