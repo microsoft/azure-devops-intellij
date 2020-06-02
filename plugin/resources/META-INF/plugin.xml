@@ -172,6 +172,7 @@
             <separator/>
             <action id="Tfvc.Add" class="com.microsoft.alm.plugin.idea.tfvc.actions.AddAction" text="_Add"/>
             <reference id="CheckinFiles"/>
+            <action id="Tfvc.Checkout" class="com.microsoft.alm.plugin.idea.tfvc.actions.CheckoutAction"/>
             <reference id="UpdateFiles"/>
             <!--<reference id="IntegrateFiles"/>
             <reference id="CheckStatusForFiles"/>

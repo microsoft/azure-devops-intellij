@@ -626,6 +626,14 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_TFVC_BRANCH_BROWSE_TITLE = "Actions.Tfvc.Branch.Browse.Title";
 
+    // TFVC Checkout Action
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_CHECKOUT_TITLE = "Actions.Tfvc.Checkout.Title";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_CHECKOUT_DESCRIPTION = "Actions.Tfvc.Checkout.Description";
+    @NonNls
+    public static final String KEY_ACTIONS_TFVC_CHECKOUT_PROGRESS = "Actions.Tfvc.Checkout.Progress";
+
     // TFVC Server Tree
     @NonNls
     public static final String KEY_ACTIONS_TFVC_SERVER_TREE_CREATE_FOLDER_TITLE = "Tfvc.Server.Tree.Create.Folder.Title";
