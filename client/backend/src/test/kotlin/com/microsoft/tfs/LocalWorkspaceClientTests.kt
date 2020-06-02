@@ -3,55 +3,19 @@
 
 package com.microsoft.tfs
 
-import com.google.common.io.Files
-import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.PendingSet
 import com.microsoft.tfs.model.host.TfsLocalPath
-import com.microsoft.tfs.tests.*
-import org.apache.commons.io.FileUtils.deleteDirectory
-import org.apache.log4j.Level
+import com.microsoft.tfs.tests.TfsClientTestFixture
+import com.microsoft.tfs.tests.cloneTestRepository
+import com.microsoft.tfs.tests.createClient
 import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
-class TfsClientTests : LifetimedTest() {
+class LocalWorkspaceClientTests : TfsClientTestFixture() {
 
-    companion object {
-        private fun assertNoPendingChanges(client: TfsClient, path: Path) {
-            val states = client.status(listOf(TfsLocalPath(path.toString())))
-            Assert.assertEquals("There should be no changes in $path", emptyList<PendingSet>(), states)
-        }
-
-        private fun createTestFile(filePath: Path) {
-            filePath.parent.toFile().mkdirs()
-
-            @Suppress("UnstableApiUsage")
-            Files.write("testfile", filePath.toFile(), StandardCharsets.UTF_8)
-        }
-
-        private fun ignoreItem(workspace: Path, item: String) {
-            val tfIgnore = workspace.resolve(".tfignore")
-
-            @Suppress("UnstableApiUsage")
-            Files.append("\n$item", tfIgnore.toFile(), StandardCharsets.UTF_8)
-        }
-    }
-
-    lateinit var workspacePath: Path
-
-    override fun setUp() {
-        Logging.initialize(null, Level.INFO)
-        super.setUp()
-        IntegrationTestUtils.ensureInitialized()
-        workspacePath = cloneTestRepository()
-    }
-
-    override fun tearDown() {
-        deleteWorkspace(workspacePath)
-        deleteDirectory(workspacePath.toFile())
-        super.tearDown()
-    }
+    override fun cloneRepository(): Path =
+        cloneTestRepository()
 
     @Test
     fun clientShouldReturnDeletedPath() {

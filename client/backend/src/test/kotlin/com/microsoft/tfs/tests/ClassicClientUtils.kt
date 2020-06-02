@@ -30,9 +30,10 @@ private fun executeClient(directory: Path, vararg arguments: String) {
     Assert.assertEquals(0, exitCode)
 }
 
-private fun tfCreateWorkspace(workspacePath: Path, name: String) {
+private fun tfCreateWorkspace(workspacePath: Path, name: String, isServer: Boolean) {
     val collectionUrl = IntegrationTestUtils.serverUrl
-    executeClient(workspacePath, "workspace", "-new", "-collection:$collectionUrl", name)
+    val location = if (isServer) "server" else "local"
+    executeClient(workspacePath, "workspace", "-new", "-collection:$collectionUrl", "-location:$location", name)
 }
 
 private fun tfDeleteWorkspace(workspacePath: Path, workspaceName: String) {
@@ -47,11 +48,11 @@ private fun tfGet(workspacePath: Path) {
     executeClient(workspacePath, "get")
 }
 
-fun cloneTestRepository(): Path {
+fun cloneTestRepository(isServer: Boolean = false): Path {
     val workspacePath = Files.createTempDirectory("adi.b.test.").toFile().canonicalFile.toPath()
     val workspaceName = "${workspacePath.fileName}.${IntegrationTestUtils.workspaceNameSuffix}"
     Assert.assertTrue(workspaceName.length <= 64)
-    tfCreateWorkspace(workspacePath, workspaceName)
+    tfCreateWorkspace(workspacePath, workspaceName, isServer)
     tfCreateMapping(workspacePath, workspaceName, "$/${IntegrationTestUtils.teamProject}", Paths.get("."))
     tfGet(workspacePath)
     return workspacePath
