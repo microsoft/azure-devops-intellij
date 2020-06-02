@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.event.HyperlinkEvent;
 import javax.ws.rs.NotAuthorizedException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -187,32 +188,30 @@ public class WorkspaceModel extends AbstractModel {
         logger.info("loadWorkspace starting");
         setLoading(true);
         // Load
-        OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    logger.info("loadWorkspace: getting repository context");
-                    final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(project);
-                    if (repositoryContext == null || StringUtils.isEmpty(repositoryContext.getUrl()) || StringUtils.isEmpty(repositoryContext.getTeamProjectName())) {
-                        logger.warn("loadWorkspace: Could not determine repositoryContext for project");
-                        throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED));
-                    }
-
-                    logger.info("loadWorkspace: getting server context");
-                    currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
-                    if (currentServerContext == null) {
-                        logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
-                        throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
-                    }
-
-                    logger.info("loadWorkspace: getting workspace");
-                    // It would be a bit more efficient here to pass the workspace name into the getWorkspace command.
-                    // However, when you change the name of the workspace that causes errors. So for now, we are not optimal.
-                    loadWorkspaceInternal(CommandUtils.getWorkspace(currentServerContext, project));
-                } finally {
-                    loadWorkspaceComplete();
-
+        OperationExecutor.getInstance().submitOperationTask(() -> {
+            try {
+                logger.info("loadWorkspace: getting repository context");
+                final RepositoryContext repositoryContext = VcsHelper.getRepositoryContext(project);
+                if (repositoryContext == null || StringUtils.isEmpty(repositoryContext.getUrl()) || StringUtils.isEmpty(repositoryContext.getTeamProjectName())) {
+                    logger.warn("loadWorkspace: Could not determine repositoryContext for project");
+                    throw new RuntimeException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_CONTEXT_FAILED));
                 }
+
+                logger.info("loadWorkspace: getting server context");
+                currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
+                        URI.create(repositoryContext.getUrl()),
+                        repositoryContext.getTeamProjectName(),
+                        true);
+                if (currentServerContext == null) {
+                    logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
+                    throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
+                }
+
+                logger.info("loadWorkspace: getting workspace");
+                loadWorkspaceInternal(CommandUtils.getDetailedWorkspace(currentServerContext, project));
+            } finally {
+                loadWorkspaceComplete();
+
             }
         });
     }

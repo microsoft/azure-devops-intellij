@@ -207,6 +207,26 @@ public class CommandUtils {
     }
 
     /**
+     * Determine detailed workspace information (e.g. including a location kind).
+     *
+     * @param context server context to extract the authentication information from.
+     * @param project project to extract the path.
+     */
+    @Nullable
+    public static Workspace getDetailedWorkspace(@NotNull ServerContext context, @NotNull Project project) {
+        // First, call getPartialWorkspace to extract the workspace name and collection:
+        Workspace partialWorkspace = getPartialWorkspace(project, false);
+        if (partialWorkspace == null)
+            return null;
+
+        GetDetailedWorkspaceCommand command = new GetDetailedWorkspaceCommand(
+                partialWorkspace.getServerDisplayName(),
+                partialWorkspace.getName(),
+                context.getAuthenticationInfo());
+        return command.runSynchronously();
+    }
+
+    /**
      * This method determines the workspace name from the project and then calls getWorkspace with the name.
      *
      * @param context
