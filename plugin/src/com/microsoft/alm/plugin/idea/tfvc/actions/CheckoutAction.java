@@ -11,10 +11,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.ui.UIUtil;
+import com.microsoft.alm.plugin.external.utils.TfvcCheckoutResultUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
-import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,20 +52,7 @@ public class CheckoutAction extends SimpleMultipleItemAction {
                                 filePaths,
                                 true);
                         try {
-                            if (!checkoutResult.getErrorMessages().isEmpty()) {
-                                String message = String.join("\n", checkoutResult.getErrorMessages());
-                                throw new VcsException(
-                                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKOUT_FAILED, message));
-                            }
-
-                            if (!checkoutResult.getNotFoundFiles().isEmpty()) {
-                                List<String> failedPaths = checkoutResult.getNotFoundFiles().stream()
-                                        .map(TfsLocalPath::getPath)
-                                        .collect(Collectors.toList());
-                                String failedPathList = String.join(", ", failedPaths);
-                                throw new VcsException(
-                                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKOUT_FILES_FAILED, failedPathList));
-                            }
+                            TfvcCheckoutResultUtils.verify(checkoutResult);
                         } catch (VcsException e) {
                             ourLogger.warn(e);
                             UIUtil.invokeLaterIfNeeded(() -> Messages.showErrorDialog(

@@ -156,6 +156,10 @@ public abstract class CheckoutPageModelImpl extends LoginPageModelImpl implement
         return advanced;
     }
 
+    public boolean isTfvcServerCheckout() {
+        return isTfvcServerCheckout;
+    }
+
     @Override
     public void setTfvcServerCheckout(boolean isTfvcServerCheckout) {
         if (this.isTfvcServerCheckout != isTfvcServerCheckout) {
