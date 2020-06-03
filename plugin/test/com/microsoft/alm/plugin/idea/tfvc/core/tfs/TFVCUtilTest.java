@@ -10,7 +10,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,7 +25,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -54,10 +55,10 @@ public class TFVCUtilTest {
 
     @Test
     public void isFileUnderTFVCMappingShouldTests() {
-        Assert.assertTrue(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath/1.txt", false)));
-        Assert.assertTrue(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath", true)));
-        Assert.assertFalse(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath1", true)));
-        Assert.assertFalse(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath1/1.txt", false)));
+        assertTrue(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath/1.txt", false)));
+        assertTrue(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath", true)));
+        assertFalse(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath1", true)));
+        assertFalse(TFVCUtil.isFileUnderTFVCMapping(mockProject, new LocalFilePath("/tmp/localPath1/1.txt", false)));
     }
 
     @Test
@@ -85,5 +86,14 @@ public class TFVCUtilTest {
         List<FilePath> allPaths = Lists.newArrayList(Iterables.concat(localFiles, dollarFiles));
         List<String> localFilePaths = localFiles.stream().map(FilePath::getPath).collect(Collectors.toList());
         assertThat(TFVCUtil.filterValidTFVCPaths(mockProject, allPaths), is(localFilePaths));
+    }
+
+    @Test
+    public void isInServiceDirectoryTests() {
+        assertFalse(TFVCUtil.isInServiceDirectory(new LocalFilePath("C:\\Temp", true)));
+        assertFalse(TFVCUtil.isInServiceDirectory(new LocalFilePath("/tmp/_tf/xxx", true)));
+        assertTrue(TFVCUtil.isInServiceDirectory(new LocalFilePath("/tmp/$tf/xxx", true)));
+        assertTrue(TFVCUtil.isInServiceDirectory(new LocalFilePath("/tmp/.tf/xxx", true)));
+        assertTrue(TFVCUtil.isInServiceDirectory(new LocalFilePath("/tmp/.tf", false)));
     }
 }
