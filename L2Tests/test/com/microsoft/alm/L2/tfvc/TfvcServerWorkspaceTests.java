@@ -6,16 +6,20 @@ package com.microsoft.alm.L2.tfvc;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.external.utils.TfvcCheckoutResultUtils;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -27,10 +31,14 @@ public class TfvcServerWorkspaceTests extends TfvcCheckoutTestBase {
         model.setTfvcServerCheckout(true);
     }
 
+    @NotNull
+    private ServerContext getServerContext() {
+        return ServerContextManager.getInstance().get(getServerUrl());
+    }
+
     private void checkoutFile(File file) {
-        ServerContext serverContext = ServerContextManager.getInstance().get(getServerUrl());
         TfvcCheckoutResult checkoutResult = CommandUtils.checkoutFilesForEdit(
-                serverContext,
+                getServerContext(),
                 Collections.singletonList(file.toPath()),
                 false);
         try {
@@ -40,16 +48,31 @@ public class TfvcServerWorkspaceTests extends TfvcCheckoutTestBase {
         }
     }
 
+    private void assertIsServerWorkspace(Path workspace) {
+        Workspace partialWorkspace = CommandUtils.getPartialWorkspace(workspace, false);
+        AuthenticationInfo authenticationInfo = getServerContext().getAuthenticationInfo();
+        Workspace workspaceInfo = CommandUtils.getDetailedWorkspace(
+                partialWorkspace.getServerDisplayName(),
+                partialWorkspace.getName(),
+                authenticationInfo);
+        assertEquals(Workspace.Location.SERVER, workspaceInfo.getLocation());
+    }
+
+    private void testCheckoutCommand(Path workspace) {
+        File readmeIoFile = workspace.resolve(README_FILE).toFile();
+        assertTrue(readmeIoFile.exists());
+        VirtualFile readme = Objects.requireNonNull(LocalFileSystem.getInstance().findFileByIoFile(readmeIoFile));
+        assertFalse(readme.isWritable());
+        checkoutFile(readmeIoFile);
+        readme.refresh(false, false);
+        assertTrue(readme.isWritable());
+    }
+
     @Test(timeout = 60000)
-    public void testCheckout_VSO() throws InterruptedException, IOException {
+    public void testServerCheckout() throws InterruptedException, IOException {
         checkoutTestRepository(workspace -> {
-            File readmeIoFile = workspace.resolve(README_FILE).toFile();
-            assertTrue(readmeIoFile.exists());
-            VirtualFile readme = Objects.requireNonNull(LocalFileSystem.getInstance().findFileByIoFile(readmeIoFile));
-            assertFalse(readme.isWritable());
-            checkoutFile(readmeIoFile);
-            readme.refresh(false, false);
-            assertTrue(readme.isWritable());
+            assertIsServerWorkspace(workspace);
+            testCheckoutCommand(workspace);
         });
     }
 }
