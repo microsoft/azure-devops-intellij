@@ -2,11 +2,11 @@ package com.microsoft.tfs
 
 import com.microsoft.tfs.jni.FileSystemUtils
 import com.microsoft.tfs.model.host.TfsLocalPath
+import com.microsoft.tfs.model.host.TfsServerStatusType
 import com.microsoft.tfs.tests.TfsClientTestFixture
 import com.microsoft.tfs.tests.cloneTestRepository
 import com.microsoft.tfs.tests.createClient
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 import java.nio.file.Path
 
@@ -31,5 +31,18 @@ class ServerWorkspaceClientTests : TfsClientTestFixture() {
         val filePath = workspacePath.resolve("readme.txt")
         client.checkoutFilesForEdit(listOf(TfsLocalPath(filePath.toString())), false)
         assertFalse(isReadOnly(filePath))
+    }
+
+    @Test
+    fun getPendingChangesShouldReturnACheckedOutFile() {
+        val client = createClient(testLifetime)
+        val filePath = workspacePath.resolve("readme.txt")
+        val paths = listOf(TfsLocalPath(filePath.toString()))
+        client.checkoutFilesForEdit(paths, false)
+
+        val pendingChanges = toPendingChanges(client.status(paths).single())
+        val change = pendingChanges.single()
+        val types = change.changeTypes
+        assertEquals(TfsServerStatusType.EDIT, types.single())
     }
 }
