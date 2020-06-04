@@ -7,6 +7,8 @@ import com.google.common.collect.Lists;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Couple;
+import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.ToolVersion;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +32,8 @@ public class VisualStudioTfvcCommands {
     private static final Pattern WORKFOLD_REPORT_PATTERN = Pattern.compile("^(.*?): (.*)$");
     private static final Pattern WORKFOLD_WORKSPACE_NAME_AND_OWNER_PATTERN = Pattern.compile("^(.*?) \\((.*)\\)$");
 
+    private static final String AUTHENTICATION_ERROR_PREFIX = "TF30063:";
+
     @NotNull
     public static CompletionStage<ToolVersion> getVersionAsync(@NotNull Project project, @NotNull Path clientPath) {
         String basePath = project.getBasePath();
@@ -38,7 +42,7 @@ public class VisualStudioTfvcCommands {
                 basePath == null ? null : Paths.get(basePath),
                 Collections.emptyList(),
                 output -> {
-                    for (String line : output) {
+                    for (String line : output.first) {
                         Matcher matcher = VERSION_PATTERN.matcher(line);
                         if (matcher.find()) {
                             ourLogger.info("Client version: " + matcher.group());
@@ -54,6 +58,9 @@ public class VisualStudioTfvcCommands {
      * Returns partial workspace information (only workspace path, owner, collection name, and mappings) from the Visual
      * Studio TF client.
      *
+     * May asynchronously throw {@link ToolAuthenticationException} in case of an authentication error coming from the
+     * client.
+     *
      * @param clientPath    path to VS TF client.
      * @param workspacePath path to workspace.
      * @return workspace or null if it could not be determined.
@@ -66,7 +73,17 @@ public class VisualStudioTfvcCommands {
             String workspaceName = null, workspaceUser = null, collectionUrl = null;
             boolean workspaceDataAvailable = false;
             List<Workspace.Mapping> mappings = Lists.newArrayList();
-            for (String line : output) {
+
+            List<String> stdout = output.first;
+            List<String> stderr = output.second;
+
+            for (String line : stderr) {
+                if (line.startsWith(AUTHENTICATION_ERROR_PREFIX)) {
+                    throw new ToolAuthenticationException();
+                }
+            }
+
+            for (String line : stdout) {
                 Matcher matcher = WORKFOLD_REPORT_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     if (workspaceName == null) {
@@ -101,12 +118,12 @@ public class VisualStudioTfvcCommands {
             @NotNull Path clientPath,
             @Nullable Path workingDirectory,
             @NotNull List<String> arguments,
-            @NotNull Function<List<String>, T> action) {
+            @NotNull Function<Couple<List<String>>, T> action) {
         CompletableFuture<T> result = new CompletableFuture<>();
         try {
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    List<String> output = VisualStudioTfvcClient.executeClientAndGetOutput(
+                    Couple<List<String>> output = VisualStudioTfvcClient.executeClientAndGetOutput(
                             clientPath,
                             workingDirectory,
                             arguments);
