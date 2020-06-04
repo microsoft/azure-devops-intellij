@@ -74,14 +74,6 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
     }
 
     @Test
-    public void isRootTestNoServiceDirectory() throws IOException {
-        Path path = FileSystemTestUtil.createTempFileSystem("readme.txt");
-        mockTfToolPath("tf.cmd");
-
-        Assert.assertFalse(checker.isRoot(path.toString()));
-    }
-
-    @Test
     public void isRootTestNoWorkspace() throws IOException {
         Path path = FileSystemTestUtil.createTempFileSystem("$tf/");
         mockTfToolPath("tf.cmd");
