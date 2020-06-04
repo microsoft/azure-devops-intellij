@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.function.Consumer;
 
-public class TfvcCheckoutTestBase extends L2Test {
+public abstract class TfvcCheckoutTestBase extends L2Test {
 
     protected static final String TFVC_FOLDER = ".tf";
     protected static final String TFVC_FOLDER_WIN = "$tf";
