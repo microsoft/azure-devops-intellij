@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.external.visualstudio;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Couple;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.microsoft.alm.plugin.external.exceptions.VisualStudioClientVersionException;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,7 +85,23 @@ public class VisualStudioTfvcClient {
         });
     }
 
-    static List<String> executeClientAndGetOutput(
+    private static List<String> readAsLines(InputStream stream, String label) throws IOException {
+        List<String> output = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                ourLogger.info("VS client " + label + ": " + line);
+                output.add(line);
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * @return a pair of stdout and stderr.
+     */
+    static Couple<List<String>> executeClientAndGetOutput(
             @NotNull Path clientPath,
             @Nullable Path workingDirectory,
             @NotNull List<String> arguments) throws IOException, InterruptedException {
@@ -97,18 +115,12 @@ public class VisualStudioTfvcClient {
                 .directory(workingDirectory == null ? null : workingDirectory.toFile())
                 .start();
 
-        List<String> output = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                ourLogger.info("VS client stdout: " + line);
-                output.add(line);
-            }
-        }
+        List<String> output = readAsLines(client.getInputStream(), "stdout");
+        List<String> errors = readAsLines(client.getErrorStream(), "stderr");
 
         int exitCode = client.waitFor();
         ourLogger.info("VS client exit code: " + exitCode);
 
-        return output;
+        return Couple.of(output, errors);
     }
 }

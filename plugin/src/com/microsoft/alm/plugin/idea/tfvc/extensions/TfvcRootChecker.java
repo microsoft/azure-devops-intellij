@@ -34,8 +34,8 @@ public class TfvcRootChecker extends VcsRootChecker {
     // @Override // only available in IDEA 2019.2
     public boolean validateRoot(@NotNull String pathString) {
         Path path = Paths.get(pathString);
-        String fileName = path.getFileName().toString();
-        if (isVcsDir(fileName) || fileName.startsWith("$"))
+        Path fileName = path.getFileName();
+        if (fileName != null && (isVcsDir(fileName.toString()) || fileName.toString().startsWith("$")))
             return false;
 
         for (Path component : path) {

@@ -81,7 +81,7 @@ public class TfvcRootCache {
      */
     public void putNoMappingsFor(@NotNull Path path) {
         assertNoServiceDirectory(path);
-        ourLogger.trace(String.format("New  without mapping roots: %s", path));
+        ourLogger.trace(String.format("New without mapping roots: %s", path));
         synchronized (myLock) {
             // Destroy contradictory information: since we know the path isn't a mapping root and contains no parent
             // mapping roots, and information about the parents being roots is now invalid.

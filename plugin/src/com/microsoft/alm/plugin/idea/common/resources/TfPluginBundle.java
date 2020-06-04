@@ -909,6 +909,12 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_REPOSITORY_VIEW_COLUMN_REVISION = "Tfvc.RepositoryView.Column.Revision";
 
+    // Visual Studio Client
+    @NonNls
+    public static final String KEY_VISUAL_STUDIO_CLIENT_AUTHENTICATION_ERROR = "VisualStudioClient.AuthenticationError";
+    @NonNls
+    public static final String KEY_VISUAL_STUDIO_CLIENT = "VisualStudioClient";
+
     //Workspace dialog
     public static final String KEY_WORKSPACE_DIALOG_TITLE = "WorkspaceDialog.Title";
     public static final String KEY_WORKSPACE_DIALOG_SAVE_BUTTON = "WorkspaceDialog.SaveButton";
