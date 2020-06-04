@@ -59,11 +59,7 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Repository history refresh has been made significantly faster when Reactive client is enabled</li>
-        <li>TFVC client is now able to successfully delete ignored files (<a href="https://github.com/microsoft/azure-devops-intellij/issues/330">#330</a>)</li>
-        <li>Fixed a failure to edit a workspace inside of a TFS collection when the collection name had a space (<a href="https://github.com/microsoft/azure-devops-intellij/issues/326">#326</a>)</li>
-        <li>Fixed a failure to lock an item under TFVC (<a href="https://github.com/microsoft/azure-devops-intellij/issues/345">#345</a>)</li>
-        <li>Reduced memory consumption for TFVC client process cache (<a href="https://github.com/microsoft/azure-devops-intellij/pull/356">#356</a>)</li>
+        <li>Server workspace support: import existing ones or create new ones (<a href="https://github.com/microsoft/azure-devops-intellij/issues/325">#325</a>)</li>
       </ul>
       <br />
     ]]>
