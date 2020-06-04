@@ -261,7 +261,8 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
     @Test(expected = VcsException.class)
     public void testEditWorkspace_NullContext() throws Exception {
         doReturn(workspace1).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
-        when(mockServerContextManager.createContextFromTfvcServerUrl(workspace1.getServerDisplayName(), "root", true)).thenReturn(null);
+        when(mockServerContextManager.createContextFromTfvcServerUrl(workspace1.getServerUri(), "root", true))
+                .thenReturn(null);
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
     }
