@@ -56,6 +56,16 @@ public class TfvcRootChecker extends VcsRootChecker {
         if (StringUtil.isEmpty(TfTool.getLocation()))
             return false;
 
+        TfvcRootCache.CachedStatus cachedStatus = myCache.get(Paths.get(path));
+        switch (cachedStatus) {
+            case IS_MAPPING_ROOT:
+                return true;
+            case NO_ROOT:
+            case UNDER_MAPPING_ROOT:
+                return false;
+        }
+
+        // Will get here only if cachedStatus == UNKNOWN.
         return EULADialog.executeWithGuard(null, () -> {
             Workspace workspace = null;
             Path workspacePath = Paths.get(path);

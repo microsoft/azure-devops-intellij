@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -50,12 +51,13 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
 
     private static void mockPartialWorkspace(Path path, Workspace workspace) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getPartialWorkspace(eq(path))).thenReturn(workspace);
+        when(CommandUtils.getPartialWorkspace(eq(path), any(Boolean.class))).thenReturn(workspace);
     }
 
     private static void mockPartialWorkspaceNotDetermined(Path path) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getPartialWorkspace(eq(path))).thenThrow(new WorkspaceCouldNotBeDeterminedException());
+        when(CommandUtils.getPartialWorkspace(eq(path), any(Boolean.class)))
+                .thenThrow(new WorkspaceCouldNotBeDeterminedException());
     }
 
     private static Workspace createWorkspaceWithMapping(String localPath) {
