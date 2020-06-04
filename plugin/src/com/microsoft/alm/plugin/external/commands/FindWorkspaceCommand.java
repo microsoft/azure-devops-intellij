@@ -60,13 +60,6 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
         this.allowBasicInformation = allowBasicInformation;
     }
 
-    /**
-     * @deprecated Use {@link #FindWorkspaceCommand(String, AuthenticationInfo, boolean)} instead.
-     */
-    public FindWorkspaceCommand(final String localPath) {
-        this(localPath, null, false);
-    }
-
     public FindWorkspaceCommand(final String collection, final String workspace, final AuthenticationInfo authInfo) {
         super("workfold", null);
         ArgumentHelper.checkNotEmptyString(collection, "collection");
