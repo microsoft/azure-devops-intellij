@@ -87,6 +87,10 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
 
         if (authInfo != null) {
             builder.addAuthInfo(authInfo);
+        } else if (!StringUtils.isEmpty(localPath)) {
+            logger.info("Using fake credentials for a FindWorkspaceCommand on the local workspace \"" + localPath + "\"");
+            // because the credentials are required even in cases when they're unused
+            builder.addSwitch("login", "username,pw");
         }
 
         return builder;
