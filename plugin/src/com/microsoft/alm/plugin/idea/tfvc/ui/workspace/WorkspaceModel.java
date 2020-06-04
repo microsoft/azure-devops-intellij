@@ -223,23 +223,23 @@ public class WorkspaceModel extends AbstractModel {
 
         setLoading(true);
         // Load
-        OperationExecutor.getInstance().submitOperationTask(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    logger.info("loadWorkspace: getting server context");
-                    currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true);
-                    if (currentServerContext == null) {
-                        logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
-                        throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
-                    }
-
-                    logger.info("loadWorkspace: getting workspace by name");
-                    loadWorkspaceInternal(CommandUtils.getWorkspace(currentServerContext, workspaceName));
-                } finally {
-                    // Make sure to fire events only on the UI thread
-                    loadWorkspaceComplete();
+        OperationExecutor.getInstance().submitOperationTask(() -> {
+            try {
+                logger.info("loadWorkspace: getting server context");
+                currentServerContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
+                        URI.create(repositoryContext.getUrl()),
+                        repositoryContext.getTeamProjectName(),
+                        true);
+                if (currentServerContext == null) {
+                    logger.warn("loadWorkspace: Could not get the context for the repository. User may have canceled.");
+                    throw new NotAuthorizedException(TfPluginBundle.message(TfPluginBundle.KEY_WORKSPACE_DIALOG_ERRORS_AUTH_FAILED, repositoryContext.getUrl()));
                 }
+
+                logger.info("loadWorkspace: getting workspace by name");
+                loadWorkspaceInternal(CommandUtils.getWorkspace(currentServerContext, workspaceName));
+            } finally {
+                // Make sure to fire events only on the UI thread
+                loadWorkspaceComplete();
             }
         });
     }

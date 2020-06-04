@@ -30,10 +30,12 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.ws.rs.NotAuthorizedException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -71,9 +73,9 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
 
         serverContextManager = mock(ServerContextManager.class);
         when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromTfvcServerUrl(anyString(), anyString(), anyBoolean()))
+        when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), anyString(), anyBoolean()))
                 .thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromTfvcServerUrl(anyString(), Matchers.eq(""), anyBoolean()))
+        when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), Matchers.eq(""), anyBoolean()))
                 .thenReturn(null);
 
         PowerMockito.mockStatic(ServerContextManager.class);
@@ -81,10 +83,11 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
 
         final Workspace workspace = new Workspace(server, name, computer, owner, comment, mappings, Workspace.Location.SERVER);
         PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getWorkspace(Matchers.any(ServerContext.class), anyString())).thenReturn(workspace);
-        when(CommandUtils.getWorkspace(Matchers.any(ServerContext.class), Matchers.any(Project.class))).thenReturn(workspace);
-        when(CommandUtils.updateWorkspace(Matchers.any(ServerContext.class), Matchers.any(Workspace.class), Matchers.any(Workspace.class))).thenReturn("");
-        when(CommandUtils.syncWorkspace(Matchers.any(ServerContext.class), anyString())).thenReturn(null);
+        when(CommandUtils.getWorkspace(any(ServerContext.class), anyString())).thenReturn(workspace);
+        when(CommandUtils.getWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
+        when(CommandUtils.getDetailedWorkspace(any(ServerContext.class), any(Project.class))).thenReturn(workspace);
+        when(CommandUtils.updateWorkspace(any(ServerContext.class), any(Workspace.class), any(Workspace.class))).thenReturn("");
+        when(CommandUtils.syncWorkspace(any(ServerContext.class), anyString())).thenReturn(null);
 
         repositoryContext = RepositoryContext.createTfvcContext("/path", name, "project1", workspace.getServerUri());
         repositoryContext_noProject = RepositoryContext.createTfvcContext("/path", name, "", workspace.getServerUri());
@@ -94,7 +97,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
 
         mockVcsNotifier = mock(VcsNotifier.class);
         PowerMockito.mockStatic(VcsNotifier.class);
-        when(VcsNotifier.getInstance(Matchers.any(Project.class))).thenReturn(mockVcsNotifier);
+        when(VcsNotifier.getInstance(any(Project.class))).thenReturn(mockVcsNotifier);
     }
 
 
@@ -409,11 +412,11 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         final WorkspaceModel m = new WorkspaceModel();
         // mockProject2 will return a repository context that does not have a project
         // this will in turn call a null server context to be returned
-        when(serverContextManager.createContextFromTfvcServerUrl("bad url", "bad team name", true))
+        when(serverContextManager.createContextFromTfvcServerUrl(URI.create("http://bad.example.com"), "bad team name", true))
                 .thenReturn(null);
         final Project localMockProject = mock(Project.class);
         final RepositoryContext mockRepositoryContext = mock(RepositoryContext.class);
-        when(mockRepositoryContext.getUrl()).thenReturn("bad url");
+        when(mockRepositoryContext.getUrl()).thenReturn("http://bad.example.com");
         when(mockRepositoryContext.getTeamProjectName()).thenReturn("bad team name");
         when(VcsHelper.getRepositoryContext(localMockProject)).thenReturn(mockRepositoryContext);
         m.loadWorkspace(localMockProject);
@@ -500,6 +503,6 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
         final Workspace oldWorkspace = new Workspace(server, name + "old", computer, owner, comment, mappings);
         m.saveWorkspaceInternal(authenticatedContext, oldWorkspace, newWorkspace, null, mockProject, "/path", true, null);
-        verify(mockVcsNotifier).notifyImportantInfo(anyString(), anyString(), Matchers.any(NotificationListener.class));
+        verify(mockVcsNotifier).notifyImportantInfo(anyString(), anyString(), any(NotificationListener.class));
     }
 }

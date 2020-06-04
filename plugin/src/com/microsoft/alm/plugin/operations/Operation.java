@@ -9,6 +9,7 @@ import com.microsoft.alm.plugin.context.ServerContextManager;
 import org.slf4j.Logger;
 
 import javax.ws.rs.NotAuthorizedException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -206,7 +207,7 @@ public abstract class Operation {
         } else {
             logger.info("getServerContext: creating TFVC context");
             serverContext = ServerContextManager.getInstance().createContextFromTfvcServerUrl(
-                    repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), allowPrompt);
+                    URI.create(repositoryContext.getUrl()), repositoryContext.getTeamProjectName(), allowPrompt);
         }
 
         if (serverContext == null) {
