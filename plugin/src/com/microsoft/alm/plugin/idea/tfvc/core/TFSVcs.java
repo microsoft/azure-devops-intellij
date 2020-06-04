@@ -75,6 +75,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.event.HyperlinkEvent;
 import javax.ws.rs.NotAuthorizedException;
+import java.net.URI;
 import java.util.Collection;
 
 /**
@@ -279,7 +280,7 @@ public class TFSVcs extends AbstractVcs {
                 && StringUtils.isNotEmpty(repositoryContext.getTeamProjectName())
                 && StringUtils.isNotEmpty(repositoryContext.getUrl()) ?
                 ServerContextManager.getInstance().createContextFromTfvcServerUrl(
-                        repositoryContext.getUrl(), repositoryContext.getTeamProjectName(), true)
+                        URI.create(repositoryContext.getUrl()), repositoryContext.getTeamProjectName(), true)
                 : null;
 
         if (serverContext == null && throwIfNotFound) {

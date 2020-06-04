@@ -384,18 +384,14 @@ public class ServerContextManager {
         return context;
     }
 
-    public ServerContext createContextFromTfvcServerUrl(URI tfvcServerUrl, String teamProjectName, boolean prompt) {
-        return createContextFromTfvcServerUrl(tfvcServerUrl.toString(), teamProjectName, prompt);
-    }
-
-    /**
-     * @deprecated Use {@link #createContextFromTfvcServerUrl(URI, String, boolean)} instead.
-     */
-    public ServerContext createContextFromTfvcServerUrl(final String tfvcServerUrl, final String teamProjectName, final boolean prompt) {
-        ArgumentHelper.checkNotEmptyString(tfvcServerUrl, "tfvcServerUrl");
+    public ServerContext createContextFromTfvcServerUrl(
+            @NotNull URI tfvcServerUrl,
+            String teamProjectName,
+            boolean prompt) {
+        String tfvcServerUrlString = tfvcServerUrl.toString();
 
         // Get matching context from manager
-        ServerContext context = get(tfvcServerUrl);
+        ServerContext context = get(tfvcServerUrlString);
         logger.info("createContextFromTfvcServerUrl context exists: " + (context != null));
         if (context == null || context.getServerUri() == null ||
                 context.getTeamProjectCollectionReference() == null ||
@@ -411,7 +407,9 @@ public class ServerContextManager {
             // Manager didn't have a matching context, so try to look up the auth info
             final AuthenticationInfo authenticationInfo = getAuthenticationInfo(tfvcServerUrl, prompt);
             if (authenticationInfo != null) {
-                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(tfvcServerUrl) ? ServerContext.Type.VSO : ServerContext.Type.TFS;
+                final ServerContext.Type type = UrlHelper.isTeamServicesUrl(tfvcServerUrlString)
+                        ? ServerContext.Type.VSO
+                        : ServerContext.Type.TFS;
 
                 final ServerContext contextToValidate = new ServerContextBuilder()
                         .type(type).uri(tfvcServerUrl).authentication(authenticationInfo)
@@ -424,7 +422,7 @@ public class ServerContextManager {
                     if (prompt) {
                         // refreshing creds
                         logger.info("createContextFromTfvcServerUrl: refreshing creds");
-                        updateAuthenticationInfo(tfvcServerUrl);
+                        updateAuthenticationInfo(tfvcServerUrlString);
                         final AuthenticationInfo authenticationInfoRefreshed = getAuthenticationInfo(tfvcServerUrl, prompt);
                         final ServerContext contextToValidateRefreshed = new ServerContextBuilder()
                                 .type(type).uri(tfvcServerUrl).authentication(authenticationInfoRefreshed)
