@@ -85,7 +85,7 @@ public class VisualStudioTfvcClient {
         });
     }
 
-    private static List<String> readAsLines(InputStream stream, String label) throws IOException {
+    private static List<String> readLines(InputStream stream, String label) throws IOException {
         List<String> output = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
             String line;
@@ -115,8 +115,8 @@ public class VisualStudioTfvcClient {
                 .directory(workingDirectory == null ? null : workingDirectory.toFile())
                 .start();
 
-        List<String> output = readAsLines(client.getInputStream(), "stdout");
-        List<String> errors = readAsLines(client.getErrorStream(), "stderr");
+        List<String> output = readLines(client.getInputStream(), "stdout");
+        List<String> errors = readLines(client.getErrorStream(), "stderr");
 
         int exitCode = client.waitFor();
         ourLogger.info("VS client exit code: " + exitCode);
