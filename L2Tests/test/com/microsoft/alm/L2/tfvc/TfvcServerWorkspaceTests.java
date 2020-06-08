@@ -4,8 +4,6 @@
 package com.microsoft.alm.L2.tfvc;
 
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -21,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Objects;
 
 public class TfvcServerWorkspaceTests extends TfvcCheckoutTestBase {
 
@@ -58,21 +55,8 @@ public class TfvcServerWorkspaceTests extends TfvcCheckoutTestBase {
         assertEquals(Workspace.Location.SERVER, workspaceInfo.getLocation());
     }
 
-    private void testCheckoutCommand(Path workspace) {
-        File readmeIoFile = workspace.resolve(README_FILE).toFile();
-        assertTrue(readmeIoFile.exists());
-        VirtualFile readme = Objects.requireNonNull(LocalFileSystem.getInstance().findFileByIoFile(readmeIoFile));
-        assertFalse(readme.isWritable());
-        checkoutFile(readmeIoFile);
-        readme.refresh(false, false);
-        assertTrue(readme.isWritable());
-    }
-
     @Test(timeout = 60000)
     public void testServerCheckout() throws InterruptedException, IOException {
-        checkoutTestRepository(workspace -> {
-            assertIsServerWorkspace(workspace);
-            testCheckoutCommand(workspace);
-        });
+        checkoutTestRepository(this::assertIsServerWorkspace);
     }
 }
