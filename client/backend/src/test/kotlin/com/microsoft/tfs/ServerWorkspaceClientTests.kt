@@ -28,7 +28,7 @@ class ServerWorkspaceClientTests : TfsClientTestFixture() {
         assertTrue(isReadOnly(filePath))
     }
 
-    @Test
+    // @Test for manual run only, because concurrent checkout in tests is not supported
     fun readOnlyFlagShouldBeClearedOnCheckout() {
         val client = createClient(testLifetime)
         val filePath = workspacePath.resolve("readme.txt")
@@ -36,7 +36,7 @@ class ServerWorkspaceClientTests : TfsClientTestFixture() {
         assertFalse(isReadOnly(filePath))
     }
 
-    @Test
+    // @Test for manual run only, because concurrent checkout in tests is not supported
     fun getPendingChangesShouldReturnACheckedOutFile() {
         val client = createClient(testLifetime)
         val filePath = workspacePath.resolve("readme.txt")
