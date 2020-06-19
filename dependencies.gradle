@@ -1,0 +1,46 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See License.txt in the project root.
+
+/**
+ * This file controls the Microsoft ALM dependency artifacts that should be downloaded before building the plugin.
+ */
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.security.MessageDigest
+
+ext {
+    externalDependenciesDirectory = "$buildDir/externalDependencies"
+}
+
+def externalDependencies = [
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client-0.4.3-SNAPSHOT.jar': '5a86232de6ca24f41b74e5582ee0cb0c73a031ccb7a889b7d95a77fe1670555d',
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client.build2-0.4.3-SNAPSHOT.jar': '938ba642439a40d242106f51f1d81e8db4b92c6245e05f600da5554e7056d211',
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client.core-0.4.3-SNAPSHOT.jar': 'dc39f877f8360d46420b9056742c58be6f85c2724212d783c183fd9cca36fb7a',
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client.distributedtask-0.4.3-SNAPSHOT.jar': '5cb95c0adf5e64d6d7e0dc4750f81480566de4c30ba15cd470cb1e1cf9e1b48e',
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client.sourcecontrol-0.4.3-SNAPSHOT.jar': '73be5b93e7b0f7e03f37e2c79481a1eeebf14b1bd4e475f7757cb1188aa42a85',
+    'https://github.com/JetBrains/vso-httpclient-java/releases/download/0.4.3-SNAPSHOT/com.microsoft.alm.client.workitemtracking-0.4.3-SNAPSHOT.jar': '6596b047be73f5e979c42cdaf548f93235b477e6b15782ab4faace3f7c7a4c23'
+]
+
+private static def getUrlFileName(String url) {
+    return Paths.get(new URI(url).getPath()).fileName
+}
+
+externalDependencies.entrySet().forEach { entry ->
+    def url = entry.key
+    def expectedHash = entry.value
+    def fileName = getUrlFileName(url)
+    def downloadedFilePath = "$ext.externalDependenciesDirectory/$fileName"
+    download {
+        src url
+        dest downloadedFilePath
+        overwrite false
+    }
+
+    def digest = MessageDigest.getInstance("SHA-256")
+    def bytes = Files.readAllBytes(Paths.get(downloadedFilePath))
+    def hash = String.format("%064x", new BigInteger(1, digest.digest(bytes)))
+    if (!hash.equalsIgnoreCase(expectedHash)) {
+        delete downloadedFilePath
+        throw new RuntimeException("Expected hash: $expectedHash, actual hash: $hash for dependency file $fileName\nPlease retry build")
+    }
+}
