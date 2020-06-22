@@ -5,6 +5,7 @@ package com.microsoft.alm.plugin.idea.git.ui.simplecheckout;
 
 import com.intellij.openapi.ui.ValidationInfo;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import org.junit.Assert;
@@ -50,7 +51,7 @@ public class SimpleCheckoutControllerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testActionPerformed() throws Exception {
+    public void testActionPerformed() {
         ActionEvent e = new ActionEvent(this, 1, BaseDialog.CMD_OK);
         controller.actionPerformed(e);
 
@@ -85,13 +86,14 @@ public class SimpleCheckoutControllerTest extends IdeaAbstractTest {
 
     @Test
     public void testValidate_Error() {
-        String message = "message";
+        String messageKey = TfPluginBundle.KEY_VCS_LOADING_ERRORS;
+        String message = TfPluginBundle.message(messageKey);
         String componentName = "component";
         JComponent mockComponent = mock(JComponent.class);
 
         when(mockDialog.getComponent(componentName)).thenReturn(mockComponent);
-        ValidationInfo expectInfo = new ValidationInfo("!" + message + "!", mockComponent);
-        when(mockModel.validate()).thenReturn(ModelValidationInfo.createWithResource(componentName, message));
+        ValidationInfo expectInfo = new ValidationInfo(message, mockComponent);
+        when(mockModel.validate()).thenReturn(ModelValidationInfo.createWithResource(componentName, messageKey));
         ValidationInfo actualInfo = controller.validate();
 
         Assert.assertEquals(expectInfo.message, actualInfo.message);
