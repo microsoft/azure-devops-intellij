@@ -26,6 +26,7 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
@@ -82,18 +83,16 @@ public abstract class SingleItemAction extends DumbAwareAction {
         final String actionTitle = StringUtil.trimEnd(e.getPresentation().getText(), "...");
         try {
             final SingleItemActionContext actionContext = new SingleItemActionContext(project, localPath);
-            final List<VcsException> errors = new ArrayList<VcsException>();
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-                public void run() {
-                    try {
-                        ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                        final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
-                        final ItemInfo item = CommandUtils.getItemInfo(context, localPath.getPath());
-                        actionContext.setItem(item);
-                        actionContext.setServerContext(context);
-                    } catch (final Throwable t) {
-                        errors.add(TFSVcs.convertToVcsException(t));
-                    }
+            final List<VcsException> errors = new ArrayList<>();
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+                try {
+                    ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+                    final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
+                    final ItemInfo item = CommandUtils.getItemInfo(context, localPath.getPath());
+                    actionContext.setItem(item);
+                    actionContext.setServerContext(context);
+                } catch (final Throwable t) {
+                    errors.add(TFSVcs.convertToVcsException(t));
                 }
             }, getProgressMessage(), false, project);
 
@@ -117,7 +116,14 @@ public abstract class SingleItemAction extends DumbAwareAction {
     }
 
     protected final boolean isEnabled(@Nullable final Project project, @Nullable final VirtualFile file) {
-        return project != null && file != null && getAllowedStatuses().contains(FileStatusManager.getInstance(project).getStatus(file));
+        if (project == null
+                || file == null
+                || !getAllowedStatuses().contains(FileStatusManager.getInstance(project).getStatus(file)))
+            return false;
+
+        // TODO: Remove this suppression after migration to IDEA 2019.1. AbstractVcs became non-generic in newer IDEA.
+        @SuppressWarnings("rawtypes") AbstractVcs vcs = VcsUtil.getVcsFor(project, file);
+        return vcs != null && TFSVcs.getKey().equals(vcs.getKeyInstanceMethod());
     }
 
     public static class SingleItemActionContext {
