@@ -60,6 +60,7 @@
       <br />
       <ul>
         <li>Server workspace support: import existing ones or create new ones (<a href="https://github.com/microsoft/azure-devops-intellij/issues/325">#325</a>)</li>
+        <li><b>Merge Branch Changes</b> action won't stay in your way in non-TFVC projects in the plugin in installed</li>
       </ul>
       <br />
     ]]>
@@ -84,8 +85,7 @@
                             predicateClassName="com.microsoft.alm.plugin.idea.git.extensions.VcsPullRequestContentProvider$VcsPullRequestVisibilityPredicate"/>
         <changesViewContent className="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider" tabName="Work Items"
                             predicateClassName="com.microsoft.alm.plugin.idea.common.extensions.VcsWorkItemContentProvider$VcsWorkItemVisibilityPredicate"/>
-        <applicationService serviceInterface="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"
-                            serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
+        <applicationService serviceImplementation="com.microsoft.alm.plugin.idea.common.settings.TeamServicesSettingsService"/>
         <vcsConfigurableProvider implementation="com.microsoft.alm.plugin.idea.common.ui.settings.TeamServicesConfigurable"/>
 
         <vcsRootChecker implementation="com.microsoft.alm.plugin.idea.tfvc.extensions.TfvcRootChecker"/>
