@@ -231,7 +231,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
     @Nullable
     @Override
-    public File copy(final VirtualFile virtualFile, final VirtualFile virtualFile1, final String s) throws IOException {
+    public File copy(final VirtualFile virtualFile, final VirtualFile virtualFile1, final String s) {
         return null;
     }
 
@@ -304,10 +304,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
     /**
      * Move and rename logic the same
      *
-     * @param oldFile
-     * @param newPath
-     * @return
-     * @throws IOException
+     * @return whether the item was renamed by the VCS.
      */
     private boolean renameOrMove(final VirtualFile oldFile, final String newPath) throws IOException {
         final TFSVcs vcs = VcsHelper.getTFSVcsByPath(oldFile);
@@ -352,7 +349,14 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
                 return false;
             } else {
                 ourLogger.info("Renaming file thru tf commandline");
-                CommandUtils.renameFile(vcs.getServerContext(true), oldPath, newPath);
+                TfvcClient client = TfvcClient.getInstance(myProject);
+                if (!client.renameFile(
+                        vcs.getServerContext(true),
+                        Paths.get(oldPath),
+                        Paths.get(newPath))) {
+                    throw new IOException("Couldn't rename file \"" + oldPath + "\" to \"" + newPath + "\"");
+                }
+
                 return true;
             }
         } catch (Throwable t) {

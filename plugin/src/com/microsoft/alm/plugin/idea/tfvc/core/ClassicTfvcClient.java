@@ -3,8 +3,10 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
@@ -27,6 +29,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ClassicTfvcClient implements TfvcClient {
+
+    private static final Logger ourLogger = Logger.getInstance(ClassicTfvcClient.class);
 
     @NotNull
     private final Project myProject;
@@ -162,5 +166,26 @@ public class ClassicTfvcClient implements TfvcClient {
             @NotNull List<Path> filePaths,
             boolean recursive) {
         return CommandUtils.checkoutFilesForEdit(serverContext, filePaths, recursive);
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<Boolean> renameFileAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull Path oldFile,
+            @NotNull Path newFile) {
+        renameFile(serverContext, oldFile, newFile);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public boolean renameFile(@NotNull ServerContext serverContext, @NotNull Path oldFile, @NotNull Path newFile) {
+        try {
+            CommandUtils.renameFile(serverContext, oldFile.toString(), newFile.toString());
+            return true;
+        } catch (ToolBadExitCodeException ex) {
+            ourLogger.error(ex);
+            return false;
+        }
     }
 }

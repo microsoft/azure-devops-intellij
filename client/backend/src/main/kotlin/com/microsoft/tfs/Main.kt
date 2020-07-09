@@ -144,6 +144,11 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         client.checkoutFilesForEdit(parameters.filePaths, parameters.recursive)
     }
 
+    collection.renameFile.set { (oldPath, newPath) ->
+        logger.info { "Performing Rename operation on \"${oldPath.path}\" to \"${newPath.path}\"" }
+        client.renameFile(oldPath, newPath)
+    }
+
     client.workspaces.advise(lifetime) { workspaces ->
         val paths = workspaces.flatMap { it.mappedPaths.map(::TfsLocalPath) }
         collection.mappedPaths.set(paths)

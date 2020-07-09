@@ -7,7 +7,7 @@ import com.microsoft.tfs.model.host.TfsLocalPath
 import com.microsoft.tfs.tests.TfsClientTestFixture
 import com.microsoft.tfs.tests.cloneTestRepository
 import com.microsoft.tfs.tests.createClient
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.file.Path
@@ -26,9 +26,9 @@ class LocalWorkspaceClientTests : TfsClientTestFixture() {
 
         val result = client.deletePathsRecursively(localPathList)
 
-        Assert.assertEquals(localPathList, result.deletedPaths)
-        Assert.assertEquals(emptyList<TfsLocalPath>(), result.notFoundPaths)
-        Assert.assertEquals(emptyList<String>(), result.errorMessages)
+        assertEquals(localPathList, result.deletedPaths)
+        assertEquals(emptyList<TfsLocalPath>(), result.notFoundPaths)
+        assertEquals(emptyList<String>(), result.errorMessages)
     }
 
     @Test
@@ -41,8 +41,19 @@ class LocalWorkspaceClientTests : TfsClientTestFixture() {
         assertNoPendingChanges(client, filePath)
 
         val result = client.deletePathsRecursively(listOf(TfsLocalPath(filePath.toString())))
-        Assert.assertEquals(emptyList<TfsLocalPath>(), result.deletedPaths)
-        Assert.assertEquals(listOf(TfsLocalPath(filePath.toString())), result.notFoundPaths)
-        Assert.assertEquals(emptyList<String>(), result.errorMessages)
+        assertEquals(emptyList<TfsLocalPath>(), result.deletedPaths)
+        assertEquals(listOf(TfsLocalPath(filePath.toString())), result.notFoundPaths)
+        assertEquals(emptyList<String>(), result.errorMessages)
+    }
+
+    @Test
+    fun clientShouldBeAbleToRenameAFile() {
+        val client = createClient(testLifetime)
+        val oldPath = workspacePath.resolve("readme.txt")
+        val newPath = workspacePath.resolve("donotreadme.txt")
+
+        val result = client.renameFile(TfsLocalPath(oldPath.toString()), TfsLocalPath(newPath.toString()))
+
+        assertTrue(result)
     }
 }

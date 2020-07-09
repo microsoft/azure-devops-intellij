@@ -222,4 +222,24 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
 
         return TfvcCheckoutResult(editedPaths, notFoundPaths, errorMessages)
     }
+
+    fun renameFile(oldPath: TfsLocalPath, newPath: TfsLocalPath): Boolean {
+        val workspace = getWorkspaceFor(oldPath)
+        if (workspace == null) {
+            logger.warn { "Could not determine workspace for path: \"$oldPath\"" }
+            return false
+        }
+
+        val changedItems = workspace.pendRename(
+            oldPath.path,
+            newPath.path,
+            LockLevel.NONE,
+            GetOptions.NONE,
+            true,
+            PendChangesOptions.NONE
+        )
+        logger.info { "pendRename result: $changedItems" }
+
+        return changedItems == 1
+    }
 }

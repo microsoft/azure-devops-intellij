@@ -208,6 +208,14 @@ public class ReactiveTfvcClientHost {
                 .thenCompose(collection -> myConnection.checkoutFilesForEditAsync(collection, paths, recursive));
     }
 
+    public CompletionStage<Boolean> renameFileAsync(
+            @NotNull ServerIdentification serverIdentification,
+            @NotNull TfsLocalPath oldPath,
+            @NotNull TfsLocalPath newPath) {
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> myConnection.renameFileAsync(collection, oldPath, newPath));
+    }
+
     private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
         return new ProcessAdapter() {
             @Override
