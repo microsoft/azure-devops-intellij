@@ -13,9 +13,9 @@ import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.process.ProcessOutputTypes;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
@@ -70,8 +70,8 @@ public class ReactiveTfvcClientHost {
         myConnection = connection;
     }
 
-    public static ReactiveTfvcClientHost create(Project project, Path clientPath) throws ExecutionException {
-        SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(project), "ReactiveTfClient Scheduler");
+    public static ReactiveTfvcClientHost create(Disposable parent, Path clientPath) throws ExecutionException {
+        SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(parent), "ReactiveTfClient Scheduler");
         ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
         try {
             Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
