@@ -29,6 +29,8 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     public static Path getClientBackendPath() {
+        // TODO: Replace with PluginManagerCore.getPlugin after migration to IDEA 2019.3
+        //noinspection UnstableApiUsage
         return Paths.get(
                 Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
                 "backend");
@@ -41,7 +43,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
     public ReactiveTfvcClientHolder(Project myProject) {
         this.myProject = myProject;
         ApplicationManager.getApplication().getMessageBus()
-                .connect(myProject)
+                .connect(this)
                 .subscribe(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC, propertyKey -> {
                     if (propertyKey.equals(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT)) {
                         destroyClientIfExists();
@@ -97,7 +99,7 @@ public class ReactiveTfvcClientHolder implements Disposable {
         Path clientPath = getClientBackendPath()
                 .resolve("bin")
                 .resolve(SystemInfo.isWindows ? "backend.bat" : "backend");
-        ReactiveTfvcClientHost client = ReactiveTfvcClientHost.create(myProject, clientPath);
+        ReactiveTfvcClientHost client = ReactiveTfvcClientHost.create(this, clientPath);
         return client.startAsync().thenApply(unused -> client).toCompletableFuture();
     }
 }
