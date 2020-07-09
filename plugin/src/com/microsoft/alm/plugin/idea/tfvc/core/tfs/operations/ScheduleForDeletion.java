@@ -59,21 +59,22 @@ public class ScheduleForDeletion {
         // find if changes need reverted and revert them
         // schedule roots for deletion using their original names
 
-        final Collection<VcsException> errors = new ArrayList<VcsException>();
+        final Collection<VcsException> errors = new ArrayList<>();
 
-        final List<String> filePaths = new ArrayList<String>(files.size());
+        final List<String> filePaths = new ArrayList<>(files.size());
         for (final FilePath filePath : files) {
             filePaths.add(filePath.getPath());
         }
 
         try {
-            final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
-            final List<String> revert = new ArrayList<String>();
-            final Set<String> scheduleForDeletion = new HashSet<String>();
+            final List<PendingChange> pendingChanges = new ArrayList<>();
+            final List<String> revert = new ArrayList<>();
+            final Set<String> scheduleForDeletion = new HashSet<>();
             final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
 
+            TfvcClient client = TfvcClient.getInstance(project);
             for (final String path : filePaths) {
-                final List<PendingChange> fileChanges = CommandUtils.getStatusForFiles(project, context, ImmutableList.of(path));
+                List<PendingChange> fileChanges = client.getStatusForFiles(context, ImmutableList.of(path));
 
                 // deleting a file that has no changes
                 if (fileChanges.isEmpty()) {
@@ -142,10 +143,10 @@ public class ScheduleForDeletion {
 
             if (!revert.isEmpty()) {
                 List<TfsPath> pathsForUndo = revert.stream().map(TfsLocalPath::new).collect(Collectors.toList());
-                TfvcClient.getInstance(project).undoLocalChanges(context, pathsForUndo);
+                client.undoLocalChanges(context, pathsForUndo);
             }
 
-            final List<String> confirmedDeletedFiles = new ArrayList<String>();
+            final List<String> confirmedDeletedFiles = new ArrayList<>();
             if (!scheduleForDeletion.isEmpty()) {
                 // a workspace is needed since some paths are server paths, all changes will have the same workspace so
                 // just get it from the first change (list isn't empty since deletes were found)

@@ -20,7 +20,6 @@ import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.utils.VcsHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
@@ -39,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -329,27 +327,25 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         final String oldPath = oldFile.getPath();
         try {
+            TfvcClient client = TfvcClient.getInstance(myProject);
+
             // a single file may have 0, 1, or 2 pending changes to it
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
-            final List<PendingChange> pendingChanges = new ArrayList<>(2);
-            pendingChanges.addAll(
-                    CommandUtils.getStatusForFiles(
-                            myProject,
-                            vcs.getServerContext(true),
-                            ImmutableList.of(oldPath)));
+            List<PendingChange> pendingChanges = client.getStatusForFiles(
+                    vcs.getServerContext(true),
+                    ImmutableList.of(oldPath));
 
             // ** Rename logic **
-            // If 1 change and it's a candidate add that means it's a new unversioned file so rename thru the file system
+            // If 1 change and it's a candidate add that means it's a new unversioned file so rename through the file system
             // Anything else can be renamed
             // Deleted files should not be at this point since IDE disables rename option for them
             if (pendingChanges.size() == 1 && pendingChanges.get(0).isCandidate() && pendingChanges.get(0).getChangeTypes().contains(ServerStatusType.ADD)) {
-                ourLogger.info("Renaming unversioned file thru file system");
+                ourLogger.info("Renaming unversioned file through file system");
                 return false;
             } else {
-                ourLogger.info("Renaming file thru tf commandline");
-                TfvcClient client = TfvcClient.getInstance(myProject);
+                ourLogger.info("Renaming file through tf commandline");
                 if (!client.renameFile(
                         vcs.getServerContext(true),
                         Paths.get(oldPath),

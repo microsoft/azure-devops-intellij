@@ -50,6 +50,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
@@ -92,8 +93,8 @@ public class ResolveConflictHelper {
         this(project, updatedFiles, updateRoots, null);
     }
 
-    public ResolveConflictHelper(final Project project,
-                                 final UpdatedFiles updatedFiles,
+    public ResolveConflictHelper(@NotNull final Project project,
+                                 @Nullable final UpdatedFiles updatedFiles,
                                  final List<String> updateRoots,
                                  final MergeResults mergeResults) {
         this.project = project;
@@ -386,7 +387,17 @@ public class ResolveConflictHelper {
                 final String serverChanges;
                 final String myLocalChanges;
 
-                final PendingChange originalChange = CommandUtils.getStatusForFile(context, conflict.getLocalPath());
+
+                String conflictLocalPath = conflict.getLocalPath();
+                List<PendingChange> pendingChange = TfvcClient.getInstance(project)
+                        .getStatusForFiles(context, Collections.singletonList(conflictLocalPath));
+                if (pendingChange.size() > 1) {
+                    logger.warn(
+                            "Count of local changes for file \"{}\" is greater than 1: {}",
+                            conflictLocalPath,
+                            pendingChange.size());
+                }
+                PendingChange originalChange = pendingChange.size() > 0 ? pendingChange.get(1) : null;
                 if (isMergeConflict(conflict, null)) {
                     final String workingFolder = localPath.isDirectory() ?
                             localPath.getPath() :
@@ -406,7 +417,7 @@ public class ResolveConflictHelper {
                     if (originalChange != null) {
                         final int version = Integer.parseInt(originalChange.getVersion());
                         if (isNameConflict(conflict)) {
-                            final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                            final FilePath renamePath = VersionControlPath.getFilePath(conflictLocalPath, conflictPath.isDirectory());
                             original = TFSContentRevision.createRenameRevision(project, renamePath,
                                     version, originalChange.getDate(), ((RenameConflict) conflict).getOldPath()).getContent();
                         } else {
@@ -426,10 +437,10 @@ public class ResolveConflictHelper {
                     // get content from server
                     if (isNameConflict(conflict)) {
                         final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, ((RenameConflict) conflict).getServerPath());
-                        final FilePath renamePath = VersionControlPath.getFilePath(conflict.getLocalPath(), conflictPath.isDirectory());
+                        final FilePath renamePath = VersionControlPath.getFilePath(conflictLocalPath, conflictPath.isDirectory());
                         serverChanges = TFSContentRevision.createRenameRevision(project, renamePath, serverChange.getIdAsInt(), serverChange.getDate(), ((RenameConflict) conflict).getServerPath()).getContent();
                     } else {
-                        final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflict.getLocalPath());
+                        final ChangeSet serverChange = CommandUtils.getLastHistoryEntryForAnyUser(context, conflictLocalPath);
                         serverChanges = TFSContentRevision.create(project, localPath, serverChange.getIdAsInt(), serverChange.getDate()).getContent();
                     }
                 }
