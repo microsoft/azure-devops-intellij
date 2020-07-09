@@ -33,9 +33,9 @@ import com.intellij.refactoring.rename.RenameUtil;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
 import com.microsoft.alm.helpers.Path;
+import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,12 +77,9 @@ public class RenameFileDirectory {
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
-            final List<PendingChange> pendingChanges = new ArrayList<>(2);
-            pendingChanges.addAll(
-                    CommandUtils.getStatusForFiles(
-                            project,
-                            TFSVcs.getInstance(project).getServerContext(true),
-                            ImmutableList.of(currentPath)));
+            TfvcClient client = TfvcClient.getInstance(project);
+            ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(true);
+            List<PendingChange> pendingChanges = client.getStatusForFiles(serverContext, ImmutableList.of(currentPath));
 
             // ** Rename logic **
             // If 1 change and it's an add that means it's a new unversioned file so rename thru the file system
@@ -94,9 +90,8 @@ public class RenameFileDirectory {
                 RenameUtil.doRenameGenericNamedElement(element, newName, usages, listener);
             } else {
                 logger.info("Renaming file thru tf commandline");
-                TfvcClient client = TfvcClient.getInstance(project);
                 if (!client.renameFile(
-                        TFSVcs.getInstance(project).getServerContext(true),
+                        serverContext,
                         Paths.get(currentPath),
                         Paths.get(newPath)))
                     throw new IncorrectOperationException("Couldn't rename file \"" + currentPath + "\" to \"" + newPath + "\"");

@@ -29,10 +29,10 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsVFSListener;
+import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.ServerStatus;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.StatusProvider;
@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,14 +58,17 @@ public class TFSFileListener extends VcsVFSListener {
         super(project, vcs);
     }
 
+    @NotNull
     protected String getAddTitle() {
         return TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ITEMS);
     }
 
+    @NotNull
     protected String getSingleFileAddTitle() {
         return TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ITEM);
     }
 
+    @NotNull
     protected String getSingleFileAddPromptTemplate() {
         // pass {0} as a param because the current {0} in the string needs to be replaced by something or else there is an error
         // the {0} will be replaced higher up by the file name that we don't have here
@@ -72,7 +76,9 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     @Override
-    protected void executeAdd(List<VirtualFile> addedFiles, Map<VirtualFile, VirtualFile> copyFromMap) {
+    protected void executeAdd(
+            @NotNull List<VirtualFile> addedFiles,
+            @NotNull Map<VirtualFile, VirtualFile> copyFromMap) {
         logger.info("executeAdd executing...");
         Application application = ApplicationManager.getApplication();
         if (UndoManager.getInstance(myProject).isUndoInProgress()) {
@@ -81,18 +87,16 @@ public class TFSFileListener extends VcsVFSListener {
         }
 
         final List<String> filePaths = TfsFileUtil.getFilePathStrings(addedFiles);
-        final List<PendingChange> pendingChanges = new ArrayList<PendingChange>();
+        final List<PendingChange> pendingChanges = new ArrayList<>();
 
-        application.invokeAndWait(() -> {
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                pendingChanges.addAll(
-                        CommandUtils.getStatusForFiles(
-                                myProject,
-                                TFSVcs.getInstance(myProject).getServerContext(true),
-                                filePaths));
-            }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject);
-        });
+        application.invokeAndWait(() -> ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+            ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+            TfvcClient client = TfvcClient.getInstance(myProject);
+            pendingChanges.addAll(
+                    client.getStatusForFiles(
+                            TFSVcs.getInstance(myProject).getServerContext(true),
+                            filePaths));
+        }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject));
 
         for (final PendingChange pendingChange : pendingChanges) {
             StatusProvider.visitByStatus(new StatusProvider.StatusAdapter() {
@@ -140,7 +144,7 @@ public class TFSFileListener extends VcsVFSListener {
         }
     }
 
-    protected void performDeletion(final List<FilePath> filesToDelete) {
+    protected void performDeletion(@NotNull final List<FilePath> filesToDelete) {
         // nothing to do here since we already have taken care of the deleted file
     }
 
@@ -150,13 +154,15 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     @Override
-    protected void performAdding(final Collection<VirtualFile> addedFiles, final Map<VirtualFile, VirtualFile> copyFromMap) {
-        final List<VcsException> errors = new ArrayList<VcsException>();
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                errors.addAll(TFSVcs.getInstance(myProject).getCheckinEnvironment().scheduleUnversionedFilesForAddition(new ArrayList(addedFiles)));
-            }
+    protected void performAdding(@NotNull final Collection<VirtualFile> addedFiles, @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
+        final List<VcsException> errors = new ArrayList<>();
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+            ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+            CheckinEnvironment checkinEnvironment = Objects.requireNonNull(
+                    TFSVcs.getInstance(myProject).getCheckinEnvironment());
+            List<VcsException> exceptions = checkinEnvironment.scheduleUnversionedFilesForAddition(
+                    new ArrayList<>(addedFiles));
+            if (exceptions != null) errors.addAll(exceptions);
         }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_PROGRESS), false, myProject);
 
         if (!errors.isEmpty()) {
@@ -164,6 +170,7 @@ public class TFSFileListener extends VcsVFSListener {
         }
     }
 
+    @NotNull
     protected String getDeleteTitle() {
         return StringUtils.EMPTY; // never called
     }
@@ -177,18 +184,12 @@ public class TFSFileListener extends VcsVFSListener {
     }
 
     protected void performMoveRename(final List<MovedFileInfo> movedFiles) {
-        final List<VcsException> errors = new ArrayList<VcsException>();
-
         // Refreshes the files so that the changes show up in the Local Changes tab
-        final Collection<FilePath> invalidate = new ArrayList<FilePath>(movedFiles.size());
+        final Collection<FilePath> invalidate = new ArrayList<>(movedFiles.size());
         for (final MovedFileInfo info : movedFiles) {
             invalidate.add(VcsUtil.getFilePath(info.myOldPath));
         }
         TfsFileUtil.markDirtyRecursively(myProject, invalidate);
-
-        if (!errors.isEmpty()) {
-            AbstractVcsHelper.getInstance(myProject).showErrors(errors, TFSVcs.TFVC_NAME);
-        }
     }
 
     protected boolean isDirectoryVersioningSupported() {
