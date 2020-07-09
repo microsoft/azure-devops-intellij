@@ -4,6 +4,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.operations;
 
 import com.google.common.collect.ImmutableList;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.persistent.PersistentFS;
@@ -21,6 +22,7 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,14 +47,14 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, TFSVcs.class, PersistentFS.class, RenameUtil.class})
+@PrepareForTest({CommandUtils.class, ServiceManager.class, TFSVcs.class, PersistentFS.class, RenameUtil.class})
 public class RenameFileDirectoryTest extends IdeaAbstractTest {
-    private UsageInfo[] usageInfos = new UsageInfo[1];
-    private String NEW_FILE_NAME = "newName.txt";
-    private String NEW_DIRECTORY_NAME = "newDirectory";
-    private String PARENT_PATH = "/path/to/the";
-    private String CURRENT_FILE_PATH = Path.combine(PARENT_PATH, "file.txt");
-    private String NEW_FILE_PATH = Path.combine(PARENT_PATH, NEW_FILE_NAME);
+    private final UsageInfo[] usageInfos = new UsageInfo[1];
+    private final String NEW_FILE_NAME = "newName.txt";
+    private final String NEW_DIRECTORY_NAME = "newDirectory";
+    private final String PARENT_PATH = "/path/to/the";
+    private final String CURRENT_FILE_PATH = Path.combine(PARENT_PATH, "file.txt");
+    private final String NEW_FILE_PATH = Path.combine(PARENT_PATH, NEW_FILE_NAME);
 
     @Mock
     private PsiFile mockPsiFile;
@@ -87,7 +89,12 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, PersistentFS.class, RenameUtil.class);
+        PowerMockito.mockStatic(
+                CommandUtils.class,
+                ServiceManager.class,
+                TFSVcs.class,
+                PersistentFS.class,
+                RenameUtil.class);
 
         when(mockPsiFile.getVirtualFile()).thenReturn(mockVirtualFile);
         when(mockPsiFile.getProject()).thenReturn(mockProject);
@@ -97,6 +104,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
         when(mockVirtualFile.getParent()).thenReturn(mockVirtualParent);
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
+        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(PersistentFS.getInstance()).thenReturn(mockPersistentFS);
     }
