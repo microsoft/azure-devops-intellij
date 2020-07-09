@@ -151,4 +151,19 @@ public class ReactiveTfvcClient implements TfvcClient {
                             recursive));
         });
     }
+
+    @NotNull
+    @Override
+    public CompletionStage<Boolean> renameFileAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull Path oldFile,
+            @NotNull Path newFile) {
+        return traceTime("Rename", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            TfsLocalPath oldPath = TfsFileUtil.createLocalPath(oldFile);
+            TfsLocalPath newPath = TfsFileUtil.createLocalPath(newFile);
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.renameFileAsync(serverIdentification, oldPath, newPath));
+        });
+    }
 }

@@ -37,10 +37,12 @@ import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.models.ServerStatusType;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,10 +94,15 @@ public class RenameFileDirectory {
                 RenameUtil.doRenameGenericNamedElement(element, newName, usages, listener);
             } else {
                 logger.info("Renaming file thru tf commandline");
-                CommandUtils.renameFile(TFSVcs.getInstance(project).getServerContext(true), currentPath, newPath);
+                TfvcClient client = TfvcClient.getInstance(project);
+                if (!client.renameFile(
+                        TFSVcs.getInstance(project).getServerContext(true),
+                        Paths.get(currentPath),
+                        Paths.get(newPath)))
+                    throw new IncorrectOperationException("Couldn't rename file \"" + currentPath + "\" to \"" + newPath + "\"");
 
                 // this alerts that a rename has taken place so any additional processing can take place
-                final VFileEvent event = new VFilePropertyChangeEvent(element.getManager(), virtualFile, "name", currentPath, newName, false);
+                final VFileEvent event = new VFilePropertyChangeEvent(element.getManager(), virtualFile, VirtualFile.PROP_NAME, currentPath, newName, false);
                 PersistentFS.getInstance().processEvents(Collections.singletonList(event));
             }
         } catch (Throwable t) {

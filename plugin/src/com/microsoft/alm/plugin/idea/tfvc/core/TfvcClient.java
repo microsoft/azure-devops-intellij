@@ -222,4 +222,35 @@ public interface TfvcClient {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Performs file rename using TFVC asynchronously.
+     *
+     * @param serverContext a server context to extract the authorization information from.
+     * @param oldFile       the old file path and name.
+     * @param newFile       the new file path and name.
+     * @return a completion stage with the checkout result that will be resolved when the operation ends. The stage
+     * contains the operation success status.
+     */
+    @NotNull
+    CompletionStage<Boolean> renameFileAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull Path oldFile,
+            @NotNull Path newFile);
+
+    /**
+     * Performs file rename using TFVC.
+     *
+     * @param serverContext a server context to extract the authorization information from.
+     * @param oldFile       the old file path and name.
+     * @param newFile       the new file path and name.
+     * @return whether the operation was successful.
+     */
+    default boolean renameFile(@NotNull ServerContext serverContext, @NotNull Path oldFile, @NotNull Path newFile) {
+        try {
+            return renameFileAsync(serverContext, oldFile, newFile).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -90,6 +90,11 @@ object TfsModel : Root() {
         field("errorMessages", immutableList(string))
     }
 
+    private val TfvcRenameRequest = structdef {
+        field("oldPath", TfsLocalPath)
+        field("newPath", TfsLocalPath)
+    }
+
     private val TfsCollection = classdef {
         property("isReady", bool)
             .doc("Whether the client is ready to accept method calls")
@@ -117,6 +122,9 @@ object TfsModel : Root() {
 
         call("checkoutFilesForEdit", TfvcCheckoutParameters, TfvcCheckoutResult)
             .doc("Makes one or more local files writable and creates \"edit\" pending changes for them in the current workspace.")
+
+        call("renameFile", TfvcRenameRequest, bool)
+            .doc("Creates a \"rename\" pending change, which moves or renames a file or folder. Returns success status")
     }
 
     init {
