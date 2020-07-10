@@ -19,6 +19,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.rd.framework.impl.RdSecureString;
+import com.jetbrains.rd.util.lifetime.LifetimeDefinition;
 import com.jetbrains.rd.util.threading.SingleThreadScheduler;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
@@ -64,15 +65,18 @@ public class ReactiveTfvcClientHost {
 
     private static final Logger ourLogger = Logger.getInstance(ReactiveTfvcClientHost.class);
 
+    private final LifetimeDefinition myLifetime;
     private final ReactiveClientConnection myConnection;
 
-    public ReactiveTfvcClientHost(ReactiveClientConnection connection) {
+    public ReactiveTfvcClientHost(LifetimeDefinition myLifetime, ReactiveClientConnection connection) {
+        this.myLifetime = myLifetime;
         myConnection = connection;
     }
 
     public static ReactiveTfvcClientHost create(Disposable parent, Path clientPath) throws ExecutionException {
-        SingleThreadScheduler scheduler = new SingleThreadScheduler(defineNestedLifetime(parent), "ReactiveTfClient Scheduler");
-        ReactiveClientConnection connection = new ReactiveClientConnection(scheduler);
+        LifetimeDefinition hostLifetime = defineNestedLifetime(parent);
+        SingleThreadScheduler scheduler = new SingleThreadScheduler(hostLifetime, "ReactiveTfClient Scheduler");
+        ReactiveClientConnection connection = new ReactiveClientConnection(hostLifetime, scheduler);
         try {
             Path logDirectory = Paths.get(PathManager.getLogPath(), "ReactiveTfsClient");
             Path clientHomeDir = clientPath.getParent().getParent();
@@ -81,18 +85,18 @@ public class ReactiveTfvcClientHost {
             ProcessHandler processHandler = new OSProcessHandler(commandLine);
             connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);
 
-            processHandler.addProcessListener(createProcessListener(connection));
+            processHandler.addProcessListener(createProcessListener(hostLifetime));
             processHandler.startNotify();
 
-            return new ReactiveTfvcClientHost(connection);
+            return new ReactiveTfvcClientHost(hostLifetime, connection);
         } catch (Throwable t) {
-            connection.terminate();
+            hostLifetime.terminate(false);
             throw t;
         }
     }
 
     public void terminate() {
-        myConnection.terminate();
+        myLifetime.terminate(false);
     }
 
     @NotNull
@@ -224,7 +228,7 @@ public class ReactiveTfvcClientHost {
                 .thenCompose(collection -> myConnection.renameFileAsync(collection, oldPath, newPath));
     }
 
-    private static ProcessListener createProcessListener(ReactiveClientConnection connection) {
+    private static ProcessListener createProcessListener(LifetimeDefinition lifetime) {
         return new ProcessAdapter() {
             @Override
             public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
@@ -240,7 +244,7 @@ public class ReactiveTfvcClientHost {
             @Override
             public void processTerminated(@NotNull ProcessEvent event) {
                 ourLogger.info("Process is terminated, terminating the connection");
-                connection.terminate();
+                lifetime.terminate(false);
             }
         };
     }

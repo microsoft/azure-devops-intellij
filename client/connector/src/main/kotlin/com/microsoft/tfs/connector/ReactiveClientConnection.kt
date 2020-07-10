@@ -15,16 +15,14 @@ import kotlinx.coroutines.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
-class ReactiveClientConnection(private val scheduler: IScheduler) {
-    private val lifetimeDefinition = LifetimeDefinition()
-    val lifetime = lifetimeDefinition.lifetime
+class ReactiveClientConnection(val lifetime: LifetimeDefinition, private val scheduler: IScheduler) {
     private val socket = SocketWire.Server(
         lifetime,
         scheduler,
         null).apply {
         // Handle disconnection:
         connected.change.advise(lifetime) { connected ->
-            if (!connected) lifetimeDefinition.terminate()
+            if (!connected) lifetime.terminate()
         }
     }
     private val protocol = Protocol(
@@ -39,8 +37,6 @@ class ReactiveClientConnection(private val scheduler: IScheduler) {
 
     val port
         get() = socket.port
-
-    fun terminate() = lifetimeDefinition.terminate()
 
     fun startAsync(): CompletionStage<Void> =
         queueFutureAsync { lt ->
