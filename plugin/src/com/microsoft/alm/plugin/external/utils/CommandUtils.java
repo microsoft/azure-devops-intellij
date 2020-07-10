@@ -404,19 +404,6 @@ public class CommandUtils {
     }
 
     /**
-     * Get the status for a single file
-     *
-     * @param context
-     * @param file
-     * @return
-     */
-    public static PendingChange getStatusForFile(final ServerContext context, final String file) {
-        final Command<List<PendingChange>> command = new StatusCommand(context, file);
-        final List<PendingChange> results = command.runSynchronously();
-        return results.isEmpty() ? null : results.get(0);
-    }
-
-    /**
      * Get the status for a list of files
      *
      * @param context

@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -26,6 +27,7 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
+import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
@@ -56,6 +58,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
@@ -68,8 +71,17 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, ProgressManager.class, TFSVcs.class, TfsFileUtil.class, TFSContentRevision.class,
-        CurrentContentRevision.class, VersionControlPath.class, ConflictsEnvironment.class, VcsUtil.class})
+@PrepareForTest({
+        CommandUtils.class,
+        ProgressManager.class,
+        ServiceManager.class,
+        TFSVcs.class,
+        TfsFileUtil.class,
+        TFSContentRevision.class,
+        CurrentContentRevision.class,
+        VersionControlPath.class,
+        ConflictsEnvironment.class,
+        VcsUtil.class})
 public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public final Conflict CONFLICT_RENAME = new RenameConflict("/path/to/fileRename.txt", "$/server/path", "/old/path");
     public final Conflict CONFLICT_CONTEXT = new Conflict("/path/to/fileContent.txt", Conflict.ConflictType.CONTENT);
@@ -132,8 +144,17 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     @Before
     public void setUp() throws VcsException {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, ProgressManager.class, VcsUtil.class,
-                TFSVcs.class, TfsFileUtil.class, TFSContentRevision.class, CurrentContentRevision.class, VersionControlPath.class);
+        PowerMockito.mockStatic(
+                CommandUtils.class,
+                ConflictsEnvironment.class,
+                ProgressManager.class,
+                ServiceManager.class,
+                VcsUtil.class,
+                TFSVcs.class,
+                TfsFileUtil.class,
+                TFSContentRevision.class,
+                CurrentContentRevision.class,
+                VersionControlPath.class);
 
         when(mockFile.isFile()).thenReturn(true);
         when(mockFile.isDirectory()).thenReturn(false);
@@ -143,6 +164,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         when(mockProgressManager.getProgressIndicator()).thenReturn(mockProgressIndicator);
 
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
+        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(ConflictsEnvironment.getNameMerger()).thenReturn(mockNameMerger);
         when(ConflictsEnvironment.getContentMerger()).thenReturn(mockContentMerger);
@@ -254,13 +276,22 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         helper.resolveConflict(CONFLICT_BOTH.getLocalPath(), CONFLICT_BOTH.getLocalPath(), ResolveConflictsCommand.AutoResolveType.KeepYours, mockServerContext, mockResolveConflictsModel, true, null);
     }
 
+    private void mockGetStatusForFiles(PendingChange pendingChangeOriginal, Conflict conflict) {
+        when(
+                CommandUtils.getStatusForFiles(
+                        eq(mockProject),
+                        eq(mockServerContext),
+                        eq(Collections.singletonList(conflict.getLocalPath()))))
+                .thenReturn(Collections.singletonList(pendingChangeOriginal));
+    }
+
     @Test
     public void testPopulateThreeWayDiff_ContentsChangeOnly() throws Exception {
         PendingChange pendingChangeOriginal = new PendingChange("$/server/path/file.txt", "/path/to/file.txt", "10", "domain/user", "2016-09-14T16:10:08.487-0400", "none", "edit", "workspace1", "computer1", false, StringUtils.EMPTY);
         CheckedInChange checkedInChange = new CheckedInChange("$/server/path/file.txt", "edit", "9", "2016-09-10T16:10:08.487-0400");
         ChangeSet changeSet = new ChangeSet("9", "domain/user", "domain/user", "2016-09-14T16:10:08.487-0400", "comment", Arrays.asList(checkedInChange));
 
-        when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(pendingChangeOriginal);
+        mockGetStatusForFiles(pendingChangeOriginal, CONFLICT_CONTEXT);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, CONFLICT_CONTEXT.getLocalPath())).thenReturn(changeSet);
         when(TFSContentRevision.create(mockProject, mockFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate())).thenReturn(mockTFSContentRevision1);
         when(TFSContentRevision.create(mockProject, mockFilePath, changeSet.getIdAsInt(), changeSet.getDate())).thenReturn(mockTFSContentRevision2);
@@ -285,7 +316,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
         when(VersionControlPath.getFilePath(CONFLICT_BOTH.getLocalPath(), false)).thenReturn(mockRenameFilePath);
         when(CommandUtils.getLastHistoryEntryForAnyUser(mockServerContext, ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(changeSet);
-        when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_BOTH.getLocalPath())).thenReturn(pendingChangeOriginal);
+        mockGetStatusForFiles(pendingChangeOriginal, CONFLICT_BOTH);
         when(TFSContentRevision.createRenameRevision(mockProject, mockRenameFilePath, Integer.parseInt(pendingChangeOriginal.getVersion()), pendingChangeOriginal.getDate(), ((RenameConflict) CONFLICT_BOTH).getOldPath())).thenReturn(mockTFSContentRevision1);
         when(TFSContentRevision.createRenameRevision(mockProject, mockRenameFilePath, Integer.parseInt(changeSet.getId()), changeSet.getDate(), ((RenameConflict) CONFLICT_BOTH).getServerPath())).thenReturn(mockTFSContentRevision2);
         when(CurrentContentRevision.create(mockFilePath)).thenReturn(mockCurrentContentRevision);
@@ -302,7 +333,8 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
 
     @Test(expected = VcsException.class)
     public void testPopulateThreeWayDiff_Exception() throws Exception {
-        when(CommandUtils.getStatusForFile(mockServerContext, CONFLICT_BOTH.getLocalPath())).thenThrow(new RuntimeException("Test Error"));
+        when(CommandUtils.getStatusForFiles(eq(mockProject), eq(mockServerContext), anyList()))
+                .thenThrow(new RuntimeException("Test Error"));
         helper.populateThreeWayDiff(CONFLICT_BOTH, mockFile, mockFilePath, mockServerContext, mockContentTriplet);
     }
 
