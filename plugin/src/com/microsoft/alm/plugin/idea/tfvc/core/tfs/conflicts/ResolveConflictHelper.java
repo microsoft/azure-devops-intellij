@@ -387,7 +387,6 @@ public class ResolveConflictHelper {
                 final String serverChanges;
                 final String myLocalChanges;
 
-
                 String conflictLocalPath = conflict.getLocalPath();
                 List<PendingChange> pendingChange = TfvcClient.getInstance(project)
                         .getStatusForFiles(context, Collections.singletonList(conflictLocalPath));
@@ -397,7 +396,7 @@ public class ResolveConflictHelper {
                             conflictLocalPath,
                             pendingChange.size());
                 }
-                PendingChange originalChange = pendingChange.size() > 0 ? pendingChange.get(1) : null;
+                PendingChange originalChange = pendingChange.size() > 0 ? pendingChange.get(0) : null;
                 if (isMergeConflict(conflict, null)) {
                     final String workingFolder = localPath.isDirectory() ?
                             localPath.getPath() :

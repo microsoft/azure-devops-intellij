@@ -4,8 +4,10 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.google.common.collect.ImmutableList;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsNotifier;
@@ -29,12 +31,15 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -42,7 +47,13 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, VersionControlPath.class, TfsFileUtil.class, ProgressManager.class, VcsNotifier.class})
+@PrepareForTest({
+        CommandUtils.class,
+        ServiceManager.class,
+        VersionControlPath.class,
+        TfsFileUtil.class,
+        ProgressManager.class,
+        VcsNotifier.class})
 public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     TFSCheckinEnvironment tfsCheckinEnvironment;
     List<String> filePaths = ImmutableList.of("/path/to/file1", "/path/to/file2");
@@ -70,12 +81,18 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, VersionControlPath.class, TfsFileUtil.class,
-                ProgressManager.class, VcsNotifier.class);
+        PowerMockito.mockStatic(
+                CommandUtils.class,
+                ServiceManager.class,
+                VersionControlPath.class,
+                TfsFileUtil.class,
+                ProgressManager.class,
+                VcsNotifier.class);
 
         when(mockServerContext.getUri()).thenReturn(URI.create("http://organization.visualstudio.com"));
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
+        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(VcsNotifier.getInstance(mockProject)).thenReturn(mockVcsNotifier);
         tfsCheckinEnvironment = new TFSCheckinEnvironment(mockTFSVcs);
@@ -103,10 +120,23 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
         assertEquals(1, exceptions.size());
     }
 
+    private List<String> toCanonicalPaths(List<String> paths) {
+        return paths.stream().map(FileUtil::toCanonicalPath).collect(Collectors.toList());
+    }
+
+    private void mockAddFiles(List<String> pathsToReturn) {
+        when(CommandUtils.addFiles(eq(mockServerContext), anyList())).then(invocation -> {
+            List<String> filesToAddPaths = invocation.getArgumentAt(1, List.class);
+            if (toCanonicalPaths(filesToAddPaths).equals(toCanonicalPaths(filePaths)))
+                return pathsToReturn;
+            return Collections.EMPTY_LIST;
+        });
+    }
+
     @Test
     public void testScheduleUnversionedFilesForAddition_Happy() {
         List<VirtualFile> mockFiles = setupAdd();
-        when(CommandUtils.addFiles(mockServerContext, filePaths)).thenReturn(filePaths);
+        mockAddFiles(filePaths);
 
         List<VcsException> exceptions =
                 tfsCheckinEnvironment.scheduleUnversionedFilesForAddition(mockFiles);
@@ -119,14 +149,16 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     @Test
     public void testScheduleUnversionedFilesForAddition_FailedAdd() {
         List<VirtualFile> mockFiles = setupAdd();
-        when(CommandUtils.addFiles(mockServerContext, filePaths)).thenReturn(ImmutableList.of(filePaths.get(0)));
+        mockAddFiles(ImmutableList.of(filePaths.get(0)));
 
         List<VcsException> exceptions =
                 tfsCheckinEnvironment.scheduleUnversionedFilesForAddition(mockFiles);
         verifyStatic(times(1));
         TfsFileUtil.markFileDirty(any(Project.class), eq(mockFiles.get(0)));
         assertEquals(1, exceptions.size());
-        assertEquals(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ERROR, filePaths.get(1)), exceptions.get(0).getMessage());
+        assertEquals(
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ERROR, filePaths.get(1)).replace('\\', '/'),
+                exceptions.get(0).getMessage().replace('\\', '/'));
     }
 
     private void setupCommit() {
@@ -166,8 +198,16 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
         when(mockVirtualFile1.isValid()).thenReturn(true);
         when(mockVirtualFile2.isValid()).thenReturn(true);
 
-        when(VersionControlPath.getVirtualFile(filePaths.get(0))).thenReturn(mockVirtualFile1);
-        when(VersionControlPath.getVirtualFile(filePaths.get(1))).thenReturn(mockVirtualFile2);
+        when(VersionControlPath.getVirtualFile(any())).then(invocation -> {
+            String localPath = invocation.getArgumentAt(0, String.class);
+            String canonicalPath = FileUtil.toCanonicalPath(localPath);
+            if (canonicalPath.equals(FileUtil.toCanonicalPath(filePaths.get(0))))
+                return mockVirtualFile1;
+            else if (canonicalPath.equals(FileUtil.toCanonicalPath(filePaths.get(1))))
+                return mockVirtualFile2;
+            else
+                return null;
+        });
 
         return ImmutableList.of(mockVirtualFile1, mockVirtualFile2);
     }
