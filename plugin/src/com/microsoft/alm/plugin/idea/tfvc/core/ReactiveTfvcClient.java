@@ -105,6 +105,22 @@ public class ReactiveTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
+    public CompletionStage<List<Path>> addFilesAsync(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
+        return traceTime("Add", () -> {
+            ServerIdentification serverIdentification = getServerIdentification(serverContext);
+            List<TfsLocalPath> localPaths = files.stream()
+                    .map(TfsFileUtil::createLocalPath)
+                    .collect(Collectors.toList());
+            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+                    .thenCompose(client -> client.addFilesAsync(serverIdentification, localPaths))
+                    .thenApply(paths -> paths.stream()
+                            .map(path -> Paths.get(path.getPath()))
+                            .collect(Collectors.toList()));
+        });
+    }
+
+    @NotNull
+    @Override
     public CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {

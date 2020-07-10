@@ -136,6 +136,37 @@ public interface TfvcClient {
     }
 
     /**
+     * Adds the files to the VCS.
+     *
+     * @param serverContext server context to authenticate.
+     * @param files         items to add.
+     * @return a completion stage that will be finished after the call is finished. Will return a list of the added
+     * file paths.
+     */
+    @NotNull
+    CompletionStage<List<Path>> addFilesAsync(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> files);
+
+    /**
+     * Adds the files to the VCS.
+     *
+     * @param serverContext server context to authenticate.
+     * @param files         items to add.
+     * @return a list of the added file paths.
+     */
+    @NotNull
+    default List<Path> addFiles(
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> files) {
+        try {
+            return addFilesAsync(serverContext, files).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Deletes the passed paths recursively using the TFS client.
      *
      * @param serverContext server context to authenticate.

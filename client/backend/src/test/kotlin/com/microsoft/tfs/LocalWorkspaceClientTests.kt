@@ -3,6 +3,7 @@
 
 package com.microsoft.tfs
 
+import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.ChangeType
 import com.microsoft.tfs.model.host.TfsLocalPath
 import com.microsoft.tfs.tests.TfsClientTestFixture
 import com.microsoft.tfs.tests.cloneTestRepository
@@ -16,6 +17,21 @@ class LocalWorkspaceClientTests : TfsClientTestFixture() {
 
     override fun cloneRepository(): Path =
         cloneTestRepository()
+
+    @Test
+    fun clientShouldAddFile() {
+        val client = createClient(testLifetime)
+        val newFilePath = workspacePath.resolve("new_readme.txt")
+        newFilePath.toFile().writeText("test")
+        val localPathList = listOf(TfsLocalPath(newFilePath.toString()))
+
+        val result = client.addFiles(localPathList)
+        val status = client.status(localPathList)
+
+        assertEquals(localPathList, result)
+        val change = status.single().pendingChanges.single()
+        assertTrue(change.changeType.contains(ChangeType.ADD))
+    }
 
     @Test
     fun clientShouldReturnDeletedPath() {

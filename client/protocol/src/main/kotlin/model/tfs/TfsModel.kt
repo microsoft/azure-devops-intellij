@@ -114,6 +114,9 @@ object TfsModel : Root() {
         call("invalidatePaths", immutableList(TfsLocalPath), void)
             .doc("Invalidates the paths in the TFS cache")
 
+        call("addFiles", immutableList(TfsLocalPath), immutableList(TfsLocalPath))
+            .doc("Creates an \"add\" pending change, which adds files and folders from the local workspace to the source control server. Returns a collection of the paths added.")
+
         call("deleteFilesRecursively", immutableList(TfsPath), TfsDeleteResult)
             .doc("Scheduled deletion of the files")
 

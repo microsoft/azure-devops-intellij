@@ -125,6 +125,13 @@ private fun initializeCollection(lifetime: Lifetime, definition: TfsCollectionDe
         client.invalidatePaths(paths)
     }
 
+    collection.addFiles.set { paths ->
+        if (paths.isEmpty()) return@set emptyList()
+
+        logPaths("Add", paths)
+        client.addFiles(paths)
+    }
+
     collection.deleteFilesRecursively.set { paths ->
         if (paths.isEmpty()) return@set TfsDeleteResult(emptyList(), emptyList(), emptyList())
 

@@ -85,6 +85,11 @@ class ReactiveClientConnection(val lifetime: LifetimeDefinition, private val sch
             collection.invalidatePaths.start(paths).pipeToVoid(lt, this)
         }
 
+    fun addFilesAsync(collection: TfsCollection, files: List<TfsLocalPath>): CompletionStage<List<TfsLocalPath>> =
+        queueFutureAsync { lt ->
+            collection.addFiles.start(files).pipeTo(lt, this)
+        }
+
     fun deleteFilesRecursivelyAsync(collection: TfsCollection, paths: List<TfsPath>): CompletionStage<TfsDeleteResult> =
         queueFutureAsync { lt ->
             collection.deleteFilesRecursively.start(paths).pipeTo(lt, this)
