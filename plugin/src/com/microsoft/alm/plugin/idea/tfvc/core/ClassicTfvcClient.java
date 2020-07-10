@@ -20,6 +20,7 @@ import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,6 +92,19 @@ public class ClassicTfvcClient implements TfvcClient {
             @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
         List<ExtendedItemInfo> itemInfos = CommandUtils.getItemInfos(serverContext, pathsToProcess);
         itemInfos.forEach(onItemReceived);
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<List<Path>> addFilesAsync(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
+        return CompletableFuture.completedFuture(addFiles(serverContext, files));
+    }
+
+    @NotNull
+    @Override
+    public List<Path> addFiles(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
+        List<String> pathStrings = files.stream().map(Path::toString).collect(Collectors.toList());
+        return CommandUtils.addFiles(serverContext, pathStrings).stream().map(Paths::get).collect(Collectors.toList());
     }
 
     @NotNull

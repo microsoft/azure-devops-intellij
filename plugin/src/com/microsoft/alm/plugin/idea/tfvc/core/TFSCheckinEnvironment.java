@@ -20,8 +20,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.ide.BrowserUtil;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
@@ -53,10 +51,12 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.event.HyperlinkEvent;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Handles VCS checkin features
@@ -167,14 +167,14 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     public List<VcsException> commit(final List<Change> changes,
                                      final String preparedComment,
                                      @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
-        final List<VcsException> errors = new ArrayList<VcsException>();
+        final List<VcsException> errors = new ArrayList<>();
 
         // set progress bar status
         final ProgressIndicator progressIndicator = ProgressManager.getInstance().getProgressIndicator();
         TFSProgressUtil.setProgressText(progressIndicator, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_STATUS));
 
         // find files that are to be checked in
-        final List<String> files = new ArrayList<String>();
+        final List<String> files = new ArrayList<>();
         for (final Change change : changes) {
             String path = null;
             final ContentRevision beforeRevision = change.getBeforeRevision();
@@ -198,12 +198,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_LINK_TEXT, changesetNumber));
             VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), new NotificationListener() {
-                        @Override
-                        public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
-                            BrowserUtil.browse(hyperlinkEvent.getURL());
-                        }
-                    });
+                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), (notification, hyperlinkEvent) -> BrowserUtil.browse(hyperlinkEvent.getURL()));
         } catch (Exception e) {
             // no notification needs to be done by us for errors, IntelliJ handles that
             logger.warn("Error during checkin", e);
@@ -219,18 +214,16 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
 
     public List<VcsException> commit(List<Change> changes, String preparedComment) {
-        return commit(changes, preparedComment, FunctionUtil.<Object, Object>nullConstant(), null);
+        return commit(changes, preparedComment, FunctionUtil.nullConstant(), null);
     }
 
     @Nullable
     public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
-        final List<VcsException> errors = new ArrayList<VcsException>();
+        final List<VcsException> errors = new ArrayList<>();
 
-        ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-            public void run() {
-                ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-                errors.addAll(ScheduleForDeletion.execute(myVcs.getProject(), files));
-            }
+        ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+            ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
+            errors.addAll(ScheduleForDeletion.execute(myVcs.getProject(), files));
         }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_DELETE_SCHEDULING), false, myVcs.getProject());
 
         return errors;
@@ -238,28 +231,27 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
 
     @Nullable
     public List<VcsException> scheduleUnversionedFilesForAddition(final List<VirtualFile> files) {
-        // TODO: schedule parent folders? (JetBrains)
-        final List<VcsException> exceptions = new ArrayList<VcsException>();
+        final List<VcsException> exceptions = new ArrayList<>();
         try {
-            final List<String> filesToAddPaths = new ArrayList<String>(files.size());
-            for (final VirtualFile file : files) {
-                filesToAddPaths.add(file.getPath());
-            }
-            final List<String> successfullyAdded = CommandUtils.addFiles(myVcs.getServerContext(false), filesToAddPaths);
+            List<Path> pathsToAdd = files.stream()
+                    .map(file -> Paths.get(file.getPath()))
+                    .collect(Collectors.toList());
+            TfvcClient client = TfvcClient.getInstance(myVcs.getProject());
+            List<Path> successfullyAdded = client.addFiles(myVcs.getServerContext(false), pathsToAdd);
 
             // mark files as dirty so that they refresh in local changes tab
-            for (final String path : successfullyAdded) {
-                final VirtualFile file = VersionControlPath.getVirtualFile(path);
+            for (Path path : successfullyAdded) {
+                final VirtualFile file = VersionControlPath.getVirtualFile(path.toString());
                 if (file != null && file.isValid()) {
                     TfsFileUtil.markFileDirty(myVcs.getProject(), file);
                 }
             }
 
             //check all files were added
-            if (successfullyAdded.size() != filesToAddPaths.size()) {
+            if (successfullyAdded.size() != pathsToAdd.size()) {
                 // remove all added files from original list of files to add to give us which files weren't added
-                filesToAddPaths.removeAll(successfullyAdded);
-                exceptions.add(new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ERROR, StringUtils.join(filesToAddPaths, ", "))));
+                pathsToAdd.removeAll(successfullyAdded);
+                exceptions.add(new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_ERROR, StringUtils.join(pathsToAdd, ", "))));
             }
         } catch (RuntimeException e) {
             logger.warn("Exception during adding the files", e);

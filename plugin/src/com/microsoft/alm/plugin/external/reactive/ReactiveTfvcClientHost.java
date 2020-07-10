@@ -184,6 +184,14 @@ public class ReactiveTfvcClientHost {
     }
 
     @NotNull
+    public CompletionStage<List<TfsLocalPath>> addFilesAsync(
+            @NotNull ServerIdentification serverIdentification,
+            @NotNull List<TfsLocalPath> files) {
+        return getReadyCollectionAsync(serverIdentification)
+                .thenCompose(collection -> myConnection.addFilesAsync(collection, files));
+    }
+
+    @NotNull
     public CompletionStage<TfsDeleteResult> deleteFilesRecursivelyAsync(
             @NotNull ServerIdentification serverIdentification,
             @NotNull List<TfsPath> paths) {
