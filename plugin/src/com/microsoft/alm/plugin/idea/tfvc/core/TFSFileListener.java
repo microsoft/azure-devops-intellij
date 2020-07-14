@@ -155,6 +155,11 @@ public class TFSFileListener extends VcsVFSListener {
 
     @Override
     protected void performAdding(@NotNull final Collection<VirtualFile> addedFiles, @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
+        if (addedFiles.isEmpty()) {
+            logger.warn("TFSFileListener was asked to add 0 files under VCS; skipping");
+            return;
+        }
+
         final List<VcsException> errors = new ArrayList<>();
         ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
             ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);

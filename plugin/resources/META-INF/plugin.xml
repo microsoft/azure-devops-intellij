@@ -63,6 +63,7 @@
         <li>Add operations are now performed using faster reactive client (<a href="https://github.com/microsoft/azure-devops-intellij/issues/338">#338</a>)</li>
         <li>Rename operations are now performed using faster reactive client</li>
         <li><b>Merge Branch Changes</b> action won't stay in your way in non-TFVC projects in the plugin in installed</li>
+        <li>Avoid spamming "unversionedFiles are empty" message when trying to add files in some cases</li>
       </ul>
       <br />
     ]]>
