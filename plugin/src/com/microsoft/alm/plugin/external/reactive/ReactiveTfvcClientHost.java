@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.reactive;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
@@ -27,6 +28,7 @@ import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.tfs.connector.ReactiveClientConnection;
 import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
@@ -58,6 +60,9 @@ public class ReactiveTfvcClientHost {
     static {
         RdIdeaLoggerFactory.initialize();
     }
+
+    public static final String REACTIVE_CLIENT_OPTIONS_ENV = "BACKEND_OPTS";
+    public static final int REACTIVE_CLIENT_DEFAULT_MEMORY_LIMIT = 2048;
 
     private static final int INFO_PARTITION_COUNT = 1000;
 
@@ -115,7 +120,20 @@ public class ReactiveTfvcClientHost {
             command.addAll(0, Arrays.asList("/usr/bin/env", "sh"));
         }
 
-        return new GeneralCommandLine(command).withWorkDirectory(clientHome.toString());
+        String backendOptions = System.getenv(REACTIVE_CLIENT_OPTIONS_ENV);
+        if (Strings.isNullOrEmpty(backendOptions)) {
+            String memoryMb = PropertyService.getInstance().getProperty(PropertyService.PROP_REACTIVE_CLIENT_MEMORY);
+            if (memoryMb == null)
+                memoryMb = Integer.toString(REACTIVE_CLIENT_DEFAULT_MEMORY_LIMIT);
+
+            backendOptions = String.format("-Xmx%sm", memoryMb);
+        }
+
+        ourLogger.info("Reactive client will be started with env " + REACTIVE_CLIENT_OPTIONS_ENV + "=" + backendOptions);
+        return new GeneralCommandLine(command)
+                .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.SYSTEM)
+                .withEnvironment(REACTIVE_CLIENT_OPTIONS_ENV, backendOptions)
+                .withWorkDirectory(clientHome.toString());
     }
 
     public CompletionStage<Void> startAsync() {

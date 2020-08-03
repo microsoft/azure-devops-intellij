@@ -20,6 +20,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.ui.settings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
@@ -33,6 +34,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkLabel;
 import com.microsoft.alm.plugin.external.exceptions.ToolException;
 import com.microsoft.alm.plugin.external.exceptions.ToolVersionException;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHost;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcClient;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -45,6 +47,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -76,6 +79,9 @@ public class ProjectConfigurableForm {
     private JLabel visualStudioClientLabel;
     private TextFieldWithBrowseButton visualStudioClientField;
     private JButton testVisualStudioClientButton;
+    private JLabel reactiveClientMemoryLimitLabel;
+    private JSpinner reactiveClientMemoryLimitSpinner;
+    private JLabel reactiveClientMemoryLimitInfo;
     private String originalTfLocation = StringUtils.EMPTY;
     private String originalVsClientPath = StringUtils.EMPTY;
 
@@ -148,6 +154,11 @@ public class ProjectConfigurableForm {
 
             }
         });
+
+        // Reactive client settings:
+        useReactiveClientCheckBox.addActionListener(e -> refreshReactiveClientMemoryLimitAvailability());
+        reactiveClientMemoryLimitLabel.setText(
+                TfPluginBundle.message(TfPluginBundle.KEY_TFVC_SETTINGS_REACTIVE_CLIENT_MEMORY_LIMIT));
 
         // Visual Studio client is only available on Windows:
         visualStudioClientLabel.setVisible(SystemInfo.isWindows);
@@ -222,6 +233,22 @@ public class ProjectConfigurableForm {
         return visualStudioClientField.getText().trim();
     }
 
+    private void refreshReactiveClientMemoryLimitAvailability() {
+        String reactiveClientOptions = System.getenv(ReactiveTfvcClientHost.REACTIVE_CLIENT_OPTIONS_ENV);
+        if (!Strings.isNullOrEmpty(reactiveClientOptions)) {
+            reactiveClientMemoryLimitSpinner.setEnabled(false);
+            reactiveClientMemoryLimitInfo.setText(
+                    TfPluginBundle.message(
+                            TfPluginBundle.KEY_TFVC_SETTINGS_REACTIVE_CLIENT_ENV_WARNING,
+                            ReactiveTfvcClientHost.REACTIVE_CLIENT_OPTIONS_ENV));
+            reactiveClientMemoryLimitInfo.setVisible(true);
+            return;
+        }
+
+        reactiveClientMemoryLimitInfo.setVisible(false);
+        reactiveClientMemoryLimitSpinner.setEnabled(useReactiveClientCheckBox.isSelected());
+    }
+
     public void load() {
         PropertyService propertyService = PropertyService.getInstance();
 
@@ -245,6 +272,18 @@ public class ProjectConfigurableForm {
             originalVsClientPath = vsClientPath;
             visualStudioClientField.setText(vsClientPath);
         }
+
+        refreshReactiveClientMemoryLimitAvailability();
+        String reactiveClientMemory = propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_MEMORY);
+        reactiveClientMemoryLimitSpinner.setValue(ReactiveTfvcClientHost.REACTIVE_CLIENT_DEFAULT_MEMORY_LIMIT);
+        if (reactiveClientMemory != null) {
+            try {
+                int memory = Integer.parseInt(reactiveClientMemory);
+                reactiveClientMemoryLimitSpinner.setValue(memory);
+            } catch (NumberFormatException ex) {
+                ourLogger.error(ex);
+            }
+        }
     }
 
     public void apply() {
@@ -255,6 +294,12 @@ public class ProjectConfigurableForm {
         propertyService.setProperty(
                 PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT,
                 isReactiveClientEnabled ? "true" : "false");
+
+        if (reactiveClientMemoryLimitSpinner.isEnabled()) {
+            propertyService.setProperty(
+                    PropertyService.PROP_REACTIVE_CLIENT_MEMORY,
+                    reactiveClientMemoryLimitSpinner.getValue().toString());
+        }
 
         propertyService.setProperty(
                 PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH,
@@ -269,7 +314,10 @@ public class ProjectConfigurableForm {
                 && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected()
                 && Objects.equals(
                         propertyService.getProperty(PropertyService.PROP_VISUAL_STUDIO_TF_CLIENT_PATH),
-                        getCurrentVisualStudioClientPath()));
+                        getCurrentVisualStudioClientPath())
+                && Objects.equals(
+                        propertyService.getProperty(PropertyService.PROP_REACTIVE_CLIENT_MEMORY),
+                        reactiveClientMemoryLimitSpinner.getValue().toString()));
     }
 
     public void reset() {

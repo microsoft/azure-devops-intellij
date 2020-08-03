@@ -10,6 +10,7 @@ public interface PropertyService {
     String PROP_REPO_ROOT = "repoRoot";
     String PROP_TF_HOME = "tfHome";
     String PROP_AUTH_TYPE = "authType";
+    String PROP_REACTIVE_CLIENT_MEMORY = "reactiveClientMemory";
     String PROP_TF_SDK_EULA_ACCEPTED = "tfSdkEulaAccepted";
     String PROP_TFVC_USE_REACTIVE_CLIENT = "tfvcUseReactiveClient";
     String PROP_VISUAL_STUDIO_TF_CLIENT_PATH = "visualStudioTfClientPath";
