@@ -829,6 +829,10 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_SETTINGS_PATH_EMPTY = "Tfvc.Settings.Path.Empty";
     public static final String KEY_TFVC_SETTINGS_PATH_NOT_FOUND = "Tfvc.Settings.Path.NotFound";
     @NonNls
+    public static final String KEY_TFVC_SETTINGS_REACTIVE_CLIENT_ENV_WARNING = "Tfvc.Settings.ReactiveClient.EnvWarning";
+    @NonNls
+    public static final String KEY_TFVC_SETTINGS_REACTIVE_CLIENT_MEMORY_LIMIT = "Tfvc.Settings.ReactiveClient.MemoryLimit";
+    @NonNls
     public static final String KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT = "Tfvc.Settings.VisualStudioClient";
     @NonNls
     public static final String KEY_TFVC_SETTINGS_VISUAL_STUDIO_CLIENT_TEST = "Tfvc.Settings.VisualStudioClient.Test";
