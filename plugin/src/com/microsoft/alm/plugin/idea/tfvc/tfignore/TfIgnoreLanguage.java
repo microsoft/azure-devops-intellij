@@ -5,7 +5,7 @@ package com.microsoft.alm.plugin.idea.tfvc.tfignore;
 
 import com.intellij.lang.Language;
 
-public class TfIgnoreLanguage extends Language { // TODO: Inherit from IgnoreLanguage if we target IDEA 2019.*
+public class TfIgnoreLanguage extends Language {
     public static TfIgnoreLanguage INSTANCE = new TfIgnoreLanguage();
     private TfIgnoreLanguage() {
         super("TFIgnore");

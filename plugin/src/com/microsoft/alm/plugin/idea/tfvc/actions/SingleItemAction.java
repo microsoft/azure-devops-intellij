@@ -121,7 +121,7 @@ public abstract class SingleItemAction extends DumbAwareAction {
                 || !getAllowedStatuses().contains(FileStatusManager.getInstance(project).getStatus(file)))
             return false;
 
-        // TODO: Remove this suppression after migration to IDEA 2019.1. AbstractVcs became non-generic in newer IDEA.
+        // TODO: Remove this suppression after migration to IDEA 2019.3. AbstractVcs became non-generic in newer IDEA.
         @SuppressWarnings("rawtypes") AbstractVcs vcs = VcsUtil.getVcsFor(project, file);
         return vcs != null && TFSVcs.getKey().equals(vcs.getKeyInstanceMethod());
     }

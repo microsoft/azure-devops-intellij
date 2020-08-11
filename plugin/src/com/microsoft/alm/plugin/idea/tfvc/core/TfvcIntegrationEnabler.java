@@ -64,16 +64,14 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         myVcs = vcs;
     }
 
-    // TODO: Fix the generic signatures in this method after migration to IDEA 2019.1. Currently this is crippled due to
-    // IDEA 2018.3 compatibility.
-    @SuppressWarnings("unchecked")
     @Override
-    public void enable(@NotNull Collection vcsRoots) {
+    public void enable(@NotNull Collection<? extends VcsRoot> vcsRoots) {
         // This override does the same as base method, but tries to determine a workspace directory instead of using
         // project.getBaseDir().
-        Collection<VcsRoot> typedRoots = (Collection<VcsRoot>)vcsRoots;
-        Collection<VirtualFile> existingRoots = typedRoots.stream().filter(root -> {
-            AbstractVcs vcs = root.getVcs();
+        Collection<VirtualFile> existingRoots = vcsRoots.stream().filter(root -> {
+            // TODO: Remove this suppression after migration to IDEA 2019.3. AbstractVcs became non-generic in newer
+            // IDEA.
+            @SuppressWarnings("rawtypes") AbstractVcs vcs = root.getVcs();
             return vcs != null && vcs.getName().equals(myVcs.getName());
         }).map(VcsRoot::getPath).collect(toList());
 
