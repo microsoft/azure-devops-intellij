@@ -7,9 +7,6 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.VcsConfiguration;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.EdtTestUtil;
@@ -257,8 +254,6 @@ public abstract class L2Test extends UsefulTestCase {
             myVcs = ObjectUtils.assertNotNull(GitVcs.getInstance(myProject));
             myVcs.doActivate();
 
-            addSilently();
-            removeSilently();
             EULADialog.acceptClientEula();
             ServerPollingManager.getInstance().startPolling();
         } catch (Exception e) {
@@ -376,6 +371,7 @@ public abstract class L2Test extends UsefulTestCase {
         return Collections.emptyList();
     }
 
+    @SuppressWarnings("UnstableApiUsage") // TODO: Replace with defaultRunBare(ThrowableRunnable<Throwable>) after update to IDEA 2020.3
     @Override
     protected void defaultRunBare() throws Throwable {
         try {
@@ -391,24 +387,6 @@ public abstract class L2Test extends UsefulTestCase {
     @NotNull
     private String createTestStartedIndicator() {
         return "Starting " + getClass().getName() + "." + getTestName(false) + Math.random();
-    }
-
-    protected void doActionSilently(final VcsConfiguration.StandardConfirmation op) {
-        //AbstractVcsTestCase.setStandardConfirmation(myProject, GitVcs.NAME, op, VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
-    }
-
-    protected void updateChangeListManager() {
-        ChangeListManager changeListManager = ChangeListManager.getInstance(myProject);
-        VcsDirtyScopeManager.getInstance(myProject).markEverythingDirty();
-        changeListManager.ensureUpToDate(false);
-    }
-
-    protected void addSilently() {
-        doActionSilently(VcsConfiguration.StandardConfirmation.ADD);
-    }
-
-    protected void removeSilently() {
-        doActionSilently(VcsConfiguration.StandardConfirmation.REMOVE);
     }
 
     public static File createTempDirectory()

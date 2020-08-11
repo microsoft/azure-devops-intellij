@@ -57,7 +57,7 @@ public class L2GitUtil {
         final LocalChangeListImpl localChangeList = LocalChangeListImpl.createEmptyChangeListImpl(project, "TestCommit", "12345");
         final ChangeListManagerImpl changeListManager = ChangeListManagerImpl.getInstanceImpl(project);
         VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
-        changeListManager.ensureUpToDate(false);
+        changeListManager.ensureUpToDate();
         changeListManager.addUnversionedFiles(localChangeList, ImmutableList.of(readmeVirtualFile));
         final Change change = changeListManager.getChange(LocalFileSystem.getInstance().findFileByIoFile(file));
         repository.getVcs().getCheckinEnvironment().commit(ImmutableList.of(change), COMMIT_MESSAGE);
