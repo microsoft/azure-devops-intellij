@@ -5,13 +5,14 @@ package com.microsoft.alm.L2.git;
 
 import com.google.common.collect.ImmutableList;
 import com.intellij.dvcs.DvcsUtil;
+import com.intellij.ide.IdeEventQueue;
 import com.intellij.ide.actions.ImportModuleAction;
 import com.intellij.ide.util.newProjectWizard.AddModuleWizard;
-import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.util.ProgressIndicatorBase;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
@@ -34,6 +35,9 @@ import org.junit.Assert;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.Assert.assertTrue;
 
 public class L2GitUtil {
     public static final String COMMIT_MESSAGE = "test commit";
@@ -61,6 +65,13 @@ public class L2GitUtil {
         changeListManager.addUnversionedFiles(localChangeList, ImmutableList.of(readmeVirtualFile));
         final Change change = changeListManager.getChange(LocalFileSystem.getInstance().findFileByIoFile(file));
         repository.getVcs().getCheckinEnvironment().commit(ImmutableList.of(change), COMMIT_MESSAGE);
+    }
+
+    private static void waitForInitialization(@NotNull Project project) {
+        AtomicBoolean initialized = new AtomicBoolean(false);
+        StartupManager.getInstance(project).runWhenProjectIsInitialized(() -> initialized.set(true));
+        IdeEventQueue.getInstance().flushQueue();
+        assertTrue(initialized.get());
     }
 
     /**
@@ -100,7 +111,9 @@ public class L2GitUtil {
             }
         });
 
-        return customListener.getNewProject();
+        Project clonedProject = customListener.getNewProject();
+        waitForInitialization(clonedProject);
+        return clonedProject;
     }
 }
 
@@ -139,9 +152,10 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
 
 
         if (!checkoutCompleted) {
-            final VcsAwareCheckoutListener[] vcsAwareExtensions = Extensions.getExtensions(VcsAwareCheckoutListener.EP_NAME);
+            final VcsAwareCheckoutListener[] vcsAwareExtensions = VcsAwareCheckoutListener.EP_NAME.getExtensions();
             for (VcsAwareCheckoutListener extension : vcsAwareExtensions) {
-                boolean processingCompleted = extension.processCheckedOutDirectory(myProject, directory, myVcsKey);
+                // TODO: Migrate to a new signature after update to IDEA 2020.2
+                @SuppressWarnings("UnstableApiUsage") boolean processingCompleted = extension.processCheckedOutDirectory(myProject, directory, myVcsKey);
                 if (processingCompleted) break;
             }
         }
