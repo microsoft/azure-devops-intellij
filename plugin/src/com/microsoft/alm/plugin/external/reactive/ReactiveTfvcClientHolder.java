@@ -29,8 +29,6 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     public static Path getClientBackendPath() {
-        // TODO: Replace with PluginManagerCore.getPlugin after migration to IDEA 2019.3
-        //noinspection UnstableApiUsage
         return Paths.get(
                 Objects.requireNonNull(PluginManager.getPlugin(IdeaHelper.PLUGIN_ID)).getPath().getAbsolutePath(),
                 "backend");
