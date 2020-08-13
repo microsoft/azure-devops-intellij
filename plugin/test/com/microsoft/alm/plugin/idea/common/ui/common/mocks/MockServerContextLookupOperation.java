@@ -40,6 +40,11 @@ public class MockServerContextLookupOperation extends ServerContextLookupOperati
     }
 
     @Override
+    public void doWork(Inputs inputs) {
+        // Do nothing (all the results are supposed to be provided by the test, no need to run actual work).
+    }
+
+    @Override
     protected void onLookupResults(Results results) {
         super.onLookupResults(results);
     }
