@@ -6,8 +6,6 @@ package com.microsoft.alm.plugin.idea.common.ui.common.mocks;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextLookupPageModel;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import sun.security.util.Debug;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +42,6 @@ public class MockServerContextLookupPageModel implements ServerContextLookupPage
 
     @Override
     public void clearContexts() {
-        // Disgnostics for ServerContextLookupListenerTest::testLoadContexts
-        Debug.println("MockServerContextLookupPageModel::clearContexts", ExceptionUtils.getStackTrace(new Throwable()));
         contexts.clear();
     }
 }
