@@ -21,6 +21,8 @@ package com.microsoft.alm.plugin.idea.tfvc.actions;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.microsoft.alm.plugin.external.commands.LockCommand;
+import com.microsoft.alm.plugin.external.exceptions.LockFailedException;
+import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
@@ -71,8 +73,14 @@ public class LockAction extends MultipleItemAction<ExtendedItemInfo> {
             }
 
             logger.info("Calling the lock command");
-            CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
-                    d.getLockLevel(), d.getRecursive(), itemSpecs);
+            try {
+                CommandUtils.lock(actionContext.serverContext, actionContext.workingFolder,
+                        d.getLockLevel(), d.getRecursive(), itemSpecs);
+            } catch (ToolBadExitCodeException ex) {
+                if (ex.getExitCode() == LockCommand.LOCK_FAILED_EXIT_CODE) {
+                    throw new LockFailedException();
+                }
+            }
         }, title);
 
         if (!actionContext.hasErrors()) {

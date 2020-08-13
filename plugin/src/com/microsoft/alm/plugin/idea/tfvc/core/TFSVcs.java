@@ -254,7 +254,8 @@ public class TFSVcs extends AbstractVcs {
             return (VcsException) throwable;
         }
 
-        final VcsException exception = new VcsException(throwable.getMessage(), throwable);
+        String message = LocalizationServiceImpl.getInstance().getExceptionMessage(throwable);
+        final VcsException exception = new VcsException(message, throwable);
         if (throwable instanceof SyncException) {
             exception.setIsWarning(((SyncException) throwable).isWarning());
         }

@@ -572,7 +572,7 @@ public class TfPluginBundle {
     public static final String KEY_TFVC_LABEL_DIALOG_VERSION_COLUMN = "Tfvc.Label.Dialog.VersionColumn";
 
 
-    // TFVC Apply Label Action
+    // TFVC Lock Action
     @NonNls
     public static final String KEY_ACTIONS_TFVC_LOCK_TITLE = "Actions.Tfvc.Lock.Title";
     @NonNls
@@ -586,7 +586,7 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_ACTIONS_TFVC_LOCK_SUCCESS_UNLOCKED = "Actions.Tfvc.Label.Success.Unlocked";
 
-    // TFVC Apply Label Dialog
+    // TFVC Lock Dialog
     @NonNls
     public static final String KEY_TFVC_LOCK_DIALOG_TITLE = "Tfvc.Lock.Dialog.Title";
     @NonNls
