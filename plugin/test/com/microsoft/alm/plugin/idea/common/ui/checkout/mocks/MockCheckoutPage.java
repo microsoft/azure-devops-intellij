@@ -9,25 +9,16 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MockCheckoutPage implements CheckoutPage {
-    private List<ActionListener> actionListeners = new ArrayList<ActionListener>();
-    private String displayError;
-    private int selectedTabIndex = 0;
-    private boolean loginShowing = false;
-    private boolean cloneEnabled = false;
     private String repositoryFilter;
 
     @Override
     public void addActionListener(ActionListener listener) {
-        actionListeners.add(listener);
     }
 
     @Override
     public void setLoginShowing(boolean showLogin) {
-        loginShowing = showLogin;
     }
 
     @Override
