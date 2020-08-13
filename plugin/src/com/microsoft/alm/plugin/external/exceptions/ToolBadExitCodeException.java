@@ -20,4 +20,8 @@ public class ToolBadExitCodeException extends ToolException {
     public String[] getMessageParameters() {
         return new String[] {Integer.toString(exitCode)};
     }
+
+    public int getExitCode() {
+        return exitCode;
+    }
 }

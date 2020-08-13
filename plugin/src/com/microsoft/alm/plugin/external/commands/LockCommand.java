@@ -19,6 +19,7 @@ import java.util.List;
  */
 public class LockCommand extends Command<String> {
     public static final Logger logger = LoggerFactory.getLogger(LockCommand.class);
+    public static final int LOCK_FAILED_EXIT_CODE = 100;
 
     public enum LockLevel {
         NONE("none"),
