@@ -124,6 +124,8 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_ACTION_ADD_TO_TFIGNORE = "Tfvc.Action.AddToTfIgnore";
     @NonNls
+    public static final String KEY_TFVC_DETERMINE_WORKSPACE_TITLE = "Actions.Tfvc.DetermineWorkspace.Title";
+    @NonNls
     public static final String KEY_TFVC_IMPORT_WORKSPACE_TITLE = "Actions.Tfvc.ImportWorkspace.Title";
     @NonNls
     public static final String KEY_TFVC_REPOSITORY_IMPORT_ERROR = "Tfvc.RepositoryImportError";
