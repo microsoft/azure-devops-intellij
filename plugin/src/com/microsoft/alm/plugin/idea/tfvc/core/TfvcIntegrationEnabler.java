@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.progress.impl.ProgressManagerImpl;
 import com.intellij.openapi.project.Project;
@@ -50,6 +51,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.stream.Collectors.toList;
 
@@ -86,12 +88,19 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
             return;
         }
 
-        Path workspacePath = determineWorkspaceDirectory(Paths.get(basePath));
-        VirtualFile workspaceFile = ObjectUtils.notNull(
-                LocalFileSystem.getInstance().findFileByIoFile(workspacePath.toFile()));
+        AtomicReference<VirtualFile> workspaceFile = new AtomicReference<>();
+        ProgressManager.getInstance().run(new Task.Modal(myProject, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_DETERMINE_WORKSPACE_TITLE), true) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                Path workspacePath = determineWorkspaceDirectory(Paths.get(basePath), indicator);
+                workspaceFile.set(ObjectUtils.notNull(
+                        LocalFileSystem.getInstance().findFileByIoFile(workspacePath.toFile())));
+                indicator.checkCanceled();
+            }
+        });
 
-        if (initOrNotifyError(workspaceFile))
-            addVcsRoot(workspaceFile);
+        if (initOrNotifyError(workspaceFile.get()))
+            addVcsRoot(workspaceFile.get());
     }
 
     private void showVsAuthenticationErrorDialog(Path path) {
@@ -117,10 +126,12 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
     }
 
     @NotNull
-    private Path determineWorkspaceDirectory(@NotNull Path projectBasePath) {
+    private Path determineWorkspaceDirectory(@NotNull Path projectBasePath, @NotNull ProgressIndicator indicator) {
         Path vsClient = VisualStudioTfvcClient.getOrDetectPath(PropertyService.getInstance());
         Path path = projectBasePath;
         do {
+            indicator.checkCanceled();
+
             Workspace workspace = null;
             try {
                 ourLogger.info("Analyzing path \"" + path + "\" using TF Everywhere client");
