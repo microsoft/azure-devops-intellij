@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -202,7 +203,7 @@ public class ToolRunner {
         ArgumentHelper.checkNotNull(argumentBuilder, "argumentBuilder");
         logger.info("sendArgsViaStandardInput: proceedWithArgs: " + argumentBuilder.toString());
         final OutputStream stdin = toolProcess.getOutputStream();
-        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
+        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin, StandardCharsets.UTF_8));
         try {
             for (final String arg : argumentBuilder.build()) {
                 final String escapedArg = escapeArgument(arg);
@@ -395,7 +396,7 @@ public class ToolRunner {
             // Don't let exceptions escape from this top level method
             try {
                 // Create a buffered reader so that we can process the output one line at a time
-                bufferedReader = new BufferedReader(new InputStreamReader(stream));
+                bufferedReader = new BufferedReader(new InputStreamReader(stream,StandardCharsets.UTF_8));
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     // Call the appropriate event with the line that was read
