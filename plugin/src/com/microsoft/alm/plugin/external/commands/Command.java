@@ -190,7 +190,7 @@ public abstract class Command<T> {
                         listener.progress("", OUTPUT_TYPE_INFO, 100);
                         listener.completed(result, error);
                     }
-                }, shouldPrepareCachedRunner());
+                }, shouldPrepareCachedRunner(),skipVersionCheck());
     }
 
     /**
@@ -285,6 +285,11 @@ public abstract class Command<T> {
      */
     public boolean shouldPrepareCachedRunner() {
         return true;
+    }
+
+
+    public boolean skipVersionCheck() {
+        return false;
     }
 
     protected NodeList evaluateXPath(final String stdout, final String xpathQuery) {

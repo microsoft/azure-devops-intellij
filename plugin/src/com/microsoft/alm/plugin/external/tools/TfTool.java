@@ -14,6 +14,7 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.sun.jna.Platform;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,8 @@ import java.io.File;
  */
 public class TfTool {
     private static final Logger logger = LoggerFactory.getLogger(TfTool.class);
+
+    private static final Object cacheLock = new Object();
 
     private static final String[] TF_WINDOWS_PROGRAMS = {"tf.exe", "tf.bat", "tf.cmd"};
     private static final String[] TF_OTHER_PROGRAMS = {"tf", "tf.sh"};
@@ -89,15 +92,22 @@ public class TfTool {
      * Determines the version of the TF command being used and throws if the version is too small.
      */
     public static void checkVersion() {
-        final TfVersionCommand command = new TfVersionCommand();
-        cachedVersion = command.runSynchronously();
-        if (cachedVersion.compare(TF_MIN_VERSION) < 0) {
-            throw new ToolVersionException(cachedVersion, TF_MIN_VERSION);
+        synchronized(cacheLock) {
+            final TfVersionCommand command = new TfVersionCommand();
+            cachedVersion = command.runSynchronously();
+            if (cachedVersion.compare(TF_MIN_VERSION) < 0) {
+                throw new ToolVersionException(cachedVersion, TF_MIN_VERSION);
+            }
         }
     }
 
-    public static ToolVersion getCachedVersion() {
-        return cachedVersion;
+    @NotNull public static ToolVersion getToolVersion() {
+        synchronized(cacheLock) {
+            if (cachedVersion == null) {
+                cachedVersion = new TfVersionCommand().runSynchronously();
+            }
+            return cachedVersion;
+        }
     }
 
     /**

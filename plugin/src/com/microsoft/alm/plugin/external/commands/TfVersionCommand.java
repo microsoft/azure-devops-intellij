@@ -20,6 +20,11 @@ public class TfVersionCommand extends Command<ToolVersion> {
     }
 
     @Override
+    public boolean skipVersionCheck() {
+        return true;
+    }
+
+    @Override
     public ToolRunner.ArgumentBuilder getArgumentBuilder() {
         final ToolRunner.ArgumentBuilder builder = super.getArgumentBuilder()
                 .addSwitch("?");

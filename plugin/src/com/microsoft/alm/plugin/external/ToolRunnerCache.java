@@ -33,15 +33,16 @@ public class ToolRunnerCache {
             String toolLocation,
             ToolRunner.ArgumentBuilder argumentBuilder,
             ToolRunner.Listener listener,
-            boolean shouldPrepareCachedRunner) {
+            boolean shouldPrepareCachedRunner,
+            boolean skipVersionCheck) {
         logger.info("getRunningToolRunner: toolLocation={}", toolLocation);
         ToolRunner toolRunner;
 
         // Check the version
-        final ToolVersion version = TfTool.getCachedVersion();
+        final ToolVersion version = skipVersionCheck ? null : TfTool.getToolVersion();
         if (version == null || version.compare(TfTool.TF_MIN_VERSION) < 0) {
             // If it is older than the min version then just return a new ToolRunner and start it
-            logger.info("getRunningToolRunner: slow version - " + version);
+            logger.info("getRunningToolRunner: slow version - " + (skipVersionCheck ? "(version check skipped)" : version));
             toolRunner = startToolRunner(toolLocation, argumentBuilder, listener);
         } else {
             // check the cache and try to get one that is already running
