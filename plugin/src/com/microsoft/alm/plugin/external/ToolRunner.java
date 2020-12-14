@@ -396,7 +396,7 @@ public class ToolRunner {
             // Don't let exceptions escape from this top level method
             try {
                 // Create a buffered reader so that we can process the output one line at a time
-                bufferedReader = new BufferedReader(new InputStreamReader(stream,StandardCharsets.UTF_8));
+                bufferedReader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     // Call the appropriate event with the line that was read
