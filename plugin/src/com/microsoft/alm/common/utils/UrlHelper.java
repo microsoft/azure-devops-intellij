@@ -7,6 +7,8 @@ import com.microsoft.alm.common.artifact.GitRefArtifactID;
 import com.microsoft.alm.helpers.UriHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,28 +132,15 @@ public class UrlHelper {
         }
     }
 
-    /**
-     * Sometimes the Git infrastructure may pass an URL like https://username@dev.azure.com/ (note the username
-     * placement). Such URL should be converted into https://dev.azure.com/username to properly serve as a base URL for
-     * HTTP API calls.
-     * <p />
-     * This method will only process URLs pointing to the azure.com and *.azure.com hosts.
-     */
-    public static String convertToCanonicalHttpApiBase(String url) {
-        if (url == null) {
+    @Nullable
+    public static URI createOrganizationUri(@NotNull String host, @NotNull String organization) {
+        URI uri = URI.create("https://" + host);
+        if (!UriHelper.isAzureHost(uri)) {
+            logger.error("Non-azure host passed to convertToOrganizationUrl: {}", host);
             return null;
         }
 
-        URI uri = URI.create(url);
-        if (UriHelper.isAzureHost(uri)) {
-            String fullAccount = UriHelper.getFullAccount(uri); // dev.azure.com/username
-            String result = uri.getScheme() + "://" + fullAccount; // https://dev.azure.com/username
-            logger.info("Converted an URL {} into canonical HTTP API base: {}", url, result);
-            return result;
-        }
-
-        logger.info("Not an Azure host {}, HTTP API base conversion skipped", url);
-        return url;
+        return URI.create("https://" + host + "/" + organization);
     }
 
     public static boolean isVSO(final URI uri) {

@@ -31,10 +31,10 @@ public class UrlHelperTest {
     }
 
     @Test
-    public void testConvertToCanonicalHttpApiBase() {
-        assertEquals("https://dev.azure.com/username", UrlHelper.convertToCanonicalHttpApiBase("https://username@dev.azure.com"));
-        assertEquals("https://username@microsoft.com", UrlHelper.convertToCanonicalHttpApiBase(("https://username@microsoft.com")));
-        assertEquals("http://dev.azure.com", UrlHelper.convertToCanonicalHttpApiBase(("http://dev.azure.com")));
+    public void testCreateOrganizationUri() {
+        assertEquals(URI.create("https://dev.azure.com/username"), UrlHelper.createOrganizationUri("dev.azure.com", "username"));
+        assertNull(UrlHelper.createOrganizationUri("microsoft.com", "username"));
+        assertEquals(URI.create("https://dev.azure.com/"), UrlHelper.createOrganizationUri("dev.azure.com", ""));
     }
 
     @Test

@@ -11,18 +11,15 @@ import com.microsoft.alm.plugin.authentication.AuthHelper;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.idea.common.ui.common.AzureDevOpsNotifications;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import git4idea.remote.GitHttpAuthDataProvider;
 import git4idea.repo.GitRemote;
-import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -31,55 +28,24 @@ import java.util.stream.Collectors;
 public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     private static final Logger logger = LoggerFactory.getLogger(TfGitHttpAuthDataProvider.class);
 
-    /**
-     * It is important that we override this method, because {@link GitHttpAuthDataProvider#getAuthData(String)}
-     * override won't receive the `username@` as part of the URL starting from this version of IDEA. So we have to add
-     * the username to the URL ourselves, because the internal Azure authentication mechanism requires the URL combined
-     * with the username.
-     */
-    @Nullable
-    @Override
-    public AuthData getAuthData(@NotNull Project project, @NotNull String url, @NotNull String login) {
-        logger.info("getAuthData: processing URL {}, login {}", url, login);
-        try {
-            String urlWithLogin = appendOrganizationInfo(url, login);
-            return getAuthData(project, urlWithLogin);
-        } catch (URISyntaxException e) {
-            logger.warn("Error when parsing URL \"" + url + "\"", e);
-            return getAuthData(url);
-        }
-    }
-
-    @Nullable
-    @Override
-    public AuthData getAuthData(@NotNull Project project, @NotNull String url) {
-        logger.info("getAuthData: processing URL {}", url);
-
-        URI remoteUri = URI.create(url);
+    private static URI tryDetectApiUriFromGitRemotes(Project project, URI remoteUri) {
         String host = remoteUri.getHost();
         if (UrlHelper.isOrganizationHost(host)) {
-            logger.info("getAuthData: is Azure DevOps host: {}", host);
+            logger.info("tryDetectApiUriFromGitRemotes: is Azure DevOps host: {}", host);
 
-            // For azure.com hosts (mainly for dev.azure.com), we need to check if the organization name could be
-            // determined from the URL passed from Git. Sometimes, when using the Git repositories created in Visual
-            // Studio, the organization name may be omitted from the authority part.
+            // For proper authentication on azure.com and dev.azure.com, we'll need to know the organization to
+            // authenticate to. The organization is stored in the remote URL, but Git won't pass the full URL to the
+            // askpass program (which IntelliJ implements), but will only pass the scheme and authority parts (including
+            // the username@ part, if available). So, when trying to work with a canonical remote named
+            // "https://{username}@dev.azure.com/{organization}/{repo}/_git/{repo}", the askpass program will only
+            // receive "https://{username}@dev.azure.com".
             //
-            // Usually, a proper Git remote URL for dev.azure.com looks like this:
-            // https://{organization}@dev.azure.com/{organization}/{repo}/_git/{repo}
+            // In most cases, "{username}" is the same as "{organization}", but in some cases it isn't (e.g. when
+            // using an alternate credentials pair: in such case, "{username}" may be a username user chose as part of
+            // the alternate credentials).
             //
-            // The reason for that is simple: when authenticating the user, Git will only pass the authority part (i.e.
-            // https://{organization}@dev.azure.com) to the askpass program (and IDEA implements the askpass protocol
-            // for Git), so, without the "{organization}@" part in the URL authority, it would be impossible to know in
-            // which organization we should authenticate.
-            //
-            // If we're in the situation when we use dev.azure.com and the organization name is unknown from the
-            // authority part of the URL, we may guess the organization by analyzing the Git remotes in the current
-            // project.
-            if (!Strings.isNullOrEmpty(remoteUri.getUserInfo())) {
-                logger.info("getAuthData: URL has authentication info");
-                return getAuthData(url);
-            }
-
+            // So, we cannot reliably use the "{username}@" from the URL to determine the Azure DevOps organization, and
+            // may only try guessing it by analyzing the Git remotes in the current project.
             Collection<GitRemote> remotes = TfGitHelper.getTfGitRemotes(project);
             List<String> organizationsFromRemotes = remotes.stream()
                     .map(GitRemote::getFirstUrl)
@@ -91,35 +57,42 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                     .distinct()
                     .collect(Collectors.toList());
             if (organizationsFromRemotes.size() == 0) {
-                logger.info("getAuthData: no Azure DevOps organizations detected");
+                logger.info("tryDetectApiUriFromGitRemotes: no Azure DevOps organizations detected");
                 return null; // we cannot authenticate without knowing the organization
             }
 
             if (organizationsFromRemotes.size() > 1) {
                 // If there's more that one Azure-like Git remote, then we have no information on which remote to use,
                 // so we only could fail with notification.
-                logger.info("getAuthData: more than one Azure DevOps organizations detected: {}", organizationsFromRemotes);
-                AzureDevOpsNotifications.showManageRemoteUrlsNotification(project, host);
+                logger.info(
+                        "tryDetectApiUriFromGitRemotes: more than one Azure DevOps organizations detected: {}",
+                        organizationsFromRemotes);
                 return null;
             }
 
             String organizationName = organizationsFromRemotes.get(0);
 
-            try {
-                url = appendOrganizationInfo(url, organizationName);
-            } catch (URISyntaxException e) {
-                logger.warn("Error when parsing URL \"" + url + "\"", e);
-            }
+            URI result = UrlHelper.createOrganizationUri(host, organizationName);
+            logger.info("Organization name appended to the URI: {}", result);
+            return result;
         }
 
-        return getAuthData(url);
+        return null;
     }
 
+    @Nullable
     @Override
-    public AuthData getAuthData(@NotNull String url) {
-        logger.info("getAuthData: processing URL {}", url);
+    public AuthData getAuthData(@NotNull Project project, @NotNull String url) {
+        logger.info("getAuthData: init with URL {}", url);
 
-        url = UrlHelper.convertToCanonicalHttpApiBase(url);
+        URI remoteUri = URI.create(url);
+        URI apiBaseFromRemote = tryDetectApiUriFromGitRemotes(project, remoteUri);
+        if (apiBaseFromRemote != null) {
+            url = apiBaseFromRemote.toString();
+            logger.info("getAuthData: URI override: {}", url);
+        }
+
+        logger.info("getAuthData: processing URL {}", url);
 
         //try to find authentication info from saved server contexts
         final AuthenticationInfo authenticationInfo = ServerContextManager.getInstance().getBestAuthenticationInfo(url, false);
@@ -137,7 +110,8 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
                 // For dev.azure.com we need to check if the organization was included.
                 logger.info("getAuthData: is Azure DevOps host: {}", host);
                 if (Strings.isNullOrEmpty(UrlHelper.getAccountFromOrganizationUri(uri))) {
-                    throw new RuntimeException("User information could not be determined from the project URL");
+                    logger.warn("getAuthData: user information could not be determined from the project URL {}", uri);
+                    return null;
                 }
             }
 
@@ -167,9 +141,13 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
     }
 
     @Override
-    public void forgetPassword(@NotNull String url) {
+    public void forgetPassword(@NotNull Project project, @NotNull String url, @NotNull AuthData authData) {
         // This method got called since stored credentials for the url resulted in an unauthorized error 401 or 403
-        url = UrlHelper.convertToCanonicalHttpApiBase(url);
+        URI apiBaseFromRemote = tryDetectApiUriFromGitRemotes(project, URI.create(url));
+        if (apiBaseFromRemote != null) {
+            url = apiBaseFromRemote.toString();
+            logger.info("forgetPassword: URI override: {}", url);
+        }
 
         if (UrlHelper.isTeamServicesUrl(url)) {
             // IntelliJ calls us with a http server url e.g. http://myorganization.visualstudio.com
@@ -185,9 +163,5 @@ public class TfGitHttpAuthDataProvider implements GitHttpAuthDataProvider {
             logger.warn("forgetPassword: If server is https:// user might see multiple prompts for entering password resulting in all failures.");
             ServerContextManager.getInstance().updateAuthenticationInfo(url);
         }
-    }
-
-    private static String appendOrganizationInfo(String url, String organization) throws URISyntaxException {
-        return new URIBuilder(url).setUserInfo(organization).build().toString();
     }
 }
