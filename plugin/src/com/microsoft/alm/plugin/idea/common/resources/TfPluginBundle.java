@@ -64,12 +64,6 @@ public class TfPluginBundle {
     @NonNls
     public static final String KEY_TFVC_NOTIFICATIONS = "Plugin.TfvcNotifications";
 
-    // Git
-    @NonNls
-    public static final String KEY_GIT_NOTIFICATION_REMOTE = "Git.Notification.Remote";
-    @NonNls
-    public static final String KEY_GIT_CONFIGURE_REMOTES = "Git.Action.ConfigureRemotes";
-
     // Login form
     @NonNls
     public static final String KEY_LOGIN_FORM_AUTHENTICATING_VSO = "LoginForm.VSO.Authenticating";
