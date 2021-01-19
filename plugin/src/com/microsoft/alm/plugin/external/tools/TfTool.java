@@ -92,7 +92,7 @@ public class TfTool {
      * Determines the version of the TF command being used and throws if the version is too small.
      */
     public static void checkVersion() {
-        synchronized(cacheLock) {
+        synchronized (cacheLock) {
             final TfVersionCommand command = new TfVersionCommand();
             cachedVersion = command.runSynchronously();
             if (cachedVersion.compare(TF_MIN_VERSION) < 0) {
@@ -102,7 +102,7 @@ public class TfTool {
     }
 
     @NotNull public static ToolVersion getToolVersion() {
-        synchronized(cacheLock) {
+        synchronized (cacheLock) {
             if (cachedVersion == null) {
                 cachedVersion = new TfVersionCommand().runSynchronously();
             }

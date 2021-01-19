@@ -190,7 +190,7 @@ public abstract class Command<T> {
                         listener.progress("", OUTPUT_TYPE_INFO, 100);
                         listener.completed(result, error);
                     }
-                }, shouldPrepareCachedRunner(),skipVersionCheck());
+                }, shouldPrepareCachedRunner(), skipVersionCheck());
     }
 
     /**
