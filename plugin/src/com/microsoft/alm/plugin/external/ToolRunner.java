@@ -241,6 +241,16 @@ public class ToolRunner {
      */
     public void dispose() {
         try {
+            try {
+                // Close process' stdin so it could gracefully terminate by itself. Otherwise, process could outlive
+                // even processWaiter.cleanUp() call (since it only terminates the root process and not children).
+                if (toolProcess != null) {
+                    toolProcess.getOutputStream().close();
+                }
+            } catch (IOException e) {
+                logger.warn("Couldn't close the process' stdin", e);
+            }
+
             if (processWaiter != null) {
                 processWaiter.cleanUp();
                 processWaiter = null;

@@ -10,6 +10,7 @@ import com.intellij.openapi.vcs.VcsKey;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.ToolRunnerCache;
 import com.microsoft.alm.plugin.external.commands.DeleteWorkspaceCommand;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.CheckoutModel;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
@@ -43,6 +44,12 @@ public abstract class TfvcCheckoutTestBase extends L2Test {
         model.setServerName(getServerUrl());
         model.setUserName(getUser());
         model.setParentDirectory(path);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        ToolRunnerCache.tearDown();
+        super.tearDown();
     }
 
     /**
