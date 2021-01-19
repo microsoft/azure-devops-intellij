@@ -59,11 +59,9 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Server workspace support: import existing ones or create new ones (<a href="https://github.com/microsoft/azure-devops-intellij/issues/325">#325</a>)</li>
-        <li>Add operations are now performed using faster reactive client (<a href="https://github.com/microsoft/azure-devops-intellij/issues/338">#338</a>)</li>
-        <li>Rename operations are now performed using faster reactive client</li>
-        <li><b>Merge Branch Changes</b> action won't stay in your way in non-TFVC projects in the plugin in installed</li>
-        <li>Avoid spamming "unversionedFiles are empty" message when trying to add files in some cases</li>
+        <li>Fixed an error when user password for TFVC was containing non-cmd-friendly characters (<a href="https://github.com/microsoft/azure-devops-intellij/issues/323">#323</a>)</li>
+        <li>Enforce UTF-8 encoding for all TFVC operations (<a href="https://github.com/microsoft/azure-devops-intellij/issues/311">#311</a>)</li>
+        <li>Ignore username in authentication data provider which may not be a valid one (<a href="https://github.com/microsoft/azure-devops-intellij/issues/419">#419</a>)</li>
       </ul>
       <br />
     ]]>
