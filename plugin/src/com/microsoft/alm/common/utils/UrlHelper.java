@@ -218,7 +218,7 @@ public class UrlHelper {
     }
 
     public static boolean isSshGitRemoteUrl(final String gitRemoteUrl) {
-        if (isGitRemoteUrl(gitRemoteUrl) && isTeamServicesUrl(gitRemoteUrl)) {
+        if (isGitRemoteUrl(gitRemoteUrl)) {
             if (StringUtils.startsWithIgnoreCase(gitRemoteUrl, "https://") ||
                     StringUtils.startsWithIgnoreCase(gitRemoteUrl, "http://")) {
                 return false;
