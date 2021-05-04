@@ -256,6 +256,9 @@ public class UrlHelperTest {
         assertEquals("https://myorganization.visualstudio.com/myCollection/_git/My.Repo",
                 UrlHelper.getHttpsGitUrlFromSshUrl("https://myorganization.visualstudio.com/myCollection/_git/My.Repo"));
 
+        assertEquals("https://azure.devops.server.com/tfs/myCollection/_git/My.Repo",
+                UrlHelper.getHttpsGitUrlFromSshUrl("ssh://azure.devops.server.com:22/tfs/myCollection/_git/My.Repo"));
+
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("ssh://git@github.com:Microsoft/vso-agent-tasks.git"));
 
         assertNull(UrlHelper.getHttpsGitUrlFromSshUrl("git@github.com:Microsoft/vso-agent-tasks.git"));
