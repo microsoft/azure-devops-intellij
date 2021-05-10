@@ -9,10 +9,7 @@ import com.google.common.collect.Lists;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.OSProcessHandler;
-import com.intellij.execution.process.ProcessAdapter;
-import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
-import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.PathManager;
@@ -87,10 +84,33 @@ public class ReactiveTfvcClientHost {
             Path clientHomeDir = clientPath.getParent().getParent();
             GeneralCommandLine commandLine = ProcessHelper.patchPathEnvironmentVariable(
                     getClientCommandLine(clientPath, connection.getPort(), logDirectory, clientHomeDir));
-            ProcessHandler processHandler = new OSProcessHandler(commandLine);
-            connection.getLifetime().onTerminationIfAlive(processHandler::destroyProcess);
 
-            processHandler.addProcessListener(createProcessListener(hostLifetime));
+            ProcessHandler processHandler = new OSProcessHandler(commandLine) {
+                @Override
+                protected void notifyProcessTerminated(int exitCode) {
+                    super.notifyProcessTerminated(exitCode);
+                    if (exitCode == 0)
+                        ourLogger.info("Reactive client process terminated with exit code " + exitCode);
+                    else
+                        ourLogger.warn("Reactive client process terminated with exit code " + exitCode);
+
+                    hostLifetime.terminate(false);
+                }
+
+                @Override
+                public void notifyTextAvailable(@NotNull String text, @NotNull Key outputType) {
+                    super.notifyTextAvailable(text, outputType);
+                    if (outputType.equals(ProcessOutputTypes.STDOUT))
+                        ourLogger.trace(outputType + ": " + text);
+                    else
+                        ourLogger.info(outputType + ": " + text);
+                }
+            };
+            connection.getLifetime().onTerminationIfAlive(() -> {
+                ourLogger.info("TFVC client connection terminated, terminating process");
+                processHandler.destroyProcess();
+            });
+
             processHandler.startNotify();
 
             return new ReactiveTfvcClientHost(hostLifetime, connection);
@@ -244,27 +264,6 @@ public class ReactiveTfvcClientHost {
             @NotNull TfsLocalPath newPath) {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.renameFileAsync(collection, oldPath, newPath));
-    }
-
-    private static ProcessListener createProcessListener(LifetimeDefinition lifetime) {
-        return new ProcessAdapter() {
-            @Override
-            public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {
-                if (outputType == ProcessOutputTypes.STDERR || ourLogger.isTraceEnabled()) {
-                    String message = "Process output (" + outputType + "): " + event.getText();
-                    if (outputType == ProcessOutputTypes.STDERR)
-                        ourLogger.warn(message);
-                    else
-                        ourLogger.trace(message);
-                }
-            }
-
-            @Override
-            public void processTerminated(@NotNull ProcessEvent event) {
-                ourLogger.info("Process is terminated, terminating the connection");
-                lifetime.terminate(false);
-            }
-        };
     }
 
     private CompletionStage<TfsCollection> getReadyCollectionAsync(
