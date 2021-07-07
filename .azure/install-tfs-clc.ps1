@@ -1,6 +1,6 @@
 param (
-    $ClientArchiveUrl = 'https://github.com/microsoft/team-explorer-everywhere/releases/download/14.134.0/TEE-CLC-14.134.0.zip',
-    $ClientArchiveHash = 'AF4B7123A09475FF03A3F5662DF3DE614DF2F4ACC33DF16CDAB307B5FB6D7DC7',
+    $ClientArchiveUrl = 'https://github.com/JetBrains/team-explorer-everywhere/releases/download/14.135.2/TEE-CLC-14.135.2.zip',
+    $ClientArchiveHash = '27B3346D1CDCD3E9431D21942BAB5C6EFBBB0AFC945B71BF332485FE214CB338',
     $ClientArchiveStorage = "$PSScriptRoot/.download-cache",
     $ClientInstallPath = "$PSScriptRoot/.installed/tfs-clc"
 )
