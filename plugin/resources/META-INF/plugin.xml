@@ -36,7 +36,6 @@
             <li>Add labels to files and directories.</li>
             <li>Create, view, manage, and edit a workspace.</li>
             <li>Supports using a TFS proxy.</li>
-            <li>Local workspace support only.</li>
         </ul>
         <li>View work items based on queries and select one or more work items to associate with your commits or checkins.</li>
         <li>Check the build status of your repository and queue a new build if desired.</li>
