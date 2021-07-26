@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.external.commands;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.ToolRunner;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class DownloadCommand extends Command<String> {
     private static final String FILE_NOT_FOUND_ERROR = "The specified file does not exist at the specified version";
+    private static final Logger logger = Logger.getInstance(DownloadCommand.class);
 
     private final String localPath;
     private final int version;
@@ -70,7 +72,9 @@ public class DownloadCommand extends Command<String> {
         // Write the contents of stdout to the destination file
         final File file = new File(destination);
         if (file.exists()) {
-            file.delete();
+            if (!file.delete()) {
+                logger.warn("Unable to delete file \"" + file + "\" before re-downloading.");
+            }
         }
         try {
             FileUtils.writeStringToFile(file, fileContents.toString(), StandardCharsets.UTF_8);
