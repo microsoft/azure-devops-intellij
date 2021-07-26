@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This command calls View to get the contents of the file at the version provided and write them to the destination
@@ -72,7 +73,7 @@ public class DownloadCommand extends Command<String> {
             file.delete();
         }
         try {
-            FileUtils.writeStringToFile(file, fileContents.toString());
+            FileUtils.writeStringToFile(file, fileContents.toString(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             // throw any errors that occur
             throw new ToolParseFailureException(e);
