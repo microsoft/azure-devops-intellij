@@ -24,6 +24,8 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsRevisionNumber;
 import com.microsoft.alm.plugin.idea.tfvc.exceptions.TfsException;
@@ -129,7 +131,20 @@ public abstract class TFSContentRevision implements ContentRevision {
 
     @Nullable
     public String getContent() throws VcsException {
-        return new String(doGetContent(), getFile().getCharset(project));
+        FilePath filePath = getFile();
+        try {
+            // Download the file if required:
+            TFSContentStoreFactory.findOrCreate(filePath.getPath(), getChangeset(), getFilePath(), project);
+        } catch (IOException e) {
+            throw new VcsException(e);
+        }
+
+        VirtualFile virtualFile = Objects.requireNonNull(filePath.getVirtualFile());
+        try {
+            return VfsUtil.loadText(virtualFile);
+        } catch (IOException e) {
+            throw new VcsException(e);
+        }
     }
 
     @Nullable
