@@ -9,11 +9,10 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsRootChecker;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
-import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import org.jetbrains.annotations.NotNull;
 
@@ -70,15 +69,13 @@ public class TfvcRootChecker extends VcsRootChecker {
             Workspace workspace = null;
             Path workspacePath = Paths.get(path);
             try {
-                workspace = CommandUtils.getPartialWorkspace(workspacePath, true);
-            } catch (WorkspaceCouldNotBeDeterminedException | ToolAuthenticationException ex) {
-                if (!(ex instanceof WorkspaceCouldNotBeDeterminedException))
-                    ourLogger.warn(ex);
-
-                ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
+                workspace = TfvcClient.getInstance().getPartialWorkspace(null, workspacePath, true);
+            } catch (ToolAuthenticationException ex) {
+                ourLogger.warn(ex);
             }
 
             if (workspace == null) {
+                ourLogger.info("TFVC workspace could not be determined from path \"" + path + "\"");
                 myCache.putNoMappingsFor(workspacePath);
                 return false;
             }

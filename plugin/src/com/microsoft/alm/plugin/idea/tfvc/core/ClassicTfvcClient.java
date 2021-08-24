@@ -8,9 +8,11 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
@@ -227,6 +229,20 @@ public class ClassicTfvcClient implements TfvcClient {
         } catch (ToolBadExitCodeException ex) {
             ourLogger.error(ex);
             return false;
+        }
+    }
+
+    @Nullable
+    @Override
+    public CompletionStage<Workspace> getPartialWorkspaceAsync(
+            @Nullable Project project,
+            Path workspacePath,
+            boolean allowCredentialPrompt) {
+        try {
+            Workspace workspace = CommandUtils.getPartialWorkspace(workspacePath, allowCredentialPrompt);
+            return CompletableFuture.completedFuture(workspace);
+        } catch (WorkspaceCouldNotBeDeterminedException ex) {
+            return CompletableFuture.completedFuture(null);
         }
     }
 }
