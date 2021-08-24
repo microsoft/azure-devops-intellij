@@ -63,7 +63,7 @@ private fun runRdClient(portNumber: Int) {
             appLifetime.terminate()
         }
 
-        model.collections.view(appLifetime, ::initializeCollection)
+        initializeModel(appLifetime, model)
     }
 
     logger.info { "Application initialized, waiting termination" }
@@ -82,6 +82,18 @@ private fun startSocketWatchdog(ld: LifetimeDefinition, socket: SocketWire.Clien
 private fun waitTermination(lifetime: Lifetime, msBetweenChecks: Long = 1000L) {
     while (lifetime.isAlive) {
         Thread.sleep(msBetweenChecks)
+    }
+}
+
+private fun initializeModel(lifetime: Lifetime, model: TfsModel) {
+    val logger = Logging.getLogger("Workspace")
+
+    model.collections.view(lifetime, ::initializeCollection)
+    model.getPartialWorkspaceInfo.set { workspacePath ->
+        logger.info { "Searching for workspace for path \"$workspacePath\"." }
+        val result = TfsClient.getWorkspace(workspacePath)
+        logger.info { "Workspace for $workspacePath is ${if (result == null) "not " else ""}detected." }
+        result
     }
 }
 

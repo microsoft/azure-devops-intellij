@@ -100,6 +100,8 @@ configure(mainProjects) {
     }
 }
 
+def reactiveBackend = file("client/backend/build/install")
+
 /**
  * specific settings for each project
  */
@@ -120,7 +122,6 @@ project(":plugin") {
         updateSinceUntilBuild = false
 
         // buildPlugin and runIde should depend on the reactive backend
-        def reactiveBackend = file("../client/backend/build/install")
         task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
             from reactiveBackend
             into file("${prepareSandbox.destinationDir}/${prepareSandbox.pluginName}")
@@ -158,6 +159,12 @@ project(":L2Tests") {
     intellij {
         version = ideaVersion
         plugins = ['git4idea']
+
+        task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
+            from reactiveBackend
+            into file("${prepareTestingSandbox.destinationDir}/${prepareTestingSandbox.pluginName}")
+        }
+        prepareTestingSandbox.finalizedBy(prepareBackendSandbox)
     }
 
     dependencies {

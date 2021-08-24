@@ -19,6 +19,7 @@ import com.microsoft.alm.plugin.services.PropertyService;
 import kotlin.text.Charsets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.JComponent;
@@ -165,6 +166,7 @@ public class EULADialog extends DialogWrapper {
         }
     }
 
+    @TestOnly
     public static void acceptClientEula() throws IOException, InterruptedException {
         String tfLocation = TfTool.getLocation();
         Process process = ProcessHelper.startProcess(
@@ -172,7 +174,8 @@ public class EULADialog extends DialogWrapper {
         process.waitFor();
     }
 
-    private static void acceptSdkEula() {
+    @TestOnly
+    public static void acceptSdkEula() {
         PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED, "true");
     }

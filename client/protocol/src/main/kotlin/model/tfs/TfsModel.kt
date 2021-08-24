@@ -130,10 +130,23 @@ object TfsModel : Root() {
             .doc("Creates a \"rename\" pending change, which moves or renames a file or folder. Returns success status")
     }
 
+    private val TfsWorkspaceMapping = structdef {
+        field("localPath", TfsLocalPath)
+        field("serverPath", TfsServerPath)
+        field("isCloaked", bool)
+    }
+
+    private val TfsWorkspaceInfo = structdef {
+        field("serverUri", string)
+        field("workspaceName", string)
+        field("mappings", immutableList(TfsWorkspaceMapping))
+    }
+
     init {
         signal("shutdown", void)
             .doc("Shuts down the application")
 
         map("collections", TfsCollectionDefinition, TfsCollection)
+        call("getPartialWorkspaceInfo", TfsLocalPath, TfsWorkspaceInfo.nullable)
     }
 }
