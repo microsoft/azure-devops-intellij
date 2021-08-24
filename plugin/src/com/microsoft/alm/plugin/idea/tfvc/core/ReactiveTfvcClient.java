@@ -10,6 +10,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
@@ -190,5 +191,13 @@ public class ReactiveTfvcClient implements TfvcClient {
             return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.renameFileAsync(serverIdentification, oldPath, newPath));
         });
+    }
+
+    @Override
+    public CompletionStage<Workspace> getPartialWorkspaceAsync(
+            @Nullable Project project,
+            Path workspacePath,
+            boolean allowCredentialPrompt) {
+        throw new RuntimeException("TODO: Use reactive API");
     }
 }

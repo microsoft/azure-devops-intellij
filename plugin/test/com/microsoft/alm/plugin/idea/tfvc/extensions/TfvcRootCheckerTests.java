@@ -9,8 +9,10 @@ import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.tfvc.FileSystemTestUtil;
+import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -26,9 +28,16 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, TfTool.class})
+@PrepareForTest({ClassicTfvcClient.class, CommandUtils.class, TfTool.class})
 public class TfvcRootCheckerTests extends IdeaAbstractTest {
     private final TfvcRootChecker checker = new TfvcRootChecker();
+
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(
+                ClassicTfvcClient.class);
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+    }
 
     @Test
     public void isVcsDirTests() {

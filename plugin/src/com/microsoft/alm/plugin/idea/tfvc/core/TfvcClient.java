@@ -8,6 +8,7 @@ import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
@@ -312,4 +313,49 @@ public interface TfvcClient {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Returns a partially populated Workspace object that includes just the name, server, and mappings.
+     * <p>
+     * It may require the user to enter the credentials.
+     *
+     * @param workspacePath         path to a local workspace directory.
+     * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
+     * @return either a partially filled workspace or null in case the directory isn't under TFVC.
+     * @throws com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException in case it was impossible or
+     *                                                                                  forbidden to authenticate.
+     */
+    default @Nullable
+    Workspace getPartialWorkspace(
+            @Nullable Project project,
+            Path workspacePath,
+            boolean allowCredentialPrompt) {
+        try {
+            return getPartialWorkspaceAsync(project, workspacePath, allowCredentialPrompt).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Returns a partially populated Workspace object that includes just the name, server, and mappings.
+     * <p>
+     * It may require the user to enter the credentials.
+     * <p>
+     * May throw {@link com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException} either
+     * synchronously or asynchronously.
+     *
+     * @param workspacePath         path to a local workspace directory.
+     * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
+     * @return a completion stage with the workspace search result that will be resolved when the operation ends. The
+     * stage contains either a partially filled workspace or null in case the directory isn't under TFVC.
+     * @throws com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException in case it was impossible or
+     *                                                                                  forbidden to authenticate (may
+     *                                                                                  be thrown either synchronously
+     *                                                                                  or asynchronously).
+     */
+    CompletionStage<Workspace> getPartialWorkspaceAsync(
+            @Nullable Project project,
+            Path workspacePath,
+            boolean allowCredentialPrompt);
 }
