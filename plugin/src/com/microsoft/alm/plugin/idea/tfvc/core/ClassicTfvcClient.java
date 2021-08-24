@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -18,6 +19,7 @@ import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,60 +35,66 @@ public class ClassicTfvcClient implements TfvcClient {
 
     private static final Logger ourLogger = Logger.getInstance(ClassicTfvcClient.class);
 
-    @NotNull
-    private final Project myProject;
+    public static ClassicTfvcClient getInstance() {
+        return ServiceManager.getService(ClassicTfvcClient.class);
+    }
 
-    public ClassicTfvcClient(@NotNull Project project) {
-        myProject = project;
+    public ClassicTfvcClient() {
     }
 
     @NotNull
     @Override
     public CompletionStage<List<PendingChange>> getStatusForFilesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
-        return CompletableFuture.completedFuture(getStatusForFiles(serverContext, pathsToProcess));
+        return CompletableFuture.completedFuture(getStatusForFiles(project, serverContext, pathsToProcess));
     }
 
     @NotNull
     @Override
     public List<PendingChange> getStatusForFiles(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
         return EULADialog.executeWithGuard(
-                myProject,
-                () -> CommandUtils.getStatusForFiles(myProject, serverContext, pathsToProcess));
+                project,
+                () -> CommandUtils.getStatusForFiles(project, serverContext, pathsToProcess));
     }
 
     @NotNull
     @Override
     public CompletionStage<Void> getLocalItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
-        return getExtendedItemsInfoAsync(serverContext, pathsToProcess, onItemReceived::accept);
+        return getExtendedItemsInfoAsync(project, serverContext, pathsToProcess, onItemReceived::accept);
     }
 
     @Override
     public void getLocalItemsInfo(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
-        getExtendedItemsInfo(serverContext, pathsToProcess, onItemReceived::accept);
+        getExtendedItemsInfo(project, serverContext, pathsToProcess, onItemReceived::accept);
     }
 
     @NotNull
     @Override
     public CompletionStage<Void> getExtendedItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
-        getExtendedItemsInfo(serverContext, pathsToProcess, onItemReceived);
+        getExtendedItemsInfo(project, serverContext, pathsToProcess, onItemReceived);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void getExtendedItemsInfo(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
@@ -96,13 +104,19 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<List<Path>> addFilesAsync(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
-        return CompletableFuture.completedFuture(addFiles(serverContext, files));
+    public CompletionStage<List<Path>> addFilesAsync(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> files) {
+        return CompletableFuture.completedFuture(addFiles(project, serverContext, files));
     }
 
     @NotNull
     @Override
-    public List<Path> addFiles(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
+    public List<Path> addFiles(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> files) {
         List<String> pathStrings = files.stream().map(Path::toString).collect(Collectors.toList());
         return CommandUtils.addFiles(serverContext, pathStrings).stream().map(Paths::get).collect(Collectors.toList());
     }
@@ -110,13 +124,14 @@ public class ClassicTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
-        return CompletableFuture.completedFuture(deleteFilesRecursively(serverContext, items));
+        return CompletableFuture.completedFuture(deleteFilesRecursively(project, serverContext, items));
     }
 
     @NotNull
-    private static Optional<String> getWorkspace(TfsPath path) {
+    public Optional<String> getWorkspace(TfsPath path) {
         if (path instanceof TfsLocalPath)
             return Optional.empty();
         else if (path instanceof TfsServerPath)
@@ -128,10 +143,11 @@ public class ClassicTfvcClient implements TfvcClient {
     @Override
     @NotNull
     public TfvcDeleteResult deleteFilesRecursively(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         Map<Optional<String>, List<TfsPath>> itemsByWorkspace = items.stream()
-                .collect(Collectors.groupingBy(ClassicTfvcClient::getWorkspace));
+                .collect(Collectors.groupingBy(this::getWorkspace));
         TfvcDeleteResult result = new TfvcDeleteResult();
         for (Map.Entry<Optional<String>, List<TfsPath>> workspaceItems : itemsByWorkspace.entrySet()) {
             Optional<String> workspace = workspaceItems.getKey();
@@ -151,14 +167,18 @@ public class ClassicTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
-        undoLocalChanges(serverContext, items);
+        undoLocalChanges(project, serverContext, items);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+    public List<TfsLocalPath> undoLocalChanges(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) {
         List<String> itemPaths = items.stream().map(TfsFileUtil::getPathItem).collect(Collectors.toList());
         List<String> undonePaths = CommandUtils.undoLocalFiles(serverContext, itemPaths);
         return undonePaths.stream().map(TfsLocalPath::new).collect(Collectors.toList());
@@ -167,15 +187,17 @@ public class ClassicTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> filePaths,
             boolean recursive) {
-        return CompletableFuture.completedFuture(checkoutForEdit(serverContext, filePaths, recursive));
+        return CompletableFuture.completedFuture(checkoutForEdit(project, serverContext, filePaths, recursive));
     }
 
     @NotNull
     @Override
     public TfvcCheckoutResult checkoutForEdit(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> filePaths,
             boolean recursive) {
@@ -185,15 +207,20 @@ public class ClassicTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<Boolean> renameFileAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull Path oldFile,
             @NotNull Path newFile) {
-        renameFile(serverContext, oldFile, newFile);
+        renameFile(project, serverContext, oldFile, newFile);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public boolean renameFile(@NotNull ServerContext serverContext, @NotNull Path oldFile, @NotNull Path newFile) {
+    public boolean renameFile(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull Path oldFile,
+            @NotNull Path newFile) {
         try {
             CommandUtils.renameFile(serverContext, oldFile.toString(), newFile.toString());
             return true;

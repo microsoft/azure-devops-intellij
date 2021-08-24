@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
@@ -14,6 +13,7 @@ import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -34,25 +34,27 @@ import java.util.function.Consumer;
 public interface TfvcClient {
 
     @NotNull
-    static TfvcClient getInstance(@NotNull Project project) {
+    static TfvcClient getInstance() {
         boolean useReactiveClient = "true".equalsIgnoreCase(
                 PropertyService.getInstance().getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
         return useReactiveClient
-                ? ServiceManager.getService(project, ReactiveTfvcClient.class)
-                : ServiceManager.getService(project, ClassicTfvcClient.class);
+                ? ReactiveTfvcClient.getInstance()
+                : ClassicTfvcClient.getInstance();
     }
 
     @NotNull
     CompletionStage<List<PendingChange>> getStatusForFilesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess);
 
     @NotNull
     default List<PendingChange> getStatusForFiles(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
         try {
-            return getStatusForFilesAsync(serverContext, pathsToProcess).toCompletableFuture().get();
+            return getStatusForFilesAsync(project, serverContext, pathsToProcess).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -72,6 +74,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<Void> getLocalItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived);
@@ -86,11 +89,12 @@ public interface TfvcClient {
      *                       a thread-safe way (multiple simultaneous calls are prohibited).
      */
     default void getLocalItemsInfo(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
         try {
-            getLocalItemsInfoAsync(serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
+            getLocalItemsInfoAsync(project, serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -98,7 +102,8 @@ public interface TfvcClient {
 
     /**
      * Collects extended item information on selected items asynchronously and passes it into a user-provided callback.
-     * Differs from {@link #getLocalItemsInfoAsync(ServerContext, List, Consumer)} in that it also returns lock information.
+     * Differs from {@link #getLocalItemsInfoAsync(Project, ServerContext, List, Consumer)} in that it also returns lock
+     * information.
      *
      * @param serverContext  server context to extract a authorization information from
      * @param pathsToProcess list of items to process information
@@ -110,13 +115,14 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<Void> getExtendedItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ExtendedItemInfo> onItemReceived);
 
     /**
      * Collects extended item information on selected items and passes it into a user-provided callback. Differs from
-     * {@link #getLocalItemsInfo(ServerContext, List, Consumer)} in that it also returns lock information.
+     * {@link #getLocalItemsInfo(Project, ServerContext, List, Consumer)} in that it also returns lock information.
      *
      * @param serverContext  server context to extract a authorization information from
      * @param pathsToProcess list of items to process information
@@ -125,11 +131,16 @@ public interface TfvcClient {
      *                       a thread-safe way (multiple simultaneous calls are prohibited).
      */
     default void getExtendedItemsInfo(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
         try {
-            getExtendedItemsInfoAsync(serverContext, pathsToProcess, onItemReceived).toCompletableFuture().get();
+            getExtendedItemsInfoAsync(
+                    project,
+                    serverContext,
+                    pathsToProcess,
+                    onItemReceived).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -145,6 +156,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<List<Path>> addFilesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> files);
 
@@ -157,10 +169,11 @@ public interface TfvcClient {
      */
     @NotNull
     default List<Path> addFiles(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> files) {
         try {
-            return addFilesAsync(serverContext, files).toCompletableFuture().get();
+            return addFilesAsync(project, serverContext, files).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -176,6 +189,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
@@ -185,9 +199,12 @@ public interface TfvcClient {
      * @param serverContext server context to authenticate.
      * @param items         items to delete.
      */
-    default TfvcDeleteResult deleteFilesRecursively(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+    default TfvcDeleteResult deleteFilesRecursively(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) {
         try {
-            return deleteFilesRecursivelyAsync(serverContext, items).toCompletableFuture().get();
+            return deleteFilesRecursivelyAsync(project, serverContext, items).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -202,6 +219,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items);
 
@@ -212,9 +230,12 @@ public interface TfvcClient {
      * @param items         list of items to undo changes
      * @return list of the paths undone.
      */
-    default List<TfsLocalPath> undoLocalChanges(@NotNull ServerContext serverContext, @NotNull List<TfsPath> items) {
+    default List<TfsLocalPath> undoLocalChanges(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<TfsPath> items) {
         try {
-            return undoLocalChangesAsync(serverContext, items).toCompletableFuture().get();
+            return undoLocalChangesAsync(project, serverContext, items).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -230,6 +251,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> filePaths,
             boolean recursive);
@@ -244,11 +266,12 @@ public interface TfvcClient {
      */
     @NotNull
     default TfvcCheckoutResult checkoutForEdit(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> filePaths,
             boolean recursive) {
         try {
-            return checkoutForEditAsync(serverContext, filePaths, recursive).toCompletableFuture().get();
+            return checkoutForEditAsync(project, serverContext, filePaths, recursive).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -265,6 +288,7 @@ public interface TfvcClient {
      */
     @NotNull
     CompletionStage<Boolean> renameFileAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull Path oldFile,
             @NotNull Path newFile);
@@ -277,9 +301,13 @@ public interface TfvcClient {
      * @param newFile       the new file path and name.
      * @return whether the operation was successful.
      */
-    default boolean renameFile(@NotNull ServerContext serverContext, @NotNull Path oldFile, @NotNull Path newFile) {
+    default boolean renameFile(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull Path oldFile,
+            @NotNull Path newFile) {
         try {
-            return renameFileAsync(serverContext, oldFile, newFile).toCompletableFuture().get();
+            return renameFileAsync(project, serverContext, oldFile, newFile).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

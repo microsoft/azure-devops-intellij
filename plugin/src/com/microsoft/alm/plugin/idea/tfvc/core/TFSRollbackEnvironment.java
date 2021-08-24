@@ -134,7 +134,10 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
 
             // Call the undo command synchronously
             final ServerContext context = vcs.getServerContext(true);
-            final List<TfsLocalPath> filesUndone = TfvcClient.getInstance(project).undoLocalChanges(context, localFiles);
+            final List<TfsLocalPath> filesUndone = TfvcClient.getInstance().undoLocalChanges(
+                    project,
+                    context,
+                    localFiles);
 
             // Trigger the accept callback and build up our refresh list
             final List<VirtualFile> refresh = new ArrayList<VirtualFile>(filesUndone.size());

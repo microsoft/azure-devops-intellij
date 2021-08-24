@@ -15,6 +15,7 @@ import com.microsoft.alm.plugin.idea.common.settings.SettingsChangedNotifier;
 import com.microsoft.alm.plugin.idea.common.utils.IdeaHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
 import com.microsoft.alm.plugin.services.PropertyService;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,8 +25,8 @@ import java.util.concurrent.CompletionStage;
 
 public class ReactiveTfvcClientHolder implements Disposable {
 
-    public static ReactiveTfvcClientHolder getInstance(Project project) {
-        return ServiceManager.getService(project, ReactiveTfvcClientHolder.class);
+    public static ReactiveTfvcClientHolder getInstance() {
+        return ServiceManager.getService(ReactiveTfvcClientHolder.class);
     }
 
     public static Path getClientBackendPath() {
@@ -35,11 +36,9 @@ public class ReactiveTfvcClientHolder implements Disposable {
     }
 
     private final Object myClientLock = new Object();
-    private final Project myProject;
     private CompletableFuture<ReactiveTfvcClientHost> myClient;
 
-    public ReactiveTfvcClientHolder(Project myProject) {
-        this.myProject = myProject;
+    public ReactiveTfvcClientHolder() {
         ApplicationManager.getApplication().getMessageBus()
                 .connect(this)
                 .subscribe(SettingsChangedNotifier.SETTINGS_CHANGED_TOPIC, propertyKey -> {
@@ -50,8 +49,8 @@ public class ReactiveTfvcClientHolder implements Disposable {
                 });
     }
 
-    public CompletionStage<ReactiveTfvcClientHost> getClient() {
-        ensureEulaAccepted();
+    public CompletionStage<ReactiveTfvcClientHost> getClient(@Nullable Project project) {
+        ensureEulaAccepted(project);
 
         synchronized (myClientLock) {
             if (myClient == null || myClient.isCompletedExceptionally() || myClient.isCancelled()) {
@@ -73,12 +72,12 @@ public class ReactiveTfvcClientHolder implements Disposable {
         destroyClientIfExists();
     }
 
-    private void ensureEulaAccepted() {
+    private void ensureEulaAccepted(@Nullable Project project) {
         ApplicationManager.getApplication().invokeAndWait(() -> {
             PropertyService propertyService = PropertyService.getInstance();
             String eulaAccepted = propertyService.getProperty(PropertyService.PROP_TF_SDK_EULA_ACCEPTED);
             if (!"true".equalsIgnoreCase(eulaAccepted)) {
-                if (!EULADialog.forTfsSdk(myProject).showAndGet())
+                if (!EULADialog.forTfsSdk(project).showAndGet())
                     throw new RuntimeException("EULA acceptance is required to use the reactive TF client");
             }
         }, ModalityState.any()); // EULA should be shown even if there's a modal dialog (e.g. a commit one)

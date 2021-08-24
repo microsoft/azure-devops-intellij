@@ -16,7 +16,7 @@ abstract class SimpleMultipleItemAction extends MultipleItemAction<ItemInfo> {
 
     @Override
     protected void loadItemInfoCollection(MultipleItemActionContext context, List<String> localPaths) {
-        TfvcClient client = TfvcClient.getInstance(context.project);
-        client.getLocalItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
+        TfvcClient client = TfvcClient.getInstance();
+        client.getLocalItemsInfo(context.project, context.serverContext, localPaths, context.itemInfos::add);
     }
 }

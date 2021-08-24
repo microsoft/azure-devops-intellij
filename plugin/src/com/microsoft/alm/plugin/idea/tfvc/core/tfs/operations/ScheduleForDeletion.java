@@ -72,9 +72,9 @@ public class ScheduleForDeletion {
             final Set<String> scheduleForDeletion = new HashSet<>();
             final ServerContext context = TFSVcs.getInstance(project).getServerContext(true);
 
-            TfvcClient client = TfvcClient.getInstance(project);
+            TfvcClient client = TfvcClient.getInstance();
             for (final String path : filePaths) {
-                List<PendingChange> fileChanges = client.getStatusForFiles(context, ImmutableList.of(path));
+                List<PendingChange> fileChanges = client.getStatusForFiles(project, context, ImmutableList.of(path));
 
                 // deleting a file that has no changes
                 if (fileChanges.isEmpty()) {
@@ -143,7 +143,7 @@ public class ScheduleForDeletion {
 
             if (!revert.isEmpty()) {
                 List<TfsPath> pathsForUndo = revert.stream().map(TfsLocalPath::new).collect(Collectors.toList());
-                client.undoLocalChanges(context, pathsForUndo);
+                client.undoLocalChanges(project, context, pathsForUndo);
             }
 
             final List<String> confirmedDeletedFiles = new ArrayList<>();

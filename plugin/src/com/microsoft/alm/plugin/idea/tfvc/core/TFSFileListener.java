@@ -91,9 +91,10 @@ public class TFSFileListener extends VcsVFSListener {
 
         application.invokeAndWait(() -> ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
             ProgressManager.getInstance().getProgressIndicator().setIndeterminate(true);
-            TfvcClient client = TfvcClient.getInstance(myProject);
+            TfvcClient client = TfvcClient.getInstance();
             pendingChanges.addAll(
                     client.getStatusForFiles(
+                            myProject,
                             TFSVcs.getInstance(myProject).getServerContext(true),
                             filePaths));
         }, TfPluginBundle.message(TfPluginBundle.KEY_TFVC_ADD_SCHEDULING), false, myProject));

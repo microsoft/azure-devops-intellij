@@ -77,9 +77,12 @@ public class RenameFileDirectory {
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
-            TfvcClient client = TfvcClient.getInstance(project);
+            TfvcClient client = TfvcClient.getInstance();
             ServerContext serverContext = TFSVcs.getInstance(project).getServerContext(true);
-            List<PendingChange> pendingChanges = client.getStatusForFiles(serverContext, ImmutableList.of(currentPath));
+            List<PendingChange> pendingChanges = client.getStatusForFiles(
+                    project,
+                    serverContext,
+                    ImmutableList.of(currentPath));
 
             // ** Rename logic **
             // If 1 change and it's an add that means it's a new unversioned file so rename thru the file system
@@ -91,6 +94,7 @@ public class RenameFileDirectory {
             } else {
                 logger.info("Renaming file thru tf commandline");
                 if (!client.renameFile(
+                        project,
                         serverContext,
                         Paths.get(currentPath),
                         Paths.get(newPath)))

@@ -100,10 +100,11 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             UndoManager.getInstance(currentProject).nonundoableActionPerformed(ref, false);
         }
 
-        TfvcClient tfvcClient = TfvcClient.getInstance(currentProject);
+        TfvcClient tfvcClient = TfvcClient.getInstance();
         ServerContext serverContext = vcs.getServerContext(true);
 
         List<PendingChange> pendingChanges = tfvcClient.getStatusForFiles(
+                currentProject,
                 serverContext,
                 Collections.singletonList(virtualFile.getPath()));
 
@@ -111,6 +112,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         if (pendingChanges.isEmpty()) {
             ourLogger.info("No changes to file so deleting though TFVC");
             TfvcDeleteResult operationResult = tfvcClient.deleteFilesRecursively(
+                    currentProject,
                     serverContext,
                     Collections.singletonList(TfsFileUtil.createLocalPath(virtualFile)));
             operationResult.throwIfErrorMessagesAreNotEmpty();
@@ -197,7 +199,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         if (revert.get()) {
             TfsPath filePath = TfsFileUtil.createLocalPath(virtualFile);
-            tfvcClient.undoLocalChanges(serverContext, Collections.singletonList(filePath));
+            tfvcClient.undoLocalChanges(currentProject, serverContext, Collections.singletonList(filePath));
         }
 
         if (success.get() && !isUndelete.get()) {
@@ -208,6 +210,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
                     ? new TfsServerPath(pendingChange.getWorkspace(), pendingChange.getSourceItem())
                     : TfsFileUtil.createLocalPath(pendingChange.getLocalItem());
             TfvcDeleteResult operationResult = tfvcClient.deleteFilesRecursively(
+                    currentProject,
                     serverContext,
                     Collections.singletonList(itemToDelete));
             operationResult.throwIfErrorMessagesAreNotEmpty();
@@ -257,11 +260,11 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         if (vcs == null)
             return false;
 
-        TfvcClient client = TfvcClient.getInstance(myProject);
+        TfvcClient client = TfvcClient.getInstance();
         ServerContext serverContext = vcs.getServerContext(true);
 
         String path = Paths.get(dir.getPath(), name).toString();
-        List<PendingChange> changes = client.getStatusForFiles(serverContext, Collections.singletonList(path));
+        List<PendingChange> changes = client.getStatusForFiles(myProject, serverContext, Collections.singletonList(path));
 
         AtomicBoolean performUndo = new AtomicBoolean(false);
         for (PendingChange change : changes) {
@@ -281,7 +284,10 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         if (performUndo.get()) {
             TfsPath filePath = TfsFileUtil.createLocalPath(path);
-            List<TfsLocalPath> undone = client.undoLocalChanges(serverContext, Collections.singletonList(filePath));
+            List<TfsLocalPath> undone = client.undoLocalChanges(
+                    vcs.getProject(),
+                    serverContext,
+                    Collections.singletonList(filePath));
             ourLogger.info("Undone {} items", undone.size());
             return true;
         }
@@ -327,13 +333,14 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
 
         final String oldPath = oldFile.getPath();
         try {
-            TfvcClient client = TfvcClient.getInstance(myProject);
+            TfvcClient client = TfvcClient.getInstance();
 
             // a single file may have 0, 1, or 2 pending changes to it
             // 0 - file has not been touched in the local workspace
             // 1 - file has versioned OR unversioned changes
             // 2 - file has versioned AND unversioned changes (rare but can happen)
             List<PendingChange> pendingChanges = client.getStatusForFiles(
+                    myProject,
                     vcs.getServerContext(true),
                     ImmutableList.of(oldPath));
 
@@ -347,6 +354,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
             } else {
                 ourLogger.info("Renaming file through tf commandline");
                 if (!client.renameFile(
+                        myProject,
                         vcs.getServerContext(true),
                         Paths.get(oldPath),
                         Paths.get(newPath))) {

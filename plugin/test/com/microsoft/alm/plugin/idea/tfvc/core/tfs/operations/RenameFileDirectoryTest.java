@@ -47,7 +47,14 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, ServiceManager.class, TFSVcs.class, PersistentFS.class, RenameUtil.class})
+@PrepareForTest({
+        ClassicTfvcClient.class,
+        CommandUtils.class,
+        ServiceManager.class,
+        TFSVcs.class,
+        PersistentFS.class,
+        RenameUtil.class
+})
 public class RenameFileDirectoryTest extends IdeaAbstractTest {
     private final UsageInfo[] usageInfos = new UsageInfo[1];
     private final String NEW_FILE_NAME = "newName.txt";
@@ -90,6 +97,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
+                ClassicTfvcClient.class,
                 CommandUtils.class,
                 ServiceManager.class,
                 TFSVcs.class,
@@ -104,7 +112,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
         when(mockVirtualFile.getParent()).thenReturn(mockVirtualParent);
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(PersistentFS.getInstance()).thenReturn(mockPersistentFS);
     }
