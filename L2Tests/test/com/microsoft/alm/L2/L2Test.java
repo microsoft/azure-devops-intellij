@@ -255,6 +255,7 @@ public abstract class L2Test extends UsefulTestCase {
             myVcs.doActivate();
 
             EULADialog.acceptClientEula();
+            EULADialog.acceptSdkEula();
             ServerPollingManager.getInstance().startPolling();
         } catch (Exception e) {
             tearDown();

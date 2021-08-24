@@ -198,6 +198,8 @@ public class ReactiveTfvcClient implements TfvcClient {
             @Nullable Project project,
             Path workspacePath,
             boolean allowCredentialPrompt) {
-        throw new RuntimeException("TODO: Use reactive API");
+        // TODO: Port logic for server repositories here from CommandUtil.getPartialWorkspace(Path, boolean).
+        return traceTime("getPartialWorkspace", () -> ReactiveTfvcClientHolder.getInstance().getClient(project)
+                .thenCompose(client -> client.getPartialWorkspaceAsync(workspacePath)));
     }
 }

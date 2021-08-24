@@ -23,6 +23,7 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.services.PropertyService;
@@ -264,6 +265,23 @@ public class ReactiveTfvcClientHost {
             @NotNull TfsLocalPath newPath) {
         return getReadyCollectionAsync(serverIdentification)
                 .thenCompose(collection -> myConnection.renameFileAsync(collection, oldPath, newPath));
+    }
+
+    @NotNull
+    public CompletionStage<Workspace> getPartialWorkspaceAsync(@NotNull Path workspacePath) {
+        return myConnection.getPartialWorkspaceAsync(new TfsLocalPath(workspacePath.toString()))
+                .thenApply(workspaceInfo -> workspaceInfo == null ? null : new Workspace(
+                        workspaceInfo.getServerUri(),
+                        workspaceInfo.getWorkspaceName(),
+                        "",
+                        "",
+                        "",
+                        workspaceInfo.getMappings().stream().map(mappingInfo -> new Workspace.Mapping(
+                                mappingInfo.getServerPath().getPath(),
+                                mappingInfo.getLocalPath().getPath(),
+                                mappingInfo.isCloaked()
+                        )).collect(Collectors.toList())
+                    ));
     }
 
     private CompletionStage<TfsCollection> getReadyCollectionAsync(

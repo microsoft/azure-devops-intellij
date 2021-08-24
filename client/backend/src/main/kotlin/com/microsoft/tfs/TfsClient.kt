@@ -3,6 +3,7 @@
 
 package com.microsoft.tfs
 
+import com.jetbrains.rd.util.error
 import com.jetbrains.rd.util.info
 import com.jetbrains.rd.util.lifetime.Lifetime
 import com.jetbrains.rd.util.lifetime.onTermination
@@ -16,6 +17,7 @@ import com.microsoft.tfs.core.clients.versioncontrol.events.PendingChangeEvent
 import com.microsoft.tfs.core.clients.versioncontrol.events.UndonePendingChangeListener
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.*
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
+import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.Credentials
 import com.microsoft.tfs.model.host.*
 import com.microsoft.tfs.sdk.*
@@ -26,6 +28,47 @@ import java.nio.file.Paths
 class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
     companion object {
         private val logger = Logging.getLogger<TfsClient>()
+        fun getWorkspace(path: TfsLocalPath): TfsWorkspaceInfo? {
+            val workstation = Workstation.getCurrent(DefaultPersistenceStoreProvider.INSTANCE)
+            val canonicalPathString = path.toCanonicalPathString()
+            if (!workstation.isMapped(canonicalPathString)) {
+                logger.info { "Path not mapped: \"$path\". Refreshing the cache." }
+                workstation.reloadCache()
+                if (!workstation.isMapped(canonicalPathString)) {
+                    logger.info { "Path still not mapped: \"$path\"." }
+                    return null
+                }
+            }
+
+            val workspaceInfo = workstation.getLocalWorkspaceInfo(canonicalPathString) ?: return null
+
+            val serverUri = workspaceInfo.serverURI
+            val workspaceName = workspaceInfo.name.orEmpty()
+            val mappings =
+                try {
+                    if (serverUri == null) emptyList()
+                    else {
+                        val collection = TFSTeamProjectCollection(serverUri, null)
+                        try {
+                            val workspace = workspaceInfo.getWorkspace(collection)
+                            workspace.folders?.map { workingFolder ->
+                                TfsWorkspaceMapping(
+                                    TfsLocalPath(workingFolder.localItem),
+                                    TfsServerPath(workspaceName, workingFolder.displayServerItem),
+                                    workingFolder.type == WorkingFolderType.CLOAK
+                                )
+                            }.orEmpty()
+                        } finally {
+                            collection.close()
+                        }
+                    }
+                } catch (e: Throwable) {
+                    logger.error("Cannot determine workspace mappings for workspace \"$path\".", e)
+                    emptyList<TfsWorkspaceMapping>()
+                }
+
+            return TfsWorkspaceInfo(workspaceInfo.server.toString(), workspaceInfo.name, mappings)
+        }
     }
 
     val client: VersionControlClient
