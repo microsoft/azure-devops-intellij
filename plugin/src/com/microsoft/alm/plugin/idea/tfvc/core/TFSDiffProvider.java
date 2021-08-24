@@ -130,10 +130,10 @@ public class TFSDiffProvider extends DiffProviderEx {
             filePaths.add(filePath);
         }
 
-        TfvcClient client = TfvcClient.getInstance(project);
+        TfvcClient client = TfvcClient.getInstance();
         final LocalFileSystem fs = LocalFileSystem.getInstance();
         final Map<VirtualFile, VcsRevisionNumber> revisionMap = ContainerUtil.newHashMap();
-        client.getLocalItemsInfo(context, filePaths, info -> {
+        client.getLocalItemsInfo(project, context, filePaths, info -> {
             final String itemPath = info.getLocalItem();
             final VirtualFile virtualFile = fs.findFileByPath(itemPath);
             if (virtualFile == null) {

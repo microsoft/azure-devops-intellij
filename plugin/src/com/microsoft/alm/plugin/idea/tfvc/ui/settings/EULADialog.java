@@ -99,7 +99,7 @@ public class EULADialog extends DialogWrapper {
                 EULADialog::acceptClientEula);
     }
 
-    public static EULADialog forTfsSdk(@NotNull Project project) {
+    public static EULADialog forTfsSdk(@Nullable Project project) {
         return new EULADialog(
                 project,
                 "Team Foundation SDK for Java License Terms",

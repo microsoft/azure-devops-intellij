@@ -388,8 +388,8 @@ public class ResolveConflictHelper {
                 final String myLocalChanges;
 
                 String conflictLocalPath = conflict.getLocalPath();
-                List<PendingChange> pendingChange = TfvcClient.getInstance(project)
-                        .getStatusForFiles(context, Collections.singletonList(conflictLocalPath));
+                List<PendingChange> pendingChange = TfvcClient.getInstance()
+                        .getStatusForFiles(project, context, Collections.singletonList(conflictLocalPath));
                 if (pendingChange.size() > 1) {
                     logger.warn(
                             "Count of local changes for file \"{}\" is greater than 1: {}",

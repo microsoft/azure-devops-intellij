@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -16,6 +17,7 @@ import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,11 +36,8 @@ public class ReactiveTfvcClient implements TfvcClient {
 
     private static final Logger ourLogger = Logger.getInstance(ReactiveTfvcClient.class);
 
-    @NotNull
-    private final Project myProject;
-
-    public ReactiveTfvcClient(@NotNull Project project) {
-        myProject = project;
+    public static ReactiveTfvcClient getInstance() {
+        return ServiceManager.getService(ReactiveTfvcClient.class);
     }
 
     private static ServerIdentification getServerIdentification(ServerContext serverContext) {
@@ -61,13 +60,14 @@ public class ReactiveTfvcClient implements TfvcClient {
     @Override
     @NotNull
     public CompletionStage<List<PendingChange>> getStatusForFilesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess) {
         return traceTime("Status", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
 
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.getPendingChangesAsync(serverIdentification, paths));
         });
     }
@@ -75,13 +75,14 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<Void> getLocalItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ItemInfo> onItemReceived) {
         return traceTime("Info", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.getLocalItemsInfoAsync(serverIdentification, paths, onItemReceived));
         });
     }
@@ -89,13 +90,14 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<Void> getExtendedItemsInfoAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<String> pathsToProcess,
             @NotNull Consumer<ExtendedItemInfo> onItemReceived) {
         return traceTime("Extended info", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             Stream<Path> paths = pathsToProcess.stream().map(Paths::get);
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.getExtendedItemsInfoAsync(
                             serverIdentification,
                             paths,
@@ -105,13 +107,16 @@ public class ReactiveTfvcClient implements TfvcClient {
 
     @NotNull
     @Override
-    public CompletionStage<List<Path>> addFilesAsync(@NotNull ServerContext serverContext, @NotNull List<Path> files) {
+    public CompletionStage<List<Path>> addFilesAsync(
+            @Nullable Project project,
+            @NotNull ServerContext serverContext,
+            @NotNull List<Path> files) {
         return traceTime("Add", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             List<TfsLocalPath> localPaths = files.stream()
                     .map(TfsFileUtil::createLocalPath)
                     .collect(Collectors.toList());
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.addFilesAsync(serverIdentification, localPaths))
                     .thenApply(paths -> paths.stream()
                             .map(path -> Paths.get(path.getPath()))
@@ -122,11 +127,12 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<TfvcDeleteResult> deleteFilesRecursivelyAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         return traceTime("Delete", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.deleteFilesRecursivelyAsync(serverIdentification, items))
                     .thenApply(result -> {
                         List<Path> deletedPaths = result.getDeletedPaths().stream()
@@ -140,11 +146,12 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<List<TfsLocalPath>> undoLocalChangesAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<TfsPath> items) {
         return traceTime("Undo", () -> {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.undoLocalChangesAsync(serverIdentification, items));
         });
     }
@@ -152,6 +159,7 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<TfvcCheckoutResult> checkoutForEditAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull List<Path> filePaths,
             boolean recursive) {
@@ -160,7 +168,7 @@ public class ReactiveTfvcClient implements TfvcClient {
             List<TfsLocalPath> paths = filePaths.stream()
                     .map(TfsFileUtil::createLocalPath)
                     .collect(Collectors.toList());
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.checkoutFilesForEditAsync(
                             serverIdentification,
                             paths,
@@ -171,6 +179,7 @@ public class ReactiveTfvcClient implements TfvcClient {
     @NotNull
     @Override
     public CompletionStage<Boolean> renameFileAsync(
+            @Nullable Project project,
             @NotNull ServerContext serverContext,
             @NotNull Path oldFile,
             @NotNull Path newFile) {
@@ -178,7 +187,7 @@ public class ReactiveTfvcClient implements TfvcClient {
             ServerIdentification serverIdentification = getServerIdentification(serverContext);
             TfsLocalPath oldPath = TfsFileUtil.createLocalPath(oldFile);
             TfsLocalPath newPath = TfsFileUtil.createLocalPath(newFile);
-            return ReactiveTfvcClientHolder.getInstance(myProject).getClient()
+            return ReactiveTfvcClientHolder.getInstance().getClient(project)
                     .thenCompose(client -> client.renameFileAsync(serverIdentification, oldPath, newPath));
         });
     }

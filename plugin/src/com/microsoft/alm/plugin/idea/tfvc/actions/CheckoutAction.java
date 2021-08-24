@@ -43,11 +43,12 @@ public class CheckoutAction extends SimpleMultipleItemAction {
                         false) {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
-                        TfvcClient client = TfvcClient.getInstance(project);
+                        TfvcClient client = TfvcClient.getInstance();
                         List<Path> filePaths = actionContext.itemInfos.stream()
                                 .map(item -> Paths.get(item.getLocalItem()))
                                 .collect(Collectors.toList());
                         TfvcCheckoutResult checkoutResult = client.checkoutForEdit(
+                                actionContext.project,
                                 actionContext.serverContext,
                                 filePaths,
                                 true);

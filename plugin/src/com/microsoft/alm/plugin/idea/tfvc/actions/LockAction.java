@@ -45,8 +45,8 @@ public class LockAction extends MultipleItemAction<ExtendedItemInfo> {
 
     @Override
     protected void loadItemInfoCollection(MultipleItemActionContext context, List<String> localPaths) {
-        TfvcClient client = TfvcClient.getInstance(context.project);
-        client.getExtendedItemsInfo(context.serverContext, localPaths, context.itemInfos::add);
+        TfvcClient client = TfvcClient.getInstance();
+        client.getExtendedItemsInfo(context.project, context.serverContext, localPaths, context.itemInfos::add);
     }
 
     @Override

@@ -49,6 +49,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
+        ClassicTfvcClient.class,
         CommandUtils.class,
         LocalFileSystem.class,
         ServiceManager.class,
@@ -102,6 +103,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
+                ClassicTfvcClient.class,
                 CommandUtils.class,
                 LocalFileSystem.class,
                 ServiceManager.class,
@@ -111,7 +113,7 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
                 VersionControlPath.class
         );
 
-        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
         when(mockTFSVcs.getDeleteConfirmation()).thenReturn(mockVcsShowConfirmationOption);

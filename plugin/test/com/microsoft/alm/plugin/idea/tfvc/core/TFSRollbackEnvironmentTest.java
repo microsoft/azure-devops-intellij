@@ -46,7 +46,13 @@ import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, LocalFileSystem.class, ServiceManager.class, TfsFileUtil.class})
+@PrepareForTest({
+        ClassicTfvcClient.class,
+        CommandUtils.class,
+        LocalFileSystem.class,
+        ServiceManager.class,
+        TfsFileUtil.class
+})
 public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     TFSRollbackEnvironment rollbackEnvironment;
     List<String> filePaths = SystemInfo.isWindows
@@ -76,10 +82,15 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, LocalFileSystem.class, ServiceManager.class, TfsFileUtil.class);
+        PowerMockito.mockStatic(
+                ClassicTfvcClient.class,
+                CommandUtils.class,
+                LocalFileSystem.class,
+                ServiceManager.class,
+                TfsFileUtil.class);
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
         when(TfsFileUtil.createLocalPath(any(String.class))).thenCallRealMethod();
         when(TfsFileUtil.createLocalPath(any(FilePath.class))).thenCallRealMethod();

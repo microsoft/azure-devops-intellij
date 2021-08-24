@@ -30,7 +30,8 @@ public class TfvcEditFileProvider implements EditFileProvider {
         List<Path> paths = Stream.of(files).map(file -> Paths.get(file.getPath())).collect(Collectors.toList());
 
         ServerContext serverContext = myVcs.getServerContext(true);
-        TfvcCheckoutResult result = TfvcClient.getInstance(myVcs.getProject()).checkoutForEdit(
+        TfvcCheckoutResult result = TfvcClient.getInstance().checkoutForEdit(
+                myVcs.getProject(),
                 serverContext,
                 paths,
                 false);

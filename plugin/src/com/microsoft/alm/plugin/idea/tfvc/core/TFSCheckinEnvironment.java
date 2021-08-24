@@ -236,8 +236,11 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             List<Path> pathsToAdd = files.stream()
                     .map(file -> Paths.get(file.getPath()))
                     .collect(Collectors.toList());
-            TfvcClient client = TfvcClient.getInstance(myVcs.getProject());
-            List<Path> successfullyAdded = client.addFiles(myVcs.getServerContext(false), pathsToAdd);
+            TfvcClient client = TfvcClient.getInstance();
+            List<Path> successfullyAdded = client.addFiles(
+                    myVcs.getProject(),
+                    myVcs.getServerContext(false),
+                    pathsToAdd);
 
             // mark files as dirty so that they refresh in local changes tab
             for (Path path : successfullyAdded) {

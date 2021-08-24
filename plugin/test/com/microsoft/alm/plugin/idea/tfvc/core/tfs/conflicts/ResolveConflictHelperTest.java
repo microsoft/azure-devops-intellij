@@ -72,6 +72,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
+        ClassicTfvcClient.class,
         CommandUtils.class,
         ProgressManager.class,
         ServiceManager.class,
@@ -145,6 +146,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public void setUp() throws VcsException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
+                ClassicTfvcClient.class,
                 CommandUtils.class,
                 ConflictsEnvironment.class,
                 ProgressManager.class,
@@ -164,7 +166,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         when(mockProgressManager.getProgressIndicator()).thenReturn(mockProgressIndicator);
 
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
-        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(ConflictsEnvironment.getNameMerger()).thenReturn(mockNameMerger);
         when(ConflictsEnvironment.getContentMerger()).thenReturn(mockContentMerger);

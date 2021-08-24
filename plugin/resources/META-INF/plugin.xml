@@ -92,9 +92,9 @@
 
         <fileTypeFactory implementation="com.microsoft.alm.plugin.idea.tfvc.tfignore.TfIgnoreFileTypeFactory"/>
 
-        <projectService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder" />
-        <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient" />
-        <projectService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ReactiveTfvcClient" />
+        <applicationService serviceImplementation="com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder" />
+        <applicationService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient" />
+        <applicationService serviceImplementation="com.microsoft.alm.plugin.idea.tfvc.core.ReactiveTfvcClient" />
 
         <applicationService serviceInterface="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"
                             serviceImplementation="com.microsoft.alm.plugin.authentication.VsoAuthenticationProvider"

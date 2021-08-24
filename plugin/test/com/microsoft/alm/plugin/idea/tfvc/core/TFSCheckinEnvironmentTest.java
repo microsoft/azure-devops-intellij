@@ -92,7 +92,7 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
         when(mockServerContext.getUri()).thenReturn(URI.create("http://organization.visualstudio.com"));
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
-        when(ServiceManager.getService(eq(mockProject), any())).thenReturn(new ClassicTfvcClient(mockProject));
+        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(VcsNotifier.getInstance(mockProject)).thenReturn(mockVcsNotifier);
         tfsCheckinEnvironment = new TFSCheckinEnvironment(mockTFSVcs);
