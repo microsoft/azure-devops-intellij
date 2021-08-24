@@ -99,7 +99,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
     }
 
     private fun enumeratePathsWithWorkspace(paths: Iterable<TfsPath>, action: (Workspace, List<TfsPath>) -> Unit) {
-        for ((workspace, workspacePathList) in paths.asSequence().groupBy(::getWorkspaceFor)) {
+        for ((workspace, workspacePathList) in paths.groupBy(::getWorkspaceFor)) {
             if (workspace == null) {
                 logger.warn { "Could not determine workspace for paths: " + paths.joinToString() }
                 continue
