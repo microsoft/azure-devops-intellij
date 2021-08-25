@@ -11,6 +11,7 @@ import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.tfvc.FileSystemTestUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,14 +29,15 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ClassicTfvcClient.class, CommandUtils.class, TfTool.class})
+@PrepareForTest({ClassicTfvcClient.class, CommandUtils.class, TfTool.class, TfvcWorkspaceLocator.class})
 public class TfvcRootCheckerTests extends IdeaAbstractTest {
     private final TfvcRootChecker checker = new TfvcRootChecker();
 
     @Before
     public void setUp() {
         PowerMockito.mockStatic(
-                ClassicTfvcClient.class);
+                ClassicTfvcClient.class,
+                TfvcWorkspaceLocator.class);
         when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
     }
 
@@ -60,12 +62,12 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
 
     private static void mockPartialWorkspace(Path path, Workspace workspace) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getPartialWorkspace(eq(path), any(Boolean.class))).thenReturn(workspace);
+        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(path), any(Boolean.class))).thenReturn(workspace);
     }
 
     private static void mockPartialWorkspaceNotDetermined(Path path) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getPartialWorkspace(eq(path), any(Boolean.class)))
+        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(path), any(Boolean.class)))
                 .thenThrow(new WorkspaceCouldNotBeDeterminedException());
     }
 

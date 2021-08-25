@@ -135,7 +135,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
             Workspace workspace = null;
             try {
                 ourLogger.info("Analyzing path \"" + path + "\" using TF Everywhere client");
-                workspace = CommandUtils.getPartialWorkspace(path);
+                workspace = TfvcWorkspaceLocator.getPartialWorkspace(path, false);
             } catch (WorkspaceCouldNotBeDeterminedException ex) {
                 ourLogger.info("Path \"" + path + "\" has no TF Everywhere workspace");
             }
@@ -248,7 +248,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
 
         ourLogger.info("Checking if workspace under path \"" + workspacePath + "\" is already imported");
         try {
-            Workspace existingWorkspace = CommandUtils.getPartialWorkspace(workspacePath);
+            Workspace existingWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, false);
             //noinspection ConstantConditions // force null check just in case
             if (existingWorkspace != null) {
                 ourLogger.info("Workspace under path \"" + workspacePath + "\" is already imported, exiting");
@@ -305,7 +305,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                         ourLogger.info("Checking if workspace was successfully imported from path: \"" + workspacePath + "\"");
                         Workspace workspace;
                         try {
-                            workspace = CommandUtils.getPartialWorkspace(workspacePath);
+                            workspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, false);
                             indicator.setFraction(5.0 / totalSteps);
                         } catch (WorkspaceCouldNotBeDeterminedException ex) {
                             return false;
