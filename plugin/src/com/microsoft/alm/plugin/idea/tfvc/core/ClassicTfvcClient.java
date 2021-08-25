@@ -239,7 +239,7 @@ public class ClassicTfvcClient implements TfvcClient {
             Path workspacePath,
             boolean allowCredentialPrompt) {
         try {
-            Workspace workspace = CommandUtils.getPartialWorkspace(workspacePath, allowCredentialPrompt);
+            Workspace workspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, allowCredentialPrompt);
             return CompletableFuture.completedFuture(workspace);
         } catch (WorkspaceCouldNotBeDeterminedException ex) {
             return CompletableFuture.completedFuture(null);

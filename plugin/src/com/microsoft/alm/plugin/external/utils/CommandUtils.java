@@ -9,7 +9,6 @@ import com.microsoft.alm.common.utils.SystemHelper;
 import com.microsoft.alm.helpers.Path;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
-import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.commands.AddCommand;
 import com.microsoft.alm.plugin.external.commands.CheckinCommand;
 import com.microsoft.alm.plugin.external.commands.CheckoutCommand;
@@ -39,7 +38,6 @@ import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
-import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
@@ -56,9 +54,9 @@ import com.microsoft.alm.plugin.external.models.SyncResults;
 import com.microsoft.alm.plugin.external.models.TfvcLabel;
 import com.microsoft.alm.plugin.external.models.VersionSpec;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.models.WorkspaceInformation;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -66,7 +64,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -106,7 +103,7 @@ public class CommandUtils {
         ArgumentHelper.checkNotNull(project, "project");
         String basePath = project.getBasePath();
         if (basePath == null) return null;
-        return getPartialWorkspace(Paths.get(basePath), allowCredentialPrompt);
+        return TfvcWorkspaceLocator.getPartialWorkspace(Paths.get(basePath), allowCredentialPrompt);
     }
 
     /**
@@ -123,58 +120,6 @@ public class CommandUtils {
 
     /**
      * This method will return a partially populated Workspace object that includes just the name, server, and mappings.
-     * It may require the user to enter the credentials.
-     *
-     * @param path                  path to a local workspace directory.
-     * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
-     */
-    @NotNull
-    public static Workspace getPartialWorkspace(@NotNull java.nio.file.Path path, boolean allowCredentialPrompt) {
-        // This command will fail to provide detailed information on a server workspace with no authentication provided.
-        logger.info("Determining workspace information from path {}", path);
-        FindWorkspaceCommand command = new FindWorkspaceCommand(path.toString(), null, true);
-        WorkspaceInformation resultWithNoAuth = command.runSynchronously();
-        if (resultWithNoAuth.getDetailed() != null) {
-            // Local workspace; no authentication was required.
-            logger.info("Workspace information determined successfully without authentication for {}", path);
-            return resultWithNoAuth.getDetailed();
-        }
-
-        logger.info("Workspace information could not be determined without authentication: {}", path);
-        WorkspaceInformation.BasicInformation basicInfo = Objects.requireNonNull(resultWithNoAuth.getBasic());
-        URI collectionUri = basicInfo.getCollectionUri();
-
-        logger.info(
-                "Loading authentication info for URI \"{}\", credential prompt allowed: {}",
-                collectionUri,
-                allowCredentialPrompt);
-        AuthenticationInfo authenticationInfo = ServerContextManager.getInstance()
-                .getBestAuthenticationInfo(collectionUri, allowCredentialPrompt);
-        if (authenticationInfo == null) {
-            logger.warn("Wasn't able to load the authentication information for \"{}\"", collectionUri);
-            throw new ToolAuthenticationException();
-        }
-
-        logger.info("Loading workspace information for path \"{}\" (using authentication info)", path);
-        WorkspaceInformation resultWithAuth = new FindWorkspaceCommand(path.toString(), authenticationInfo, false)
-                .runSynchronously();
-        return Objects.requireNonNull(resultWithAuth.getDetailed());
-    }
-
-    /**
-     * @deprecated Use {@link #getPartialWorkspace(java.nio.file.Path, boolean)} instead.
-     */
-    @NotNull
-    public static Workspace getPartialWorkspace(@NotNull java.nio.file.Path path) {
-        return getPartialWorkspace(path, false);
-    }
-
-    /**
-     * This method will return a partially populated Workspace object that includes just the name, server, and mappings
-     *
-     * @param collectionName
-     * @param workspaceName
-     * @return
      */
     public static Workspace getPartialWorkspace(final String collectionName, final String workspaceName) {
         return getPartialWorkspace(collectionName, workspaceName, null);
