@@ -6,11 +6,11 @@ package com.microsoft.alm.L2.tfvc;
 import com.intellij.openapi.vcs.VcsRootChecker;
 import com.microsoft.alm.plugin.idea.tfvc.extensions.TfvcRootChecker;
 import com.microsoft.alm.plugin.services.PropertyService;
-import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
-public class TfvcRootCheckerTest extends TfvcCheckoutTestBase {
+public abstract class TfvcRootCheckerTestBase extends TfvcCheckoutTestBase {
 
     private String savedUseReactiveClientValue;
 
@@ -28,19 +28,19 @@ public class TfvcRootCheckerTest extends TfvcCheckoutTestBase {
         super.tearDown();
     }
 
-    private void doRootCheckerTest() throws IOException, InterruptedException {
+    protected void doRootCheckerTest() throws IOException, InterruptedException {
         checkoutTestRepository(workspace -> {
             TfvcRootChecker rootChecker = VcsRootChecker.EXTENSION_POINT_NAME.findExtension(TfvcRootChecker.class);
             assertNotNull(rootChecker);
             assertTrue(rootChecker.isRoot(workspace.toString()));
-        });
-    }
 
-    @Test(timeout = 60000)
-    public void testRootChecker() throws InterruptedException, IOException {
-        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "false");
-        doRootCheckerTest();
-        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "true");
-        doRootCheckerTest();
+            File tempDirectory = null;
+            try {
+                tempDirectory = createTempDirectory();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            assertFalse(rootChecker.isRoot(tempDirectory.getAbsolutePath()));
+        });
     }
 }
