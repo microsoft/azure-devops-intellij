@@ -6,19 +6,22 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
+import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.exceptions.ToolBadExitCodeException;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -234,15 +237,45 @@ public class ClassicTfvcClient implements TfvcClient {
 
     @Nullable
     @Override
-    public CompletionStage<Workspace> getPartialWorkspaceAsync(
-            @Nullable Project project,
-            Path workspacePath,
-            boolean allowCredentialPrompt) {
+    public TfsWorkspaceInfo getBasicWorkspaceInfo(@Nullable Project project, @NotNull Path workspacePath) {
         try {
-            Workspace workspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, allowCredentialPrompt);
-            return CompletableFuture.completedFuture(workspace);
+            return new FindWorkspaceCommand(workspacePath.toString(), null, true).runSynchronously();
         } catch (WorkspaceCouldNotBeDeterminedException ex) {
-            return CompletableFuture.completedFuture(null);
+            return null;
         }
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<TfsWorkspaceInfo> getBasicWorkspaceInfoAsync(
+            @Nullable Project project,
+            @NotNull Path workspacePath) {
+        return CompletableFuture.completedFuture(getBasicWorkspaceInfo(project, workspacePath));
+    }
+
+    @Nullable
+    @Override
+    public TfsDetailedWorkspaceInfo getDetailedWorkspaceInfo(
+            @Nullable Project project,
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath) {
+        try {
+            TfsWorkspaceInfo workspace = new FindWorkspaceCommand(
+                    workspacePath.toString(),
+                    authenticationInfo,
+                    true).runSynchronously();
+            return (TfsDetailedWorkspaceInfo) workspace;
+        } catch (WorkspaceCouldNotBeDeterminedException ex) {
+            return null;
+        }
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<TfsDetailedWorkspaceInfo> getDetailedWorkspaceInfoAsync(
+            @Nullable Project project,
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath) {
+        return CompletableFuture.completedFuture(getDetailedWorkspaceInfo(project, authenticationInfo, workspacePath));
     }
 }

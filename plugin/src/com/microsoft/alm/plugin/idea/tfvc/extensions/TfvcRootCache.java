@@ -6,8 +6,8 @@ package com.microsoft.alm.plugin.idea.tfvc.extensions;
 import com.google.common.collect.Maps;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.LocalFilePath;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TFVCUtil;
+import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.InvalidPathException;
@@ -116,10 +116,10 @@ public class TfvcRootCache {
     /**
      * Caches the fact that the following mappings are available on disk.
      */
-    public void putMappings(@NotNull List<Workspace.Mapping> mappings) {
+    public void putMappings(@NotNull List<TfsWorkspaceMapping> mappings) {
         synchronized (myLock) {
-            for (Workspace.Mapping mapping : mappings) {
-                Path path = Paths.get(mapping.getLocalPath());
+            for (TfsWorkspaceMapping mapping : mappings) {
+                Path path = Paths.get(mapping.getLocalPath().getPath());
                 assertNoServiceDirectory(path);
 
                 ourLogger.trace(String.format("New mapping root: %s", path));

@@ -12,6 +12,7 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.external.utils.TfvcCheckoutResultUtils;
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -47,7 +48,11 @@ public class TfvcServerWorkspaceTests extends TfvcCheckoutTestBase {
     }
 
     private void assertIsServerWorkspace(Path workspace) {
-        Workspace partialWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(workspace, false);
+        TfsDetailedWorkspaceInfo partialWorkspaceInfo = TfvcWorkspaceLocator.getPartialWorkspace(
+                null,
+                workspace,
+                false);
+        Workspace partialWorkspace = Workspace.fromWorkspaceInfo(partialWorkspaceInfo);
         AuthenticationInfo authenticationInfo = getServerContext().getAuthenticationInfo();
         Workspace workspaceInfo = CommandUtils.getDetailedWorkspace(
                 partialWorkspace.getServerDisplayName(),

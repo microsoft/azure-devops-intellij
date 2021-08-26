@@ -17,8 +17,10 @@ import com.microsoft.tfs.core.clients.versioncontrol.events.PendingChangeEvent
 import com.microsoft.tfs.core.clients.versioncontrol.events.UndonePendingChangeListener
 import com.microsoft.tfs.core.clients.versioncontrol.soapextensions.*
 import com.microsoft.tfs.core.clients.versioncontrol.specs.ItemSpec
+import com.microsoft.tfs.core.clients.versioncontrol.workspacecache.WorkspaceInfo
 import com.microsoft.tfs.core.config.persistence.DefaultPersistenceStoreProvider
 import com.microsoft.tfs.core.httpclient.Credentials
+import com.microsoft.tfs.core.httpclient.UsernamePasswordCredentials
 import com.microsoft.tfs.model.host.*
 import com.microsoft.tfs.sdk.*
 import com.microsoft.tfs.watcher.ExternallyControlledPathWatcherFactory
@@ -28,7 +30,8 @@ import java.nio.file.Paths
 class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
     companion object {
         private val logger = Logging.getLogger<TfsClient>()
-        fun getWorkspace(path: TfsLocalPath): TfsWorkspaceInfo? {
+
+        private fun tryLoadWorkspaceInfo(path: TfsLocalPath): WorkspaceInfo? {
             val workstation = Workstation.getCurrent(DefaultPersistenceStoreProvider.INSTANCE)
             val canonicalPathString = path.toCanonicalPathString()
             if (!workstation.isMapped(canonicalPathString)) {
@@ -40,34 +43,52 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
                 }
             }
 
-            val workspaceInfo = workstation.getLocalWorkspaceInfo(canonicalPathString) ?: return null
+            return workstation.getLocalWorkspaceInfo(canonicalPathString)
+        }
 
+        private fun loadMappings(workspaceInfo: WorkspaceInfo, credentials: Credentials?): List<TfsWorkspaceMapping> {
             val serverUri = workspaceInfo.serverURI
+            if (serverUri == null) {
+                logger.warn { "Server URI is null for workspace ${workspaceInfo.name}; no mappings will be available." }
+                return emptyList()
+            } else {
+                val collection = TFSTeamProjectCollection(serverUri, credentials)
+                try {
+                    val workspace = workspaceInfo.getWorkspace(collection)
+                    return workspace.folders?.map { workingFolder ->
+                        TfsWorkspaceMapping(
+                            TfsLocalPath(workingFolder.localItem),
+                            TfsServerPath(workspaceInfo.name.orEmpty(), workingFolder.displayServerItem),
+                            workingFolder.type == WorkingFolderType.CLOAK
+                        )
+                    }.orEmpty()
+                } finally {
+                    collection.close()
+                }
+            }
+        }
+
+        fun getBasicWorkspaceInfo(path: TfsLocalPath): TfsWorkspaceInfo? {
+            val workspaceInfo = tryLoadWorkspaceInfo(path) ?: return null
             val workspaceName = workspaceInfo.name.orEmpty()
             val mappings =
                 try {
-                    if (serverUri == null) emptyList()
-                    else {
-                        val collection = TFSTeamProjectCollection(serverUri, null)
-                        try {
-                            val workspace = workspaceInfo.getWorkspace(collection)
-                            workspace.folders?.map { workingFolder ->
-                                TfsWorkspaceMapping(
-                                    TfsLocalPath(workingFolder.localItem),
-                                    TfsServerPath(workspaceName, workingFolder.displayServerItem),
-                                    workingFolder.type == WorkingFolderType.CLOAK
-                                )
-                            }.orEmpty()
-                        } finally {
-                            collection.close()
-                        }
-                    }
+                    loadMappings(workspaceInfo, null)
                 } catch (e: Throwable) {
                     logger.error("Cannot determine workspace mappings for workspace \"$path\".", e)
-                    emptyList<TfsWorkspaceMapping>()
+                    return TfsBasicWorkspaceInfo(workspaceInfo.server.toString(), workspaceName)
                 }
 
-            return TfsWorkspaceInfo(workspaceInfo.server.toString(), workspaceInfo.name, mappings)
+            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.server.toString(), workspaceInfo.name)
+        }
+
+        fun getDetailedWorkspaceInfo(path: TfsLocalPath, credentials: TfsCredentials): TfsDetailedWorkspaceInfo? {
+            val workspaceInfo = tryLoadWorkspaceInfo(path) ?: return null
+            val mappings = loadMappings(
+                workspaceInfo,
+                UsernamePasswordCredentials(credentials.login, credentials.password.contents))
+
+            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.server.toString(), workspaceInfo.name)
         }
     }
 

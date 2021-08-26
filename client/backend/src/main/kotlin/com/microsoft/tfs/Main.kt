@@ -89,10 +89,16 @@ private fun initializeModel(lifetime: Lifetime, model: TfsModel) {
     val logger = Logging.getLogger("Workspace")
 
     model.collections.view(lifetime, ::initializeCollection)
-    model.getPartialWorkspaceInfo.set { workspacePath ->
-        logger.info { "Searching for workspace for path \"$workspacePath\"." }
-        val result = TfsClient.getWorkspace(workspacePath)
+    model.getBasicWorkspaceInfo.set { workspacePath ->
+        logger.info { "Searching basic workspace info for path \"$workspacePath\"." }
+        val result = TfsClient.getBasicWorkspaceInfo(workspacePath)
         logger.info { "Workspace for $workspacePath is ${if (result == null) "not " else ""}detected." }
+        result
+    }
+    model.getDetailedWorkspaceInfo.set { request ->
+        logger.info { "Searching detailed workspace info for path \"${request.workspacePath}\"." }
+        val result = TfsClient.getDetailedWorkspaceInfo(request.workspacePath, request.credentials)
+        logger.info { "Workspace for ${request.workspacePath} is ${if (result == null) "not " else ""}detected." }
         result
     }
 }

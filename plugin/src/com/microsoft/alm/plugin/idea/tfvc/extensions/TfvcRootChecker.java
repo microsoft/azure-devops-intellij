@@ -9,11 +9,11 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsRootChecker;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
-import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import com.microsoft.alm.plugin.idea.tfvc.ui.settings.EULADialog;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -66,10 +66,10 @@ public class TfvcRootChecker extends VcsRootChecker {
 
         // Will get here only if cachedStatus == UNKNOWN.
         return EULADialog.executeWithGuard(null, () -> {
-            Workspace workspace = null;
+            TfsDetailedWorkspaceInfo workspace = null;
             Path workspacePath = Paths.get(path);
             try {
-                workspace = TfvcClient.getInstance().getPartialWorkspace(null, workspacePath, true);
+                workspace = TfvcWorkspaceLocator.getPartialWorkspace(null, workspacePath, true);
             } catch (ToolAuthenticationException ex) {
                 ourLogger.warn(ex);
             }
@@ -82,7 +82,7 @@ public class TfvcRootChecker extends VcsRootChecker {
 
             myCache.putMappings(workspace.getMappings());
             return workspace.getMappings().stream()
-                    .anyMatch(mapping -> FileUtil.pathsEqual(path, mapping.getLocalPath()));
+                    .anyMatch(mapping -> FileUtil.pathsEqual(path, mapping.getLocalPath().getPath()));
         });
     }
 

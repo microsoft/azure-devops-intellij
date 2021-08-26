@@ -5,12 +5,16 @@ package com.microsoft.alm.plugin.external.models;
 
 import com.google.common.base.Objects;
 import com.microsoft.alm.common.utils.UrlHelper;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents the properties of a local TFVC workspace.
@@ -38,6 +42,23 @@ public class Workspace {
         this.comment = comment;
         this.mappings = new ArrayList<Mapping>(mappings);
         this.location = location;
+    }
+
+    @NotNull
+    public static Workspace fromWorkspaceInfo(TfsWorkspaceInfo info) {
+        List<Mapping> mappings;
+        if (info instanceof TfsDetailedWorkspaceInfo) {
+            mappings = ((TfsDetailedWorkspaceInfo) info).getMappings().stream()
+                    .map(mapping -> new Mapping(
+                            mapping.getServerPath().getPath(),
+                            mapping.getLocalPath().getPath(),
+                            mapping.isCloaked()))
+                    .collect(Collectors.toList());
+        } else {
+            mappings = Collections.emptyList();
+        }
+
+        return new Workspace(info.getServerUri(), info.getWorkspaceName(), "", "", "", mappings);
     }
 
     /**

@@ -4,7 +4,6 @@
 package com.microsoft.alm.plugin.idea.tfvc.extensions;
 
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
@@ -12,6 +11,10 @@ import com.microsoft.alm.plugin.idea.tfvc.FileSystemTestUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsServerPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,20 +63,23 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
         when(TfTool.getLocation()).thenReturn(path);
     }
 
-    private static void mockPartialWorkspace(Path path, Workspace workspace) {
+    private static void mockPartialWorkspace(Path path, TfsDetailedWorkspaceInfo workspace) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(path), any(Boolean.class))).thenReturn(workspace);
+        when(TfvcWorkspaceLocator.getPartialWorkspace(null, eq(path), any(Boolean.class))).thenReturn(workspace);
     }
 
     private static void mockPartialWorkspaceNotDetermined(Path path) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(path), any(Boolean.class)))
+        when(TfvcWorkspaceLocator.getPartialWorkspace(null, eq(path), any(Boolean.class)))
                 .thenThrow(new WorkspaceCouldNotBeDeterminedException());
     }
 
-    private static Workspace createWorkspaceWithMapping(String localPath) {
-        Workspace.Mapping mapping = new Workspace.Mapping("serverPath", localPath, false);
-        return new Workspace("server", "name", "computer", "owner", "comment", Collections.singletonList(mapping));
+    private static TfsDetailedWorkspaceInfo createWorkspaceWithMapping(String localPath) {
+        TfsWorkspaceMapping mapping = new TfsWorkspaceMapping(
+                new TfsLocalPath(localPath),
+                new TfsServerPath("server", "serverPath"),
+                false);
+        return new TfsDetailedWorkspaceInfo(Collections.singletonList(mapping), "server", "name");
     }
 
     @Test

@@ -130,16 +130,26 @@ object TfsModel : Root() {
             .doc("Creates a \"rename\" pending change, which moves or renames a file or folder. Returns success status")
     }
 
+    private val TfsWorkspaceInfo = basestruct {
+        field("serverUri", string)
+        field("workspaceName", string)
+    }
+
     private val TfsWorkspaceMapping = structdef {
         field("localPath", TfsLocalPath)
         field("serverPath", TfsServerPath)
         field("isCloaked", bool)
     }
 
-    private val TfsWorkspaceInfo = structdef {
-        field("serverUri", string)
-        field("workspaceName", string)
+    private val TfsBasicWorkspaceInfo = structdef extends TfsWorkspaceInfo {}
+
+    private val TfsDetailedWorkspaceInfo = structdef extends TfsWorkspaceInfo {
         field("mappings", immutableList(TfsWorkspaceMapping))
+    }
+
+    private val TfsDetailedWorkspaceRequest = structdef {
+        field("credentials", TfsCredentials)
+        field("workspacePath", TfsLocalPath)
     }
 
     init {
@@ -147,6 +157,7 @@ object TfsModel : Root() {
             .doc("Shuts down the application")
 
         map("collections", TfsCollectionDefinition, TfsCollection)
-        call("getPartialWorkspaceInfo", TfsLocalPath, TfsWorkspaceInfo.nullable)
+        call("getBasicWorkspaceInfo", TfsLocalPath, TfsWorkspaceInfo.nullable)
+        call("getDetailedWorkspaceInfo", TfsDetailedWorkspaceRequest, TfsDetailedWorkspaceInfo.nullable)
     }
 }
