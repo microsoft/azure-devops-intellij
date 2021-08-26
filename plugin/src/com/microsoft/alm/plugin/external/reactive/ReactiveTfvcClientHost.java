@@ -23,7 +23,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.ProcessHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.services.PropertyService;
@@ -32,8 +31,10 @@ import com.microsoft.tfs.model.connector.TfsCollection;
 import com.microsoft.tfs.model.connector.TfsCollectionDefinition;
 import com.microsoft.tfs.model.connector.TfsCredentials;
 import com.microsoft.tfs.model.connector.TfsDeleteResult;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -268,32 +269,32 @@ public class ReactiveTfvcClientHost {
     }
 
     @NotNull
-    public CompletionStage<Workspace> getPartialWorkspaceAsync(@NotNull Path workspacePath) {
-        return myConnection.getPartialWorkspaceAsync(new TfsLocalPath(workspacePath.toString()))
-                .thenApply(workspaceInfo -> workspaceInfo == null ? null : new Workspace(
-                        workspaceInfo.getServerUri(),
-                        workspaceInfo.getWorkspaceName(),
-                        "",
-                        "",
-                        "",
-                        workspaceInfo.getMappings().stream().map(mappingInfo -> new Workspace.Mapping(
-                                mappingInfo.getServerPath().getPath(),
-                                mappingInfo.getLocalPath().getPath(),
-                                mappingInfo.isCloaked()
-                        )).collect(Collectors.toList())
-                    ));
+    public CompletionStage<TfsWorkspaceInfo> getBasicWorkspaceInfoAsync(@NotNull Path workspacePath) {
+        return myConnection.getBasicWorkspaceInfoAsync(new TfsLocalPath(workspacePath.toString()));
+    }
+
+    @NotNull
+    public CompletionStage<TfsDetailedWorkspaceInfo> getDetailedWorkspaceInfoAsync(
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath) {
+        TfsCredentials workspaceDefinition = getTfsCredentials(authenticationInfo);
+        return myConnection.getDetailedWorkspaceInfoAsync(
+                workspaceDefinition,
+                new TfsLocalPath(workspacePath.toString()));
+    }
+
+    private TfsCredentials getTfsCredentials(@NotNull AuthenticationInfo authenticationInfo) {
+        return new TfsCredentials(
+                authenticationInfo.getUserName(),
+                new RdSecureString(authenticationInfo.getPassword()));
     }
 
     private CompletionStage<TfsCollection> getReadyCollectionAsync(
             @NotNull ServerIdentification serverIdentification) {
-        AuthenticationInfo authenticationInfo = serverIdentification.getAuthenticationInfo();
-        TfsCredentials tfsCredentials = new TfsCredentials(
-                authenticationInfo.getUserName(),
-                new RdSecureString(authenticationInfo.getPassword()));
+        TfsCredentials credentials = getTfsCredentials(serverIdentification.getAuthenticationInfo());
         TfsCollectionDefinition workspaceDefinition = new TfsCollectionDefinition(
                 serverIdentification.getServerUri(),
-                tfsCredentials);
-
+                credentials);
         return myConnection.getOrCreateCollectionAsync(workspaceDefinition)
                 .thenCompose(workspace -> myConnection.waitForReadyAsync(workspace)
                         .thenApply(unused -> workspace));

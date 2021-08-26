@@ -118,9 +118,18 @@ class ReactiveClientConnection(val lifetime: LifetimeDefinition, private val sch
             collection.renameFile.start(TfvcRenameRequest(oldPath, newPath)).pipeTo(lt, this)
         }
 
-    fun getPartialWorkspaceAsync(workspacePath: TfsLocalPath): CompletionStage<TfsWorkspaceInfo?> =
+    fun getBasicWorkspaceInfoAsync(workspacePath: TfsLocalPath): CompletionStage<TfsWorkspaceInfo?> =
         queueFutureAsync { lt ->
-            model.getPartialWorkspaceInfo.start(workspacePath).pipeTo(lt, this)
+            model.getBasicWorkspaceInfo.start(workspacePath).pipeTo(lt, this)
+        }
+
+    fun getDetailedWorkspaceInfoAsync(
+        credentials: TfsCredentials,
+        workspacePath: TfsLocalPath
+    ): CompletionStage<TfsDetailedWorkspaceInfo?> =
+        queueFutureAsync { lt ->
+            model.getDetailedWorkspaceInfo.start(TfsDetailedWorkspaceRequest(credentials, workspacePath))
+                .pipeTo(lt, this)
         }
 
     private fun <T> queueFutureAsync(action: CompletableFuture<T>.(Lifetime) -> Unit): CompletionStage<T> {

@@ -4,14 +4,16 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.services.PropertyService;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -315,47 +317,63 @@ public interface TfvcClient {
     }
 
     /**
-     * Returns a partially populated Workspace object that includes just the name, server, and mappings.
-     * <p>
-     * It may require the user to enter the credentials.
+     * Returns only basic workspace information. For a local workspace, may return full information.
      *
-     * @param workspacePath         path to a local workspace directory.
-     * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
-     * @return either a partially filled workspace or null in case the directory isn't under TFVC.
-     * @throws com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException in case it was impossible or
-     *                                                                                  forbidden to authenticate.
+     * @param workspacePath path to a local workspace directory.
+     * @return either a workspace information object or null in case the directory isn't under TFVC.
      */
-    default @Nullable
-    Workspace getPartialWorkspace(
-            @Nullable Project project,
-            Path workspacePath,
-            boolean allowCredentialPrompt) {
+    @Nullable
+    default TfsWorkspaceInfo getBasicWorkspaceInfo(@Nullable Project project, @NotNull Path workspacePath) {
         try {
-            return getPartialWorkspaceAsync(project, workspacePath, allowCredentialPrompt).toCompletableFuture().get();
+            return getBasicWorkspaceInfoAsync(project, workspacePath).toCompletableFuture().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Returns a partially populated Workspace object that includes just the name, server, and mappings.
-     * <p>
-     * It may require the user to enter the credentials.
-     * <p>
-     * May throw {@link com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException} either
-     * synchronously or asynchronously.
+     * Returns only basic workspace information. For a local workspace, may return full information.
      *
-     * @param workspacePath         path to a local workspace directory.
-     * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
+     * @param workspacePath path to a local workspace directory.
      * @return a completion stage with the workspace search result that will be resolved when the operation ends. The
-     * stage contains either a partially filled workspace or null in case the directory isn't under TFVC.
-     * @throws com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException in case it was impossible or
-     *                                                                                  forbidden to authenticate (may
-     *                                                                                  be thrown either synchronously
-     *                                                                                  or asynchronously).
+     * stage contains either a workspace information object or null in case the directory isn't under TFVC.
      */
-    CompletionStage<Workspace> getPartialWorkspaceAsync(
+    @NotNull
+    CompletionStage<TfsWorkspaceInfo> getBasicWorkspaceInfoAsync(
             @Nullable Project project,
-            Path workspacePath,
-            boolean allowCredentialPrompt);
+            @NotNull Path workspacePath);
+
+    /**
+     * Returns detailed workspace information.
+     *
+     * @param workspacePath path to a local workspace directory.
+     * @return either a full set of workspace information or null in case the directory isn't under TFVC.
+     */
+    @Nullable
+    default TfsDetailedWorkspaceInfo getDetailedWorkspaceInfo(
+            @Nullable Project project,
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath) {
+        try {
+            return getDetailedWorkspaceInfoAsync(
+                    project,
+                    authenticationInfo,
+                    workspacePath).toCompletableFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Returns detailed workspace information.
+     *
+     * @param workspacePath path to a local workspace directory.
+     * @return a completion stage with the workspace search result that will be resolved when the operation ends. The
+     * stage contains either a full set of workspace information or null in case the directory isn't under TFVC.
+     */
+    @NotNull
+    CompletionStage<TfsDetailedWorkspaceInfo> getDetailedWorkspaceInfoAsync(
+            @Nullable Project project,
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath);
 }

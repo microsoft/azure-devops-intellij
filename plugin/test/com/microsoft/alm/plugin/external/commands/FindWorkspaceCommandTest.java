@@ -7,7 +7,8 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.models.WorkspaceInformation;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -74,8 +75,8 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
     @Test
     public void testParseOutput_noOutput() {
         final FindWorkspaceCommand cmd = new FindWorkspaceCommand("/path/localfile.txt", null, true);
-        WorkspaceInformation workspace = cmd.parseOutput("", "");
-        Assert.assertEquals(null, workspace);
+        TfsWorkspaceInfo workspace = cmd.parseOutput("", "");
+        Assert.assertNull(workspace);
     }
 
     @Test
@@ -87,7 +88,9 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
                 "Workspace:  MyWorkspace\n" +
                 "Collection: http://server:8080/tfs/\n" +
                 "$/project1: /path";
-        Workspace workspace = Objects.requireNonNull(cmd.parseOutput(output, "").getDetailed());
+        TfsDetailedWorkspaceInfo workspaceInfo = Objects.requireNonNull(
+                (TfsDetailedWorkspaceInfo)cmd.parseOutput(output, ""));
+        Workspace workspace = Workspace.fromWorkspaceInfo(workspaceInfo);
         Assert.assertEquals("MyWorkspace", workspace.getName());
         Assert.assertEquals("http://server:8080/tfs/", workspace.getServerDisplayName());
         Assert.assertEquals("", workspace.getComment());
@@ -103,7 +106,9 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
                 "Workspace:  MyWorkspace\n" +
                 "Collection: http://server:8080/tfs/\n" +
                 "$/project1: /path";
-        Workspace workspace = Objects.requireNonNull(cmd.parseOutput(output, "").getDetailed());
+        TfsDetailedWorkspaceInfo workspaceInfo = Objects.requireNonNull(
+                (TfsDetailedWorkspaceInfo)cmd.parseOutput(output, ""));
+        Workspace workspace = Workspace.fromWorkspaceInfo(workspaceInfo);
         Assert.assertEquals("MyWorkspace", workspace.getName());
         Assert.assertEquals("http://server:8080/tfs/", workspace.getServerDisplayName());
         Assert.assertEquals("", workspace.getComment());
@@ -118,7 +123,7 @@ public class FindWorkspaceCommandTest extends AbstractCommandTest {
         final String output = "Workspace:  MyWorkspace\n" +
                 "Collection: http://server:8080/tfs/\n" +
                 "$/project1: /path";
-        WorkspaceInformation workspace = cmd.parseOutput(output, "");
+        TfsWorkspaceInfo workspace = cmd.parseOutput(output, "");
         Assert.assertNull(workspace);
     }
 

@@ -34,7 +34,7 @@ public abstract class TfvcRootCheckerTestBase extends TfvcCheckoutTestBase {
             assertNotNull(rootChecker);
             assertTrue(rootChecker.isRoot(workspace.toString()));
 
-            File tempDirectory = null;
+            File tempDirectory;
             try {
                 tempDirectory = createTempDirectory();
             } catch (IOException e) {

@@ -3,17 +3,19 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
+import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContextManager;
-import com.microsoft.alm.plugin.external.commands.FindWorkspaceCommand;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
-import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.models.WorkspaceInformation;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public class TfvcWorkspaceLocator {
@@ -25,22 +27,31 @@ public class TfvcWorkspaceLocator {
      *
      * @param path                  path to a local workspace directory.
      * @param allowCredentialPrompt whether to allow this method to request the user to enter the credentials.
+     * @throws ToolAuthenticationException in case when authentication was required by the workspace, but wasn't allowed
+     *                                     by the flag passed.
      */
-    @NotNull
-    public static Workspace getPartialWorkspace(@NotNull java.nio.file.Path path, boolean allowCredentialPrompt) {
+    @Nullable
+    public static TfsDetailedWorkspaceInfo getPartialWorkspace(
+            @Nullable Project project,
+            @NotNull Path path,
+            boolean allowCredentialPrompt) {
         // This command will fail to provide detailed information on a server workspace with no authentication provided.
         logger.info("Determining workspace information from path {}", path);
-        FindWorkspaceCommand command = new FindWorkspaceCommand(path.toString(), null, true);
-        WorkspaceInformation resultWithNoAuth = command.runSynchronously();
-        if (resultWithNoAuth.getDetailed() != null) {
+        TfvcClient client = TfvcClient.getInstance();
+        TfsWorkspaceInfo resultWithNoAuth = client.getBasicWorkspaceInfo(project, path);
+        if (resultWithNoAuth == null) {
+            logger.info("No workspace found at path \"{}\"", path);
+            return null;
+        }
+
+        if (resultWithNoAuth instanceof TfsDetailedWorkspaceInfo) {
             // Local workspace; no authentication was required.
             logger.info("Workspace information determined successfully without authentication for {}", path);
-            return resultWithNoAuth.getDetailed();
+            return (TfsDetailedWorkspaceInfo)resultWithNoAuth;
         }
 
         logger.info("Workspace information could not be determined without authentication: {}", path);
-        WorkspaceInformation.BasicInformation basicInfo = Objects.requireNonNull(resultWithNoAuth.getBasic());
-        URI collectionUri = basicInfo.getCollectionUri();
+        URI collectionUri = URI.create(resultWithNoAuth.getServerUri());
 
         logger.info(
                 "Loading authentication info for URI \"{}\", credential prompt allowed: {}",
@@ -54,8 +65,7 @@ public class TfvcWorkspaceLocator {
         }
 
         logger.info("Loading workspace information for path \"{}\" (using authentication info)", path);
-        WorkspaceInformation resultWithAuth = new FindWorkspaceCommand(path.toString(), authenticationInfo, false)
-                .runSynchronously();
-        return Objects.requireNonNull(resultWithAuth.getDetailed());
+        TfsDetailedWorkspaceInfo resultWithAuth = client.getDetailedWorkspaceInfo(project, authenticationInfo, path);
+        return Objects.requireNonNull(resultWithAuth);
     }
 }

@@ -3,7 +3,9 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.extensions;
 
-import com.microsoft.alm.plugin.external.models.Workspace;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsServerPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
 import org.junit.Test;
 
 import java.nio.file.InvalidPathException;
@@ -17,8 +19,8 @@ public class TfvcRootCacheTests {
 
     private final TfvcRootCache myCache = new TfvcRootCache();
 
-    private Workspace.Mapping createMapping(Path path) {
-        return new Workspace.Mapping(null, path.toString(), false);
+    private TfsWorkspaceMapping createMapping(Path path) {
+        return new TfsWorkspaceMapping(new TfsLocalPath(path.toString()), new TfsServerPath("", ""), false);
     }
 
     @Test

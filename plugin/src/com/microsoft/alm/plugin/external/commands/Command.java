@@ -17,8 +17,13 @@ import com.microsoft.alm.plugin.external.exceptions.ToolParseFailureException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
+import com.microsoft.tfs.model.connector.TfsLocalPath;
+import com.microsoft.tfs.model.connector.TfsServerPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
@@ -461,6 +466,16 @@ public abstract class Command<T> {
         }
 
         return null;
+    }
+
+    @Nullable
+    protected TfsWorkspaceMapping getMapping(@NotNull String line, @NotNull String workspaceName) {
+        Workspace.Mapping mapping = getMapping(line);
+        if (mapping == null) return null;
+        return new TfsWorkspaceMapping(
+                new TfsLocalPath(mapping.getLocalPath()),
+                new TfsServerPath(workspaceName, mapping.getServerPath()),
+                mapping.isCloaked());
     }
 
     /**

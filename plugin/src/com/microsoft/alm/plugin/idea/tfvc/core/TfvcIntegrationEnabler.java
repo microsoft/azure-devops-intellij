@@ -31,7 +31,6 @@ import com.microsoft.alm.plugin.authentication.AuthenticationProvider;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
-import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcClient;
@@ -39,6 +38,7 @@ import com.microsoft.alm.plugin.external.visualstudio.VisualStudioTfvcCommands;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.services.LocalizationServiceImpl;
 import com.microsoft.alm.plugin.services.PropertyService;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,11 +132,13 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         do {
             indicator.checkCanceled();
 
-            Workspace workspace = null;
-            try {
-                ourLogger.info("Analyzing path \"" + path + "\" using TF Everywhere client");
-                workspace = TfvcWorkspaceLocator.getPartialWorkspace(path, false);
-            } catch (WorkspaceCouldNotBeDeterminedException ex) {
+            ourLogger.info("Analyzing path \"" + path + "\" using TF Everywhere client");
+            TfsDetailedWorkspaceInfo workspaceInfo = TfvcWorkspaceLocator.getPartialWorkspace(
+                    myProject,
+                    path,
+                    false);
+            Workspace workspace = workspaceInfo == null ? null : Workspace.fromWorkspaceInfo(workspaceInfo);
+            if (workspace == null) {
                 ourLogger.info("Path \"" + path + "\" has no TF Everywhere workspace");
             }
 
@@ -247,16 +249,16 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         indicator.setFraction(0.0 / totalSteps);
 
         ourLogger.info("Checking if workspace under path \"" + workspacePath + "\" is already imported");
-        try {
-            Workspace existingWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, false);
-            //noinspection ConstantConditions // force null check just in case
-            if (existingWorkspace != null) {
-                ourLogger.info("Workspace under path \"" + workspacePath + "\" is already imported, exiting");
-                return CompletableFuture.completedFuture(true);
-            }
-        } catch (WorkspaceCouldNotBeDeterminedException ex) {
-            ourLogger.info("No known workspace detected under path \"" + workspacePath + "\"");
+        TfsDetailedWorkspaceInfo existingWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(
+                project,
+                workspacePath,
+                false);
+        if (existingWorkspace != null) {
+            ourLogger.info("Workspace under path \"" + workspacePath + "\" is already imported, exiting");
+            return CompletableFuture.completedFuture(true);
         }
+
+        ourLogger.info("No known workspace detected under path \"" + workspacePath + "\"");
         indicator.setFraction(1.0 / totalSteps);
 
         Path visualStudioClientPath = VisualStudioTfvcClient.getOrDetectPath(PropertyService.getInstance());
@@ -303,15 +305,13 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
                         indicator.setFraction(4.0 / totalSteps);
 
                         ourLogger.info("Checking if workspace was successfully imported from path: \"" + workspacePath + "\"");
-                        Workspace workspace;
-                        try {
-                            workspace = TfvcWorkspaceLocator.getPartialWorkspace(workspacePath, false);
-                            indicator.setFraction(5.0 / totalSteps);
-                        } catch (WorkspaceCouldNotBeDeterminedException ex) {
-                            return false;
-                        }
+                        TfsDetailedWorkspaceInfo workspaceInfo = TfvcWorkspaceLocator.getPartialWorkspace(
+                                project,
+                                workspacePath,
+                                false);
+                        indicator.setFraction(5.0 / totalSteps);
 
-                        return workspace != null;
+                        return workspaceInfo != null;
                     });
                 });
     }

@@ -9,8 +9,10 @@ import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.external.ToolRunner;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
 import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
-import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.models.WorkspaceInformation;
+import com.microsoft.tfs.model.connector.TfsBasicWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
+import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +28,7 @@ import java.util.List;
  * (This is one of the only commands that expects to be a strictly local operation - no server calls - and so does not
  * take a server context object in the constructor)
  */
-public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
+public class FindWorkspaceCommand extends Command<TfsWorkspaceInfo> {
     protected static final Logger logger = LoggerFactory.getLogger(FindWorkspaceCommand.class);
 
     protected static final String AUTH_ERROR_SERVER = "An error occurred: Access denied connecting to TFS server";
@@ -135,7 +137,7 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
      * $/tfsTest_01: D:\tmp\test
      */
     @Override
-    public WorkspaceInformation parseOutput(final String stdout, final String stderr) {
+    public TfsWorkspaceInfo parseOutput(final String stdout, final String stderr) {
         boolean hasNonFatalErrors = checkErrors(stderr);
         final String[] lines = getLines(stdout);
 
@@ -147,22 +149,18 @@ public class FindWorkspaceCommand extends Command<WorkspaceInformation> {
 
                 if (hasNonFatalErrors) {
                     // In this case, we cannot read mappings, so just return basic information:
-                    return WorkspaceInformation.basic(
-                            new WorkspaceInformation.BasicInformation(
-                                    workspaceName,
-                                    UrlHelper.createUri(collectionURL)));
+                    return new TfsBasicWorkspaceInfo(collectionURL, workspaceName);
                 }
 
                 // Finally, parse the workspace mappings
-                final List<Workspace.Mapping> mappings = new ArrayList<Workspace.Mapping>(10);
+                final List<TfsWorkspaceMapping> mappings = new ArrayList<>(10);
                 for (int i = x + 3; i < lines.length; i++) {
-                    Workspace.Mapping mapping = getMapping(lines[i]);
+                    TfsWorkspaceMapping mapping = getMapping(lines[i], workspaceName);
                     if (mapping != null) {
                         mappings.add(mapping);
                     }
                 }
-                Workspace workspace = new Workspace(collectionURL, workspaceName, "", "", "", mappings);
-                return WorkspaceInformation.detailed(workspace);
+                return new TfsDetailedWorkspaceInfo(mappings, collectionURL, workspaceName);
             }
         }
 

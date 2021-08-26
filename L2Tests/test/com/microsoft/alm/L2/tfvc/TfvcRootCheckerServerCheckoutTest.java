@@ -4,6 +4,7 @@
 package com.microsoft.alm.L2.tfvc;
 
 import com.microsoft.alm.plugin.idea.common.ui.checkout.VsoCheckoutPageModel;
+import com.microsoft.alm.plugin.services.PropertyService;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,10 +19,9 @@ public class TfvcRootCheckerServerCheckoutTest extends TfvcRootCheckerTestBase {
 
     @Test(timeout = 60000)
     public void testRootChecker() throws InterruptedException, IOException {
-        // TODO: Perform the tests.
-//        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "false");
-//        doRootCheckerTest();
-//        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "true");
-//        doRootCheckerTest();
+        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "false");
+        doRootCheckerTest();
+        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "true");
+        doRootCheckerTest();
     }
 }

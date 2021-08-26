@@ -38,6 +38,7 @@ import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
@@ -57,6 +58,7 @@ import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFVCNotifications;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcDeleteResult;
 import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -100,10 +102,16 @@ public class CommandUtils {
      */
     @Nullable
     public static Workspace getPartialWorkspace(Project project, boolean allowCredentialPrompt) {
+        // TODO: Move this method to TfvcWorkspaceLocator
         ArgumentHelper.checkNotNull(project, "project");
         String basePath = project.getBasePath();
         if (basePath == null) return null;
-        return TfvcWorkspaceLocator.getPartialWorkspace(Paths.get(basePath), allowCredentialPrompt);
+        TfsDetailedWorkspaceInfo workspace = TfvcWorkspaceLocator.getPartialWorkspace(
+                project,
+                Paths.get(basePath),
+                allowCredentialPrompt);
+        if (workspace == null) throw new WorkspaceCouldNotBeDeterminedException();
+        return Workspace.fromWorkspaceInfo(workspace);
     }
 
     /**
@@ -115,6 +123,7 @@ public class CommandUtils {
      * @return
      */
     public static Workspace getPartialWorkspace(final Project project) {
+        // TODO: Delete this method
         return getPartialWorkspace(project, false);
     }
 
@@ -130,7 +139,8 @@ public class CommandUtils {
         ArgumentHelper.checkNotNull(collectionName, "collectionName");
         ArgumentHelper.checkNotNull(workspaceName, "workspaceName");
         final FindWorkspaceCommand command = new FindWorkspaceCommand(collectionName, workspaceName, authInfo);
-        return Objects.requireNonNull(command.runSynchronously().getDetailed());
+        TfsDetailedWorkspaceInfo workspace = (TfsDetailedWorkspaceInfo) command.runSynchronously();
+        return Workspace.fromWorkspaceInfo(Objects.requireNonNull(workspace));
     }
 
     /**

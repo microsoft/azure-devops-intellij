@@ -6,16 +6,18 @@ package com.microsoft.alm.plugin.idea.tfvc.core;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.models.ExtendedItemInfo;
 import com.microsoft.alm.plugin.external.models.ItemInfo;
 import com.microsoft.alm.plugin.external.models.PendingChange;
-import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.external.reactive.ServerIdentification;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
+import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsPath;
+import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfvcCheckoutResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -193,13 +195,22 @@ public class ReactiveTfvcClient implements TfvcClient {
         });
     }
 
+    @NotNull
     @Override
-    public CompletionStage<Workspace> getPartialWorkspaceAsync(
+    public CompletionStage<TfsWorkspaceInfo> getBasicWorkspaceInfoAsync(
             @Nullable Project project,
-            Path workspacePath,
-            boolean allowCredentialPrompt) {
-        // TODO: Port logic for server repositories here from CommandUtil.getPartialWorkspace(Path, boolean).
-        return traceTime("getPartialWorkspace", () -> ReactiveTfvcClientHolder.getInstance().getClient(project)
-                .thenCompose(client -> client.getPartialWorkspaceAsync(workspacePath)));
+            @NotNull Path workspacePath) {
+        return traceTime("Basic workspace info", () -> ReactiveTfvcClientHolder.getInstance().getClient(project)
+                .thenCompose(client -> client.getBasicWorkspaceInfoAsync(workspacePath)));
+    }
+
+    @NotNull
+    @Override
+    public CompletionStage<TfsDetailedWorkspaceInfo> getDetailedWorkspaceInfoAsync(
+            @Nullable Project project,
+            @NotNull AuthenticationInfo authenticationInfo,
+            @NotNull Path workspacePath) {
+        return traceTime("Detailed workspace info", () -> ReactiveTfvcClientHolder.getInstance().getClient(project)
+                .thenCompose(client -> client.getDetailedWorkspaceInfoAsync(authenticationInfo, workspacePath)));
     }
 }
