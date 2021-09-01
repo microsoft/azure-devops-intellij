@@ -71,15 +71,16 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
         fun getBasicWorkspaceInfo(path: TfsLocalPath): TfsWorkspaceInfo? {
             val workspaceInfo = tryLoadWorkspaceInfo(path) ?: return null
             val workspaceName = workspaceInfo.name.orEmpty()
+            val serverUri = workspaceInfo.serverURI.toString()
             val mappings =
                 try {
                     loadMappings(workspaceInfo, null)
                 } catch (e: Throwable) {
                     logger.error("Cannot determine workspace mappings for workspace \"$path\".", e)
-                    return TfsBasicWorkspaceInfo(workspaceInfo.server.toString(), workspaceName)
+                    return TfsBasicWorkspaceInfo(serverUri, workspaceName)
                 }
 
-            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.server.toString(), workspaceInfo.name)
+            return TfsDetailedWorkspaceInfo(mappings, serverUri, workspaceInfo.name)
         }
 
         fun getDetailedWorkspaceInfo(path: TfsLocalPath, credentials: TfsCredentials): TfsDetailedWorkspaceInfo? {
@@ -88,7 +89,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
                 workspaceInfo,
                 UsernamePasswordCredentials(credentials.login, credentials.password.contents))
 
-            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.server.toString(), workspaceInfo.name)
+            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.serverURI.toString(), workspaceInfo.name)
         }
     }
 
