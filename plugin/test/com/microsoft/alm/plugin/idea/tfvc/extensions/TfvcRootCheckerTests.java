@@ -3,7 +3,6 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.extensions;
 
-import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.tools.TfTool;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
@@ -65,13 +64,12 @@ public class TfvcRootCheckerTests extends IdeaAbstractTest {
 
     private static void mockPartialWorkspace(Path path, TfsDetailedWorkspaceInfo workspace) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(null, eq(path), any(Boolean.class))).thenReturn(workspace);
+        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class))).thenReturn(workspace);
     }
 
     private static void mockPartialWorkspaceNotDetermined(Path path) {
         PowerMockito.mockStatic(CommandUtils.class);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(null, eq(path), any(Boolean.class)))
-                .thenThrow(new WorkspaceCouldNotBeDeterminedException());
+        when(TfvcWorkspaceLocator.getPartialWorkspace(eq(null), eq(path), any(Boolean.class))).thenReturn(null);
     }
 
     private static TfsDetailedWorkspaceInfo createWorkspaceWithMapping(String localPath) {
