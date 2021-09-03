@@ -285,7 +285,7 @@ public class TFSFileSystemListener implements LocalFileOperationsHandler, Dispos
         if (performUndo.get()) {
             TfsPath filePath = TfsFileUtil.createLocalPath(path);
             List<TfsLocalPath> undone = client.undoLocalChanges(
-                    vcs.getProject(),
+                    myProject,
                     serverContext,
                     Collections.singletonList(filePath));
             ourLogger.info("Undone {} items", undone.size());
