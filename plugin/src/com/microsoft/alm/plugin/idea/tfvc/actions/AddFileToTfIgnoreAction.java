@@ -12,8 +12,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.actions.RefreshAction;
 import com.intellij.util.ObjectUtils;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfIgnoreUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +40,7 @@ public class AddFileToTfIgnoreAction extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         ourLogger.info("Performing AddFileToTfIgnoreAction for " + myServerFilePath);
 
-        Workspace partialWorkspace = CommandUtils.getPartialWorkspace(myProject, true);
+        Workspace partialWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(myProject, true);
         String filePath = ObjectUtils.assertNotNull(
                 TfsFileUtil.translateServerItemToLocalItem(partialWorkspace.getMappings(), myServerFilePath, false));
         File localFile = new File(filePath);

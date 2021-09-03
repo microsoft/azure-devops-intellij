@@ -7,8 +7,11 @@ import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.authentication.AuthenticationInfo;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.external.exceptions.ToolAuthenticationException;
+import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
+import com.microsoft.alm.plugin.external.models.Workspace;
 import com.microsoft.tfs.model.connector.TfsDetailedWorkspaceInfo;
 import com.microsoft.tfs.model.connector.TfsWorkspaceInfo;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public class TfvcWorkspaceLocator {
@@ -67,5 +71,41 @@ public class TfvcWorkspaceLocator {
         logger.info("Loading workspace information for path \"{}\" (using authentication info)", path);
         TfsDetailedWorkspaceInfo resultWithAuth = client.getDetailedWorkspaceInfo(project, authenticationInfo, path);
         return Objects.requireNonNull(resultWithAuth);
+    }
+
+    /**
+     * Determine partial workspace information from the project base directory.
+     *
+     * @param project               project to determine the root workspace.
+     * @param allowCredentialPrompt whether to allow the command to prompt credentials from user if they're required.
+     * @return a partially populated {@link Workspace} object that includes just the name, server, and mappings. Will
+     * return null in case the project base directory couldn't be determined.
+     * @throws WorkspaceCouldNotBeDeterminedException in case project base directory was determined, but the workspace
+     *                                                wasn't found.
+     */
+    @Nullable
+    public static Workspace getPartialWorkspace(@NotNull Project project, boolean allowCredentialPrompt) {
+        String basePath = project.getBasePath();
+        if (basePath == null) return null;
+        TfsDetailedWorkspaceInfo workspace = TfvcWorkspaceLocator.getPartialWorkspace(
+                project,
+                Paths.get(basePath),
+                allowCredentialPrompt);
+        if (workspace == null) throw new WorkspaceCouldNotBeDeterminedException();
+        return Workspace.fromWorkspaceInfo(workspace);
+    }
+
+    /**
+     * This method will return just the workspace name or empty string (never null)
+     *
+     * @param project
+     * @return
+     */
+    public static String getWorkspaceName(final Project project) {
+        final Workspace workspace = getPartialWorkspace(project, false);
+        if (workspace != null) {
+            return workspace.getName();
+        }
+        return StringUtils.EMPTY;
     }
 }

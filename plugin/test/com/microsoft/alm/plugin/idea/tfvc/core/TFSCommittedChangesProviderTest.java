@@ -41,7 +41,13 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({TFSVcs.class, CommandUtils.class, TFSCommittedChangesProvider.class, TFVCUtil.class})
+@PrepareForTest({
+        CommandUtils.class,
+        TFSCommittedChangesProvider.class,
+        TFSVcs.class,
+        TFVCUtil.class,
+        TfvcWorkspaceLocator.class
+})
 public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     private static final String SERVER_URL = "https://organization.visualstudio.com";
     private static final String LOCAL_ROOT_PATH = "/Users/user/root";
@@ -75,14 +81,14 @@ public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(TFSVcs.class, CommandUtils.class);
+        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, TfvcWorkspaceLocator.class);
 
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockVcs);
         when(mockVirtualFile.getPath()).thenReturn(LOCAL_ROOT_PATH);
         when(mockRoot.getVirtualFile()).thenReturn(mockVirtualFile);
         when(mockWorkspace.getServerDisplayName()).thenReturn(SERVER_URL);
         when(mockChangeBrowserSettings.getUserFilter()).thenReturn(USER_ME);
-        when(CommandUtils.getPartialWorkspace(mockProject)).thenReturn(mockWorkspace);
+        when(TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false)).thenReturn(mockWorkspace);
         whenNew(TFSChangeListBuilder.class).withAnyArguments().thenReturn(mockTFSChangeListBuilder);
         when(mockChangeBrowserSettings.getChangeAfterFilter()).thenReturn(30L);
         when(mockChangeBrowserSettings.getChangeBeforeFilter()).thenReturn(50L);

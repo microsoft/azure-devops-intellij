@@ -9,8 +9,8 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -108,7 +108,7 @@ public class TFVCUtil {
     }
 
     private static List<FilePath> getMappingsFromWorkspace(@NotNull Project project) {
-        Workspace workspace = CommandUtils.getPartialWorkspace(project);
+        Workspace workspace = TfvcWorkspaceLocator.getPartialWorkspace(project, false);
         if (workspace == null) {
             return Collections.emptyList();
         }

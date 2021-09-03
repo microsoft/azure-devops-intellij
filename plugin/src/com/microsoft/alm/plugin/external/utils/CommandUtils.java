@@ -38,7 +38,6 @@ import com.microsoft.alm.plugin.external.commands.UndoCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceCommand;
 import com.microsoft.alm.plugin.external.commands.UpdateWorkspaceMappingCommand;
 import com.microsoft.alm.plugin.external.exceptions.DollarInPathException;
-import com.microsoft.alm.plugin.external.exceptions.WorkspaceCouldNotBeDeterminedException;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.Conflict;
 import com.microsoft.alm.plugin.external.models.ConflictResults;
@@ -66,7 +65,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -77,55 +75,6 @@ import java.util.Objects;
  */
 public class CommandUtils {
     protected static final Logger logger = LoggerFactory.getLogger(CommandUtils.class);
-
-    /**
-     * This method will return just the workspace name or empty string (never null)
-     *
-     * @param project
-     * @return
-     */
-    public static String getWorkspaceName(final Project project) {
-        final Workspace workspace = getPartialWorkspace(project);
-        if (workspace != null) {
-            return workspace.getName();
-        }
-        return StringUtils.EMPTY;
-    }
-
-    /**
-     * Determine partial workspace information from the project base directory.
-     *
-     * @param project               project to determine the root workspace.
-     * @param allowCredentialPrompt whether to allow the command to prompt credentials from user if they're required.
-     * @return a partially populated {@link Workspace} object that includes just the name, server, and mappings. Will
-     * return null in case the project base directory couldn't be determined.
-     */
-    @Nullable
-    public static Workspace getPartialWorkspace(Project project, boolean allowCredentialPrompt) {
-        // TODO: Move this method to TfvcWorkspaceLocator
-        ArgumentHelper.checkNotNull(project, "project");
-        String basePath = project.getBasePath();
-        if (basePath == null) return null;
-        TfsDetailedWorkspaceInfo workspace = TfvcWorkspaceLocator.getPartialWorkspace(
-                project,
-                Paths.get(basePath),
-                allowCredentialPrompt);
-        if (workspace == null) throw new WorkspaceCouldNotBeDeterminedException();
-        return Workspace.fromWorkspaceInfo(workspace);
-    }
-
-    /**
-     * This method will return a partially populated Workspace object that includes just the name, server, and mappings
-     *
-     * @deprecated Use {@link #getPartialWorkspace(Project, boolean)} instead
-     *
-     * @param project
-     * @return
-     */
-    public static Workspace getPartialWorkspace(final Project project) {
-        // TODO: Delete this method
-        return getPartialWorkspace(project, false);
-    }
 
     /**
      * This method will return a partially populated Workspace object that includes just the name, server, and mappings.
@@ -170,7 +119,7 @@ public class CommandUtils {
     @Nullable
     public static Workspace getDetailedWorkspace(@NotNull ServerContext context, @NotNull Project project) {
         // First, call getPartialWorkspace to extract the workspace name and collection:
-        Workspace partialWorkspace = getPartialWorkspace(project, false);
+        Workspace partialWorkspace = TfvcWorkspaceLocator.getPartialWorkspace(project, false);
         if (partialWorkspace == null)
             return null;
 
@@ -190,7 +139,7 @@ public class CommandUtils {
      */
 
     public static Workspace getWorkspace(final ServerContext context, final Project project) {
-        final String workspaceName = getWorkspaceName(project);
+        final String workspaceName = TfvcWorkspaceLocator.getWorkspaceName(project);
         return getWorkspace(context, workspaceName);
     }
 
