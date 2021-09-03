@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.external.utils.CommandUtils;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcWorkspaceLocator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class})
+@PrepareForTest({TfvcWorkspaceLocator.class})
 public class TFVCUtilTest {
 
     private final Workspace workspace = new Workspace(
@@ -49,8 +49,8 @@ public class TFVCUtilTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        PowerMockito.mockStatic(CommandUtils.class);
-        when(CommandUtils.getPartialWorkspace(mockProject)).thenReturn(workspace);
+        PowerMockito.mockStatic(TfvcWorkspaceLocator.class);
+        when(TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false)).thenReturn(workspace);
     }
 
     @Test

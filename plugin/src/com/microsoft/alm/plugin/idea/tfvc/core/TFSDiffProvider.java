@@ -53,6 +53,7 @@ import java.io.File;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class TFSDiffProvider extends DiffProviderEx {
     private static final Logger logger = LoggerFactory.getLogger(TFSDiffProvider.class);
@@ -218,7 +219,7 @@ public class TFSDiffProvider extends DiffProviderEx {
      * TODO: call this from places where we know a mapping change has occurred
      */
     public void updateMappings() {
-        final Workspace workspace = CommandUtils.getPartialWorkspace(project);
+        final Workspace workspace = Objects.requireNonNull(TfvcWorkspaceLocator.getPartialWorkspace(project, false));
         mappings = workspace.getMappings();
         lastUpdated = Calendar.getInstance();
     }

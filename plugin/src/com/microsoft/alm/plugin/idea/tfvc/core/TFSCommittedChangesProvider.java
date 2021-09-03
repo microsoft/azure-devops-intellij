@@ -95,7 +95,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
             return null;
         }
 
-        final Workspace workspace = CommandUtils.getPartialWorkspace(project);
+        final Workspace workspace = TfvcWorkspaceLocator.getPartialWorkspace(project, false);
         return new TFSRepositoryLocation(workspace, root.getVirtualFile());
     }
 
