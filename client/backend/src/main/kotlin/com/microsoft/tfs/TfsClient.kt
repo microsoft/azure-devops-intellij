@@ -48,8 +48,9 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
 
         private fun loadMappings(workspaceInfo: WorkspaceInfo, credentials: Credentials?): List<TfsWorkspaceMapping> {
             val serverUri = workspaceInfo.serverURI
+            val workspaceName = workspaceInfo.name.orEmpty()
             if (serverUri == null) {
-                logger.warn { "Server URI is null for workspace ${workspaceInfo.name}; no mappings will be available." }
+                logger.warn { "Server URI is null for workspace ${workspaceName}; no mappings will be available." }
                 return emptyList()
             } else {
                 val collection = TFSTeamProjectCollection(serverUri, credentials)
@@ -58,7 +59,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
                     return workspace.folders?.map { workingFolder ->
                         TfsWorkspaceMapping(
                             TfsLocalPath(workingFolder.localItem),
-                            TfsServerPath(workspaceInfo.name.orEmpty(), workingFolder.displayServerItem),
+                            TfsServerPath(workspaceName, workingFolder.displayServerItem),
                             workingFolder.type == WorkingFolderType.CLOAK
                         )
                     }.orEmpty()
@@ -80,7 +81,7 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
                     return TfsBasicWorkspaceInfo(serverUri, workspaceName)
                 }
 
-            return TfsDetailedWorkspaceInfo(mappings, serverUri, workspaceInfo.name)
+            return TfsDetailedWorkspaceInfo(mappings, serverUri, workspaceName)
         }
 
         fun getDetailedWorkspaceInfo(path: TfsLocalPath, credentials: TfsCredentials): TfsDetailedWorkspaceInfo? {
@@ -89,7 +90,10 @@ class TfsClient(lifetime: Lifetime, serverUri: URI, credentials: Credentials) {
                 workspaceInfo,
                 UsernamePasswordCredentials(credentials.login, credentials.password.contents))
 
-            return TfsDetailedWorkspaceInfo(mappings, workspaceInfo.serverURI.toString(), workspaceInfo.name)
+            return TfsDetailedWorkspaceInfo(
+                mappings,
+                workspaceInfo.serverURI?.toString().orEmpty(),
+                workspaceInfo.name.orEmpty())
         }
     }
 
