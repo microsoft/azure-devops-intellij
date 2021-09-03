@@ -38,9 +38,7 @@ public interface TfvcClient {
 
     @NotNull
     static TfvcClient getInstance() {
-        boolean useReactiveClient = "true".equalsIgnoreCase(
-                PropertyService.getInstance().getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
-        return useReactiveClient
+        return PropertyService.getInstance().useReactiveClient()
                 ? ReactiveTfvcClient.getInstance()
                 : ClassicTfvcClient.getInstance();
     }
