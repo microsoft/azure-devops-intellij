@@ -24,6 +24,7 @@ import com.microsoft.alm.plugin.external.utils.CommandUtils;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,12 +49,12 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-        ClassicTfvcClient.class,
         CommandUtils.class,
+        PersistentFS.class,
+        RenameUtil.class,
         ServiceManager.class,
         TFSVcs.class,
-        PersistentFS.class,
-        RenameUtil.class
+        TfvcClient.class
 })
 public class RenameFileDirectoryTest extends IdeaAbstractTest {
     private final UsageInfo[] usageInfos = new UsageInfo[1];
@@ -97,12 +98,12 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
-                ClassicTfvcClient.class,
                 CommandUtils.class,
+                PersistentFS.class,
+                RenameUtil.class,
                 ServiceManager.class,
                 TFSVcs.class,
-                PersistentFS.class,
-                RenameUtil.class);
+                TfvcClient.class);
 
         when(mockPsiFile.getVirtualFile()).thenReturn(mockVirtualFile);
         when(mockPsiFile.getProject()).thenReturn(mockProject);
@@ -112,7 +113,7 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
         when(mockVirtualFile.getParent()).thenReturn(mockVirtualParent);
 
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+        when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(PersistentFS.getInstance()).thenReturn(mockPersistentFS);
     }

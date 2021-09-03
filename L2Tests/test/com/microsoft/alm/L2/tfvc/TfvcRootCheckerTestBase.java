@@ -12,19 +12,17 @@ import java.io.IOException;
 
 public abstract class TfvcRootCheckerTestBase extends TfvcCheckoutTestBase {
 
-    private String savedUseReactiveClientValue;
+    private boolean savedUseReactiveClientValue;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        savedUseReactiveClientValue = PropertyService.getInstance()
-                .getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT);
+        savedUseReactiveClientValue = PropertyService.getInstance().useReactiveClient();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        PropertyService.getInstance()
-                .setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, savedUseReactiveClientValue);
+        PropertyService.getInstance().setUseReactiveClient(savedUseReactiveClientValue);
         super.tearDown();
     }
 

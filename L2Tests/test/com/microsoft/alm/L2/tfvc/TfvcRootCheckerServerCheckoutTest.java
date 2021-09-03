@@ -19,9 +19,9 @@ public class TfvcRootCheckerServerCheckoutTest extends TfvcRootCheckerTestBase {
 
     @Test(timeout = 60000)
     public void testRootChecker() throws InterruptedException, IOException {
-        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "false");
+        PropertyService.getInstance().setUseReactiveClient(false);
         doRootCheckerTest();
-        PropertyService.getInstance().setProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT, "true");
+        PropertyService.getInstance().setUseReactiveClient(true);
         doRootCheckerTest();
     }
 }

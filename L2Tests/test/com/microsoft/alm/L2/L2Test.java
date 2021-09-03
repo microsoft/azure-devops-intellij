@@ -26,6 +26,7 @@ import com.microsoft.alm.plugin.context.RepositoryContextManager;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
+import com.microsoft.alm.plugin.external.reactive.ReactiveTfvcClientHolder;
 import com.microsoft.alm.plugin.idea.common.settings.MockTeamServicesSecrets;
 import com.microsoft.alm.plugin.idea.common.settings.ServerContextState;
 import com.microsoft.alm.plugin.idea.common.settings.SettingsState;
@@ -287,10 +288,15 @@ public abstract class L2Test extends UsefulTestCase {
         Thread.sleep(1000);
     }
 
+    private void disposeReactiveClient() {
+        ReactiveTfvcClientHolder.getInstance().dispose();
+    }
+
     @Override
     protected void tearDown() throws Exception {
         disposeRegisteredServerContexts();
         disposeJerseyPool();
+        disposeReactiveClient();
         try {
             /*if (myDialogManager != null) {
                 myDialogManager.cleanup();

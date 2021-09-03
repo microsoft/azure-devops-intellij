@@ -29,6 +29,7 @@ import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.tfvc.core.ClassicTfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
+import com.microsoft.alm.plugin.idea.tfvc.core.TfvcClient;
 import com.microsoft.alm.plugin.idea.tfvc.core.revision.TFSContentRevision;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
@@ -72,17 +73,17 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-        ClassicTfvcClient.class,
         CommandUtils.class,
+        ConflictsEnvironment.class,
+        CurrentContentRevision.class,
         ProgressManager.class,
         ServiceManager.class,
+        TFSContentRevision.class,
         TFSVcs.class,
         TfsFileUtil.class,
-        TFSContentRevision.class,
-        CurrentContentRevision.class,
-        VersionControlPath.class,
-        ConflictsEnvironment.class,
-        VcsUtil.class})
+        TfvcClient.class,
+        VcsUtil.class,
+        VersionControlPath.class})
 public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public final Conflict CONFLICT_RENAME = new RenameConflict("/path/to/fileRename.txt", "$/server/path", "/old/path");
     public final Conflict CONFLICT_CONTEXT = new Conflict("/path/to/fileContent.txt", Conflict.ConflictType.CONTENT);
@@ -146,16 +147,16 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
     public void setUp() throws VcsException {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(
-                ClassicTfvcClient.class,
                 CommandUtils.class,
                 ConflictsEnvironment.class,
+                CurrentContentRevision.class,
                 ProgressManager.class,
                 ServiceManager.class,
-                VcsUtil.class,
+                TFSContentRevision.class,
                 TFSVcs.class,
                 TfsFileUtil.class,
-                TFSContentRevision.class,
-                CurrentContentRevision.class,
+                TfvcClient.class,
+                VcsUtil.class,
                 VersionControlPath.class);
 
         when(mockFile.isFile()).thenReturn(true);
@@ -166,7 +167,7 @@ public class ResolveConflictHelperTest extends IdeaAbstractTest {
         when(mockProgressManager.getProgressIndicator()).thenReturn(mockProgressIndicator);
 
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
-        when(ClassicTfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+        when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
         when(ConflictsEnvironment.getNameMerger()).thenReturn(mockNameMerger);
         when(ConflictsEnvironment.getContentMerger()).thenReturn(mockContentMerger);

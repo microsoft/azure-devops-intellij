@@ -261,8 +261,7 @@ public class ProjectConfigurableForm {
         }
         tfExeField.setText(originalTfLocation);
 
-        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
-                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
+        boolean isReactiveClientEnabled = propertyService.useReactiveClient();
         useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
 
         if (SystemInfo.isWindows) {
@@ -289,11 +288,7 @@ public class ProjectConfigurableForm {
     public void apply() {
         PropertyService propertyService = PropertyService.getInstance();
         propertyService.setProperty(PropertyService.PROP_TF_HOME, getCurrentExecutablePath());
-
-        boolean isReactiveClientEnabled = useReactiveClientCheckBox.isSelected();
-        propertyService.setProperty(
-                PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT,
-                isReactiveClientEnabled ? "true" : "false");
+        propertyService.setUseReactiveClient(useReactiveClientCheckBox.isSelected());
 
         if (reactiveClientMemoryLimitSpinner.isEnabled()) {
             propertyService.setProperty(
@@ -308,8 +303,7 @@ public class ProjectConfigurableForm {
 
     public boolean isModified() {
         PropertyService propertyService = PropertyService.getInstance();
-        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
-                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
+        boolean isReactiveClientEnabled = propertyService.useReactiveClient();;
         return !(propertyService.getProperty(PropertyService.PROP_TF_HOME).equals(getCurrentExecutablePath())
                 && isReactiveClientEnabled == useReactiveClientCheckBox.isSelected()
                 && Objects.equals(
@@ -325,10 +319,7 @@ public class ProjectConfigurableForm {
         propertyService.setProperty(PropertyService.PROP_TF_HOME, originalTfLocation);
         tfExeField.setText(originalTfLocation);
 
-        boolean isReactiveClientEnabled = "true".equalsIgnoreCase(
-                propertyService.getProperty(PropertyService.PROP_TFVC_USE_REACTIVE_CLIENT));
-        useReactiveClientCheckBox.setSelected(isReactiveClientEnabled);
-
+        useReactiveClientCheckBox.setSelected(propertyService.useReactiveClient());
         visualStudioClientField.setText(originalVsClientPath);
     }
 
