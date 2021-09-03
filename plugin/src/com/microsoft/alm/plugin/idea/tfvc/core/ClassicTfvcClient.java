@@ -44,9 +44,6 @@ public class ClassicTfvcClient implements TfvcClient {
         return ServiceManager.getService(ClassicTfvcClient.class);
     }
 
-    public ClassicTfvcClient() {
-    }
-
     @NotNull
     @Override
     public CompletionStage<List<PendingChange>> getStatusForFilesAsync(
