@@ -10,7 +10,6 @@ import com.intellij.vcs.log.impl.HashImpl;
 import git4idea.GitCommit;
 import git4idea.GitLocalBranch;
 import git4idea.GitRemoteBranch;
-import git4idea.history.GitLogUtil;
 import git4idea.repo.GitRemote;
 
 import java.util.Arrays;
@@ -64,7 +63,6 @@ public class PRGitObjectMockHelper {
                 message,
                 user,
                 date,
-                Collections.EMPTY_LIST,
-                GitLogUtil.DiffRenameLimit.GIT_CONFIG);
+                Collections.EMPTY_LIST);
     }
 }

@@ -40,7 +40,6 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import com.microsoft.alm.sourcecontrol.webapi.GitHttpClient;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRepository;
-import git4idea.GitPlatformFacade;
 import git4idea.GitUtil;
 import git4idea.GitVcs;
 import git4idea.commands.Git;
@@ -95,7 +94,6 @@ public abstract class L2Test extends UsefulTestCase {
     protected String myProjectPath;
     protected GitRepositoryManager myGitRepositoryManager;
     protected GitVcsSettings myGitSettings;
-    protected GitPlatformFacade myPlatformFacade;
     protected Git myGit;
     protected GitVcs myVcs;
 
@@ -127,7 +125,7 @@ public abstract class L2Test extends UsefulTestCase {
     }
 
     /**
-     * Returns name unique enough for test purposes. Adds value of {@link L2Test::ENV_UNIQUE_SUFFIX} to the passed
+     * Returns name unique enough for test purposes. Adds value of {@link L2Test#ENV_UNIQUE_SUFFIX} to the passed
      * prefix.
      */
     protected String generateUniqueName(String prefix) {
@@ -245,13 +243,11 @@ public abstract class L2Test extends UsefulTestCase {
             initializeTfEnvironment();
 
             myProject = myProjectFixture.getProject();
-            myProjectRoot = myProject.getBaseDir();
-            myProjectPath = myProjectRoot.getPath();
+            myProjectPath = myProject.getBasePath();
 
             myGitSettings = GitVcsSettings.getInstance(myProject);
             myGitRepositoryManager = GitUtil.getRepositoryManager(myProject);
-            myPlatformFacade = ServiceManager.getService(myProject, GitPlatformFacade.class);
-            myGit = ServiceManager.getService(myProject, Git.class);
+            myGit = ServiceManager.getService(Git.class);
             myVcs = ObjectUtils.assertNotNull(GitVcs.getInstance(myProject));
             myVcs.doActivate();
 
