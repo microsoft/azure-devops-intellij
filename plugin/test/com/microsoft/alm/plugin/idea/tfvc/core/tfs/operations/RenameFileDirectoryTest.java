@@ -8,10 +8,10 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.newvfs.persistent.PersistentFS;
+import com.intellij.psi.NavigatablePsiElement;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMethod;
 import com.intellij.refactoring.listeners.RefactoringElementListener;
 import com.intellij.refactoring.rename.RenameUtil;
 import com.intellij.usageView.UsageInfo;
@@ -120,8 +120,8 @@ public class RenameFileDirectoryTest extends IdeaAbstractTest {
 
     @Test(expected = IncorrectOperationException.class)
     public void testExecute_BadElement() {
-        PsiMethod mockmethod = mock(PsiMethod.class);
-        RenameFileDirectory.execute(mockmethod, NEW_FILE_NAME, usageInfos, mockListener);
+        NavigatablePsiElement mockElement = mock(NavigatablePsiElement.class);
+        RenameFileDirectory.execute(mockElement, NEW_FILE_NAME, usageInfos, mockListener);
     }
 
     @Test

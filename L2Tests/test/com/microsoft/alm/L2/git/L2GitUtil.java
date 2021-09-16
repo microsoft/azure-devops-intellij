@@ -17,12 +17,13 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.ChangeListManagerEx;
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl;
 import com.intellij.openapi.vcs.changes.LocalChangeListImpl;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.checkout.VcsAwareCheckoutListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.projectImport.ProjectImportProvider;
 import com.intellij.util.containers.ContainerUtil;
@@ -34,8 +35,11 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertTrue;
 
@@ -115,6 +119,33 @@ public class L2GitUtil {
         waitForInitialization(clonedProject);
         return clonedProject;
     }
+
+    public static void pumpAndWaitForChangeListManagerUpdate(@NotNull Project project, @NotNull Duration maxDuration) {
+        AtomicBoolean finished = new AtomicBoolean();
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+        ForkJoinPool.commonPool().execute(() -> {
+            try {
+                ChangeListManagerEx changeListManager = (ChangeListManagerEx) ChangeListManager.getInstance(project);
+                changeListManager.waitForUpdate("L2GitUtil::waitForChangeListManagerUpdate");
+                finished.set(true);
+            } catch (Throwable t) {
+                exception.set(t);
+            }
+        });
+
+        long startTimeNs = System.nanoTime();
+        do {
+            IdeEventQueue.getInstance().flushQueue();
+        } while (!finished.get() && exception.get() == null && System.nanoTime() - startTimeNs < maxDuration.toNanos());
+
+        if (exception.get() != null) {
+            throw new RuntimeException(exception.get());
+        }
+
+        if (!finished.get()) {
+            throw new AssertionError("waitForChangeListManagerUpdate wasn't able to finish in " + maxDuration + ".");
+        }
+    }
 }
 
 /**
@@ -172,8 +203,9 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
     @Nullable
     Project findProjectByBaseDirLocation(@NotNull File directory) {
         return ContainerUtil.find(ProjectManager.getInstance().getOpenProjects(), project -> {
-            VirtualFile baseDir = project.getBaseDir();
-            return baseDir != null && FileUtil.filesEqual(VfsUtilCore.virtualToIoFile(baseDir), directory);
+            String basePath = project.getBasePath();
+            File baseDir = basePath == null ? null : new File(basePath);
+            return baseDir != null && FileUtil.filesEqual(baseDir, directory);
         });
     }
 

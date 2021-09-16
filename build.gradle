@@ -158,7 +158,7 @@ project(":L2Tests") {
 
     intellij {
         version = ideaVersion
-        plugins = ['git4idea']
+        plugins = ['git4idea', 'java']
 
         task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
             from reactiveBackend

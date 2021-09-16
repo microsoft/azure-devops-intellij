@@ -20,9 +20,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
-
 
 public class GitImportTest extends L2Test {
 
@@ -31,6 +31,8 @@ public class GitImportTest extends L2Test {
 
     @Override
     protected void tearDown() throws Exception {
+        L2GitUtil.pumpAndWaitForChangeListManagerUpdate(myProject, Duration.ofMinutes(1L));
+
         File gitDirectory = new File(myProjectPath, GIT_FOLDER);
         FileUtils.deleteDirectory(gitDirectory);
 
