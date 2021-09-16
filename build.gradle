@@ -15,7 +15,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.jetbrains.intellij' version '0.4.1' apply false
+    id 'org.jetbrains.intellij' version '0.4.13' apply false
     id "org.jetbrains.kotlin.jvm" version "1.3.50" apply false
     id "de.undercouch.download" version "4.0.0"
 }
@@ -159,6 +159,8 @@ project(":L2Tests") {
     intellij {
         version = ideaVersion
         plugins = ['git4idea', 'java']
+
+        buildSearchableOptions.enabled = false
 
         task prepareBackendSandbox(type: Copy, dependsOn: ":client:backend:installDist") {
             from reactiveBackend
