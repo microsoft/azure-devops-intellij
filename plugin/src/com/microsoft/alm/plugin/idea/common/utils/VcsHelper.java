@@ -5,11 +5,9 @@ package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.containers.ContainerUtil;
 import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.RepositoryContextManager;
@@ -98,12 +96,7 @@ public class VcsHelper {
                 return false;
             }
 
-            return ContainerUtil.exists(GitUtil.getRepositoryManager(project).getRepositories(), new Condition<GitRepository>() {
-                @Override
-                public boolean value(GitRepository gitRepository) {
-                    return TfGitHelper.isTfGitRepository(gitRepository);
-                }
-            });
+            return TfGitHelper.getTfGitRepository(project) != null;
         }
         return false;
     }

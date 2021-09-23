@@ -5,14 +5,12 @@ package com.microsoft.alm.plugin.idea.common.utils;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.plugin.idea.tfvc.core.TFSVcs;
-import git4idea.GitUtil;
 import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
-import git4idea.repo.GitRepositoryManager;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,15 +21,12 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Collections;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ProjectLevelVcsManager.class, GitUtil.class, TfGitHelper.class})
+@PrepareForTest({ProjectLevelVcsManager.class, TfGitHelper.class})
 public class VcsHelperTest extends IdeaAbstractTest {
 
     @Mock
@@ -39,17 +34,13 @@ public class VcsHelperTest extends IdeaAbstractTest {
     @Mock
     private Project mockProject;
     @Mock
-    private GitRepositoryManager mockGitRepositoryManager;
-    @Mock
     private GitRepository mockGitRepository;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ProjectLevelVcsManager.class, GitUtil.class, TfGitHelper.class);
+        PowerMockito.mockStatic(ProjectLevelVcsManager.class, TfGitHelper.class);
         when(ProjectLevelVcsManager.getInstance(mockProject)).thenReturn(mockProjectLevelVcsManager);
-        when(GitUtil.getRepositoryManager(mockProject)).thenReturn(mockGitRepositoryManager);
-        when(mockGitRepositoryManager.getRepositoryForFile(any(VirtualFile.class))).thenReturn(mockGitRepository);
     }
 
     @Test
@@ -104,21 +95,12 @@ public class VcsHelperTest extends IdeaAbstractTest {
     @Test
     public void testIsVstsRepo_GitNoRepoFound() {
         setupVcs(true, false);
-        when(mockGitRepositoryManager.getRepositoryForFile(any(VirtualFile.class))).thenReturn(null);
-        assertFalse(VcsHelper.isVstsRepo(mockProject));
-    }
-
-    @Test
-    public void testIsVstsRepo_GitNotVsts() {
-        setupVcs(true, false);
-        when(TfGitHelper.isTfGitRepository(mockGitRepository)).thenReturn(false);
         assertFalse(VcsHelper.isVstsRepo(mockProject));
     }
 
     @Test
     public void testIsVstsRepo_GitVsts() {
-        setupVcs(true, false);
-        when(TfGitHelper.isTfGitRepository(mockGitRepository)).thenReturn(true);
+        setupVcs(true, false, mockGitRepository);
         assertTrue(VcsHelper.isVstsRepo(mockProject));
     }
 
@@ -128,7 +110,11 @@ public class VcsHelperTest extends IdeaAbstractTest {
     }
 
     private void setupVcs(final boolean isGit, final boolean isTfvc) {
-        when(mockGitRepositoryManager.getRepositories()).thenReturn(Collections.singletonList(mockGitRepository));
+        setupVcs(isGit, isTfvc, null);
+    }
+
+    private void setupVcs(final boolean isGit, final boolean isTfvc, @Nullable GitRepository tfGitRepository) {
+        when(TfGitHelper.getTfGitRepository(mockProject)).thenReturn(tfGitRepository);
         when(mockProjectLevelVcsManager.checkVcsIsActive(GitVcs.NAME)).thenReturn(isGit);
         when(mockProjectLevelVcsManager.checkVcsIsActive(TFSVcs.TFVC_NAME)).thenReturn(isTfvc);
     }
