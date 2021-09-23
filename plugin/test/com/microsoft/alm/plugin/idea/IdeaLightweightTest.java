@@ -3,11 +3,11 @@
 
 package com.microsoft.alm.plugin.idea;
 
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
+import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import com.microsoft.alm.plugin.AbstractTest;
 import com.microsoft.alm.plugin.events.ServerPollingManager;
 
-public abstract class IdeaLightweightTest extends LightPlatformCodeInsightFixtureTestCase {
+public abstract class IdeaLightweightTest extends BasePlatformTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
