@@ -95,6 +95,7 @@ public class TfGitHelper {
         return Collections2.filter(gitRemotes, TfGitHelper::isTfGitRemote);
     }
 
+    @Nullable
     public static GitRepository getTfGitRepository(@NotNull final Project project) {
         if (project != null) {
             final List<GitRepository> repositories = GitUtil.getRepositoryManager(project).getRepositories();
