@@ -22,7 +22,6 @@ package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -336,7 +335,7 @@ public class WorkspaceModel extends AbstractModel {
 
             if (onSuccess != null) {
                 // Trigger the onSuccess callback on the UI thread (it is up to the success handler to notify the user)
-                IdeaHelper.runOnUIThread(onSuccess, false, ModalityState.defaultModalityState());
+                IdeaHelper.runOnUIThread(onSuccess, false);
             } else {
                 // Notify the user of success and provide a link to sync the workspace
                 // (It doesn't make sense to tell the user we are done here if there is another thread still doing work)

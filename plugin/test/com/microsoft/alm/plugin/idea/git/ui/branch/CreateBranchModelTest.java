@@ -6,14 +6,12 @@ package com.microsoft.alm.plugin.idea.git.ui.branch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.intellij.dvcs.repo.Repository;
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.Hash;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.rest.GitHttpClientEx;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
@@ -50,8 +48,8 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ApplicationManager.class, GeneralGitHelper.class, TfGitHelper.class})
-public class CreateBranchModelTest extends IdeaAbstractTest {
+@PrepareForTest({GeneralGitHelper.class, TfGitHelper.class})
+public class CreateBranchModelTest extends MockedIdeaApplicationTest {
 
     private CreateBranchModel underTest;
     private static final String defaultBranchName = "defaultName";
@@ -63,8 +61,6 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
             ImmutableList.of("https://pushurl"), Collections.emptyList(), Collections.emptyList());
     private static final URI uri = URI.create("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo");
 
-    @Mock
-    private Application mockApplication;
     @Mock
     private Project mockProject;
     @Mock
@@ -116,9 +112,7 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.mockStatic(ApplicationManager.class, GeneralGitHelper.class, TfGitHelper.class);
-        when(ApplicationManager.getApplication()).thenReturn(mockApplication);
-        when(mockApplication.isUnitTestMode()).thenReturn(true);
+        PowerMockito.mockStatic(GeneralGitHelper.class, TfGitHelper.class);
 
         when(GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockRemoteMaster)).thenReturn("281e2d5f8ba36655570ba808055e81ff64ba14d8");
 

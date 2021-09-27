@@ -3,9 +3,7 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.ui.workspace;
 
-import com.intellij.notification.NotificationListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsNotifier;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.RepositoryContext;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -34,6 +32,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -43,8 +42,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({OperationExecutor.class, ServerContextManager.class, CommandUtils.class,
-        VcsHelper.class, VcsNotifier.class})
+@PrepareForTest({
+        CommandUtils.class,
+        OperationExecutor.class,
+        ServerContextManager.class,
+        VcsHelper.class
+})
 public class WorkspaceModelTest extends IdeaAbstractTest {
     final String name = "name1";
     final String server = "http://server1";
@@ -59,7 +62,6 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
     ServerContext authenticatedContext;
     RepositoryContext repositoryContext;
     RepositoryContext repositoryContext_noProject;
-    VcsNotifier mockVcsNotifier;
 
     @Before
     public void mockObjects() {
@@ -94,10 +96,6 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         PowerMockito.mockStatic(VcsHelper.class);
         when(VcsHelper.getRepositoryContext(mockProject)).thenReturn(repositoryContext);
         when(VcsHelper.getRepositoryContext(mockProject2)).thenReturn(repositoryContext_noProject);
-
-        mockVcsNotifier = mock(VcsNotifier.class);
-        PowerMockito.mockStatic(VcsNotifier.class);
-        when(VcsNotifier.getInstance(any(Project.class))).thenReturn(mockVcsNotifier);
     }
 
 
@@ -502,7 +500,8 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         final WorkspaceModel m = new WorkspaceModel();
         final Workspace newWorkspace = new Workspace(server, name, computer, owner, comment, mappings);
         final Workspace oldWorkspace = new Workspace(server, name + "old", computer, owner, comment, mappings);
-        m.saveWorkspaceInternal(authenticatedContext, oldWorkspace, newWorkspace, null, mockProject, "/path", true, null);
-        verify(mockVcsNotifier).notifyImportantInfo(anyString(), anyString(), any(NotificationListener.class));
+        AtomicBoolean success = new AtomicBoolean();
+        m.saveWorkspaceInternal(authenticatedContext, oldWorkspace, newWorkspace, null, mockProject, "/path", true, () -> success.set(true));
+        Assert.assertTrue(success.get());
     }
 }

@@ -10,14 +10,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.external.utils.CommandUtils;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
@@ -53,9 +52,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
         ServiceManager.class,
         TfsFileUtil.class,
         TfvcClient.class,
-        VcsNotifier.class,
         VersionControlPath.class})
-public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
+public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
     TFSCheckinEnvironment tfsCheckinEnvironment;
     List<String> filePaths = ImmutableList.of("/path/to/file1", "/path/to/file2");
     String comment = "Committing my work";
@@ -74,9 +72,6 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
     ServerContext mockServerContext;
 
     @Mock
-    VcsNotifier mockVcsNotifier;
-
-    @Mock
     NullableFunction mockNullableFunction;
 
     @Before
@@ -88,7 +83,6 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
                 ServiceManager.class,
                 TfsFileUtil.class,
                 TfvcClient.class,
-                VcsNotifier.class,
                 VersionControlPath.class);
 
         when(mockServerContext.getUri()).thenReturn(URI.create("http://organization.visualstudio.com"));
@@ -96,7 +90,6 @@ public class TFSCheckinEnvironmentTest extends IdeaAbstractTest {
         when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
         when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
-        when(VcsNotifier.getInstance(mockProject)).thenReturn(mockVcsNotifier);
         tfsCheckinEnvironment = new TFSCheckinEnvironment(mockTFSVcs);
     }
 

@@ -20,6 +20,7 @@
 package com.microsoft.alm.plugin.idea.tfvc.core;
 
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
@@ -197,8 +198,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
             // notify user of success
             final String changesetLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getTfvcChangesetURI(context.getUri().toString(), changesetNumber),
                     TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_LINK_TEXT, changesetNumber));
-            VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
-                    TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), (notification, hyperlinkEvent) -> BrowserUtil.browse(hyperlinkEvent.getURL()));
+            if (!ApplicationManager.getApplication().isUnitTestMode()) {
+                VcsNotifier.getInstance(myVcs.getProject()).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_TITLE),
+                        TfPluginBundle.message(TfPluginBundle.KEY_TFVC_CHECKIN_SUCCESSFUL_MSG, changesetLink), (notification, hyperlinkEvent) -> BrowserUtil.browse(hyperlinkEvent.getURL()));
+            }
         } catch (Exception e) {
             // no notification needs to be done by us for errors, IntelliJ handles that
             logger.warn("Error during checkin", e);
