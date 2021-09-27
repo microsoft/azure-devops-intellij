@@ -6,7 +6,7 @@
 <idea-plugin allow-bundled-update="true">
     <id>com.microsoft.vso.idea</id>
     <name>Azure DevOps</name>
-    <!-- <version>1.155.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
+    <!-- <version>1.162.0</version> NOTE: Version is set automatically on build, update it in gradle.properties -->
     <category>VCS Integration</category>
     <vendor url="https://github.com/microsoft/azure-devops-intellij">Microsoft Corporation</vendor>
     <description><![CDATA[
@@ -58,9 +58,10 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Better support for on-premise Azure DevOps servers (<a href="https://github.com/microsoft/azure-devops-intellij/pull/433">#433</a>)</li>
-        <li>Improved logging of the reactive client output and state</li>
-        <li>Update link to JetBrains-supported TFVC client</li>
+        <li>Bump the minimal supported IntelliJ version to 2019.3.</li>
+        <li>Fix encoding issues when browsing the local diff (<a href="https://github.com/microsoft/azure-devops-intellij/issues/451">#451</a>).</li>
+        <li>Rework TFVC VCS root detection to use currently active TFVC client (i.e. it is able to use the reactive client which is much faster).</li>
+        <li>Enable the reactive TFVC client by default.</li>
       </ul>
       <br />
     ]]>
