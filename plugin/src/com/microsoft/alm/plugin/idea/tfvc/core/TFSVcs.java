@@ -116,7 +116,7 @@ public class TFSVcs extends AbstractVcs {
         return (TFSVcs) ProjectLevelVcsManager.getInstance(project).findVcsByName(TFVC_NAME);
     }
 
-    @NonNls
+    @NotNull @NonNls
     public String getDisplayName() {
         return TFVC_NAME;
     }
@@ -190,9 +190,7 @@ public class TFSVcs extends AbstractVcs {
         return isVersionedDirectory(filePath.getVirtualFile());
     }
 
-    /**
-     * Overrides method from IDEA 2019.2 that will allow us to work without "new" root mappings.
-     */
+    @Override
     public boolean needsLegacyDefaultMappings() {
         return true;
     }

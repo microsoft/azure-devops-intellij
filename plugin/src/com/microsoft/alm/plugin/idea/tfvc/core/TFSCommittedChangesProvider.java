@@ -25,7 +25,6 @@ import com.intellij.openapi.vcs.CachingCommittedChangesProvider;
 import com.intellij.openapi.vcs.ChangeListColumn;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedListsZipper;
@@ -83,11 +82,6 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return null;
     }
 
-    @Nullable
-    public RepositoryLocation getLocationFor(final FilePath root, final String repositoryPath) {
-        return getLocationFor(root);
-    }
-
     @Override
     @Nullable
     public RepositoryLocation getLocationFor(final FilePath root) {
@@ -100,7 +94,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     }
 
     @Override
-    public Pair<TFSChangeList, FilePath> getOneList(final VirtualFile file, final VcsRevisionNumber number) throws VcsException {
+    public Pair<TFSChangeList, FilePath> getOneList(final VirtualFile file, final VcsRevisionNumber number) {
         final ChangeBrowserSettings settings = createDefaultSettings();
         settings.USE_CHANGE_AFTER_FILTER = true;
         settings.USE_CHANGE_BEFORE_FILTER = true;
@@ -123,14 +117,11 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return true;
     }
 
-    @SuppressWarnings("unchecked") // TODO: We have to use the raw type for the AsynchConsumer here, because the
-                                   // signature in question was changed in IDEA 2019.2. We may use the proper type here
-                                   // only after migration to 2019.2+.
     @Override
     public void loadCommittedChanges(final ChangeBrowserSettings settings,
                                      final RepositoryLocation location,
                                      final int maxCount,
-                                     final AsynchConsumer consumer) throws VcsException {
+                                     final AsynchConsumer<? super CommittedChangeList> consumer) {
         // TODO: (JetBrains) if revision and date filters are both set, which one should have priority?
         VersionSpec versionFrom = VersionSpec.create(1);
         if (settings.getChangeAfterFilter() != null) {
@@ -158,7 +149,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         // no changesets were found with the parameters
         if (changeSets.isEmpty()) {
             logger.info(String.format("No changesets were found in history for the range %s and user %s"
-                    , range.toString(), settings.getUserFilter() == null ? StringUtils.EMPTY : settings.getUserFilter()));
+                    , range, settings.getUserFilter() == null ? StringUtils.EMPTY : settings.getUserFilter()));
             consumer.finished();
             return;
         }
@@ -176,8 +167,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
     @Override
     public List<TFSChangeList> getCommittedChanges(final ChangeBrowserSettings settings,
                                                    final RepositoryLocation location,
-                                                   final int maxCount) throws VcsException {
-        final List<TFSChangeList> result = new ArrayList<TFSChangeList>();
+                                                   final int maxCount) {
+        final List<TFSChangeList> result = new ArrayList<>();
         loadCommittedChanges(settings, location, maxCount, new AsynchConsumer<CommittedChangeList>() {
             public void finished() {
             }
@@ -189,8 +180,8 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return result;
     }
 
-    public ChangeListColumn[] getColumns() {
-        return new ChangeListColumn[]{new ChangeListColumn.ChangeListNumberColumn(
+    public ChangeListColumn<?>[] getColumns() {
+        return new ChangeListColumn<?>[]{new ChangeListColumn.ChangeListNumberColumn(
                 TfPluginBundle.message(TfPluginBundle.KEY_TFVC_REPOSITORY_VIEW_COLUMN_REVISION)), ChangeListColumn.NAME,
                 ChangeListColumn.DATE, ChangeListColumn.DESCRIPTION};
     }
@@ -203,7 +194,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         list.writeToStream(stream);
     }
 
-    public TFSChangeList readChangeList(final RepositoryLocation location, final DataInput stream) throws IOException {
+    public TFSChangeList readChangeList(final RepositoryLocation location, final DataInput stream) {
         return new TFSChangeList(vcs, stream);
     }
 
@@ -211,7 +202,7 @@ public class TFSCommittedChangesProvider implements CachingCommittedChangesProvi
         return true;
     }
 
-    public Collection<FilePath> getIncomingFiles(final RepositoryLocation location) throws VcsException {
+    public Collection<FilePath> getIncomingFiles(final RepositoryLocation location) {
         return null;
     }
 

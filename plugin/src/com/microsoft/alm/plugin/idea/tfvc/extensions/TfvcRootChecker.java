@@ -27,10 +27,8 @@ public class TfvcRootChecker extends VcsRootChecker {
     /**
      * Checks if registered mapping can be used to perform VCS operations. According to the specification, returns
      * {@code true} if unsure.
-     * <br/>
-     * It is used as optimization in IDEA 2019.2+.
      */
-    // @Override // only available in IDEA 2019.2
+    @Override
     public boolean validateRoot(@NotNull String pathString) {
         Path path = Paths.get(pathString);
         Path fileName = path.getFileName();

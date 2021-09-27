@@ -71,9 +71,7 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
         // This override does the same as base method, but tries to determine a workspace directory instead of using
         // project.getBaseDir().
         Collection<VirtualFile> existingRoots = vcsRoots.stream().filter(root -> {
-            // TODO: Remove this suppression after migration to IDEA 2019.3. AbstractVcs became non-generic in newer
-            // IDEA.
-            @SuppressWarnings("rawtypes") AbstractVcs vcs = root.getVcs();
+            AbstractVcs vcs = root.getVcs();
             return vcs != null && vcs.getName().equals(myVcs.getName());
         }).map(VcsRoot::getPath).collect(toList());
 
@@ -104,12 +102,10 @@ public class TfvcIntegrationEnabler extends VcsIntegrationEnabler {
     }
 
     private void showVsAuthenticationErrorDialog(Path path) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            Messages.showWarningDialog(
-                    myProject,
-                    TfPluginBundle.message(TfPluginBundle.KEY_VISUAL_STUDIO_CLIENT_AUTHENTICATION_ERROR, path),
-                    TfPluginBundle.message(TfPluginBundle.KEY_VISUAL_STUDIO_CLIENT));
-        }, ModalityState.NON_MODAL);
+        ApplicationManager.getApplication().invokeLater(() -> Messages.showWarningDialog(
+                myProject,
+                TfPluginBundle.message(TfPluginBundle.KEY_VISUAL_STUDIO_CLIENT_AUTHENTICATION_ERROR, path),
+                TfPluginBundle.message(TfPluginBundle.KEY_VISUAL_STUDIO_CLIENT)), ModalityState.NON_MODAL);
     }
 
     private CompletionStage<Workspace> getVsWorkspaceAsync(Path vsClient, Path path) {
