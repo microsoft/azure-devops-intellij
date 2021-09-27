@@ -6,9 +6,9 @@ package com.microsoft.alm.plugin.idea.git.ui.branch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.intellij.dvcs.repo.Repository;
-import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.vcs.log.Hash;
 import com.microsoft.alm.core.webapi.model.TeamProjectReference;
 import com.microsoft.alm.plugin.context.ServerContext;
@@ -17,6 +17,7 @@ import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
 import com.microsoft.alm.plugin.idea.git.utils.GeneralGitHelper;
+import com.microsoft.alm.plugin.idea.git.utils.TfGitHelper;
 import com.microsoft.alm.sourcecontrol.webapi.model.GitRefUpdateResult;
 import git4idea.GitRemoteBranch;
 import git4idea.repo.GitHooksInfo;
@@ -45,24 +46,25 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsNotifier.class, GeneralGitHelper.class})
+@PrepareForTest({ApplicationManager.class, GeneralGitHelper.class, TfGitHelper.class})
 public class CreateBranchModelTest extends IdeaAbstractTest {
 
     private CreateBranchModel underTest;
     private static final String defaultBranchName = "defaultName";
     private static final GitRemote tfsRemoteMaster = new GitRemote("master", ImmutableList.of("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
-            ImmutableList.of("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
+            ImmutableList.of("https://pushurl"), Collections.emptyList(), Collections.emptyList());
     private static final GitRemote tfsRemoteBranch1 = new GitRemote("branch1", ImmutableList.of("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
-            ImmutableList.of("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
+            ImmutableList.of("https://pushurl"), Collections.emptyList(), Collections.emptyList());
     private static final GitRemote tfsRemoteBranch2 = new GitRemote("branch2", ImmutableList.of("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo"),
-            ImmutableList.of("https://pushurl"), Collections.<String>emptyList(), Collections.<String>emptyList());
+            ImmutableList.of("https://pushurl"), Collections.emptyList(), Collections.emptyList());
     private static final URI uri = URI.create("https://mytest.visualstudio.com/DefaultCollection/_git/testrepo");
 
+    @Mock
+    private Application mockApplication;
     @Mock
     private Project mockProject;
     @Mock
@@ -73,8 +75,6 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
     private GitRemoteBranch mockRemoteBranch1;
     @Mock
     private GitRemoteBranch mockRemoteBranch2;
-    @Mock
-    private VcsNotifier mockVcsNotifier;
     @Mock
     private com.microsoft.alm.sourcecontrol.webapi.model.GitRepository mockVstsRepo;
     @Mock
@@ -116,11 +116,14 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
 
     @Before
     public void setUp() throws Exception {
-        PowerMockito.mockStatic(VcsNotifier.class);
-        when(VcsNotifier.getInstance(mockProject)).thenReturn(mockVcsNotifier);
+        PowerMockito.mockStatic(ApplicationManager.class, GeneralGitHelper.class, TfGitHelper.class);
+        when(ApplicationManager.getApplication()).thenReturn(mockApplication);
+        when(mockApplication.isUnitTestMode()).thenReturn(true);
 
-        PowerMockito.mockStatic(GeneralGitHelper.class);
         when(GeneralGitHelper.getLastCommitHash(mockProject, mockGitRepository, mockRemoteMaster)).thenReturn("281e2d5f8ba36655570ba808055e81ff64ba14d8");
+
+        PowerMockito.mockStatic(TfGitHelper.class, CALLS_REAL_METHODS);
+        when(TfGitHelper.getTfGitRepository(any())).thenReturn(null);
 
         when(mockGitRepository.getRemotes()).thenReturn(ImmutableList.of(tfsRemoteMaster, tfsRemoteBranch1, tfsRemoteBranch2));
 
@@ -212,8 +215,6 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
         underTest.setBranchName("testBranch");
         assertTrue(underTest.doBranchCreate(mockContext, null));
         assertTrue(underTest.getBranchWasCreated());
-        verify(mockVcsNotifier).notifyImportantInfo(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE)), any(String.class), any(NotificationListener.class));
-
     }
 
     @Test
@@ -229,8 +230,6 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
         underTest.setBranchName("testBranch");
         assertTrue(underTest.doBranchCreate(mockContext, null));
         assertFalse(underTest.getBranchWasCreated());
-        verify(mockVcsNotifier).notifyError(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE)), any(String.class));
-
     }
 
     @Test
@@ -243,6 +242,5 @@ public class CreateBranchModelTest extends IdeaAbstractTest {
         underTest.setBranchName("testBranch");
         assertTrue(underTest.doBranchCreate(mockContext, null));
         assertFalse(underTest.getBranchWasCreated());
-        verify(mockVcsNotifier).notifyError(eq(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE)), any(String.class));
     }
 }

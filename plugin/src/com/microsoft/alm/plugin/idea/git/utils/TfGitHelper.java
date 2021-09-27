@@ -96,7 +96,7 @@ public class TfGitHelper {
     }
 
     @Nullable
-    public static GitRepository getTfGitRepository(@NotNull final Project project) {
+    public static GitRepository getTfGitRepository(@Nullable final Project project) {
         if (project != null) {
             final List<GitRepository> repositories = GitUtil.getRepositoryManager(project).getRepositories();
             for (GitRepository repository : repositories) {

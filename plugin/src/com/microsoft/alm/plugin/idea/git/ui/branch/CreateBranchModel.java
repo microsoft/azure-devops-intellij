@@ -7,6 +7,7 @@ import com.google.common.collect.Collections2;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
@@ -260,17 +261,24 @@ public class CreateBranchModel extends AbstractModel {
 
                 // create user notification
                 final String branchLink = String.format(UrlHelper.SHORT_HTTP_LINK_FORMATTER, UrlHelper.getBranchURI(context.getUri(), getBranchName()), getBranchName());
-                VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE),
-                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION, branchLink), new NotificationListener() {
-                            @Override
-                            public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
-                                BrowserUtil.browse(hyperlinkEvent.getURL());
-                            }
-                        });
+                if (!ApplicationManager.getApplication().isUnitTestMode()) {
+                    VcsNotifier.getInstance(project).notifyImportantInfo(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_TITLE),
+                            TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_SUCCESSFUL_DESCRIPTION, branchLink), new NotificationListener() {
+                                @Override
+                                public void hyperlinkUpdate(@NotNull Notification notification, @NotNull HyperlinkEvent hyperlinkEvent) {
+                                    BrowserUtil.browse(hyperlinkEvent.getURL());
+                                }
+                            });
+                }
             } else {
-                logger.warn("Create branch failed", errorMessage);
-                VcsNotifier.getInstance(project).notifyError(TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE),
-                        TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_ERRORS_BRANCH_CREATE_FAILED, errorMessage));
+                logger.warn("Create branch failed: {}", errorMessage);
+                if (!ApplicationManager.getApplication().isUnitTestMode()) {
+                    VcsNotifier.getInstance(project).notifyError(
+                            TfPluginBundle.message(TfPluginBundle.KEY_CREATE_BRANCH_DIALOG_FAILED_TITLE),
+                            TfPluginBundle.message(
+                                    TfPluginBundle.KEY_CREATE_BRANCH_ERRORS_BRANCH_CREATE_FAILED,
+                                    errorMessage));
+                }
             }
 
             hasNotifiedUser = true;
