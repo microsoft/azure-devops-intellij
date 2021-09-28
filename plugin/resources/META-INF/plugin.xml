@@ -41,6 +41,7 @@
         <li>Check the build status of your repository and queue a new build if desired.</li>
         <li>Supports proxy settings configured in the IDE's System Settings section.</li>
         <li>Edit cached project information through configuration management.</li>
+        <li>History view: fixed an issue where we were always performing a diff operation on the local file version.</li>
       </ul>
       <br />
       <br />

@@ -132,14 +132,15 @@ public abstract class TFSContentRevision implements ContentRevision {
     @Nullable
     public String getContent() throws VcsException {
         FilePath filePath = getFile();
+        TFSContentStore contentStore;
         try {
             // Download the file if required:
-            TFSContentStoreFactory.findOrCreate(filePath.getPath(), getChangeset(), getFilePath(), project);
+            contentStore = TFSContentStoreFactory.findOrCreate(filePath.getPath(), getChangeset(), getFilePath(), project);
         } catch (IOException e) {
             throw new VcsException(e);
         }
 
-        VirtualFile virtualFile = Objects.requireNonNull(filePath.getVirtualFile());
+        VirtualFile virtualFile = Objects.requireNonNull(VfsUtil.findFileByIoFile(contentStore.getTmpFile(), true));
         try {
             return VfsUtil.loadText(virtualFile);
         } catch (IOException e) {
