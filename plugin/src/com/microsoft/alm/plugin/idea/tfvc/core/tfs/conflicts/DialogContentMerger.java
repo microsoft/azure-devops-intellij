@@ -19,15 +19,14 @@
 
 package com.microsoft.alm.plugin.idea.tfvc.core.tfs.conflicts;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diff.ActionButtonPresentation;
-import com.intellij.openapi.diff.DiffManager;
-import com.intellij.openapi.diff.DiffRequestFactory;
-import com.intellij.openapi.diff.MergeRequest;
+import com.intellij.diff.DiffManager;
+import com.intellij.diff.DiffRequestFactory;
+import com.intellij.diff.InvalidDiffRequestException;
+import com.intellij.diff.merge.MergeRequest;
+import com.intellij.diff.merge.MergeResult;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.io.StreamUtil;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.merge.MergeDialogCustomizer;
@@ -36,6 +35,9 @@ import com.microsoft.alm.common.utils.ArgumentHelper;
 import com.microsoft.alm.plugin.idea.tfvc.ui.resolve.ContentTriplet;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DialogContentMerger implements ContentMerger {
 
@@ -43,37 +45,32 @@ public class DialogContentMerger implements ContentMerger {
                                 final VcsRevisionNumber serverVersion) {
         ArgumentHelper.checkIfFileWriteable(new File(localFile.getPath()));
 
+        Document document = Objects.requireNonNull(FileDocumentManager.getInstance().getDocument(localFile));
         final MergeDialogCustomizer c = new MergeDialogCustomizer();
-        final MergeRequest request = DiffRequestFactory.getInstance().createMergeRequest(StreamUtil.convertSeparators(contentTriplet.localContent),
-                StreamUtil.convertSeparators(contentTriplet.serverContent),
-                StreamUtil.convertSeparators(contentTriplet.baseContent),
-                localFile, project,
-                ActionButtonPresentation.APPLY,
-                ActionButtonPresentation.CANCEL_WITH_PROMPT);
-
-        request.setWindowTitle(c.getMergeWindowTitle(localFile));
-        request.setVersionTitles(new String[]{
-                c.getLeftPanelTitle(localFile),
-                c.getCenterPanelTitle(localFile),
-                c.getRightPanelTitle(localFile, serverVersion)
-        });
-
-        // TODO (JetBrains) call canShow() first
-        DiffManager.getInstance().getDiffTool().show(request);
-        if (request.getResult() == DialogWrapper.OK_EXIT_CODE) {
-            return true;
-        } else {
-            request.restoreOriginalContent();
-            // TODO (JetBrains) maybe MergeVersion.MergeDocumentVersion.restoreOriginalContent() should save document itself?
-            ApplicationManager.getApplication().runWriteAction(new Runnable() {
-                public void run() {
-                    final Document document = FileDocumentManager.getInstance().getDocument(localFile);
-                    if (document != null) {
-                        FileDocumentManager.getInstance().saveDocument(document);
-                    }
-                }
-            });
-            return false;
+        final MergeRequest request;
+        AtomicReference<MergeResult> result = new AtomicReference<>();
+        try {
+            request = DiffRequestFactory.getInstance().createMergeRequest(
+                    project,
+                    localFile.getFileType(),
+                    document,
+                    Arrays.asList(
+                        StreamUtil.convertSeparators(contentTriplet.localContent),
+                        StreamUtil.convertSeparators(contentTriplet.baseContent),
+                        StreamUtil.convertSeparators(contentTriplet.serverContent)
+                    ),
+                    c.getMergeWindowTitle(localFile),
+                    Arrays.asList(
+                            c.getLeftPanelTitle(localFile),
+                            c.getCenterPanelTitle(localFile),
+                            c.getRightPanelTitle(localFile, serverVersion)
+                    ), result::set);
+        } catch (InvalidDiffRequestException e) {
+            throw new RuntimeException(e);
         }
+
+        DiffManager.getInstance().showMerge(project, request);
+
+        return result.get() != MergeResult.CANCEL;
     }
 }
