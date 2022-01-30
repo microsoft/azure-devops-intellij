@@ -4,7 +4,7 @@ This is a plugin for working with Git and TFVC repositories on Azure DevOps and 
 and various other JetBrains IDEs. It is supported on Linux, Mac OS X, and Windows.
 It is compatible with IntelliJ IDEA Community and Ultimate editions (version 2019.3+) and Android Studio (version 4.0+).
 
-To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/java/download-intellij-plug-in
+To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/repos/git/create-repo-intellij?view=azure-devops
 
 ## Pre-Reqs
 1. Install JDK 8. 
