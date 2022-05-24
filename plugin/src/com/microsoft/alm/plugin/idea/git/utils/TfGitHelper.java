@@ -68,7 +68,7 @@ public class TfGitHelper {
         final String remoteUrl = gitRemote.getFirstUrl();
         if (remoteUrl != null
             && (remoteUrl.contains(".visualstudio.com/")
-                || remoteUrl.contains(".azure.com/")
+                || remoteUrl.contains(".azure.com")
                 || remoteUrl.contains(".tfsallin.net/")
                 || remoteUrl.contains(".vsallin.net/")
                 || remoteUrl.contains(".vsts.io/")
