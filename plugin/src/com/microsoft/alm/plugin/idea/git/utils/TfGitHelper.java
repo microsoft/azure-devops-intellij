@@ -68,7 +68,9 @@ public class TfGitHelper {
         final String remoteUrl = gitRemote.getFirstUrl();
         if (remoteUrl != null
             && (remoteUrl.contains(".visualstudio.com/")
-                || remoteUrl.contains(".azure.com")
+                || remoteUrl.contains(".azure.com/")
+                // support ssh urls of the format git@ssh.dev.azure.com:v3/org/project/repo
+                || remoteUrl.contains(".azure.com:")
                 || remoteUrl.contains(".tfsallin.net/")
                 || remoteUrl.contains(".vsallin.net/")
                 || remoteUrl.contains(".vsts.io/")
