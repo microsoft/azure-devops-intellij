@@ -59,10 +59,7 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Bump the minimal supported IntelliJ version to 2019.3.</li>
-        <li>Fix encoding issues when browsing the local diff (<a href="https://github.com/microsoft/azure-devops-intellij/issues/451">#451</a>).</li>
-        <li>Rework TFVC VCS root detection to use currently active TFVC client (i.e. it is able to use the reactive client which is much faster).</li>
-        <li>Enable the reactive TFVC client by default.</li>
+        <li>Fix an issue when it was impossible to create a pull request in IDEs based on IntelliJ 2022.2</li>
       </ul>
       <br />
     ]]>
