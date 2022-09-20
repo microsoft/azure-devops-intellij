@@ -16,6 +16,7 @@ buildscript {
 
 plugins {
     id 'org.jetbrains.intellij' version '0.4.13' apply false
+    // https://docs.gradle.org/current/userguide/compatibility.html#kotlin
     id "org.jetbrains.kotlin.jvm" version "1.3.50" apply false
     id "de.undercouch.download" version "4.0.0"
 }
@@ -65,8 +66,8 @@ configure(mainProjects) {
     apply plugin: 'pmd'
     apply plugin: 'findbugs'
 
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 11
+    targetCompatibility = 11
 
     sourceSets {
         main {
@@ -92,6 +93,9 @@ configure(mainProjects) {
             java {
                 srcDir 'test'
             }
+            resources {
+                srcDir 'test-resources'
+            }
         }
     }
 
@@ -109,7 +113,7 @@ project(":plugin") {
     apply plugin: 'org.jetbrains.intellij'
 
     dependencies {
-        compile project(":client:connector")
+        compile project(path: ":client:connector", configuration: "default")
         testRuntime project(":plugin:test-utils")
     }
 
