@@ -59,7 +59,8 @@
     <change-notes><![CDATA[
       <br />
       <ul>
-        <li>Fix an issue when it was impossible to create a pull request in IDEs based on IntelliJ 2022.2</li>
+        <li>Fix an issue <a href="https://github.com/microsoft/azure-devops-intellij/issues/491">#491</a>: it was impossible to create a Git pull request in IDEs based on IntelliJ 2022.2</li>
+        <li>Fix an issue with TFVC operations (<a href="https://github.com/microsoft/azure-devops-intellij/issues/498">#498</a>).</li>
       </ul>
       <br />
     ]]>

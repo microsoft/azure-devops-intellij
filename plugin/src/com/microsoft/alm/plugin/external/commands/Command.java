@@ -20,7 +20,6 @@ import com.microsoft.alm.plugin.external.utils.WorkspaceHelper;
 import com.microsoft.tfs.model.connector.TfsLocalPath;
 import com.microsoft.tfs.model.connector.TfsServerPath;
 import com.microsoft.tfs.model.connector.TfsWorkspaceMapping;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +34,7 @@ import sun.security.util.Debug;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -314,7 +314,7 @@ public abstract class Command<T> {
             xmlInput = new InputSource(new StringReader(stdout));
         }
 
-        final XPath xpath = new XPathFactoryImpl().newXPath();
+        final XPath xpath = XPathFactory.newInstance().newXPath();
         try {
             final Object result = xpath.evaluate(xpathQuery, xmlInput, XPathConstants.NODESET);
             if (result != null && result instanceof NodeList) {
