@@ -7,9 +7,8 @@ It is compatible with IntelliJ IDEA Community and Ultimate editions (version 201
 To learn more about installing and using our Azure DevOps IntelliJ plug-in, visit: https://docs.microsoft.com/en-us/azure/devops/repos/git/create-repo-intellij?view=azure-devops
 
 ## Pre-Reqs
-1. Install JDK 8. 
-   * You can find the JDK 8 download on Oracle's web site at <a href="http://www.oracle.com/technetwork/java/javase/downloads" target="_blank">Java SE Downloads</a>.
-2. Set JAVA_HOME to the location of JDK 8.
+1. Install OpenJDK 11.
+2. Set JAVA_HOME to the location of JDK 11.
 3. Clone the repository (if planning on building yourself).
 
 ## Building the Plugin
@@ -20,7 +19,7 @@ Run the build by:
 1. Open a terminal/console window. 
 2. Navigate to the repository root.
 3. Run `./gradlew buildPlugin`
-   * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the 1.8 JDK.
+   * If you have multiple versions of the Java JDK installed, you may need to set your `JAVA_HOME` environment variable to the installation folder of the JDK 11.
 4. The plugin zip file will be created in the `plugin/build/distributions/` folder.
 
 
@@ -29,9 +28,9 @@ Once you've downloaded the dependencies, run the build by:
 
 1. Start IntelliJ and open the Gradle project from the root project directory.
 
-2. Configure the project to use language level JDK 8
+2. Configure the project to use language level Java 11
    * File -> Project Structure -> Project Settings -> Project
-   * Under Project Language Level, select "8 - Lambdas, type annotations etc."
+   * Under Project Language Level, select "11 - Local variable syntax for lambda parameters"
 
 3. Configure the project and ***each module*** to build with this "IntelliJ Platform Plugin SDK".
    * File -> Project Structure -> Project Settings -> Project.
