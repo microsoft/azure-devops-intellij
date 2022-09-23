@@ -24,12 +24,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.net.URI;
 import java.util.Observer;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -121,7 +121,7 @@ public class TabModelImplTest extends IdeaAbstractTest {
     @Test
     public void testSetFilter_Same() {
         underTest.setFilter(FILTER);
-        verifyZeroInteractions(mockModel);
+        verifyNoMoreInteractions(mockModel);
         Assert.assertEquals(FILTER, underTest.getFilter());
     }
 }

@@ -104,9 +104,9 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
         ApplicationStartup appStartup = new ApplicationStartup();
         appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(1));
+        PowerMockito.verifyStatic(AuthHelper.class, Mockito.times(1));
         AuthHelper.setDeviceFlowEnvFromSettingsFile();
-        PowerMockito.verifyStatic(Mockito.times(0));
+        PowerMockito.verifyStatic(AuthHelper.class, Mockito.times(0));
         AuthHelper.isDeviceFlowEnvSetTrue();
     }
 
@@ -117,9 +117,9 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
         ApplicationStartup appStartup = new ApplicationStartup();
         appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(0));
+        PowerMockito.verifyStatic(AuthHelper.class, Mockito.times(0));
         AuthHelper.setDeviceFlowEnvFromSettingsFile();
-        PowerMockito.verifyStatic(Mockito.times(1));
+        PowerMockito.verifyStatic(AuthHelper.class, Mockito.times(1));
         AuthHelper.isDeviceFlowEnvSetTrue();
         AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);
     }
@@ -131,7 +131,7 @@ public class ApplicationStartupTest extends IdeaAbstractTest {
 
         ApplicationStartup appStartup = new ApplicationStartup();
         appStartup.configureAuthType();
-        PowerMockito.verifyStatic(Mockito.times(0));
+        PowerMockito.verifyStatic(AuthHelper.class, Mockito.times(0));
         AuthHelper.setDeviceFlowEnvFromSettingsFile();
         AuthHelper.isDeviceFlowEnvSetTrue();
         AuthHelper.setAuthTypeInSettingsFile(AuthTypes.DEVICE_FLOW);

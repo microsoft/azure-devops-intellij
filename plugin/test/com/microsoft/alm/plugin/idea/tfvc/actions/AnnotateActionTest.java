@@ -28,8 +28,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,10 +91,10 @@ public class AnnotateActionTest extends IdeaAbstractTest {
         when(mockActionContext.getServerContext()).thenReturn(null);
         annotateAction.execute(mockActionContext);
 
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(mockProject, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_MSG),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_TITLE));
-        verifyStatic(times(0));
+        verifyStatic(BrowserUtil.class, times(0));
         BrowserUtil.browse(any(URI.class));
     }
 
@@ -104,10 +104,10 @@ public class AnnotateActionTest extends IdeaAbstractTest {
         when(mockActionContext.getServerContext()).thenReturn(mockServerContext);
         annotateAction.execute(mockActionContext);
 
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(mockProject, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_MSG),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_TITLE));
-        verifyStatic(times(0));
+        verifyStatic(BrowserUtil.class, times(0));
         BrowserUtil.browse(any(URI.class));
     }
 
@@ -118,10 +118,10 @@ public class AnnotateActionTest extends IdeaAbstractTest {
         when(mockActionContext.getItem()).thenReturn(null);
         annotateAction.execute(mockActionContext);
 
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(mockProject, TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_MSG),
                 TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_ANNOTATE_ERROR_TITLE));
-        verifyStatic(times(0));
+        verifyStatic(BrowserUtil.class, times(0));
         BrowserUtil.browse(any(URI.class));
     }
 
@@ -135,9 +135,9 @@ public class AnnotateActionTest extends IdeaAbstractTest {
         when(mockActionContext.getItem()).thenReturn(mockItemInfo);
         annotateAction.execute(mockActionContext);
 
-        verifyStatic(times(0));
+        verifyStatic(Messages.class, times(0));
         Messages.showErrorDialog(any(Project.class), anyString(), anyString());
-        verifyStatic(times(1));
+        verifyStatic(BrowserUtil.class, times(1));
         BrowserUtil.browse(argCapture.capture());
         assertEquals(serverURI.toString() +
                         "TeamName/_versionControl/?path=%24%2Fpath%2Fto%2Ffile.txt&_a=contents&annotate=true&hideComments=true",

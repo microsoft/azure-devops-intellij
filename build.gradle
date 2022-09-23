@@ -53,8 +53,6 @@ allprojects {
  */
 configure(mainProjects) {
     configurations {
-        codeAnalysisLibs
-
         // Some our dependencies should be included *before* dependencies from IDEA (e.g. junit, jackson-databind). IDEA
         // has some versions of these dependencies that sometimes break tests (see comments for particular dependencies
         // included into this configuration for details).
@@ -64,15 +62,12 @@ configure(mainProjects) {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
-    apply plugin: 'findbugs'
 
     sourceCompatibility = 11
     targetCompatibility = 11
 
     sourceSets {
         main {
-            compileClasspath += configurations.codeAnalysisLibs
-
             java {
                 srcDir 'src'
             }
@@ -84,7 +79,7 @@ configure(mainProjects) {
 
         test {
             def setUpDependencies = { originalCollection ->
-                configurations.priorityTestCompile + originalCollection + configurations.codeAnalysisLibs
+                configurations.priorityTestCompile + originalCollection
             }
 
             compileClasspath = setUpDependencies(compileClasspath)
@@ -114,6 +109,11 @@ project(":plugin") {
 
     dependencies {
         compile project(path: ":client:connector", configuration: "default")
+
+        testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.2'
+        testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.2'
+        testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '2.0.2'
+
         testRuntime project(":plugin:test-utils")
     }
 
@@ -214,7 +214,6 @@ configure(mainProjects) {
         compile ':com.microsoft.alm.client.sourcecontrol:0.4.3-SNAPSHOT'
         compile ':com.microsoft.alm.client.workitemtracking:0.4.3-SNAPSHOT'
 
-        codeAnalysisLibs 'com.google.code.findbugs:annotations:3.0.0'
         compile group: 'commons-io', name: 'commons-io', version: '2.4'
         compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.28'
         compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.28'
@@ -232,23 +231,12 @@ configure(mainProjects) {
         // version to take priority.
         priorityTestCompile group: 'junit', name: 'junit', version: '4.12'
 
-        testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
-        testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.7.1'
-        testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.7.1'
-        testCompile group: 'org.powermock', name: 'powermock-classloading-xstream', version: '1.7.1'
+        testCompile group: 'org.mockito', name: 'mockito-core', version: '2.25.1'
         testCompile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     }
 
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-    }
-
-    tasks.withType(FindBugs) {
-        ignoreFailures = true
-        reports {
-            html { enabled = true }
-            xml.enabled = !html.enabled
-        }
     }
 
     /**
@@ -267,12 +255,5 @@ configure(mainProjects) {
         toolVersion = "5.0.3"
         ignoreFailures = true
         ruleSetFiles = files "${rootDir}/config/pmd/custom-pmd-rules.xml"
-    }
-
-    /**
-     * Static code analysis tools
-     */
-    findbugs {
-      toolVersion = "3.0.0"
     }
 }

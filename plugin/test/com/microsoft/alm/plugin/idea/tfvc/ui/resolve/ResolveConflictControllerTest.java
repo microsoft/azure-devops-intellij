@@ -15,7 +15,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.awt.event.ActionEvent;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

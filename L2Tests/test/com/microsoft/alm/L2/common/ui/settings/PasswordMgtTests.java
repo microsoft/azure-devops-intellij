@@ -6,6 +6,7 @@ package com.microsoft.alm.L2.common.ui.settings;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TestDialog;
+import com.intellij.openapi.ui.TestDialogManager;
 import com.microsoft.alm.L2.L2Test;
 import com.microsoft.alm.plugin.context.ServerContext;
 import com.microsoft.alm.plugin.context.ServerContextManager;
@@ -29,7 +30,7 @@ public class PasswordMgtTests extends L2Test {
 
     private static void verifyShowsMessage(String expectedMessage, int messageResult, Runnable action) {
         AtomicReference<String> messageShown = new AtomicReference<>();
-        TestDialog oldTestDialog = Messages.setTestDialog(message -> {
+        TestDialog oldTestDialog = TestDialogManager.setTestDialog(message -> {
             messageShown.set(message);
             return messageResult;
         });
@@ -38,13 +39,12 @@ public class PasswordMgtTests extends L2Test {
             action.run();
             assertEquals("Message shown in dialog", expectedMessage, messageShown.get());
         } finally {
-            Messages.setTestDialog(oldTestDialog);
+            TestDialogManager.setTestDialog(oldTestDialog);
         }
     }
 
     public void testSettingsSetup() {
         createSettings();
-
         assertEquals(2, model.getTableModel().getRowCount());
         assertFalse(controller.isModified());
     }

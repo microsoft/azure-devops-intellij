@@ -42,9 +42,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -115,7 +115,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.reloadWorkspacesWithProgress(server);
 
         observer.assertAndClearLastUpdate(manageWorkspacesModel, ManageWorkspacesModel.REFRESH_SERVER);
-        verifyStatic(never());
+        verifyStatic(Messages.class, never());
         Messages.showErrorDialog(any(Project.class), any(String.class), any(String.class));
     }
 
@@ -127,7 +127,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.reloadWorkspacesWithProgress(server);
 
         observer.assertAndClearLastUpdate(manageWorkspacesModel, ManageWorkspacesModel.REFRESH_SERVER);
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_MSG, server.getName())),
                 eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_RELOAD_ERROR_TITLE)));
     }
@@ -138,7 +138,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         when(mockServerContextManager.getAuthenticationInfo(server.getName(), true)).thenReturn(mockAuthInfo);
 
         manageWorkspacesModel.reloadWorkspaces(server);
-        verifyStatic(times(1));
+        verifyStatic(CommandUtils.class, times(1));
         CommandUtils.refreshWorkspacesForServer(mockAuthInfo, server.getName());
     }
 
@@ -165,8 +165,9 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.deleteWorkspaceWithProgress(workspace1);
 
         observer.assertUpdateNeverOccurred(ManageWorkspacesModel.REFRESH_WORKSPACE);
-        verifyStatic(never());
+        verifyStatic(VcsUtil.class, never());
         VcsUtil.runVcsProcessWithProgress(any(VcsRunnable.class), any(String.class), any(Boolean.class), any(Project.class));
+        verifyStatic(Messages.class, never());
         Messages.showErrorDialog(any(Project.class), any(String.class), any(String.class));
     }
 
@@ -178,7 +179,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.deleteWorkspaceWithProgress(workspace1);
 
         observer.assertAndClearLastUpdate(manageWorkspacesModel, ManageWorkspacesModel.REFRESH_WORKSPACE);
-        verifyStatic(never());
+        verifyStatic(Messages.class, never());
         Messages.showErrorDialog(any(Project.class), any(String.class), any(String.class));
     }
 
@@ -192,7 +193,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.deleteWorkspaceWithProgress(workspace1);
 
         observer.assertAndClearLastUpdate(manageWorkspacesModel, ManageWorkspacesModel.REFRESH_WORKSPACE);
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_MSG, workspace1.getName())),
                 eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_DELETE_ERROR_TITLE)));
     }
@@ -202,7 +203,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         doReturn(workspace1).when(manageWorkspacesModel).getPartialWorkspace(server.getName(), workspace1.getName());
 
         manageWorkspacesModel.deleteWorkspace(workspace1);
-        verifyStatic(times(1));
+        verifyStatic(CommandUtils.class, times(1));
         CommandUtils.deleteWorkspace(mockServerContext, workspace1.getName());
     }
 
@@ -224,7 +225,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
     public void testEditWorkspaceWithProgress_Happy() throws Exception {
         manageWorkspacesModel.editWorkspaceWithProgress(workspace1, mockRunnable);
 
-        verifyStatic(never());
+        verifyStatic(Messages.class, never());
         Messages.showErrorDialog(any(Project.class), any(String.class), any(String.class));
     }
 
@@ -234,7 +235,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
                 .thenThrow(new VcsException(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG, workspace1.getName())));
         manageWorkspacesModel.editWorkspaceWithProgress(workspace1, mockRunnable);
 
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_MSG, workspace1.getName())),
                 eq(TfPluginBundle.message(TfPluginBundle.KEY_TFVC_MANAGE_WORKSPACES_EDIT_ERROR_TITLE)));
     }
@@ -247,7 +248,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         when(CommandUtils.getDetailedWorkspace(server.getName(), workspace1.getName(), mockAuthInfo)).thenReturn(workspace1);
 
         manageWorkspacesModel.editWorkspace(workspace1, mockRunnable);
-        verifyStatic(times(1));
+        verifyStatic(IdeaHelper.class, times(1));
         IdeaHelper.runOnUIThread(any(Runnable.class), eq(true));
     }
 
@@ -313,7 +314,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
 
         manageWorkspacesModel.editProxy(server);
         observer.assertAndClearLastUpdate(manageWorkspacesModel, ManageWorkspacesModel.REFRESH_SERVER);
-        verifyStatic(times(1));
+        verifyStatic(WorkspaceHelper.class, times(1));
         WorkspaceHelper.setProxyServer(server.getName(), "http://testUri.com");
     }
 
@@ -327,7 +328,7 @@ public class ManageWorkspacesModelTest extends IdeaAbstractTest {
         manageWorkspacesModel.editProxy(server);
         observer.assertUpdateNeverOccurred(ManageWorkspacesModel.REFRESH_SERVER);
         verify(mockProxySettingsDialog, never()).getProxyUri();
-        verifyStatic(never());
+        verifyStatic(WorkspaceHelper.class, never());
         WorkspaceHelper.setProxyServer(server.getName(), "http://testUri.com");
     }
 

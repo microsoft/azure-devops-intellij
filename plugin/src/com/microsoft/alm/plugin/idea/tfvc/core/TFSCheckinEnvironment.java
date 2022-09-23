@@ -165,9 +165,10 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
 
     @Nullable
-    public List<VcsException> commit(final List<Change> changes,
-                                     final String preparedComment,
-                                     @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
+    public List<VcsException> commit(List<? extends Change> changes,
+                                     String preparedComment,
+                                     @NotNull NullableFunction<Object, Object> parametersHolder,
+                                     Set<? super String> feedback) {
         final List<VcsException> errors = new ArrayList<>();
 
         // set progress bar status
@@ -216,12 +217,12 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
         return errors;
     }
 
-    public List<VcsException> commit(List<Change> changes, String preparedComment) {
+    public List<VcsException> commit(List<? extends Change> changes, String preparedComment) {
         return commit(changes, preparedComment, FunctionUtil.nullConstant(), null);
     }
 
     @Nullable
-    public List<VcsException> scheduleMissingFileForDeletion(final List<FilePath> files) {
+    public List<VcsException> scheduleMissingFileForDeletion(List<? extends FilePath> files) {
         final List<VcsException> errors = new ArrayList<>();
 
         ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
@@ -233,7 +234,7 @@ public class TFSCheckinEnvironment implements CheckinEnvironment {
     }
 
     @Nullable
-    public List<VcsException> scheduleUnversionedFilesForAddition(final List<VirtualFile> files) {
+    public List<VcsException> scheduleUnversionedFilesForAddition(final List<? extends VirtualFile> files) {
         final List<VcsException> exceptions = new ArrayList<>();
         try {
             List<Path> pathsToAdd = files.stream()

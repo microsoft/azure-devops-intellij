@@ -19,7 +19,6 @@ import com.microsoft.alm.workitemtracking.webapi.models.WorkItemReference;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
@@ -34,9 +33,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -61,7 +61,7 @@ public class WorkItemQueriesLookupOperationTest extends AbstractTest {
         result.setWorkItems(workItemRefs);
 
         WorkItemTrackingHttpClient witHttpClient = Mockito.mock(WorkItemTrackingHttpClient.class);
-        when(witHttpClient.getQueries(any(UUID.class), any(QueryExpand.class), Matchers.eq(1), Matchers.eq(false)))
+        when(witHttpClient.getQueries(any(UUID.class), any(QueryExpand.class), eq(1), eq(false)))
                 .thenReturn(queries);
 
         AuthenticationInfo authInfo = new AuthenticationInfo("user", "pass", "serverURI", "user");

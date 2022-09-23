@@ -19,7 +19,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ServerContextTableModel;
 import com.microsoft.alm.plugin.idea.git.ui.checkout.GitCheckoutModel;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.security.util.Debug;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class GitCheckoutTest extends L2Test {
 
         // Create a temp folder for the clone
         File tempFolder = L2Test.createTempDirectory();
-        Debug.println("tempFolder=" + tempFolder, null);
+        System.out.println("tempFolder=" + tempFolder);
 
         // Get the model and set fields appropriately
         final VsoCheckoutPageModel model = (VsoCheckoutPageModel) checkoutModel.getVsoModel();

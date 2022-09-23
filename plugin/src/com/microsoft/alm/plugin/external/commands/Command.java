@@ -29,7 +29,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import sun.security.util.Debug;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -261,7 +260,6 @@ public abstract class Command<T> {
             final long endTime = System.nanoTime();
             double seconds = ((double) endTime - startTime) / 1_000_000_000.0;
             logger.info(seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
-            Debug.println("", seconds + " sec - elapsed time for " + this.getArgumentBuilder().toString());
         }
     }
 
@@ -280,7 +278,7 @@ public abstract class Command<T> {
     /**
      * Determines whether a cached tool runner instance should be created after execution of this command. This runner
      * will be used when a new command is issued against the same working directory/tool location. See
-     * {@link ToolRunnerCache#getKey} for details on cache key calculation.
+     * {@code  ToolRunnerCache::getKey} for details on cache key calculation.
      * <p/>
      * Usually, it is a good idea to prepare a runner in advance, because there's always a possibility that new
      * commands will be issued against the same working directory as defined by the current command.

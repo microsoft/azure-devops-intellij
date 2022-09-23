@@ -3,6 +3,7 @@
 
 package com.microsoft.alm.L2;
 
+import com.intellij.openapi.application.Experiments;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -239,6 +240,8 @@ public abstract class L2Test extends UsefulTestCase {
             myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getTestName(true)).getFixture();
             myProjectFixture.setUp();
 
+            enableGitWslWorkaround();
+
             // Use the context info loaded earlier to setup the environment for TF work
             initializeTfEnvironment();
 
@@ -311,6 +314,8 @@ public abstract class L2Test extends UsefulTestCase {
                 });
 
             }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         } finally {
             try {
                 String tempTestIndicator = myTestStartedIndicator;
@@ -374,11 +379,10 @@ public abstract class L2Test extends UsefulTestCase {
         return Collections.emptyList();
     }
 
-    @SuppressWarnings("UnstableApiUsage") // TODO: Replace with defaultRunBare(ThrowableRunnable<Throwable>) after update to IDEA 2020.3
     @Override
-    protected void defaultRunBare() throws Throwable {
+    protected void defaultRunBare(@NotNull ThrowableRunnable<Throwable> runnable) throws Throwable {
         try {
-            super.defaultRunBare();
+            super.defaultRunBare(runnable);
         } catch (Throwable throwable) {
             if (myTestStartedIndicator != null) {
                 TestLoggerFactory.dumpLogToStdout(myTestStartedIndicator);
@@ -407,5 +411,10 @@ public abstract class L2Test extends UsefulTestCase {
         }
 
         return temp;
+    }
+
+    private void enableGitWslWorkaround() {
+        // Workaround for IDEA 2021.2.4 to not freeze on WSL enumeration, see IDEA-279044:
+        Experiments.getInstance().setFeatureEnabled("wsl.p9.show.roots.in.file.chooser", false);
     }
 }

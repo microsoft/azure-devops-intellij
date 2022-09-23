@@ -33,8 +33,8 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
@@ -149,7 +149,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
         assertEquals(0, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(0, teamServicesSettingsModel.getDeleteContexts().size());
         assertEquals(AuthTypes.CREDS, teamServicesSettingsModel.getOriginalAuthType());
-        verifyStatic(times(1));
+        verifyStatic(AuthHelper.class, times(1));
         mockServerContextManager.remove("mockServerContext_GitRepo");
         mockServerContextManager.remove("mockServerContext_TfvcRepo");
         AuthHelper.setDeviceFlowEnvVariableFalse();
@@ -177,7 +177,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
         assertEquals(1, teamServicesSettingsModel.getDeleteContexts().size());
         assertEquals(1, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(mockServerContext_GitRepo, teamServicesSettingsModel.getTableModel().getServerContext(0));
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showYesNoDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG)), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE)), any(Icon.class));
     }
 
@@ -192,7 +192,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(mockServerContext_TfvcRepo, teamServicesSettingsModel.getTableModel().getServerContext(0));
         assertEquals(mockServerContext_GitRepo, teamServicesSettingsModel.getTableModel().getServerContext(1));
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showYesNoDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_MSG)), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE)), any(Icon.class));
     }
 
@@ -205,7 +205,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(mockServerContext_TfvcRepo, teamServicesSettingsModel.getTableModel().getServerContext(0));
         assertEquals(mockServerContext_GitRepo, teamServicesSettingsModel.getTableModel().getServerContext(1));
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showWarningDialog(mockProject, TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_DELETE_TITLE));
     }
 
@@ -218,7 +218,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
 
         assertEquals(0, teamServicesSettingsModel.getDeleteContexts().size());
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showYesNoDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_MSG)), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE)), any(Icon.class));
     }
 
@@ -233,7 +233,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
         assertEquals(mockServerContext_TfvcRepo, teamServicesSettingsModel.getTableModel().getServerContext(0));
         assertEquals(mockServerContext_GitRepo, teamServicesSettingsModel.getTableModel().getServerContext(1));
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showYesNoDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_MSG)), eq(TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE)), any(Icon.class));
     }
 
@@ -244,7 +244,7 @@ public class TeamServicesSettingsModelTest extends IdeaAbstractTest {
 
         assertEquals(0, teamServicesSettingsModel.getDeleteContexts().size());
         assertEquals(2, teamServicesSettingsModel.getTableModel().getRowCount());
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showWarningDialog(mockProject, TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_NO_ROWS_SELECTED), TfPluginBundle.message(TfPluginBundle.KEY_SETTINGS_PASSWORD_MGT_DIALOG_UPDATE_TITLE));
     }
 }
