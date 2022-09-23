@@ -231,7 +231,7 @@ configure(mainProjects) {
         // version to take priority.
         priorityTestCompile group: 'junit', name: 'junit', version: '4.12'
 
-        testCompile group: 'org.mockito', name: 'mockito-core', version: '2.25.1'
+        testCompile group: 'org.mockito', name: 'mockito-core', version: '4.8.0'
         testCompile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
     }
 
