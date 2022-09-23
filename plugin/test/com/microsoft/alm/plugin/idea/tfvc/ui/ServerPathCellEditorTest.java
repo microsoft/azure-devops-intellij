@@ -19,7 +19,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -85,7 +85,7 @@ public class ServerPathCellEditorTest {
         doReturn(StringUtils.EMPTY).when(spy).getServerPath();
 
         spy.createBrowserDialog();
-        verifyStatic(times(1));
+        verifyStatic(Messages.class, times(1));
         Messages.showErrorDialog(eq(mockProject), eq(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_MSG)),
                 eq(TfPluginBundle.message(TfPluginBundle.KEY_ACTIONS_TFVC_SERVER_TREE_NO_ROOT_TITLE)));
     }

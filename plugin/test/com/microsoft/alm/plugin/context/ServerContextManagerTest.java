@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.api.mockito.PowerMockito;
@@ -36,8 +35,9 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.UUID;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
@@ -180,7 +180,7 @@ public class ServerContextManagerTest extends AbstractTest {
         connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenReturn(connectionData);
 
         final Client client = Mockito.mock(Client.class);
@@ -205,7 +205,7 @@ public class ServerContextManagerTest extends AbstractTest {
         connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenReturn(connectionData);
 
         final Client client = Mockito.mock(Client.class);
@@ -230,7 +230,7 @@ public class ServerContextManagerTest extends AbstractTest {
         connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenReturn(connectionData);
 
         final Client client = Mockito.mock(Client.class);
@@ -251,7 +251,7 @@ public class ServerContextManagerTest extends AbstractTest {
         Assert.assertNull(manager.getLastUsedContext());
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenThrow(new VstsHttpClient.VstsHttpClientException(404, "message", null));
 
         final Client client = Mockito.mock(Client.class);
@@ -281,7 +281,7 @@ public class ServerContextManagerTest extends AbstractTest {
         connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenReturn(connectionData);
 
         final TeamProjectCollection collection = new TeamProjectCollection();
@@ -318,7 +318,7 @@ public class ServerContextManagerTest extends AbstractTest {
         connectionData.getLocationServiceData().setServiceDefinitions(new ServiceDefinition[]{definition});
 
         PowerMockito.mockStatic(VstsHttpClient.class);
-        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), Matchers.eq(ConnectionData.class)))
+        when(VstsHttpClient.sendRequest(any(Client.class), anyString(), eq(ConnectionData.class)))
                 .thenReturn(connectionData);
 
         final TeamProjectCollection collection = new TeamProjectCollection();

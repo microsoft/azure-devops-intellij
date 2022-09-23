@@ -17,7 +17,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -25,7 +24,10 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.mockito.Matchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -119,7 +121,7 @@ public class LookupHelperTests extends IdeaAbstractTest {
 
         verify(loginPageModel).setConnected(true);
         verify(lookupPageModel).setLoading(true);
-        verify(lookupListener).loadContexts(anyList(), Matchers.eq(scope));
+        verify(lookupListener).loadContexts(anyList(), eq(scope));
     }
 
     @Test
@@ -133,13 +135,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadTfsContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();
@@ -162,13 +164,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadTfsContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();
@@ -191,13 +193,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadTfsContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();
@@ -227,7 +229,7 @@ public class LookupHelperTests extends IdeaAbstractTest {
 
         verify(loginPageModel).setConnected(true);
         verify(lookupPageModel).setLoading(true);
-        verify(lookupListener).loadContexts(anyList(), Matchers.eq(scope));
+        verify(lookupListener).loadContexts(anyList(), eq(scope));
     }
 
     @Test
@@ -249,7 +251,7 @@ public class LookupHelperTests extends IdeaAbstractTest {
 
         verify(loginPageModel).setConnected(true);
         verify(lookupPageModel).setLoading(true);
-        verify(lookupListener).loadContexts(anyList(), Matchers.eq(scope));
+        verify(lookupListener).loadContexts(anyList(), eq(scope));
     }
 
     @Test
@@ -263,13 +265,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadVsoContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();
@@ -292,13 +294,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadVsoContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();
@@ -321,13 +323,13 @@ public class LookupHelperTests extends IdeaAbstractTest {
         final AuthenticationProvider authenticationProvider = Mockito.mock(AuthenticationProvider.class);
         when(authenticationProvider.isAuthenticated(serverUrl)).thenReturn(false);
         when(authenticationProvider.getAuthenticationInfo(serverUrl)).thenReturn(authInfo);
-        doNothing().when(authenticationProvider).authenticateAsync(Matchers.anyString(), Matchers.any(AuthenticationListener.class));
+        doNothing().when(authenticationProvider).authenticateAsync(anyString(), any(AuthenticationListener.class));
         final ServerContextLookupListener lookupListener = Mockito.mock(ServerContextLookupListener.class);
 
         ArgumentCaptor<AuthenticationListener> captor = ArgumentCaptor.forClass(AuthenticationListener.class);
         LookupHelper.authenticateAndLoadVsoContexts(loginPageModel, lookupPageModel,
                 authenticationProvider, lookupListener, scope);
-        verify(authenticationProvider).authenticateAsync(Matchers.anyString(), captor.capture());
+        verify(authenticationProvider).authenticateAsync(anyString(), captor.capture());
         final AuthenticationListener listener = captor.getValue();
         // Finish the code path by calling the listener methods
         listener.authenticating();

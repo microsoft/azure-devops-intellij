@@ -11,7 +11,6 @@ import com.microsoft.alm.plugin.idea.common.ui.common.ValidationListener;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -19,7 +18,8 @@ import org.mockito.MockitoAnnotations;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
@@ -67,7 +67,7 @@ public class WorkspaceControllerTest extends IdeaAbstractTest {
 
         // Check that the dialog and model were connected correctly to the controller
         Mockito.verify(mockDialog).addActionListener(c);
-        Mockito.verify(mockDialog).addValidationListener(Matchers.any(ValidationListener.class));
+        Mockito.verify(mockDialog).addValidationListener(any(ValidationListener.class));
         Mockito.verify(mockModel).addObserver(c);
     }
 
@@ -154,7 +154,7 @@ public class WorkspaceControllerTest extends IdeaAbstractTest {
     private WorkspaceController getController() {
         final WorkspaceController c = new WorkspaceController(mockProject, mockDialog, mockModel);
         Mockito.verify(mockDialog).addActionListener(c);
-        Mockito.verify(mockDialog).addValidationListener(Matchers.any(ValidationListener.class));
+        Mockito.verify(mockDialog).addValidationListener(any(ValidationListener.class));
         return c;
     }
 

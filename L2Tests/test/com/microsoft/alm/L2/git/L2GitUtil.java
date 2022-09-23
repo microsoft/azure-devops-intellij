@@ -4,7 +4,6 @@
 package com.microsoft.alm.L2.git;
 
 import com.google.common.collect.ImmutableList;
-import com.intellij.dvcs.DvcsUtil;
 import com.intellij.ide.IdeEventQueue;
 import com.intellij.ide.actions.ImportModuleAction;
 import com.intellij.ide.util.newProjectWizard.AddModuleWizard;
@@ -15,18 +14,19 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.CheckoutProvider;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeListManagerEx;
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl;
 import com.intellij.openapi.vcs.changes.LocalChangeListImpl;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.checkout.VcsAwareCheckoutListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.projectImport.ProjectImportProvider;
 import com.intellij.util.containers.ContainerUtil;
+import com.intellij.vcsUtil.VcsUtil;
 import git4idea.GitVcs;
 import git4idea.commands.Git;
 import org.jetbrains.annotations.NotNull;
@@ -64,9 +64,10 @@ public class L2GitUtil {
         // adds and commits the change
         final LocalChangeListImpl localChangeList = LocalChangeListImpl.createEmptyChangeListImpl(project, "TestCommit", "12345");
         final ChangeListManagerImpl changeListManager = ChangeListManagerImpl.getInstanceImpl(project);
-        VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
-        changeListManager.ensureUpToDate();
+//        VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
+//        changeListManager.ensureUpToDate();
         changeListManager.addUnversionedFiles(localChangeList, ImmutableList.of(readmeVirtualFile));
+        changeListManager.waitUntilRefreshed();
         final Change change = changeListManager.getChange(LocalFileSystem.getInstance().findFileByIoFile(file));
         repository.getVcs().getCheckinEnvironment().commit(ImmutableList.of(change), COMMIT_MESSAGE);
     }
@@ -76,6 +77,10 @@ public class L2GitUtil {
         StartupManager.getInstance(project).runWhenProjectIsInitialized(() -> initialized.set(true));
         IdeEventQueue.getInstance().flushQueue();
         assertTrue(initialized.get());
+        Assert.assertNotEquals(
+                "The active VCS list in the cloned project should not be empty.",
+                0,
+                ProjectLevelVcsManager.getInstance(project).getAllActiveVcss().length);
     }
 
     /**
@@ -105,17 +110,22 @@ public class L2GitUtil {
             }
         }, new ProgressIndicatorBase());
 
-        DvcsUtil.addMappingIfSubRoot(project, FileUtil.join(baseDirectory.getPath(), teamProject), GitVcs.NAME);
-        virtualBaseDirectory.refresh(true, true, new Runnable() {
-            public void run() {
-                if (project.isOpen() && !project.isDisposed() && !project.isDefault()) {
-                    final VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
-                    mgr.fileDirty(virtualBaseDirectory);
-                }
-            }
-        });
+//        virtualBaseDirectory.refresh(false, true, new Runnable() {
+//            public void run() {
+//                if (project.isOpen() && !project.isDisposed() && !project.isDefault()) {
+//                    final VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
+//                    mgr.fileDirty(virtualBaseDirectory);
+//                }
+//            }
+//        });
 
         Project clonedProject = customListener.getNewProject();
+        ProjectLevelVcsManager manager = ProjectLevelVcsManager.getInstance(clonedProject);
+        manager.setDirectoryMappings(
+                VcsUtil.addMapping(
+                        manager.getDirectoryMappings(),
+                        new File(baseDirectory, teamProject).getPath(),
+                        GitVcs.NAME));
         waitForInitialization(clonedProject);
         return clonedProject;
     }
@@ -126,7 +136,7 @@ public class L2GitUtil {
         ForkJoinPool.commonPool().execute(() -> {
             try {
                 ChangeListManagerEx changeListManager = (ChangeListManagerEx) ChangeListManager.getInstance(project);
-                changeListManager.waitForUpdate("L2GitUtil::waitForChangeListManagerUpdate");
+                changeListManager.waitForUpdate();
                 finished.set(true);
             } catch (Throwable t) {
                 exception.set(t);
@@ -185,8 +195,7 @@ class CustomCheckoutListener implements CheckoutProvider.Listener {
         if (!checkoutCompleted) {
             final VcsAwareCheckoutListener[] vcsAwareExtensions = VcsAwareCheckoutListener.EP_NAME.getExtensions();
             for (VcsAwareCheckoutListener extension : vcsAwareExtensions) {
-                // TODO: Migrate to a new signature after update to IDEA 2020.2
-                @SuppressWarnings("UnstableApiUsage") boolean processingCompleted = extension.processCheckedOutDirectory(myProject, directory, myVcsKey);
+                boolean processingCompleted = extension.processCheckedOutDirectory(myProject, directory.toPath(), myVcsKey);
                 if (processingCompleted) break;
             }
         }

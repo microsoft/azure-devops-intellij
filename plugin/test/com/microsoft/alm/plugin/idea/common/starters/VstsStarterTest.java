@@ -58,7 +58,6 @@ public class VstsStarterTest extends IdeaAbstractTest {
         List<String> args = new ArrayList<String>(Arrays.asList("fakeCommand", VALID_GIT_URL));
         vstsStarter.processCommand(args);
 
-        PowerMockito.verifyStatic();
         verify(mockSimpleCheckoutStarter, never()).processCommand();
     }
 
@@ -90,7 +89,6 @@ public class VstsStarterTest extends IdeaAbstractTest {
     public void testProcessUriBadCommand() throws Exception {
         vstsStarter.processUri(VALID_URI.replace(SimpleCheckoutStarter.SUB_COMMAND_NAME, "fakeCommand"));
 
-        PowerMockito.verifyStatic();
         verify(mockSimpleCheckoutStarter, never()).processCommand();
     }
 
@@ -99,7 +97,6 @@ public class VstsStarterTest extends IdeaAbstractTest {
         String uri = "checkouturl=https://laa018-test.visualstudio.com/DefaultCollection/_git/TestProject&EncFormat=UTF8";
         vstsStarter.processUri(uri);
 
-        PowerMockito.verifyStatic();
         verify(mockSimpleCheckoutStarter, never()).processCommand();
     }
 

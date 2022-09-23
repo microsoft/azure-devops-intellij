@@ -54,8 +54,8 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
         this.project = project;
     }
 
-    public void rollbackChanges(final List<Change> changes,
-                                final List<VcsException> vcsExceptions,
+    public void rollbackChanges(List<? extends Change> changes,
+                                List<VcsException> vcsExceptions,
                                 @NotNull final RollbackProgressListener listener) {
         logger.info("rollbackChanges started");
         final List<FilePath> localPaths = new ArrayList<FilePath>();
@@ -70,9 +70,9 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
         logger.info("rollbackChanges ended");
     }
 
-    public void rollbackMissingFileDeletion(final List<FilePath> files,
-                                            final List<VcsException> errors,
-                                            final RollbackProgressListener listener) {
+    public void rollbackMissingFileDeletion(List<? extends FilePath> files,
+                                            List<? super VcsException> errors,
+                                            RollbackProgressListener listener) {
         logger.info("rollbackMissingFileDeletion started");
         for (final FilePath file : files) {
             try {
@@ -86,9 +86,9 @@ public class TFSRollbackEnvironment extends DefaultRollbackEnvironment {
         logger.info("rollbackMissingFileDeletion ended");
     }
 
-    public void rollbackModifiedWithoutCheckout(final List<VirtualFile> files,
-                                                final List<VcsException> errors,
-                                                final RollbackProgressListener listener) {
+    public void rollbackModifiedWithoutCheckout(List<? extends VirtualFile> files,
+                                                List<? super VcsException> errors,
+                                                RollbackProgressListener listener) {
 //TODO: implement once we have server workspace where you can checkout files for edit
 //    try {
 //      WorkstationHelper.processByWorkspaces(TfsFileUtil.getFilePaths(files), false, project, new WorkstationHelper.VoidProcessDelegate() {

@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -121,7 +121,7 @@ public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
 
     private void mockAddFiles(List<String> pathsToReturn) {
         when(CommandUtils.addFiles(eq(mockServerContext), anyList())).then(invocation -> {
-            List<String> filesToAddPaths = invocation.getArgumentAt(1, List.class);
+            List<String> filesToAddPaths = invocation.getArgument(1, List.class);
             if (toCanonicalPaths(filesToAddPaths).equals(toCanonicalPaths(filePaths)))
                 return pathsToReturn;
             return Collections.EMPTY_LIST;
@@ -135,8 +135,9 @@ public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
 
         List<VcsException> exceptions =
                 tfsCheckinEnvironment.scheduleUnversionedFilesForAddition(mockFiles);
-        verifyStatic(times(1));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.markFileDirty(any(Project.class), eq(mockFiles.get(0)));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.markFileDirty(any(Project.class), eq(mockFiles.get(1)));
         assertTrue(exceptions.isEmpty());
     }
@@ -148,7 +149,7 @@ public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
 
         List<VcsException> exceptions =
                 tfsCheckinEnvironment.scheduleUnversionedFilesForAddition(mockFiles);
-        verifyStatic(times(1));
+        verifyStatic(TfsFileUtil.class, times(1));
         TfsFileUtil.markFileDirty(any(Project.class), eq(mockFiles.get(0)));
         assertEquals(1, exceptions.size());
         assertEquals(
@@ -194,7 +195,7 @@ public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
         when(mockVirtualFile2.isValid()).thenReturn(true);
 
         when(VersionControlPath.getVirtualFile(any())).then(invocation -> {
-            String localPath = invocation.getArgumentAt(0, String.class);
+            String localPath = invocation.getArgument(0, String.class);
             String canonicalPath = FileUtil.toCanonicalPath(localPath);
             if (canonicalPath.equals(FileUtil.toCanonicalPath(filePaths.get(0))))
                 return mockVirtualFile1;

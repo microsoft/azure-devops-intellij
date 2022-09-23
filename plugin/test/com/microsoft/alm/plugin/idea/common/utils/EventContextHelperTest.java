@@ -12,7 +12,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -22,6 +21,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -168,13 +169,13 @@ public class EventContextHelperTest extends IdeaAbstractTest {
     public void testTriggerPullRequestChanged() {
         Project project = Mockito.mock(Project.class);
         EventContextHelper.triggerPullRequestChanged(EventContextHelper.SENDER_CREATE_PULL_REQUEST, project);
-        verify(serverEventManager).triggerEvent(Matchers.eq(ServerEvent.PULL_REQUESTS_CHANGED), Matchers.anyMap());
+        verify(serverEventManager).triggerEvent(eq(ServerEvent.PULL_REQUESTS_CHANGED), anyMap());
     }
 
     @Test
     public void testTriggerWorkItemChanged() {
         Project project = Mockito.mock(Project.class);
         EventContextHelper.triggerWorkItemChanged(EventContextHelper.SENDER_ASSOCIATE_BRANCH, project);
-        verify(serverEventManager).triggerEvent(Matchers.eq(ServerEvent.WORK_ITEMS_CHANGED), Matchers.anyMap());
+        verify(serverEventManager).triggerEvent(eq(ServerEvent.WORK_ITEMS_CHANGED), anyMap());
     }
 }

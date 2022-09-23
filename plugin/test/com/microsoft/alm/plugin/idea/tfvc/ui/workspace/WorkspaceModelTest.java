@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -34,9 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -77,7 +77,7 @@ public class WorkspaceModelTest extends IdeaAbstractTest {
         when(serverContextManager.get(anyString())).thenReturn(authenticatedContext);
         when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), anyString(), anyBoolean()))
                 .thenReturn(authenticatedContext);
-        when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), Matchers.eq(""), anyBoolean()))
+        when(serverContextManager.createContextFromTfvcServerUrl(any(URI.class), eq(""), anyBoolean()))
                 .thenReturn(null);
 
         PowerMockito.mockStatic(ServerContextManager.class);
