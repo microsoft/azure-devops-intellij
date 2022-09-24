@@ -12,10 +12,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.swing.JComponent;
 import javax.swing.ListSelectionModel;
@@ -30,8 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({IdeaHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
     private TeamServicesSettingsController controller;
 
@@ -48,12 +45,12 @@ public class TeamServicesSettingsControllerTest extends IdeaAbstractTest {
     @Mock
     private JComponent mockComponent;
 
+    @Mock
+    private MockedStatic<IdeaHelper> ideaHelper;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(IdeaHelper.class);
-
-        when(IdeaHelper.getCurrentProject()).thenReturn(mockProject);
+        ideaHelper.when(IdeaHelper::getCurrentProject).thenReturn(mockProject);
         when(mockTeamServicesSettingsModel.getTableModel()).thenReturn(mockTableModel);
         when(mockTeamServicesSettingsModel.getTableSelectionModel()).thenReturn(mockListSelectionModel);
         when(mockTeamServicesSettingsModel.getOriginalAuthType()).thenReturn(AuthTypes.DEVICE_FLOW);

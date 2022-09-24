@@ -18,10 +18,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ProgressManager.class, VcsUtil.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ResolveConflictsModelTest extends IdeaAbstractTest {
     public final Conflict CONFLICT2 = new Conflict("/path/to/file2", Conflict.ConflictType.CONTENT);
     public final Conflict CONFLICT3 = new Conflict("/path/to/file3", Conflict.ConflictType.CONTENT);
@@ -56,12 +53,15 @@ public class ResolveConflictsModelTest extends IdeaAbstractTest {
 
     public ResolveConflictsModel resolveConflictsModel;
 
+    @Mock
+    private MockedStatic<ProgressManager> progressManagerStatic;
+
+    @Mock
+    private MockedStatic<VcsUtil> vcsUtilStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ProgressManager.class);
-        PowerMockito.mockStatic(VcsUtil.class);
-        when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
+        progressManagerStatic.when(ProgressManager::getInstance).thenReturn(mockProgressManager);
 
         when(mockConflictsTableModel.getMyConflicts()).thenReturn(CONFLICTS);
         resolveConflictsModel = new ResolveConflictsModel(mockProject, mockResolveConflictHelper, mockConflictsTableModel);

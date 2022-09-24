@@ -20,10 +20,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 
@@ -35,8 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsUtil.class, Presentation.class, Messages.class, BrowserUtil.class})
+@RunWith(MockitoJUnitRunner.class)
 public class AnnotateActionTest extends IdeaAbstractTest {
     private AnnotateAction annotateAction;
     private final URI serverURI = URI.create("http://organization.visualstudio.com/");
@@ -58,13 +55,19 @@ public class AnnotateActionTest extends IdeaAbstractTest {
     @Mock
     private ItemInfo mockItemInfo;
 
+    @Mock
+    private MockedStatic<VcsUtil> vcsUtilStatic;
+
+    @Mock
+    private MockedStatic<Messages> messagesStatic;
+
+    @Mock
+    private MockedStatic<BrowserUtil> browserUtilStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(VcsUtil.class, Messages.class, BrowserUtil.class);
-
         when(mockAnActionEvent.getPresentation()).thenReturn(mockPresentation);
-        when(VcsUtil.getOneVirtualFile(mockAnActionEvent)).thenReturn(mockVirtualFile);
+        vcsUtilStatic.when(() -> VcsUtil.getOneVirtualFile(mockAnActionEvent)).thenReturn(mockVirtualFile);
         when(mockActionContext.getProject()).thenReturn(mockProject);
         when(mockServerContext.getUri()).thenReturn(serverURI);
         annotateAction = new AnnotateAction();

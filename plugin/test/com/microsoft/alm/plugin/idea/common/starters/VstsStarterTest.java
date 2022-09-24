@@ -11,10 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,10 +23,8 @@ import java.util.Map;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SimpleCheckoutStarter.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VstsStarterTest extends IdeaAbstractTest {
     public static final String VALID_GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/TestProject";
     public static final String VALID_URI = SimpleCheckoutStarter.SUB_COMMAND_NAME + "/?url=" + VALID_GIT_URL + "&EncFormat=UTF8";
@@ -37,17 +33,18 @@ public class VstsStarterTest extends IdeaAbstractTest {
     @Mock
     public SimpleCheckoutStarter mockSimpleCheckoutStarter;
 
+    @Mock
+    private MockedStatic<SimpleCheckoutStarter> simpleCheckoutStarter;
+
     @Before
     public void setupLocal() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(SimpleCheckoutStarter.class);
         vstsStarter = new VstsStarter();
     }
 
     @Test
     public void testProcessCommandHappy() {
         List<String> args = new ArrayList<String>(Arrays.asList(SimpleCheckoutStarter.SUB_COMMAND_NAME, VALID_GIT_URL));
-        when(SimpleCheckoutStarter.createWithCommandLineArgs(Arrays.asList(VALID_GIT_URL))).thenReturn(mockSimpleCheckoutStarter);
+        simpleCheckoutStarter.when(() -> SimpleCheckoutStarter.createWithCommandLineArgs(Arrays.asList(VALID_GIT_URL))).thenReturn(mockSimpleCheckoutStarter);
         vstsStarter.processCommand(args);
 
         verify(mockSimpleCheckoutStarter).processCommand();
@@ -63,23 +60,25 @@ public class VstsStarterTest extends IdeaAbstractTest {
 
     @Test
     public void testProcessUriHappy() throws Exception {
-        Map<String, String> uriMap = new HashMap<String, String>() {
+        var uriMap1 = new HashMap<String, String>() {
             {
                 put("url", VALID_GIT_URL);
                 put("EncFormat", "UTF8");
             }
         };
-        when(SimpleCheckoutStarter.createWithUriAttributes(uriMap)).thenReturn(mockSimpleCheckoutStarter);
+        simpleCheckoutStarter.when(() -> SimpleCheckoutStarter.createWithUriAttributes(uriMap1))
+                .thenReturn(mockSimpleCheckoutStarter);
         vstsStarter.processUri(VALID_URI);
 
         //with limited refs _optimized
-        uriMap = new HashMap<String, String>() {
+        var uriMap2 = new HashMap<String, String>() {
             {
                 put("url", VALID_GIT_URL.replace("_git/", "_git/_optimized/"));
                 put("EncFormat", "UTF8");
             }
         };
-        when(SimpleCheckoutStarter.createWithUriAttributes(uriMap)).thenReturn(mockSimpleCheckoutStarter);
+        simpleCheckoutStarter.when(()-> SimpleCheckoutStarter.createWithUriAttributes(uriMap2))
+                .thenReturn(mockSimpleCheckoutStarter);
         vstsStarter.processUri(VALID_URI.replace("_git/", "_git/_optimized/"));
 
         verify(mockSimpleCheckoutStarter, times(2)).processCommand();

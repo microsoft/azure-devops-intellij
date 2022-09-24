@@ -10,17 +10,15 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.microsoft.alm.plugin.external.models.ChangeSet;
 import com.microsoft.alm.plugin.external.models.CheckedInChange;
 import com.microsoft.alm.plugin.external.models.Workspace;
-import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
+import com.microsoft.alm.plugin.idea.MockedIdeaApplicationTest;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.TfsFileUtil;
 import com.microsoft.alm.plugin.idea.tfvc.core.tfs.VersionControlPath;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -33,9 +31,8 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({TfsFileUtil.class, VcsUtil.class, VersionControlPath.class})
-public class TFSChangeListBuilderTest extends IdeaAbstractTest {
+@RunWith(MockitoJUnitRunner.class)
+public class TFSChangeListBuilderTest extends MockedIdeaApplicationTest {
     private static final int CHANGESET_ID = 123;
     private static final String OWNER = "John Smith";
     private static final String CHANGESET_DATE = "2016-08-15T11:50:09.427-0400";
@@ -85,11 +82,17 @@ public class TFSChangeListBuilderTest extends IdeaAbstractTest {
 
     private TFSChangeListBuilder changeListBuilder;
 
+    @Mock
+    private MockedStatic<TfsFileUtil> tfsFileUtilStatic;
+
+    @Mock
+    private MockedStatic<VcsUtil> vcsUtilStatic;
+
+    @Mock
+    private MockedStatic<VersionControlPath> versionControlPathStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(TfsFileUtil.class, VcsUtil.class, VersionControlPath.class);
-
         when(file1.getPath()).thenReturn(PATH_FILE_1);
         when(file2.getPath()).thenReturn(PATH_FILE_2);
         when(file3.getPath()).thenReturn(PATH_FILE_3);
@@ -100,35 +103,35 @@ public class TFSChangeListBuilderTest extends IdeaAbstractTest {
         when(file8.getPath()).thenReturn(PATH_FILE_8);
         when(file9.getPath()).thenReturn(PATH_FILE_1); // having a duplicate entry on purpose
 
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange1.getServerItem()))).thenReturn(PATH_FILE_1);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange2.getServerItem()))).thenReturn(PATH_FILE_2);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange3.getServerItem()))).thenReturn(PATH_FILE_3);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange4.getServerItem()))).thenReturn(PATH_FILE_4);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange5.getServerItem()))).thenReturn(PATH_FILE_5);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange6.getServerItem()))).thenReturn(PATH_FILE_6);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange7.getServerItem()))).thenReturn(PATH_FILE_7);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange8.getServerItem()))).thenReturn(PATH_FILE_8);
-        when(TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange9.getServerItem()))).thenReturn(PATH_FILE_1);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange1.getServerItem()))).thenReturn(PATH_FILE_1);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange2.getServerItem()))).thenReturn(PATH_FILE_2);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange3.getServerItem()))).thenReturn(PATH_FILE_3);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange4.getServerItem()))).thenReturn(PATH_FILE_4);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange5.getServerItem()))).thenReturn(PATH_FILE_5);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange6.getServerItem()))).thenReturn(PATH_FILE_6);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange7.getServerItem()))).thenReturn(PATH_FILE_7);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange8.getServerItem()))).thenReturn(PATH_FILE_8);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.translateServerItemToLocalItem(any(List.class), eq(checkedInChange9.getServerItem()))).thenReturn(PATH_FILE_1);
 
-        when(VcsUtil.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file1);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_2), anyBoolean())).thenReturn(file2);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_3), anyBoolean())).thenReturn(file3);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_4), anyBoolean())).thenReturn(file4);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_5), anyBoolean())).thenReturn(file5);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_6), anyBoolean())).thenReturn(file6);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_7), anyBoolean())).thenReturn(file7);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_8), anyBoolean())).thenReturn(file8);
-        when(VcsUtil.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file9);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file1);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_2), anyBoolean())).thenReturn(file2);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_3), anyBoolean())).thenReturn(file3);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_4), anyBoolean())).thenReturn(file4);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_5), anyBoolean())).thenReturn(file5);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_6), anyBoolean())).thenReturn(file6);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_7), anyBoolean())).thenReturn(file7);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_8), anyBoolean())).thenReturn(file8);
+        vcsUtilStatic.when(() -> VcsUtil.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file9);
 
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file1);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_2), anyBoolean())).thenReturn(file2);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_3), anyBoolean())).thenReturn(file3);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_4), anyBoolean())).thenReturn(file4);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_5), anyBoolean())).thenReturn(file5);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_6), anyBoolean())).thenReturn(file6);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_7), anyBoolean())).thenReturn(file7);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_8), anyBoolean())).thenReturn(file8);
-        when(VersionControlPath.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file9);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file1);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_2), anyBoolean())).thenReturn(file2);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_3), anyBoolean())).thenReturn(file3);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_4), anyBoolean())).thenReturn(file4);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_5), anyBoolean())).thenReturn(file5);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_6), anyBoolean())).thenReturn(file6);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_7), anyBoolean())).thenReturn(file7);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_8), anyBoolean())).thenReturn(file8);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(eq(PATH_FILE_1), anyBoolean())).thenReturn(file9);
 
         changeListBuilder = new TFSChangeListBuilder(mockVcs, mockWorkspace);
     }

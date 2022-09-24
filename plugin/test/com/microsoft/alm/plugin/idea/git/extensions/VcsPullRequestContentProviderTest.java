@@ -11,27 +11,28 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VcsHelper.class, IdeaHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VcsPullRequestContentProviderTest extends IdeaAbstractTest {
     private VcsPullRequestContentProvider.VcsPullRequestVisibilityPredicate pullRequestVisibilityPredicate;
 
     @Mock
     private Project mockProject;
 
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelperStatic;
+
+    @Mock
+    private MockedStatic<IdeaHelper> ideaHelperStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(VcsHelper.class, IdeaHelper.class);
         pullRequestVisibilityPredicate = new VcsPullRequestContentProvider.VcsPullRequestVisibilityPredicate();
     }
 

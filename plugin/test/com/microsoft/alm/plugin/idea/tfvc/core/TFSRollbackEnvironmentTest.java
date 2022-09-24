@@ -24,10 +24,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,17 +40,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-        CommandUtils.class,
-        LocalFileSystem.class,
-        ServiceManager.class,
-        TfsFileUtil.class,
-        TfvcClient.class
-})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     TFSRollbackEnvironment rollbackEnvironment;
     List<String> filePaths = SystemInfo.isWindows
@@ -79,22 +69,30 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     @Mock
     FilePath filePath1, filePath2, filePath3;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<LocalFileSystem> localFileSystemStatic;
+
+    @Mock
+    private MockedStatic<ServiceManager> serviceManagerStatic;
+
+    @Mock
+    private MockedStatic<TfsFileUtil> tfsFileUtilStatic;
+
+    @Mock
+    private MockedStatic<TfvcClient> tfvcClientStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(
-                CommandUtils.class,
-                LocalFileSystem.class,
-                ServiceManager.class,
-                TfsFileUtil.class,
-                TfvcClient.class);
-
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
-        when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
-        when(TfsFileUtil.createLocalPath(any(String.class))).thenCallRealMethod();
-        when(TfsFileUtil.createLocalPath(any(FilePath.class))).thenCallRealMethod();
-        when(TfsFileUtil.getPathItem(any(TfsPath.class))).thenCallRealMethod();
+        tfvcClientStatic.when(TfvcClient::getInstance).thenReturn(new ClassicTfvcClient());
+        //noinspection ResultOfMethodCallIgnored
+        localFileSystemStatic.when(LocalFileSystem::getInstance).thenReturn(mockLocalFileSystem);
+        tfsFileUtilStatic.when(() -> TfsFileUtil.createLocalPath(any(String.class))).thenCallRealMethod();
+        tfsFileUtilStatic.when(() -> TfsFileUtil.createLocalPath(any(FilePath.class))).thenCallRealMethod();
+        tfsFileUtilStatic.when(() -> TfsFileUtil.getPathItem(any(TfsPath.class))).thenCallRealMethod();
         when(filePath1.getPath()).thenReturn("/path/to/file1");
         when(filePath2.getPath()).thenReturn("/path/to/file2");
         when(filePath3.getPath()).thenReturn("/path/to/file3");
@@ -145,8 +143,9 @@ public class TFSRollbackEnvironmentTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testRollbackMissingFileDeletion_Excepion() throws Exception {
-        doThrow(new RuntimeException("test error")).when(CommandUtils.class, "forceGetFile", mockServerContext, "/path/to/file1");
+    public void testRollbackMissingFileDeletion_Exception() {
+        commandUtilsStatic.when(() -> CommandUtils.forceGetFile(mockServerContext, "/path/to/file1"))
+                .thenThrow(new RuntimeException("test error"));
 
         rollbackEnvironment.rollbackMissingFileDeletion(ImmutableList.of(filePath1), exceptions, mockRollbackProgressListener);
         assertEquals(1, exceptions.size());

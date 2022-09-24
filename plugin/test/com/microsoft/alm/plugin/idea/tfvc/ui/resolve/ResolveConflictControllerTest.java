@@ -42,7 +42,7 @@ public class ResolveConflictControllerTest extends IdeaAbstractTest {
         verify(mockDialog).addActionListener(controller);
         verify(mockModel).addObserver(controller);
         verify(mockModel).loadConflicts();
-        verify(mockDialog).setConflictsTableModel(any(ConflictsTableModel.class));
+        verify(mockDialog).setConflictsTableModel(any());
         verify(mockModel).getConflictsTableModel();
         verifyNoMoreInteractions(mockDialog);
         verifyNoMoreInteractions(mockModel);
@@ -56,7 +56,7 @@ public class ResolveConflictControllerTest extends IdeaAbstractTest {
 
         verify(mockModel).clearErrors();
         verify(mockDialog).getSelectedRows();
-        verify(mockModel).acceptTheirs(any(int[].class));
+        verify(mockModel).acceptTheirs(any());
         verifyNoMoreInteractions(mockDialog);
         verifyNoMoreInteractions(mockModel);
     }
@@ -69,7 +69,7 @@ public class ResolveConflictControllerTest extends IdeaAbstractTest {
 
         verify(mockModel).clearErrors();
         verify(mockDialog).getSelectedRows();
-        verify(mockModel).acceptYours(any(int[].class));
+        verify(mockModel).acceptYours(any());
         verifyNoMoreInteractions(mockDialog);
         verifyNoMoreInteractions(mockModel);
     }
@@ -82,7 +82,7 @@ public class ResolveConflictControllerTest extends IdeaAbstractTest {
 
         verify(mockModel).clearErrors();
         verify(mockDialog).getSelectedRows();
-        verify(mockModel).merge(any(int[].class));
+        verify(mockModel).merge(any());
         verifyNoMoreInteractions(mockDialog);
         verifyNoMoreInteractions(mockModel);
     }
@@ -104,7 +104,7 @@ public class ResolveConflictControllerTest extends IdeaAbstractTest {
         reset(mockDialog, mockModel);
         controller.update(null, null);
 
-        verify(mockDialog).setConflictsTableModel(any(ConflictsTableModel.class));
+        verify(mockDialog).setConflictsTableModel(any());
         verify(mockModel).getConflictsTableModel();
         verifyNoMoreInteractions(mockDialog);
         verifyNoMoreInteractions(mockModel);

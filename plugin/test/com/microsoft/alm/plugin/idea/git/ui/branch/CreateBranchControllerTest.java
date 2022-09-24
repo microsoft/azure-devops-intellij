@@ -8,7 +8,6 @@ import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
 import com.microsoft.alm.plugin.idea.common.resources.TfPluginBundle;
 import com.microsoft.alm.plugin.idea.common.ui.common.BaseDialog;
 import com.microsoft.alm.plugin.idea.common.ui.common.ModelValidationInfo;
-import git4idea.GitRemoteBranch;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +15,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.swing.ComboBoxModel;
 import java.awt.event.ActionEvent;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -47,26 +45,26 @@ public class CreateBranchControllerTest extends IdeaAbstractTest {
         ActionEvent e = new ActionEvent(this, 1, BaseDialog.CMD_OK);
         underTest.actionPerformed(e);
 
-        verify(mockModel).setBranchName(any(String.class));
-        verify(mockModel).setSelectedRemoteBranch(any(GitRemoteBranch.class));
+        verify(mockModel).setBranchName(any());
+        verify(mockModel).setSelectedRemoteBranch(any());
     }
 
     @Test
     public void testUpdate_BranchName() {
         underTest.update(null, CreateBranchModel.PROP_BRANCH_NAME);
-        verify(mockDialog).setBranchName(any(String.class));
+        verify(mockDialog).setBranchName(any());
     }
 
     @Test
     public void testUpdate_ComboBox() {
         underTest.update(null, CreateBranchModel.PROP_REMOTE_BRANCH_COMBO_MODEL);
-        verify(mockDialog).setRemoteBranchDropdownModel(any(ComboBoxModel.class));
+        verify(mockDialog).setRemoteBranchDropdownModel(any());
     }
 
     @Test
     public void testUpdate_SelectedRemote() {
         underTest.update(null, CreateBranchModel.PROP_SELECTED_REMOTE_BRANCH);
-        verify(mockDialog).setSelectedRemoteBranch(any(GitRemoteBranch.class));
+        verify(mockDialog).setSelectedRemoteBranch(any());
     }
 
     @Test
@@ -87,9 +85,9 @@ public class CreateBranchControllerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testUpdateModel() throws Exception {
+    public void testUpdateModel() {
         underTest.updateModel();
-        verify(mockModel).setBranchName(any(String.class));
-        verify(mockModel).setSelectedRemoteBranch(any(GitRemoteBranch.class));
+        verify(mockModel).setBranchName(any());
+        verify(mockModel).setSelectedRemoteBranch(any());
     }
 }

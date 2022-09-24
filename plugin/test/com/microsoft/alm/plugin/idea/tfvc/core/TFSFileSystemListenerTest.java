@@ -25,10 +25,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -47,17 +45,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-        CommandUtils.class,
-        LocalFileSystem.class,
-        ServiceManager.class,
-        TFSVcs.class,
-        TfvcClient.class,
-        TFVCUtil.class,
-        VcsHelper.class,
-        VersionControlPath.class,
-})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     private String CURRENT_FILE_NAME = "file.txt";
     private String NEW_FILE_NAME = "newName.txt";
@@ -99,41 +87,56 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Mock
     private VcsShowConfirmationOption mockVcsShowConfirmationOption;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<LocalFileSystem> localFileSystemStatic;
+
+    @Mock
+    private MockedStatic<ServiceManager> serviceManagerStatic;
+
+    @Mock
+    private MockedStatic<TFSVcs> tfsVcsStatic;
+
+    @Mock
+    private MockedStatic<TfvcClient> tfvcClientStatic;
+
+    @Mock
+    private MockedStatic<TFVCUtil> tfvcUtilStatic;
+
+    @Mock
+    private MockedStatic<VcsHelper> vcsHelperStatic;
+
+    @Mock
+    private MockedStatic<VersionControlPath> versionControlPathStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(
-                CommandUtils.class,
-                LocalFileSystem.class,
-                ServiceManager.class,
-                TFSVcs.class,
-                TfvcClient.class,
-                TFVCUtil.class,
-                VcsHelper.class,
-                VersionControlPath.class
-        );
-
-        when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+        tfvcClientStatic.when(TfvcClient::getInstance).thenReturn(new ClassicTfvcClient());
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         when(mockVcsShowConfirmationOption.getValue()).thenReturn(VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY);
         when(mockTFSVcs.getDeleteConfirmation()).thenReturn(mockVcsShowConfirmationOption);
-        when(VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(mockTFSVcs);
-        when(LocalFileSystem.getInstance()).thenReturn(mockLocalFileSystem);
+        vcsHelperStatic.when(() -> VcsHelper.getTFSVcsByPath(mockVirtualFile)).thenReturn(mockTFSVcs);
+        //noinspection ResultOfMethodCallIgnored
+        localFileSystemStatic.when(LocalFileSystem::getInstance).thenReturn(mockLocalFileSystem);
         when(mockVirtualFile.getPath()).thenReturn(CURRENT_FILE_PATH);
         when(mockVirtualFile.getName()).thenReturn(CURRENT_FILE_NAME);
         when(mockVirtualParent.getPath()).thenReturn(PARENT_PATH);
         when(mockVirtualFile.getParent()).thenReturn(mockVirtualParent);
         when(mockNewDirectory.getPath()).thenReturn(NEW_DIRECTORY_PATH);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
-        when(TFVCUtil.isInvalidTFVCPath(eq(mockTFSVcs), any(FilePath.class))).thenReturn(false);
-        when(
-                CommandUtils.deleteFiles(
-                        any(ServerContext.class), anyList(), any(String.class), any(Boolean.class)))
+        tfsVcsStatic.when(() -> TFSVcs.getInstance(mockProject)).thenReturn(mockTFSVcs);
+        tfvcUtilStatic.when(() -> TFVCUtil.isInvalidTFVCPath(eq(mockTFSVcs), any(FilePath.class)))
+                .thenReturn(false);
+        commandUtilsStatic.when(
+                () -> CommandUtils.deleteFiles(
+                        any(), anyList(), any(), any(Boolean.class)))
                 .thenReturn(new TfvcDeleteResult());
 
         FilePath mockFilePath = mock(FilePath.class);
-        when(VersionControlPath.getFilePath(CURRENT_FILE_PATH, false)).thenReturn(mockFilePath);
+        versionControlPathStatic.when(() -> VersionControlPath.getFilePath(CURRENT_FILE_PATH, false))
+                .thenReturn(mockFilePath);
         when(mockPendingChange.getLocalItem()).thenReturn(CURRENT_FILE_PATH);
         when(mockPendingChange.getVersion()).thenReturn("5");
 
@@ -165,7 +168,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testRename_FileEditChanges() throws Exception {
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
@@ -178,7 +180,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testRename_FileEditRenameChanges() throws Exception {
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
@@ -206,7 +207,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Test
     public void testRename_FileAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
@@ -231,7 +231,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testMove_FileEditChanges() throws Exception {
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
@@ -244,7 +243,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
 
     @Test
     public void testMove_FileEditRenameChanges() throws Exception {
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.EDIT, ServerStatusType.RENAME));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 
@@ -272,7 +270,6 @@ public class TFSFileSystemListenerTest extends IdeaAbstractTest {
     @Test
     public void testMove_FileAdd() throws Exception {
         when(mockPendingChange.isCandidate()).thenReturn(false);
-        when(mockPendingChange.getChangeTypes()).thenReturn(ImmutableList.of(ServerStatusType.ADD));
         when(CommandUtils.getStatusForFiles(mockProject, mockServerContext, ImmutableList.of(CURRENT_FILE_PATH)))
                 .thenReturn(ImmutableList.of(mockPendingChange));
 

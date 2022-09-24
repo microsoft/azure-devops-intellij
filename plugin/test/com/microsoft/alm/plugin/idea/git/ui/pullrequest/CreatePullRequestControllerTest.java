@@ -5,13 +5,10 @@ package com.microsoft.alm.plugin.idea.git.ui.pullrequest;
 
 import com.intellij.openapi.project.Project;
 import com.microsoft.alm.plugin.idea.IdeaAbstractTest;
-import git4idea.GitBranch;
-import git4idea.GitRemoteBranch;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.swing.ComboBoxModel;
 import java.awt.event.ActionEvent;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -39,31 +36,31 @@ public class CreatePullRequestControllerTest extends IdeaAbstractTest {
     }
 
     @Test
-    public void testActionPerformed() throws Exception {
+    public void testActionPerformed() {
         ActionEvent e = new ActionEvent(this, 1, CreatePullRequestForm.CMD_TARGET_BRANCH_UPDATED);
         underTest.actionPerformed(e);
 
-        verify(modelMock).setTargetBranch(any(GitRemoteBranch.class));
+        verify(modelMock).setTargetBranch(any());
         verify(modelMock).loadDiff();
     }
 
     @Test
-    public void whenSourceOfUpdateIsNotSetUpdateAll() throws Exception {
+    public void whenSourceOfUpdateIsNotSetUpdateAll() {
         underTest.update(null, null);
-        verify(dialogMock).setSourceBranch(any(GitBranch.class));
-        verify(dialogMock).setTargetBranchDropdownModel(any(ComboBoxModel.class));
-        verify(dialogMock).setSelectedTargetBranch(any(GitRemoteBranch.class));
-        verify(dialogMock).setTitle(anyString());
-        verify(dialogMock).setDescription(anyString());
+        verify(dialogMock).setSourceBranch(any());
+        verify(dialogMock).setTargetBranchDropdownModel(any());
+        verify(dialogMock).setSelectedTargetBranch(any());
+        verify(dialogMock).setTitle(any());
+        verify(dialogMock).setDescription(any());
         verify(dialogMock).setIsLoading(anyBoolean());
-        verify(dialogMock).populateDiff(any(Project.class), any(GitChangesContainer.class));
+        verify(dialogMock).populateDiff(any(), any());
     }
 
     /* test some specific updates */
     @Test
     public void whenTitleIsChangedOnlyTitleShouldBeUpdated() {
         underTest.update(null, CreatePullRequestModel.PROP_TITLE);
-        verify(dialogMock).setTitle(anyString());
+        verify(dialogMock).setTitle(any());
         verify(modelMock).getTitle();
         verify(dialogMock, never()).setDescription(anyString());
         verify(modelMock, never()).getDescription();

@@ -22,10 +22,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,21 +32,13 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-        CommandUtils.class,
-        TFSCommittedChangesProvider.class,
-        TFSVcs.class,
-        TFVCUtil.class,
-        TfvcWorkspaceLocator.class
-})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     private static final String SERVER_URL = "https://organization.visualstudio.com";
     private static final String LOCAL_ROOT_PATH = "/Users/user/root";
@@ -73,37 +64,52 @@ public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     private ChangeSet mockChangeSet2;
     @Mock
     private ChangeSet mockChangeSet3;
-    @Mock
-    private TFSChangeListBuilder mockTFSChangeListBuilder;
 
     private TFSCommittedChangesProvider committedChangesProvider;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<TFSVcs> tfsVcsStatic;
+
+    @Mock
+    private MockedStatic<TfvcWorkspaceLocator> tfvcWorkspaceLocatorStatic;
+
+    @Mock
+    private MockedConstruction<TFSChangeListBuilder> tfsChangeListBuilderConstruction;
+
+    @Mock
+    private MockedStatic<TFVCUtil> tfvcUtilStatic;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, TFSVcs.class, TfvcWorkspaceLocator.class);
-
-        when(TFSVcs.getInstance(mockProject)).thenReturn(mockVcs);
+        tfsVcsStatic.when(() -> TFSVcs.getInstance(mockProject)).thenReturn(mockVcs);
         when(mockVirtualFile.getPath()).thenReturn(LOCAL_ROOT_PATH);
         when(mockRoot.getVirtualFile()).thenReturn(mockVirtualFile);
         when(mockWorkspace.getServerDisplayName()).thenReturn(SERVER_URL);
         when(mockChangeBrowserSettings.getUserFilter()).thenReturn(USER_ME);
-        when(TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false)).thenReturn(mockWorkspace);
-        whenNew(TFSChangeListBuilder.class).withAnyArguments().thenReturn(mockTFSChangeListBuilder);
+        tfvcWorkspaceLocatorStatic.when(() -> TfvcWorkspaceLocator.getPartialWorkspace(mockProject, false))
+                .thenReturn(mockWorkspace);
         when(mockChangeBrowserSettings.getChangeAfterFilter()).thenReturn(30L);
         when(mockChangeBrowserSettings.getChangeBeforeFilter()).thenReturn(50L);
 
-        when(mockChangeSet1.getIdAsInt()).thenReturn(48);
+        lenient().when(mockChangeSet1.getIdAsInt()).thenReturn(48);
         when(mockChangeSet2.getIdAsInt()).thenReturn(40);
         when(mockChangeSet3.getIdAsInt()).thenReturn(31);
-        when(mockChangeSet1.getDate()).thenReturn("2016-08-15T11:50:09.427-0400");
+        lenient().when(mockChangeSet1.getDate()).thenReturn("2016-08-15T11:50:09.427-0400");
         when(mockChangeSet2.getDate()).thenReturn("2016-07-11T12:00:00.000-0400");
         when(mockChangeSet3.getDate()).thenReturn("2016-06-23T04:30:00.00-0400");
 
-        mockStatic(TFVCUtil.class);
-        when(TFVCUtil.isFileUnderTFVCMapping(mockProject, mockRoot)).thenReturn(true);
+        tfvcUtilStatic.when(() -> TFVCUtil.isFileUnderTFVCMapping(mockProject, mockRoot)).thenReturn(true);
 
         committedChangesProvider = new TFSCommittedChangesProvider(mockProject);
+    }
+
+    private TFSChangeListBuilder getMockTfsChangeListBuilder() {
+        var builders = tfsChangeListBuilderConstruction.constructed();
+        assertEquals(1, builders.size());
+        return builders.get(0);
     }
 
     @Test
@@ -117,14 +123,14 @@ public class TFSCommittedChangesProviderTest extends IdeaAbstractTest {
     @Test
     public void testLoadCommittedChanges_FoundChanges() throws Exception {
         final List<ChangeSet> changeSetList = ImmutableList.of(mockChangeSet1, mockChangeSet2, mockChangeSet3);
-        when(CommandUtils.getHistoryCommand(any(ServerContext.class), eq(LOCAL_ROOT_PATH), eq("C30~C50"),
+        when(CommandUtils.getHistoryCommand(any(), eq(LOCAL_ROOT_PATH), eq("C30~C50"),
                 eq(20), eq(true), eq(USER_ME))).thenReturn(changeSetList);
         final RepositoryLocation repositoryLocation = new TFSRepositoryLocation(mockWorkspace, mockVirtualFile);
         committedChangesProvider.loadCommittedChanges(mockChangeBrowserSettings, repositoryLocation, 20, mockAsynchConsumer);
-        verify(mockAsynchConsumer, times(3)).consume(any(TFSChangeList.class));
-        verify(mockTFSChangeListBuilder).createChangeList(eq(mockChangeSet1), eq(40), eq("2016-07-11T12:00:00.000-0400"));
-        verify(mockTFSChangeListBuilder).createChangeList(eq(mockChangeSet2), eq(31), eq("2016-06-23T04:30:00.00-0400"));
-        verify(mockTFSChangeListBuilder).createChangeList(eq(mockChangeSet3), eq(0), eq(StringUtils.EMPTY));
+        verify(mockAsynchConsumer, times(3)).consume(any());
+        verify(getMockTfsChangeListBuilder()).createChangeList(eq(mockChangeSet1), eq(40), eq("2016-07-11T12:00:00.000-0400"));
+        verify(getMockTfsChangeListBuilder()).createChangeList(eq(mockChangeSet2), eq(31), eq("2016-06-23T04:30:00.00-0400"));
+        verify(getMockTfsChangeListBuilder()).createChangeList(eq(mockChangeSet3), eq(0), eq(StringUtils.EMPTY));
         verify(mockAsynchConsumer).finished();
         verifyNoMoreInteractions(mockAsynchConsumer);
     }

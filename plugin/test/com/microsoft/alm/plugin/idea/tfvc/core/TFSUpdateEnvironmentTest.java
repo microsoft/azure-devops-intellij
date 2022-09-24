@@ -27,12 +27,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +42,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,8 +50,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     TFSUpdateEnvironment updateEnvironment;
 
@@ -87,27 +84,36 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
     @Mock
     FileGroup mockFileGroupUpdate;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<ConflictsEnvironment> conflictsEnvironmentStatic;
+
+    @Mock
+    private MockedStatic<TfsFileUtil> tfsFileUtilStatic;
+
+    @Mock
+    private MockedStatic<TFVCUtil> tfvcUtilStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(CommandUtils.class, ConflictsEnvironment.class, TfsFileUtil.class, TFVCUtil.class);
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
-        when(ConflictsEnvironment.getConflictsHandler()).thenReturn(mockConflictsHandler);
+        //noinspection ResultOfMethodCallIgnored
+        conflictsEnvironmentStatic.when(ConflictsEnvironment::getConflictsHandler).thenReturn(mockConflictsHandler);
         when(mockUpdatedFiles.getGroupById(FileGroup.REMOVED_FROM_REPOSITORY_ID)).thenReturn(mockFileGroupRemove);
         when(mockUpdatedFiles.getGroupById(FileGroup.CREATED_ID)).thenReturn(mockFileGroupCreate);
         when(mockUpdatedFiles.getGroupById(FileGroup.UPDATED_ID)).thenReturn(mockFileGroupUpdate);
-        when(TFVCUtil.filterValidTFVCPaths(eq(mockProject), anyCollection())).then(new Answer<Collection<String>>() {
-            @Override
-            public Collection<String> answer(InvocationOnMock invocation) throws Throwable {
-                @SuppressWarnings("unchecked") Collection<FilePath> argument = (Collection<FilePath>) invocation.getArguments()[1];
-                ArrayList<String> result = new ArrayList<String>();
-                for (FilePath filePath : argument) {
-                    result.add(filePath.getPath());
-                }
-                return result;
-            }
-        });
+        tfvcUtilStatic.when(() -> TFVCUtil.filterValidTFVCPaths(eq(mockProject), anyCollection()))
+                .then((Answer<Collection<String>>) invocation -> {
+                    @SuppressWarnings("unchecked") Collection<FilePath> argument = (Collection<FilePath>) invocation.getArguments()[1];
+                    ArrayList<String> result = new ArrayList<String>();
+                    for (FilePath filePath : argument) {
+                        result.add(filePath.getPath());
+                    }
+                    return result;
+                });
 
         updateEnvironment = new TFSUpdateEnvironment(mockProject, mockTFSVcs);
     }
@@ -165,7 +171,7 @@ public class TFSUpdateEnvironmentTest extends IdeaAbstractTest {
         when(filePath2.getPath()).thenReturn("/path/to/directory");
 
         FilePath filePath3 = mock(FilePath.class);
-        when(filePath3.isDirectory()).thenReturn(false);
+        lenient().when(filePath3.isDirectory()).thenReturn(false);
         when(filePath3.getPath()).thenReturn("/path/to/file2");
         FilePath[] filePaths = {filePath1, filePath2, filePath3};
 

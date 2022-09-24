@@ -24,10 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URI;
 import java.util.Collections;
@@ -45,14 +43,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-        CommandUtils.class,
-        ProgressManager.class,
-        ServiceManager.class,
-        TfsFileUtil.class,
-        TfvcClient.class,
-        VersionControlPath.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
     TFSCheckinEnvironment tfsCheckinEnvironment;
     List<String> filePaths = ImmutableList.of("/path/to/file1", "/path/to/file2");
@@ -74,21 +65,30 @@ public class TFSCheckinEnvironmentTest extends MockedIdeaApplicationTest {
     @Mock
     NullableFunction mockNullableFunction;
 
+    @Mock
+    private MockedStatic<CommandUtils> commandUtilsStatic;
+
+    @Mock
+    private MockedStatic<ProgressManager> progressManagerStatic;
+
+    @Mock
+    private MockedStatic<ServiceManager> serviceManagerStatic;
+
+    @Mock
+    private MockedStatic<TfsFileUtil> tfsFileUtilStatic;
+
+    @Mock
+    private MockedStatic<TfvcClient> tfvcClientStatic;
+
+    @Mock
+    private MockedStatic<VersionControlPath> versionControlPathStatic;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(
-                CommandUtils.class,
-                ProgressManager.class,
-                ServiceManager.class,
-                TfsFileUtil.class,
-                TfvcClient.class,
-                VersionControlPath.class);
-
         when(mockServerContext.getUri()).thenReturn(URI.create("http://organization.visualstudio.com"));
         when(mockTFSVcs.getServerContext(anyBoolean())).thenReturn(mockServerContext);
-        when(ProgressManager.getInstance()).thenReturn(mockProgressManager);
-        when(TfvcClient.getInstance()).thenReturn(new ClassicTfvcClient());
+        progressManagerStatic.when(ProgressManager::getInstance).thenReturn(mockProgressManager);
+        tfvcClientStatic.when(TfvcClient::getInstance).thenReturn(new ClassicTfvcClient());
         when(mockTFSVcs.getProject()).thenReturn(mockProject);
         tfsCheckinEnvironment = new TFSCheckinEnvironment(mockTFSVcs);
     }

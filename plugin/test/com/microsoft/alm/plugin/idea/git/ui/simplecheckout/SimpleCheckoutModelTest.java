@@ -14,14 +14,11 @@ import com.microsoft.alm.plugin.services.PluginServiceProvider;
 import com.microsoft.alm.plugin.services.PropertyService;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +26,7 @@ import java.io.IOException;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PluginServiceProvider.class, LocalFileSystem.class})
+@RunWith(MockitoJUnitRunner.class)
 public class SimpleCheckoutModelTest extends IdeaAbstractTest {
     public static final String REPO_NAME = "TestProject-" + System.currentTimeMillis();
     public static final String GIT_URL = "https://organization.visualstudio.com/DefaultCollection/_git/" + REPO_NAME;
@@ -45,12 +41,11 @@ public class SimpleCheckoutModelTest extends IdeaAbstractTest {
     @Mock
     public CheckoutProvider.Listener mockListener;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(PluginServiceProvider.class);
-        PowerMockito.mockStatic(LocalFileSystem.class);
-    }
+    @Mock
+    private MockedStatic<PluginServiceProvider> pluginServiceProviderStatic;
+
+    @Mock
+    private MockedStatic<LocalFileSystem> localFileSystemStatic;
 
     @Test
     public void testConstructor_Happy() {
